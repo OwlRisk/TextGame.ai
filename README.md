@@ -1,73 +1,210 @@
-# 游戏平台设计
+# GameMaster - AI Game Master Platform
 
-This is a code bundle for 游戏平台设计. The original project is available at https://www.figma.com/design/MpzvYw3r2IcvwjJUNloup6/%E6%B8%B8%E6%88%8F%E5%B9%B3%E5%8F%B0%E8%AE%BE%E8%AE%A1.
+An AI-powered intelligent game master platform that supports various social deduction games (such as Werewolf, Undercover, etc.), providing an immersive gaming experience with personalized AI host characters.
 
-## 技术栈
+## ✨ Features
 
-- **框架**: Next.js 15 (App Router)
-- **语言**: TypeScript
-- **样式**: Tailwind CSS
-- **UI 组件**: Radix UI + shadcn/ui
-- **状态管理**: React Hooks
+### Core Features
+- 🤖 **AI Game Master System** - Intelligent AI hosts with multiple personalized characters
+- 🎮 **Multiple Game Templates** - Built-in classic game templates including Werewolf, Undercover, and more
+- 🎨 **Custom Game Creation** - Flexible game rule configuration and customization
+- 💬 **Real-time Chat Interaction** - Smooth conversational gaming experience
+- 🔊 **Voice Input Support** - Speech-to-text input capability
+- 👥 **Multi-player Management** - Complete player panel and role assignment system
+- 📊 **Game Session Management** - Support for saving, resuming, and managing multiple sessions
+- 🎭 **Personalized Hosts** - Multiple AI host characters to choose from, each with unique styles
 
-## 运行项目
+### UI Features
+- 🎨 **Modern UI Design** - Beautiful interface based on shadcn/ui
+- 📱 **Responsive Design** - Perfect adaptation to various device sizes
+- 🌙 **Dark Theme** - Immersive dark theme design
+- ✨ **Smooth Animations** - Rich interactive animation effects
 
-### 安装依赖
+## 🛠️ Tech Stack
+
+### Frontend Framework
+- **Next.js 16** - React framework using App Router
+- **React 19** - UI library
+- **TypeScript** - Type safety
+
+### UI Component Library
+- **Radix UI** - Accessible component foundation
+- **shadcn/ui** - High-quality component library
+- **Tailwind CSS** - Utility-first CSS framework
+- **Lucide React** - Icon library
+
+### Other Dependencies
+- **Sonner** - Toast notifications
+- **React Hook Form** - Form management
+- **Motion** - Animation library
+- **Recharts** - Chart library
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- npm / pnpm / yarn
+- OpenAI API Key (for AI features)
+- PostgreSQL database (optional, for data persistence)
+
+### Installation Steps
+
+1. **Clone the repository**
+
+```bash
+git clone <repository-url>
+cd GameMaster
+```
+
+2. **Install dependencies**
 
 ```bash
 npm install
-# 或
+# or
 pnpm install
-# 或
+# or
 yarn install
 ```
 
-### 环境变量
+3. **Configure environment variables**
 
-创建 `.env` 文件并添加必要的环境变量：
+Create a `.env` file and add the necessary environment variables:
 
 ```env
+# OpenAI API configuration (required)
 OPENAI_API_KEY=your_openai_api_key
+
+# Database configuration (optional, for data persistence)
 DATABASE_URL=your_database_url
 DIRECT_URL=your_direct_database_url
 ```
 
-### 开发模式
+4. **Start the development server**
 
 ```bash
 npm run dev
 ```
 
-在浏览器中打开 [http://localhost:3000](http://localhost:3000) 查看应用。
+5. **Access the application**
 
-### 构建生产版本
+Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
+
+### Build for Production
 
 ```bash
+# Build
 npm run build
+
+# Start production server
 npm start
 ```
 
-## 项目结构
+### Code Linting
 
-```
-src/
-├── app/
-│   ├── layout.tsx          # 根布局
-│   ├── page.tsx             # 主页面
-│   ├── components/          # 组件目录
-│   │   ├── game-master-chat.tsx
-│   │   ├── game-creator-form.tsx
-│   │   ├── chat-area.tsx
-│   │   └── ui/              # UI 组件库
-│   └── config/              # 配置文件
-└── styles/                  # 样式文件
+```bash
+npm run lint
 ```
 
-## 功能特性
+## 📁 Project Structure
 
-- 🎮 AI 游戏主持人系统
-- 💬 实时聊天功能
-- 🎯 多种游戏模板（狼人杀、卧底等）
-- 🎨 现代化 UI 设计
-- 🔊 语音输入支持
-- 📱 响应式设计
+```
+GameMaster/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx                    # Root layout component
+│   │   ├── page.tsx                      # Main page
+│   │   ├── components/                   # Components directory
+│   │   │   ├── game-master-chat.tsx     # AI game master chat interface
+│   │   │   ├── game-creator-form.tsx    # Game creation form
+│   │   │   ├── game-setup-dialog.tsx    # Game setup dialog
+│   │   │   ├── my-games-page.tsx        # My games page
+│   │   │   ├── player-board.tsx         # Player panel
+│   │   │   ├── chat-area.tsx            # Chat area
+│   │   │   ├── welcome-page.tsx         # Welcome page
+│   │   │   ├── discover-page.tsx        # Discover page
+│   │   │   ├── host-selector.tsx        # Host selector
+│   │   │   └── ui/                      # UI component library (shadcn/ui)
+│   │   └── config/
+│   │       └── host-config.ts           # Host configuration file
+│   └── styles/                           # Style files
+│       ├── index.css                     # Main style file
+│       ├── tailwind.css                  # Tailwind styles
+│       └── theme.css                    # Theme styles
+├── public/                                # Static assets
+├── .env                                  # Environment variables (create yourself)
+├── package.json                          # Project configuration
+├── tailwind.config.js                    # Tailwind configuration
+├── tsconfig.json                         # TypeScript configuration
+└── README.md                             # Project documentation
+```
+
+## 🎮 Usage Guide
+
+### Creating a New Game
+
+1. Click the "Create New Game" button
+2. Select a game template (Werewolf, Undercover, or Custom)
+3. Configure game parameters (player count, rules, etc.)
+4. Choose an AI host character
+5. Start the game
+
+### Managing Games
+
+- **My Games** - View all created games
+- **Continue Game** - Resume unfinished game sessions
+- **View History** - Browse completed game records
+- **Delete Game** - Clean up unwanted games
+
+### AI Host Features
+
+- Intelligent conversational game guidance
+- Automatic game flow and phase management
+- Role assignment and rule explanation
+- Real-time game state updates
+
+## 🔧 Development Guide
+
+### Adding a New Game Template
+
+Add a new template to the `GAME_TEMPLATES` array in `src/app/components/game-master-chat.tsx`:
+
+```typescript
+{
+  id: "new-game",
+  name: "New Game",
+  description: "Game description",
+  minPlayers: 4,
+  maxPlayers: 10,
+  defaultRules: "Game rules...",
+  roles: ["Role1", "Role2"]
+}
+```
+
+### Adding a New Host Character
+
+Add a new character to the `HOST_PERSONALITIES` array in `src/app/config/host-config.ts`.
+
+### Style Customization
+
+The project uses Tailwind CSS. You can customize themes and styles in `tailwind.config.js`.
+
+## 📝 Design Reference
+
+This project is developed based on a Figma design:
+- [Game Platform Design](https://www.figma.com/design/MpzvYw3r2IcvwjJUNloup6/%E6%B8%B8%E6%88%8F%E5%B9%B3%E5%8F%B0%E8%AE%BE%E8%AE%A1)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit Issues and Pull Requests.
+
+## 📄 License
+
+This project is private.
+
+## 🔗 Related Links
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [shadcn/ui Documentation](https://ui.shadcn.com)
+- [Radix UI Documentation](https://www.radix-ui.com)
