@@ -1,0 +1,534 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Sparkles, Send, CheckCircle2 } from "lucide-react";
+import { HOST_PERSONALITIES, HostPersonality, getDefaultHost } from "@/app/config/host-config";
+import { HostSelector } from "@/app/components/host-selector";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { ScrollArea } from "@/app/components/ui/scroll-area";
+
+export interface GameTemplate {
+  id: string;
+  name: string;
+  description: string;
+  minPlayers: number;
+  maxPlayers: number;
+  defaultRules: string;
+  roles?: string[];
+}
+
+interface GameSetupDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onCreateGame: (config: GameConfig) => void;
+}
+
+export interface GameConfig {
+  name: string;
+  template: string;
+  playerCount: number;
+  rules: string;
+  customRoles?: string[];
+  hostId: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: "gm" | "user";
+  content: string;
+  timestamp: Date;
+}
+
+const GAME_TEMPLATES: GameTemplate[] = [
+  {
+    id: "werewolf",
+    name: "Werewolf",
+    description: "A classic social deduction game where villagers try to find the werewolves among them.",
+    minPlayers: 5,
+    maxPlayers: 12,
+    defaultRules: `OBJECTIVE: Villagers must find and eliminate all Werewolves. Werewolves must eliminate all Villagers.
+
+PHASES:
+1. Night Phase - Werewolves choose a victim
+2. Day Phase - All players discuss and vote to eliminate someone
+
+ROLES:
+- Villagers: Innocent townspeople
+- Werewolves: Kill one villager each night
+- Seer: Can check one player's role each night
+- Doctor: Can protect one player each night
+
+RULES:
+- Once rules are set, they cannot be changed
+- Game Master controls all phases
+- Dead players cannot communicate
+- Majority vote eliminates a player`,
+    roles: ["Villager", "Werewolf", "Seer", "Doctor"]
+  },
+  {
+    id: "undercover",
+    name: "Undercover (Who's the Spy)",
+    description: "Find the undercover agent who has a different word while blending in with the group.",
+    minPlayers: 4,
+    maxPlayers: 10,
+    defaultRules: `OBJECTIVE: Civilians find the Undercover. Undercover tries to blend in and survive.
+
+SETUP:
+- Most players get the same word (Civilians)
+- One player gets a similar but different word (Undercover)
+- One player gets a completely different word (Mr. White - optional)
+
+GAMEPLAY:
+1. Each player describes their word in one sentence
+2. Vote to eliminate the suspected Undercover
+3. Eliminated player reveals their role
+4. Continue until Undercover is found or wins
+
+WINNING:
+- Civilians win if they eliminate the Undercover
+- Undercover wins if they survive to final 3 players
+- Mr. White wins if they correctly guess the civilian word when eliminated`,
+    roles: ["Civilian", "Undercover", "Mr. White"]
+  },
+  {
+    id: "custom",
+    name: "Custom Game",
+    description: "Create your own game with custom rules and roles.",
+    minPlayers: 2,
+    maxPlayers: 20,
+    defaultRules: "Custom game rules will be defined through conversation",
+    roles: []
+  }
+];
+
+type ConversationState = "greeting" | "game-type" | "player-count" | "rules-discussion" | "confirmation" | "completed";
+
+export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialogProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [conversationState, setConversationState] = useState<ConversationState>("greeting");
+  const [isGMTyping, setIsGMTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Game configuration being built
+  const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
+  const [playerCount, setPlayerCount] = useState<number>(6);
+  const [customRules, setCustomRules] = useState<string>("");
+  const [gameName, setGameName] = useState<string>("");
+  const [selectedHostId, setSelectedHostId] = useState<string>(getDefaultHost().id);
+  const [showHostSelector, setShowHostSelector] = useState(false);
+  
+  useEffect(() => {
+    if (open && messages.length === 0) {
+      // Initial greeting from Game Master
+      setTimeout(() => {
+        addGMMessage(
+          "Greetings! I'm the Game Master, and I'll help you create an amazing game experience. " +
+          "I can set up classic games like Werewolf or Undercover, or we can design something completely custom together.\n\n" +
+          "What type of game would you like to play today? You can choose:\n" +
+          "• **Werewolf** - A thrilling social deduction game\n" +
+          "• **Undercover** - Find the spy among you\n" +
+          "• **Custom** - Let's create something unique!\n\n" +
+          "Just tell me your preference, or describe what kind of game you have in mind!"
+        );
+      }, 500);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  const addGMMessage = (content: string) => {
+    const newMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      role: "gm",
+      content,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+    setIsGMTyping(false);
+  };
+
+  const addUserMessage = (content: string) => {
+    const newMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      role: "user",
+      content,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const simulateGMResponse = (userInput: string) => {
+    setIsGMTyping(true);
+    const lowerInput = userInput.toLowerCase();
+
+    setTimeout(() => {
+      if (conversationState === "greeting") {
+        // Detect game type
+        if (lowerInput.includes("werewolf") || lowerInput.includes("wolf")) {
+          setSelectedTemplate(GAME_TEMPLATES[0]);
+          setConversationState("player-count");
+          addGMMessage(
+            "Excellent choice! Werewolf is a classic game of deception and deduction.\n\n" +
+            "For this game, I recommend 5-12 players (including you). How many AI players would you like to join? " +
+            "Just give me a number between 4 and 11."
+          );
+        } else if (lowerInput.includes("undercover") || lowerInput.includes("spy") || lowerInput.includes("卧底")) {
+          setSelectedTemplate(GAME_TEMPLATES[1]);
+          setConversationState("player-count");
+          addGMMessage(
+            "Great! Undercover is a fantastic word-guessing game where one player has a different word.\n\n" +
+            "This game works best with 4-10 players (including you). How many AI players should I create? " +
+            "Give me a number between 3 and 9."
+          );
+        } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("自定义")) {
+          setSelectedTemplate(GAME_TEMPLATES[2]);
+          setConversationState("rules-discussion");
+          addGMMessage(
+            "Wonderful! Let's create a custom game together. I love creativity!\n\n" +
+            "Tell me about the game you envision:\n" +
+            "• What's the objective?\n" +
+            "• What roles or characters are involved?\n" +
+            "• Any special rules or phases?\n\n" +
+            "Share your ideas, and I'll help structure it into a playable game!"
+          );
+        } else {
+          addGMMessage(
+            "I'm not sure which game you'd prefer. Let me help you:\n\n" +
+            "🐺 **Werewolf** - Perfect for strategy lovers. Players debate to find hidden werewolves.\n" +
+            "🕵️ **Undercover** - Quick and fun! Guess who has the different word.\n" +
+            "🎮 **Custom** - Have a unique idea? Let's build it together!\n\n" +
+            "Which one sounds interesting to you?"
+          );
+        }
+      } else if (conversationState === "player-count") {
+        // Extract number from input
+        const numbers = userInput.match(/\d+/);
+        if (numbers) {
+          const count = parseInt(numbers[0]);
+          const min = selectedTemplate!.minPlayers - 1;
+          const max = selectedTemplate!.maxPlayers - 1;
+          
+          if (count >= min && count <= max) {
+            setPlayerCount(count);
+            setConversationState("rules-discussion");
+            addGMMessage(
+              `Perfect! I'll create ${count} AI players for you.\n\n` +
+              `Now, let's discuss the rules. Here are the standard rules for ${selectedTemplate!.name}:\n\n` +
+              `${selectedTemplate!.defaultRules}\n\n` +
+              `Would you like to:\n` +
+              `• **Keep these rules** (just say "yes" or "keep them")\n` +
+              `• **Modify something** (tell me what you'd like to change)\n` +
+              `• **Start fresh** (describe your own rules)`
+            );
+          } else {
+            addGMMessage(
+              `Hmm, ${count} players might not work well for this game. ` +
+              `I recommend between ${min} and ${max} AI players (plus you makes ${min + 1} to ${max + 1} total). ` +
+              `Could you choose a number in that range?`
+            );
+          }
+        } else {
+          addGMMessage(
+            "I didn't catch a number there. How many AI players would you like? " +
+            `Please give me a number between ${selectedTemplate!.minPlayers - 1} and ${selectedTemplate!.maxPlayers - 1}.`
+          );
+        }
+      } else if (conversationState === "rules-discussion") {
+        if (lowerInput.includes("yes") || lowerInput.includes("keep") || lowerInput.includes("standard") || 
+            lowerInput.includes("ok") || lowerInput.includes("good") || lowerInput.includes("fine")) {
+          setCustomRules(selectedTemplate!.defaultRules);
+          setConversationState("confirmation");
+          addGMMessage(
+            `Excellent! Let me summarize your game setup:\n\n` +
+            `**Game Type:** ${selectedTemplate!.name}\n` +
+            `**Total Players:** ${playerCount + 1} (${playerCount} AI + you)\n` +
+            `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
+            `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
+            `Ready to create your game? Say "create" to proceed, or "modify" if you want to adjust something.`
+          );
+        } else if (lowerInput.includes("modify") || lowerInput.includes("change") || lowerInput.includes("different")) {
+          addGMMessage(
+            "Of course! What would you like to modify? For example:\n" +
+            "• Add or remove roles\n" +
+            "• Change winning conditions\n" +
+            "• Adjust game phases\n" +
+            "• Add special abilities\n\n" +
+            "Tell me what changes you have in mind!"
+          );
+        } else if (selectedTemplate?.id === "custom") {
+          // For custom games, accumulate rules
+          setCustomRules(prev => prev ? prev + "\n\n" + userInput : userInput);
+          addGMMessage(
+            "Great ideas! I'm noting that down. " +
+            "Anything else you'd like to add to the rules? " +
+            "Or shall I summarize what we have so far? (say 'summarize' or 'done')"
+          );
+        } else {
+          // User is providing modifications
+          setCustomRules(selectedTemplate!.defaultRules + "\n\nMODIFICATIONS:\n" + userInput);
+          addGMMessage(
+            "Got it! I've added your modifications to the rules. " +
+            "Would you like to add anything else, or are we ready to finalize? " +
+            "(say 'finalize' when ready)"
+          );
+        }
+        
+        if (lowerInput.includes("summarize") || lowerInput.includes("done") || lowerInput.includes("finalize")) {
+          setConversationState("confirmation");
+          const finalRules = customRules || selectedTemplate!.defaultRules;
+          addGMMessage(
+            `Perfect! Here's your complete game setup:\n\n` +
+            `**Game Type:** ${selectedTemplate!.name}\n` +
+            `**Total Players:** ${playerCount + 1} (${playerCount} AI + you)\n` +
+            `**Rules:**\n${finalRules}\n\n` +
+            `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
+            `Ready to begin? Say "create game" to start!`
+          );
+        }
+      } else if (conversationState === "confirmation") {
+        if (lowerInput.includes("create") || lowerInput.includes("start") || 
+            lowerInput.includes("begin") || lowerInput.includes("yes")) {
+          // Show host selector
+          setShowHostSelector(true);
+          addGMMessage(
+            "Perfect! One last step - choose your guide for this adventure. Each has their own unique style that will shape your experience:"
+          );
+        } else if (lowerInput.includes("modify") || lowerInput.includes("change") || lowerInput.includes("back")) {
+          setConversationState("rules-discussion");
+          addGMMessage(
+            "No problem! What would you like to modify?\n" +
+            "• Change player count?\n" +
+            "• Adjust rules?\n" +
+            "• Switch game type?\n\n" +
+            "Let me know what you'd like to change."
+          );
+        } else {
+          addGMMessage(
+            "I'm ready when you are! Say 'create game' to begin, or 'modify' if you want to make changes."
+          );
+        }
+      }
+    }, 800 + Math.random() * 400);
+  };
+
+  const handleSend = () => {
+    if (input.trim() && !isGMTyping) {
+      addUserMessage(input.trim());
+      simulateGMResponse(input.trim());
+      setInput("");
+    }
+  };
+
+  const handleQuickReply = (reply: string) => {
+    if (!isGMTyping) {
+      addUserMessage(reply);
+      simulateGMResponse(reply);
+    }
+  };
+
+  const getQuickReplies = () => {
+    if (conversationState === "greeting") {
+      return ["Werewolf", "Undercover", "Custom Game"];
+    } else if (conversationState === "player-count") {
+      const min = selectedTemplate!.minPlayers - 1;
+      const mid = Math.floor((selectedTemplate!.minPlayers + selectedTemplate!.maxPlayers) / 2) - 1;
+      return [`${min} players`, `${mid} players`];
+    } else if (conversationState === "rules-discussion") {
+      return ["Keep standard rules", "Modify rules"];
+    } else if (conversationState === "confirmation") {
+      return ["Create game", "Modify setup"];
+    }
+    return [];
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl w-[95vw] h-[92vh] bg-zinc-900 text-white border-zinc-700 flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4 border-b border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+              <Sparkles className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <DialogTitle className="text-3xl">Game Master</DialogTitle>
+              <DialogDescription className="text-zinc-400 text-base">
+                Let's create your perfect game together
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Chat Messages */}
+        <ScrollArea className="flex-1 px-8">
+          <div className="py-6 space-y-8 max-w-5xl mx-auto">
+            {/* Host Selector in Confirmation State */}
+            {conversationState === "confirmation" && showHostSelector && (
+              <div className="mb-8">
+                <HostSelector
+                  selectedHostId={selectedHostId}
+                  onSelectHost={setSelectedHostId}
+                />
+                
+                {/* Confirmation Buttons - Prominent Position */}
+                <div className="mt-10 flex justify-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => {
+                      setShowHostSelector(false);
+                      setSelectedHostId(getDefaultHost().id);
+                    }}
+                    className="border-zinc-700 hover:bg-zinc-800 px-8 text-base h-12"
+                  >
+                    ← Back
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={() => {
+                      setConversationState("completed");
+                      const host = HOST_PERSONALITIES.find(h => h.id === selectedHostId);
+                      addGMMessage(
+                        `🎉 Fantastic! ${host?.name} will be your guide.\n\n` +
+                        `Your game is being created now. See you in the game room!`
+                      );
+                      
+                      // Create the game after a short delay
+                      setTimeout(() => {
+                        onCreateGame({
+                          name: gameName || selectedTemplate!.name,
+                          template: selectedTemplate!.id,
+                          playerCount: playerCount,
+                          rules: customRules || selectedTemplate!.defaultRules,
+                          customRoles: selectedTemplate!.roles,
+                          hostId: selectedHostId!
+                        });
+                        
+                        // Reset state
+                        setTimeout(() => {
+                          setMessages([]);
+                          setConversationState("greeting");
+                          setSelectedTemplate(null);
+                          setCustomRules("");
+                          setGameName("");
+                          setSelectedHostId(getDefaultHost().id);
+                          setShowHostSelector(false);
+                          onClose();
+                        }, 1500);
+                      }, 1000);
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-500 px-10 text-base h-12 font-semibold"
+                  >
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                    Create Game
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+              >
+                <div
+                  className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    message.role === "gm"
+                      ? "bg-gradient-to-br from-amber-500 to-orange-600"
+                      : "bg-indigo-600"
+                  }`}
+                >
+                  {message.role === "gm" ? (
+                    <Sparkles className="h-6 w-6 text-white" />
+                  ) : (
+                    <span className="text-sm font-semibold text-white">YOU</span>
+                  )}
+                </div>
+                <div className={`flex-1 ${message.role === "user" ? "flex justify-end" : ""}`}>
+                  <div
+                    className={`inline-block max-w-[85%] rounded-2xl px-5 py-4 ${
+                      message.role === "gm"
+                        ? "bg-zinc-800 text-white"
+                        : "bg-indigo-600 text-white"
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap text-base leading-relaxed">
+                      {message.content}
+                    </div>
+                  </div>
+                  <div className="text-xs text-zinc-500 mt-1.5 px-2">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {isGMTyping && (
+              <div className="flex gap-4">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div className="bg-zinc-800 rounded-2xl px-5 py-4">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-2.5 h-2.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-2.5 h-2.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={scrollRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Quick Replies */}
+        {getQuickReplies().length > 0 && !isGMTyping && conversationState !== "completed" && (
+          <div className="px-8 py-3 max-w-5xl mx-auto w-full">
+            <div className="flex flex-wrap gap-2">
+              {getQuickReplies().map((reply) => (
+                <Button
+                  key={reply}
+                  variant="outline"
+                  onClick={() => handleQuickReply(reply)}
+                  className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-300 text-base px-4 py-2 h-auto"
+                >
+                  {reply}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Input */}
+        {conversationState !== "completed" && !showHostSelector && (
+          <div className="p-8 pt-4 border-t border-zinc-800">
+            <div className="flex gap-3 max-w-5xl mx-auto">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Type your message..."
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 text-base h-12"
+                disabled={isGMTyping}
+              />
+              <Button
+                onClick={handleSend}
+                disabled={!input.trim() || isGMTyping}
+                size="icon"
+                className="bg-indigo-600 hover:bg-indigo-500 h-12 w-12"
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
