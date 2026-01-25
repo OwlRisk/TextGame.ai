@@ -19,6 +19,10 @@ export interface Player {
   isGameMaster?: boolean;
   isAI: boolean;
   isOnline?: boolean;
+  /** AI-only: short personality tag (e.g. "Skeptical and analytical") */
+  personality?: string;
+  /** AI-only: backstory / context (e.g. "Former debate champion") */
+  background?: string;
 }
 
 interface PlayerPanelProps {
@@ -124,11 +128,11 @@ function PlayerCard({
           ) : (
             <GeneratedAvatar
               name={player.name}
-              type={player.isGameMaster ? "gm" : "player"}
+              type={player.isGameMaster ? "host" : "player"}
               background={
                 player.isGameMaster
-                  ? undefined
-                  : `Social deduction game player. Role: ${player.role ?? "Player"}.`
+                  ? (player.background ?? undefined)
+                  : player.background ?? `Social deduction game player. Role: ${player.role ?? "Player"}.`
               }
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"

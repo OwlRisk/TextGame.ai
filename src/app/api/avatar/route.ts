@@ -27,27 +27,29 @@ const SINGLE_PERSON =
   'CRITICAL: One person only. Single face. No group photo. No multiple people or faces. ' +
   'One head and shoulders portrait only.';
 
-/** Style for Game Master - anime/manga style (for fixed GM avatar) */
-const ANIME_HOST_STYLE =
-  'Anime/manga art style. Colorful hair, expressive large eyes, confident expression. ' +
-  'Game show presenter aesthetic, professional yet approachable. ' +
+/** Universal anime/manga style for all avatars */
+const ANIME_STYLE =
+  'Anime/manga art style. Japanese animation aesthetic. ' +
+  'Colorful hair, expressive large eyes, clean line art. ' +
+  'Vibrant colors, soft shading, anime illustration quality. ' +
   'Head and shoulders portrait, circular crop suitable. ' +
-  'Vibrant colors, clean anime art style lines. ' +
   'Single character only, no background details. ' +
   SINGLE_PERSON;
 
-/** Style for Game Master - professional host look (legacy, not used for fixed GM) */
+/** Style for Game Master / Host - anime style */
 const HOST_STYLE =
-  'Semi-realistic portrait, game show host / presenter style. ' +
-  'Front-facing head and shoulders, neutral background, suitable for circular crop. No text or logos. ' +
-  SINGLE_PERSON;
+  'Anime/manga style game master host. ' +
+  'Confident, professional presenter vibe. ' +
+  'Colorful hair, expressive eyes, game show host aesthetic. ' +
+  ANIME_STYLE;
 
-/** Style for players - single realistic portrait */
+/** Style for players - anime style */
 const PLAYER_STYLE =
-  'Realistic human portrait photo, single person. ' +
-  'Natural lighting, head and shoulders, neutral or blurred background, suitable for circular crop. ' +
-  'No text or logos. ' +
-  SINGLE_PERSON;
+  'Anime/manga style character portrait. ' +
+  'Japanese animation art style. ' +
+  'Colorful hair, expressive large eyes, unique design. ' +
+  'Diverse anime character appearance. ' +
+  ANIME_STYLE;
 
 function buildPrompt(
   _name: string,
@@ -58,15 +60,15 @@ function buildPrompt(
 
   if (!background || !background.trim()) {
     return type === 'host'
-      ? `Game master host portrait. Professional presenter style. ${HOST_STYLE}`
-      : `Single human player portrait. Casual profile photo style. ${PLAYER_STYLE}`;
+      ? `Anime/manga style game master host character. ${HOST_STYLE}`
+      : `Anime/manga style game player character. ${PLAYER_STYLE}`;
   }
 
   if (type === 'host') {
-    return `Portrait of a game master host. Background: ${background.trim()}. ${HOST_STYLE}`;
+    return `Anime/manga style game master host character. Background: ${background.trim()}. ${HOST_STYLE}`;
   }
 
-  return `Portrait of a game player. Background: ${background.trim()}. ${PLAYER_STYLE}`;
+  return `Anime/manga style game player character. Background: ${background.trim()}. ${PLAYER_STYLE}`;
 }
 
 async function generateWithDalle3(prompt: string): Promise<string> {
@@ -75,7 +77,7 @@ async function generateWithDalle3(prompt: string): Promise<string> {
     prompt,
     size: '1024x1024',
     quality: 'standard',
-    style: 'natural',
+    style: 'vivid',
     response_format: 'b64_json',
     n: 1,
   });

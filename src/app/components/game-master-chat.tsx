@@ -4,14 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play } from "lucide-react";
+import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Volume2, VolumeX } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
-import { HOST_PERSONALITIES, getDefaultHost, getHostById } from "@/app/config/host-config";
+import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
+import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
 
 interface ChatMessage {
   id: string;
@@ -297,14 +298,33 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
 
-  // Host personality
-  const [selectedHostId, setSelectedHostId] = useState<string>(getDefaultHost().id);
+  // Host personality - try last selected, then default
+  const [selectedHostId, setSelectedHostId] = useState<string>(() => {
+    const lastHostId = getLastSelectedHostId();
+    if (lastHostId) return lastHostId;
+    return getDefaultHost().id;
+  });
 
-  // Voice input
-  const [isRecording, setIsRecording] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
-  const [voiceTranscript, setVoiceTranscript] = useState<string>("");
-  const [voiceError, setVoiceError] = useState<string>("");
+  // Voice output (TTS): GM reads replies aloud. Init false to avoid hydration mismatch;
+  // sync from localStorage after mount.
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
+  const voiceOutputEnabledRef = useRef(voiceOutputEnabled);
+  voiceOutputEnabledRef.current = voiceOutputEnabled;
+  const { speak: speakTTS, stop: stopTTS, supported: ttsSupported } = useVoiceOutput();
+
+  // Only render client-only UI (e.g. TTS button) after mount to avoid hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  useEffect(() => {
+    if (!mounted) return;
+    setVoiceOutputEnabled(localStorage.getItem("gmVoiceOutput") === "1");
+  }, [mounted]);
+
+  // Voice input (STT)
+  const voice = useVoiceInput();
+  const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   // Preview panel
   const [showPreview, setShowPreview] = useState(true);
@@ -391,7 +411,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       playerCount: 6,
       customRules: "",
       gameName: "",
-      selectedHostId: getDefaultHost().id,
+      selectedHostId: getDefaultHostForTemplate(selectedTemplate?.id || null).id,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -405,7 +425,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setPlayerCount(6);
     setCustomRules("");
     setGameName("");
-    setSelectedHostId(getDefaultHost().id);
+    setSelectedHostId(getDefaultHostForTemplate(null).id);
 
     setSessions(prev => {
       const updated = [newSession, ...prev];
@@ -450,39 +470,6 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     });
     toast.success("Session deleted");
   };
-
-  // Initialize speech recognition
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.continuous = false;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'en-US';
-
-      recognitionInstance.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setVoiceTranscript(transcript);
-        setVoiceError("");
-      };
-
-      recognitionInstance.onerror = (event: any) => {
-        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
-          setVoiceError("Microphone access denied. Please allow microphone permissions in your browser settings.");
-        } else if (event.error === 'no-speech') {
-          setVoiceError("No speech detected. Please try again.");
-        } else {
-          setVoiceError("Voice input failed. Please check your microphone and try again.");
-        }
-      };
-
-      recognitionInstance.onend = () => {
-        // Don't auto-close, wait for user to confirm or cancel
-      };
-
-      setRecognition(recognitionInstance);
-    }
-  }, []);
 
   // Show initial greeting when messages are empty
   useEffect(() => {
@@ -608,12 +595,14 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         () => {
           setIsGMTyping(false);
           setIsStreaming(false);
-
+          if (voiceOutputEnabledRef.current && fullResponse.trim()) {
+            speakTTS(fullResponse);
+          }
           // Replace temp message with final message (ensure only one message)
           setMessages(prev => {
             const filtered = prev.filter(msg => msg.id !== tempMessageId || msg.content.trim() !== '');
-            return filtered.map(msg => 
-              msg.id === tempMessageId 
+            return filtered.map(msg =>
+              msg.id === tempMessageId
                 ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }
                 : msg
             );
@@ -670,47 +659,6 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     }
   };
 
-  const handleVoiceInput = () => {
-    if (!recognition) {
-      toast.error("Voice input is not supported in your browser");
-      return;
-    }
-
-    setIsRecording(true);
-    setVoiceTranscript("");
-    setVoiceError("");
-
-    setTimeout(() => {
-      try {
-        recognition.start();
-      } catch (error) {
-        console.error("Failed to start recognition:", error);
-        setVoiceError("Unable to start voice input. Please check your microphone permissions.");
-      }
-    }, 100);
-  };
-
-  const handleVoiceCancel = () => {
-    if (recognition && isRecording) {
-      recognition.stop();
-    }
-    setIsRecording(false);
-    setVoiceTranscript("");
-    setVoiceError("");
-  };
-
-  const handleVoiceConfirm = () => {
-    if (recognition && isRecording) {
-      recognition.stop();
-    }
-    if (voiceTranscript.trim()) {
-      setInput(voiceTranscript.trim());
-    }
-    setIsRecording(false);
-    setVoiceTranscript("");
-    setVoiceError("");
-  };
-
   const host = getHostById(selectedHostId);
 
   return (
@@ -719,7 +667,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
       
-      {/* Voice Error Toast - Show error in a toast instead of overlay */}
+      {/* Voice Error Toast */}
       {voiceError && isRecording && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2">
           <div className="bg-red-500/90 backdrop-blur-xl border border-red-400/50 rounded-xl p-4 shadow-2xl max-w-md">
@@ -728,13 +676,11 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                 <X className="h-5 w-5 text-red-300" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-white mb-1">Microphone Access Blocked</h3>
-                <p className="text-xs text-red-100 mb-3">
-                  Please allow microphone permissions in your browser settings.
-                </p>
+                <h3 className="text-sm font-semibold text-white mb-1">Voice input error</h3>
+                <p className="text-xs text-red-100 mb-3">{voiceError}</p>
                 <div className="flex gap-2">
                   <Button
-                    onClick={handleVoiceCancel}
+                    onClick={voiceCancel}
                     size="sm"
                     variant="outline"
                     className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs h-7 px-3"
@@ -743,17 +689,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   </Button>
                   <Button
                     onClick={() => {
-                      setVoiceError("");
-                      setVoiceTranscript("");
-                      setTimeout(() => {
-                        if (recognition) {
-                          try {
-                            recognition.start();
-                          } catch (err) {
-                            setVoiceError("Still unable to access microphone.");
-                          }
-                        }
-                      }, 100);
+                      voiceCancel();
+                      setTimeout(() => voiceStart(), 100);
                     }}
                     size="sm"
                     className="bg-white/20 hover:bg-white/30 text-white text-xs h-7 px-3"
@@ -849,7 +786,23 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {mounted && ttsSupported && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    const next = !voiceOutputEnabled;
+                    setVoiceOutputEnabled(next);
+                    if (typeof window !== "undefined") localStorage.setItem("gmVoiceOutput", next ? "1" : "0");
+                    if (!next) stopTTS();
+                  }}
+                  className={`h-9 w-9 rounded-lg transition-all ${voiceOutputEnabled ? "text-amber-400 hover:bg-amber-500/10" : "text-zinc-500 hover:text-white hover:bg-white/5"}`}
+                  title={voiceOutputEnabled ? "Turn off read aloud" : "Read aloud GM replies"}
+                >
+                  {voiceOutputEnabled ? <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" /> : <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" />}
+                </Button>
+              )}
               {selectedTemplate && (
                 <Button
                   variant="ghost"
@@ -961,7 +914,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <Button
-                      onClick={handleVoiceCancel}
+                      onClick={voiceCancel}
                       size="sm"
                       variant="ghost"
                       className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-lg hover:bg-red-500/20 text-red-300 hover:text-red-200"
@@ -969,7 +922,11 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                       <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                     <Button
-                      onClick={handleVoiceConfirm}
+                      onClick={async () => {
+                        const t = voiceTranscript.trim();
+                        if (t) await handleSend(t);
+                        voiceConfirm();
+                      }}
                       size="sm"
                       disabled={!voiceTranscript.trim()}
                       className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
@@ -1004,15 +961,25 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   />
                 </div>
                 <Button
-                  onClick={handleVoiceInput}
-                  disabled={isGMTyping}
+                  onClick={() => {
+                    if (isRecording) {
+                      voiceCancel();
+                      return;
+                    }
+                    if (!voiceSupported) {
+                      toast.error("Voice input is not supported in your browser");
+                      return;
+                    }
+                    voiceStart();
+                  }}
+                  disabled={isGMTyping || (!mounted ? true : !voiceSupported)}
                   size="icon"
                   className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 transition-all duration-200 disabled:opacity-50 disabled:shadow-none relative overflow-hidden group ${
                     isRecording
                       ? "bg-gradient-to-br from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-red-500/30 ring-2 ring-red-500/50"
                       : "bg-zinc-700/80 hover:bg-zinc-600/80 border border-white/10 hover:border-white/20"
                   }`}
-                  title={isRecording ? "Stop recording" : "Voice input"}
+                  title={isRecording ? "Cancel recording" : "Voice input"}
                 >
                   {isRecording ? (
                     <>
@@ -1086,8 +1053,12 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
                 <HostSelector
                   selectedHostId={selectedHostId}
-                  onSelectHost={setSelectedHostId}
+                  onSelectHost={(hostId) => {
+                    setSelectedHostId(hostId);
+                    saveLastSelectedHostId(hostId);
+                  }}
                   compact
+                  templateId={selectedTemplate?.id}
                 />
               </div>
 
@@ -1096,6 +1067,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   size="lg"
                   className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-500/20"
                   onClick={() => {
+                    saveLastSelectedHostId(selectedHostId); // Save user's choice
                     onCreateGame({
                       name: gameName || selectedTemplate.name,
                       template: selectedTemplate.id,

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, CheckCircle2 } from "lucide-react";
-import { HOST_PERSONALITIES, HostPersonality, getDefaultHost } from "@/app/config/host-config";
+import { HOST_PERSONALITIES, HostPersonality, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
@@ -117,8 +117,26 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
   const [playerCount, setPlayerCount] = useState<number>(6);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
-  const [selectedHostId, setSelectedHostId] = useState<string>(getDefaultHost().id);
+  // Initialize host: try last selected, then recommended for template, then default
+  const [selectedHostId, setSelectedHostId] = useState<string>(() => {
+    const lastHostId = getLastSelectedHostId();
+    if (lastHostId) return lastHostId;
+    return getDefaultHost().id;
+  });
   const [showHostSelector, setShowHostSelector] = useState(false);
+  
+  // Update host when template changes (use recommended host for the template)
+  useEffect(() => {
+    if (selectedTemplate) {
+      const lastHostId = getLastSelectedHostId();
+      // If user has a saved preference and it's still valid, keep it
+      // Otherwise, use recommended host for this template
+      if (!lastHostId || !HOST_PERSONALITIES.find(h => h.id === lastHostId)) {
+        const recommendedHost = getDefaultHostForTemplate(selectedTemplate.id);
+        setSelectedHostId(recommendedHost.id);
+      }
+    }
+  }, [selectedTemplate]);
   
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -240,18 +258,20 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             `Please give me a number between ${selectedTemplate!.minPlayers - 1} and ${selectedTemplate!.maxPlayers - 1}.`
           );
         }
-      } else if (conversationState === "rules-discussion") {
+        } else if (conversationState === "rules-discussion") {
         if (lowerInput.includes("yes") || lowerInput.includes("keep") || lowerInput.includes("standard") || 
             lowerInput.includes("ok") || lowerInput.includes("good") || lowerInput.includes("fine")) {
           setCustomRules(selectedTemplate!.defaultRules);
           setConversationState("confirmation");
+          // Show host selector immediately when entering confirmation
+          setShowHostSelector(true);
           addGMMessage(
             `Excellent! Let me summarize your game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
             `**Total Players:** ${playerCount + 1} (${playerCount} AI + you)\n` +
             `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
             `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
-            `Ready to create your game? Say "create" to proceed, or "modify" if you want to adjust something.`
+            `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
           );
         } else if (lowerInput.includes("modify") || lowerInput.includes("change") || lowerInput.includes("different")) {
           addGMMessage(
@@ -283,24 +303,41 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
         if (lowerInput.includes("summarize") || lowerInput.includes("done") || lowerInput.includes("finalize")) {
           setConversationState("confirmation");
           const finalRules = customRules || selectedTemplate!.defaultRules;
+          // Show host selector immediately when entering confirmation
+          setShowHostSelector(true);
           addGMMessage(
             `Perfect! Here's your complete game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
             `**Total Players:** ${playerCount + 1} (${playerCount} AI + you)\n` +
             `**Rules:**\n${finalRules}\n\n` +
             `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
-            `Ready to begin? Say "create game" to start!`
+            `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
           );
         }
       } else if (conversationState === "confirmation") {
         if (lowerInput.includes("create") || lowerInput.includes("start") || 
             lowerInput.includes("begin") || lowerInput.includes("yes")) {
-          // Show host selector
-          setShowHostSelector(true);
+          // Create the game
+          const finalRules = customRules || selectedTemplate!.defaultRules;
+          const host = HOST_PERSONALITIES.find(h => h.id === selectedHostId) || getDefaultHost();
+          saveLastSelectedHostId(selectedHostId); // Save user's choice
+          onCreateGame({
+            name: gameName || selectedTemplate!.name,
+            template: selectedTemplate!.id,
+            playerCount: playerCount,
+            rules: finalRules,
+            customRoles: selectedTemplate!.roles,
+            hostId: selectedHostId!
+          });
+          setConversationState("completed");
           addGMMessage(
-            "Perfect! One last step - choose your guide for this adventure. Each has their own unique style that will shape your experience:"
+            `🎉 Fantastic! ${host.name} will be your guide. Your game "${gameName || selectedTemplate!.name}" is being created...`
           );
+          setTimeout(() => {
+            onClose();
+          }, 1500);
         } else if (lowerInput.includes("modify") || lowerInput.includes("change") || lowerInput.includes("back")) {
+          setShowHostSelector(false);
           setConversationState("rules-discussion");
           addGMMessage(
             "No problem! What would you like to modify?\n" +
@@ -373,7 +410,11 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
               <div className="mb-8">
                 <HostSelector
                   selectedHostId={selectedHostId}
-                  onSelectHost={setSelectedHostId}
+                  onSelectHost={(hostId) => {
+                    setSelectedHostId(hostId);
+                    saveLastSelectedHostId(hostId); // Save immediately when selected
+                  }}
+                  templateId={selectedTemplate?.id}
                 />
                 
                 {/* Confirmation Buttons - Prominent Position */}
@@ -383,15 +424,19 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                     size="lg"
                     onClick={() => {
                       setShowHostSelector(false);
-                      setSelectedHostId(getDefaultHost().id);
+                      const recommendedHost = selectedTemplate 
+                        ? getDefaultHostForTemplate(selectedTemplate.id)
+                        : getDefaultHost();
+                      setSelectedHostId(recommendedHost.id);
                     }}
                     className="border-zinc-700 hover:bg-zinc-800 px-8 text-base h-12"
                   >
-                    ← Back
+                    Use Recommended
                   </Button>
                   <Button
                     size="lg"
                     onClick={() => {
+                      saveLastSelectedHostId(selectedHostId); // Save user's choice
                       setConversationState("completed");
                       const host = HOST_PERSONALITIES.find(h => h.id === selectedHostId);
                       addGMMessage(
@@ -417,7 +462,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                           setSelectedTemplate(null);
                           setCustomRules("");
                           setGameName("");
-                          setSelectedHostId(getDefaultHost().id);
+                          const recommendedHost = getDefaultHostForTemplate(null);
+                          setSelectedHostId(recommendedHost.id);
                           setShowHostSelector(false);
                           onClose();
                         }, 1500);

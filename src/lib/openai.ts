@@ -50,7 +50,7 @@ export async function getAIChatResponse(
         hostPersonality: host ? {
           name: host.name,
           description: host.description,
-          personality: host.personality
+          personality: `${host.tagline}. ${host.voiceStyle}`
         } : null,
         gameContext: request.gameContext
       }),
@@ -95,7 +95,7 @@ export async function streamAIChatResponse(
         hostPersonality: host ? {
           name: host.name,
           description: host.description,
-          personality: host.personality
+          personality: `${host.tagline}. ${host.voiceStyle}`
         } : null,
         gameContext: request.gameContext
       }),

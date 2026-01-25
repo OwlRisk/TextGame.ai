@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sparkles, ArrowLeft, ArrowRight, CheckCircle2, MessageSquare, Swords, Brain, MessageCircle, Trophy, User, Clock, Smile, Frown, Zap } from "lucide-react";
@@ -8,7 +8,7 @@ import { GameConfig } from "@/app/components/game-setup-dialog";
 import { Badge } from "@/app/components/ui/badge";
 import { Textarea } from "@/app/components/ui/textarea";
 import { HostSelector } from "@/app/components/host-selector";
-import { HOST_PERSONALITIES, getDefaultHost } from "@/app/config/host-config";
+import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId } from "@/app/config/host-config";
 
 interface GameCreatorFormProps {
   onBack: () => void;
@@ -149,7 +149,25 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
   const [playerCount, setPlayerCount] = useState<number>(6);
   const [selectedTone, setSelectedTone] = useState<string>("casual");
   const [customRules, setCustomRules] = useState<string>("");
-  const [selectedHostId, setSelectedHostId] = useState<string>(getDefaultHost().id);
+  // Initialize host: try last selected, then recommended for template, then default
+  const [selectedHostId, setSelectedHostId] = useState<string>(() => {
+    const lastHostId = getLastSelectedHostId();
+    if (lastHostId) return lastHostId;
+    return getDefaultHost().id;
+  });
+  
+  // Update host when template changes (use recommended host for the template)
+  useEffect(() => {
+    if (selectedTemplate) {
+      const lastHostId = getLastSelectedHostId();
+      // If user has a saved preference and it's still valid, keep it
+      // Otherwise, use recommended host for this template
+      if (!lastHostId || !HOST_PERSONALITIES.find(h => h.id === lastHostId)) {
+        const recommendedHost = getDefaultHostForTemplate(selectedTemplate.id);
+        setSelectedHostId(recommendedHost.id);
+      }
+    }
+  }, [selectedTemplate]);
 
   const steps: Step[] = ["game-type", "player-count", "tone", "rules", "host", "review"];
   const currentStepIndex = steps.indexOf(currentStep);
@@ -195,6 +213,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
     const finalRules = customRules || selectedTemplate.defaultRules;
     const toneInstruction = `\n\nTONE: ${TONE_OPTIONS.find(t => t.id === selectedTone)?.name}`;
 
+    saveLastSelectedHostId(selectedHostId); // Save user's choice
     onCreateGame({
       name: selectedTemplate.name,
       template: selectedTemplate.id,
@@ -441,7 +460,11 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <HostSelector
                 selectedHostId={selectedHostId}
-                onSelectHost={setSelectedHostId}
+                onSelectHost={(hostId) => {
+                  setSelectedHostId(hostId);
+                  saveLastSelectedHostId(hostId);
+                }}
+                templateId={selectedTemplate?.id}
               />
             </div>
           )}

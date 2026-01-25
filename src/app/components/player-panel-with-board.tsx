@@ -1,4 +1,5 @@
-import { Crown, Volume2, VolumeX, User, Package, Heart, Zap, Shield, Sword, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Crown, Volume2, VolumeX, User, Package, Heart, Zap, Shield, Sword, Sparkles, Info } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
@@ -9,6 +10,7 @@ import { Player } from "@/app/components/player-panel";
 import { PlayerBoardData } from "@/app/components/player-board";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 
 interface PlayerPanelWithBoardProps {
   players: Player[];
@@ -42,8 +44,21 @@ export function PlayerPanelWithBoard({
   onSelectSpeaker,
   playerBoardData
 }: PlayerPanelWithBoardProps) {
+  const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const openProfile = (p: Player) => {
+    setProfilePlayer(p);
+    setProfileOpen(true);
+  };
+
   return (
     <div className="w-80 bg-zinc-850 flex flex-col border-l border-zinc-900/50">
+      <PlayerProfileDialog
+        player={profilePlayer}
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+      />
       <Tabs defaultValue="players" className="flex flex-col h-full">
         <div className="h-14 px-5 flex items-center border-b border-zinc-900/50 bg-zinc-900/30">
           <TabsList className="grid w-full grid-cols-2 bg-zinc-900 h-10">
@@ -78,6 +93,7 @@ export function PlayerPanelWithBoard({
                     isUserGameMaster={isUserGameMaster}
                     onToggleMute={onToggleMute}
                     onSelectSpeaker={onSelectSpeaker}
+                    onViewProfile={openProfile}
                   />
                   <Separator className="mt-3 bg-zinc-700/50" />
                 </div>
@@ -97,6 +113,7 @@ export function PlayerPanelWithBoard({
                       isUserGameMaster={isUserGameMaster}
                       onToggleMute={onToggleMute}
                       onSelectSpeaker={onSelectSpeaker}
+                      onViewProfile={openProfile}
                     />
                   ))}
                 </div>
@@ -307,20 +324,34 @@ function PlayerCard({
   isSpeaking,
   isUserGameMaster,
   onToggleMute,
-  onSelectSpeaker 
+  onSelectSpeaker,
+  onViewProfile,
 }: { 
   player: Player;
   isSpeaking: boolean;
   isUserGameMaster?: boolean;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
+  onViewProfile?: (player: Player) => void;
 }) {
+  const canViewProfile = !!onViewProfile;
+  const handleRowClick = () => {
+    if (canViewProfile) onViewProfile?.(player);
+  };
+
   return (
-    <div className={`group p-2 rounded-lg transition-all duration-200 ${
-      isSpeaking 
-        ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
-        : "hover:bg-zinc-700/40 hover:shadow-sm"
-    }`}>
+    <div
+      role={canViewProfile ? "button" : undefined}
+      tabIndex={canViewProfile ? 0 : undefined}
+      onClick={canViewProfile ? handleRowClick : undefined}
+      onKeyDown={canViewProfile ? (e) => e.key === "Enter" && handleRowClick() : undefined}
+      className={`group p-2 rounded-lg transition-all duration-200 ${
+        isSpeaking 
+          ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
+          : "hover:bg-zinc-700/40 hover:shadow-sm"
+      } ${canViewProfile ? "cursor-pointer" : ""}`}
+      title={canViewProfile ? "View profile" : undefined}
+    >
       <div className="flex items-start gap-2.5">
         <div className="relative flex-shrink-0">
           {!player.isAI ? (
@@ -339,11 +370,11 @@ function PlayerCard({
           ) : (
             <GeneratedAvatar
               name={player.name}
-              type={player.isGameMaster ? "gm" : "player"}
+              type={player.isGameMaster ? "host" : "player"}
               background={
                 player.isGameMaster
-                  ? undefined
-                  : `Social deduction game player. Role: ${player.role ?? "Player"}.`
+                  ? (player.background ?? undefined)
+                  : player.background ?? `Social deduction game player. Role: ${player.role ?? "Player"}.`
               }
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
@@ -360,6 +391,9 @@ function PlayerCard({
                 YOU
               </Badge>
             )}
+            {canViewProfile && player.isAI && (
+              <Info className="h-3.5 w-3.5 text-zinc-500 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
+            )}
           </div>
           {player.role && (
             <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
@@ -369,12 +403,12 @@ function PlayerCard({
           )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
-          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon"
               className="h-6 w-6 hover:bg-zinc-600/50"
-              onClick={() => onToggleMute?.(player.id)}
+              onClick={(e) => { e.stopPropagation(); onToggleMute?.(player.id); }}
             >
               {player.isMuted ? (
                 <VolumeX className="h-3 w-3 text-red-400" />

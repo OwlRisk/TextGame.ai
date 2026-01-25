@@ -7,7 +7,7 @@ import { cn } from "@/app/components/ui/utils";
 
 type AvatarDisplayType = 'gm' | 'host' | 'player';
 
-interface GeneratedAvatarProps extends UseGeneratedAvatarOptions {
+interface GeneratedAvatarProps extends Omit<UseGeneratedAvatarOptions, 'type'> {
   name: string | null | undefined;
   /** "gm" = fixed Game Master avatar; "host" = generated per-host (Echo, Nova, etc.); "player" = generated per player */
   type?: AvatarDisplayType;

@@ -20,6 +20,7 @@ import { Input } from "@/app/components/ui/input";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { getHostById, getDefaultHost } from "@/app/config/host-config";
+import { pickTraitsForPlayers } from "@/app/config/ai-player-personalities";
 
 interface Game {
   id: string;
@@ -99,13 +100,14 @@ export default function HomePage() {
       status: host.tagline,
       isGameMaster: true,
       isAI: true,
-      isMuted: false
+      isMuted: false,
+      background: host.description,
     };
 
-    // Create AI players
+    const traitsList = pickTraitsForPlayers(config.playerCount);
     const aiPlayers: Player[] = [];
     const usedNames = new Set<string>();
-    
+
     for (let i = 0; i < config.playerCount; i++) {
       let name = AI_NAMES[Math.floor(Math.random() * AI_NAMES.length)];
       while (usedNames.has(name)) {
@@ -131,6 +133,7 @@ export default function HomePage() {
         }
       }
 
+      const traits = traitsList[i];
       aiPlayers.push({
         id: `ai-${i + 1}`,
         name,
@@ -138,7 +141,9 @@ export default function HomePage() {
         role: role === "Player" ? undefined : role,
         stats,
         isAI: true,
-        isMuted: false
+        isMuted: false,
+        personality: traits.personality,
+        background: traits.background,
       });
     }
 
@@ -216,6 +221,8 @@ export default function HomePage() {
     setGames(prev => [...prev, newGame]);
     setSelectedGameId(newGame.id);
     setSelectedChannelId("game-room");
+    setShowGameMasterChat(false);
+    setShowGameCreatorForm(false);
     initializeGame(config);
     toast.success(`Game "${config.name}" created!`);
   }, [initializeGame]);
@@ -435,6 +442,7 @@ export default function HomePage() {
                 isGameActive={currentGame?.isActive || false}
                 currentSpeakerId={currentSpeakerId}
                 userId={userId}
+                players={players}
                 typingUsers={typingUsers}
               />
               <PlayerPanelWithBoard

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, AlertCircle, User } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { useVoiceInput } from "@/lib/voice";
+import { Player } from "@/app/components/player-panel";
 
 export interface Message {
   id: string;
@@ -26,6 +28,7 @@ interface ChatAreaProps {
   isGameActive: boolean;
   currentSpeakerId?: string | null;
   userId: string;
+  players?: Player[];
   typingUsers?: { name: string; avatar: string }[];
   onOpenPlayerBoard?: () => void;
 }
@@ -37,11 +40,14 @@ export function ChatArea({
   isGameActive,
   currentSpeakerId,
   userId,
+  players = [],
   typingUsers,
   onOpenPlayerBoard
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const voice = useVoiceInput();
+  const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -49,9 +55,10 @@ export function ChatArea({
     }
   }, [messages, typingUsers]);
 
-  const handleSend = () => {
-    if (input.trim()) {
-      onSendMessage(input.trim());
+  const handleSend = (override?: string) => {
+    const text = override ?? input.trim();
+    if (text) {
+      onSendMessage(text);
       setInput("");
     }
   };
@@ -113,12 +120,25 @@ export function ChatArea({
                           </AvatarFallback>
                         </Avatar>
                       ) : (
-                        <GeneratedAvatar
-                          name={message.senderName}
-                          type={message.senderId === "gm-1" ? "gm" : "player"}
-                          className="h-11 w-11"
-                          fallbackColor={message.senderAvatar}
-                        />
+                        (() => {
+                          // Find the player by senderId or senderName to get background
+                          const player = players.find(
+                            p => p.id === message.senderId || p.name === message.senderName
+                          );
+                          return (
+                            <GeneratedAvatar
+                              name={message.senderName}
+                              type={message.senderId === "gm-1" ? "host" : "player"}
+                              background={
+                                player?.isGameMaster
+                                  ? (player?.background ?? undefined)
+                                  : player?.background ?? `Social deduction game player. Role: ${player?.role ?? "Player"}.`
+                              }
+                              className="h-11 w-11"
+                              fallbackColor={message.senderAvatar}
+                            />
+                          );
+                        })()
                       )}
                       {/* Online Status Indicator */}
                       <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full ring-2 ring-zinc-700 hidden" />
@@ -155,12 +175,23 @@ export function ChatArea({
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <GeneratedAvatar
-                  name={typingUsers[0].name}
-                  type="player"
-                  className="h-10 w-10 flex-shrink-0"
-                  fallbackColor={typingUsers[0].avatar}
-                />
+                (() => {
+                  // Find the player by name to get background
+                  const player = players.find(p => p.name === typingUsers[0].name);
+                  return (
+                    <GeneratedAvatar
+                      name={typingUsers[0].name}
+                      type={player?.isGameMaster ? "host" : "player"}
+                      background={
+                        player?.isGameMaster
+                          ? (player?.background ?? undefined)
+                          : player?.background ?? `Social deduction game player. Role: ${player?.role ?? "Player"}.`
+                      }
+                      className="h-10 w-10 flex-shrink-0"
+                      fallbackColor={typingUsers[0].avatar}
+                    />
+                  );
+                })()
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -183,26 +214,67 @@ export function ChatArea({
 
       {/* Input */}
       <div className="p-5 border-t border-zinc-900/50">
-        {!canSend && isGameActive && (
+        {!canSend && isGameActive && !isRecording && (
           <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5" />
             Wait for your turn to speak
           </div>
         )}
-        <div className="flex gap-3">
+        {voiceError && isRecording && (
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
+            <span className="text-xs text-red-300">{voiceError}</span>
+            <div className="flex gap-1">
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>Close</Button>
+              <Button size="sm" className="h-7 px-2 bg-red-600 hover:bg-red-500" onClick={() => { voiceCancel(); setTimeout(voiceStart, 100); }}>Retry</Button>
+            </div>
+          </div>
+        )}
+        {isRecording && !voiceError && (
+          <div className="mb-3 flex items-center gap-3 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
+            <div className="relative w-7 h-7 rounded-full bg-red-600 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-red-500/50 animate-ping" />
+              <Mic className="h-3.5 w-3.5 text-white relative z-10" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-red-300 mb-0.5">Recording</p>
+              <p className="text-sm text-white truncate">{voiceTranscript || "Listening…"}</p>
+            </div>
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>
+              <X className="h-4 w-4" />
+            </Button>
+            <Button size="sm" className="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50" disabled={!voiceTranscript.trim()} onClick={() => { handleSend(voiceTranscript.trim()); voiceConfirm(); }}>
+              <Check className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        <div className="flex gap-2">
           <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && canSend && handleSend()}
-            placeholder={`Message #${channelName}`}
-            className="bg-zinc-600 border-none text-white placeholder:text-zinc-400 h-11 text-sm"
-            disabled={!canSend}
+            value={isRecording && voiceTranscript ? voiceTranscript : input}
+            onChange={(e) => !isRecording && setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && canSend && !isRecording && handleSend()}
+            placeholder={isRecording ? "Speaking…" : `Message #${channelName}`}
+            className="bg-zinc-600 border-none text-white placeholder:text-zinc-400 h-11 text-sm flex-1"
+            disabled={!canSend || isRecording}
           />
+          {voiceSupported && (
+            <Button
+              size="icon"
+              className={`h-11 w-11 flex-shrink-0 ${isRecording ? "bg-red-600 hover:bg-red-500" : "bg-zinc-600 hover:bg-zinc-500"}`}
+              disabled={!canSend}
+              onClick={() => {
+                if (isRecording) { voiceCancel(); return; }
+                voiceStart();
+              }}
+              title={isRecording ? "Cancel" : "Voice input"}
+            >
+              {isRecording ? <MicOff className="h-4 w-4 text-white" /> : <Mic className="h-4 w-4 text-zinc-300" />}
+            </Button>
+          )}
           <Button 
-            onClick={handleSend} 
-            disabled={!input.trim() || !canSend}
+            onClick={() => handleSend()} 
+            disabled={!input.trim() || !canSend || isRecording}
             size="icon"
-            className="bg-indigo-600 hover:bg-indigo-500 h-11 w-11"
+            className="bg-indigo-600 hover:bg-indigo-500 h-11 w-11 flex-shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>

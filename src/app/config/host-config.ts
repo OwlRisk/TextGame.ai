@@ -88,3 +88,73 @@ export function getHostById(id: string): HostPersonality | undefined {
 export function getDefaultHost(): HostPersonality {
   return HOST_PERSONALITIES[0]; // Echo as default
 }
+
+/**
+ * Get the recommended/default host for a game template.
+ * Returns the first host whose suitableFor includes the template name,
+ * or Echo as fallback.
+ */
+export function getDefaultHostForTemplate(templateId: string | null | undefined): HostPersonality {
+  if (!templateId) return getDefaultHost();
+  
+  // Map template IDs to their display names for matching
+  const templateNameMap: Record<string, string> = {
+    "werewolf": "Werewolf",
+    "undercover": "Undercover",
+    "custom": "Custom Game"
+  };
+  
+  const templateName = templateNameMap[templateId] || templateId;
+  
+  // Find first host that has this template in suitableFor
+  const recommended = HOST_PERSONALITIES.find(host =>
+    host.suitableFor.some(game => 
+      game.toLowerCase().includes(templateName.toLowerCase()) ||
+      templateName.toLowerCase().includes(game.toLowerCase())
+    )
+  );
+  
+  return recommended || getDefaultHost();
+}
+
+/**
+ * Check if a host is recommended for a given template
+ */
+export function isHostRecommendedForTemplate(hostId: string, templateId: string | null | undefined): boolean {
+  if (!templateId) return false;
+  
+  const templateNameMap: Record<string, string> = {
+    "werewolf": "Werewolf",
+    "undercover": "Undercover",
+    "custom": "Custom Game"
+  };
+  
+  const templateName = templateNameMap[templateId] || templateId;
+  const host = getHostById(hostId);
+  
+  if (!host) return false;
+  
+  return host.suitableFor.some(game =>
+    game.toLowerCase().includes(templateName.toLowerCase()) ||
+    templateName.toLowerCase().includes(game.toLowerCase())
+  );
+}
+
+/**
+ * Get last selected host ID from localStorage, or null if not set/invalid
+ */
+export function getLastSelectedHostId(): string | null {
+  if (typeof window === "undefined") return null;
+  const saved = localStorage.getItem("lastSelectedHostId");
+  if (!saved) return null;
+  // Validate that the saved host still exists
+  return getHostById(saved) ? saved : null;
+}
+
+/**
+ * Save last selected host ID to localStorage
+ */
+export function saveLastSelectedHostId(hostId: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("lastSelectedHostId", hostId);
+}
