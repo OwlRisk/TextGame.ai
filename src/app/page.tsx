@@ -21,6 +21,14 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { getHostById, getDefaultHost } from "@/app/config/host-config";
 import { pickTraitsForPlayers } from "@/app/config/ai-player-personalities";
+import { getAIChatResponse } from "@/lib/openai";
+import {
+  type GamePhaseState,
+  type GamePhaseKind,
+  DEFAULT_GAME_PHASE,
+  nextPhaseForWerewolf,
+  phaseLabel,
+} from "@/app/config/game-phase";
 
 interface Game {
   id: string;
@@ -61,6 +69,7 @@ export default function HomePage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentSpeakerId, setCurrentSpeakerId] = useState<string | null>(null);
   const [gamePhase, setGamePhase] = useState<string>("waiting");
+  const [gamePhaseState, setGamePhaseState] = useState<GamePhaseState>(DEFAULT_GAME_PHASE);
   const [typingUsers, setTypingUsers] = useState<{ name: string; avatar: string }[]>([]);
   
   const userId = "user-1";
@@ -177,7 +186,7 @@ export default function HomePage() {
         senderId: "gm-1",
         senderName: host.name,
         senderAvatar: host.color,
-        content: `Greetings, everyone! I'm ${host.name}, your guide for this session of ${config.name}. Let me explain the rules:\n\n${config.rules}\n\nAre you all ready to begin?`,
+        content: "…",
         timestamp: new Date(),
         isAI: true
       }
@@ -185,26 +194,87 @@ export default function HomePage() {
 
     setMessages(initialMessages);
     setGamePhase("intro");
-    
-    // Simulate AI ready responses
-    const mainTimeout = setTimeout(() => {
+    setGamePhaseState({ ...DEFAULT_GAME_PHASE, phase: "intro" });
+
+    const fallbackGreeting = `Hey everyone, ${host.name} here. Here's how we'll play ${config.name}:\n\n${config.rules}\n\nReady when you are - let's go!`;
+
+    const scheduleReadyReplies = () => {
       if (!isMountedRef.current) return;
       aiPlayers.slice(0, 3).forEach((player, index) => {
-        const playerTimeout = setTimeout(() => {
+        const playerTimeout = setTimeout(async () => {
           if (!isMountedRef.current) return;
-          const responses = ["Ready!", "Let's do this!", "I'm prepared.", "Sounds good!", "Let's start!"];
-          addMessage({
-            senderId: player.id,
-            senderName: player.name,
-            senderAvatar: player.avatar,
-            content: responses[Math.floor(Math.random() * responses.length)],
-            isAI: true
-          });
+          try {
+            const { message } = await getAIChatResponse({
+              messages: [{
+                role: "user",
+                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} The host just explained the rules and asked if everyone is ready. Write a short, natural response (1-2 sentences max) showing you're ready to play. Stay in character based on your personality and background. Output only your response, nothing else.`
+              }],
+              gameContext: {
+                template: config.template,
+                gameName: config.name,
+                conversationState: "intro"
+              }
+            });
+            if (!isMountedRef.current) return;
+            const reply = (message || "").trim() || "Ready!";
+            addMessage({
+              senderId: player.id,
+              senderName: player.name,
+              senderAvatar: player.avatar,
+              content: reply,
+              isAI: true
+            });
+          } catch (e) {
+            if (!isMountedRef.current) return;
+            const fallbackReplies = ["Ready!", "Let's do this!", "I'm prepared.", "Sounds good!", "Let's start!"];
+            addMessage({
+              senderId: player.id,
+              senderName: player.name,
+              senderAvatar: player.avatar,
+              content: fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)],
+              isAI: true
+            });
+          }
         }, 1000 * (index + 1));
         timeoutRefs.current.push(playerTimeout);
       });
-    }, 2000);
-    timeoutRefs.current.push(mainTimeout);
+    };
+
+    (async () => {
+      try {
+        const { message } = await getAIChatResponse({
+          messages: [{
+            role: "user",
+            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules above, and ask if everyone is ready. Stay in character. Output only the greeting, no other commentary.`
+          }],
+          hostId: config.hostId,
+          gameContext: {
+            template: config.template,
+            playerCount: config.playerCount,
+            gameName: config.name,
+            rules: config.rules,
+            conversationState: "intro"
+          }
+        });
+        if (!isMountedRef.current) return;
+        const greeting = (message || "").trim() || fallbackGreeting;
+        setMessages(prev =>
+          prev.map((m) =>
+            m.id === "msg-1" ? { ...m, content: greeting } : m
+          )
+        );
+      } catch (e) {
+        if (!isMountedRef.current) return;
+        setMessages(prev =>
+          prev.map((m) =>
+            m.id === "msg-1" ? { ...m, content: fallbackGreeting } : m
+          )
+        );
+      }
+      if (!isMountedRef.current) return;
+      const mainTimeout = setTimeout(scheduleReadyReplies, 2000);
+      timeoutRefs.current.push(mainTimeout);
+    })();
 
   }, [userId, addMessage]);
 
@@ -229,6 +299,15 @@ export default function HomePage() {
 
   const handleSendMessage = useCallback((content: string) => {
     if (!isMountedRef.current) return;
+    
+    const currentGame = games.find(g => g.id === selectedGameId);
+    const isGameActive = currentGame?.isActive || false;
+    
+    // Check if user can speak (only if game is not active, or no speaker assigned, or user is the assigned speaker)
+    if (isGameActive && currentSpeakerId && currentSpeakerId !== userId) {
+      toast.warning("It's not your turn to speak. Wait for the Host to assign you.");
+      return;
+    }
     
     addMessage({
       senderId: userId,
@@ -261,54 +340,96 @@ export default function HomePage() {
           isAI: true
         });
         setGamePhase("active");
-        
+        const currentGame = games.find(g => g.id === selectedGameId);
+        const firstPhase: GamePhaseKind = currentGame?.config.template === "werewolf" ? "night" : "day";
+        setGamePhaseState({
+          round: 1,
+          phase: firstPhase,
+          eliminatedPlayerIds: [],
+          lastNightVictimId: null,
+          lastVotedOutId: null,
+        });
         setGames(prev => {
-          const currentGame = prev.find(g => g.id === selectedGameId);
-          if (currentGame) {
-            return prev.map(g => g.id === selectedGameId ? { ...g, isActive: true } : g);
-          }
+          const g = prev.find(x => x.id === selectedGameId);
+          if (g) return prev.map(x => x.id === selectedGameId ? { ...x, isActive: true } : x);
           return prev;
         });
       }, 2500);
       timeoutRefs.current.push(responseTimeout);
     } else {
-      // Random AI response with typing indicator
+      // Random AI response with typing indicator - generate based on personality/background
       const delay = 1500 + Math.random() * 2000;
       const aiResponseTimeout = setTimeout(() => {
         if (!isMountedRef.current) return;
-        const aiPlayers = players.filter(p => p.isAI && !p.isGameMaster && !p.isMuted);
+        const aiPlayers = players.filter(
+          p => p.isAI && !p.isGameMaster && !p.isMuted && p.status !== "Eliminated" && p.stats?.Status !== "Eliminated"
+        );
         if (aiPlayers.length > 0) {
           const randomPlayer = aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
           
           // Show typing indicator
           setTypingUsers([{ name: randomPlayer.name, avatar: randomPlayer.avatar }]);
           
-          // After a short delay, send the message
-          const messageTimeout = setTimeout(() => {
+          // Get recent conversation context (last 3-5 messages)
+          const recentMessages = messages.slice(-5).map(m => ({
+            role: m.senderId === userId ? "user" as const : "assistant" as const,
+            content: `${m.senderName}: ${m.content}`
+          }));
+          
+          // After a short delay, generate and send the message
+          const messageTimeout = setTimeout(async () => {
             if (!isMountedRef.current) return;
-            setTypingUsers([]);
-            const responses = [
-              "That's an interesting point...",
-              "I'm not sure I agree with that.",
-              "Can you explain more?",
-              "I think we should consider all options.",
-              "Based on what I've seen, I have my suspicions.",
-              "Let's think about this carefully."
-            ];
-            addMessage({
-              senderId: randomPlayer.id,
-              senderName: randomPlayer.name,
-              senderAvatar: randomPlayer.avatar,
-              content: responses[Math.floor(Math.random() * responses.length)],
-              isAI: true
-            });
+            try {
+              const currentGame = games.find(g => g.id === selectedGameId);
+              const { message } = await getAIChatResponse({
+                messages: [
+                  {
+                    role: "user",
+                    content: `You are ${randomPlayer.name}, a player in a social deduction game "${currentGame?.name || "the game"}". Your role: ${randomPlayer.role || "Player"}. Your personality: ${randomPlayer.personality || "Friendly and observant."} Your background: ${randomPlayer.background || "A game enthusiast."} Recent conversation:\n${recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n")}\n\nRespond naturally based on your personality, background, and role. Stay in character. Keep it brief (1-2 sentences). Output only your response, nothing else.`
+                  }
+                ],
+                gameContext: {
+                  template: currentGame?.config.template,
+                  gameName: currentGame?.name,
+                  conversationState: gamePhase
+                }
+              });
+              if (!isMountedRef.current) return;
+              setTypingUsers([]);
+              const reply = (message || "").trim() || "I'm thinking...";
+              addMessage({
+                senderId: randomPlayer.id,
+                senderName: randomPlayer.name,
+                senderAvatar: randomPlayer.avatar,
+                content: reply,
+                isAI: true
+              });
+            } catch (e) {
+              if (!isMountedRef.current) return;
+              setTypingUsers([]);
+              const fallbackResponses = [
+                "That's an interesting point...",
+                "I'm not sure I agree with that.",
+                "Can you explain more?",
+                "I think we should consider all options.",
+                "Based on what I've seen, I have my suspicions.",
+                "Let's think about this carefully."
+              ];
+              addMessage({
+                senderId: randomPlayer.id,
+                senderName: randomPlayer.name,
+                senderAvatar: randomPlayer.avatar,
+                content: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
+                isAI: true
+              });
+            }
           }, 1500);
           timeoutRefs.current.push(messageTimeout);
         }
       }, delay);
       timeoutRefs.current.push(aiResponseTimeout);
     }
-  }, [players, gamePhase, selectedGameId, addMessage, userId]);
+  }, [players, gamePhase, selectedGameId, games, messages, addMessage, userId]);
 
   const handleToggleMute = (playerId: string) => {
     setPlayers(prev => prev.map(p => 
@@ -319,6 +440,209 @@ export default function HomePage() {
       toast.info(`${player.name} has been ${player.isMuted ? "unmuted" : "muted"}`);
     }
   };
+
+  type HostPostEventOpts = {
+    nextSpeakerId?: string | null;
+    setPhase?: GamePhaseKind | string;
+    autoAdvance?: { afterMs: number; nextEvent: string; nextPhase: GamePhaseKind | string };
+  };
+
+  const hostPostEvent = useCallback(async (
+    eventDescription: string,
+    opts?: HostPostEventOpts
+  ) => {
+    if (!isMountedRef.current) return;
+    const gameMaster = players.find(p => p.isGameMaster);
+    if (!gameMaster) return;
+
+    const currentGame = games.find(g => g.id === selectedGameId);
+    
+    const postOne = async (desc: string, updatePhase?: GamePhaseKind | string) => {
+      try {
+        const { message } = await getAIChatResponse({
+          messages: [{
+            role: "user",
+            content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". ${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Output only the announcement.`
+          }],
+          hostId: currentGame?.config.hostId,
+          gameContext: {
+            template: currentGame?.config.template,
+            gameName: currentGame?.name,
+            conversationState: gamePhaseState.phase
+          }
+        });
+        if (!isMountedRef.current) return;
+        const text = (message || "").trim() || desc;
+        addMessage({
+          senderId: "gm-1",
+          senderName: gameMaster!.name,
+          senderAvatar: gameMaster!.avatar,
+          content: text,
+          isAI: true
+        });
+        if (updatePhase) {
+          const phase = updatePhase as GamePhaseKind;
+          setGamePhaseState(s => ({
+            ...s,
+            phase,
+            ...(phase === "night" && s.phase === "elimination"
+              ? { round: s.round + 1, lastVotedOutId: null, lastNightVictimId: null }
+              : {})
+          }));
+        }
+      } catch (e) {
+        if (!isMountedRef.current) return;
+        addMessage({
+          senderId: "gm-1",
+          senderName: gameMaster!.name,
+          senderAvatar: gameMaster!.avatar,
+          content: desc,
+          isAI: true
+        });
+        if (updatePhase) {
+          const phase = updatePhase as GamePhaseKind;
+          setGamePhaseState(s => ({
+            ...s,
+            phase,
+            ...(phase === "night" && s.phase === "elimination"
+              ? { round: s.round + 1, lastVotedOutId: null, lastNightVictimId: null }
+              : {})
+          }));
+        }
+      }
+    };
+
+    await postOne(eventDescription, opts?.setPhase);
+
+    if (opts?.nextSpeakerId !== undefined) {
+      setCurrentSpeakerId(opts.nextSpeakerId);
+      if (opts.nextSpeakerId) {
+        const nextPlayer = players.find(p => p.id === opts!.nextSpeakerId);
+        if (nextPlayer) toast.info(`${nextPlayer.name} is now speaking`);
+      } else {
+        toast.info("Speaking is now open to all");
+      }
+    }
+
+    if (opts?.autoAdvance && opts.autoAdvance.afterMs > 0) {
+      const { afterMs, nextEvent, nextPhase } = opts.autoAdvance;
+      const t = setTimeout(() => {
+        if (!isMountedRef.current) return;
+        postOne(nextEvent, nextPhase as GamePhaseKind);
+        timeoutRefs.current = timeoutRefs.current.filter(x => x !== t);
+      }, afterMs);
+      timeoutRefs.current.push(t);
+    }
+  }, [players, games, selectedGameId, gamePhaseState.phase, addMessage]);
+
+  const hostAssignSpeaker = useCallback((playerId: string | null) => {
+    setCurrentSpeakerId(playerId);
+    if (playerId) {
+      const player = players.find(p => p.id === playerId);
+      if (player) toast.info(`${player.name} is now speaking`);
+    } else {
+      toast.info("Speaking is now open to all");
+    }
+  }, [players]);
+
+  const alivePlayers = players.filter(
+    p => !p.isGameMaster && p.status !== "Eliminated" && p.stats?.Status !== "Eliminated"
+  );
+
+  const hostEliminatePlayer = useCallback(async (playerId: string) => {
+    if (!isMountedRef.current) return;
+    const gameMaster = players.find(p => p.isGameMaster);
+    const target = players.find(p => p.id === playerId);
+    const currentGame = games.find(g => g.id === selectedGameId);
+    if (!gameMaster || !target || !currentGame) return;
+
+    setPlayers(prev => prev.map(p =>
+      p.id === playerId
+        ? {
+            ...p,
+            status: "Eliminated",
+            stats: { ...p.stats, Status: "Eliminated" } as Record<string, string | number>,
+          }
+        : p
+    ));
+    setGamePhaseState(s => ({
+      ...s,
+      eliminatedPlayerIds: [...s.eliminatedPlayerIds, playerId],
+      lastVotedOutId: playerId,
+      phase: "elimination",
+    }));
+    setCurrentSpeakerId(null);
+
+    const desc = `Announce that ${target.name} has been eliminated. Be brief and in character.`;
+    try {
+      const { message } = await getAIChatResponse({
+        messages: [{
+          role: "user",
+          content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
+        }],
+        hostId: currentGame.config.hostId,
+        gameContext: { template: currentGame.config.template, gameName: currentGame.name }
+      });
+      if (!isMountedRef.current) return;
+      addMessage({
+        senderId: "gm-1",
+        senderName: gameMaster.name,
+        senderAvatar: gameMaster.avatar,
+        content: (message || "").trim() || `${target.name} has been eliminated.`,
+        isAI: true
+      });
+    } catch {
+      if (!isMountedRef.current) return;
+      addMessage({
+        senderId: "gm-1",
+        senderName: gameMaster.name,
+        senderAvatar: gameMaster.avatar,
+        content: `${target.name} has been eliminated.`,
+        isAI: true
+      });
+    }
+    toast.info(`${target.name} eliminated`);
+  }, [players, games, selectedGameId, addMessage]);
+
+  const hostRevealRole = useCallback(async (playerId: string) => {
+    if (!isMountedRef.current) return;
+    const gameMaster = players.find(p => p.isGameMaster);
+    const target = players.find(p => p.id === playerId);
+    const currentGame = games.find(g => g.id === selectedGameId);
+    if (!gameMaster || !target || !currentGame) return;
+
+    const role = target.role || "Unknown";
+    const desc = `Announce that ${target.name} was a ${role}. Reveal their role to the group. Keep it brief.`;
+    try {
+      const { message } = await getAIChatResponse({
+        messages: [{
+          role: "user",
+          content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
+        }],
+        hostId: currentGame.config.hostId,
+        gameContext: { template: currentGame.config.template, gameName: currentGame.name }
+      });
+      if (!isMountedRef.current) return;
+      addMessage({
+        senderId: "gm-1",
+        senderName: gameMaster.name,
+        senderAvatar: gameMaster.avatar,
+        content: (message || "").trim() || `${target.name} was a ${role}.`,
+        isAI: true
+      });
+    } catch {
+      if (!isMountedRef.current) return;
+      addMessage({
+        senderId: "gm-1",
+        senderName: gameMaster.name,
+        senderAvatar: gameMaster.avatar,
+        content: `${target.name} was a ${role}.`,
+        isAI: true
+      });
+    }
+    setGamePhaseState(s => ({ ...s, lastVotedOutId: null }));
+    toast.info(`Revealed: ${target.name} was ${role}`);
+  }, [players, games, selectedGameId, addMessage]);
 
   const handleShare = () => {
     setShowShareDialog(true);
@@ -444,6 +768,14 @@ export default function HomePage() {
                 userId={userId}
                 players={players}
                 typingUsers={typingUsers}
+                onHostPostEvent={hostPostEvent}
+                onHostAssignSpeaker={hostAssignSpeaker}
+                onHostEliminate={hostEliminatePlayer}
+                onHostRevealRole={hostRevealRole}
+                isUserHost={true}
+                gamePhaseLabel={currentGame?.isActive ? phaseLabel(gamePhaseState.phase, gamePhaseState.round) : undefined}
+                alivePlayers={alivePlayers}
+                lastVotedOutId={gamePhaseState.lastVotedOutId}
               />
               <PlayerPanelWithBoard
                 players={players}

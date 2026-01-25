@@ -338,6 +338,7 @@ function PlayerCard({
   const handleRowClick = () => {
     if (canViewProfile) onViewProfile?.(player);
   };
+  const isEliminated = player.status === "Eliminated" || player.stats?.Status === "Eliminated";
 
   return (
     <div
@@ -346,6 +347,7 @@ function PlayerCard({
       onClick={canViewProfile ? handleRowClick : undefined}
       onKeyDown={canViewProfile ? (e) => e.key === "Enter" && handleRowClick() : undefined}
       className={`group p-2 rounded-lg transition-all duration-200 ${
+        isEliminated ? "opacity-50 bg-zinc-800/50" :
         isSpeaking 
           ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
           : "hover:bg-zinc-700/40 hover:shadow-sm"
@@ -399,7 +401,9 @@ function PlayerCard({
             <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
           )}
           {player.status && (
-            <div className="text-xs text-emerald-400 mt-0.5 font-medium">Status: {player.status}</div>
+            <div className={`text-xs mt-0.5 font-medium ${isEliminated ? "text-red-400" : "text-emerald-400"}`}>
+              Status: {player.status}
+            </div>
           )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
