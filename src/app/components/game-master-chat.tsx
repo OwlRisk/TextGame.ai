@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
 import { HOST_PERSONALITIES, getDefaultHost } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
+import { getAIChatResponse, streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 
 interface ChatMessage {
   id: string;
@@ -426,171 +427,109 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const simulateGMResponse = (userInput: string) => {
+  const getGMResponse = async (userInput: string) => {
     setIsGMTyping(true);
     const lowerInput = userInput.toLowerCase();
 
-    setTimeout(() => {
+    try {
+      // Convert messages to API format
+      const apiMessages: AIChatMessage[] = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp
+      }));
+
+      // Add current user message
+      apiMessages.push({
+        role: 'user',
+        content: userInput,
+        timestamp: new Date()
+      });
+
+      // Get game context
+      const gameContext = {
+        template: selectedTemplate?.id || undefined,
+        playerCount: playerCount,
+        gameName: gameName || undefined,
+        rules: customRules || selectedTemplate?.defaultRules || undefined,
+        conversationState: conversationState
+      };
+
+      // Call OpenAI API
+      const response = await getAIChatResponse({
+        messages: apiMessages,
+        hostId: selectedHostId,
+        gameContext: gameContext
+      });
+
+      // Process AI response and update state based on conversation flow
+      const aiResponse = response.message;
+      
+      // Detect game type selection (only in greeting state)
       if (conversationState === "greeting") {
-        // Detect game type
         if (lowerInput.includes("werewolf") || lowerInput.includes("wolf")) {
           setSelectedTemplate(GAME_TEMPLATES[0]);
           setConversationState("player-count");
-          addGMMessage(
-            "Excellent choice! Werewolf is a classic game of deception and deduction.\n\n" +
-            "For this game, I recommend 5-12 players (including you). How many other players would you like to join? " +
-            "Just give me a number between 4 and 11."
-          );
         } else if (lowerInput.includes("undercover") || lowerInput.includes("spy") || lowerInput.includes("卧底")) {
           setSelectedTemplate(GAME_TEMPLATES[1]);
           setConversationState("player-count");
-          addGMMessage(
-            "Great! Undercover is a fantastic word-guessing game where one player has a different word.\n\n" +
-            "This game works best with 4-10 players (including you). How many other players should I create? " +
-            "Give me a number between 3 and 9."
-          );
         } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("自定义")) {
           setSelectedTemplate(GAME_TEMPLATES[2]);
           setConversationState("rules-discussion");
-          addGMMessage(
-            "Wonderful! Let's create a custom game together. I love creativity!\n\n" +
-            "Tell me about the game you envision:\n" +
-            "• What's the objective?\n" +
-            "• What roles or characters are involved?\n" +
-            "• Any special rules or phases?\n\n" +
-            "Share your ideas, and I'll help structure it into a playable game!"
-          );
-        } else {
-          addGMMessage(
-            "I'm not sure which game you'd prefer. Let me help you:\n\n" +
-            "🐺 **Werewolf** - Perfect for strategy lovers. Players debate to find hidden werewolves.\n" +
-            "🕵️ **Undercover** - Quick and fun! Guess who has the different word.\n" +
-            "🎮 **Custom** - Have a unique idea! Let's build it together!\n\n" +
-            "Which one sounds interesting to you?"
-          );
         }
-      } else if (conversationState === "player-count") {
-        const numbers = userInput.match(/\\d+/);
+      }
+
+      // Detect player count (only in player-count state)
+      if (conversationState === "player-count" && selectedTemplate) {
+        const numbers = userInput.match(/\d+/);
         if (numbers) {
           const count = parseInt(numbers[0]);
-          const min = selectedTemplate!.minPlayers - 1;
-          const max = selectedTemplate!.maxPlayers - 1;
+          const min = selectedTemplate.minPlayers - 1;
+          const max = selectedTemplate.maxPlayers - 1;
           
           if (count >= min && count <= max) {
             setPlayerCount(count);
             setConversationState("rules-discussion");
-            addGMMessage(
-              `Perfect! I'll create ${count} players for you.\n\n` +
-              `Now, let's discuss the rules. Here are the standard rules for ${selectedTemplate!.name}:\n\n` +
-              `${selectedTemplate!.defaultRules}\n\n` +
-              `Would you like to:\n` +
-              `• **Keep these rules** (just say "yes" or "keep them")\n` +
-              `• **Modify something** (tell me what you'd like to change)\n` +
-              `• **Start fresh** (describe your own rules)`
-            );
-          } else {
-            addGMMessage(
-              `Hmm, ${count} players might not work well for this game. ` +
-              `I recommend between ${min} and ${max} other players (plus you makes ${min + 1} to ${max + 1} total). ` +
-              `Could you choose a number in that range?`
-            );
           }
-        } else {
-          addGMMessage(
-            "I didn't catch a number there. How many other players would you like? " +
-            `Please give me a number between ${selectedTemplate!.minPlayers - 1} and ${selectedTemplate!.maxPlayers - 1}.`
-          );
         }
-      } else if (conversationState === "rules-discussion") {
-        if (lowerInput.includes("yes") || lowerInput.includes("keep") || lowerInput.includes("standard") || 
-            lowerInput.includes("ok") || lowerInput.includes("good") || lowerInput.includes("fine")) {
-          setCustomRules(selectedTemplate!.defaultRules);
-          setConversationState("confirmation");
-          addGMMessage(
-            `Excellent! Let me summarize your game setup:\n\n` +
-            `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${playerCount + 1} (you + ${playerCount} others)\n` +
-            `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
-            `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
-            `Ready to create your game? Say "create" to proceed, or "modify" if you want to adjust something.`
-          );
-        } else if (lowerInput.includes("modify") || lowerInput.includes("change") || lowerInput.includes("different")) {
-          addGMMessage(
-            "Of course! What would you like to modify? For example:\n" +
-            "• Add or remove roles\n" +
-            "• Change winning conditions\n" +
-            "• Adjust game phases\n" +
-            "• Add special abilities\n\n" +
-            "Tell me what changes you have in mind!"
-          );
-        } else if (selectedTemplate?.id === "custom") {
-          setCustomRules(prev => prev ? prev + "\n\n" + userInput : userInput);
-          addGMMessage(
-            "Great ideas! I'm noting that down. " +
-            "Anything else you'd like to add to the rules? " +
-            "Or shall I summarize what we have so far? (say 'summarize' or 'done')"
-          );
-        } else {
-          setCustomRules(selectedTemplate!.defaultRules + "\n\nMODIFICATIONS:\n" + userInput);
-          addGMMessage(
-            "Got it! I've added your modifications to the rules. " +
-            "Would you like to add anything else, or are we ready to finalize? " +
-            "(say 'finalize' when ready)"
-          );
-        }
-        
-        if (lowerInput.includes("summarize") || lowerInput.includes("done") || lowerInput.includes("finalize")) {
-          setConversationState("confirmation");
-          const finalRules = customRules || selectedTemplate!.defaultRules;
-          addGMMessage(
-            `Perfect! Here's your complete game setup:\n\n` +
-            `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${playerCount + 1} (you + ${playerCount} others)\n` +
-            `**Rules:**\n${finalRules}\n\n` +
-            `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
-            `Ready to begin? Say "create game" to start!`
-          );
-        }
-      } else if (conversationState === "confirmation") {
+      }
+
+      // Detect confirmation (only in confirmation state)
+      if (conversationState === "confirmation") {
         if (lowerInput.includes("create") || lowerInput.includes("start") || 
             lowerInput.includes("begin") || lowerInput.includes("yes")) {
           setShowHostSelector(true);
-          addGMMessage(
-            "Perfect! One last step - choose your guide for this adventure. Each has their own unique style that will shape your experience:"
-          );
-        } else if (lowerInput.includes("modify") || lowerInput.includes("change") || lowerInput.includes("back")) {
-          setConversationState("rules-discussion");
-          addGMMessage(
-            "No problem! What would you like to modify?\n" +
-            "• Change player count?\n" +
-            "• Adjust rules?\n" +
-            "• Switch game type?\n\n" +
-            "Let me know what you'd like to change."
-          );
-        } else {
-          addGMMessage(
-            "I'm ready when you are! Say 'create game' to begin, or 'modify' if you want to make changes."
-          );
         }
       }
-    }, 800 + Math.random() * 400);
+
+      // Add AI response
+      addGMMessage(aiResponse);
+    } catch (error: any) {
+      console.error('Error getting AI response:', error);
+      toast.error(error.message || 'Failed to get AI response. Please try again.');
+      
+      // Fallback to a simple message
+      addGMMessage(
+        "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
+      );
+    }
   };
 
-  const handleSend = (messageOverride?: string) => {
+  const handleSend = async (messageOverride?: string) => {
     const message = messageOverride || input.trim();
     if (message && !isGMTyping) {
       addUserMessage(message);
-      simulateGMResponse(message);
+      await getGMResponse(message);
       setInput("");
     }
   };
 
-  const handleQuickReply = (reply: string) => {
+  const handleQuickReply = async (reply: string) => {
     if (!isGMTyping) {
       setInput(reply);
-      setTimeout(() => {
+      setTimeout(async () => {
         addUserMessage(reply);
-        simulateGMResponse(reply);
+        await getGMResponse(reply);
         setInput("");
       }, 300);
     }
@@ -643,28 +582,25 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
       
-      {/* Voice Recording Overlay */}
-      {isRecording && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-2xl z-50 flex flex-col items-center justify-center animate-in fade-in duration-300">
-          <div className="mb-16 max-w-2xl px-8">
-            {voiceError ? (
-              <div className="text-center">
-                <div className="mb-6">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-                    <X className="h-10 w-10 text-red-600" />
-                  </div>
-                  <h2 className="text-2xl font-semibold text-red-600 mb-3">
-                    Microphone Access Blocked
-                  </h2>
-                  <p className="text-base text-zinc-700 mb-6">
-                    Your browser has blocked microphone access. To use voice input, you need to allow microphone permissions.
-                  </p>
-                </div>
-                <div className="flex gap-3 justify-center">
+      {/* Voice Error Toast - Show error in a toast instead of overlay */}
+      {voiceError && isRecording && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2">
+          <div className="bg-red-500/90 backdrop-blur-xl border border-red-400/50 rounded-xl p-4 shadow-2xl max-w-md">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <X className="h-5 w-5 text-red-300" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-white mb-1">Microphone Access Blocked</h3>
+                <p className="text-xs text-red-100 mb-3">
+                  Please allow microphone permissions in your browser settings.
+                </p>
+                <div className="flex gap-2">
                   <Button
                     onClick={handleVoiceCancel}
+                    size="sm"
                     variant="outline"
-                    className="bg-white border-zinc-300 hover:bg-zinc-50 text-zinc-900"
+                    className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs h-7 px-3"
                   >
                     Close
                   </Button>
@@ -677,67 +613,20 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                           try {
                             recognition.start();
                           } catch (err) {
-                            setVoiceError("Still unable to access microphone. Please check your browser settings and reload the page.");
+                            setVoiceError("Still unable to access microphone.");
                           }
                         }
                       }, 100);
                     }}
-                    className="bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white"
+                    size="sm"
+                    className="bg-white/20 hover:bg-white/30 text-white text-xs h-7 px-3"
                   >
                     Try Again
                   </Button>
                 </div>
               </div>
-            ) : (
-              <h2 className="text-2xl font-normal text-zinc-900 text-center">
-                {voiceTranscript ? voiceTranscript : "Ready when you are."}
-              </h2>
-            )}
-          </div>
-          
-          {!voiceError && (
-            <div className="relative w-full max-w-3xl mb-24">
-              <div className="h-14 bg-white border border-zinc-200 rounded-full shadow-2xl flex items-center justify-between px-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-zinc-50 via-white to-zinc-50" />
-                <button className="w-9 h-9 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors relative z-10">
-                  <Mic className="h-5 w-5 text-zinc-600" />
-                </button>
-                <div className="flex-1 flex items-center justify-center gap-1 px-8 relative z-10">
-                  {[...Array(40)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 bg-zinc-400 rounded-full animate-pulse"
-                      style={{
-                        height: `${Math.random() * 32 + 8}px`,
-                        animationDelay: `${i * 50}ms`,
-                        animationDuration: `${800 + Math.random() * 400}ms`,
-                      }}
-                    />
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 relative z-10">
-                  <button
-                    onClick={handleVoiceCancel}
-                    className="w-9 h-9 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"
-                  >
-                    <X className="h-5 w-5 text-zinc-600" />
-                  </button>
-                  <button
-                    onClick={handleVoiceConfirm}
-                    className="w-9 h-9 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"
-                  >
-                    <Check className="h-5 w-5 text-zinc-600" />
-                  </button>
-                </div>
-              </div>
             </div>
-          )}
-          
-          {!voiceError && (
-            <p className="text-sm text-zinc-500">
-              Speak now • Press <kbd className="px-1.5 py-0.5 bg-zinc-200 rounded text-xs">✓</kbd> to confirm or <kbd className="px-1.5 py-0.5 bg-zinc-200 rounded text-xs">✕</kbd> to cancel
-            </p>
-          )}
+          </div>
         </div>
       )}
       
@@ -979,8 +868,58 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           <div className="p-8 border-t border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
             <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
             
-            <div className="max-w-5xl mx-auto relative space-y-5">
-              {conversationState === "greeting" && messages.length > 0 && (
+            <div className="max-w-5xl mx-auto relative space-y-3">
+              {/* Voice recording indicator - inline */}
+              {isRecording && !voiceError && (
+                <div className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full bg-red-500/50 animate-ping" />
+                      <Mic className="h-4 w-4 text-white relative z-10" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-red-300">Recording...</span>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-1 bg-red-400 rounded-full animate-pulse"
+                            style={{
+                              height: `${8 + Math.sin(i) * 4}px`,
+                              animationDelay: `${i * 100}ms`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-white truncate">
+                      {voiceTranscript || "Listening..."}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      onClick={handleVoiceCancel}
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 hover:bg-red-500/20 text-red-300 hover:text-red-200"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={handleVoiceConfirm}
+                      size="sm"
+                      disabled={!voiceTranscript.trim()}
+                      className="h-8 px-3 bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {conversationState === "greeting" && messages.length > 0 && !isRecording && (
                 <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   <button
                     onClick={() => handleQuickReply("Create a mystery game in a haunted mansion")}
@@ -1021,12 +960,16 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                 <div className="flex-1 relative group">
                   <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                   <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    placeholder="Type your message... or use voice 🎤"
+                    value={isRecording && voiceTranscript ? voiceTranscript : input}
+                    onChange={(e) => !isRecording && setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isRecording) {
+                        handleSend();
+                      }
+                    }}
+                    placeholder={isRecording ? "Speaking..." : "Type your message... or use voice 🎤"}
                     className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/50 text-white placeholder:text-zinc-600 text-base h-16 rounded-2xl px-7 font-normal transition-all duration-300 relative shadow-lg focus:shadow-2xl focus:shadow-violet-500/10"
-                    disabled={isGMTyping}
+                    disabled={isGMTyping || isRecording}
                   />
                 </div>
                 <Button
@@ -1035,13 +978,17 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   size="icon"
                   className={`h-16 w-16 rounded-2xl shadow-2xl flex-shrink-0 transition-all duration-300 disabled:opacity-50 disabled:shadow-none relative overflow-hidden group ${
                     isRecording
-                      ? "bg-gradient-to-br from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-red-500/30 hover:shadow-red-500/50 animate-pulse"
-                      : "bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-indigo-500/30 hover:shadow-indigo-500/50"
+                      ? "bg-gradient-to-br from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-red-500/40 hover:shadow-red-500/60 ring-2 ring-red-500/50"
+                      : "bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105"
                   }`}
+                  title={isRecording ? "Stop recording" : "Start voice input"}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   {isRecording ? (
-                    <MicOff className="h-5 w-5 relative z-10" />
+                    <>
+                      <div className="absolute inset-0 rounded-2xl bg-red-500/20 animate-ping" />
+                      <MicOff className="h-5 w-5 relative z-10" />
+                    </>
                   ) : (
                     <Mic className="h-5 w-5 relative z-10" />
                   )}
