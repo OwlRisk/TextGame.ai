@@ -47,6 +47,17 @@ export async function POST(request: NextRequest) {
     }
 
     systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Guide the user through the game setup process step by step.`;
+    
+    // When in confirmation state, guide user to confirm
+    if (gameContext?.conversationState === "confirmation") {
+      systemMessage += `\n\nIMPORTANT: You are in the confirmation state. The game configuration is complete. You should:
+1. Summarize the game configuration
+2. Ask if the user wants to make any changes
+3. When the user confirms they're ready (says "yes", "create", "start", etc.), encourage them to click the "Create Game" button that will appear
+4. Remind them they can still modify rules before creating if needed
+
+The user will see a button to create the game - guide them to click it when they're ready.`;
+    }
 
     // Format messages for OpenAI
     const formattedMessages = [

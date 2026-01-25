@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
 import { HOST_PERSONALITIES, getDefaultHost } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
-import { getAIChatResponse, streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
+import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 
 interface ChatMessage {
   id: string;
@@ -39,55 +39,171 @@ function formatMessage(content: string) {
   const elements: JSX.Element[] = [];
   
   lines.forEach((line, index) => {
-    if (!line.trim()) {
+    const trimmedLine = line.trim();
+    
+    // Empty lines
+    if (!trimmedLine) {
       elements.push(<div key={`br-${index}`} className="h-3" />);
       return;
     }
 
-    // List items starting with •
-    if (line.trim().startsWith('•')) {
-      const text = line.replace(/^[•\s]+/, '');
-      // Parse bold text **text**
-      const parts = text.split(/(\*\*.*?\*\*)/g);
+    // Markdown headers (###, ##, #)
+    if (trimmedLine.startsWith('###')) {
+      const text = trimmedLine.replace(/^###+\s*/, '');
       elements.push(
-        <div key={index} className="flex gap-3 mb-2">
-          <span className="text-indigo-400 flex-shrink-0">•</span>
-          <div>
-            {parts.map((part, i) => {
-              if (part.startsWith('**') && part.endsWith('**')) {
-                return <strong key={i} className="font-bold text-white">{part.slice(2, -2)}</strong>;
-              }
-              return <span key={i}>{part}</span>;
-            })}
+        <h3 key={index} className="font-bold text-lg text-violet-300 mt-6 mb-3 first:mt-0">
+          {parseInlineFormatting(text)}
+        </h3>
+      );
+      return;
+    }
+    
+    if (trimmedLine.startsWith('##')) {
+      const text = trimmedLine.replace(/^##+\s*/, '');
+      elements.push(
+        <h2 key={index} className="font-bold text-xl text-violet-200 mt-6 mb-3 first:mt-0">
+          {parseInlineFormatting(text)}
+        </h2>
+      );
+      return;
+    }
+    
+    if (trimmedLine.startsWith('#')) {
+      const text = trimmedLine.replace(/^#+\s*/, '');
+      elements.push(
+        <h1 key={index} className="font-bold text-2xl text-violet-100 mt-6 mb-4 first:mt-0">
+          {parseInlineFormatting(text)}
+        </h1>
+      );
+      return;
+    }
+
+    // Numbered list items (1. 2. 3. etc.)
+    const numberedListMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+    if (numberedListMatch) {
+      const [, number, text] = numberedListMatch;
+      elements.push(
+        <div key={index} className="flex gap-3 mb-2.5">
+          <span className="text-violet-400 font-semibold flex-shrink-0 min-w-[24px]">{number}.</span>
+          <div className="flex-1">
+            {parseInlineFormatting(text)}
           </div>
         </div>
       );
-    } 
-    // Headers (lines ending with :)
-    else if (line.trim().endsWith(':') && line.trim().length < 50 && line.trim() === line.trim().toUpperCase()) {
+      return;
+    }
+
+    // Bullet list items (•, -, *)
+    if (/^[•\-\*]\s+/.test(trimmedLine)) {
+      const text = trimmedLine.replace(/^[•\-\*]\s+/, '');
       elements.push(
-        <div key={index} className="font-bold text-lg text-indigo-300 mt-4 mb-2">
-          {line.trim()}
+        <div key={index} className="flex gap-3 mb-2.5">
+          <span className="text-violet-400 flex-shrink-0 mt-1">•</span>
+          <div className="flex-1">
+            {parseInlineFormatting(text)}
+          </div>
         </div>
       );
+      return;
     }
-    // Regular text with bold support
-    else {
-      const parts = line.split(/(\*\*.*?\*\*)/g);
+
+    // Headers (lines ending with : and all caps or short)
+    if (trimmedLine.endsWith(':') && (trimmedLine.length < 50 || trimmedLine === trimmedLine.toUpperCase())) {
       elements.push(
-        <div key={index} className="mb-2">
-          {parts.map((part, i) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={i} className="font-bold text-white">{part.slice(2, -2)}</strong>;
-            }
-            return <span key={i}>{part}</span>;
-          })}
+        <div key={index} className="font-semibold text-base text-violet-300 mt-4 mb-2 first:mt-0">
+          {parseInlineFormatting(trimmedLine)}
         </div>
       );
+      return;
     }
+
+    // Regular text with formatting support
+    elements.push(
+      <div key={index} className="mb-2 leading-relaxed">
+        {parseInlineFormatting(trimmedLine)}
+      </div>
+    );
   });
 
-  return <div>{elements}</div>;
+  return <div className="space-y-1">{elements}</div>;
+}
+
+// Helper function to parse inline formatting (bold, italic, emoji)
+function parseInlineFormatting(text: string): JSX.Element[] {
+  const parts: (string | JSX.Element)[] = [];
+  let currentIndex = 0;
+  
+  // Match **bold**, *italic*, and emoji patterns
+  const patterns = [
+    { regex: /\*\*(.*?)\*\*/g, type: 'bold' },
+    { regex: /\*(.*?)\*/g, type: 'italic' },
+    { regex: /`(.*?)`/g, type: 'code' },
+  ];
+  
+  // Find all matches
+  const matches: Array<{ start: number; end: number; type: string; content: string }> = [];
+  
+  patterns.forEach(({ regex, type }) => {
+    let match;
+    regex.lastIndex = 0;
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        type,
+        content: match[1]
+      });
+    }
+  });
+  
+  // Sort matches by position
+  matches.sort((a, b) => a.start - b.start);
+  
+  // Remove overlapping matches (prefer bold over italic)
+  const filteredMatches: typeof matches = [];
+  matches.forEach(match => {
+    const overlaps = filteredMatches.some(m => 
+      (match.start >= m.start && match.start < m.end) ||
+      (match.end > m.start && match.end <= m.end) ||
+      (match.start <= m.start && match.end >= m.end)
+    );
+    if (!overlaps) {
+      filteredMatches.push(match);
+    }
+  });
+  
+  // Build elements
+  filteredMatches.forEach((match, i) => {
+    // Add text before match
+    if (match.start > currentIndex) {
+      parts.push(text.substring(currentIndex, match.start));
+    }
+    
+    // Add formatted content
+    if (match.type === 'bold') {
+      parts.push(<strong key={`bold-${i}`} className="font-bold text-white">{match.content}</strong>);
+    } else if (match.type === 'italic') {
+      parts.push(<em key={`italic-${i}`} className="italic text-zinc-300">{match.content}</em>);
+    } else if (match.type === 'code') {
+      parts.push(<code key={`code-${i}`} className="bg-white/10 px-1.5 py-0.5 rounded text-sm font-mono text-violet-300">{match.content}</code>);
+    }
+    
+    currentIndex = match.end;
+  });
+  
+  // Add remaining text
+  if (currentIndex < text.length) {
+    parts.push(text.substring(currentIndex));
+  }
+  
+  // If no matches, return original text
+  if (parts.length === 0) {
+    return [<span key="text">{text}</span>];
+  }
+  
+  return parts.map((part, i) => 
+    typeof part === 'string' ? <span key={`text-${i}`}>{part}</span> : part
+  );
 }
 
 interface GameTemplate {
@@ -186,6 +302,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   const [input, setInput] = useState("");
   const [conversationState, setConversationState] = useState<ConversationState>("greeting");
   const [isGMTyping, setIsGMTyping] = useState(true);
+  const [isStreaming, setIsStreaming] = useState(false); // Track if currently streaming
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // Game configuration being built
@@ -428,11 +545,36 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   };
 
   const getGMResponse = async (userInput: string) => {
+    // Prevent multiple simultaneous requests
+    if (isStreaming || isGMTyping) {
+      return;
+    }
+    
     setIsGMTyping(true);
+    setIsStreaming(true);
     const lowerInput = userInput.toLowerCase();
 
+    // Create a temporary message for streaming
+    const tempMessageId = `msg-temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const tempMessage: ChatMessage = {
+      id: tempMessageId,
+      role: "gm",
+      content: "",
+      timestamp: new Date()
+    };
+    
+    // Add empty message first for streaming (only if not already exists)
+    setMessages(prev => {
+      // Check if temp message already exists
+      const hasTempMessage = prev.some(msg => msg.id.startsWith('msg-temp-'));
+      if (hasTempMessage) {
+        return prev;
+      }
+      return [...prev, tempMessage];
+    });
+
     try {
-      // Convert messages to API format
+      // Convert messages to API format (excluding the temp message)
       const apiMessages: AIChatMessage[] = messages.map(msg => ({
         role: msg.role,
         content: msg.content,
@@ -455,58 +597,118 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         conversationState: conversationState
       };
 
-      // Call OpenAI API
-      const response = await getAIChatResponse({
-        messages: apiMessages,
-        hostId: selectedHostId,
-        gameContext: gameContext
-      });
-
-      // Process AI response and update state based on conversation flow
-      const aiResponse = response.message;
+      // Stream AI response
+      let fullResponse = "";
       
-      // Detect game type selection (only in greeting state)
-      if (conversationState === "greeting") {
-        if (lowerInput.includes("werewolf") || lowerInput.includes("wolf")) {
-          setSelectedTemplate(GAME_TEMPLATES[0]);
-          setConversationState("player-count");
-        } else if (lowerInput.includes("undercover") || lowerInput.includes("spy") || lowerInput.includes("卧底")) {
-          setSelectedTemplate(GAME_TEMPLATES[1]);
-          setConversationState("player-count");
-        } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("自定义")) {
-          setSelectedTemplate(GAME_TEMPLATES[2]);
-          setConversationState("rules-discussion");
-        }
-      }
-
-      // Detect player count (only in player-count state)
-      if (conversationState === "player-count" && selectedTemplate) {
-        const numbers = userInput.match(/\d+/);
-        if (numbers) {
-          const count = parseInt(numbers[0]);
-          const min = selectedTemplate.minPlayers - 1;
-          const max = selectedTemplate.maxPlayers - 1;
+      await streamAIChatResponse(
+        {
+          messages: apiMessages,
+          hostId: selectedHostId,
+          gameContext: gameContext
+        },
+          // onChunk: Update message content as chunks arrive
+        (chunk: string) => {
+          fullResponse += chunk;
+          setMessages(prev => prev.map(msg => 
+            msg.id === tempMessageId 
+              ? { ...msg, content: fullResponse }
+              : msg
+          ));
+          // Auto-scroll to bottom during streaming
+          setTimeout(() => {
+            if (scrollRef.current) {
+              scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 50);
+        },
+        // onComplete: Handle state transitions after streaming completes
+        () => {
+          setIsGMTyping(false);
+          setIsStreaming(false);
           
-          if (count >= min && count <= max) {
-            setPlayerCount(count);
-            setConversationState("rules-discussion");
+          // Detect game type selection (only in greeting state)
+          if (conversationState === "greeting") {
+            if (lowerInput.includes("werewolf") || lowerInput.includes("wolf")) {
+              setSelectedTemplate(GAME_TEMPLATES[0]);
+              setConversationState("player-count");
+            } else if (lowerInput.includes("undercover") || lowerInput.includes("spy") || lowerInput.includes("卧底")) {
+              setSelectedTemplate(GAME_TEMPLATES[1]);
+              setConversationState("player-count");
+            } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("自定义")) {
+              setSelectedTemplate(GAME_TEMPLATES[2]);
+              setConversationState("rules-discussion");
+            }
           }
-        }
-      }
 
-      // Detect confirmation (only in confirmation state)
-      if (conversationState === "confirmation") {
-        if (lowerInput.includes("create") || lowerInput.includes("start") || 
-            lowerInput.includes("begin") || lowerInput.includes("yes")) {
-          setShowHostSelector(true);
-        }
-      }
+          // Detect player count (only in player-count state)
+          if (conversationState === "player-count" && selectedTemplate) {
+            const numbers = userInput.match(/\d+/);
+            if (numbers) {
+              const count = parseInt(numbers[0]);
+              const min = selectedTemplate.minPlayers - 1;
+              const max = selectedTemplate.maxPlayers - 1;
+              
+              if (count >= min && count <= max) {
+                setPlayerCount(count);
+                setConversationState("rules-discussion");
+              }
+            }
+          }
 
-      // Add AI response
-      addGMMessage(aiResponse);
+          // In confirmation state, show host selector when user confirms
+          if (conversationState === "confirmation") {
+            const userInputLower = lowerInput;
+            
+            // Check if user wants to create/start or choose host
+            if (userInputLower.includes("create") || 
+                userInputLower.includes("start") || 
+                userInputLower.includes("begin") || 
+                userInputLower.includes("yes") ||
+                userInputLower.includes("ready") ||
+                userInputLower.includes("let's go")) {
+              // User confirms - show host selector
+              setShowHostSelector(true);
+            } else if (userInputLower.includes("choose host") || 
+                       userInputLower.includes("select host") ||
+                       userInputLower.includes("pick host")) {
+              // User wants to choose host manually
+              setShowHostSelector(true);
+            }
+          }
+
+          // Replace temp message with final message (ensure only one message)
+          setMessages(prev => {
+            const filtered = prev.filter(msg => msg.id !== tempMessageId || msg.content.trim() !== '');
+            return filtered.map(msg => 
+              msg.id === tempMessageId 
+                ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }
+                : msg
+            );
+          });
+        },
+        // onError: Handle errors
+        (error: Error) => {
+          console.error('Error streaming AI response:', error);
+          toast.error(error.message || 'Failed to get AI response. Please try again.');
+          
+          // Remove temp message and add error message
+          setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
+          setIsGMTyping(false);
+          setIsStreaming(false);
+          
+          addGMMessage(
+            "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
+          );
+        }
+      );
     } catch (error: any) {
       console.error('Error getting AI response:', error);
       toast.error(error.message || 'Failed to get AI response. Please try again.');
+      
+      // Remove temp message
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
+      setIsGMTyping(false);
+      setIsStreaming(false);
       
       // Fallback to a simple message
       addGMMessage(
@@ -517,7 +719,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
   const handleSend = async (messageOverride?: string) => {
     const message = messageOverride || input.trim();
-    if (message && !isGMTyping) {
+    if (message && !isGMTyping && !isStreaming) {
       addUserMessage(message);
       await getGMResponse(message);
       setInput("");
@@ -525,7 +727,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   };
 
   const handleQuickReply = async (reply: string) => {
-    if (!isGMTyping) {
+    if (!isGMTyping && !isStreaming) {
       setInput(reply);
       setTimeout(async () => {
         addUserMessage(reply);
@@ -724,9 +926,14 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         {/* Chat Messages */}
         <ScrollArea className="flex-1 min-h-0">
           <div className="max-w-5xl mx-auto py-20 px-10 space-y-12">
-            {messages.map((message, index) => (
-              <div
-                key={message.id}
+            {messages.map((message, index) => {
+              // Don't render empty messages (except temp messages that are being streamed)
+              if (!message.content.trim() && !message.id.startsWith('msg-temp-')) {
+                return null;
+              }
+              return (
+                <div
+                  key={message.id}
                 className={`flex gap-6 ${message.role === "user" ? "flex-row-reverse" : ""} animate-in fade-in slide-in-from-bottom-4 duration-500`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -781,28 +988,10 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
 
-            {isGMTyping && (
-              <div className="flex gap-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="relative flex-shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/30 to-orange-600/30 blur-2xl rounded-full" />
-                  <Avatar className="h-12 w-12 border-2 border-amber-500/20 shadow-2xl shadow-amber-500/20 relative">
-                    <AvatarFallback className="bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 text-white">
-                      <Sparkles className="h-6 w-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="bg-gradient-to-br from-zinc-900/90 via-zinc-800/80 to-zinc-900/90 backdrop-blur-xl rounded-3xl px-7 py-6 border border-white/10 shadow-2xl relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
-                  <div className="flex gap-2.5 relative z-10">
-                    <div className="w-2.5 h-2.5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-bounce shadow-lg shadow-amber-500/50" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2.5 h-2.5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-bounce shadow-lg shadow-amber-500/50" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2.5 h-2.5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-bounce shadow-lg shadow-amber-500/50" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Typing indicator removed - streaming messages are shown directly in messages array */}
 
             {/* Host Selector */}
             {conversationState === "confirmation" && showHostSelector && (
@@ -919,40 +1108,161 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                 </div>
               )}
               
-              {conversationState === "greeting" && messages.length > 0 && !isRecording && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  <button
-                    onClick={() => handleQuickReply("Create a mystery game in a haunted mansion")}
-                    disabled={isGMTyping}
-                    className="group relative px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/10 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-                    <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
-                      💬 "Create a mystery game"
-                    </span>
-                  </button>
+              {/* Quick Reply Suggestions - Different prompts for different states */}
+              {!isRecording && !isGMTyping && (
+                <div className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  {conversationState === "greeting" && (
+                    <>
+                      <button
+                        onClick={() => handleQuickReply("I want to play Werewolf")}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20 border border-purple-500/30 hover:border-purple-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+                        <span className="text-sm text-purple-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                          <span>🐺</span>
+                          <span>Play Werewolf</span>
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleQuickReply("I want to play Undercover")}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-blue-500/30 hover:border-blue-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+                        <span className="text-sm text-blue-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                          <span>🕵️</span>
+                          <span>Play Undercover</span>
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleQuickReply("Create a custom game")}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-gradient-to-r from-pink-500/10 to-rose-500/10 hover:from-pink-500/20 hover:to-rose-500/20 border border-pink-500/30 hover:border-pink-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 via-pink-500/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+                        <span className="text-sm text-pink-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                          <span>✨</span>
+                          <span>Custom Game</span>
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleQuickReply("Create a mystery game in a haunted mansion")}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 hover:border-orange-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/10 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+                        <span className="text-sm text-orange-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                          <span>🏰</span>
+                          <span>Mystery Game</span>
+                        </span>
+                      </button>
+                    </>
+                  )}
                   
-                  <button
-                    onClick={() => handleQuickReply("I want to play Werewolf")}
-                    disabled={isGMTyping}
-                    className="group relative px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/10 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-                    <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
-                      🐺 "Setup Werewolf"
-                    </span>
-                  </button>
+                  {conversationState === "player-count" && selectedTemplate && (
+                    <>
+                      <button
+                        onClick={() => handleQuickReply(`${selectedTemplate.minPlayers - 1}`)}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
+                          {selectedTemplate.minPlayers - 1} players
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleQuickReply(`${Math.floor((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1}`)}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
+                          {Math.floor((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1} players (推荐)
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleQuickReply(`${selectedTemplate.maxPlayers - 1}`)}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
+                          {selectedTemplate.maxPlayers - 1} players
+                        </span>
+                      </button>
+                    </>
+                  )}
                   
-                  <button
-                    onClick={() => handleQuickReply("Design a space adventure game")}
-                    disabled={isGMTyping}
-                    className="group relative px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/10 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-                    <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
-                      🚀 "Space adventure"
-                    </span>
-                  </button>
+                  {conversationState === "rules-discussion" && (
+                    <>
+                      <button
+                        onClick={() => handleQuickReply("Keep the default rules")}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-green-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                          <span>✅</span>
+                          <span>Keep Default Rules</span>
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleQuickReply("I want to modify the rules")}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-yellow-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                          <span>✏️</span>
+                          <span>Modify Rules</span>
+                        </span>
+                      </button>
+                      
+                      {selectedTemplate?.id === "custom" && (
+                        <button
+                          onClick={() => handleQuickReply("Done, let's finalize")}
+                          disabled={isGMTyping}
+                          className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                            <span>🎯</span>
+                            <span>Finalize</span>
+                          </span>
+                        </button>
+                      )}
+                    </>
+                  )}
+                  
+                  {conversationState === "confirmation" && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setShowHostSelector(true);
+                        }}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 hover:from-violet-500/30 hover:to-indigo-500/30 border border-violet-500/50 hover:border-violet-500/70 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm text-violet-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2 font-semibold">
+                          <span>🎭</span>
+                          <span>Choose Host</span>
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleQuickReply("Modify something")}
+                        disabled={isGMTyping}
+                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-yellow-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
+                          <span>⚙️</span>
+                          <span>Modify</span>
+                        </span>
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
               
