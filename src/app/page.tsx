@@ -203,7 +203,7 @@ export default function HomePage() {
 
   }, [userId, addMessage]);
 
-  const handleCreateGame = (config: GameConfig) => {
+  const handleCreateGame = useCallback((config: GameConfig) => {
     const newGame: Game = {
       id: `game-${Date.now()}`,
       name: config.name,
@@ -218,7 +218,7 @@ export default function HomePage() {
     setSelectedChannelId("game-room");
     initializeGame(config);
     toast.success(`Game "${config.name}" created!`);
-  };
+  }, [initializeGame]);
 
   const handleSendMessage = useCallback((content: string) => {
     if (!isMountedRef.current) return;
@@ -378,10 +378,7 @@ export default function HomePage() {
         selectedGameId={selectedGameId}
         onSelectGame={(gameId) => {
           setSelectedGameId(gameId);
-          // Close GameMasterChat when navigating to other pages
-          if (gameId !== "home") {
-            setShowGameMasterChat(false);
-          }
+          if (gameId !== "home") setShowGameMasterChat(false);
         }}
         onCreateGame={() => setShowGameMasterChat(true)}
         onOpenProfile={() => setShowUserProfile(true)}
@@ -413,14 +410,9 @@ export default function HomePage() {
         <GameMasterChat
           onBack={() => {
             setShowGameMasterChat(false);
-            if (selectedGameId === "home") {
-              setSelectedGameId("discover");
-            }
+            if (selectedGameId === "home") setSelectedGameId("discover");
           }}
-          onCreateGame={(config) => {
-            handleCreateGame(config);
-            setShowGameMasterChat(false);
-          }}
+          onCreateGame={handleCreateGame}
         />
       ) : (
         <>

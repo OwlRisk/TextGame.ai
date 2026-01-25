@@ -5,6 +5,8 @@ import { Send, AlertCircle, User } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 
 export interface Message {
   id: string;
@@ -101,12 +103,23 @@ export function ChatArea({
                 {showAvatar ? (
                   <div className="flex gap-4">
                     <div className="relative flex-shrink-0">
-                      <div 
-                        className="h-11 w-11 rounded-full flex items-center justify-center text-sm font-semibold"
-                        style={{ backgroundColor: message.senderAvatar }}
-                      >
-                        {message.senderName.substring(0, 2).toUpperCase()}
-                      </div>
+                      {message.senderId === userId || message.senderName === "You" ? (
+                        <Avatar className="h-11 w-11">
+                          <AvatarFallback
+                            className="text-sm font-semibold text-white"
+                            style={{ backgroundColor: message.senderAvatar }}
+                          >
+                            {message.senderName.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <GeneratedAvatar
+                          name={message.senderName}
+                          type={message.senderId === "gm-1" ? "gm" : "player"}
+                          className="h-11 w-11"
+                          fallbackColor={message.senderAvatar}
+                        />
+                      )}
                       {/* Online Status Indicator */}
                       <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full ring-2 ring-zinc-700 hidden" />
                     </div>
@@ -132,12 +145,23 @@ export function ChatArea({
           {/* Typing Indicator */}
           {typingUsers && typingUsers.length > 0 && (
             <div className="flex gap-3 mt-4">
-              <div 
-                className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-                style={{ backgroundColor: typingUsers[0].avatar }}
-              >
-                {typingUsers[0].name.substring(0, 2).toUpperCase()}
-              </div>
+              {typingUsers[0].name === "You" ? (
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  <AvatarFallback
+                    className="text-sm font-semibold text-white"
+                    style={{ backgroundColor: typingUsers[0].avatar }}
+                  >
+                    {typingUsers[0].name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <GeneratedAvatar
+                  name={typingUsers[0].name}
+                  type="player"
+                  className="h-10 w-10 flex-shrink-0"
+                  fallbackColor={typingUsers[0].avatar}
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-white">{typingUsers[0].name}</span>

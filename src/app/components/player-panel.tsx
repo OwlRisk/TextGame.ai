@@ -5,6 +5,8 @@ import { Separator } from "@/app/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { PlayerBoardData } from "@/app/components/player-board";
 import { Badge } from "@/app/components/ui/badge";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 
 export interface Player {
   id: string;
@@ -106,14 +108,34 @@ function PlayerCard({
     }`}>
       <div className="flex items-start gap-2.5">
         <div className="relative flex-shrink-0">
-          <div 
-            className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shadow-md transition-transform duration-200 ${
-              isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
-            }`}
-            style={{ backgroundColor: player.avatar }}
-          >
-            {player.name.substring(0, 2).toUpperCase()}
-          </div>
+          {!player.isAI ? (
+            <Avatar
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
+                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+              }`}
+            >
+              <AvatarFallback
+                className="text-sm font-semibold text-white"
+                style={{ backgroundColor: player.avatar }}
+              >
+                {player.name.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <GeneratedAvatar
+              name={player.name}
+              type={player.isGameMaster ? "gm" : "player"}
+              background={
+                player.isGameMaster
+                  ? undefined
+                  : `Social deduction game player. Role: ${player.role ?? "Player"}.`
+              }
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
+                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+              }`}
+              fallbackColor={player.avatar}
+            />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">

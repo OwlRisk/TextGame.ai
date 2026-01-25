@@ -15,9 +15,9 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     id: "echo",
     name: "Echo",
     icon: "🌙",
-    color: "#6366f1", // indigo
+    color: "#6366f1",
     tagline: "Mysterious & Professional",
-    description: "A mysterious host who speaks with intrigue and suspense. Perfect for games that require tension and careful observation.",
+    description: "Male game show host. Mysterious, speaks with intrigue and suspense. Calm, enigmatic. Perfect for games that require tension and careful observation.",
     voiceStyle: "Calm, enigmatic, creates atmosphere",
     suitableFor: ["Werewolf", "Mafia", "Murder Mystery", "Detective"],
     systemPrompt: `You are Echo, a mysterious and professional game host. Your speaking style:
@@ -32,9 +32,9 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     id: "nova",
     name: "Nova",
     icon: "⭐",
-    color: "#f59e0b", // amber
+    color: "#f59e0b",
     tagline: "Energetic & Fun",
-    description: "An enthusiastic host who brings energy and excitement to every game. Great for party games and social interactions.",
+    description: "Female game show host. Enthusiastic, brings energy and excitement. Upbeat, encouraging, playful. Great for party games and social interactions.",
     voiceStyle: "Upbeat, encouraging, playful",
     suitableFor: ["Undercover", "Party Games", "Charades", "Truth or Dare"],
     systemPrompt: `You are Nova, an energetic and fun game host. Your speaking style:
@@ -49,9 +49,9 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     id: "sage",
     name: "Sage",
     icon: "📚",
-    color: "#8b5cf6", // purple
+    color: "#8b5cf6",
     tagline: "Wise & Calm",
-    description: "A wise and thoughtful host who guides with patience and fairness. Ideal for strategy games and debates.",
+    description: "Male game show host. Wise, thoughtful, guides with patience and fairness. Thoughtful, balanced, philosophical. Ideal for strategy games and debates.",
     voiceStyle: "Thoughtful, balanced, philosophical",
     suitableFor: ["Strategy Games", "Debate", "Trivia", "Logic Puzzles"],
     systemPrompt: `You are Sage, a wise and calm game host. Your speaking style:
@@ -66,9 +66,9 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     id: "spark",
     name: "Spark",
     icon: "⚡",
-    color: "#ec4899", // pink
+    color: "#ec4899",
     tagline: "Playful & Quick",
-    description: "A quick-witted host with a playful edge. Perfect for fast-paced games and keeping everyone on their toes.",
+    description: "Female game show host. Quick-witted, playful edge. Fast-paced, witty, competitive. Perfect for speed games and keeping everyone on their toes.",
     voiceStyle: "Quick, witty, competitive",
     suitableFor: ["Speed Games", "Competition", "Quick Fire", "Reaction Games"],
     systemPrompt: `You are Spark, a playful and quick-witted game host. Your speaking style:

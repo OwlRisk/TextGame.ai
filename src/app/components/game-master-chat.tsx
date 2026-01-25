@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Sparkles, Send, ArrowLeft, CheckCircle2, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical } from "lucide-react";
+import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
-import { HOST_PERSONALITIES, getDefaultHost } from "@/app/config/host-config";
+import { HOST_PERSONALITIES, getDefaultHost, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 
@@ -41,91 +42,76 @@ function formatMessage(content: string) {
   lines.forEach((line, index) => {
     const trimmedLine = line.trim();
     
-    // Empty lines
     if (!trimmedLine) {
-      elements.push(<div key={`br-${index}`} className="h-3" />);
+      elements.push(<div key={`br-${index}`} className="h-2" />);
       return;
     }
 
-    // Markdown headers (###, ##, #)
     if (trimmedLine.startsWith('###')) {
       const text = trimmedLine.replace(/^###+\s*/, '');
       elements.push(
-        <h3 key={index} className="font-bold text-lg text-violet-300 mt-6 mb-3 first:mt-0">
+        <h3 key={index} className="font-bold text-base text-violet-300 mt-4 mb-2 first:mt-0">
           {parseInlineFormatting(text)}
         </h3>
       );
       return;
     }
-    
     if (trimmedLine.startsWith('##')) {
       const text = trimmedLine.replace(/^##+\s*/, '');
       elements.push(
-        <h2 key={index} className="font-bold text-xl text-violet-200 mt-6 mb-3 first:mt-0">
+        <h2 key={index} className="font-bold text-lg text-violet-200 mt-4 mb-2 first:mt-0">
           {parseInlineFormatting(text)}
         </h2>
       );
       return;
     }
-    
     if (trimmedLine.startsWith('#')) {
       const text = trimmedLine.replace(/^#+\s*/, '');
       elements.push(
-        <h1 key={index} className="font-bold text-2xl text-violet-100 mt-6 mb-4 first:mt-0">
+        <h1 key={index} className="font-bold text-xl text-violet-100 mt-4 mb-3 first:mt-0">
           {parseInlineFormatting(text)}
         </h1>
       );
       return;
     }
 
-    // Numbered list items (1. 2. 3. etc.)
     const numberedListMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
     if (numberedListMatch) {
       const [, number, text] = numberedListMatch;
       elements.push(
-        <div key={index} className="flex gap-3 mb-2.5">
-          <span className="text-violet-400 font-semibold flex-shrink-0 min-w-[24px]">{number}.</span>
-          <div className="flex-1">
-            {parseInlineFormatting(text)}
-          </div>
+        <div key={index} className="flex gap-2.5 mb-1.5">
+          <span className="text-violet-400 font-semibold flex-shrink-0 min-w-[20px]">{number}.</span>
+          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
         </div>
       );
       return;
     }
-
-    // Bullet list items (•, -, *)
     if (/^[•\-\*]\s+/.test(trimmedLine)) {
       const text = trimmedLine.replace(/^[•\-\*]\s+/, '');
       elements.push(
-        <div key={index} className="flex gap-3 mb-2.5">
-          <span className="text-violet-400 flex-shrink-0 mt-1">•</span>
-          <div className="flex-1">
-            {parseInlineFormatting(text)}
-          </div>
+        <div key={index} className="flex gap-2.5 mb-1.5">
+          <span className="text-violet-400 flex-shrink-0 mt-0.5">•</span>
+          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
         </div>
       );
       return;
     }
-
-    // Headers (lines ending with : and all caps or short)
     if (trimmedLine.endsWith(':') && (trimmedLine.length < 50 || trimmedLine === trimmedLine.toUpperCase())) {
       elements.push(
-        <div key={index} className="font-semibold text-base text-violet-300 mt-4 mb-2 first:mt-0">
+        <div key={index} className="font-semibold text-sm text-violet-300 mt-3 mb-1.5 first:mt-0">
           {parseInlineFormatting(trimmedLine)}
         </div>
       );
       return;
     }
-
-    // Regular text with formatting support
     elements.push(
-      <div key={index} className="mb-2 leading-relaxed">
+      <div key={index} className="mb-1.5 leading-relaxed">
         {parseInlineFormatting(trimmedLine)}
       </div>
     );
   });
 
-  return <div className="space-y-1">{elements}</div>;
+  return <div className="space-y-0.5">{elements}</div>;
 }
 
 // Helper function to parse inline formatting (bold, italic, emoji)
@@ -185,7 +171,7 @@ function parseInlineFormatting(text: string): JSX.Element[] {
     } else if (match.type === 'italic') {
       parts.push(<em key={`italic-${i}`} className="italic text-zinc-300">{match.content}</em>);
     } else if (match.type === 'code') {
-      parts.push(<code key={`code-${i}`} className="bg-white/10 px-1.5 py-0.5 rounded text-sm font-mono text-violet-300">{match.content}</code>);
+      parts.push(<code key={`code-${i}`} className="bg-white/10 px-1.5 py-0.5 rounded text-[13px] font-mono text-violet-300">{match.content}</code>);
     }
     
     currentIndex = match.end;
@@ -313,7 +299,6 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
   // Host personality
   const [selectedHostId, setSelectedHostId] = useState<string>(getDefaultHost().id);
-  const [showHostSelector, setShowHostSelector] = useState(false);
 
   // Voice input
   const [isRecording, setIsRecording] = useState(false);
@@ -421,7 +406,6 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setCustomRules("");
     setGameName("");
     setSelectedHostId(getDefaultHost().id);
-    setShowHostSelector(false);
 
     setSessions(prev => {
       const updated = [newSession, ...prev];
@@ -444,7 +428,6 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setCustomRules(session.customRules);
     setGameName(session.gameName);
     setSelectedHostId(session.selectedHostId);
-    setShowHostSelector(false);
     setIsGMTyping(session.messages.length === 0);
   };
 
@@ -621,60 +604,10 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
             }
           }, 50);
         },
-        // onComplete: Handle state transitions after streaming completes
+        // onComplete: Handle cleanup after streaming completes
         () => {
           setIsGMTyping(false);
           setIsStreaming(false);
-          
-          // Detect game type selection (only in greeting state)
-          if (conversationState === "greeting") {
-            if (lowerInput.includes("werewolf") || lowerInput.includes("wolf")) {
-              setSelectedTemplate(GAME_TEMPLATES[0]);
-              setConversationState("player-count");
-            } else if (lowerInput.includes("undercover") || lowerInput.includes("spy") || lowerInput.includes("卧底")) {
-              setSelectedTemplate(GAME_TEMPLATES[1]);
-              setConversationState("player-count");
-            } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("自定义")) {
-              setSelectedTemplate(GAME_TEMPLATES[2]);
-              setConversationState("rules-discussion");
-            }
-          }
-
-          // Detect player count (only in player-count state)
-          if (conversationState === "player-count" && selectedTemplate) {
-            const numbers = userInput.match(/\d+/);
-            if (numbers) {
-              const count = parseInt(numbers[0]);
-              const min = selectedTemplate.minPlayers - 1;
-              const max = selectedTemplate.maxPlayers - 1;
-              
-              if (count >= min && count <= max) {
-                setPlayerCount(count);
-                setConversationState("rules-discussion");
-              }
-            }
-          }
-
-          // In confirmation state, show host selector when user confirms
-          if (conversationState === "confirmation") {
-            const userInputLower = lowerInput;
-            
-            // Check if user wants to create/start or choose host
-            if (userInputLower.includes("create") || 
-                userInputLower.includes("start") || 
-                userInputLower.includes("begin") || 
-                userInputLower.includes("yes") ||
-                userInputLower.includes("ready") ||
-                userInputLower.includes("let's go")) {
-              // User confirms - show host selector
-              setShowHostSelector(true);
-            } else if (userInputLower.includes("choose host") || 
-                       userInputLower.includes("select host") ||
-                       userInputLower.includes("pick host")) {
-              // User wants to choose host manually
-              setShowHostSelector(true);
-            }
-          }
 
           // Replace temp message with final message (ensure only one message)
           setMessages(prev => {
@@ -778,6 +711,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setVoiceError("");
   };
 
+  const host = getHostById(selectedHostId);
+
   return (
     <div className="flex-1 flex bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 h-full overflow-hidden relative">
       {/* Ambient Background Effects */}
@@ -833,27 +768,25 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       )}
       
       {/* Session History Sidebar */}
-      <div className="w-60 border-r border-white/5 bg-black/60 backdrop-blur-xl flex flex-col relative z-10">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-transparent" />
+      <div className="w-52 sm:w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col relative z-10">
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-transparent pointer-events-none" />
         
-        {/* Header */}
-        <div className="p-4 border-b border-white/10 relative">
+        <div className="p-3 sm:p-4 border-b border-white/10 relative">
           <Button
             onClick={createNewSession}
-            className="w-full bg-gradient-to-br from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-500 hover:via-indigo-500 hover:to-violet-600 text-white shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all duration-300"
+            className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-violet-500/20 transition-all"
           >
             <MessageSquarePlus className="h-4 w-4 mr-2" />
             New Session
           </Button>
         </div>
 
-        {/* Session List */}
         <ScrollArea className="flex-1">
-          <div className="p-3 space-y-2 relative">
+          <div className="p-2 sm:p-3 space-y-1.5 relative">
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className={`group relative rounded-xl transition-all duration-300 ${
+                className={`group relative rounded-lg transition-all duration-200 ${
                   currentSessionId === session.id
                     ? "bg-white/10 border border-white/20"
                     : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
@@ -861,25 +794,23 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
               >
                 <button
                   onClick={() => loadSession(session.id)}
-                  className="w-full p-3 text-left"
+                  className="w-full p-2.5 sm:p-3 text-left"
                 >
-                  <div className="text-sm font-medium text-white mb-1 line-clamp-2">
+                  <div className="text-sm font-medium text-white mb-0.5 line-clamp-2 pr-7">
                     {session.title}
                   </div>
-                  <div className="text-xs text-zinc-500">
-                    {new Date(session.updatedAt).toLocaleDateString()} • {session.messages.length} messages
+                  <div className="text-[11px] sm:text-xs text-zinc-500">
+                    {new Date(session.updatedAt).toLocaleDateString()} · {session.messages.length}
                   </div>
                 </button>
-                
-                {/* Delete Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteSession(session.id);
                   }}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+                  className="absolute top-2 right-2 w-6 h-6 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                  <Trash2 className="h-3 w-3 text-red-400" />
                 </button>
               </div>
             ))}
@@ -892,31 +823,41 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
-          <div className="h-24 px-10 flex items-center justify-between relative">
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/40 to-orange-600/40 blur-xl rounded-full" />
-                <Avatar className="h-16 w-16 border-2 border-white/10 shadow-2xl shadow-amber-500/20 relative">
-                  <AvatarFallback className="bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 text-white">
-                    <Sparkles className="h-8 w-8 animate-pulse" />
-                  </AvatarFallback>
-                </Avatar>
+          <div className="h-16 px-6 sm:px-8 flex items-center justify-between relative gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="relative flex-shrink-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/30 to-orange-600/30 blur-xl rounded-full" />
+                <GeneratedAvatar
+                  name="Game Master"
+                  type="gm"
+                  className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-white/10 shadow-xl shadow-amber-500/20 relative"
+                  fallbackColor="#f59e0b"
+                  fallback={<Sparkles className="h-6 w-6 sm:h-7 sm:w-7 animate-pulse" />}
+                />
               </div>
-              
-              <div>
-                <h1 className="text-3xl font-semibold text-white tracking-tight mb-1">Game Master</h1>
-                <p className="text-sm text-zinc-500 font-medium">Choose a game below or describe your own</p>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight truncate">Game Master</h1>
+                <p className="text-xs sm:text-sm text-zinc-500 font-medium truncate">
+                  {isGMTyping || isStreaming ? (
+                    <span className="inline-flex items-center gap-1.5 text-amber-400/90">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      Thinking...
+                    </span>
+                  ) : (
+                    "Choose a game below or describe your own"
+                  )}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {selectedTemplate && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowPreview(!showPreview)}
-                  className="text-zinc-500 hover:text-white hover:bg-white/5 transition-all duration-300"
+                  className="h-9 w-9 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
                 >
-                  <Eye className="h-5 w-5" />
+                  <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               )}
             </div>
@@ -925,360 +866,140 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
         {/* Chat Messages */}
         <ScrollArea className="flex-1 min-h-0">
-          <div className="max-w-5xl mx-auto py-20 px-10 space-y-12">
+          <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 md:px-8 space-y-6 sm:space-y-8">
             {messages.map((message, index) => {
-              // Don't render empty messages (except temp messages that are being streamed)
               if (!message.content.trim() && !message.id.startsWith('msg-temp-')) {
                 return null;
               }
+              const isUser = message.role === "user";
+              const isStreamingMsg = message.id.startsWith("msg-temp-");
               return (
                 <div
                   key={message.id}
-                className={`flex gap-6 ${message.role === "user" ? "flex-row-reverse" : ""} animate-in fade-in slide-in-from-bottom-4 duration-500`}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="relative flex-shrink-0">
-                  {message.role === "gm" && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/30 to-orange-600/30 blur-2xl rounded-full" />
-                  )}
-                  {message.role === "user" && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/30 to-indigo-600/30 blur-2xl rounded-full" />
-                  )}
-                  <Avatar
-                    className={`h-14 w-14 border-2 shadow-2xl relative ${
-                      message.role === "gm"
-                        ? "border-amber-500/20 shadow-amber-500/20"
-                        : "border-violet-500/20 shadow-violet-500/20"
-                    }`}
-                  >
-                    <AvatarFallback
-                      className={`text-white font-semibold ${
-                        message.role === "gm"
-                          ? "bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600"
-                          : "bg-gradient-to-br from-violet-500 via-indigo-500 to-violet-600"
-                      }`}
-                    >
-                      {message.role === "gm" ? (
-                        <Sparkles className="h-6 w-6" />
-                      ) : (
-                        <span className="text-sm">YOU</span>
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+                  className={`flex gap-3 sm:gap-4 ${isUser ? "flex-row-reverse" : ""} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  style={{ animationDelay: `${Math.min(index * 30, 150)}ms` }}
+                >
+                  <div className="relative flex-shrink-0">
+                    {message.role === "gm" && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-orange-600/20 blur-xl rounded-full" />
+                    )}
+                    {message.role === "user" && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-indigo-600/20 blur-xl rounded-full" />
+                    )}
+                    {message.role === "gm" ? (
+                    <GeneratedAvatar
+                      name="Game Master"
+                      type="gm"
+                      className="h-10 w-10 sm:h-11 sm:w-11 border-2 border-white/10 shadow-lg relative border-amber-500/20"
+                      fallbackColor="#f59e0b"
+                      fallback={<Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />}
+                    />
+                    ) : (
+                      <Avatar className="h-10 w-10 sm:h-11 sm:w-11 border-2 shadow-lg relative border-violet-500/20">
+                        <AvatarFallback className="bg-gradient-to-br from-violet-500 via-indigo-500 to-violet-600 text-white font-semibold text-xs">
+                          YOU
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
 
-                <div className={`flex-1 ${message.role === "user" ? "flex justify-end" : ""}`}>
-                  <div className="max-w-[85%]">
-                    <div
-                      className={`rounded-3xl px-8 py-7 shadow-2xl backdrop-blur-xl relative overflow-hidden ${
-                        message.role === "gm"
-                          ? "bg-gradient-to-br from-zinc-900/90 via-zinc-800/80 to-zinc-900/90 border border-white/10 text-zinc-100"
-                          : "bg-gradient-to-br from-violet-600/90 via-indigo-600/90 to-violet-600/90 border border-white/10 text-white"
-                      }`}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
-                      
-                      <div className="text-base leading-relaxed relative z-10 font-normal">
-                        {message.role === "gm" ? formatMessage(message.content) : message.content}
+                  <div className={`flex-1 min-w-0 ${isUser ? "flex justify-end" : ""}`}>
+                    <div className={`max-w-[90%] sm:max-w-[85%] ${isUser ? "flex flex-col items-end" : ""}`}>
+                      <div
+                        className={`rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 shadow-lg backdrop-blur-xl relative overflow-hidden ${
+                          message.role === "gm"
+                            ? "bg-zinc-800/80 border border-white/[0.08] text-zinc-100"
+                            : "bg-violet-600/85 border border-white/10 text-white"
+                        } ${isStreamingMsg ? "ring-1 ring-amber-500/20" : ""}`}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+                        <div className="text-[15px] sm:text-base leading-relaxed relative z-10 font-normal">
+                          {message.role === "gm" ? formatMessage(message.content) : message.content}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-xs text-zinc-600 font-medium mt-3 px-2">
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div className={`text-[11px] text-zinc-500 mt-1.5 ${isUser ? "pr-1" : "pl-1"}`}>
+                        {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
               );
             })}
 
-            {/* Typing indicator removed - streaming messages are shown directly in messages array */}
-
-            {/* Host Selector */}
-            {conversationState === "confirmation" && showHostSelector && (
-              <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <HostSelector
-                  selectedHostId={selectedHostId}
-                  onSelectHost={setSelectedHostId}
-                />
-                
-                <div className="mt-10 flex justify-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => {
-                      setShowHostSelector(false);
-                      setSelectedHostId(getDefaultHost().id);
-                    }}
-                    className="bg-zinc-900/80 backdrop-blur-xl border-white/20 hover:bg-zinc-800/80 hover:border-white/30 text-white transition-all duration-300 px-8 text-base h-12"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back
-                  </Button>
-                  <Button
-                    size="lg"
-                    onClick={() => {
-                      setConversationState("completed");
-                      const host = HOST_PERSONALITIES.find(h => h.id === selectedHostId);
-                      addGMMessage(
-                        `🎉 Fantastic! ${host?.name} will be your guide.\n\n` +
-                        `Your game is being created now. See you in the game room!`
-                      );
-                      
-                      setTimeout(() => {
-                        onCreateGame({
-                          name: gameName || selectedTemplate!.name,
-                          template: selectedTemplate!.id,
-                          playerCount: playerCount,
-                          rules: customRules || selectedTemplate!.defaultRules,
-                          customRoles: selectedTemplate!.roles,
-                          hostId: selectedHostId
-                        });
-                        
-                        setTimeout(() => {
-                          onBack();
-                        }, 1500);
-                      }, 1000);
-                    }}
-                    className="bg-gradient-to-br from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-500 hover:via-indigo-500 hover:to-violet-600 text-white shadow-2xl shadow-violet-500/50 hover:shadow-violet-500/70 transition-all duration-300 px-10 text-base h-12 font-semibold"
-                  >
-                    <CheckCircle2 className="h-5 w-5 mr-2" />
-                    Create Game
-                  </Button>
-                </div>
-              </div>
-            )}
-            
             <div ref={scrollRef} />
           </div>
         </ScrollArea>
 
         {/* Input */}
-        {conversationState !== "completed" && !showHostSelector && (
-          <div className="p-8 border-t border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
+        {conversationState !== "completed" && (
+          <div className="p-4 sm:p-5 border-t border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5 pointer-events-none" />
             
-            <div className="max-w-5xl mx-auto relative space-y-3">
-              {/* Voice recording indicator - inline */}
+            <div className="max-w-3xl mx-auto relative space-y-3">
               {isRecording && !voiceError && (
-                <div className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3 bg-red-500/10 border border-red-500/30 rounded-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
                   <div className="relative flex-shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center">
                       <div className="absolute inset-0 rounded-full bg-red-500/50 animate-ping" />
-                      <Mic className="h-4 w-4 text-white relative z-10" />
+                      <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white relative z-10" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-red-300">Recording...</span>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-xs font-medium text-red-300">Recording</span>
+                      <div className="flex items-center gap-0.5">
+                        {[0, 1, 2, 3, 4].map((i) => (
                           <div
                             key={i}
                             className="w-1 bg-red-400 rounded-full animate-pulse"
-                            style={{
-                              height: `${8 + Math.sin(i) * 4}px`,
-                              animationDelay: `${i * 100}ms`,
-                            }}
+                            style={{ height: "6px", animationDelay: `${i * 80}ms` }}
                           />
                         ))}
                       </div>
                     </div>
-                    <p className="text-sm text-white truncate">
-                      {voiceTranscript || "Listening..."}
-                    </p>
+                    <p className="text-sm text-white truncate">{voiceTranscript || "Listening..."}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <Button
                       onClick={handleVoiceCancel}
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0 hover:bg-red-500/20 text-red-300 hover:text-red-200"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-lg hover:bg-red-500/20 text-red-300 hover:text-red-200"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                     <Button
                       onClick={handleVoiceConfirm}
                       size="sm"
                       disabled={!voiceTranscript.trim()}
-                      className="h-8 px-3 bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
               )}
               
-              {/* Quick Reply Suggestions - Different prompts for different states */}
-              {!isRecording && !isGMTyping && (
-                <div className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  {conversationState === "greeting" && (
-                    <>
-                      <button
-                        onClick={() => handleQuickReply("I want to play Werewolf")}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20 border border-purple-500/30 hover:border-purple-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
-                        <span className="text-sm text-purple-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                          <span>🐺</span>
-                          <span>Play Werewolf</span>
-                        </span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleQuickReply("I want to play Undercover")}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-blue-500/30 hover:border-blue-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
-                        <span className="text-sm text-blue-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                          <span>🕵️</span>
-                          <span>Play Undercover</span>
-                        </span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleQuickReply("Create a custom game")}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-gradient-to-r from-pink-500/10 to-rose-500/10 hover:from-pink-500/20 hover:to-rose-500/20 border border-pink-500/30 hover:border-pink-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 via-pink-500/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
-                        <span className="text-sm text-pink-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                          <span>✨</span>
-                          <span>Custom Game</span>
-                        </span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleQuickReply("Create a mystery game in a haunted mansion")}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 hover:border-orange-500/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/10 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
-                        <span className="text-sm text-orange-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                          <span>🏰</span>
-                          <span>Mystery Game</span>
-                        </span>
-                      </button>
-                    </>
-                  )}
-                  
-                  {conversationState === "player-count" && selectedTemplate && (
-                    <>
-                      <button
-                        onClick={() => handleQuickReply(`${selectedTemplate.minPlayers - 1}`)}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
-                          {selectedTemplate.minPlayers - 1} players
-                        </span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleQuickReply(`${Math.floor((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1}`)}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
-                          {Math.floor((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1} players (推荐)
-                        </span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleQuickReply(`${selectedTemplate.maxPlayers - 1}`)}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10">
-                          {selectedTemplate.maxPlayers - 1} players
-                        </span>
-                      </button>
-                    </>
-                  )}
-                  
-                  {conversationState === "rules-discussion" && (
-                    <>
-                      <button
-                        onClick={() => handleQuickReply("Keep the default rules")}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-green-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                          <span>✅</span>
-                          <span>Keep Default Rules</span>
-                        </span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleQuickReply("I want to modify the rules")}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-yellow-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                          <span>✏️</span>
-                          <span>Modify Rules</span>
-                        </span>
-                      </button>
-                      
-                      {selectedTemplate?.id === "custom" && (
-                        <button
-                          onClick={() => handleQuickReply("Done, let's finalize")}
-                          disabled={isGMTyping}
-                          className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                            <span>🎯</span>
-                            <span>Finalize</span>
-                          </span>
-                        </button>
-                      )}
-                    </>
-                  )}
-                  
-                  {conversationState === "confirmation" && (
-                    <>
-                      <button
-                        onClick={() => {
-                          setShowHostSelector(true);
-                        }}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 hover:from-violet-500/30 hover:to-indigo-500/30 border border-violet-500/50 hover:border-violet-500/70 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-sm text-violet-200 group-hover:text-white transition-colors relative z-10 flex items-center gap-2 font-semibold">
-                          <span>🎭</span>
-                          <span>Choose Host</span>
-                        </span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleQuickReply("Modify something")}
-                        disabled={isGMTyping}
-                        className="group relative px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-yellow-400/50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors relative z-10 flex items-center gap-2">
-                          <span>⚙️</span>
-                          <span>Modify</span>
-                        </span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-              
-              <div className="flex gap-4">
-                <div className="flex-1 relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+              <div className="flex gap-2 sm:gap-3">
+                <div className="flex-1 relative group min-w-0">
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 rounded-xl sm:rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
                   <Input
                     value={isRecording && voiceTranscript ? voiceTranscript : input}
                     onChange={(e) => !isRecording && setInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isRecording) {
+                      if (e.key === "Enter" && !e.shiftKey && !isRecording) {
+                        e.preventDefault();
                         handleSend();
                       }
                     }}
-                    placeholder={isRecording ? "Speaking..." : "Type your message... or use voice 🎤"}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/50 text-white placeholder:text-zinc-600 text-base h-16 rounded-2xl px-7 font-normal transition-all duration-300 relative shadow-lg focus:shadow-2xl focus:shadow-violet-500/10"
+                    placeholder={
+                      isGMTyping || isStreaming
+                        ? "GM is thinking..."
+                        : isRecording
+                          ? "Speaking..."
+                          : "Message Game Master…"
+                    }
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base h-12 sm:h-14 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed"
                     disabled={isGMTyping || isRecording}
                   />
                 </div>
@@ -1286,31 +1007,29 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   onClick={handleVoiceInput}
                   disabled={isGMTyping}
                   size="icon"
-                  className={`h-16 w-16 rounded-2xl shadow-2xl flex-shrink-0 transition-all duration-300 disabled:opacity-50 disabled:shadow-none relative overflow-hidden group ${
+                  className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 transition-all duration-200 disabled:opacity-50 disabled:shadow-none relative overflow-hidden group ${
                     isRecording
-                      ? "bg-gradient-to-br from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-red-500/40 hover:shadow-red-500/60 ring-2 ring-red-500/50"
-                      : "bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105"
+                      ? "bg-gradient-to-br from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-red-500/30 ring-2 ring-red-500/50"
+                      : "bg-zinc-700/80 hover:bg-zinc-600/80 border border-white/10 hover:border-white/20"
                   }`}
-                  title={isRecording ? "Stop recording" : "Start voice input"}
+                  title={isRecording ? "Stop recording" : "Voice input"}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   {isRecording ? (
                     <>
-                      <div className="absolute inset-0 rounded-2xl bg-red-500/20 animate-ping" />
-                      <MicOff className="h-5 w-5 relative z-10" />
+                      <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-red-500/20 animate-ping" />
+                      <MicOff className="h-4 w-4 sm:h-5 sm:w-5 relative z-10 text-white" />
                     </>
                   ) : (
-                    <Mic className="h-5 w-5 relative z-10" />
+                    <Mic className="h-4 w-4 sm:h-5 sm:w-5 relative z-10 text-zinc-300" />
                   )}
                 </Button>
                 <Button
                   onClick={() => handleSend()}
                   disabled={!input.trim() || isGMTyping}
                   size="icon"
-                  className="bg-gradient-to-br from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-500 hover:via-indigo-500 hover:to-violet-600 h-16 w-16 rounded-2xl shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 flex-shrink-0 transition-all duration-300 disabled:opacity-50 disabled:shadow-none relative overflow-hidden group"
+                  className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 bg-violet-600 hover:bg-violet-500 border border-violet-500/30 hover:border-violet-400/40 transition-all duration-200 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <Send className="h-5 w-5 relative z-10" />
+                  <Send className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </Button>
               </div>
             </div>
@@ -1320,80 +1039,78 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
       {/* Preview Panel */}
       {selectedTemplate && showPreview && (
-        <div className="w-80 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10">
-          <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent" />
+        <div className="w-72 sm:w-80 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10">
+          <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
-          <div className="p-6 border-b border-white/10 relative">
-            <h2 className="text-xl font-bold text-white mb-2">Game Preview</h2>
-            <p className="text-sm text-zinc-500">Building your game...</p>
+          <div className="p-4 sm:p-5 border-b border-white/10 relative">
+            <h2 className="text-lg font-bold text-white mb-1">Game Preview</h2>
+            <p className="text-xs text-zinc-500">Building your game…</p>
           </div>
 
           <ScrollArea className="flex-1">
-            <div className="p-6 space-y-6 relative">
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-white" />
+            <div className="p-4 sm:p-5 space-y-4 relative">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-lg bg-violet-600 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Game Type</div>
-                    <div className="text-base font-bold text-white">{selectedTemplate.name}</div>
+                    <div className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">Game Type</div>
+                    <div className="text-sm font-bold text-white">{selectedTemplate.name}</div>
                   </div>
                 </div>
-                <p className="text-sm text-zinc-400">{selectedTemplate.description}</p>
+                <p className="text-xs text-zinc-400">{selectedTemplate.description}</p>
               </div>
 
               {playerCount > 0 && (
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                  <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3">Players</div>
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Players</div>
                   <div className="flex items-baseline gap-2">
-                    <div className="text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
+                    <span className="text-2xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
                       {playerCount + 1}
-                    </div>
-                    <div className="text-sm text-zinc-400">total players</div>
+                    </span>
+                    <span className="text-xs text-zinc-400">total · You + {playerCount} AI</span>
                   </div>
-                  <div className="text-xs text-zinc-500 mt-2">You + {playerCount} AI characters</div>
                 </div>
               )}
 
               {customRules && (
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                  <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3">Rules</div>
-                  <div className="text-sm text-zinc-300 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Rules</div>
+                  <div className="text-xs text-zinc-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
                     {customRules}
                   </div>
                 </div>
               )}
 
-              <div className="bg-gradient-to-br from-violet-600/10 to-indigo-600/10 border border-violet-500/20 rounded-2xl p-5">
-                <div className="text-xs text-violet-300 uppercase tracking-wider font-semibold mb-3">Setup Progress</div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className={conversationState === "greeting" ? "text-white font-semibold" : "text-zinc-500"}>
-                      1. Choose Game
-                    </span>
-                    {conversationState !== "greeting" && <span className="text-green-400">✓</span>}
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className={conversationState === "player-count" ? "text-white font-semibold" : conversationState === "greeting" ? "text-zinc-600" : "text-zinc-500"}>
-                      2. Set Players
-                    </span>
-                    {playerCount > 0 && conversationState !== "player-count" && conversationState !== "greeting" && <span className="text-green-400">✓</span>}
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className={conversationState === "rules-discussion" ? "text-white font-semibold" : conversationState === "greeting" || conversationState === "player-count" ? "text-zinc-600" : "text-zinc-500"}>
-                      3. Configure Rules
-                    </span>
-                    {customRules && conversationState !== "rules-discussion" && conversationState !== "player-count" && conversationState !== "greeting" && <span className="text-green-400">✓</span>}
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className={conversationState === "confirmation" ? "text-white font-semibold" : conversationState === "completed" ? "text-zinc-500" : "text-zinc-600"}>
-                      4. Confirm & Launch
-                    </span>
-                    {conversationState === "completed" && <span className="text-green-400">✓</span>}
-                  </div>
-                </div>
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+                <HostSelector
+                  selectedHostId={selectedHostId}
+                  onSelectHost={setSelectedHostId}
+                  compact
+                />
               </div>
+
+              {selectedTemplate && playerCount > 0 && (
+                <Button
+                  size="lg"
+                  className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-500/20"
+                  onClick={() => {
+                    onCreateGame({
+                      name: gameName || selectedTemplate.name,
+                      template: selectedTemplate.id,
+                      playerCount,
+                      rules: customRules || selectedTemplate.defaultRules,
+                      customRoles: selectedTemplate.roles,
+                      hostId: selectedHostId,
+                    });
+                    onBack();
+                  }}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Game
+                </Button>
+              )}
             </div>
           </ScrollArea>
         </div>

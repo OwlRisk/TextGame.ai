@@ -7,6 +7,8 @@ import { Progress } from "@/app/components/ui/progress";
 import { Badge } from "@/app/components/ui/badge";
 import { Player } from "@/app/components/player-panel";
 import { PlayerBoardData } from "@/app/components/player-board";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 
 interface PlayerPanelWithBoardProps {
   players: Player[];
@@ -114,12 +116,25 @@ export function PlayerPanelWithBoard({
                 
                 <div className="relative flex items-center gap-3">
                   <div className="relative">
-                    <div 
-                      className="h-14 w-14 rounded-xl flex items-center justify-center shadow-lg ring-2 ring-zinc-700/50 transition-transform hover:scale-105"
-                      style={{ backgroundColor: playerBoardData.avatar }}
-                    >
-                      <User className="h-7 w-7 text-white" />
-                    </div>
+                    {playerBoardData.characterName === "You" ? (
+                      <Avatar className="h-14 w-14 rounded-xl shadow-lg ring-2 ring-zinc-700/50 transition-transform hover:scale-105">
+                        <AvatarFallback
+                          className="text-white"
+                          style={{ backgroundColor: playerBoardData.avatar }}
+                        >
+                          <User className="h-7 w-7 text-white" />
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <GeneratedAvatar
+                        name={playerBoardData.characterName}
+                        type="player"
+                        background={`Game character. Role: ${playerBoardData.characterClass ?? "Player"}.`}
+                        className="h-14 w-14 rounded-xl shadow-lg ring-2 ring-zinc-700/50 transition-transform hover:scale-105"
+                        fallbackColor={playerBoardData.avatar}
+                        fallback={<User className="h-7 w-7 text-white" />}
+                      />
+                    )}
                     <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-md">
                       {playerBoardData.level || 1}
                     </div>
@@ -308,14 +323,34 @@ function PlayerCard({
     }`}>
       <div className="flex items-start gap-2.5">
         <div className="relative flex-shrink-0">
-          <div 
-            className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shadow-md transition-transform duration-200 ${
-              isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
-            }`}
-            style={{ backgroundColor: player.avatar }}
-          >
-            {player.name.substring(0, 2).toUpperCase()}
-          </div>
+          {!player.isAI ? (
+            <Avatar
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
+                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+              }`}
+            >
+              <AvatarFallback
+                className="text-sm font-semibold text-white"
+                style={{ backgroundColor: player.avatar }}
+              >
+                {player.name.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <GeneratedAvatar
+              name={player.name}
+              type={player.isGameMaster ? "gm" : "player"}
+              background={
+                player.isGameMaster
+                  ? undefined
+                  : `Social deduction game player. Role: ${player.role ?? "Player"}.`
+              }
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
+                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+              }`}
+              fallbackColor={player.avatar}
+            />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">

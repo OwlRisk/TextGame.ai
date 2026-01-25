@@ -3,6 +3,8 @@ import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Progress } from "@/app/components/ui/progress";
 import { Badge } from "@/app/components/ui/badge";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 
 export interface PlayerAttribute {
   id: string;
@@ -69,12 +71,25 @@ export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardPr
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-700">
           <div className="flex items-center gap-4">
-            <div 
-              className="h-16 w-16 rounded-full flex items-center justify-center text-2xl"
-              style={{ backgroundColor: data.avatar }}
-            >
-              <User className="h-8 w-8 text-white" />
-            </div>
+            {data.characterName === "You" ? (
+              <Avatar className="h-16 w-16">
+                <AvatarFallback
+                  className="text-white"
+                  style={{ backgroundColor: data.avatar }}
+                >
+                  <User className="h-8 w-8 text-white" />
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <GeneratedAvatar
+                name={data.characterName}
+                type="player"
+                background={`Game character. Role: ${data.characterClass ?? "Player"}.`}
+                className="h-16 w-16"
+                fallbackColor={data.avatar}
+                fallback={<User className="h-8 w-8 text-white" />}
+              />
+            )}
             <div>
               <h2 className="text-2xl font-bold text-white">{data.characterName}</h2>
               <div className="flex items-center gap-2 mt-1">

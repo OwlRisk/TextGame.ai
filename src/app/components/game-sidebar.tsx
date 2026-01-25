@@ -142,8 +142,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
-          {/* Create New Game - removed */}
-
         </div>
 
         <div className="w-10 h-0.5 bg-zinc-700 rounded-full my-2" />
