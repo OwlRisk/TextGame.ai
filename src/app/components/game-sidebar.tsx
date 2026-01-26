@@ -59,12 +59,9 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             <TooltipContent 
               side="right" 
               sideOffset={8}
-              className="font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 border border-violet-500/50 shadow-lg shadow-violet-500/30 text-white px-4 py-2.5 rounded-lg backdrop-blur-sm [&>svg]:fill-violet-600 [&>svg]:border-violet-500/50"
+              className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
             >
-              <p className="flex items-center gap-2">
-                <span>🏠</span>
-                <span>Home</span>
-              </p>
+              Home
             </TooltipContent>
           </Tooltip>
 
@@ -96,12 +93,9 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             <TooltipContent 
               side="right" 
               sideOffset={8}
-              className="font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 border border-blue-500/50 shadow-lg shadow-blue-500/30 text-white px-4 py-2.5 rounded-lg backdrop-blur-sm [&>svg]:fill-blue-600 [&>svg]:border-blue-500/50"
+              className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
             >
-              <p className="flex items-center gap-2">
-                <span>🎮</span>
-                <span>My Games</span>
-              </p>
+              My Games
             </TooltipContent>
           </Tooltip>
 
@@ -133,12 +127,9 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             <TooltipContent 
               side="right" 
               sideOffset={8}
-              className="font-semibold bg-gradient-to-r from-amber-500 to-orange-500 border border-amber-500/50 shadow-lg shadow-amber-500/30 text-white px-4 py-2.5 rounded-lg backdrop-blur-sm [&>svg]:fill-amber-500 [&>svg]:border-amber-500/50"
+              className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
             >
-              <p className="flex items-center gap-2">
-                <span>🧭</span>
-                <span>Discover</span>
-              </p>
+              Discover
             </TooltipContent>
           </Tooltip>
 
@@ -173,8 +164,12 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     </Button>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{game.name}</p>
+                <TooltipContent 
+                  side="right"
+                  sideOffset={8}
+                  className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
+                >
+                  {game.name}
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -200,8 +195,12 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Button>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>My Drafts</p>
+            <TooltipContent 
+              side="right"
+              sideOffset={8}
+              className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
+            >
+              My Drafts
             </TooltipContent>
           </Tooltip>
         )}

@@ -102,8 +102,24 @@ export async function streamAIChatResponse(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to stream AI response');
+      let errorMessage = 'Failed to stream AI response';
+      try {
+        const error = await response.json();
+        errorMessage = error.error || errorMessage;
+      } catch (e) {
+        // If response is not JSON, try to get text
+        try {
+          const text = await response.text();
+          if (text.includes('OPENAI_API_KEY')) {
+            errorMessage = 'OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment variables.';
+          } else {
+            errorMessage = text || errorMessage;
+          }
+        } catch (textError) {
+          // Fallback to default message
+        }
+      }
+      throw new Error(errorMessage);
     }
 
     const reader = response.body?.getReader();
@@ -145,7 +161,12 @@ export async function streamAIChatResponse(
     }
   } catch (error: any) {
     console.error('Error streaming AI response:', error);
-    onError?.(error);
-    throw error;
+    // Call onError callback if provided, but don't throw to avoid double error handling
+    if (onError) {
+      onError(error);
+    } else {
+      // Only throw if no error handler is provided
+      throw error;
+    }
   }
 }

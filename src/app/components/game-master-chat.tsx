@@ -339,7 +339,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         ...s,
         messages: s.messages.map((m: any) => ({
           ...m,
-          id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Regenerate unique IDs
+          id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, // Regenerate unique IDs
           timestamp: new Date(m.timestamp)
         })),
         createdAt: new Date(s.createdAt),
@@ -495,7 +495,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
   const addGMMessage = (content: string) => {
     const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       role: "gm",
       content,
       timestamp: new Date()
@@ -506,7 +506,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
   const addUserMessage = (content: string) => {
     const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       role: "user",
       content,
       timestamp: new Date()
@@ -525,7 +525,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     const lowerInput = userInput.toLowerCase();
 
     // Create a temporary message for streaming
-    const tempMessageId = `msg-temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const tempMessageId = `msg-temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const tempMessage: ChatMessage = {
       id: tempMessageId,
       role: "gm",
@@ -533,15 +533,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       timestamp: new Date()
     };
     
-    // Add empty message first for streaming (only if not already exists)
-    setMessages(prev => {
-      // Check if temp message already exists
-      const hasTempMessage = prev.some(msg => msg.id.startsWith('msg-temp-'));
-      if (hasTempMessage) {
-        return prev;
-      }
-      return [...prev, tempMessage];
-    });
+    // Don't add empty temp message - we'll add it only when first chunk arrives
+    // This prevents showing empty bubble at the start
 
     try {
       // Convert messages to API format (excluding the temp message)
@@ -569,6 +562,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
       // Stream AI response
       let fullResponse = "";
+      let tempMessageAdded = false;
       
       await streamAIChatResponse(
         {
@@ -579,11 +573,22 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           // onChunk: Update message content as chunks arrive
         (chunk: string) => {
           fullResponse += chunk;
-          setMessages(prev => prev.map(msg => 
-            msg.id === tempMessageId 
-              ? { ...msg, content: fullResponse }
-              : msg
-          ));
+          // Add temp message only when first chunk with content arrives
+          setMessages(prev => {
+            const hasTempMessage = prev.some(msg => msg.id === tempMessageId);
+            if (!hasTempMessage && fullResponse.trim()) {
+              tempMessageAdded = true;
+              return [...prev, { ...tempMessage, content: fullResponse }];
+            }
+            if (hasTempMessage) {
+              return prev.map(msg => 
+                msg.id === tempMessageId 
+                  ? { ...msg, content: fullResponse }
+                  : msg
+              );
+            }
+            return prev;
+          });
           // Auto-scroll to bottom during streaming
           setTimeout(() => {
             if (scrollRef.current) {
@@ -600,10 +605,14 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           }
           // Replace temp message with final message (ensure only one message)
           setMessages(prev => {
-            const filtered = prev.filter(msg => msg.id !== tempMessageId || msg.content.trim() !== '');
-            return filtered.map(msg =>
+            // If no content was received, remove the temp message
+            if (!fullResponse.trim()) {
+              return prev.filter(msg => msg.id !== tempMessageId);
+            }
+            // Replace temp message ID with final message ID
+            return prev.map(msg =>
               msg.id === tempMessageId
-                ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }
+                ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}` }
                 : msg
             );
           });
@@ -611,31 +620,50 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         // onError: Handle errors
         (error: Error) => {
           console.error('Error streaming AI response:', error);
-          toast.error(error.message || 'Failed to get AI response. Please try again.');
           
-          // Remove temp message and add error message
+          // Check if it's an API key configuration error
+          const isConfigError = error.message?.includes('OPENAI_API_KEY') || error.message?.includes('API key');
+          
+          if (isConfigError) {
+            toast.error('OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.', {
+              duration: 10000,
+            });
+            addGMMessage(
+              "⚠️ **Configuration Error**\n\n" +
+              "The OpenAI API key is not configured. Please:\n\n" +
+              "1. Create a `.env` file in the project root\n" +
+              "2. Add: `OPENAI_API_KEY=your_api_key_here`\n" +
+              "3. Restart the development server\n\n" +
+              "You can get your API key from: https://platform.openai.com/api-keys"
+            );
+          } else {
+            toast.error(error.message || 'Failed to get AI response. Please try again.');
+            addGMMessage(
+              "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
+            );
+          }
+          
+          // Remove temp message
           setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
           setIsGMTyping(false);
           setIsStreaming(false);
-          
-          addGMMessage(
-            "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
-          );
         }
       );
     } catch (error: any) {
       console.error('Error getting AI response:', error);
-      toast.error(error.message || 'Failed to get AI response. Please try again.');
-      
-      // Remove temp message
+      // Remove temp message if it exists
       setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
       setIsGMTyping(false);
       setIsStreaming(false);
       
-      // Fallback to a simple message
-      addGMMessage(
-        "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
-      );
+      // Only handle error here if onError callback wasn't called (e.g., error before streaming starts)
+      // Most errors should be handled by onError callback, so we check if we're still streaming
+      if (!isStreaming) {
+        toast.error(error.message || 'Failed to get AI response. Please try again.');
+        addGMMessage(
+          "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
+        );
+      }
     }
   };
 
@@ -821,7 +849,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         <ScrollArea className="flex-1 min-h-0">
           <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 md:px-8 space-y-6 sm:space-y-8">
             {messages.map((message, index) => {
-              if (!message.content.trim() && !message.id.startsWith('msg-temp-')) {
+              // Filter out empty messages (including empty temp messages)
+              if (!message.content.trim()) {
                 return null;
               }
               const isUser = message.role === "user";

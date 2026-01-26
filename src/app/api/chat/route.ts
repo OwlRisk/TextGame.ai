@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization to avoid errors at module load time
+function getOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable is not set. Please configure it in your .env file.');
+  }
+  return new OpenAI({ apiKey });
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Check API key first
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { 
+          error: 'OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment variables.' 
+        },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { messages, hostPersonality, gameContext } = body;
 
@@ -16,6 +31,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const openai = getOpenAI();
 
     // Build system message with host personality and game context
     let systemMessage = `You are an AI Game Master for a social deduction game platform. Your role is to guide players through game setup and gameplay in a friendly, engaging manner.`;

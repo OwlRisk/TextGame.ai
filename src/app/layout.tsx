@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "../styles/index.css";
 
 export const metadata: Metadata = {
-  title: "游戏平台设计",
+  title: "Game Master",
   description: "AI 游戏平台",
 };
 
