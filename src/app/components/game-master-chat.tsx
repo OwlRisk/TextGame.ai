@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Volume2, VolumeX } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
@@ -291,7 +291,41 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   const [isGMTyping, setIsGMTyping] = useState(true);
   const [isStreaming, setIsStreaming] = useState(false); // Track if currently streaming
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const MIN_INPUT_H = 48;
+  const MAX_INPUT_H = 160;
   
+  const resizeInput = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    
+    // Store current scroll position
+    const scrollTop = el.scrollTop;
+    
+    // Temporarily hide overflow to get accurate scrollHeight
+    el.style.overflow = 'hidden';
+    
+    // Reset height to auto to shrink if needed
+    el.style.height = 'auto';
+    
+    // Get the scroll height (includes padding but not border)
+    const scrollH = el.scrollHeight;
+    
+    // Calculate new height with constraints
+    const newH = Math.min(Math.max(scrollH, MIN_INPUT_H), MAX_INPUT_H);
+    
+    // Set the new height
+    el.style.height = `${newH}px`;
+    
+    // Show overflow only if content exceeds max height
+    el.style.overflow = scrollH > MAX_INPUT_H ? 'auto' : 'hidden';
+    
+    // Restore scroll position if needed
+    if (scrollTop > 0) {
+      el.scrollTop = scrollTop;
+    }
+  }, []);
   // Game configuration being built
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
   const [playerCount, setPlayerCount] = useState<number>(6);
@@ -325,6 +359,19 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   // Voice input (STT)
   const voice = useVoiceInput();
   const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
+
+  // Resize on mount and input change
+  useEffect(() => {
+    if (inputRef.current) {
+      resizeInput();
+    }
+  }, [resizeInput]);
+
+  useEffect(() => {
+    if (input || isRecording) {
+      resizeInput();
+    }
+  }, [input, isRecording, voiceTranscript, resizeInput]);
 
   // Preview panel
   const [showPreview, setShowPreview] = useState(true);
@@ -670,9 +717,13 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   const handleSend = async (messageOverride?: string) => {
     const message = messageOverride || input.trim();
     if (message && !isGMTyping && !isStreaming) {
+      // Clear input immediately for better UX
+      setInput("");
+      requestAnimationFrame(() => resizeInput());
+      
+      // Then send message and get response
       addUserMessage(message);
       await getGMResponse(message);
-      setInput("");
     }
   };
 
@@ -680,9 +731,13 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     if (!isGMTyping && !isStreaming) {
       setInput(reply);
       setTimeout(async () => {
+        // Clear input immediately after showing the quick reply
+        setInput("");
+        requestAnimationFrame(() => resizeInput());
+        
+        // Then send message and get response
         addUserMessage(reply);
         await getGMResponse(reply);
-        setInput("");
       }, 300);
     }
   };
@@ -966,12 +1021,18 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                 </div>
               )}
               
-              <div className="flex gap-2 sm:gap-3">
+              <div className="flex gap-2 sm:gap-3 items-end">
                 <div className="flex-1 relative group min-w-0">
                   <div className="absolute inset-0 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 rounded-xl sm:rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-                  <Input
+                  <Textarea
+                    ref={inputRef}
                     value={isRecording && voiceTranscript ? voiceTranscript : input}
-                    onChange={(e) => !isRecording && setInput(e.target.value)}
+                    onChange={(e) => {
+                      if (!isRecording) {
+                        setInput(e.target.value);
+                        requestAnimationFrame(() => resizeInput());
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey && !isRecording) {
                         e.preventDefault();
@@ -985,8 +1046,10 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                           ? "Speaking..."
                           : "Message Game Master…"
                     }
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base h-12 sm:h-14 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-xl sm:rounded-2xl px-4 sm:px-5 py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
+                    style={{ minHeight: `${MIN_INPUT_H}px`, maxHeight: `${MAX_INPUT_H}px` }}
                     disabled={isGMTyping || isRecording}
+                    rows={1}
                   />
                 </div>
                 <Button

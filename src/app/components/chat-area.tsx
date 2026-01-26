@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, AlertCircle, User, Mic, MicOff, X, Check, Crown, Megaphone, Users, Moon, Sun, Vote, UserX } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/app/components/ui/dropdown-menu";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -63,8 +63,59 @@ export function ChatArea({
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
   const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
+
+  const MIN_INPUT_HEIGHT = 44;
+  const MAX_INPUT_HEIGHT = 160;
+
+  const resizeInput = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    
+    // Store current scroll position
+    const scrollTop = el.scrollTop;
+    
+    // Temporarily hide overflow to get accurate scrollHeight
+    el.style.overflow = 'hidden';
+    
+    // Reset height to auto to shrink if needed
+    el.style.height = 'auto';
+    
+    // Get the scroll height (includes padding but not border)
+    const scrollH = el.scrollHeight;
+    
+    // Calculate new height with constraints
+    const newH = Math.min(Math.max(scrollH, MIN_INPUT_HEIGHT), MAX_INPUT_HEIGHT);
+    
+    // Set the new height
+    el.style.height = `${newH}px`;
+    
+    // Show overflow only if content exceeds max height
+    el.style.overflow = scrollH > MAX_INPUT_HEIGHT ? 'auto' : 'hidden';
+    
+    // Restore scroll position if needed
+    if (scrollTop > 0) {
+      el.scrollTop = scrollTop;
+    }
+  }, []);
+
+  // Resize on input change (fallback for voice input)
+  useEffect(() => {
+    if (isRecording && voiceTranscript) {
+      requestAnimationFrame(() => {
+        resizeInput();
+      });
+    }
+  }, [voiceTranscript, isRecording, resizeInput]);
+
+  // Initialize height on mount
+  useEffect(() => {
+    if (inputRef.current) {
+      resizeInput();
+    }
+  }, [resizeInput]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -77,6 +128,10 @@ export function ChatArea({
     if (text) {
       onSendMessage(text);
       setInput("");
+      // Reset height after clearing input
+      requestAnimationFrame(() => {
+        resizeInput();
+      });
     }
   };
 
@@ -368,14 +423,35 @@ export function ChatArea({
             </Button>
           </div>
         )}
-        <div className="flex gap-2">
-          <Input
+        <div className="flex gap-2 items-end">
+          <Textarea
+            ref={inputRef}
             value={isRecording && voiceTranscript ? voiceTranscript : input}
-            onChange={(e) => !isRecording && setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && canSend && !isRecording && handleSend()}
+            onChange={(e) => {
+              if (!isRecording) {
+                setInput(e.target.value);
+                // Immediately resize on change
+                requestAnimationFrame(() => {
+                  resizeInput();
+                });
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (canSend && !isRecording) {
+                  handleSend();
+                }
+              }
+            }}
             placeholder={isRecording ? "Speaking…" : `Message #${channelName}`}
-            className="bg-zinc-600 border-none text-white placeholder:text-zinc-400 h-11 text-sm flex-1"
+            className="bg-zinc-600 border-none text-white placeholder:text-zinc-400 py-2.5 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide"
+            style={{ 
+              minHeight: `${MIN_INPUT_HEIGHT}px`, 
+              maxHeight: `${MAX_INPUT_HEIGHT}px`
+            }}
             disabled={!canSend || isRecording}
+            rows={1}
           />
           {voiceSupported && (
             <Button
