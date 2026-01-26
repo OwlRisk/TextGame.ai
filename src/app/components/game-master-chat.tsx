@@ -375,6 +375,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
   // Preview panel
   const [showPreview, setShowPreview] = useState(true);
+  const [previewContent, setPreviewContent] = useState<string>("");
+  const [isEditingContent, setIsEditingContent] = useState<boolean>(false);
 
   // Load sessions from localStorage on mount
   useEffect(() => {
@@ -473,6 +475,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setCustomRules("");
     setGameName("");
     setSelectedHostId(getDefaultHostForTemplate(null).id);
+    setPreviewContent(""); // Clear preview content for new session
 
     setSessions(prev => {
       const updated = [newSession, ...prev];
@@ -496,6 +499,10 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setGameName(session.gameName);
     setSelectedHostId(session.selectedHostId);
     setIsGMTyping(session.messages.length === 0);
+    // Update preview content with all GM messages from loaded session
+    const allGMMessages = session.messages.filter(msg => msg.role === "gm");
+    const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
+    setPreviewContent(allContent);
   };
 
   // Delete a session
@@ -547,7 +554,14 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       content,
       timestamp: new Date()
     };
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prev => {
+      const updated = [...prev, newMessage];
+      // Update preview content with all GM messages
+      const allGMMessages = updated.filter(msg => msg.role === "gm");
+      const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
+      setPreviewContent(allContent);
+      return updated;
+    });
     setIsGMTyping(false);
   };
 
@@ -623,18 +637,28 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           // Add temp message only when first chunk with content arrives
           setMessages(prev => {
             const hasTempMessage = prev.some(msg => msg.id === tempMessageId);
+            let updated;
             if (!hasTempMessage && fullResponse.trim()) {
               tempMessageAdded = true;
-              return [...prev, { ...tempMessage, content: fullResponse }];
-            }
-            if (hasTempMessage) {
-              return prev.map(msg => 
+              updated = [...prev, { ...tempMessage, content: fullResponse }];
+            } else if (hasTempMessage) {
+              updated = prev.map(msg => 
                 msg.id === tempMessageId 
                   ? { ...msg, content: fullResponse }
                   : msg
               );
+            } else {
+              updated = prev;
             }
-            return prev;
+            // Update preview content in real-time during streaming
+            if (updated) {
+              const allGMMessages = updated.filter(msg => msg.role === "gm" && !msg.id.startsWith("msg-temp-"));
+              const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
+              // Add current streaming response
+              const streamingContent = fullResponse.trim() ? `${allContent}\n\n${fullResponse}` : allContent;
+              setPreviewContent(streamingContent || "");
+            }
+            return updated;
           });
           // Auto-scroll to bottom during streaming
           setTimeout(() => {
@@ -657,11 +681,18 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
               return prev.filter(msg => msg.id !== tempMessageId);
             }
             // Replace temp message ID with final message ID
-            return prev.map(msg =>
+            const updated = prev.map(msg =>
               msg.id === tempMessageId
                 ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}` }
                 : msg
             );
+            // Update preview content with all GM messages
+            if (fullResponse.trim()) {
+              const allGMMessages = updated.filter(msg => msg.role === "gm" && !msg.id.startsWith("msg-temp-"));
+              const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
+              setPreviewContent(allContent);
+            }
+            return updated;
           });
         },
         // onError: Handle errors
@@ -749,6 +780,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       {/* Ambient Background Effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
+      
+      <div className="flex flex-1 min-w-0 relative z-10 h-full">
       
       {/* Voice Error Toast */}
       {voiceError && isRecording && (
@@ -839,7 +872,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex flex-col min-w-0 h-full ${showPreview ? 'w-1/2' : 'flex-1'}`}>
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
@@ -886,16 +919,14 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                   {voiceOutputEnabled ? <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" /> : <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" />}
                 </Button>
               )}
-              {selectedTemplate && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="h-9 w-9 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-                >
-                  <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowPreview(!showPreview)}
+                className="h-9 w-9 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+              >
+                <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
             </div>
           </div>
         </div>
@@ -1096,89 +1127,53 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         )}
       </div>
 
-      {/* Preview Panel */}
-      {selectedTemplate && showPreview && (
-        <div className="w-72 sm:w-80 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10">
+      {/* Preview Panel - Editable Text Content */}
+      {showPreview && (
+        <div className="w-1/2 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
-          <div className="p-4 sm:p-5 border-b border-white/10 relative">
-            <h2 className="text-lg font-bold text-white mb-1">Game Preview</h2>
-            <p className="text-xs text-zinc-500">Building your game…</p>
+          <div className="p-4 sm:p-5 border-b border-white/10 relative flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white mb-1">Content</h2>
+                <p className="text-xs text-zinc-500">Formatted content from GM</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditingContent(!isEditingContent)}
+                className="h-8 px-3 text-xs text-zinc-400 hover:text-white hover:bg-white/5"
+              >
+                {isEditingContent ? "View" : "Edit"}
+              </Button>
+            </div>
           </div>
 
-          <ScrollArea className="flex-1">
-            <div className="p-4 sm:p-5 space-y-4 relative">
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-9 h-9 rounded-lg bg-violet-600 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">Game Type</div>
-                    <div className="text-sm font-bold text-white">{selectedTemplate.name}</div>
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-400">{selectedTemplate.description}</p>
-              </div>
-
-              {playerCount > 0 && (
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Players</div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
-                      {playerCount + 1}
-                    </span>
-                    <span className="text-xs text-zinc-400">total · You + {playerCount} AI</span>
-                  </div>
-                </div>
-              )}
-
-              {customRules && (
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-                  <div className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Rules</div>
-                  <div className="text-xs text-zinc-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                    {customRules}
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-                <HostSelector
-                  selectedHostId={selectedHostId}
-                  onSelectHost={(hostId) => {
-                    setSelectedHostId(hostId);
-                    saveLastSelectedHostId(hostId);
-                  }}
-                  compact
-                  templateId={selectedTemplate?.id}
-                />
-              </div>
-
-              {selectedTemplate && playerCount > 0 && (
-                <Button
-                  size="lg"
-                  className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-500/20"
-                  onClick={() => {
-                    saveLastSelectedHostId(selectedHostId); // Save user's choice
-                    onCreateGame({
-                      name: gameName || selectedTemplate.name,
-                      template: selectedTemplate.id,
-                      playerCount,
-                      rules: customRules || selectedTemplate.defaultRules,
-                      customRoles: selectedTemplate.roles,
-                      hostId: selectedHostId,
-                    });
-                    onBack();
-                  }}
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Start Game
-                </Button>
-              )}
+          {isEditingContent ? (
+            <div className="flex-1 p-4 sm:p-5 overflow-hidden flex flex-col min-h-0">
+              <Textarea
+                value={previewContent}
+                onChange={(e) => setPreviewContent(e.target.value)}
+                placeholder="Enter your text content here..."
+                className="flex-1 w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-xl px-4 py-4 font-normal resize-none leading-relaxed whitespace-pre-wrap"
+              />
             </div>
-          </ScrollArea>
+          ) : (
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="p-4 sm:p-5">
+                {previewContent ? (
+                  <div className="text-zinc-100 text-sm sm:text-base leading-relaxed">
+                    {formatMessage(previewContent)}
+                  </div>
+                ) : (
+                  <div className="text-zinc-500 text-sm italic">No content yet. Start chatting with GM to see formatted content here.</div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
         </div>
       )}
+      </div>
     </div>
   );
 }

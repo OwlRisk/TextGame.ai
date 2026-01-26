@@ -82,10 +82,10 @@ export async function POST(request: NextRequest) {
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Using gpt-4o-mini for cost efficiency, can switch to gpt-4o if needed
+      model: 'gpt-5.2',
       messages: formattedMessages,
       temperature: 0.8,
-      max_tokens: 500,
+      max_completion_tokens: 500,
       stream: false,
     });
 

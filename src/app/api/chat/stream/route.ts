@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
 
     // Create streaming response
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.2',
       messages: formattedMessages,
       temperature: 0.8,
-      max_tokens: 500,
+      max_completion_tokens: 500,
       stream: true,
     });
 
