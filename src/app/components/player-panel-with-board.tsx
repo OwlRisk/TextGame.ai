@@ -4,7 +4,6 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Progress } from "@/app/components/ui/progress";
 import { Badge } from "@/app/components/ui/badge";
 import { Player } from "@/app/components/player-panel";
 import { PlayerBoardData } from "@/app/components/player-board";
@@ -182,26 +181,25 @@ export function PlayerPanelWithBoard({
                       key={attr.id}
                       className="group bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-lg p-2.5 border border-zinc-700/50 hover:border-zinc-600 transition-all hover:shadow-md"
                     >
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={`text-${attr.color || 'blue'}-400 transition-transform group-hover:scale-110`}>
                             {attributeIcons[attr.id.toLowerCase()] || <Sparkles className="h-3.5 w-3.5" />}
                           </div>
                           <span className="text-xs font-semibold text-white">{attr.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-white tabular-nums">
-                          {attr.value}
-                          {attr.maxValue && <span className="text-zinc-500 font-medium">/{attr.maxValue}</span>}
-                        </span>
-                      </div>
-                      {attr.maxValue && (
-                        <div className="relative h-2 bg-zinc-800 rounded-full overflow-hidden">
-                          <div 
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all shadow-sm"
-                            style={{ width: `${(attr.value / attr.maxValue) * 100}%` }}
-                          />
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-white tabular-nums">
+                            {attr.value}
+                            {attr.maxValue && <span className="text-zinc-500 font-medium">/{attr.maxValue}</span>}
+                          </span>
+                          {attr.maxValue && (
+                            <span className="text-xs text-zinc-400 tabular-nums">
+                              ({Math.round((attr.value / attr.maxValue) * 100)}%)
+                            </span>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>

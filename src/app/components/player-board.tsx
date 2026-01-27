@@ -1,7 +1,6 @@
 import { X, User, Heart, Zap, Shield, Sword, Package, Sparkles, Plus, Minus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Progress } from "@/app/components/ui/progress";
 import { Badge } from "@/app/components/ui/badge";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
@@ -131,24 +130,25 @@ export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardPr
                     key={attr.id}
                     className="bg-zinc-800 rounded-lg p-4 border border-zinc-700"
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className={`text-${attr.color || 'blue'}-400`}>
                           {attributeIcons[attr.id.toLowerCase()] || <Sparkles className="h-4 w-4" />}
                         </div>
                         <span className="font-medium text-white">{attr.name}</span>
                       </div>
-                      <span className="text-lg font-bold text-white">
-                        {attr.value}
-                        {attr.maxValue && <span className="text-zinc-500">/{attr.maxValue}</span>}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-white">
+                          {attr.value}
+                          {attr.maxValue && <span className="text-zinc-500">/{attr.maxValue}</span>}
+                        </span>
+                        {attr.maxValue && (
+                          <span className="text-sm text-zinc-400 tabular-nums">
+                            ({Math.round((attr.value / attr.maxValue) * 100)}%)
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {attr.maxValue && (
-                      <Progress 
-                        value={(attr.value / attr.maxValue) * 100} 
-                        className="h-2"
-                      />
-                    )}
                   </div>
                 ))}
               </div>

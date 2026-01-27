@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, AlertCircle, User, Mic, MicOff, X, Check, Crown, Megaphone, Users, Moon, Sun, Vote, UserX } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/app/components/ui/dropdown-menu";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { useVoiceInput } from "@/lib/voice";
@@ -123,17 +122,22 @@ export function ChatArea({
     }
   }, [messages, typingUsers]);
 
-  const handleSend = (override?: string) => {
+  const handleSendRef = useRef<(override?: string) => void>();
+  handleSendRef.current = (override?: string) => {
     const text = override ?? input.trim();
     if (text) {
-      onSendMessage(text);
+      // Clear input immediately to prevent double submission
       setInput("");
+      onSendMessage(text);
       // Reset height after clearing input
       requestAnimationFrame(() => {
         resizeInput();
       });
     }
   };
+  const handleSend = useCallback((override?: string) => {
+    handleSendRef.current?.(override);
+  }, [onSendMessage]);
 
   const canSend = !isGameActive || !currentSpeakerId || currentSpeakerId === userId;
 
@@ -151,103 +155,7 @@ export function ChatArea({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {isUserHost && isGameActive && onHostPostEvent && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hover:bg-zinc-700 text-amber-400 hover:text-amber-300"
-                >
-                  <Crown className="h-4 w-4 mr-2" />
-                  Host Actions
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-800 border-zinc-700 text-white w-64 max-h-[70vh] overflow-y-auto">
-                <div className="px-2 py-1.5 text-xs font-semibold text-zinc-400 uppercase">Events</div>
-                <DropdownMenuItem
-                  onClick={() => onHostPostEvent(
-                    "Announce that Night Phase begins. All players close their eyes. Werewolves wake up and choose a victim.",
-                    { setPhase: "night", autoAdvance: { afterMs: 20000, nextEvent: "Announce that Day Phase begins. Everyone wakes up. Reveal who was eliminated during the night (if any).", nextPhase: "day" } }
-                  )}
-                  className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                >
-                  <Moon className="h-4 w-4 mr-2" />
-                  Start Night Phase (→ Day in 20s)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onHostPostEvent(
-                    "Announce that Day Phase begins. Everyone wakes up. Reveal who was eliminated during the night (if any).",
-                    { setPhase: "day" }
-                  )}
-                  className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                >
-                  <Sun className="h-4 w-4 mr-2" />
-                  Start Day Phase
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onHostPostEvent(
-                    "Announce that discussion begins. Players may speak to find the werewolves.",
-                    { setPhase: "discussion" }
-                  )}
-                  className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Start Discussion
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onHostPostEvent(
-                    "Announce that voting begins. Players must decide who to eliminate.",
-                    { setPhase: "voting" }
-                  )}
-                  className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                >
-                  <Vote className="h-4 w-4 mr-2" />
-                  Start Voting
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-zinc-700" />
-                <div className="px-2 py-1.5 text-xs font-semibold text-zinc-400 uppercase">Eliminate & Reveal</div>
-                {alivePlayers.map((player) => (
-                  <DropdownMenuItem
-                    key={player.id}
-                    onClick={() => onHostEliminate?.(player.id)}
-                    className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                  >
-                    <UserX className="h-4 w-4 mr-2 text-red-400" />
-                    Eliminate {player.name}
-                  </DropdownMenuItem>
-                ))}
-                {lastVotedOutId && onHostRevealRole && (
-                  <DropdownMenuItem
-                    onClick={() => onHostRevealRole(lastVotedOutId!)}
-                    className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                  >
-                    <Megaphone className="h-4 w-4 mr-2" />
-                    Reveal last eliminated role
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator className="bg-zinc-700" />
-                <div className="px-2 py-1.5 text-xs font-semibold text-zinc-400 uppercase">Speaking</div>
-                <DropdownMenuItem
-                  onClick={() => onHostAssignSpeaker?.(null)}
-                  className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Open (All)
-                </DropdownMenuItem>
-                {alivePlayers.map((player) => (
-                  <DropdownMenuItem
-                    key={player.id}
-                    onClick={() => onHostAssignSpeaker?.(player.id)}
-                    className="text-zinc-300 hover:bg-zinc-700 cursor-pointer"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    {player.name} speaks
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {/* Host Actions menu removed - these actions are now controlled automatically by AI host */}
           {onOpenPlayerBoard && (
             <Button
               variant="ghost"
@@ -297,10 +205,12 @@ export function ChatArea({
                         </Avatar>
                       ) : (
                         (() => {
-                          // Find the player by senderId or senderName to get background
+                          // Find the player by senderId or senderName to get background and avatar
                           const player = players.find(
                             p => p.id === message.senderId || p.name === message.senderName
                           );
+                          // Use player.avatar if available, otherwise fall back to message.senderAvatar
+                          const avatarColor = player?.avatar || message.senderAvatar;
                           return (
                             <GeneratedAvatar
                               name={message.senderName}
@@ -311,7 +221,7 @@ export function ChatArea({
                                   : player?.background ?? `Social deduction game player. Role: ${player?.role ?? "Player"}.`
                               }
                               className="h-11 w-11"
-                              fallbackColor={message.senderAvatar}
+                              fallbackColor={avatarColor}
                             />
                           );
                         })()
@@ -352,8 +262,10 @@ export function ChatArea({
                 </Avatar>
               ) : (
                 (() => {
-                  // Find the player by name to get background
+                  // Find the player by name to get background and avatar
                   const player = players.find(p => p.name === typingUsers[0].name);
+                  // Use player.avatar if available, otherwise fall back to typingUsers avatar
+                  const avatarColor = player?.avatar || typingUsers[0].avatar;
                   return (
                     <GeneratedAvatar
                       name={typingUsers[0].name}
@@ -364,7 +276,7 @@ export function ChatArea({
                           : player?.background ?? `Social deduction game player. Role: ${player?.role ?? "Player"}.`
                       }
                       className="h-10 w-10 flex-shrink-0"
-                      fallbackColor={typingUsers[0].avatar}
+                      fallbackColor={avatarColor}
                     />
                   );
                 })()

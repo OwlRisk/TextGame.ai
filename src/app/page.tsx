@@ -7,7 +7,7 @@ import { ChatArea, Message } from "@/app/components/chat-area";
 import { Player } from "@/app/components/player-panel";
 import { PlayerPanelWithBoard } from "@/app/components/player-panel-with-board";
 import { GameConfig } from "@/app/components/game-setup-dialog";
-import { DiscoverPage } from "@/app/components/discover-page";
+import { DiscoverPage, type DiscoverPreset } from "@/app/components/discover-page";
 import { WelcomePage } from "@/app/components/welcome-page";
 import { MyGamesPage } from "@/app/components/my-games-page";
 import { GameMasterChat } from "@/app/components/game-master-chat";
@@ -62,6 +62,7 @@ export default function HomePage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>("home");
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [showGameMasterChat, setShowGameMasterChat] = useState(false);
+  const [discoverPreset, setDiscoverPreset] = useState<DiscoverPreset | null>(null);
   const [showGameCreatorForm, setShowGameCreatorForm] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -90,10 +91,19 @@ export default function HomePage() {
     if (!isMountedRef.current) return;
     const newMessage: Message = {
       ...msg,
-      id: `msg-${Date.now()}-${Math.random()}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date()
     };
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prev => {
+      // Check if message already exists (prevent duplicates)
+      const exists = prev.some(m => 
+        m.senderId === newMessage.senderId && 
+        m.content === newMessage.content && 
+        Math.abs(m.timestamp.getTime() - newMessage.timestamp.getTime()) < 1000
+      );
+      if (exists) return prev;
+      return [...prev, newMessage];
+    });
   }, []);
 
   // Initialize Game Master and Players
@@ -297,8 +307,20 @@ export default function HomePage() {
     toast.success(`Game "${config.name}" created!`);
   }, [initializeGame]);
 
+  // Track last sent message to prevent duplicates
+  const lastSentMessageRef = useRef<{ content: string; timestamp: number } | null>(null);
+
   const handleSendMessage = useCallback((content: string) => {
     if (!isMountedRef.current) return;
+    
+    // Prevent duplicate messages within 500ms
+    const now = Date.now();
+    if (lastSentMessageRef.current && 
+        lastSentMessageRef.current.content === content && 
+        now - lastSentMessageRef.current.timestamp < 500) {
+      return;
+    }
+    lastSentMessageRef.current = { content, timestamp: now };
     
     const currentGame = games.find(g => g.id === selectedGameId);
     const isGameActive = currentGame?.isActive || false;
@@ -354,6 +376,26 @@ export default function HomePage() {
           if (g) return prev.map(x => x.id === selectedGameId ? { ...x, isActive: true } : x);
           return prev;
         });
+        
+        // Auto-start first phase after intro
+        if (currentGame?.config.template === "werewolf") {
+          const autoStartTimeout = setTimeout(async () => {
+            if (!isMountedRef.current) return;
+            await hostPostEvent(
+              "Announce that Night Phase begins. All players close their eyes. Werewolves wake up and choose a victim.",
+              { 
+                setPhase: "night",
+                autoAdvance: { 
+                  afterMs: 15000, 
+                  nextEvent: "Announce that Day Phase begins. Everyone wakes up. Reveal who was eliminated during the night (if any).", 
+                  nextPhase: "day" 
+                } 
+              }
+            );
+            timeoutRefs.current = timeoutRefs.current.filter(t => t !== autoStartTimeout);
+          }, 3000);
+          timeoutRefs.current.push(autoStartTimeout);
+        }
       }, 2500);
       timeoutRefs.current.push(responseTimeout);
     } else {
@@ -640,9 +682,138 @@ export default function HomePage() {
         isAI: true
       });
     }
-    setGamePhaseState(s => ({ ...s, lastVotedOutId: null }));
-    toast.info(`Revealed: ${target.name} was ${role}`);
   }, [players, games, selectedGameId, addMessage]);
+
+  // AI Host Auto-Decision System - automatically advances game phases and makes decisions
+  const aiHostAutoDecision = useCallback(async () => {
+    if (!isMountedRef.current) return;
+    
+    const currentGame = games.find(g => g.id === selectedGameId);
+    if (!currentGame?.isActive) return;
+    
+    const gameMaster = players.find(p => p.isGameMaster);
+    if (!gameMaster) return;
+
+    const aliveCount = alivePlayers.length;
+    const phase = gamePhaseState.phase;
+    const template = currentGame.config.template;
+
+    // Auto-advance based on game rules and state
+    if (template === "werewolf") {
+      if (phase === "night" && !gamePhaseState.lastNightVictimId) {
+        // Night phase: werewolves choose victim, then move to day
+        const timeout = setTimeout(async () => {
+          if (!isMountedRef.current) return;
+          const werewolves = alivePlayers.filter(p => p.role === "Werewolf");
+          if (werewolves.length > 0 && aliveCount > werewolves.length) {
+            const possibleVictims = alivePlayers.filter(p => p.role !== "Werewolf");
+            const victim = possibleVictims[Math.floor(Math.random() * possibleVictims.length)];
+            if (victim) {
+              await hostEliminatePlayer(victim.id);
+              setGamePhaseState(s => ({ ...s, lastNightVictimId: victim.id }));
+            }
+          }
+          await hostPostEvent(
+            "Announce that Day Phase begins. Everyone wakes up. Reveal who was eliminated during the night (if any).",
+            { setPhase: "day" }
+          );
+          timeoutRefs.current = timeoutRefs.current.filter(t => t !== timeout);
+        }, 15000);
+        timeoutRefs.current.push(timeout);
+      } else if (phase === "day" && !currentSpeakerId) {
+        // Day phase: start discussion after announcement
+        const timeout = setTimeout(async () => {
+          if (!isMountedRef.current) return;
+          await hostPostEvent(
+            "Announce that discussion begins. Players may speak to find the werewolves.",
+            { setPhase: "discussion", nextSpeakerId: null }
+          );
+          timeoutRefs.current = timeoutRefs.current.filter(t => t !== timeout);
+        }, 5000);
+        timeoutRefs.current.push(timeout);
+      } else if (phase === "discussion") {
+        // Discussion: move to voting after enough messages
+        const discussionMessages = messages.filter(m => 
+          m.senderId !== "gm-1" && 
+          new Date(m.timestamp).getTime() > Date.now() - 30000
+        );
+        if (discussionMessages.length >= aliveCount * 2) {
+          await hostPostEvent(
+            "Announce that voting begins. Players must decide who to eliminate.",
+            { setPhase: "voting", nextSpeakerId: null }
+          );
+        }
+      } else if (phase === "voting" && !gamePhaseState.lastVotedOutId) {
+        // Voting: eliminate player after voting period
+        const timeout = setTimeout(async () => {
+          if (!isMountedRef.current) return;
+          if (aliveCount > 2) {
+            const candidates = alivePlayers.filter(p => p.role !== "Werewolf" || aliveCount <= 3);
+            const votedOut = candidates[Math.floor(Math.random() * candidates.length)];
+            if (votedOut) {
+              await hostEliminatePlayer(votedOut.id);
+            }
+          }
+          timeoutRefs.current = timeoutRefs.current.filter(t => t !== timeout);
+        }, 20000);
+        timeoutRefs.current.push(timeout);
+      } else if (phase === "elimination" && gamePhaseState.lastVotedOutId) {
+        // Elimination: reveal role, check win, then next round
+        const timeout = setTimeout(async () => {
+          if (!isMountedRef.current) return;
+          await hostRevealRole(gamePhaseState.lastVotedOutId!);
+          const werewolves = alivePlayers.filter(p => p.role === "Werewolf");
+          const villagers = alivePlayers.filter(p => p.role !== "Werewolf");
+          if (werewolves.length === 0) {
+            await hostPostEvent("Announce that the game is over. The villagers have successfully eliminated all werewolves!", { setPhase: "game-over" });
+          } else if (werewolves.length >= villagers.length) {
+            await hostPostEvent("Announce that the game is over. The werewolves have taken over the village!", { setPhase: "game-over" });
+          } else {
+            await hostPostEvent(
+              "Announce that Night Phase begins. All players close their eyes. Werewolves wake up and choose a victim.",
+              { 
+                setPhase: "night",
+                autoAdvance: { 
+                  afterMs: 15000, 
+                  nextEvent: "Announce that Day Phase begins. Everyone wakes up. Reveal who was eliminated during the night (if any).", 
+                  nextPhase: "day" 
+                } 
+              }
+            );
+          }
+          timeoutRefs.current = timeoutRefs.current.filter(t => t !== timeout);
+        }, 5000);
+        timeoutRefs.current.push(timeout);
+      }
+    } else {
+      // Other game types - simpler auto-advance
+      if (phase === "day" && !currentSpeakerId) {
+        const timeout = setTimeout(async () => {
+          if (!isMountedRef.current) return;
+          await hostPostEvent(
+            "Announce that discussion begins. Players may speak.",
+            { setPhase: "discussion", nextSpeakerId: null }
+          );
+          timeoutRefs.current = timeoutRefs.current.filter(t => t !== timeout);
+        }, 5000);
+        timeoutRefs.current.push(timeout);
+      }
+    }
+  }, [players, games, selectedGameId, gamePhaseState, alivePlayers, currentSpeakerId, messages, hostPostEvent, hostEliminatePlayer, hostRevealRole, addMessage]);
+
+  // Auto-decision effect - runs when game state changes
+  useEffect(() => {
+    if (!isMountedRef.current) return;
+    const currentGame = games.find(g => g.id === selectedGameId);
+    if (!currentGame?.isActive) return;
+    
+    // Trigger auto-decision after a short delay
+    const timeout = setTimeout(() => {
+      aiHostAutoDecision();
+    }, 3000);
+    
+    return () => clearTimeout(timeout);
+  }, [gamePhaseState.phase, gamePhaseState.round, alivePlayers.length, currentSpeakerId, selectedGameId, games, aiHostAutoDecision]);
 
   const handleShare = () => {
     setShowShareDialog(true);
@@ -711,7 +882,10 @@ export default function HomePage() {
           setSelectedGameId(gameId);
           if (gameId !== "home") setShowGameMasterChat(false);
         }}
-        onCreateGame={() => setShowGameMasterChat(true)}
+        onCreateGame={() => {
+          setDiscoverPreset(null);
+          setShowGameMasterChat(true);
+        }}
         onOpenProfile={() => setShowUserProfile(true)}
       />
 
@@ -726,6 +900,7 @@ export default function HomePage() {
           }}
           onSwitchToChat={() => {
             setShowGameCreatorForm(false);
+            setDiscoverPreset(null);
             setShowGameMasterChat(true);
           }}
         />
@@ -733,17 +908,44 @@ export default function HomePage() {
         <MyGamesPage
           games={games}
           onSelectGame={setSelectedGameId}
-          onCreateGame={() => setShowGameMasterChat(true)}
+          onCreateGame={() => {
+            setDiscoverPreset(null);
+            setShowGameMasterChat(true);
+          }}
         />
-      ) : selectedGameId === "discover" ? (
-        <DiscoverPage onCreateGame={() => setShowGameMasterChat(true)} />
-      ) : showGameMasterChat || selectedGameId === "home" ? (
+      ) : showGameMasterChat ? (
         <GameMasterChat
           onBack={() => {
             setShowGameMasterChat(false);
-            if (selectedGameId === "home") setSelectedGameId("discover");
+            if (selectedGameId === "home" || selectedGameId === "discover") {
+              setSelectedGameId("discover");
+            }
           }}
           onCreateGame={handleCreateGame}
+          initialPreset={discoverPreset}
+          onPresetApplied={() => setDiscoverPreset(null)}
+        />
+      ) : selectedGameId === "discover" ? (
+        <DiscoverPage
+          onCreateGame={(preset) => {
+            // Clear previous preset first to ensure new one is applied
+            setDiscoverPreset(null);
+            // Use setTimeout to ensure state update happens before showing chat
+            setTimeout(() => {
+              setDiscoverPreset(preset);
+              setShowGameMasterChat(true);
+            }, 0);
+          }}
+        />
+      ) : selectedGameId === "home" ? (
+        <GameMasterChat
+          onBack={() => {
+            setShowGameMasterChat(false);
+            setSelectedGameId("discover");
+          }}
+          onCreateGame={handleCreateGame}
+          initialPreset={discoverPreset}
+          onPresetApplied={() => setDiscoverPreset(null)}
         />
       ) : (
         <>
@@ -772,7 +974,7 @@ export default function HomePage() {
                 onHostAssignSpeaker={hostAssignSpeaker}
                 onHostEliminate={hostEliminatePlayer}
                 onHostRevealRole={hostRevealRole}
-                isUserHost={true}
+                isUserHost={false}
                 gamePhaseLabel={currentGame?.isActive ? phaseLabel(gamePhaseState.phase, gamePhaseState.round) : undefined}
                 alivePlayers={alivePlayers}
                 lastVotedOutId={gamePhaseState.lastVotedOutId}
