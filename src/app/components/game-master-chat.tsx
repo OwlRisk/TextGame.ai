@@ -375,8 +375,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
   // Preview panel
   const [showPreview, setShowPreview] = useState(true);
-  const [previewContent, setPreviewContent] = useState<string>("");
-  const [isEditingContent, setIsEditingContent] = useState<boolean>(false);
+  const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
 
   // Load sessions from localStorage on mount
   useEffect(() => {
@@ -475,7 +474,6 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setCustomRules("");
     setGameName("");
     setSelectedHostId(getDefaultHostForTemplate(null).id);
-    setPreviewContent(""); // Clear preview content for new session
 
     setSessions(prev => {
       const updated = [newSession, ...prev];
@@ -499,10 +497,6 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setGameName(session.gameName);
     setSelectedHostId(session.selectedHostId);
     setIsGMTyping(session.messages.length === 0);
-    // Update preview content with all GM messages from loaded session
-    const allGMMessages = session.messages.filter(msg => msg.role === "gm");
-    const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
-    setPreviewContent(allContent);
   };
 
   // Delete a session
@@ -535,7 +529,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           "**How to start:**\n" +
           "• Choose a quick option below, or\n" +
           "• Simply describe your game idea to me\n\n" +
-          "Let's create something amazing together! 🎮"
+          "As we discuss, I'll automatically update the game rules panel on the right in real-time, just like a code editor! 🎮"
         );
       }, 300);
     }
@@ -554,14 +548,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       content,
       timestamp: new Date()
     };
-    setMessages(prev => {
-      const updated = [...prev, newMessage];
-      // Update preview content with all GM messages
-      const allGMMessages = updated.filter(msg => msg.role === "gm");
-      const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
-      setPreviewContent(allContent);
-      return updated;
-    });
+    setMessages(prev => [...prev, newMessage]);
     setIsGMTyping(false);
   };
 
@@ -573,6 +560,151 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);
+  };
+
+  // Helper function to extract and update game rules from AI response (like a code editor agent)
+  const extractAndUpdateRules = (response: string): string => {
+    let cleanedResponse = response;
+    
+    // 1. Handle EDIT_RULES - Complete replacement (highest priority)
+    // Use a more robust regex that captures all content between tags, including newlines
+    const editRulesMatch = response.match(/<EDIT_RULES>([\s\S]*?)<\/EDIT_RULES>/i);
+    if (editRulesMatch && editRulesMatch[1]) {
+      const newRules = editRulesMatch[1].trim();
+      if (newRules) {
+        // Always update with the complete rules from the tag
+        setCustomRules(newRules);
+        // Remove the tag from the response (use global flag to remove all instances)
+        cleanedResponse = cleanedResponse.replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '').trim();
+        return cleanedResponse; // EDIT_RULES replaces everything, so return early
+      }
+    }
+    
+    // Also check for incomplete EDIT_RULES tags (in case closing tag is missing)
+    // This can happen if streaming was interrupted
+    const incompleteEditMatch = response.match(/<EDIT_RULES>([\s\S]+)$/i);
+    if (incompleteEditMatch && incompleteEditMatch[1]) {
+      const partialRules = incompleteEditMatch[1].trim();
+      if (partialRules.length > 50) {
+        // If we have substantial content even without closing tag, use it
+        setCustomRules(partialRules);
+        cleanedResponse = cleanedResponse.replace(/<EDIT_RULES>[\s\S]*$/i, '').trim();
+      }
+    }
+    
+    // 2. Handle ADD_TO_RULES - Add content to a specific section
+    const addToRulesMatches = Array.from(response.matchAll(/<ADD_TO_RULES\s+section="([^"]+)"[^>]*>([\s\S]*?)<\/ADD_TO_RULES>/gi));
+    if (addToRulesMatches.length > 0) {
+      setCustomRules(prevRules => {
+        let updatedRules = prevRules || selectedTemplate?.defaultRules || "";
+        for (const match of addToRulesMatches) {
+          const section = match[1].trim();
+          const contentToAdd = match[2].trim();
+          if (contentToAdd) {
+            updatedRules = addContentToSection(updatedRules, section, contentToAdd);
+          }
+        }
+        return updatedRules;
+      });
+      // Remove all ADD_TO_RULES tags from response
+      for (const match of addToRulesMatches) {
+        cleanedResponse = cleanedResponse.replace(match[0], '').trim();
+      }
+    }
+    
+    // 3. Handle REPLACE_IN_RULES - Replace specific content in a section
+    const replaceMatches = Array.from(response.matchAll(/<REPLACE_IN_RULES\s+section="([^"]+)"\s+old="([^"]+)"\s+new="([^"]+)"[^>]*>\s*<\/REPLACE_IN_RULES>/gi));
+    if (replaceMatches.length > 0) {
+      setCustomRules(prevRules => {
+        let updatedRules = prevRules || selectedTemplate?.defaultRules || "";
+        for (const match of replaceMatches) {
+          const section = match[1].trim();
+          const oldContent = match[2].trim();
+          const newContent = match[3].trim();
+          if (oldContent && newContent) {
+            updatedRules = replaceContentInSection(updatedRules, section, oldContent, newContent);
+          }
+        }
+        return updatedRules;
+      });
+      // Remove all REPLACE_IN_RULES tags from response
+      for (const match of replaceMatches) {
+        cleanedResponse = cleanedResponse.replace(match[0], '').trim();
+      }
+    }
+    
+    // Also handle old UPDATE_RULES format for backward compatibility
+    const updateRulesMatch = response.match(/<UPDATE_RULES>([\s\S]*?)<\/UPDATE_RULES>/i);
+    if (updateRulesMatch && updateRulesMatch[1] && !editRulesMatch) {
+      const extractedRules = updateRulesMatch[1].trim();
+      if (extractedRules) {
+        setCustomRules(extractedRules);
+        cleanedResponse = cleanedResponse.replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '').trim();
+      }
+    }
+    
+    return cleanedResponse;
+  };
+
+  // Helper function to add content to a specific section
+  // Now more flexible - can handle natural language sections
+  const addContentToSection = (rules: string, section: string, content: string): string => {
+    if (!rules) {
+      // If no rules exist, just add the content
+      return content;
+    }
+    
+    // Try to find the section using flexible matching
+    // First try exact section name match (uppercase, with colon)
+    const exactSectionRegex = new RegExp(`(${section}[\\s:]*)([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s]+:|$)`, 'i');
+    let match = rules.match(exactSectionRegex);
+    
+    if (match) {
+      // Section exists, append to it
+      const sectionHeader = match[1];
+      const sectionContent = match[2].trim();
+      const newSectionContent = sectionContent 
+        ? `${sectionContent}\n${content}`
+        : content;
+      return rules.replace(exactSectionRegex, `$1${newSectionContent}`);
+    }
+    
+    // If no exact match, try to find similar section names or just append at the end
+    // For natural language rules, just append the new content
+    // This is more flexible for LLM-readable rules
+    return `${rules}\n\n${content}`;
+  };
+
+  // Helper function to replace content in a specific section
+  // Now more flexible - can handle natural language rules
+  const replaceContentInSection = (rules: string, section: string, oldContent: string, newContent: string): string => {
+    if (!rules) return rules;
+    
+    // Escape special regex characters in oldContent
+    const escapedOld = oldContent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // First try to find and replace within a specific section
+    const sectionRegex = new RegExp(`(${section}[\\s:]*)([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s]+:|$)`, 'i');
+    const match = rules.match(sectionRegex);
+    
+    if (match) {
+      const sectionHeader = match[1];
+      let sectionContent = match[2];
+      
+      // Replace the old content with new content within the section
+      if (sectionContent.includes(oldContent)) {
+        sectionContent = sectionContent.replace(new RegExp(escapedOld, 'g'), newContent);
+        return rules.replace(sectionRegex, `$1${sectionContent}`);
+      }
+    }
+    
+    // If section not found or content not in section, try global replace
+    // This is more flexible for natural language rules where structure is less rigid
+    if (rules.includes(oldContent)) {
+      return rules.replace(new RegExp(escapedOld, 'g'), newContent);
+    }
+    
+    return rules;
   };
 
   const getGMResponse = async (userInput: string) => {
@@ -624,6 +756,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       // Stream AI response
       let fullResponse = "";
       let tempMessageAdded = false;
+      let lastProcessedLength = 0; // Track what we've already processed
+      let processedEditTags = new Set<string>(); // Track which edit tags we've already processed to avoid duplicates
       
       await streamAIChatResponse(
         {
@@ -631,33 +765,156 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           hostId: selectedHostId,
           gameContext: gameContext
         },
-          // onChunk: Update message content as chunks arrive
+          // onChunk: Update message content as chunks arrive - REAL-TIME EDITING like code agent
         (chunk: string) => {
           fullResponse += chunk;
+          
+          // Real-time rule editing - process incrementally as chunks arrive
+          // This makes it feel like a code editor agent writing code in real-time
+          try {
+            const newContent = fullResponse.slice(lastProcessedLength);
+            lastProcessedLength = fullResponse.length;
+            
+            // Real-time rule editing - like a code agent writing code
+            let hasEditActivity = false;
+            
+            // 1. Check for EDIT_RULES - can process incrementally
+            // Use a more robust regex that handles multiline content better
+            const editRulesMatch = fullResponse.match(/<EDIT_RULES>([\s\S]*?)(<\/EDIT_RULES>|$)/i);
+            if (editRulesMatch) {
+              hasEditActivity = true;
+              const rulesContent = editRulesMatch[1];
+              const tagKey = `EDIT_RULES_${editRulesMatch.index || 0}`;
+              
+              // If we have closing tag, ALWAYS update with complete content (even if processed before)
+              // This ensures we get the final, complete version
+              if (editRulesMatch[2] === '</EDIT_RULES>') {
+                const newRules = rulesContent.trim();
+                if (newRules) {
+                  // Always update when we have complete tag, even if we've seen it before
+                  // This ensures we get the latest complete version
+                  setCustomRules(newRules);
+                  setIsRulesBeingEdited(true);
+                  // Don't add to processedEditTags here - we want to allow updates if content changes
+                }
+              } else if (rulesContent.length > 0) {
+                // Show that we're in the middle of editing
+                setIsRulesBeingEdited(true);
+                // Update incrementally if we have substantial content (even without closing tag)
+                // Use a lower threshold and don't block updates
+                if (rulesContent.length > 30) {
+                  const newRules = rulesContent.trim();
+                  if (newRules && !processedEditTags.has(tagKey + '_partial')) {
+                    setCustomRules(newRules);
+                    processedEditTags.add(tagKey + '_partial');
+                  }
+                }
+              }
+            }
+            
+            // 2. Check for ADD_TO_RULES - process as we receive content
+            const addMatches = Array.from(fullResponse.matchAll(/<ADD_TO_RULES\s+section="([^"]+)"[^>]*>([\s\S]*?)(<\/ADD_TO_RULES>|$)/gi));
+            for (const match of addMatches) {
+              const section = match[1]?.trim();
+              const content = match[2]?.trim();
+              const tagKey = `ADD_${section}_${match.index}`;
+              
+              // Only apply if we have closing tag (to avoid partial additions)
+              if (section && content && match[3] === '</ADD_TO_RULES>' && !processedEditTags.has(tagKey)) {
+                hasEditActivity = true;
+                setIsRulesBeingEdited(true);
+                processedEditTags.add(tagKey);
+                setCustomRules(prevRules => {
+                  const currentRules = prevRules || selectedTemplate?.defaultRules || "";
+                  // Only add if not already added (avoid duplicates)
+                  if (!currentRules.includes(content)) {
+                    return addContentToSection(currentRules, section, content);
+                  }
+                  return currentRules;
+                });
+              } else if (section && content && content.length > 0) {
+                // Show editing indicator even for partial content
+                hasEditActivity = true;
+                setIsRulesBeingEdited(true);
+              }
+            }
+            
+            // 3. Check for REPLACE_IN_RULES - process when complete
+            const replaceMatches = Array.from(fullResponse.matchAll(/<REPLACE_IN_RULES\s+section="([^"]+)"\s+old="([^"]+)"\s+new="([^"]+)"[^>]*>\s*(<\/REPLACE_IN_RULES>|$)/gi));
+            for (const match of replaceMatches) {
+              const tagKey = `REPLACE_${match[1]}_${match.index}`;
+              
+              // Only process if we have the closing tag (REPLACE needs complete instruction)
+              if (match[4] === '</REPLACE_IN_RULES>' && !processedEditTags.has(tagKey)) {
+                hasEditActivity = true;
+                setIsRulesBeingEdited(true);
+                processedEditTags.add(tagKey);
+                const section = match[1]?.trim();
+                const oldContent = match[2]?.trim();
+                const newContent = match[3]?.trim();
+                if (section && oldContent && newContent) {
+                  setCustomRules(prevRules => {
+                    const currentRules = prevRules || selectedTemplate?.defaultRules || "";
+                    return replaceContentInSection(currentRules, section, oldContent, newContent);
+                  });
+                }
+              } else if (match[1]) {
+                // We're in the middle of a replace instruction
+                hasEditActivity = true;
+                setIsRulesBeingEdited(true);
+              }
+            }
+            
+            // Keep editing indicator active if we detect any edit tags (even incomplete)
+            const hasAnyEditTag = /<(EDIT_RULES|ADD_TO_RULES|REPLACE_IN_RULES)/i.test(fullResponse);
+            if (hasAnyEditTag) {
+              setIsRulesBeingEdited(true);
+            } else if (!hasEditActivity && fullResponse.length > 200) {
+              // Only reset if we've received substantial content and no edit tags at all
+              setIsRulesBeingEdited(false);
+            }
+          } catch (e) {
+            // Ignore errors during streaming, will be handled in onComplete
+            console.debug('Real-time editing error (non-critical):', e);
+          }
+          
+          // Clean response for display (remove all editing tags) - keep conversation and editing separate
+          const cleanForDisplay = (text: string): string => {
+            // Remove all editing tags and their content
+            let cleaned = text
+              .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
+              .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
+              .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
+              .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
+              // Also remove incomplete tags
+              .replace(/<EDIT_RULES>[\s\S]*$/i, '')
+              .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
+              .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
+              .trim();
+            return cleaned;
+          };
+          
+          const displayContent = cleanForDisplay(fullResponse);
+          
           // Add temp message only when first chunk with content arrives
           setMessages(prev => {
             const hasTempMessage = prev.some(msg => msg.id === tempMessageId);
             let updated;
-            if (!hasTempMessage && fullResponse.trim()) {
+            // Only show message if there's content after removing editing tags
+            if (!hasTempMessage && displayContent.trim()) {
               tempMessageAdded = true;
-              updated = [...prev, { ...tempMessage, content: fullResponse }];
+              updated = [...prev, { ...tempMessage, content: displayContent }];
             } else if (hasTempMessage) {
+              // Update with cleaned content
               updated = prev.map(msg => 
                 msg.id === tempMessageId 
-                  ? { ...msg, content: fullResponse }
+                  ? { ...msg, content: displayContent }
                   : msg
               );
             } else {
               updated = prev;
             }
-            // Update preview content in real-time during streaming
-            if (updated) {
-              const allGMMessages = updated.filter(msg => msg.role === "gm" && !msg.id.startsWith("msg-temp-"));
-              const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
-              // Add current streaming response
-              const streamingContent = fullResponse.trim() ? `${allContent}\n\n${fullResponse}` : allContent;
-              setPreviewContent(streamingContent || "");
-            }
+            // Rules are updated in real-time via extractAndUpdateRules in onChunk
             return updated;
           });
           // Auto-scroll to bottom during streaming
@@ -671,27 +928,49 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         () => {
           setIsGMTyping(false);
           setIsStreaming(false);
-          if (voiceOutputEnabledRef.current && fullResponse.trim()) {
-            speakTTS(fullResponse);
+          
+          // Final pass: Extract and update rules if present (handles any missed edits)
+          // This ensures we always have the complete, final version of rules
+          // extractAndUpdateRules returns cleaned response (without editing tags)
+          const cleanedResponse = extractAndUpdateRules(fullResponse);
+          
+          // Double-check: if we have EDIT_RULES in the final response, make sure it's applied
+          const finalEditMatch = fullResponse.match(/<EDIT_RULES>([\s\S]*?)<\/EDIT_RULES>/i);
+          if (finalEditMatch && finalEditMatch[1]) {
+            const finalRules = finalEditMatch[1].trim();
+            if (finalRules) {
+              setCustomRules(finalRules);
+            }
           }
+          
+          setIsRulesBeingEdited(false); // Reset editing indicator after final update
+          
+          // Clean response for TTS (remove all editing tags)
+          const cleanForTTS = cleanedResponse
+            .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
+            .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
+            .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
+            .trim();
+          
+          if (voiceOutputEnabledRef.current && cleanForTTS.trim()) {
+            speakTTS(cleanForTTS);
+          }
+          
           // Replace temp message with final message (ensure only one message)
+          // Use cleaned response which has all editing tags removed
           setMessages(prev => {
-            // If no content was received, remove the temp message
-            if (!fullResponse.trim()) {
+            // If no content was received after cleaning, remove the temp message
+            if (!cleanedResponse.trim()) {
               return prev.filter(msg => msg.id !== tempMessageId);
             }
-            // Replace temp message ID with final message ID
+            // Replace temp message ID with final message ID and use cleaned response
+            // This ensures conversation content is completely separate from editing tags
             const updated = prev.map(msg =>
               msg.id === tempMessageId
-                ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}` }
+                ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, content: cleanedResponse }
                 : msg
             );
-            // Update preview content with all GM messages
-            if (fullResponse.trim()) {
-              const allGMMessages = updated.filter(msg => msg.role === "gm" && !msg.id.startsWith("msg-temp-"));
-              const allContent = allGMMessages.map(msg => msg.content).join("\n\n");
-              setPreviewContent(allContent);
-            }
+            // Rules are already updated via extractAndUpdateRules
             return updated;
           });
         },
@@ -872,7 +1151,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       </div>
 
       {/* Main Chat Area */}
-      <div className={`flex flex-col min-w-0 h-full ${showPreview ? 'w-1/2' : 'flex-1'}`}>
+      <div className={`flex flex-col min-w-0 h-full ${showPreview ? 'flex-[1] min-w-0' : 'flex-1'}`}>
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
@@ -933,7 +1212,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
         {/* Chat Messages */}
         <ScrollArea className="flex-1 min-h-0">
-          <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 md:px-8 space-y-6 sm:space-y-8">
+          <div className="max-w-none mx-auto py-8 sm:py-12 px-4 sm:px-6 md:px-8 space-y-6 sm:space-y-8">
             {messages.map((message, index) => {
               // Filter out empty messages (including empty temp messages)
               if (!message.content.trim()) {
@@ -1003,7 +1282,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           <div className="p-4 sm:p-5 border-t border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
             <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5 pointer-events-none" />
             
-            <div className="max-w-3xl mx-auto relative space-y-3">
+            <div className="max-w-none mx-auto relative space-y-3">
               {isRecording && !voiceError && (
                 <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3 bg-red-500/10 border border-red-500/30 rounded-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
                   <div className="relative flex-shrink-0">
@@ -1127,50 +1406,78 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         )}
       </div>
 
-      {/* Preview Panel - Editable Text Content */}
+      {/* Preview Panel - Always Editable */}
       {showPreview && (
-        <div className="w-1/2 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
+        <div className="flex-[1.2] min-w-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
-          <div className="p-4 sm:p-5 border-b border-white/10 relative flex-shrink-0">
+          <div className="px-4 py-3 border-b border-white/10 relative flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-white mb-1">Content</h2>
-                <p className="text-xs text-zinc-500">Formatted content from GM</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-white">Game Rules</h2>
+                {isRulesBeingEdited && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
+                  </div>
+                )}
               </div>
               <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditingContent(!isEditingContent)}
-                className="h-8 px-3 text-xs text-zinc-400 hover:text-white hover:bg-white/5"
+                onClick={() => {
+                  // Create game config from current state
+                  if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
+                    toast.error("Please define game rules first");
+                    return;
+                  }
+                  
+                  const gameConfig: GameConfig = {
+                    template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
+                    playerCount: playerCount,
+                    rules: customRules,
+                    name: gameName || selectedTemplate?.name || "Custom Game",
+                    hostId: selectedHostId,
+                    tone: "balanced" // Default tone
+                  };
+                  
+                  onCreateGame(gameConfig);
+                }}
+                disabled={isRulesBeingEdited}
+                className="h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isEditingContent ? "View" : "Edit"}
+                Start Game
               </Button>
             </div>
           </div>
 
-          {isEditingContent ? (
-            <div className="flex-1 p-4 sm:p-5 overflow-hidden flex flex-col min-h-0">
-              <Textarea
-                value={previewContent}
-                onChange={(e) => setPreviewContent(e.target.value)}
-                placeholder="Enter your text content here..."
-                className="flex-1 w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-xl px-4 py-4 font-normal resize-none leading-relaxed whitespace-pre-wrap"
-              />
-            </div>
-          ) : (
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="p-4 sm:p-5">
-                {previewContent ? (
-                  <div className="text-zinc-100 text-sm sm:text-base leading-relaxed">
-                    {formatMessage(previewContent)}
+          <div className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
+            {isRulesBeingEdited ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-3">
+                  <div className="flex items-center justify-center gap-2 text-amber-400">
+                    <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-sm font-medium">AI is editing rules...</span>
                   </div>
-                ) : (
-                  <div className="text-zinc-500 text-sm italic">No content yet. Start chatting with GM to see formatted content here.</div>
-                )}
+                  <p className="text-xs text-zinc-500 max-w-xs">
+                    Please wait for AI to finish editing. You can edit manually once AI is done.
+                  </p>
+                </div>
               </div>
-            </ScrollArea>
-          )}
+            ) : (
+              <Textarea
+                value={customRules || selectedTemplate?.defaultRules || ""}
+                onChange={(e) => setCustomRules(e.target.value)}
+                onBlur={() => {
+                  // Auto-save when user finishes editing
+                  if (currentSessionId) {
+                    saveCurrentSession();
+                  }
+                }}
+                placeholder="Type or edit game rules here... Rules will be saved automatically. You can also discuss with GM to update rules automatically."
+                className="flex-1 w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
+                disabled={isRulesBeingEdited}
+              />
+            )}
+          </div>
         </div>
       )}
       </div>
