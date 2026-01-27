@@ -44,7 +44,7 @@ export function GeneratedAvatar({
 
   // Host & player: generated from background (API uses type 'host' | 'player')
   const apiType = type === "host" ? "host" : "player";
-  const { src, loading } = useGeneratedAvatar(name, {
+  const { src, loading, error } = useGeneratedAvatar(name, {
     type: apiType,
     role,
     background,
@@ -53,18 +53,31 @@ export function GeneratedAvatar({
   });
   const initials = name ? name.substring(0, 2).toUpperCase() : "??";
 
+  // Show image if available and not loading
+  const showImage = src && !loading;
+  // Show fallback if no image available (either loading failed, or still loading but we want to show something)
+  const showFallback = !showImage;
+
   return (
     <Avatar className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}>
-      {src && !loading && <AvatarImage src={src} alt={name ?? "Avatar"} className="object-cover" />}
-      <AvatarFallback
-        className={cn(
-          "flex items-center justify-center text-sm font-semibold text-white",
-          fallbackColor && !src && "bg-transparent"
-        )}
-        style={fallbackColor && !src ? { backgroundColor: fallbackColor } : undefined}
-      >
-        {fallback ?? initials}
-      </AvatarFallback>
+      {showImage && <AvatarImage src={src} alt={name ?? "Avatar"} className="object-cover" />}
+      {showFallback && (
+        <AvatarFallback
+          className={cn(
+            "flex items-center justify-center text-sm font-semibold text-white",
+            fallbackColor && "bg-transparent"
+          )}
+          style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
+        >
+          {loading ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            </div>
+          ) : (
+            (fallback ?? initials)
+          )}
+        </AvatarFallback>
+      )}
     </Avatar>
   );
 }

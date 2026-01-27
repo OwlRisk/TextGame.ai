@@ -6,6 +6,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Volume2, VolumeX } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
+import type { DiscoverPreset } from "@/app/components/discover-page";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
@@ -270,16 +271,20 @@ type ConversationState = "greeting" | "game-type" | "player-count" | "rules-disc
 interface GameMasterChatProps {
   onBack: () => void;
   onCreateGame: (config: GameConfig) => void;
+  initialPreset?: DiscoverPreset | null;
+  onPresetApplied?: () => void;
 }
 
 // Helper function to generate session title
-function generateSessionTitle(template: GameTemplate | null, playerCount: number): string {
+function generateSessionTitle(template: GameTemplate | null, playerCount: number, gameName?: string): string {
+  const trimmedName = gameName?.trim();
+  if (trimmedName) return `${trimmedName} - ${playerCount + 1} Players`;
   if (!template) return "New Game Setup";
   if (template.id === "custom") return "Custom Game Setup";
   return `${template.name} - ${playerCount + 1} Players`;
 }
 
-export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
+export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
   // Session management
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
@@ -393,11 +398,23 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
         createdAt: new Date(s.createdAt),
         updatedAt: new Date(s.updatedAt)
       }));
-      setSessions(sessionsWithDates);
+      
+      // Auto-cleanup: Keep only the most recent 30 sessions
+      const MAX_SESSIONS = 30;
+      const sortedSessions = sessionsWithDates.sort((a: GameSession, b: GameSession) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      const sessionsToKeep = sortedSessions.slice(0, MAX_SESSIONS);
+      
+      if (sessionsToKeep.length < sessionsWithDates.length) {
+        localStorage.setItem("gameMasterSessions", JSON.stringify(sessionsToKeep));
+      }
+      
+      setSessions(sessionsToKeep);
       
       // Load the most recent session
-      if (sessionsWithDates.length > 0) {
-        loadSession(sessionsWithDates[0].id, sessionsWithDates);
+      if (sessionsToKeep.length > 0) {
+        loadSession(sessionsToKeep[0].id, sessionsToKeep);
       } else {
         // Create first session
         createNewSession();
@@ -406,6 +423,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       // Create first session
       createNewSession();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save current session
@@ -423,7 +441,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
   const saveCurrentSession = () => {
     if (!currentSessionId) return;
 
-    const sessionTitle = generateSessionTitle(selectedTemplate, playerCount);
+    const sessionTitle = generateSessionTitle(selectedTemplate, playerCount, gameName);
     
     const updatedSession: GameSession = {
       id: currentSessionId,
@@ -449,7 +467,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
 
   // Create new session
   const createNewSession = () => {
-    const newSessionId = `session-${Date.now()}`;
+    // Use timestamp + random to ensure unique ID
+    const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const newSession: GameSession = {
       id: newSessionId,
       title: "New Game Setup",
@@ -476,11 +495,90 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
     setSelectedHostId(getDefaultHostForTemplate(null).id);
 
     setSessions(prev => {
-      const updated = [newSession, ...prev];
+      // Remove any existing session with the same ID (shouldn't happen, but just in case)
+      const filtered = prev.filter(s => s.id !== newSessionId);
+      const updated = [newSession, ...filtered];
       localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
       return updated;
     });
   };
+
+  const createSessionFromPreset = useCallback((preset: DiscoverPreset) => {
+    const resolvedTemplate = GAME_TEMPLATES.find(t => t.id === (preset.templateId || "custom")) || null;
+    const nextPlayerCount = preset.playerCount ?? 6;
+    // Use preset rules if available, otherwise fall back to template default rules
+    const nextRules = preset.rules?.trim() || resolvedTemplate?.defaultRules || "";
+    const nextGameName = preset.name?.trim() || "";
+    const recommendedHost = getDefaultHostForTemplate(resolvedTemplate?.id || null);
+
+    // Use timestamp + random to ensure unique ID
+    const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    const newSession: GameSession = {
+      id: newSessionId,
+      title: generateSessionTitle(resolvedTemplate, nextPlayerCount, nextGameName),
+      messages: [],
+      conversationState: "greeting",
+      selectedTemplate: resolvedTemplate,
+      playerCount: nextPlayerCount,
+      customRules: nextRules,
+      gameName: nextGameName,
+      selectedHostId: recommendedHost.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    setCurrentSessionId(newSessionId);
+    setMessages([]);
+    setConversationState("greeting");
+    setIsGMTyping(true);
+    setSelectedTemplate(resolvedTemplate);
+    setPlayerCount(nextPlayerCount);
+    setCustomRules(nextRules);
+    setGameName(nextGameName);
+    setSelectedHostId(recommendedHost.id);
+
+    setSessions(prev => {
+      // Remove any existing session with the same ID (shouldn't happen, but just in case)
+      const filtered = prev.filter(s => s.id !== newSessionId);
+      const updated = [newSession, ...filtered];
+      localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // Track the last applied preset to avoid duplicate applications
+  const lastAppliedPresetRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!initialPreset) {
+      lastAppliedPresetRef.current = null;
+      return;
+    }
+    
+    // Create a unique key for this preset based on id, name, and rules hash
+    const rulesHash = initialPreset.rules?.substring(0, 100) || '';
+    const presetKey = `${initialPreset.id}-${initialPreset.name}-${rulesHash}`;
+    
+    // Only apply if this is a different preset
+    if (lastAppliedPresetRef.current !== presetKey) {
+      // Force update by clearing first, then applying
+      setCustomRules("");
+      setSelectedTemplate(null);
+      
+      // Use requestAnimationFrame to ensure state is cleared before applying new preset
+      requestAnimationFrame(() => {
+        createSessionFromPreset(initialPreset);
+        lastAppliedPresetRef.current = presetKey;
+        
+        if (onPresetApplied) {
+          // Use setTimeout to ensure state updates are complete
+          setTimeout(() => {
+            onPresetApplied();
+          }, 100);
+        }
+      });
+    }
+  }, [initialPreset, createSessionFromPreset, onPresetApplied]);
 
   // Load a session
   const loadSession = (sessionId: string, sessionsList?: GameSession[]) => {
@@ -1100,10 +1198,10 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
       )}
       
       {/* Session History Sidebar */}
-      <div className="w-52 sm:w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col relative z-10">
+      <div className="w-52 sm:w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col relative z-10 h-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-transparent pointer-events-none" />
         
-        <div className="p-3 sm:p-4 border-b border-white/10 relative">
+        <div className="p-3 sm:p-4 border-b border-white/10 relative flex-shrink-0">
           <Button
             onClick={createNewSession}
             className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-violet-500/20 transition-all"
@@ -1113,8 +1211,8 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
           </Button>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-2 sm:p-3 space-y-1.5 relative">
+        <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+          <div className="p-2 space-y-1 relative">
             {sessions.map((session) => (
               <div
                 key={session.id}
@@ -1126,13 +1224,13 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
               >
                 <button
                   onClick={() => loadSession(session.id)}
-                  className="w-full p-2.5 sm:p-3 text-left"
+                  className="w-full p-2 text-left"
                 >
-                  <div className="text-sm font-medium text-white mb-0.5 line-clamp-2 pr-7">
+                  <div className="text-xs font-medium text-white mb-0.5 line-clamp-1 pr-6">
                     {session.title}
                   </div>
-                  <div className="text-[11px] sm:text-xs text-zinc-500">
-                    {new Date(session.updatedAt).toLocaleDateString()} · {session.messages.length}
+                  <div className="text-[10px] text-zinc-500">
+                    {new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {session.messages.length}msgs
                   </div>
                 </button>
                 <button
@@ -1140,12 +1238,34 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
                     e.stopPropagation();
                     deleteSession(session.id);
                   }}
-                  className="absolute top-2 right-2 w-6 h-6 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete session"
                 >
-                  <Trash2 className="h-3 w-3 text-red-400" />
+                  <Trash2 className="h-2.5 w-2.5 text-red-400" />
                 </button>
               </div>
             ))}
+            {sessions.length > 20 && (
+              <div className="pt-2 pb-1 px-2 border-t border-white/5 mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // Keep only the most recent 20 sessions
+                    const sortedSessions = [...sessions].sort((a, b) => 
+                      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                    );
+                    const sessionsToKeep = sortedSessions.slice(0, 20);
+                    setSessions(sessionsToKeep);
+                    localStorage.setItem("gameMasterSessions", JSON.stringify(sessionsToKeep));
+                    toast.success(`Cleaned up ${sessions.length - 20} old sessions`);
+                  }}
+                  className="w-full h-7 text-[10px] text-zinc-400 hover:text-white hover:bg-white/5"
+                >
+                  Clear Old ({sessions.length - 20})
+                </Button>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>
@@ -1464,6 +1584,7 @@ export function GameMasterChat({ onBack, onCreateGame }: GameMasterChatProps) {
               </div>
             ) : (
               <Textarea
+                key={currentSessionId || 'rules-editor'}
                 value={customRules || selectedTemplate?.defaultRules || ""}
                 onChange={(e) => setCustomRules(e.target.value)}
                 onBlur={() => {

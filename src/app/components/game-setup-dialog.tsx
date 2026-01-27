@@ -32,6 +32,7 @@ export interface GameConfig {
   rules: string;
   customRoles?: string[];
   hostId: string;
+  tone?: string;
 }
 
 interface ChatMessage {

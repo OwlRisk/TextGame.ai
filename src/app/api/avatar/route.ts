@@ -27,6 +27,12 @@ const SINGLE_PERSON =
   'CRITICAL: One person only. Single face. No group photo. No multiple people or faces. ' +
   'One head and shoulders portrait only.';
 
+/** No text rule: absolutely no text, letters, words, or characters in the image */
+const NO_TEXT =
+  'ABSOLUTELY NO TEXT: No text, no letters, no words, no characters, no writing, no symbols, no labels, no name tags, no captions, no subtitles, no speech bubbles, no signs, no banners. ' +
+  'Pure visual portrait only. The image must contain ONLY the character portrait with absolutely no written content whatsoever. ' +
+  'If any text appears in the image, the generation is invalid.';
+
 /** Universal anime/manga style for all avatars */
 const ANIME_STYLE =
   'Anime/manga art style. Japanese animation aesthetic. ' +
@@ -34,7 +40,7 @@ const ANIME_STYLE =
   'Vibrant colors, soft shading, anime illustration quality. ' +
   'Head and shoulders portrait, circular crop suitable. ' +
   'Single character only, no background details. ' +
-  SINGLE_PERSON;
+  SINGLE_PERSON + ' ' + NO_TEXT;
 
 /** Style for Game Master / Host - anime style */
 const HOST_STYLE =
@@ -72,9 +78,12 @@ function buildPrompt(
 }
 
 async function generateWithDalle3(prompt: string): Promise<string> {
+  // Enhance prompt to prevent text generation
+  const enhancedPrompt = prompt + ' IMPORTANT: The image must be a pure portrait with no text, letters, words, or any written content. Only visual elements are allowed.';
+  
   const resp = await openai.images.generate({
     model: 'dall-e-3',
-    prompt,
+    prompt: enhancedPrompt,
     size: '1024x1024',
     quality: 'standard',
     style: 'vivid',
@@ -101,11 +110,15 @@ async function generateWithReplicate(
   let modelId: `${string}/${string}` | `${string}/${string}:${string}`;
   let input: Record<string, any>;
 
+  // Negative prompt to prevent text in images
+  const negativePrompt = 'text, letters, words, characters, writing, symbols, labels, name tags, captions, subtitles, speech bubbles, signs, banners, written content';
+  
   if (model === 'flux') {
     // FLUX.1 [dev] - high quality, realistic
     modelId = 'black-forest-labs/flux-dev' as const;
     input = {
-      prompt,
+      prompt: prompt + ' No text, no letters, no words.',
+      negative_prompt: negativePrompt,
       aspect_ratio: '1:1',
       output_format: 'png',
       output_quality: 90,
@@ -114,7 +127,8 @@ async function generateWithReplicate(
     // Stable Diffusion XL - good for portraits
     modelId = 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b' as const;
     input = {
-      prompt,
+      prompt: prompt + ' No text, no letters, no words.',
+      negative_prompt: negativePrompt,
       width: 1024,
       height: 1024,
       num_outputs: 1,
