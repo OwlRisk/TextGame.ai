@@ -175,20 +175,28 @@ export default function HomePage() {
 
   // Initialize Game Master and Players
   const initializeGame = useCallback((config: GameConfig) => {
-    // Get the selected host personality
-    const host = getHostById(config.hostId) || getDefaultHost();
+    // Use GM-created host when present, otherwise preset host
+    const presetHost = getHostById(config.hostId) || getDefaultHost();
+    const host = config.generatedHost
+      ? {
+          name: config.generatedHost.name,
+          color: config.generatedHost.color,
+          tagline: config.generatedHost.voiceStyle || config.generatedHost.personality,
+          description: config.generatedHost.personality,
+        }
+      : presetHost;
     
     const gameMaster: Player = {
       id: "gm-1",
       name: host.name,
       avatar: host.color,
       role: host.name,
-      status: host.tagline,
+      status: host.tagline ?? undefined,
       isGameMaster: true,
       isAI: true,
       isMuted: false,
-      background: host.description,
-      gender: host.gender,
+      background: host.description ?? undefined,
+      gender: "gender" in host ? host.gender : undefined,
     };
 
     const aiPlayers: Player[] = [];
@@ -366,6 +374,7 @@ export default function HomePage() {
             content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules above, and ask if everyone is ready. Stay in character. Output only the greeting, no other commentary.`
           }],
           hostId: config.hostId,
+          hostPersonality: config.generatedHost ? { name: config.generatedHost.name, description: config.generatedHost.personality, personality: config.generatedHost.voiceStyle } : undefined,
           gameContext: {
             template: config.template,
             playerCount: config.playerCount,
@@ -641,6 +650,7 @@ As the host, analyze who would naturally want to respond based on:
 IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-sensitive). If you think no one should respond right now (e.g., waiting for a game phase change), respond with "NONE".`
             }],
             hostId: currentGame.config.hostId,
+            hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
             gameContext: {
               template: currentGame.config.template,
               gameName: currentGame.name,
@@ -657,7 +667,7 @@ IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-se
             selectedPlayer = alivePlayers.find(p => 
               p.name.toLowerCase() === selectedPlayerName.toLowerCase() || 
               p.name === selectedPlayerName
-            );
+            ) ?? null;
             
             // If no valid player selected or host said "NONE", skip
             if (!selectedPlayer || selectedPlayerName.toUpperCase() === "NONE") {
@@ -815,6 +825,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
             content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". ${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Output only the announcement.`
           }],
           hostId: currentGame?.config.hostId,
+          hostPersonality: currentGame?.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
           gameContext: {
             template: currentGame?.config.template,
             gameName: currentGame?.name,
@@ -980,6 +991,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
           content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
         }],
         hostId: currentGame.config.hostId,
+        hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
         gameContext: { template: currentGame.config.template, gameName: currentGame.name }
       });
       if (!isMountedRef.current) return;
@@ -1019,6 +1031,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
           content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
         }],
         hostId: currentGame.config.hostId,
+        hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
         gameContext: { template: currentGame.config.template, gameName: currentGame.name }
       });
       if (!isMountedRef.current) return;

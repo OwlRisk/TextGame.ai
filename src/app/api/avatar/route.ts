@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import Replicate from 'replicate';
+import sharp from 'sharp';
+
+const AVATAR_OUTPUT_SIZE = 64;
+
+/** DALL-E 2 minimum is 256x256; we resize to 64 to save bandwidth and storage */
+async function resizeAvatarTo64(dataUrl: string): Promise<string> {
+  const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64, 'base64');
+  const resized = await sharp(buffer)
+    .resize(AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE)
+    .png()
+    .toBuffer();
+  return `data:image/png;base64,${resized.toString('base64')}`;
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -130,7 +144,7 @@ async function generateWithDalle3(prompt: string): Promise<string> {
     const resp = await openai.images.generate({
       model: 'dall-e-2',
       prompt: finalPrompt,
-      size: '256x256', // Smallest size for avatar thumbnails - sufficient for display
+      size: '256x256', // Min size for DALL-E 2; we resize to 128 before returning
       response_format: 'b64_json',
       n: 1,
     });
@@ -282,7 +296,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ image: imageDataUrl });
+    const image64 = await resizeAvatarTo64(imageDataUrl);
+    return NextResponse.json({ image: image64 });
   } catch (e: unknown) {
     console.error('Avatar generation error:', e);
     const err = e as { status?: number; message?: string; error?: { message?: string } };

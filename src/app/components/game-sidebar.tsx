@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, User, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2 } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { useState } from "react";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
 
 interface Game {
   id: string;
@@ -256,9 +257,16 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-200 overflow-hidden"
+                  className="h-14 w-14 rounded-full overflow-hidden p-0 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-200 ring-2 ring-white/10 hover:ring-violet-500/40"
                 >
-                  <User className="h-7 w-7 text-white" />
+                  <GeneratedAvatar
+                    name="You"
+                    type="player"
+                    gameId={selectedGameId && !["home", "my-games", "discover"].includes(selectedGameId) ? selectedGameId : undefined}
+                    enabled={true}
+                    className="h-full w-full rounded-full"
+                    fallbackColor="#6366f1"
+                  />
                 </Button>
               </div>
             </PopoverTrigger>
@@ -270,8 +278,15 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               <div className="p-4 space-y-4">
                 {/* User Avatar & Info */}
                 <div className="flex items-center gap-3 pb-3 border-b border-zinc-800">
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center shadow-lg">
-                    <User className="h-8 w-8 text-white" />
+                  <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0 shadow-lg ring-2 ring-zinc-700">
+                    <GeneratedAvatar
+                      name="You"
+                      type="player"
+                      gameId={selectedGameId && !["home", "my-games", "discover"].includes(selectedGameId) ? selectedGameId : undefined}
+                      enabled={true}
+                      className="h-full w-full rounded-full"
+                      fallbackColor="#6366f1"
+                    />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold">Player</h3>

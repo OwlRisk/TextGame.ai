@@ -5,6 +5,13 @@ import { useState, useEffect, useCallback } from 'react';
 type AvatarType = 'host' | 'player';
 
 const cache = new Map<string, string>();
+/** Dedupe in-flight requests so sidebar and game room share the same avatar for the same key */
+const inFlight = new Map<string, Promise<string>>();
+
+const PERSIST_PREFIX = 'gm_avatar_';
+const PERSIST_KEYS_LIST = 'gm_avatar_keys';
+const PERSIST_MAX_KEYS = 50;
+const PERSIST_EVICT_COUNT = 10;
 
 function cacheKey(
   name: string,
@@ -16,6 +23,49 @@ function cacheKey(
   gender?: string
 ): string {
   return [name, type, gameId ?? '', role ?? '', background ?? '', personality ?? '', gender ?? ''].join('|');
+}
+
+function loadFromStorage(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(PERSIST_PREFIX + key);
+    if (stored) return stored;
+  } catch (_) {}
+  return null;
+}
+
+function saveToStorage(key: string, dataUrl: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PERSIST_PREFIX + key, dataUrl);
+    const keysJson = localStorage.getItem(PERSIST_KEYS_LIST);
+    const keys: string[] = keysJson ? JSON.parse(keysJson) : [];
+    if (!keys.includes(key)) keys.push(key);
+    if (keys.length > PERSIST_MAX_KEYS) {
+      for (let i = 0; i < PERSIST_EVICT_COUNT && keys.length > 0; i++) {
+        const old = keys.shift()!;
+        localStorage.removeItem(PERSIST_PREFIX + old);
+      }
+      localStorage.setItem(PERSIST_KEYS_LIST, JSON.stringify(keys));
+    } else {
+      localStorage.setItem(PERSIST_KEYS_LIST, JSON.stringify(keys));
+    }
+  } catch (e) {
+    if (e instanceof Error && e.name === 'QuotaExceededError') {
+      try {
+        const keysJson = localStorage.getItem(PERSIST_KEYS_LIST);
+        const keys: string[] = keysJson ? JSON.parse(keysJson) : [];
+        for (let i = 0; i < PERSIST_EVICT_COUNT && keys.length > 0; i++) {
+          const old = keys.shift()!;
+          localStorage.removeItem(PERSIST_PREFIX + old);
+        }
+        localStorage.setItem(PERSIST_KEYS_LIST, JSON.stringify(keys));
+        localStorage.setItem(PERSIST_PREFIX + key, dataUrl);
+        if (!keys.includes(key)) keys.push(key);
+        localStorage.setItem(PERSIST_KEYS_LIST, JSON.stringify(keys));
+      } catch (_) {}
+    }
+  }
 }
 
 export async function fetchGeneratedAvatar(
@@ -31,32 +81,51 @@ export async function fetchGeneratedAvatar(
   const cached = cache.get(key);
   if (cached) return cached;
 
-  const res = await fetch('/api/avatar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name,
-      type,
-      gameId: gameId || undefined,
-      role: role || undefined,
-      background: background || undefined,
-      personality: personality || undefined,
-      gender: gender || undefined,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const errorMessage = (err as { error?: string; details?: string }).error || 'Failed to generate avatar';
-    const details = (err as { details?: string }).details;
-    const fullError = details ? `${errorMessage} (${details})` : errorMessage;
-    console.error('[Avatar] API error:', res.status, fullError);
-    throw new Error(fullError);
+  const stored = loadFromStorage(key);
+  if (stored) {
+    cache.set(key, stored);
+    return stored;
   }
 
-  const data = (await res.json()) as { image: string };
-  cache.set(key, data.image);
-  return data.image;
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    try {
+      const res = await fetch('/api/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          type,
+          gameId: gameId || undefined,
+          role: role || undefined,
+          background: background || undefined,
+          personality: personality || undefined,
+          gender: gender || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const errorMessage = (err as { error?: string; details?: string }).error || 'Failed to generate avatar';
+        const details = (err as { details?: string }).details;
+        const fullError = details ? `${errorMessage} (${details})` : errorMessage;
+        console.error('[Avatar] API error:', res.status, fullError);
+        throw new Error(fullError);
+      }
+
+      const data = (await res.json()) as { image: string };
+      cache.set(key, data.image);
+      saveToStorage(key, data.image);
+      return data.image;
+    } finally {
+      inFlight.delete(key);
+    }
+  })();
+
+  inFlight.set(key, promise);
+  return promise;
 }
 
 export interface UseGeneratedAvatarOptions {
@@ -83,9 +152,17 @@ export function useGeneratedAvatar(
     gender,
     enabled = true,
   } = options;
+  const key = cacheKey(name, type, gameId, role, background, personality, gender);
   const [src, setSrc] = useState<string | null>(() => {
     if (!name) return null;
-    return cache.get(cacheKey(name, type, gameId, role, background, personality, gender)) ?? null;
+    const fromMemory = cache.get(key);
+    if (fromMemory) return fromMemory;
+    const fromStorage = loadFromStorage(key);
+    if (fromStorage) {
+      cache.set(key, fromStorage);
+      return fromStorage;
+    }
+    return null;
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -97,7 +174,6 @@ export function useGeneratedAvatar(
       setError(null);
       return;
     }
-    const key = cacheKey(name, type, gameId, role, background, personality, gender);
     if (cache.has(key)) {
       setSrc(cache.get(key)!);
       setLoading(false);
@@ -116,7 +192,7 @@ export function useGeneratedAvatar(
         setSrc(null);
       })
       .finally(() => setLoading(false));
-  }, [name, type, gameId, role, background, personality, gender, enabled]);
+  }, [name, type, gameId, role, background, personality, gender, enabled, key]);
 
   useEffect(() => {
     fetchAvatar();

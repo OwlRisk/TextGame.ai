@@ -6,9 +6,18 @@ export interface ChatMessage {
   timestamp?: Date;
 }
 
+/** Custom host from GM conversation (overrides hostId when provided) */
+export interface HostPersonalityOverride {
+  name: string;
+  description?: string;
+  personality?: string;
+}
+
 export interface ChatRequest {
   messages: ChatMessage[];
   hostId?: string;
+  /** When set (e.g. host created via GM), used instead of hostId for host personality */
+  hostPersonality?: HostPersonalityOverride;
   gameContext?: {
     template?: string;
     playerCount?: number;
@@ -38,7 +47,10 @@ export async function getAIChatResponse(
   
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const host = request.hostId ? getHostById(request.hostId) : null;
+      const hostPersonality = request.hostPersonality ?? (request.hostId ? (() => {
+        const host = getHostById(request.hostId);
+        return host ? { name: host.name, description: host.description, personality: `${host.tagline}. ${host.voiceStyle}` } : null;
+      })() : null);
       
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -51,11 +63,7 @@ export async function getAIChatResponse(
             content: msg.content,
             timestamp: msg.timestamp?.toISOString()
           })),
-          hostPersonality: host ? {
-            name: host.name,
-            description: host.description,
-            personality: `${host.tagline}. ${host.voiceStyle}`
-          } : null,
+          hostPersonality,
           gameContext: request.gameContext
         }),
       });
@@ -100,7 +108,10 @@ export async function streamAIChatResponse(
   
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const host = request.hostId ? getHostById(request.hostId) : null;
+      const hostPersonality = request.hostPersonality ?? (request.hostId ? (() => {
+        const host = getHostById(request.hostId);
+        return host ? { name: host.name, description: host.description, personality: `${host.tagline}. ${host.voiceStyle}` } : null;
+      })() : null);
       
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -113,11 +124,7 @@ export async function streamAIChatResponse(
             content: msg.content,
             timestamp: msg.timestamp?.toISOString()
           })),
-          hostPersonality: host ? {
-            name: host.name,
-            description: host.description,
-            personality: `${host.tagline}. ${host.voiceStyle}`
-          } : null,
+          hostPersonality,
           gameContext: request.gameContext
         }),
       });

@@ -161,6 +161,14 @@ export async function POST(request: NextRequest) {
     systemMessage += `]\n`;
     systemMessage += `</CONFIG_PLAYERS>\n`;
 
+    systemMessage += `\n\nPLAYER COUNT (GM CAN DECIDE):\n`;
+    systemMessage += `You can set the number of AI players when the user asks you to decide, or when you recommend a count.\n`;
+    systemMessage += `Use: <SET_PLAYER_COUNT>N</SET_PLAYER_COUNT> where N is the number of AI players (user + N = total).\n`;
+    systemMessage += `- When a game template is selected, use the template's recommended range (e.g. Werewolf 4-11 AI, Undercover 3-9 AI, Custom 1-19).\n`;
+    systemMessage += `- When user says "you decide", "how many?", "recommend", or "up to you", output this tag with your chosen N.\n`;
+    systemMessage += `- The tag is invisible to the user; your message should still say something like "I'll set it to 8 players (you + 7 AI)."\n`;
+    systemMessage += `- Example: "I think 8 works great for Werewolf! <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>" (7 AI + user = 8 total).\n`;
+
     // Format messages for OpenAI
     const formattedMessages = [
       { role: 'system' as const, content: systemMessage },

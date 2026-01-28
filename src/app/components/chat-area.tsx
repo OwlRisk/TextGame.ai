@@ -366,61 +366,41 @@ export function ChatArea({
               );
             }
 
+            const messagePlayer = showAvatar ? players.find(
+              p => p.id === message.senderId || p.name === message.senderName
+            ) : null;
+            const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
+
             return (
               <div key={message.id} className={showAvatar ? "mt-5" : "mt-2"}>
                 {showAvatar ? (
                   <div className="flex gap-4">
-                    <div className="relative flex-shrink-0">
-                      {message.senderId === userId || message.senderName === "You" ? (
-                        <Avatar className="h-11 w-11">
-                          <AvatarFallback
-                            className="text-sm font-semibold text-white"
-                            style={{ backgroundColor: message.senderAvatar }}
-                          >
-                            {message.senderName.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        (() => {
-                          // Find the player by senderId or senderName to get background and avatar
-                          const player = players.find(
-                            p => p.id === message.senderId || p.name === message.senderName
-                          );
-                          // Use player.avatar if available, otherwise fall back to message.senderAvatar
-                          const avatarColor = player?.avatar || message.senderAvatar;
-                          const avatarProps = getAvatarPropsForPlayer(player);
-                          const isHost = player?.isGameMaster || avatarProps.type === "host";
-                          return (
-                            <GeneratedAvatar
-                              {...avatarProps}
-                              name={avatarProps.name || message.senderName}
-                              gameId={gameId}
-                              enabled={true}
-                              className="h-11 w-11"
-                              fallbackColor={avatarColor}
-                            />
-                          );
-                        })()
-                      )}
-                      {/* Online Status Indicator */}
-                      <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full ring-2 ring-zinc-700 hidden" />
+                    <div className="relative flex-shrink-0" title={message.senderName}>
+                      {(() => {
+                        const player = messagePlayer;
+                        const avatarColor = player?.avatar || message.senderAvatar;
+                        const avatarProps = getAvatarPropsForPlayer(player);
+                        return (
+                          <GeneratedAvatar
+                            {...avatarProps}
+                            name={avatarProps.name || message.senderName}
+                            gameId={gameId}
+                            enabled={true}
+                            className="h-11 w-11"
+                            fallbackColor={avatarColor}
+                          />
+                        );
+                      })()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2.5 mb-1.5">
-                        <span className="font-semibold text-white text-sm">{message.senderName}</span>
-                        {(() => {
-                          const player = players.find(
-                            p => p.id === message.senderId || p.name === message.senderName
-                          );
-                          const avatarProps = getAvatarPropsForPlayer(player);
-                          const isHost = player?.isGameMaster || avatarProps.type === "host";
-                          return isHost ? (
-                            <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full">
-                              <span className="text-[10px] font-bold text-white uppercase tracking-wide">HOST</span>
-                            </span>
-                          ) : null;
-                        })()}
-                        <span className="text-xs text-zinc-500">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1.5">
+                        <span className="font-semibold text-white text-sm shrink-0">{message.senderName}</span>
+                        {isHost && (
+                          <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full shrink-0">
+                            <span className="text-[10px] font-bold text-white uppercase tracking-wide">HOST</span>
+                          </span>
+                        )}
+                        <span className="text-xs text-zinc-500 shrink-0" aria-hidden="true">
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>

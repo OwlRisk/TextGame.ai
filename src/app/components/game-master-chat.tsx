@@ -772,6 +772,19 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         cleanedResponse = cleanedResponse.replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '').trim();
       }
     }
+
+    // 4. Handle SET_PLAYER_COUNT - GM decides number of AI players
+    const setPlayerCountMatch = response.match(/<SET_PLAYER_COUNT>(\d+)<\/SET_PLAYER_COUNT>/i);
+    if (setPlayerCountMatch && setPlayerCountMatch[1]) {
+      const n = parseInt(setPlayerCountMatch[1], 10);
+      if (!Number.isNaN(n)) {
+        const min = selectedTemplate ? selectedTemplate.minPlayers - 1 : 1;
+        const max = selectedTemplate ? selectedTemplate.maxPlayers - 1 : 19;
+        const clamped = Math.min(max, Math.max(min, n));
+        setPlayerCount(clamped);
+      }
+      cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '').trim();
+    }
     
     return cleanedResponse;
   };
@@ -994,6 +1007,22 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 setIsRulesBeingEdited(true);
               }
             }
+
+            // 4. Handle SET_PLAYER_COUNT - GM decides number of AI players (real-time)
+            const setPlayerCountMatches = Array.from(fullResponse.matchAll(/<SET_PLAYER_COUNT>(\d+)<\/SET_PLAYER_COUNT>/gi));
+            for (const match of setPlayerCountMatches) {
+              const tagKey = `SET_PLAYER_COUNT_${match.index}`;
+              if (!processedEditTags.has(tagKey)) {
+                processedEditTags.add(tagKey);
+                const n = parseInt(match[1], 10);
+                if (!Number.isNaN(n)) {
+                  const min = selectedTemplate ? selectedTemplate.minPlayers - 1 : 1;
+                  const max = selectedTemplate ? selectedTemplate.maxPlayers - 1 : 19;
+                  const clamped = Math.min(max, Math.max(min, n));
+                  setPlayerCount(clamped);
+                }
+              }
+            }
             
             // Keep editing indicator active if we detect any edit tags (even incomplete)
             const hasAnyEditTag = /<(EDIT_RULES|ADD_TO_RULES|REPLACE_IN_RULES)/i.test(fullResponse);
@@ -1017,11 +1046,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
               .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
+              .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
               // Also remove incomplete tags
               .replace(/<EDIT_RULES>[\s\S]*$/i, '')
               .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
+              .replace(/<SET_PLAYER_COUNT>\d*$/i, '')
               .trim();
             return cleaned;
           };
@@ -1083,6 +1114,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
             .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
             .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
+            .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
             .trim();
           
           if (voiceOutputEnabledRef.current && cleanForTTS.trim()) {

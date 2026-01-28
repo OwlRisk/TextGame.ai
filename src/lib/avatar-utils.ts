@@ -24,10 +24,21 @@ export function getAvatarPropsForPlayer(player: Player | undefined | null) {
     };
   }
 
+  // Current user ("You"): use minimal props so sidebar and chat share the same avatar cache key
+  if (!player.isAI) {
+    return {
+      name: "You",
+      type: "player" as const,
+      background: undefined,
+      personality: undefined,
+      role: undefined,
+      gender: undefined,
+    };
+  }
+
   // Standardized background generation logic
   // For hosts: use background if provided and not empty, otherwise undefined
   // For players: use background if provided, otherwise generate default with role
-  // IMPORTANT: Normalize empty strings to undefined for consistency
   const normalizedBackground = player.background?.trim() || undefined;
   const background = player.isGameMaster
     ? normalizedBackground
