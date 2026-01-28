@@ -5,14 +5,16 @@ import { Player } from "@/app/components/player-panel";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { User, Sparkles, BookOpen } from "lucide-react";
+import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
 interface PlayerProfileDialogProps {
   player: Player | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  gameId?: string;
 }
 
-export function PlayerProfileDialog({ player, open, onOpenChange }: PlayerProfileDialogProps) {
+export function PlayerProfileDialog({ player, open, onOpenChange, gameId }: PlayerProfileDialogProps) {
   if (!player) return null;
 
   const isUser = !player.isAI;
@@ -48,9 +50,9 @@ export function PlayerProfileDialog({ player, open, onOpenChange }: PlayerProfil
               </Avatar>
             ) : (
               <GeneratedAvatar
-                name={player.name}
-                type={player.isGameMaster ? "host" : "player"}
-                background={player.isGameMaster ? (player.background ?? undefined) : (player.background ?? `Social deduction game player. Role: ${player.role ?? "Player"}.`)}
+                {...getAvatarPropsForPlayer(player)}
+                gameId={gameId}
+                enabled={true}
                 className="h-16 w-16 rounded-xl ring-2 ring-zinc-600"
                 fallbackColor={player.avatar}
               />

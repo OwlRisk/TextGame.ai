@@ -9,6 +9,164 @@ import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { useVoiceInput } from "@/lib/voice";
 import { Player } from "@/app/components/player-panel";
+import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
+
+// Helper function to parse inline formatting (bold, italic, code)
+function parseInlineFormatting(text: string): JSX.Element[] {
+  const parts: (string | JSX.Element)[] = [];
+  let currentIndex = 0;
+  
+  // Match **bold**, *italic*, `code`, and ~~strikethrough~~
+  const patterns = [
+    { regex: /\*\*(.*?)\*\*/g, type: 'bold' },
+    { regex: /\*(.*?)\*/g, type: 'italic' },
+    { regex: /`(.*?)`/g, type: 'code' },
+    { regex: /~~(.*?)~~/g, type: 'strikethrough' },
+  ];
+  
+  // Find all matches
+  const matches: Array<{ start: number; end: number; type: string; content: string }> = [];
+  
+  patterns.forEach(({ regex, type }) => {
+    let match;
+    regex.lastIndex = 0;
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        type,
+        content: match[1]
+      });
+    }
+  });
+  
+  // Sort matches by position
+  matches.sort((a, b) => a.start - b.start);
+  
+  // Remove overlapping matches (prefer bold over italic)
+  const filteredMatches: typeof matches = [];
+  matches.forEach(match => {
+    const overlaps = filteredMatches.some(m => 
+      (match.start >= m.start && match.start < m.end) ||
+      (match.end > m.start && match.end <= m.end) ||
+      (match.start <= m.start && match.end >= m.end)
+    );
+    if (!overlaps) {
+      filteredMatches.push(match);
+    }
+  });
+  
+  // Build elements
+  filteredMatches.forEach((match, i) => {
+    // Add text before match
+    if (match.start > currentIndex) {
+      parts.push(text.substring(currentIndex, match.start));
+    }
+    
+    // Add formatted content
+    if (match.type === 'bold') {
+      parts.push(<strong key={`bold-${i}`} className="font-bold text-white">{match.content}</strong>);
+    } else if (match.type === 'italic') {
+      parts.push(<em key={`italic-${i}`} className="italic text-zinc-200">{match.content}</em>);
+    } else if (match.type === 'code') {
+      parts.push(<code key={`code-${i}`} className="bg-zinc-800/50 px-1.5 py-0.5 rounded text-[13px] font-mono text-violet-300 border border-zinc-700/50">{match.content}</code>);
+    } else if (match.type === 'strikethrough') {
+      parts.push(<span key={`strike-${i}`} className="line-through text-zinc-400">{match.content}</span>);
+    }
+    
+    currentIndex = match.end;
+  });
+  
+  // Add remaining text
+  if (currentIndex < text.length) {
+    parts.push(text.substring(currentIndex));
+  }
+  
+  // If no matches, return original text
+  if (parts.length === 0) {
+    return [<span key="text">{text}</span>];
+  }
+  
+  return parts.map((part, i) => 
+    typeof part === 'string' ? <span key={`text-${i}`}>{part}</span> : part
+  );
+}
+
+// Format message content with markdown-like syntax
+function formatMessage(content: string): JSX.Element {
+  const lines = content.split('\n');
+  const elements: JSX.Element[] = [];
+  
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim();
+    
+    if (!trimmedLine) {
+      elements.push(<div key={`br-${index}`} className="h-2" />);
+      return;
+    }
+
+    // Headers
+    if (trimmedLine.startsWith('###')) {
+      const text = trimmedLine.replace(/^###+\s*/, '');
+      elements.push(
+        <h3 key={index} className="font-bold text-base text-violet-300 mt-4 mb-2 first:mt-0">
+          {parseInlineFormatting(text)}
+        </h3>
+      );
+      return;
+    }
+    if (trimmedLine.startsWith('##')) {
+      const text = trimmedLine.replace(/^##+\s*/, '');
+      elements.push(
+        <h2 key={index} className="font-bold text-lg text-violet-200 mt-4 mb-2 first:mt-0">
+          {parseInlineFormatting(text)}
+        </h2>
+      );
+      return;
+    }
+    if (trimmedLine.startsWith('#')) {
+      const text = trimmedLine.replace(/^#+\s*/, '');
+      elements.push(
+        <h1 key={index} className="font-bold text-xl text-violet-100 mt-4 mb-3 first:mt-0">
+          {parseInlineFormatting(text)}
+        </h1>
+      );
+      return;
+    }
+
+    // Lists
+    const numberedListMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+    if (numberedListMatch) {
+      const [, number, text] = numberedListMatch;
+      elements.push(
+        <div key={index} className="flex gap-2.5 mb-1.5">
+          <span className="text-violet-400 font-semibold flex-shrink-0 min-w-[20px]">{number}.</span>
+          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
+        </div>
+      );
+      return;
+    }
+    if (/^[•\-\*]\s+/.test(trimmedLine)) {
+      const text = trimmedLine.replace(/^[•\-\*]\s+/, '');
+      elements.push(
+        <div key={index} className="flex gap-2.5 mb-1.5">
+          <span className="text-violet-400 flex-shrink-0 mt-0.5">•</span>
+          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
+        </div>
+      );
+      return;
+    }
+    
+    // Regular paragraph
+    elements.push(
+      <div key={index} className="mb-1.5 leading-relaxed">
+        {parseInlineFormatting(trimmedLine)}
+      </div>
+    );
+  });
+
+  return <div className="space-y-0.5">{elements}</div>;
+}
 
 export interface Message {
   id: string;
@@ -30,6 +188,7 @@ interface ChatAreaProps {
   userId: string;
   players?: Player[];
   typingUsers?: { name: string; avatar: string }[];
+  gameId?: string;
   onOpenPlayerBoard?: () => void;
   onHostPostEvent?: (eventDescription: string, opts?: { nextSpeakerId?: string | null; setPhase?: string; autoAdvance?: { afterMs: number; nextEvent: string; nextPhase: string } }) => void;
   onHostAssignSpeaker?: (playerId: string | null) => void;
@@ -50,6 +209,7 @@ export function ChatArea({
   userId,
   players = [],
   typingUsers,
+  gameId,
   onOpenPlayerBoard,
   onHostPostEvent,
   onHostAssignSpeaker,
@@ -122,6 +282,23 @@ export function ChatArea({
     }
   }, [messages, typingUsers]);
 
+  // Listen for focus input event (when user is prompted to speak)
+  useEffect(() => {
+    const handleFocusInput = () => {
+      if (inputRef.current && !isRecording) {
+        inputRef.current.focus();
+        // Flash the input border for attention
+        inputRef.current.classList.add('ring-2', 'ring-amber-500', 'ring-offset-2', 'ring-offset-zinc-700');
+        setTimeout(() => {
+          inputRef.current?.classList.remove('ring-2', 'ring-amber-500', 'ring-offset-2', 'ring-offset-zinc-700');
+        }, 2000);
+      }
+    };
+    
+    window.addEventListener('focusGameInput', handleFocusInput);
+    return () => window.removeEventListener('focusGameInput', handleFocusInput);
+  }, [isRecording]);
+
   const handleSendRef = useRef<(override?: string) => void>();
   handleSendRef.current = (override?: string) => {
     const text = override ?? input.trim();
@@ -142,7 +319,7 @@ export function ChatArea({
   const canSend = !isGameActive || !currentSpeakerId || currentSpeakerId === userId;
 
   return (
-    <div className="flex-1 flex flex-col bg-zinc-700">
+    <div className="flex-1 flex flex-col bg-zinc-700 min-w-0 h-full overflow-hidden">
       {/* Channel Header */}
       <div className="h-14 px-6 flex items-center justify-between border-b border-zinc-900/50 bg-zinc-800/50 shadow-sm">
         <div className="flex items-center gap-2.5">
@@ -211,15 +388,14 @@ export function ChatArea({
                           );
                           // Use player.avatar if available, otherwise fall back to message.senderAvatar
                           const avatarColor = player?.avatar || message.senderAvatar;
+                          const avatarProps = getAvatarPropsForPlayer(player);
+                          const isHost = player?.isGameMaster || avatarProps.type === "host";
                           return (
                             <GeneratedAvatar
-                              name={message.senderName}
-                              type={message.senderId === "gm-1" ? "host" : "player"}
-                              background={
-                                player?.isGameMaster
-                                  ? (player?.background ?? undefined)
-                                  : player?.background ?? `Social deduction game player. Role: ${player?.role ?? "Player"}.`
-                              }
+                              {...avatarProps}
+                              name={avatarProps.name || message.senderName}
+                              gameId={gameId}
+                              enabled={true}
                               className="h-11 w-11"
                               fallbackColor={avatarColor}
                             />
@@ -232,17 +408,33 @@ export function ChatArea({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2.5 mb-1.5">
                         <span className="font-semibold text-white text-sm">{message.senderName}</span>
+                        {(() => {
+                          const player = players.find(
+                            p => p.id === message.senderId || p.name === message.senderName
+                          );
+                          const avatarProps = getAvatarPropsForPlayer(player);
+                          const isHost = player?.isGameMaster || avatarProps.type === "host";
+                          return isHost ? (
+                            <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full">
+                              <span className="text-[10px] font-bold text-white uppercase tracking-wide">HOST</span>
+                            </span>
+                          ) : null;
+                        })()}
                         <span className="text-xs text-zinc-500">
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <div className="text-zinc-100 text-sm leading-relaxed break-words">{message.content}</div>
+                      <div className="text-zinc-100 text-sm leading-relaxed break-words">
+                        {formatMessage(message.content)}
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="flex gap-4">
                     <div className="w-11 flex-shrink-0" />
-                    <div className="flex-1 text-zinc-100 text-sm leading-relaxed break-words">{message.content}</div>
+                    <div className="flex-1 text-zinc-100 text-sm leading-relaxed break-words">
+                      {formatMessage(message.content)}
+                    </div>
                   </div>
                 )}
               </div>
@@ -266,15 +458,13 @@ export function ChatArea({
                   const player = players.find(p => p.name === typingUsers[0].name);
                   // Use player.avatar if available, otherwise fall back to typingUsers avatar
                   const avatarColor = player?.avatar || typingUsers[0].avatar;
+                  const avatarProps = getAvatarPropsForPlayer(player);
                   return (
                     <GeneratedAvatar
-                      name={typingUsers[0].name}
-                      type={player?.isGameMaster ? "host" : "player"}
-                      background={
-                        player?.isGameMaster
-                          ? (player?.background ?? undefined)
-                          : player?.background ?? `Social deduction game player. Role: ${player?.role ?? "Player"}.`
-                      }
+                      {...avatarProps}
+                      name={avatarProps.name || typingUsers[0].name}
+                      gameId={gameId}
+                      enabled={true}
                       className="h-10 w-10 flex-shrink-0"
                       fallbackColor={avatarColor}
                     />

@@ -10,11 +10,13 @@ import { PlayerBoardData } from "@/app/components/player-board";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
+import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
 interface PlayerPanelWithBoardProps {
   players: Player[];
   currentSpeakerId?: string | null;
   isUserGameMaster?: boolean;
+  gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
   playerBoardData: PlayerBoardData;
@@ -39,6 +41,7 @@ export function PlayerPanelWithBoard({
   players, 
   currentSpeakerId,
   isUserGameMaster,
+  gameId,
   onToggleMute,
   onSelectSpeaker,
   playerBoardData
@@ -52,13 +55,14 @@ export function PlayerPanelWithBoard({
   };
 
   return (
-    <div className="w-80 bg-zinc-850 flex flex-col border-l border-zinc-900/50">
+    <div className="w-80 flex-shrink-0 bg-zinc-850 flex flex-col border-l border-zinc-900/50 h-full overflow-hidden">
       <PlayerProfileDialog
         player={profilePlayer}
         open={profileOpen}
         onOpenChange={setProfileOpen}
+        gameId={gameId}
       />
-      <Tabs defaultValue="players" className="flex flex-col h-full">
+      <Tabs defaultValue="players" className="flex flex-col h-full overflow-hidden">
         <div className="h-14 px-5 flex items-center border-b border-zinc-900/50 bg-zinc-900/30">
           <TabsList className="grid w-full grid-cols-2 bg-zinc-900 h-10">
             <TabsTrigger value="players" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 text-xs">
@@ -90,6 +94,7 @@ export function PlayerPanelWithBoard({
                     player={player}
                     isSpeaking={currentSpeakerId === player.id}
                     isUserGameMaster={isUserGameMaster}
+                    gameId={gameId}
                     onToggleMute={onToggleMute}
                     onSelectSpeaker={onSelectSpeaker}
                     onViewProfile={openProfile}
@@ -110,6 +115,7 @@ export function PlayerPanelWithBoard({
                       player={player}
                       isSpeaking={currentSpeakerId === player.id}
                       isUserGameMaster={isUserGameMaster}
+                      gameId={gameId}
                       onToggleMute={onToggleMute}
                       onSelectSpeaker={onSelectSpeaker}
                       onViewProfile={openProfile}
@@ -145,7 +151,10 @@ export function PlayerPanelWithBoard({
                       <GeneratedAvatar
                         name={playerBoardData.characterName}
                         type="player"
+                        gameId={gameId}
                         background={`Game character. Role: ${playerBoardData.characterClass ?? "Player"}.`}
+                        role={playerBoardData.characterClass}
+                        enabled={true}
                         className="h-14 w-14 rounded-xl shadow-lg ring-2 ring-zinc-700/50 transition-transform hover:scale-105"
                         fallbackColor={playerBoardData.avatar}
                         fallback={<User className="h-7 w-7 text-white" />}
@@ -321,6 +330,7 @@ function PlayerCard({
   player, 
   isSpeaking,
   isUserGameMaster,
+  gameId,
   onToggleMute,
   onSelectSpeaker,
   onViewProfile,
@@ -328,6 +338,7 @@ function PlayerCard({
   player: Player;
   isSpeaking: boolean;
   isUserGameMaster?: boolean;
+  gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
   onViewProfile?: (player: Player) => void;
@@ -369,13 +380,9 @@ function PlayerCard({
             </Avatar>
           ) : (
             <GeneratedAvatar
-              name={player.name}
-              type={player.isGameMaster ? "host" : "player"}
-              background={
-                player.isGameMaster
-                  ? (player.background ?? undefined)
-                  : player.background ?? `Social deduction game player. Role: ${player.role ?? "Player"}.`
-              }
+              {...getAvatarPropsForPlayer(player)}
+              gameId={gameId}
+              enabled={true}
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
               }`}

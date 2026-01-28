@@ -11,6 +11,8 @@ interface GeneratedAvatarProps extends Omit<UseGeneratedAvatarOptions, 'type'> {
   name: string | null | undefined;
   /** "gm" = fixed Game Master avatar; "host" = generated per-host (Echo, Nova, etc.); "player" = generated per player */
   type?: AvatarDisplayType;
+  /** Game room ID for caching - same game room will reuse generated avatars */
+  gameId?: string;
   className?: string;
   fallbackColor?: string;
   fallback?: React.ReactNode;
@@ -19,9 +21,11 @@ interface GeneratedAvatarProps extends Omit<UseGeneratedAvatarOptions, 'type'> {
 export function GeneratedAvatar({
   name,
   type = "player",
+  gameId,
   role,
   background,
   personality,
+  gender,
   enabled = true,
   className,
   fallbackColor,
@@ -46,9 +50,11 @@ export function GeneratedAvatar({
   const apiType = type === "host" ? "host" : "player";
   const { src, loading, error } = useGeneratedAvatar(name, {
     type: apiType,
+    gameId,
     role,
     background,
     personality,
+    gender,
     enabled,
   });
   const initials = name ? name.substring(0, 2).toUpperCase() : "??";

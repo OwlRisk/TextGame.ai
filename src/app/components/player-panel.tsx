@@ -7,6 +7,7 @@ import { PlayerBoardData } from "@/app/components/player-board";
 import { Badge } from "@/app/components/ui/badge";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
 export interface Player {
   id: string;
@@ -23,12 +24,15 @@ export interface Player {
   personality?: string;
   /** AI-only: backstory / context (e.g. "Former debate champion") */
   background?: string;
+  /** Player gender (male, female, other) - can be configured by GM */
+  gender?: string;
 }
 
 interface PlayerPanelProps {
   players: Player[];
   currentSpeakerId?: string | null;
   isUserGameMaster?: boolean;
+  gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
 }
@@ -37,6 +41,7 @@ export function PlayerPanel({
   players, 
   currentSpeakerId,
   isUserGameMaster,
+  gameId,
   onToggleMute,
   onSelectSpeaker 
 }: PlayerPanelProps) {
@@ -62,6 +67,7 @@ export function PlayerPanel({
                 player={player}
                 isSpeaking={currentSpeakerId === player.id}
                 isUserGameMaster={isUserGameMaster}
+                gameId={gameId}
                 onToggleMute={onToggleMute}
                 onSelectSpeaker={onSelectSpeaker}
               />
@@ -79,6 +85,7 @@ export function PlayerPanel({
                   player={player}
                   isSpeaking={currentSpeakerId === player.id}
                   isUserGameMaster={isUserGameMaster}
+                  gameId={gameId}
                   onToggleMute={onToggleMute}
                   onSelectSpeaker={onSelectSpeaker}
                 />
@@ -95,12 +102,14 @@ function PlayerCard({
   player, 
   isSpeaking,
   isUserGameMaster,
+  gameId,
   onToggleMute,
   onSelectSpeaker 
 }: { 
   player: Player;
   isSpeaking: boolean;
   isUserGameMaster?: boolean;
+  gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
 }) {
@@ -127,13 +136,9 @@ function PlayerCard({
             </Avatar>
           ) : (
             <GeneratedAvatar
-              name={player.name}
-              type={player.isGameMaster ? "host" : "player"}
-              background={
-                player.isGameMaster
-                  ? (player.background ?? undefined)
-                  : player.background ?? `Social deduction game player. Role: ${player.role ?? "Player"}.`
-              }
+              {...getAvatarPropsForPlayer(player)}
+              gameId={gameId}
+              enabled={true}
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
               }`}

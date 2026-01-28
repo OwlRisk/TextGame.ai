@@ -43,7 +43,9 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
                 <GeneratedAvatar
                   name={host.name}
                   type="host"
+                  gender={host.gender}
                   background={host.description}
+                  enabled={true}
                   className="h-9 w-9"
                   fallbackColor={host.color + "30"}
                   fallback={<span className="text-base">{host.icon}</span>}
@@ -111,7 +113,9 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
               <GeneratedAvatar
                 name={host.name}
                 type="host"
+                gender={host.gender}
                 background={host.description}
+                enabled={true}
                 className="h-14 w-14 flex-shrink-0"
                 fallbackColor={host.color + "20"}
                 fallback={<span className="text-2xl">{host.icon}</span>}

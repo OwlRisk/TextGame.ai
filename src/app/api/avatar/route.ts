@@ -24,8 +24,10 @@ function getModel(): AvatarModel {
 
 /** Strict rule: single person only, no multiple faces */
 const SINGLE_PERSON =
-  'CRITICAL: One person only. Single face. No group photo. No multiple people or faces. ' +
-  'One head and shoulders portrait only.';
+  'CRITICAL REQUIREMENT: ONE PERSON ONLY. ONE SINGLE FACE. ONE HEAD. ' +
+  'NO MULTIPLE PEOPLE. NO MULTIPLE FACES. NO GROUP PHOTO. NO OVERLAPPING FACES. ' +
+  'NO DUPLICATE FACES. NO REFLECTIONS WITH FACES. NO MIRRORS WITH FACES. ' +
+  'ONLY ONE CHARACTER. ONE HEAD AND SHOULDERS PORTRAIT. SINGLE INDIVIDUAL.';
 
 /** No text rule: absolutely no text, letters, words, or characters in the image */
 const NO_TEXT =
@@ -35,12 +37,13 @@ const NO_TEXT =
 
 /** Universal anime/manga style for all avatars */
 const ANIME_STYLE =
+  SINGLE_PERSON + ' ' +
   'Anime/manga art style. Japanese animation aesthetic. ' +
   'Colorful hair, expressive large eyes, clean line art. ' +
   'Vibrant colors, soft shading, anime illustration quality. ' +
   'Head and shoulders portrait, circular crop suitable. ' +
   'Single character only, no background details. ' +
-  SINGLE_PERSON + ' ' + NO_TEXT;
+  'ONE PERSON. ONE FACE. ' + NO_TEXT;
 
 /** Style for Game Master / Host - anime style */
 const HOST_STYLE =
@@ -57,46 +60,98 @@ const PLAYER_STYLE =
   'Diverse anime character appearance. ' +
   ANIME_STYLE;
 
+/** Gender phrase for prompt: avatar appearance must match name gender */
+function genderPhrase(gender?: string): string {
+  if (!gender || !gender.trim()) return '';
+  const g = gender.trim().toLowerCase();
+  if (g === 'female') return 'Female character. ';
+  if (g === 'male') return 'Male character. ';
+  if (g === 'other') return 'Androgynous or gender-neutral character. ';
+  return '';
+}
+
 function buildPrompt(
   _name: string,
   type: AvatarType,
-  opts: { background?: string }
+  opts: { background?: string; gender?: string }
 ): string {
-  const { background } = opts;
+  const { background, gender } = opts;
+  const genderPrefix = genderPhrase(gender);
+
+  // DALL-E 2 has a 1000 character limit for prompts
+  const MAX_PROMPT_LENGTH = 1000;
+
+  // Core style rules (shorter version to save space)
+  const coreStyle = 'Anime/manga art style. One person only. One face. Head and shoulders portrait. Colorful hair, expressive eyes. No text.';
+
+  // Base prompts with strong single-person emphasis; gender first so appearance matches name
+  const baseHostPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game master host character. ${coreStyle} ONE PERSON. ONE FACE.`;
+  const basePlayerPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game player character. ${coreStyle} ONE PERSON. ONE FACE.`;
 
   if (!background || !background.trim()) {
-    return type === 'host'
-      ? `Anime/manga style game master host character. ${HOST_STYLE}`
-      : `Anime/manga style game player character. ${PLAYER_STYLE}`;
+    const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
+    return result.length > MAX_PROMPT_LENGTH
+      ? result.substring(0, MAX_PROMPT_LENGTH)
+      : result;
   }
 
-  if (type === 'host') {
-    return `Anime/manga style game master host character. Background: ${background.trim()}. ${HOST_STYLE}`;
+  // Truncate background to fit within limit, but preserve single-person rules
+  const trimmedBackground = background.trim();
+  const prefix = type === 'host'
+    ? `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game master host character. Background: `
+    : `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game player character. Background: `;
+  const suffix = `. ${coreStyle} ONE PERSON. ONE FACE.`;
+
+  const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;
+  if (availableLength <= 0) {
+    return `${genderPrefix}ONE PERSON ONLY. ONE FACE. ${coreStyle}`;
   }
 
-  return `Anime/manga style game player character. Background: ${background.trim()}. ${PLAYER_STYLE}`;
+  const truncatedBackground = trimmedBackground.length > availableLength
+    ? trimmedBackground.substring(0, availableLength - 3) + '...'
+    : trimmedBackground;
+
+  const result = prefix + truncatedBackground + suffix;
+  return result.length > MAX_PROMPT_LENGTH
+    ? result.substring(0, MAX_PROMPT_LENGTH)
+    : result;
 }
 
 async function generateWithDalle3(prompt: string): Promise<string> {
-  // Enhance prompt to prevent text generation
-  const enhancedPrompt = prompt + ' IMPORTANT: The image must be a pure portrait with no text, letters, words, or any written content. Only visual elements are allowed.';
+  // Use DALL-E 2 with 256x256 for lowest cost and fastest generation
+  // Prompt already includes strong single-person emphasis from buildPrompt
   
-  const resp = await openai.images.generate({
-    model: 'dall-e-3',
-    prompt: enhancedPrompt,
-    size: '1024x1024',
-    quality: 'standard',
-    style: 'vivid',
-    response_format: 'b64_json',
-    n: 1,
-  });
+  // Ensure prompt doesn't exceed 1000 characters (DALL-E 2 limit)
+  const finalPrompt = prompt.length > 1000 ? prompt.substring(0, 1000) : prompt;
+  
+  console.log(`[DALL-E] Generating with prompt length: ${finalPrompt.length}`);
+  
+  try {
+    const resp = await openai.images.generate({
+      model: 'dall-e-2',
+      prompt: finalPrompt,
+      size: '256x256', // Smallest size for avatar thumbnails - sufficient for display
+      response_format: 'b64_json',
+      n: 1,
+    });
 
-  const b64 = resp.data?.[0]?.b64_json;
-  if (!b64) {
-    throw new Error('No image data returned from DALL-E 3');
+    const b64 = resp.data?.[0]?.b64_json;
+    if (!b64) {
+      throw new Error('No image data returned from DALL-E');
+    }
+
+    return `data:image/png;base64,${b64}`;
+  } catch (error: any) {
+    console.error('[DALL-E] API Error:', error);
+    console.error('[DALL-E] Error details:', {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      type: error.type
+    });
+    // Re-throw with more context
+    throw new Error(`DALL-E API error: ${error.message || 'Unknown error'}`);
   }
-
-  return `data:image/png;base64,${b64}`;
 }
 
 async function generateWithReplicate(
@@ -156,15 +211,19 @@ export async function POST(request: NextRequest) {
     const {
       name,
       type = 'player',
+      gameId,
       role,
       background,
       personality,
+      gender,
     } = body as {
       name?: string;
       type?: AvatarType;
+      gameId?: string;
       role?: string;
       background?: string;
       personality?: string;
+      gender?: string;
     };
 
     if (!name || typeof name !== 'string') {
@@ -176,10 +235,26 @@ export async function POST(request: NextRequest) {
 
     const prompt = buildPrompt(name, type ?? 'player', {
       background: typeof background === 'string' ? background : undefined,
+      gender: typeof gender === 'string' ? gender : undefined,
     });
+
+    console.log(`[Avatar] Generating for: ${name}, type: ${type}, gameId: ${gameId || 'none'}, prompt length: ${prompt.length}`);
+    if (prompt.length > 1000) {
+      console.error(`[Avatar] Prompt too long: ${prompt.length} characters`);
+      console.error(`[Avatar] Prompt preview: ${prompt.substring(0, 300)}...`);
+    }
 
     const model = getModel();
     let imageDataUrl: string;
+
+    // Validate prompt length before generation
+    if (prompt.length > 1000) {
+      console.error(`Prompt too long: ${prompt.length} characters`);
+      return NextResponse.json(
+        { error: `Prompt exceeds 1000 character limit: ${prompt.length} characters` },
+        { status: 400 }
+      );
+    }
 
     try {
       if (model === 'dalle-3') {
@@ -191,6 +266,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (error: any) {
       console.error(`Error generating with ${model}:`, error);
+      console.error(`Prompt length: ${prompt.length}, Prompt preview: ${prompt.substring(0, 200)}...`);
       // Fallback to DALL-E 3 if other models fail
       if (model !== 'dalle-3') {
         console.log('Falling back to DALL-E 3...');
@@ -209,10 +285,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ image: imageDataUrl });
   } catch (e: unknown) {
     console.error('Avatar generation error:', e);
-    const err = e as { status?: number; message?: string };
+    const err = e as { status?: number; message?: string; error?: { message?: string } };
+    
+    // Extract detailed error message
+    let errorMessage = 'Failed to generate avatar';
+    if (err.message) {
+      errorMessage = err.message;
+    } else if (err.error?.message) {
+      errorMessage = err.error.message;
+    } else if (typeof e === 'object' && e !== null) {
+      const errorObj = e as { message?: string; error?: { message?: string } };
+      errorMessage = errorObj.message || errorObj.error?.message || errorMessage;
+    }
+    
+    const statusCode = err.status ?? 500;
+    console.error(`Avatar API error (${statusCode}):`, errorMessage);
+    
     return NextResponse.json(
-      { error: err.message ?? 'Failed to generate avatar' },
-      { status: err.status ?? 500 }
+      { 
+        error: errorMessage,
+        details: statusCode === 400 ? 'Bad request - check prompt length and format' : undefined
+      },
+      { status: statusCode }
     );
   }
 }

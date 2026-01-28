@@ -3,11 +3,15 @@ export interface HostPersonality {
   name: string;
   icon: string;
   color: string;
-  tagline: string;
-  description: string;
+  /** male / female / other - for avatar generation to match name */
+  gender?: 'male' | 'female' | 'other';
+  tagline?: string; // Optional for generated hosts
+  description?: string; // Optional, uses personality for generated hosts
+  personality?: string; // For generated hosts
   voiceStyle: string;
-  suitableFor: string[];
+  suitableFor?: string[]; // Optional for generated hosts
   systemPrompt: string;
+  isGenerated?: boolean; // Flag to distinguish generated hosts
 }
 
 export const HOST_PERSONALITIES: HostPersonality[] = [
@@ -16,6 +20,7 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     name: "Echo",
     icon: "🌙",
     color: "#6366f1",
+    gender: "male",
     tagline: "Mysterious & Professional",
     description: "Male game show host. Mysterious, speaks with intrigue and suspense. Calm, enigmatic. Perfect for games that require tension and careful observation.",
     voiceStyle: "Calm, enigmatic, creates atmosphere",
@@ -33,6 +38,7 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     name: "Nova",
     icon: "⭐",
     color: "#f59e0b",
+    gender: "female",
     tagline: "Energetic & Fun",
     description: "Female game show host. Enthusiastic, brings energy and excitement. Upbeat, encouraging, playful. Great for party games and social interactions.",
     voiceStyle: "Upbeat, encouraging, playful",
@@ -50,6 +56,7 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     name: "Sage",
     icon: "📚",
     color: "#8b5cf6",
+    gender: "male",
     tagline: "Wise & Calm",
     description: "Male game show host. Wise, thoughtful, guides with patience and fairness. Thoughtful, balanced, philosophical. Ideal for strategy games and debates.",
     voiceStyle: "Thoughtful, balanced, philosophical",
@@ -67,6 +74,7 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     name: "Spark",
     icon: "⚡",
     color: "#ec4899",
+    gender: "female",
     tagline: "Playful & Quick",
     description: "Female game show host. Quick-witted, playful edge. Fast-paced, witty, competitive. Perfect for speed games and keeping everyone on their toes.",
     voiceStyle: "Quick, witty, competitive",

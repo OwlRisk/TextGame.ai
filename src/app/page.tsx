@@ -39,11 +39,16 @@ interface Game {
   isActive: boolean;
 }
 
-// AI personality templates
+// AI personality templates; gender used for avatar generation to match name
 const AI_NAMES = [
   "Alex", "Blake", "Casey", "Drew", "Ellis", "Finley", "Gray", "Harper",
   "Indigo", "Jordan", "Kennedy", "Logan", "Morgan", "Nova", "Parker", "Quinn"
 ];
+const AI_NAME_GENDER: Record<string, 'male' | 'female' | 'other'> = {
+  Alex: "male", Blake: "other", Casey: "other", Drew: "other", Ellis: "other",
+  Finley: "other", Gray: "other", Harper: "female", Indigo: "other", Jordan: "other",
+  Kennedy: "female", Logan: "male", Morgan: "other", Nova: "female", Parker: "other", Quinn: "other",
+};
 
 const AI_COLORS = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", 
@@ -72,10 +77,66 @@ export default function HomePage() {
   const [gamePhase, setGamePhase] = useState<string>("waiting");
   const [gamePhaseState, setGamePhaseState] = useState<GamePhaseState>(DEFAULT_GAME_PHASE);
   const [typingUsers, setTypingUsers] = useState<{ name: string; avatar: string }[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false); // Track if state is loaded from storage
+  const [gameEnded, setGameEnded] = useState(false);
+  const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
   
   const userId = "user-1";
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
   const isMountedRef = useRef(true);
+  const lastAIDecisionTime = useRef<number>(0); // Track last AI decision call
+  const recentSpeakers = useRef<string[]>([]); // Track recent speakers for diversity
+
+  // Load game state from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('gameRoomState');
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.games) setGames(state.games);
+        if (state.selectedGameId) setSelectedGameId(state.selectedGameId);
+        if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId);
+        if (state.messages) {
+          // Convert timestamp strings back to Date objects
+          setMessages(state.messages.map((m: any) => ({
+            ...m,
+            timestamp: new Date(m.timestamp)
+          })));
+        }
+        if (state.players) setPlayers(state.players);
+        if (state.gamePhase) setGamePhase(state.gamePhase);
+        if (state.gamePhaseState) setGamePhaseState(state.gamePhaseState);
+      }
+    } catch (e) {
+      console.error('Error loading game state:', e);
+    }
+    setIsHydrated(true);
+  }, []);
+
+  // Save game state to localStorage whenever it changes
+  useEffect(() => {
+    if (!isHydrated) return; // Don't save until we've loaded initial state
+    
+    const timeoutId = setTimeout(() => {
+      try {
+        const state = {
+          games,
+          selectedGameId,
+          selectedChannelId,
+          messages,
+          players,
+          gamePhase,
+          gamePhaseState,
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem('gameRoomState', JSON.stringify(state));
+      } catch (e) {
+        console.error('Error saving game state:', e);
+      }
+    }, 1000); // Debounce saves
+    
+    return () => clearTimeout(timeoutId);
+  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, isHydrated]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -102,7 +163,13 @@ export default function HomePage() {
         Math.abs(m.timestamp.getTime() - newMessage.timestamp.getTime()) < 1000
       );
       if (exists) return prev;
-      return [...prev, newMessage];
+      
+      // Limit message history to last 100 messages to prevent memory issues
+      const updated = [...prev, newMessage];
+      if (updated.length > 100) {
+        return updated.slice(-100); // Keep only last 100 messages
+      }
+      return updated;
     });
   }, []);
 
@@ -121,49 +188,90 @@ export default function HomePage() {
       isAI: true,
       isMuted: false,
       background: host.description,
+      gender: host.gender,
     };
 
-    const traitsList = pickTraitsForPlayers(config.playerCount);
     const aiPlayers: Player[] = [];
-    const usedNames = new Set<string>();
+    
+    // Use configured players if available, otherwise generate random ones
+    if (config.configuredPlayers && config.configuredPlayers.length > 0) {
+      // Use GM-configured players
+      config.configuredPlayers.forEach((configPlayer, i) => {
+        let role = "Player";
+        let stats: Record<string, string | number> = {};
 
-    for (let i = 0; i < config.playerCount; i++) {
-      let name = AI_NAMES[Math.floor(Math.random() * AI_NAMES.length)];
-      while (usedNames.has(name)) {
-        name = AI_NAMES[Math.floor(Math.random() * AI_NAMES.length)];
-      }
-      usedNames.add(name);
-
-      let role = "Player";
-      let stats: Record<string, string | number> = {};
-
-      if (config.template === "werewolf" && i < WEREWOLF_ROLES.length) {
-        role = WEREWOLF_ROLES[i];
-        stats = { Status: "Alive" };
-      } else if (config.template === "undercover") {
-        if (i === 0) {
-          role = "Undercover";
-          const wordPair = UNDERCOVER_WORDS[0];
-          stats = { Word: wordPair.undercover };
-        } else {
-          role = "Civilian";
-          const wordPair = UNDERCOVER_WORDS[0];
-          stats = { Word: wordPair.civilian };
+        if (config.template === "werewolf" && i < WEREWOLF_ROLES.length) {
+          role = WEREWOLF_ROLES[i];
+          stats = { Status: "Alive" };
+        } else if (config.template === "undercover") {
+          if (i === 0) {
+            role = "Undercover";
+            const wordPair = UNDERCOVER_WORDS[0];
+            stats = { Word: wordPair.undercover };
+          } else {
+            role = "Civilian";
+            const wordPair = UNDERCOVER_WORDS[0];
+            stats = { Word: wordPair.civilian };
+          }
         }
-      }
 
-      const traits = traitsList[i];
-      aiPlayers.push({
-        id: `ai-${i + 1}`,
-        name,
-        avatar: AI_COLORS[i % AI_COLORS.length],
-        role: role === "Player" ? undefined : role,
-        stats,
-        isAI: true,
-        isMuted: false,
-        personality: traits.personality,
-        background: traits.background,
+        aiPlayers.push({
+          id: `ai-${i + 1}`,
+          name: configPlayer.name,
+          avatar: AI_COLORS[i % AI_COLORS.length],
+          role: role === "Player" ? undefined : role,
+          stats,
+          isAI: true,
+          isMuted: false,
+          personality: configPlayer.personality || "Friendly and observant",
+          background: configPlayer.background || "A game enthusiast",
+          gender: configPlayer.gender,
+        });
       });
+    } else {
+      // Generate random AI players (legacy behavior)
+      const traitsList = pickTraitsForPlayers(config.playerCount);
+      const usedNames = new Set<string>();
+
+      for (let i = 0; i < config.playerCount; i++) {
+        let name = AI_NAMES[Math.floor(Math.random() * AI_NAMES.length)];
+        while (usedNames.has(name)) {
+          name = AI_NAMES[Math.floor(Math.random() * AI_NAMES.length)];
+        }
+        usedNames.add(name);
+
+        let role = "Player";
+        let stats: Record<string, string | number> = {};
+
+        if (config.template === "werewolf" && i < WEREWOLF_ROLES.length) {
+          role = WEREWOLF_ROLES[i];
+          stats = { Status: "Alive" };
+        } else if (config.template === "undercover") {
+          if (i === 0) {
+            role = "Undercover";
+            const wordPair = UNDERCOVER_WORDS[0];
+            stats = { Word: wordPair.undercover };
+          } else {
+            role = "Civilian";
+            const wordPair = UNDERCOVER_WORDS[0];
+            stats = { Word: wordPair.civilian };
+          }
+        }
+
+        const traits = traitsList[i];
+        aiPlayers.push({
+          id: `ai-${i + 1}`,
+          name,
+          avatar: AI_COLORS[i % AI_COLORS.length],
+          role: role === "Player" ? undefined : role,
+          stats,
+          isAI: true,
+          isMuted: false,
+          personality: traits.personality,
+          background: traits.background,
+          gender: AI_NAME_GENDER[name] ?? "other",
+        });
+      }
     }
 
     // Add user
@@ -288,23 +396,62 @@ export default function HomePage() {
 
   }, [userId, addMessage]);
 
-  const handleCreateGame = useCallback((config: GameConfig) => {
-    const newGame: Game = {
-      id: `game-${Date.now()}`,
-      name: config.name,
-      icon: config.template === "werewolf" ? "🐺" : config.template === "undercover" ? "🕵️" : "🎮",
-      color: config.template === "werewolf" ? "#7c3aed" : config.template === "undercover" ? "#0ea5e9" : "#ec4899",
-      config,
-      isActive: false
-    };
+  const handleCreateGame = useCallback(async (config: GameConfig) => {
+    // Show loading toast
+    const loadingToast = toast.loading("Creating game...");
+    
+    try {
+      // Generate game icon with AI
+      let gameIcon = "🎮"; // Default fallback
+      try {
+        toast.loading("AI is generating game icon...", { id: loadingToast });
+        const iconResponse = await fetch('/api/generate-game-icon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gameName: config.name,
+            gameTemplate: config.template,
+            rules: config.rules
+          })
+        });
+        
+        if (iconResponse.ok) {
+          const iconData = await iconResponse.json();
+          gameIcon = iconData.icon;
+          toast.success("Game icon generated!", { id: loadingToast });
+        } else {
+          console.warn('Failed to generate icon, using fallback');
+          // Use emoji fallback
+          gameIcon = config.template === "werewolf" ? "🐺" : config.template === "undercover" ? "🕵️" : "🎮";
+          toast.dismiss(loadingToast);
+        }
+      } catch (error) {
+        console.error('Error generating game icon:', error);
+        // Use emoji fallback
+        gameIcon = config.template === "werewolf" ? "🐺" : config.template === "undercover" ? "🕵️" : "🎮";
+        toast.dismiss(loadingToast);
+      }
+      
+      const newGame: Game = {
+        id: `game-${Date.now()}`,
+        name: config.name,
+        icon: gameIcon,
+        color: config.template === "werewolf" ? "#7c3aed" : config.template === "undercover" ? "#0ea5e9" : "#ec4899",
+        config,
+        isActive: false
+      };
 
-    setGames(prev => [...prev, newGame]);
-    setSelectedGameId(newGame.id);
-    setSelectedChannelId("game-room");
-    setShowGameMasterChat(false);
-    setShowGameCreatorForm(false);
-    initializeGame(config);
-    toast.success(`Game "${config.name}" created!`);
+      setGames(prev => [...prev, newGame]);
+      setSelectedGameId(newGame.id);
+      setSelectedChannelId("game-room");
+      setShowGameMasterChat(false);
+      setShowGameCreatorForm(false);
+      initializeGame(config);
+      toast.success(`Game "${config.name}" created!`, { id: loadingToast });
+    } catch (error) {
+      console.error('Error creating game:', error);
+      toast.error("Failed to create game", { id: loadingToast });
+    }
   }, [initializeGame]);
 
   // Track last sent message to prevent duplicates
@@ -399,75 +546,236 @@ export default function HomePage() {
       }, 2500);
       timeoutRefs.current.push(responseTimeout);
     } else {
-      // Random AI response with typing indicator - generate based on personality/background
+      // AI Host decides which player is most likely to respond
       const delay = 1500 + Math.random() * 2000;
-      const aiResponseTimeout = setTimeout(() => {
+      const aiResponseTimeout = setTimeout(async () => {
         if (!isMountedRef.current) return;
-        const aiPlayers = players.filter(
-          p => p.isAI && !p.isGameMaster && !p.isMuted && p.status !== "Eliminated" && p.stats?.Status !== "Eliminated"
+        
+        const currentGame = games.find(g => g.id === selectedGameId);
+        const gameMaster = players.find(p => p.isGameMaster);
+        if (!gameMaster || !currentGame) return;
+        
+        // Get alive players (both AI and human)
+        const alivePlayers = players.filter(
+          p => !p.isGameMaster && !p.isMuted && p.status !== "Eliminated" && p.stats?.Status !== "Eliminated"
         );
-        if (aiPlayers.length > 0) {
-          const randomPlayer = aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+        
+        if (alivePlayers.length === 0) return;
+        
+        // Local rules engine - decide if we need AI decision or can use simple logic
+        const now = Date.now();
+        const timeSinceLastAIDecision = now - lastAIDecisionTime.current;
+        const aiPlayers = alivePlayers.filter(p => p.isAI);
+        
+        // Use local logic if:
+        // 1. AI decision was called recently (< 10 seconds ago) - reduce API calls
+        // 2. OR there are recent speakers we should avoid
+        let selectedPlayer: typeof alivePlayers[0] | null = null;
+        
+        if (timeSinceLastAIDecision < 10000 && aiPlayers.length > 0) {
+          // Use simple local logic: select an AI player who hasn't spoken recently
+          const availableAIPlayers = aiPlayers.filter(p => 
+            !recentSpeakers.current.includes(p.id)
+          );
           
-          // Show typing indicator
-          setTypingUsers([{ name: randomPlayer.name, avatar: randomPlayer.avatar }]);
+          if (availableAIPlayers.length > 0) {
+            selectedPlayer = availableAIPlayers[Math.floor(Math.random() * availableAIPlayers.length)];
+          } else {
+            // All AI players spoke recently, clear history and pick any
+            recentSpeakers.current = [];
+            selectedPlayer = aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+          }
           
-          // Get recent conversation context (last 3-5 messages)
-          const recentMessages = messages.slice(-5).map(m => ({
-            role: m.senderId === userId ? "user" as const : "assistant" as const,
-            content: `${m.senderName}: ${m.content}`
-          }));
-          
-          // After a short delay, generate and send the message
-          const messageTimeout = setTimeout(async () => {
-            if (!isMountedRef.current) return;
-            try {
-              const currentGame = games.find(g => g.id === selectedGameId);
-              const { message } = await getAIChatResponse({
-                messages: [
-                  {
-                    role: "user",
-                    content: `You are ${randomPlayer.name}, a player in a social deduction game "${currentGame?.name || "the game"}". Your role: ${randomPlayer.role || "Player"}. Your personality: ${randomPlayer.personality || "Friendly and observant."} Your background: ${randomPlayer.background || "A game enthusiast."} Recent conversation:\n${recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n")}\n\nRespond naturally based on your personality, background, and role. Stay in character. Keep it brief (1-2 sentences). Output only your response, nothing else.`
-                  }
-                ],
-                gameContext: {
-                  template: currentGame?.config.template,
-                  gameName: currentGame?.name,
-                  conversationState: gamePhase
-                }
-              });
-              if (!isMountedRef.current) return;
-              setTypingUsers([]);
-              const reply = (message || "").trim() || "I'm thinking...";
-              addMessage({
-                senderId: randomPlayer.id,
-                senderName: randomPlayer.name,
-                senderAvatar: randomPlayer.avatar,
-                content: reply,
-                isAI: true
-              });
-            } catch (e) {
-              if (!isMountedRef.current) return;
-              setTypingUsers([]);
-              const fallbackResponses = [
-                "That's an interesting point...",
-                "I'm not sure I agree with that.",
-                "Can you explain more?",
-                "I think we should consider all options.",
-                "Based on what I've seen, I have my suspicions.",
-                "Let's think about this carefully."
-              ];
-              addMessage({
-                senderId: randomPlayer.id,
-                senderName: randomPlayer.name,
-                senderAvatar: randomPlayer.avatar,
-                content: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
-                isAI: true
-              });
-            }
-          }, 1500);
-          timeoutRefs.current.push(messageTimeout);
+          // Add to recent speakers
+          recentSpeakers.current.push(selectedPlayer.id);
+          if (recentSpeakers.current.length > 3) {
+            recentSpeakers.current.shift(); // Keep only last 3 speakers
+          }
         }
+        
+        // Get recent conversation context
+        const recentMessages = messages.slice(-5).map(m => ({
+          role: m.senderId === userId ? "user" as const : "assistant" as const,
+          content: `${m.senderName}: ${m.content}`
+        }));
+        
+        // Build player information for AI Host to analyze
+        const playersInfo = alivePlayers.map(p => ({
+          id: p.id,
+          name: p.name,
+          role: p.role || "Player",
+          isAI: p.isAI || false,
+          personality: p.personality || "Friendly and observant",
+          background: p.background || "A game enthusiast",
+          isUser: p.id === userId
+        }));
+        
+        // If local logic didn't select a player, use AI Host decision
+        if (!selectedPlayer) {
+          try {
+            lastAIDecisionTime.current = now; // Update last AI decision time
+          // Ask AI Host to decide which player is most likely to respond
+          const { message: hostDecision } = await getAIChatResponse({
+            messages: [{
+              role: "user",
+              content: `You are ${gameMaster.name}, the host of "${currentGame.name}". As the host, you observe the conversation and naturally decide which player would most likely respond next.
+
+Game Rules:
+${currentGame.config.rules || "No specific rules defined."}
+
+Recent conversation:
+${recentMessages.length > 0 ? recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n") : "Game just started, no conversation yet."}
+
+Available players (all alive and not muted):
+${playersInfo.map(p => `- ${p.name} (Role: ${p.role}, Type: ${p.isAI ? "AI" : "Human"}, Personality: ${p.personality})`).join("\n")}
+
+Current game phase: ${gamePhase}
+
+As the host, analyze who would naturally want to respond based on:
+1. The conversation topic and who it relates to
+2. Each player's role and how it connects to the discussion
+3. Each player's personality - who would be most engaged or have something to say
+4. Game context and rules - who has relevant information or opinions
+5. Natural flow - who hasn't spoken recently and might want to contribute
+
+IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-sensitive). If you think no one should respond right now (e.g., waiting for a game phase change), respond with "NONE".`
+            }],
+            hostId: currentGame.config.hostId,
+            gameContext: {
+              template: currentGame.config.template,
+              gameName: currentGame.name,
+              rules: currentGame.config.rules,
+              conversationState: gamePhase
+            }
+          });
+          
+            if (!isMountedRef.current) return;
+            
+            const selectedPlayerName = (hostDecision || "").trim();
+            
+            // Find the selected player
+            selectedPlayer = alivePlayers.find(p => 
+              p.name.toLowerCase() === selectedPlayerName.toLowerCase() || 
+              p.name === selectedPlayerName
+            );
+            
+            // If no valid player selected or host said "NONE", skip
+            if (!selectedPlayer || selectedPlayerName.toUpperCase() === "NONE") {
+              return;
+            }
+            
+            // Add to recent speakers
+            recentSpeakers.current.push(selectedPlayer.id);
+            if (recentSpeakers.current.length > 3) {
+              recentSpeakers.current.shift();
+            }
+          } catch (e) {
+            // Fallback to random selection if AI Host decision fails
+            console.error("Error getting AI Host decision:", e);
+            const aiPlayers = alivePlayers.filter(p => p.isAI);
+            if (aiPlayers.length > 0) {
+              selectedPlayer = aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+            } else {
+              return;
+            }
+          }
+        }
+        
+        if (!selectedPlayer) return;
+        
+        // If selected player is the human user, prompt them to speak
+          if (selectedPlayer.id === userId) {
+            setCurrentSpeakerId(userId);
+            // Show typing indicator briefly to indicate the host is "thinking"
+            setTypingUsers([{ name: gameMaster.name, avatar: gameMaster.avatar }]);
+            setTimeout(() => {
+              if (!isMountedRef.current) return;
+              setTypingUsers([]);
+              
+              // Play notification sound
+              try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIE2S56+ihUxILTKXh8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8bllHgU2jdXvx3gpBSh+zPDckTwJFGO3+++mUhELTKXi8Q==');
+                audio.volume = 0.3;
+                audio.play().catch(() => {}); // Ignore errors if audio fails
+              } catch (e) {
+                // Ignore audio errors
+              }
+              
+              toast.info(`${gameMaster.name} thinks you might want to respond. You can speak now!`, {
+                duration: 3000,
+              });
+              
+              // Trigger input focus event (will be handled by ChatArea component)
+              window.dispatchEvent(new CustomEvent('focusGameInput'));
+            }, 800);
+            return;
+          }
+          
+          // If selected player is AI, generate their response
+          if (selectedPlayer.isAI) {
+            // Show typing indicator
+            setTypingUsers([{ name: selectedPlayer.name, avatar: selectedPlayer.avatar }]);
+            
+            // Generate AI player's response
+            const messageTimeout = setTimeout(async () => {
+              if (!isMountedRef.current) return;
+              try {
+                const { message } = await getAIChatResponse({
+                  messages: [{
+                    role: "user",
+                    content: `You are ${selectedPlayer.name}, a player in a social deduction game "${currentGame.name}". 
+
+Your role: ${selectedPlayer.role || "Player"}
+Your personality: ${selectedPlayer.personality || "Friendly and observant."}
+Your background: ${selectedPlayer.background || "A game enthusiast."}
+
+Game Rules:
+${currentGame.config.rules || "No specific rules defined."}
+
+Recent conversation:
+${recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n")}
+
+The host (${gameMaster.name}) thinks you would naturally respond to this conversation. Respond naturally based on your personality, background, role, and the game rules. Stay in character. Keep it brief (1-2 sentences). Output only your response, nothing else.`
+                  }],
+                  gameContext: {
+                    template: currentGame.config.template,
+                    gameName: currentGame.name,
+                    rules: currentGame.config.rules,
+                    conversationState: gamePhase
+                  }
+                });
+                if (!isMountedRef.current) return;
+                setTypingUsers([]);
+                const reply = (message || "").trim() || "I'm thinking...";
+                addMessage({
+                  senderId: selectedPlayer.id,
+                  senderName: selectedPlayer.name,
+                  senderAvatar: selectedPlayer.avatar,
+                  content: reply,
+                  isAI: true
+                });
+              } catch (e) {
+                if (!isMountedRef.current) return;
+                setTypingUsers([]);
+                const fallbackResponses = [
+                  "That's an interesting point...",
+                  "I'm not sure I agree with that.",
+                  "Can you explain more?",
+                  "I think we should consider all options.",
+                  "Based on what I've seen, I have my suspicions.",
+                  "Let's think about this carefully."
+                ];
+                addMessage({
+                  senderId: selectedPlayer.id,
+                  senderName: selectedPlayer.name,
+                  senderAvatar: selectedPlayer.avatar,
+                  content: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
+                  isAI: true
+                });
+              }
+            }, 1500);
+            timeoutRefs.current.push(messageTimeout);
+          }
       }, delay);
       timeoutRefs.current.push(aiResponseTimeout);
     }
@@ -591,6 +899,50 @@ export default function HomePage() {
     p => !p.isGameMaster && p.status !== "Eliminated" && p.stats?.Status !== "Eliminated"
   );
 
+  // Check win conditions
+  const checkWinConditions = useCallback(() => {
+    const currentGame = games.find(g => g.id === selectedGameId);
+    if (!currentGame || gameEnded) return;
+    
+    const alive = players.filter(
+      p => !p.isGameMaster && p.status !== "Eliminated" && p.stats?.Status !== "Eliminated"
+    );
+    
+    if (alive.length === 0) {
+      setGameEnded(true);
+      setGameResult({ winner: "No one", message: "Game ended with no survivors" });
+      return;
+    }
+    
+    // Werewolf win conditions
+    if (currentGame.config.template === "werewolf") {
+      const werewolves = alive.filter(p => p.role === "Werewolf");
+      const villagers = alive.filter(p => p.role !== "Werewolf");
+      
+      if (werewolves.length === 0) {
+        setGameEnded(true);
+        setGameResult({ winner: "Villagers", message: "All werewolves have been eliminated!" });
+      } else if (werewolves.length >= villagers.length) {
+        setGameEnded(true);
+        setGameResult({ winner: "Werewolves", message: "Werewolves have taken over the village!" });
+      }
+    }
+    
+    // Undercover win conditions
+    if (currentGame.config.template === "undercover") {
+      const undercover = alive.filter(p => p.role === "Undercover");
+      const civilians = alive.filter(p => p.role === "Civilian");
+      
+      if (undercover.length === 0) {
+        setGameEnded(true);
+        setGameResult({ winner: "Civilians", message: "The undercover agent has been caught!" });
+      } else if (alive.length <= 3 && undercover.length > 0) {
+        setGameEnded(true);
+        setGameResult({ winner: "Undercover", message: "The undercover agent survived!" });
+      }
+    }
+  }, [players, games, selectedGameId, gameEnded]);
+
   const hostEliminatePlayer = useCallback(async (playerId: string) => {
     if (!isMountedRef.current) return;
     const gameMaster = players.find(p => p.isGameMaster);
@@ -614,6 +966,11 @@ export default function HomePage() {
       phase: "elimination",
     }));
     setCurrentSpeakerId(null);
+    
+    // Check win conditions after elimination
+    setTimeout(() => {
+      checkWinConditions();
+    }, 1000);
 
     const desc = `Announce that ${target.name} has been eliminated. Be brief and in character.`;
     try {
@@ -826,11 +1183,11 @@ export default function HomePage() {
   };
 
   const currentGame = games.find(g => g.id === selectedGameId);
-  const channels = [
+  const [channels, setChannels] = useState([
     { id: "general", name: "general", type: "text" as const },
     { id: "rules", name: "rules", type: "text" as const },
     { id: "game-room", name: "game-room", type: "game" as const },
-  ];
+  ]);
 
   // Player board data (dynamically generated based on current game)
   const playerBoardData: PlayerBoardData = {
@@ -885,6 +1242,12 @@ export default function HomePage() {
         onCreateGame={() => {
           setDiscoverPreset(null);
           setShowGameMasterChat(true);
+        }}
+        onDeleteGame={(gameId) => {
+          setGames(prev => prev.filter(g => g.id !== gameId));
+          if (selectedGameId === gameId) {
+            setSelectedGameId("home");
+          }
         }}
         onOpenProfile={() => setShowUserProfile(true)}
       />
@@ -957,10 +1320,19 @@ export default function HomePage() {
             onShare={handleShare}
             onSettings={() => toast.info("Settings coming soon")}
             onBackToArena={() => setSelectedGameId("home")}
+            onDeleteChannel={(channelId) => {
+              setChannels(prev => prev.filter(c => c.id !== channelId));
+              if (selectedChannelId === channelId) {
+                const remainingChannels = channels.filter(c => c.id !== channelId);
+                if (remainingChannels.length > 0) {
+                  setSelectedChannelId(remainingChannels[0].id);
+                }
+              }
+            }}
           />
 
           {selectedChannelId === "game-room" ? (
-            <>
+            <div className="flex-1 flex min-w-0 h-full overflow-hidden">
               <ChatArea
                 channelName="game-room"
                 messages={messages}
@@ -970,6 +1342,7 @@ export default function HomePage() {
                 userId={userId}
                 players={players}
                 typingUsers={typingUsers}
+                gameId={selectedGameId || undefined}
                 onHostPostEvent={hostPostEvent}
                 onHostAssignSpeaker={hostAssignSpeaker}
                 onHostEliminate={hostEliminatePlayer}
@@ -983,11 +1356,12 @@ export default function HomePage() {
                 players={players}
                 currentSpeakerId={currentSpeakerId}
                 isUserGameMaster={false}
+                gameId={selectedGameId || undefined}
                 onToggleMute={handleToggleMute}
                 onSelectSpeaker={setCurrentSpeakerId}
                 playerBoardData={playerBoardData}
               />
-            </>
+            </div>
           ) : selectedChannelId === "rules" ? (
             <div className="flex-1 bg-zinc-700 p-10 overflow-y-auto">
               <div className="max-w-4xl mx-auto">
@@ -1082,11 +1456,70 @@ export default function HomePage() {
       </Dialog>
 
       <Toaster 
-        position="top-center" 
+        position="top-right" 
         expand={false}
         richColors
         closeButton
+        toastOptions={{
+          style: {
+            zIndex: 9999,
+          }
+        }}
       />
+
+      {/* Game End Dialog */}
+      <Dialog open={gameEnded} onOpenChange={(open) => {
+        if (!open) {
+          setGameEnded(false);
+          setGameResult(null);
+        }
+      }}>
+        <DialogContent className="bg-zinc-900 text-white border-zinc-700">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center mb-4">Game Over!</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              <div className="text-center space-y-4">
+                <div className="text-4xl font-bold text-amber-400 mb-2">
+                  {gameResult?.winner} Win!
+                </div>
+                <p className="text-lg text-zinc-300">{gameResult?.message}</p>
+                <div className="pt-4 space-y-2">
+                  <Button
+                    onClick={() => {
+                      // Reset game
+                      setGameEnded(false);
+                      setGameResult(null);
+                      setMessages([]);
+                      setPlayers([]);
+                      setGamePhase("waiting");
+                      setGamePhaseState(DEFAULT_GAME_PHASE);
+                      setCurrentSpeakerId(null);
+                      const currentGame = games.find(g => g.id === selectedGameId);
+                      if (currentGame) {
+                        initializeGame(currentGame.config);
+                      }
+                    }}
+                    className="bg-violet-600 hover:bg-violet-500 text-white w-full"
+                  >
+                    Play Again
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setGameEnded(false);
+                      setGameResult(null);
+                      setSelectedGameId("home");
+                    }}
+                    variant="outline"
+                    className="bg-transparent border-zinc-700 hover:bg-zinc-800 text-white w-full"
+                  >
+                    Back to Home
+                  </Button>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
