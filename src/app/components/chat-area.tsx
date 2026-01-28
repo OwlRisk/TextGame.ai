@@ -393,14 +393,24 @@ export function ChatArea({
                       })()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1.5">
-                        <span className="font-semibold text-white text-sm shrink-0">{message.senderName}</span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1.5 min-h-[1.375rem]">
+                        <span
+                          className={`font-semibold text-sm shrink-0 leading-tight ${
+                            isHost
+                              ? "text-amber-200"
+                              : message.senderName === "You"
+                                ? "text-violet-300"
+                                : "text-white"
+                          }`}
+                        >
+                          {message.senderName}
+                        </span>
                         {isHost && (
-                          <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full shrink-0">
-                            <span className="text-[10px] font-bold text-white uppercase tracking-wide">HOST</span>
+                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full shrink-0 bg-amber-500/15 text-amber-300 border border-amber-500/40 h-[1.25rem] box-border">
+                            <span className="text-[11px] font-semibold uppercase tracking-wide leading-none">HOST</span>
                           </span>
                         )}
-                        <span className="text-xs text-zinc-500 shrink-0" aria-hidden="true">
+                        <span className="text-xs text-zinc-500 shrink-0 leading-tight" aria-hidden="true">
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -500,7 +510,7 @@ export function ChatArea({
             <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>
               <X className="h-4 w-4" />
             </Button>
-            <Button size="sm" className="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50" disabled={!voiceTranscript.trim()} onClick={() => { handleSend(voiceTranscript.trim()); voiceConfirm(); }}>
+            <Button size="sm" className="h-8 px-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-50" disabled={!voiceTranscript.trim()} onClick={() => { handleSend(voiceTranscript.trim()); voiceConfirm(); }}>
               <Check className="h-4 w-4" />
             </Button>
           </div>
@@ -553,7 +563,7 @@ export function ChatArea({
             onClick={() => handleSend()} 
             disabled={!input.trim() || !canSend || isRecording}
             size="icon"
-            className="bg-indigo-600 hover:bg-indigo-500 h-11 w-11 flex-shrink-0"
+            className="bg-violet-600 hover:bg-violet-500 h-11 w-11 flex-shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>

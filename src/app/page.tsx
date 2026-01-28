@@ -494,6 +494,11 @@ export default function HomePage() {
       content,
       isAI: false
     });
+    
+    // Clear currentSpeakerId when user sends a message (so timeout knows user has spoken)
+    if (currentSpeakerId === userId) {
+      setCurrentSpeakerId(null);
+    }
 
     // Get the Game Master
     const gameMaster = players.find(p => p.isGameMaster);
@@ -669,9 +674,58 @@ IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-se
               p.name === selectedPlayerName
             ) ?? null;
             
-            // If no valid player selected or host said "NONE", skip
+            // If no valid player selected or host said "NONE", use fallback: random AI player or Host intervention
             if (!selectedPlayer || selectedPlayerName.toUpperCase() === "NONE") {
-              return;
+              const aiPlayers = alivePlayers.filter(p => p.isAI);
+              if (aiPlayers.length > 0) {
+                // Fallback: randomly select an AI player who hasn't spoken recently
+                const availableAIPlayers = aiPlayers.filter(p => 
+                  !recentSpeakers.current.includes(p.id)
+                );
+                selectedPlayer = availableAIPlayers.length > 0
+                  ? availableAIPlayers[Math.floor(Math.random() * availableAIPlayers.length)]
+                  : aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+              } else {
+                // No AI players available, let Host make a comment to keep game moving
+                const hostCommentTimeout = setTimeout(async () => {
+                  if (!isMountedRef.current) return;
+                  try {
+                    const { message } = await getAIChatResponse({
+                      messages: [{
+                        role: "user",
+                        content: `You are ${gameMaster.name}, the host. The conversation has paused. Make a brief comment to encourage discussion or guide the game forward (1-2 sentences). Output only your comment.`
+                      }],
+                      hostId: currentGame.config.hostId,
+                      hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
+                      gameContext: {
+                        template: currentGame.config.template,
+                        gameName: currentGame.name,
+                        rules: currentGame.config.rules,
+                        conversationState: gamePhase
+                      }
+                    });
+                    if (!isMountedRef.current) return;
+                    addMessage({
+                      senderId: "gm-1",
+                      senderName: gameMaster.name,
+                      senderAvatar: gameMaster.avatar,
+                      content: (message || "").trim() || "Let's keep the discussion going!",
+                      isAI: true
+                    });
+                  } catch (e) {
+                    if (!isMountedRef.current) return;
+                    addMessage({
+                      senderId: "gm-1",
+                      senderName: gameMaster.name,
+                      senderAvatar: gameMaster.avatar,
+                      content: "Let's keep the discussion going!",
+                      isAI: true
+                    });
+                  }
+                }, 2000);
+                timeoutRefs.current.push(hostCommentTimeout);
+                return;
+              }
             }
             
             // Add to recent speakers
@@ -718,6 +772,94 @@ IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-se
               // Trigger input focus event (will be handled by ChatArea component)
               window.dispatchEvent(new CustomEvent('focusGameInput'));
             }, 800);
+            
+            // Set timeout: if user doesn't speak within 30 seconds, automatically select an AI player
+            const userTimeout = setTimeout(async () => {
+              if (!isMountedRef.current) return;
+              // Check if user has spoken (currentSpeakerId might be cleared when they send a message)
+              const lastUserMessage = messages.find(m => m.senderId === userId);
+              const lastUserMessageTime = lastUserMessage ? new Date(lastUserMessage.timestamp).getTime() : 0;
+              const timeSinceLastUserMessage = Date.now() - lastUserMessageTime;
+              
+              // Only proceed if user hasn't spoken in the last 30 seconds
+              if (timeSinceLastUserMessage > 30000 || !lastUserMessage) {
+                setCurrentSpeakerId(null);
+                // Select a random AI player to continue
+                const aiPlayers = alivePlayers.filter(p => p.isAI && p.id !== userId);
+                if (aiPlayers.length > 0) {
+                  const availableAIPlayers = aiPlayers.filter(p => 
+                    !recentSpeakers.current.includes(p.id)
+                  );
+                  const nextPlayer = availableAIPlayers.length > 0
+                    ? availableAIPlayers[Math.floor(Math.random() * availableAIPlayers.length)]
+                    : aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+                  
+                  if (nextPlayer) {
+                    setTypingUsers([{ name: nextPlayer.name, avatar: nextPlayer.avatar }]);
+                    const messageTimeout = setTimeout(async () => {
+                      if (!isMountedRef.current) return;
+                      try {
+                        const { message } = await getAIChatResponse({
+                          messages: [{
+                            role: "user",
+                            content: `You are ${nextPlayer.name}, a player in a social deduction game "${currentGame.name}". 
+
+Your role: ${nextPlayer.role || "Player"}
+Your personality: ${nextPlayer.personality || "Friendly and observant."}
+Your background: ${nextPlayer.background || "A game enthusiast."}
+
+Game Rules:
+${currentGame.config.rules || "No specific rules defined."}
+
+Recent conversation:
+${recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n")}
+
+The conversation has paused. Respond naturally to keep the game moving. Stay in character. Keep it brief (1-2 sentences). Output only your response, nothing else.`
+                          }],
+                          gameContext: {
+                            template: currentGame.config.template,
+                            gameName: currentGame.name,
+                            rules: currentGame.config.rules,
+                            conversationState: gamePhase
+                          }
+                        });
+                        if (!isMountedRef.current) return;
+                        setTypingUsers([]);
+                        const reply = (message || "").trim() || "Let me think about that...";
+                        addMessage({
+                          senderId: nextPlayer.id,
+                          senderName: nextPlayer.name,
+                          senderAvatar: nextPlayer.avatar,
+                          content: reply,
+                          isAI: true
+                        });
+                        recentSpeakers.current.push(nextPlayer.id);
+                        if (recentSpeakers.current.length > 3) {
+                          recentSpeakers.current.shift();
+                        }
+                      } catch (e) {
+                        if (!isMountedRef.current) return;
+                        setTypingUsers([]);
+                        const fallbackResponses = [
+                          "I'm still processing that...",
+                          "That's an interesting point.",
+                          "Let me think about this more carefully."
+                        ];
+                        addMessage({
+                          senderId: nextPlayer.id,
+                          senderName: nextPlayer.name,
+                          senderAvatar: nextPlayer.avatar,
+                          content: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
+                          isAI: true
+                        });
+                      }
+                    }, 1500);
+                    timeoutRefs.current.push(messageTimeout);
+                  }
+                }
+              }
+            }, 30000); // 30 second timeout
+            timeoutRefs.current.push(userTimeout);
             return;
           }
           
@@ -1171,7 +1313,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
     }
   }, [players, games, selectedGameId, gamePhaseState, alivePlayers, currentSpeakerId, messages, hostPostEvent, hostEliminatePlayer, hostRevealRole, addMessage]);
 
-  // Auto-decision effect - runs when game state changes
+  // Auto-decision effect - runs when game state changes or new message arrives
   useEffect(() => {
     if (!isMountedRef.current) return;
     const currentGame = games.find(g => g.id === selectedGameId);

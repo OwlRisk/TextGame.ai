@@ -153,17 +153,9 @@ export function useGeneratedAvatar(
     enabled = true,
   } = options;
   const key = cacheKey(name, type, gameId, role, background, personality, gender);
-  const [src, setSrc] = useState<string | null>(() => {
-    if (!name) return null;
-    const fromMemory = cache.get(key);
-    if (fromMemory) return fromMemory;
-    const fromStorage = loadFromStorage(key);
-    if (fromStorage) {
-      cache.set(key, fromStorage);
-      return fromStorage;
-    }
-    return null;
-  });
+  // Always start with null so server and client first paint match (no localStorage on server).
+  // Cache/storage is read in fetchAvatar() inside useEffect (client-only).
+  const [src, setSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -174,8 +166,18 @@ export function useGeneratedAvatar(
       setError(null);
       return;
     }
-    if (cache.has(key)) {
-      setSrc(cache.get(key)!);
+    // Restore from cache or localStorage (client-only); avoids hydration mismatch from reading storage in useState.
+    const fromMemory = cache.get(key);
+    if (fromMemory) {
+      setSrc(fromMemory);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    const fromStorage = loadFromStorage(key);
+    if (fromStorage) {
+      cache.set(key, fromStorage);
+      setSrc(fromStorage);
       setLoading(false);
       setError(null);
       return;
