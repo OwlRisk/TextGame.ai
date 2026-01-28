@@ -10,6 +10,22 @@ import type { DiscoverPreset } from "@/app/components/discover-page";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/app/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
@@ -32,6 +48,14 @@ export interface GameSession {
   customRules: string;
   gameName: string;
   selectedHostId: string;
+  generatedHost?: {
+    name: string;
+    personality: string;
+    voiceStyle: string;
+    systemPrompt: string;
+    icon: string;
+    color: string;
+  }; // Dynamically generated host configuration
   createdAt: Date;
   updatedAt: Date;
 }
@@ -288,6 +312,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   // Session management
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<GameSession | null>(null);
   
   // Current conversation state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -336,6 +362,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [playerCount, setPlayerCount] = useState<number>(6);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
+  const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
+    name: string;
+    gender?: string;
+    personality?: string;
+    background?: string;
+  }>>([]);
 
   // Host personality - try last selected, then default
   const [selectedHostId, setSelectedHostId] = useState<string>(() => {
@@ -984,10 +1016,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
               .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
+              .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
               // Also remove incomplete tags
               .replace(/<EDIT_RULES>[\s\S]*$/i, '')
               .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
+              .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
               .trim();
             return cleaned;
           };
@@ -1029,8 +1063,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           
           // Final pass: Extract and update rules if present (handles any missed edits)
           // This ensures we always have the complete, final version of rules
-          // extractAndUpdateRules returns cleaned response (without editing tags)
+          // Extract rules and player config
           const cleanedResponse = extractAndUpdateRules(fullResponse);
+          extractAndApplyPlayerConfig(fullResponse);
           
           // Double-check: if we have EDIT_RULES in the final response, make sure it's applied
           const finalEditMatch = fullResponse.match(/<EDIT_RULES>([\s\S]*?)<\/EDIT_RULES>/i);
@@ -1214,36 +1249,41 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         <ScrollArea className="flex-1 min-h-0 overflow-hidden">
           <div className="p-2 space-y-1 relative">
             {sessions.map((session) => (
-              <div
-                key={session.id}
-                className={`group relative rounded-lg transition-all duration-200 ${
-                  currentSessionId === session.id
-                    ? "bg-white/10 border border-white/20"
-                    : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
-                }`}
-              >
-                <button
-                  onClick={() => loadSession(session.id)}
-                  className="w-full p-2 text-left"
-                >
-                  <div className="text-xs font-medium text-white mb-0.5 line-clamp-1 pr-6">
-                    {session.title}
+              <ContextMenu key={session.id}>
+                <ContextMenuTrigger>
+                  <div
+                    className={`group relative rounded-lg transition-all duration-200 ${
+                      currentSessionId === session.id
+                        ? "bg-white/10 border border-white/20"
+                        : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
+                    }`}
+                  >
+                    <button
+                      onClick={() => loadSession(session.id)}
+                      className="w-full p-2 text-left"
+                    >
+                      <div className="text-xs font-medium text-white mb-0.5 line-clamp-1 pr-6">
+                        {session.title}
+                      </div>
+                      <div className="text-[10px] text-zinc-500">
+                        {new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {session.messages.length}msgs
+                      </div>
+                    </button>
                   </div>
-                  <div className="text-[10px] text-zinc-500">
-                    {new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {session.messages.length}msgs
-                  </div>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteSession(session.id);
-                  }}
-                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Delete session"
-                >
-                  <Trash2 className="h-2.5 w-2.5 text-red-400" />
-                </button>
-              </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                  <ContextMenuItem 
+                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                    onClick={() => {
+                      setSessionToDelete(session);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Session
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))}
             {sessions.length > 20 && (
               <div className="pt-2 pb-1 px-2 border-t border-white/5 mt-2">
@@ -1532,40 +1572,147 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
           <div className="px-4 py-3 border-b border-white/10 relative flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-white">Game Rules</h2>
-                {isRulesBeingEdited && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
-                  </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-white">Game Rules</h2>
+                  {isRulesBeingEdited && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={async () => {
+                    // Create game config from current state
+                    if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
+                      toast.error("Please define game rules first");
+                      return;
+                    }
+                    
+                    let finalConfiguredPlayers = configuredPlayers;
+                    
+                    // If no players configured, automatically generate them
+                    if (configuredPlayers.length === 0) {
+                      toast.info("AI is generating player configurations...");
+                      try {
+                        const response = await fetch('/api/generate-players', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            playerCount: playerCount,
+                            gameTemplate: selectedTemplate?.id || "custom",
+                            rules: customRules
+                          })
+                        });
+                        
+                        if (response.ok) {
+                          const data = await response.json();
+                          finalConfiguredPlayers = data.players;
+                          setConfiguredPlayers(data.players);
+                          toast.success(`Generated ${data.count} random players!`);
+                        } else {
+                          toast.error("Failed to generate players, using defaults");
+                        }
+                      } catch (error) {
+                        console.error('Error generating players:', error);
+                        toast.error("Failed to generate players, using defaults");
+                      }
+                    }
+                    
+                    // Generate AI Host based on game rules
+                    let generatedHostData = null;
+                    toast.info("Generating AI Host...");
+                    try {
+                      const response = await fetch('/api/generate-host', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          gameRules: customRules,
+                          gameName: gameName || selectedTemplate?.name || "Custom Game"
+                        })
+                      });
+
+                      if (response.ok) {
+                        generatedHostData = await response.json();
+                        console.log('[Game Master] Generated host:', generatedHostData);
+
+                        // Save generated host to current session
+                        setSessions(prev => prev.map(s =>
+                          s.id === currentSessionId
+                            ? { ...s, generatedHost: generatedHostData }
+                            : s
+                        ));
+
+                        toast.success(`Host "${generatedHostData.name}" is ready!`);
+                      } else {
+                        toast.error('Failed to generate host, using default');
+                      }
+                    } catch (error) {
+                      console.error('[Game Master] Failed to generate host:', error);
+                      toast.error('Failed to generate host, using default');
+                    }
+                    
+                    const gameConfig: GameConfig = {
+                      template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
+                      playerCount: playerCount,
+                      rules: customRules,
+                      name: gameName || selectedTemplate?.name || "Custom Game",
+                      hostId: selectedHostId,
+                      tone: "balanced", // Default tone
+                      configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
+                      generatedHost: generatedHostData || undefined
+                    };
+                    
+                    onCreateGame(gameConfig);
+                  }}
+                  disabled={isRulesBeingEdited}
+                  className="h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Start Game
+                </Button>
+              </div>
+              
+              {/* Player Count Info */}
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <span>Players: {playerCount}</span>
+                {configuredPlayers.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-green-400">{configuredPlayers.length} configured</span>
+                    <button
+                      onClick={async () => {
+                        toast.info("Regenerating players...");
+                        try {
+                          const response = await fetch('/api/generate-players', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              playerCount: playerCount,
+                              gameTemplate: selectedTemplate?.id || "custom",
+                              rules: customRules
+                            })
+                          });
+                          
+                          if (response.ok) {
+                            const data = await response.json();
+                            setConfiguredPlayers(data.players);
+                            toast.success(`Regenerated ${data.count} players!`);
+                          } else {
+                            toast.error("Failed to regenerate");
+                          }
+                        } catch (error) {
+                          toast.error("Failed to regenerate");
+                        }
+                      }}
+                      className="text-violet-400 hover:text-violet-300 underline"
+                    >
+                      Regenerate
+                    </button>
+                  </>
                 )}
               </div>
-              <Button
-                onClick={() => {
-                  // Create game config from current state
-                  if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
-                    toast.error("Please define game rules first");
-                    return;
-                  }
-                  
-                  const gameConfig: GameConfig = {
-                    template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
-                    playerCount: playerCount,
-                    rules: customRules,
-                    name: gameName || selectedTemplate?.name || "Custom Game",
-                    hostId: selectedHostId,
-                    tone: "balanced" // Default tone
-                  };
-                  
-                  onCreateGame(gameConfig);
-                }}
-                disabled={isRulesBeingEdited}
-                className="h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Start Game
-              </Button>
             </div>
           </div>
 
@@ -1602,6 +1749,34 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </div>
       )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Session</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{sessionToDelete?.title}"? All conversation history will be lost. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (sessionToDelete) {
+                  deleteSession(sessionToDelete.id);
+                }
+                setSessionToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

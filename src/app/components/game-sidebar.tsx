@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, User, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2 } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, User, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -9,6 +9,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/app/components/ui/popover";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/app/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { useState } from "react";
 
 interface Game {
@@ -25,10 +41,13 @@ interface GameSidebarProps {
   onCreateGame: () => void;
   onViewDrafts?: () => void;
   onOpenProfile?: () => void;
+  onDeleteGame?: (gameId: string) => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onViewDrafts, onOpenProfile }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onViewDrafts, onOpenProfile, onDeleteGame }: GameSidebarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
 
   return (
     <div className="w-20 bg-zinc-950 border-r border-white/5 flex flex-col items-center py-4 gap-3">
@@ -141,37 +160,61 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
         <ScrollArea className="flex-1 w-full">
           <div className="flex flex-col items-center gap-3 px-3">
             {games.map((game) => (
-              <Tooltip key={game.id}>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`h-14 w-14 rounded-2xl transition-all duration-200 relative ${
-                        selectedGameId === game.id
-                          ? "rounded-xl"
-                          : "hover:rounded-xl"
-                      }`}
-                      style={{ 
-                        backgroundColor: game.color,
-                      }}
-                      onClick={() => onSelectGame(game.id)}
+              <ContextMenu key={game.id}>
+                <ContextMenuTrigger>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-14 w-14 rounded-2xl transition-all duration-200 relative overflow-hidden ${
+                            selectedGameId === game.id
+                              ? "rounded-xl"
+                              : "hover:rounded-xl"
+                          } ${game.icon.startsWith('data:image') ? 'p-0' : ''}`}
+                          style={{ 
+                            backgroundColor: game.icon.startsWith('data:image') ? 'transparent' : game.color,
+                          }}
+                          onClick={() => onSelectGame(game.id)}
+                        >
+                          {game.icon.startsWith('data:image') ? (
+                            <img 
+                              src={game.icon} 
+                              alt={game.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl">{game.icon}</span>
+                          )}
+                          {selectedGameId === game.id && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                          )}
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="right"
+                      sideOffset={8}
+                      className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
                     >
-                      <span className="text-xl">{game.icon}</span>
-                      {selectedGameId === game.id && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                      )}
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side="right"
-                  sideOffset={8}
-                  className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
-                >
-                  {game.name}
-                </TooltipContent>
-              </Tooltip>
+                      {game.name}
+                    </TooltipContent>
+                  </Tooltip>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                  <ContextMenuItem 
+                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                    onClick={() => {
+                      setGameToDelete(game);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Game
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))}
           </div>
         </ScrollArea>
@@ -289,6 +332,34 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           </Popover>
         </div>
       </TooltipProvider>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Game</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{gameToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (gameToDelete && onDeleteGame) {
+                  onDeleteGame(gameToDelete.id);
+                }
+                setGameToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

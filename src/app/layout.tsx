@@ -3,7 +3,7 @@ import "../styles/index.css";
 
 export const metadata: Metadata = {
   title: "Game Master",
-  description: "AI 游戏平台",
+  description: "AI-powered social deduction gaming platform",
 };
 
 export default function RootLayout({

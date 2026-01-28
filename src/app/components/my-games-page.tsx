@@ -27,7 +27,7 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
   const activeGames = games.filter(g => g.isActive);
   const completedGames = games.filter(g => !g.isActive);
   
-  // Mock statistics (在真实应用中这些会来自数据库)
+  // Mock statistics (in real app these would come from database)
   const getGameStats = (gameId: string) => {
     return {
       timesPlayed: Math.floor(Math.random() * 50) + 1,
@@ -147,11 +147,19 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
                           onClick={() => onSelectGame(game.id)}
                         >
                           <div className="flex items-start justify-between mb-4">
-                            <div
-                              className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg"
+                            <div 
+                              className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg overflow-hidden"
                               style={{ background: game.color }}
                             >
-                              {game.icon}
+                              {game.icon.startsWith('data:image') ? (
+                                <img 
+                                  src={game.icon} 
+                                  alt={game.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                game.icon
+                              )}
                             </div>
                             <Badge className="bg-green-500/20 border-green-500/30 text-green-300">
                               Active
@@ -252,11 +260,19 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
                         onClick={() => onSelectGame(game.id)}
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                          <div 
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl overflow-hidden"
                             style={{ background: game.color }}
                           >
-                            {game.icon}
+                            {game.icon.startsWith('data:image') ? (
+                              <img 
+                                src={game.icon} 
+                                alt={game.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              game.icon
+                            )}
                           </div>
                           <Badge className="bg-zinc-500/20 border-zinc-500/30 text-zinc-400">
                             Completed

@@ -84,6 +84,8 @@ export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardPr
                 name={data.characterName}
                 type="player"
                 background={`Game character. Role: ${data.characterClass ?? "Player"}.`}
+                role={data.characterClass}
+                enabled={true}
                 className="h-16 w-16"
                 fallbackColor={data.avatar}
                 fallback={<User className="h-8 w-8 text-white" />}

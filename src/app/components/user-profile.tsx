@@ -316,11 +316,11 @@ export function UserProfile({ onClose }: UserProfileProps) {
                       </SelectTrigger>
                       <SelectContent className="bg-[#1e1f22] border-zinc-900">
                         <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Español</SelectItem>
-                        <SelectItem value="fr">Français</SelectItem>
-                        <SelectItem value="de">Deutsch</SelectItem>
-                        <SelectItem value="ja">日本語</SelectItem>
-                        <SelectItem value="zh">中文</SelectItem>
+                        <SelectItem value="es">Spanish</SelectItem>
+                        <SelectItem value="fr">French</SelectItem>
+                        <SelectItem value="de">German</SelectItem>
+                        <SelectItem value="ja">Japanese</SelectItem>
+                        <SelectItem value="zh">Chinese</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

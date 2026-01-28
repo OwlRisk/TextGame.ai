@@ -1,7 +1,24 @@
-import { Hash, Settings, Share2, Users, ArrowLeft, Home } from "lucide-react";
+import { Hash, Settings, Share2, Users, ArrowLeft, Home, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Separator } from "@/app/components/ui/separator";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/app/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface Channel {
   id: string;
@@ -17,6 +34,7 @@ interface ChannelListProps {
   onShare: () => void;
   onSettings: () => void;
   onBackToArena?: () => void;
+  onDeleteChannel?: (channelId: string) => void;
 }
 
 export function ChannelList({ 
@@ -26,8 +44,11 @@ export function ChannelList({
   onSelectChannel,
   onShare,
   onSettings,
-  onBackToArena
+  onBackToArena,
+  onDeleteChannel
 }: ChannelListProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [channelToDelete, setChannelToDelete] = useState<Channel | null>(null);
   return (
     <div className="w-64 bg-zinc-800 flex flex-col">
       {/* Game Header */}
@@ -60,19 +81,34 @@ export function ChannelList({
               <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Channels</span>
             </div>
             {channels.filter(c => c.type === "text").map((channel) => (
-              <Button
-                key={channel.id}
-                variant="ghost"
-                className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
-                  selectedChannelId === channel.id
-                    ? "bg-zinc-700/50 text-white"
-                    : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
-                }`}
-                onClick={() => onSelectChannel(channel.id)}
-              >
-                <Hash className="h-4 w-4 mr-2" />
-                <span className="text-sm">{channel.name}</span>
-              </Button>
+              <ContextMenu key={channel.id}>
+                <ContextMenuTrigger>
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
+                      selectedChannelId === channel.id
+                        ? "bg-zinc-700/50 text-white"
+                        : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
+                    }`}
+                    onClick={() => onSelectChannel(channel.id)}
+                  >
+                    <Hash className="h-4 w-4 mr-2" />
+                    <span className="text-sm">{channel.name}</span>
+                  </Button>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                  <ContextMenuItem 
+                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                    onClick={() => {
+                      setChannelToDelete(channel);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Channel
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))}
           </div>
 
@@ -84,19 +120,34 @@ export function ChannelList({
               <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Game Rooms</span>
             </div>
             {channels.filter(c => c.type === "game").map((channel) => (
-              <Button
-                key={channel.id}
-                variant="ghost"
-                className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
-                  selectedChannelId === channel.id
-                    ? "bg-zinc-700/50 text-white"
-                    : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
-                }`}
-                onClick={() => onSelectChannel(channel.id)}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                <span className="text-sm">{channel.name}</span>
-              </Button>
+              <ContextMenu key={channel.id}>
+                <ContextMenuTrigger>
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
+                      selectedChannelId === channel.id
+                        ? "bg-zinc-700/50 text-white"
+                        : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
+                    }`}
+                    onClick={() => onSelectChannel(channel.id)}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    <span className="text-sm">{channel.name}</span>
+                  </Button>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                  <ContextMenuItem 
+                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                    onClick={() => {
+                      setChannelToDelete(channel);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Channel
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))}
           </div>
         </div>
@@ -117,6 +168,34 @@ export function ChannelList({
           <Settings className="h-4 w-4 text-zinc-400" />
         </Button>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Channel</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{channelToDelete?.name}"? All messages in this channel will be lost. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (channelToDelete && onDeleteChannel) {
+                  onDeleteChannel(channelToDelete.id);
+                }
+                setChannelToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

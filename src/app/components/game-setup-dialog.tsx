@@ -25,6 +25,13 @@ interface GameSetupDialogProps {
   onCreateGame: (config: GameConfig) => void;
 }
 
+export interface ConfiguredPlayer {
+  name: string;
+  gender?: string;
+  personality?: string;
+  background?: string;
+}
+
 export interface GameConfig {
   name: string;
   template: string;
@@ -33,6 +40,15 @@ export interface GameConfig {
   customRoles?: string[];
   hostId: string;
   tone?: string;
+  configuredPlayers?: ConfiguredPlayer[];
+  generatedHost?: {
+    name: string;
+    personality: string;
+    voiceStyle: string;
+    systemPrompt: string;
+    icon: string;
+    color: string;
+  };
 }
 
 interface ChatMessage {

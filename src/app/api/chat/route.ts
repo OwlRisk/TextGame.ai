@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     systemMessage += `   - If changes are extensive or affect multiple parts → Use EDIT_RULES (full replacement)\n`;
     systemMessage += `4. Execute your decision using the appropriate editing tag\n\n`;
     systemMessage += `EDITING FORMATS (choose the best one for each situation):\n\n`;
-    systemMessage += `1. <EDIT_RULES>\n[完整的游戏规则，用自然语言清晰描述]\n</EDIT_RULES>\n`;
+    systemMessage += `1. <EDIT_RULES>\n[Complete game rules, clearly described in natural language]\n</EDIT_RULES>\n`;
     systemMessage += `   Use when:\n`;
     systemMessage += `   - No rules exist yet\n`;
     systemMessage += `   - User selects a new game/template\n`;
@@ -104,19 +104,19 @@ export async function POST(request: NextRequest) {
     systemMessage += `   - Complete rewrite needed\n`;
     systemMessage += `   - Write in natural language - describe the game, roles, phases, win conditions, etc. clearly\n`;
     systemMessage += `   - No need for rigid section labels - just make it clear and comprehensive\n\n`;
-    systemMessage += `2. <ADD_TO_RULES section="位置描述">\n[要添加的新内容]\n</ADD_TO_RULES>\n`;
+    systemMessage += `2. <ADD_TO_RULES section="section description">\n[New content to add]\n</ADD_TO_RULES>\n`;
     systemMessage += `   Use when:\n`;
     systemMessage += `   - User wants to add a new role, phase, or rule\n`;
     systemMessage += `   - Adding to existing rules without changing other content\n`;
-    systemMessage += `   - Section can be a natural description like "角色部分" or "游戏阶段" or just "规则末尾"\n\n`;
-    systemMessage += `3. <REPLACE_IN_RULES section="位置描述" old="要替换的旧内容" new="新内容">\n</REPLACE_IN_RULES>\n`;
+    systemMessage += `   - Section can be a natural description like "Roles section" or "Game phases" or just "End of rules"\n\n`;
+    systemMessage += `3. <REPLACE_IN_RULES section="section description" old="old content to replace" new="new content">\n</REPLACE_IN_RULES>\n`;
     systemMessage += `   Use when:\n`;
     systemMessage += `   - User wants to modify specific existing content\n`;
     systemMessage += `   - Changing wording, numbers, or specific rules\n`;
     systemMessage += `   - Old content should match what's in current rules\n\n`;
     systemMessage += `DECISION EXAMPLES:\n`;
     systemMessage += `- User: "I want to play Werewolf" + No rules exist → Use <EDIT_RULES> with natural language Werewolf rules\n`;
-    systemMessage += `- User: "Add a Seer role" + Rules exist → Use <ADD_TO_RULES section="角色部分"> or <EDIT_RULES> with updated rules\n`;
+    systemMessage += `- User: "Add a Seer role" + Rules exist → Use <ADD_TO_RULES section="Roles section"> or <EDIT_RULES> with updated rules\n`;
     systemMessage += `- User: "Change player count to 8" + Rules mention "6 players" → Use <REPLACE_IN_RULES> or <EDIT_RULES>\n`;
     systemMessage += `- User selects "Midnight Impostors" + Rules exist → Use <EDIT_RULES> with complete new rules in natural language\n\n`;
     systemMessage += `CRITICAL SEPARATION:\n`;
@@ -131,7 +131,35 @@ export async function POST(request: NextRequest) {
     systemMessage += `- Preserve existing content unless user explicitly wants to change it\n`;
     systemMessage += `- When using EDIT_RULES, write rules in natural, clear language - the AI Host will understand\n`;
     systemMessage += `- Write your conversational response naturally, then add editing tags separately\n`;
-    systemMessage += `- The rules panel updates automatically when you use editing tags\n`;
+    systemMessage += `- The rules panel updates automatically when you use editing tags\n\n`;
+    
+    systemMessage += `PLAYER CONFIGURATION (NEW FEATURE):\n`;
+    systemMessage += `You can now intelligently configure player details based on the game rules!\n\n`;
+    systemMessage += `Use this format to configure players:\n`;
+    systemMessage += `<CONFIG_PLAYERS>\n`;
+    systemMessage += `[\n`;
+    systemMessage += `  {"name": "Player Name", "gender": "male/female/other", "personality": "Personality description", "background": "Background story"},\n`;
+    systemMessage += `  ...(more players)\n`;
+    systemMessage += `]\n`;
+    systemMessage += `</CONFIG_PLAYERS>\n\n`;
+    systemMessage += `Rules for player configuration:\n`;
+    systemMessage += `- Analyze game rules to determine optimal player count\n`;
+    systemMessage += `- Generate diverse, culturally appropriate names\n`;
+    systemMessage += `- Balance gender distribution (roughly 50/50 unless rules specify)\n`;
+    systemMessage += `- Create distinct personalities for each player\n`;
+    systemMessage += `- Match player backgrounds to game theme and roles\n`;
+    systemMessage += `- Use CONFIG_PLAYERS when rules are set and user is ready to start\n\n`;
+    systemMessage += `Example:\n`;
+    systemMessage += `User: "Alright, let's start the game!" (after rules are defined)\n`;
+    systemMessage += `You respond with:\n`;
+    systemMessage += `"Perfect! I've configured 8 players for you with balanced genders and unique personalities. Click the 'Start Game' button to begin!"\n`;
+    systemMessage += `<CONFIG_PLAYERS>\n`;
+    systemMessage += `[\n`;
+    systemMessage += `  {"name": "Alex", "gender": "male", "personality": "Strategic and analytical", "background": "Former detective"},\n`;
+    systemMessage += `  {"name": "Sarah", "gender": "female", "personality": "Observant and cautious", "background": "Psychology student"},\n`;
+    systemMessage += `  ...(6 more players)\n`;
+    systemMessage += `]\n`;
+    systemMessage += `</CONFIG_PLAYERS>\n`;
 
     // Format messages for OpenAI
     const formattedMessages = [
