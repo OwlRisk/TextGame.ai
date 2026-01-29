@@ -1,0 +1,8 @@
+fix: 头像水合、游戏卡住与聊天区视觉优化
+
+- 头像水合: useGeneratedAvatar 初始 src 固定为 null，在 useEffect 内从
+  cache/localStorage 恢复，避免服务端无 window 导致首屏与客户端不一致
+- 游戏流程: AI Host 返回 NONE 时随机选 AI 或让 Host 发评论；选中用户后 30 秒
+  无发言则自动选 AI 继续；用户发送消息时清除 currentSpeakerId
+- 聊天区: 发送/确认按钮统一为 violet；名字分色（Host 暖色、You 紫色、其他白）；
+  HOST 徽章改为半透明+边框样式并优化居中与尺寸
