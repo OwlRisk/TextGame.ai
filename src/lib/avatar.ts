@@ -13,16 +13,13 @@ const PERSIST_KEYS_LIST = 'gm_avatar_keys';
 const PERSIST_MAX_KEYS = 50;
 const PERSIST_EVICT_COUNT = 10;
 
-function cacheKey(
-  name: string,
-  type: AvatarType,
-  gameId?: string,
-  role?: string,
-  background?: string,
-  personality?: string,
-  gender?: string
-): string {
-  return [name, type, gameId ?? '', role ?? '', background ?? '', personality ?? '', gender ?? ''].join('|');
+/**
+ * Identity-only cache key: same person = same avatar everywhere.
+ * Cache lookup uses only name + type so avatars don't change when
+ * gameId, role, background, or personality change.
+ */
+function identityCacheKey(name: string, type: AvatarType): string {
+  return [name, type].join('|');
 }
 
 function loadFromStorage(key: string): string | null {
@@ -77,7 +74,7 @@ export async function fetchGeneratedAvatar(
   personality?: string,
   gender?: string
 ): Promise<string> {
-  const key = cacheKey(name, type, gameId, role, background, personality, gender);
+  const key = identityCacheKey(name, type);
   const cached = cache.get(key);
   if (cached) return cached;
 
@@ -152,7 +149,7 @@ export function useGeneratedAvatar(
     gender,
     enabled = true,
   } = options;
-  const key = cacheKey(name, type, gameId, role, background, personality, gender);
+  const key = (name && enabled) ? identityCacheKey(name, type) : '';
   // Always start with null so server and client first paint match (no localStorage on server).
   // Cache/storage is read in fetchAvatar() inside useEffect (client-only).
   const [src, setSrc] = useState<string | null>(null);
@@ -194,7 +191,7 @@ export function useGeneratedAvatar(
         setSrc(null);
       })
       .finally(() => setLoading(false));
-  }, [name, type, gameId, role, background, personality, gender, enabled, key]);
+  }, [name, type, enabled, key, gameId, role, background, personality, gender]);
 
   useEffect(() => {
     fetchAvatar();

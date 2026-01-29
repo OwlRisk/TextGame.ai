@@ -225,7 +225,7 @@ ROLES:
 
 RULES:
 - Once rules are set, they cannot be changed
-- Game Master controls all phases
+- Host controls all phases
 - Dead players cannot communicate
 - Majority vote eliminates a player`
   },
@@ -617,7 +617,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                       id: category.id,
                       name: category.name,
                       rules: category.rules,
-                      templateId: category.templateId
+                      templateId: (category.templateId ?? "custom") as "werewolf" | "undercover" | "custom"
                     })}
                     className={`group relative bg-white/5 backdrop-blur-xl border-2 border-white/10 hover:border-violet-500/50 rounded-2xl p-7 transition-all duration-300 hover:scale-105 hover:bg-white/10 text-left overflow-hidden ${
                       selectedCategory === category.id ? 'border-violet-500/50 bg-white/10' : ''
@@ -895,7 +895,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                       id: game.id,
                       name: game.name,
                       rules: game.rules,
-                      templateId: game.templateId
+                      templateId: (game.templateId ?? "custom") as "werewolf" | "undercover" | "custom"
                     })}
                     onMouseEnter={() => setHoveredGameId(game.id)}
                     onMouseLeave={() => setHoveredGameId(null)}
@@ -931,7 +931,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                       id: game.id,
                       name: game.name,
                       rules: game.rules,
-                      templateId: game.templateId
+                      templateId: (game.templateId ?? "custom") as "werewolf" | "undercover" | "custom"
                     })}
                     onMouseEnter={() => setHoveredGameId(game.id)}
                     onMouseLeave={() => setHoveredGameId(null)}

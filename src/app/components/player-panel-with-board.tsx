@@ -80,7 +80,7 @@ export function PlayerPanelWithBoard({
         <TabsContent value="players" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-3 space-y-3">
-              {/* Game Master Section */}
+              {/* Host Section (runs game; see docs/ROLES.md) */}
               {players.filter(p => p.isGameMaster).map((player) => (
                 <div key={player.id}>
                   <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 flex items-center gap-2">

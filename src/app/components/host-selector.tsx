@@ -138,7 +138,7 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
             <div>
               <span className="text-xs font-semibold text-zinc-400 uppercase">Best For:</span>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {host.suitableFor.map((game) => (
+                {(host.suitableFor ?? []).map((game) => (
                   <span
                     key={game}
                     className="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300"

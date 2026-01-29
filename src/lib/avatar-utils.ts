@@ -1,16 +1,16 @@
 /**
- * Utility functions for avatar generation to ensure consistency across all components
+ * Utility functions for avatar generation to ensure consistency across all components.
+ * Role design: see docs/ROLES.md (Game Master, Host, AI Player, User).
  */
 
 import { Player } from "@/app/components/player-panel";
 
 /**
- * Get standardized avatar props for a player
- * This ensures all components use the same parameters for avatar generation,
- * resulting in consistent avatars across the UI (chat, player panel, etc.)
- * 
- * IMPORTANT: All components should use this function to ensure avatar consistency.
- * The gameId should be passed separately to GeneratedAvatar component.
+ * Get standardized avatar props for a player.
+ * - User (!isAI): "You", type "player".
+ * - Host (isGameMaster): type "host"; identity from Host selector or generated Host.
+ * - AI Player (isAI && !isGameMaster): type "player".
+ * Use getAvatarPropsForPlayer + gameId when rendering GeneratedAvatar.
  */
 export function getAvatarPropsForPlayer(player: Player | undefined | null) {
   if (!player) {
@@ -36,9 +36,7 @@ export function getAvatarPropsForPlayer(player: Player | undefined | null) {
     };
   }
 
-  // Standardized background generation logic
-  // For hosts: use background if provided and not empty, otherwise undefined
-  // For players: use background if provided, otherwise generate default with role
+  // Host vs AI Player: Host uses background if provided; AI Player uses role-based default
   const normalizedBackground = player.background?.trim() || undefined;
   const background = player.isGameMaster
     ? normalizedBackground

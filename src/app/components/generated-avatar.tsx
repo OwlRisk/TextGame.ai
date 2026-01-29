@@ -9,7 +9,7 @@ type AvatarDisplayType = 'gm' | 'host' | 'player';
 
 interface GeneratedAvatarProps extends Omit<UseGeneratedAvatarOptions, 'type'> {
   name: string | null | undefined;
-  /** "gm" = fixed Game Master avatar; "host" = generated per-host (Echo, Nova, etc.); "player" = generated per player */
+  /** gm = Game Master (rules design); host = Host (runs game, e.g. Echo/Nova); player = AI Player or User. See docs/ROLES.md. */
   type?: AvatarDisplayType;
   /** Game room ID for caching - same game room will reuse generated avatars */
   gameId?: string;
@@ -46,10 +46,27 @@ export function GeneratedAvatar({
     );
   }
 
-  // Host & player: generated from background (API uses type 'host' | 'player')
-  const apiType = type === "host" ? "host" : "player";
-  const { src, loading, error } = useGeneratedAvatar(name, {
-    type: apiType,
+  // Player: default only (no generation). Account system will provide avatars later.
+  if (type === "player") {
+    const initials = name ? name.substring(0, 2).toUpperCase() : "??";
+    return (
+      <Avatar className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}>
+        <AvatarFallback
+          className={cn(
+            "flex items-center justify-center text-sm font-semibold text-white",
+            fallbackColor && "bg-transparent"
+          )}
+          style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
+        >
+          {fallback ?? initials}
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+
+  // Host: generated from background (API uses type 'host')
+  const { src, loading } = useGeneratedAvatar(name, {
+    type: "host",
     gameId,
     role,
     background,
@@ -58,10 +75,7 @@ export function GeneratedAvatar({
     enabled,
   });
   const initials = name ? name.substring(0, 2).toUpperCase() : "??";
-
-  // Show image if available and not loading
   const showImage = src && !loading;
-  // Show fallback if no image available (either loading failed, or still loading but we want to show something)
   const showFallback = !showImage;
 
   return (

@@ -50,7 +50,7 @@ ROLES:
 
 RULES:
 - Once rules are set, they cannot be changed
-- Game Master controls all phases
+- Host controls all phases
 - Dead players cannot communicate
 - Majority vote eliminates a player`,
     roles: ["Villager", "Werewolf", "Seer", "Doctor"],

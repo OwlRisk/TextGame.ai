@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
     systemMessage += `=== END OF CURRENT RULES ===\n`;
 
-    systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Guide the user through the game setup process step by step.`;
+    systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Guide the user through the game setup process step by step. You may use emojis when they fit naturally.`;
 
     systemMessage += `\n\nContext: This chat is for game setup. The actual game (phases, roles, etc.) runs on a separate screen after the user clicks "Create Game". Use your judgment to guide appropriately.`;
     

@@ -333,7 +333,7 @@ export default function HomePage() {
             const { message } = await getAIChatResponse({
               messages: [{
                 role: "user",
-                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} The host just explained the rules and asked if everyone is ready. Write a short, natural response (1-2 sentences max) showing you're ready to play. Stay in character based on your personality and background. Output only your response, nothing else.`
+                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} The host just explained the rules and asked if everyone is ready. Write a short, natural response (1-2 sentences max) showing you're ready to play. Stay in character based on your personality and background. Emojis are allowed; use when appropriate. Output only your response, nothing else.`
               }],
               gameContext: {
                 template: config.template,
@@ -371,7 +371,7 @@ export default function HomePage() {
         const { message } = await getAIChatResponse({
           messages: [{
             role: "user",
-            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules above, and ask if everyone is ready. Stay in character. Output only the greeting, no other commentary.`
+            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules above, and ask if everyone is ready. Stay in character. Emojis are allowed; use when appropriate. Output only the greeting, no other commentary.`
           }],
           hostId: config.hostId,
           hostPersonality: config.generatedHost ? { name: config.generatedHost.name, description: config.generatedHost.personality, personality: config.generatedHost.voiceStyle } : undefined,
@@ -693,7 +693,7 @@ IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-se
                     const { message } = await getAIChatResponse({
                       messages: [{
                         role: "user",
-                        content: `You are ${gameMaster.name}, the host. The conversation has paused. Make a brief comment to encourage discussion or guide the game forward (1-2 sentences). Output only your comment.`
+                        content: `You are ${gameMaster.name}, the host. The conversation has paused. Make a brief comment to encourage discussion or guide the game forward (1-2 sentences). Emojis are allowed; use when appropriate. Output only your comment.`
                       }],
                       hostId: currentGame.config.hostId,
                       hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -814,7 +814,7 @@ ${currentGame.config.rules || "No specific rules defined."}
 Recent conversation:
 ${recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n")}
 
-The conversation has paused. Respond naturally to keep the game moving. Stay in character. Keep it brief (1-2 sentences). Output only your response, nothing else.`
+The conversation has paused. Respond naturally to keep the game moving. Stay in character. Keep it brief (1-2 sentences). Emojis are allowed; use when appropriate. Output only your response, nothing else.`
                           }],
                           gameContext: {
                             template: currentGame.config.template,
@@ -887,7 +887,7 @@ ${currentGame.config.rules || "No specific rules defined."}
 Recent conversation:
 ${recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n")}
 
-The host (${gameMaster.name}) thinks you would naturally respond to this conversation. Respond naturally based on your personality, background, role, and the game rules. Stay in character. Keep it brief (1-2 sentences). Output only your response, nothing else.`
+The host (${gameMaster.name}) thinks you would naturally respond to this conversation. Respond naturally based on your personality, background, role, and the game rules. Stay in character. Keep it brief (1-2 sentences). Emojis are allowed; use when appropriate. Output only your response, nothing else.`
                   }],
                   gameContext: {
                     template: currentGame.config.template,
@@ -964,7 +964,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
         const { message } = await getAIChatResponse({
           messages: [{
             role: "user",
-            content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". ${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Output only the announcement.`
+            content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". ${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Emojis are allowed; use when appropriate. Output only the announcement.`
           }],
           hostId: currentGame?.config.hostId,
           hostPersonality: currentGame?.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -1130,7 +1130,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
       const { message } = await getAIChatResponse({
         messages: [{
           role: "user",
-          content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
+          content: `You are ${gameMaster.name}, the host. ${desc} Emojis are allowed; use when appropriate. Output only the announcement.`
         }],
         hostId: currentGame.config.hostId,
         hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -1170,7 +1170,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
       const { message } = await getAIChatResponse({
         messages: [{
           role: "user",
-          content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
+          content: `You are ${gameMaster.name}, the host. ${desc} Emojis are allowed; use when appropriate. Output only the announcement.`
         }],
         hostId: currentGame.config.hostId,
         hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,

@@ -249,7 +249,7 @@ ROLES:
 
 RULES:
 - Once rules are set, they cannot be changed
-- Game Master controls all phases
+- Host controls all phases
 - Dead players cannot communicate
 - Majority vote eliminates a player`,
     roles: ["Villager", "Werewolf", "Seer", "Doctor"]
@@ -785,8 +785,25 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       }
       cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '').trim();
     }
-    
+
     return cleanedResponse;
+  };
+
+  const extractAndApplyPlayerConfig = (response: string): void => {
+    const configMatch = response.match(/<CONFIG_PLAYERS>([\s\S]*?)<\/CONFIG_PLAYERS>/i);
+    if (!configMatch || !configMatch[1]) return;
+    try {
+      const raw = configMatch[1].trim();
+      const arr = JSON.parse(raw) as Array<{ name: string; gender?: string; personality?: string; background?: string }>;
+      if (Array.isArray(arr) && arr.length > 0) {
+        const valid = arr.filter((p): p is { name: string; gender?: string; personality?: string; background?: string } =>
+          p && typeof p === 'object' && typeof p.name === 'string'
+        );
+        if (valid.length > 0) setConfiguredPlayers(valid);
+      }
+    } catch {
+      /* ignore parse errors */
+    }
   };
 
   // Helper function to add content to a specific section
@@ -1654,7 +1671,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     }
                     
                     // Generate AI Host based on game rules
-                    let generatedHostData = null;
+                    type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string };
+                    let generatedHostData: GeneratedHost | null = null;
                     toast.info("Generating AI Host...");
                     try {
                       const response = await fetch('/api/generate-host', {
@@ -1667,17 +1685,18 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       });
 
                       if (response.ok) {
-                        generatedHostData = await response.json();
-                        console.log('[Game Master] Generated host:', generatedHostData);
+                        const host = await response.json() as GeneratedHost;
+                        generatedHostData = host;
+                        console.log('[Game Master] Generated host:', host);
 
                         // Save generated host to current session
                         setSessions(prev => prev.map(s =>
                           s.id === currentSessionId
-                            ? { ...s, generatedHost: generatedHostData }
+                            ? { ...s, generatedHost: host }
                             : s
                         ));
 
-                        toast.success(`Host "${generatedHostData.name}" is ready!`);
+                        toast.success(`Host "${host.name}" is ready!`);
                       } else {
                         toast.error('Failed to generate host, using default');
                       }

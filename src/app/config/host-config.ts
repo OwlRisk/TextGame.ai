@@ -116,7 +116,7 @@ export function getDefaultHostForTemplate(templateId: string | null | undefined)
   
   // Find first host that has this template in suitableFor
   const recommended = HOST_PERSONALITIES.find(host =>
-    host.suitableFor.some(game => 
+    (host.suitableFor ?? []).some(game => 
       game.toLowerCase().includes(templateName.toLowerCase()) ||
       templateName.toLowerCase().includes(game.toLowerCase())
     )
@@ -142,7 +142,7 @@ export function isHostRecommendedForTemplate(hostId: string, templateId: string 
   
   if (!host) return false;
   
-  return host.suitableFor.some(game =>
+  return (host.suitableFor ?? []).some(game =>
     game.toLowerCase().includes(templateName.toLowerCase()) ||
     templateName.toLowerCase().includes(game.toLowerCase())
   );
