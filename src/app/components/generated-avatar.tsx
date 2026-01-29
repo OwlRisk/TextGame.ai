@@ -31,8 +31,19 @@ export function GeneratedAvatar({
   fallbackColor,
   fallback,
 }: GeneratedAvatarProps) {
-  // GM: fixed anime avatar (Game Master role)
-  if (type === "gm") {
+  const isGM = type === "gm";
+  const apiType = type === "host" ? "host" : "player";
+  const { src, loading } = useGeneratedAvatar(name, {
+    type: apiType,
+    gameId,
+    role,
+    background,
+    personality,
+    gender,
+    enabled: isGM ? false : enabled,
+  });
+
+  if (isGM) {
     return (
       <Avatar className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}>
         <AvatarImage src={GAME_MASTER_AVATAR} alt="Game Master" className="object-cover" />
@@ -46,34 +57,6 @@ export function GeneratedAvatar({
     );
   }
 
-  // Player: default only (no generation). Account system will provide avatars later.
-  if (type === "player") {
-    const initials = name ? name.substring(0, 2).toUpperCase() : "??";
-    return (
-      <Avatar className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}>
-        <AvatarFallback
-          className={cn(
-            "flex items-center justify-center text-sm font-semibold text-white",
-            fallbackColor && "bg-transparent"
-          )}
-          style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
-        >
-          {fallback ?? initials}
-        </AvatarFallback>
-      </Avatar>
-    );
-  }
-
-  // Host: generated from background (API uses type 'host')
-  const { src, loading } = useGeneratedAvatar(name, {
-    type: "host",
-    gameId,
-    role,
-    background,
-    personality,
-    gender,
-    enabled,
-  });
   const initials = name ? name.substring(0, 2).toUpperCase() : "??";
   const showImage = src && !loading;
   const showFallback = !showImage;
