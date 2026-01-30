@@ -628,7 +628,7 @@ Output only your whisper reply, nothing else.`
       }, 800);
       timeoutRefs.current.push(typingTimeout);
       
-      const responseTimeout = setTimeout(() => {
+      const responseTimeout = setTimeout(async () => {
         if (!isMountedRef.current) return;
         setTypingUsers([]);
         addMessage({
@@ -654,6 +654,87 @@ Output only your whisper reply, nothing else.`
           return prev;
         });
         
+        // Send role whispers to each player based on game rules
+        const allPlayers = [...players.filter(p => !p.isGameMaster)];
+        const sendRoleWhispers = async () => {
+          if (!isMountedRef.current || !currentGame) return;
+          
+          for (const player of allPlayers) {
+            // Build role information based on game template
+            let roleInfo = "";
+            if (currentGame.config.template === "werewolf") {
+              const role = player.role || "Villager";
+              if (role === "Werewolf") {
+                const otherWerewolves = allPlayers.filter(p => p.role === "Werewolf" && p.id !== player.id);
+                roleInfo = `Your role is **Werewolf**. You must eliminate villagers without being caught. ${otherWerewolves.length > 0 ? `Your fellow werewolf is: ${otherWerewolves.map(w => w.name).join(", ")}.` : "You are the only werewolf."} During the night, you will choose a victim. During the day, blend in and deflect suspicion.`;
+              } else if (role === "Seer") {
+                roleInfo = `Your role is **Seer**. Each night, you may investigate one player to learn if they are a Werewolf or Not. Use this information wisely to guide the village, but be careful not to reveal yourself too early.`;
+              } else if (role === "Doctor") {
+                roleInfo = `Your role is **Doctor**. Each night, you may protect one player from being eliminated by the werewolves. You cannot protect the same player twice in a row. Your protection is crucial for the village's survival.`;
+              } else {
+                roleInfo = `Your role is **Villager**. You have no special abilities, but your vote and observations are crucial. Work with others to identify and eliminate the werewolves before they take over.`;
+              }
+            } else if (currentGame.config.template === "undercover") {
+              const role = player.role || "Civilian";
+              const word = player.stats?.Word as string || "";
+              if (role === "Undercover") {
+                roleInfo = `Your role is **Undercover**. Your secret word is: **"${word}"**. Your word is similar but different from the civilians' word. Describe your word carefully to blend in, but not so accurately that you give yourself away.`;
+              } else {
+                roleInfo = `Your role is **Civilian**. Your secret word is: **"${word}"**. Describe your word to help identify who has a different word. Be careful - the undercover agent has a similar but different word.`;
+              }
+            } else {
+              // Custom game - use AI to generate role whisper based on rules
+              try {
+                const { message } = await getAIChatResponse({
+                  messages: [{
+                    role: "user",
+                    content: `You are ${gameMaster.name}, the host of "${currentGame.name}". 
+                    
+Game Rules:
+${currentGame.config.rules}
+
+Player: ${player.name}
+Role/Position: ${player.role || "Player"}
+Stats: ${JSON.stringify(player.stats || {})}
+
+Generate a brief private message (1-3 sentences) to whisper to this player about their role, abilities, or any secret information they should know based on the game rules. Be specific and helpful. If there's nothing secret to share, give them a brief encouragement or reminder relevant to their position in the game.
+
+Output only the whisper message, nothing else.`
+                  }],
+                  gameContext: {
+                    template: currentGame.config.template,
+                    gameName: currentGame.name,
+                    rules: currentGame.config.rules
+                  }
+                });
+                roleInfo = (message || "").trim() || `Welcome to the game, ${player.name}. Play wisely and trust your instincts.`;
+              } catch {
+                roleInfo = `Welcome to the game, ${player.name}. Play wisely and trust your instincts.`;
+              }
+            }
+            
+            // Send whisper to player
+            if (roleInfo) {
+              await new Promise(resolve => setTimeout(resolve, 300)); // Small delay between whispers
+              if (!isMountedRef.current) return;
+              addMessage({
+                senderId: "gm-1",
+                senderName: gameMaster.name,
+                senderAvatar: gameMaster.avatar,
+                content: roleInfo,
+                isAI: true,
+                isWhisper: true,
+                whisperToId: player.id,
+                whisperToName: player.name,
+              });
+            }
+          }
+        };
+        
+        // Send role whispers after a short delay
+        const whisperTimeout = setTimeout(sendRoleWhispers, 1500);
+        timeoutRefs.current.push(whisperTimeout);
+        
         // Auto-start first phase after intro
         if (currentGame?.config.template === "werewolf") {
           const autoStartTimeout = setTimeout(async () => {
@@ -670,7 +751,7 @@ Output only your whisper reply, nothing else.`
               }
             );
             timeoutRefs.current = timeoutRefs.current.filter(t => t !== autoStartTimeout);
-          }, 3000);
+          }, 5000); // Increased delay to allow role whispers to be sent first
           timeoutRefs.current.push(autoStartTimeout);
         }
       }, 2500);
