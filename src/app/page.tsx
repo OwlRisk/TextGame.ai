@@ -33,6 +33,10 @@ import {
 /** Message returned by /api/chat when the model returns empty content; treat as failure and use fallback. */
 const API_ERROR_PLACEHOLDER = /I apologize,? but I encountered an error/i;
 
+/** Instruction so Host and AI speak in the same language as the game rules (any language). */
+const LANG_MATCH_RULES =
+  "LANGUAGE: The game rules above are written in a specific language. You MUST write all your output in the SAME language as the rules (e.g. if the rules are in Chinese, write only in Chinese; if in Japanese, only in Japanese; if in Spanish, only in Spanish). Do not mix languages. Match the rules' language exactly.";
+
 interface Game {
   id: string;
   name: string;
@@ -365,10 +369,11 @@ export default function HomePage() {
         const playerTimeout = setTimeout(async () => {
           if (!isMountedRef.current) return;
           try {
+            const rulesSnippet = (config.rules || "").trim().slice(0, 500);
             const { message } = await getAIChatResponse({
               messages: [{
                 role: "user",
-                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} The host just explained the rules and asked if everyone is ready. Write a short, natural response (1-2 sentences max) showing you're ready to play. Stay in character based on your personality and background. Output only your response, nothing else.`
+                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} Game rules (for language—reply in this language):\n${rulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\nThe host just explained the rules and asked if everyone is ready. Write a short, natural response (1-2 sentences max) showing you're ready to play. Stay in character. Output only your response, nothing else.`
               }],
               gameContext: {
                 template: config.template,
@@ -406,7 +411,7 @@ export default function HomePage() {
         const { message } = await getAIChatResponse({
           messages: [{
             role: "user",
-            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules above, and ask if everyone is ready. Stay in character. Output only the greeting, no other commentary.`
+            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\n${LANG_MATCH_RULES}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules above, and ask if everyone is ready. Stay in character. Output only the greeting, no other commentary.`
           }],
           hostId: config.hostId,
           hostPersonality: config.generatedHost ? { name: config.generatedHost.name, description: config.generatedHost.personality, personality: config.generatedHost.voiceStyle } : undefined,
@@ -533,6 +538,7 @@ export default function HomePage() {
       const pacingHint = !lastFewFromUser && messages.length >= 4
         ? "\n\nThe human player (You) hasn't spoken recently; consider NEXT_SPEAKER: You so they can participate, or NONE for a short pause."
         : "";
+      const languageRule = LANG_MATCH_RULES.replace("above", "below").replace("write all your output", "write all your output (NEXT_SPEAKER line, PRIVATE_TO_... content, POST_EVENT content)");
 
       let selectedPlayer: typeof alivePlayersList[0] | null = null;
       try {
@@ -543,6 +549,8 @@ export default function HomePage() {
 1) Decide who speaks next
 2) Optionally send private messages to specific players (e.g. clues, role info, secrets)
 3) Optionally post a public event/announcement to the channel
+
+${languageRule}
 
 Game Rules:
 ${currentGame.config.rules || "No specific rules defined."}
@@ -666,6 +674,8 @@ ${currentGame.config.rules || "No specific rules defined."}
 
 Recent conversation:
 ${recentMessagesForAI.join("\n")}
+
+${LANG_MATCH_RULES}
 
 The host (${gameMaster.name}) thinks you would naturally respond. Respond in character, briefly (1-2 sentences). Output only your response, nothing else.`
               }],
@@ -817,12 +827,13 @@ The host (${gameMaster.name}) thinks you would naturally respond. Respond in cha
 
     const currentGame = games.find(g => g.id === selectedGameId);
     
+    const rulesForLang = (currentGame?.config.rules || "").trim().slice(0, 600);
     const postOne = async (desc: string, updatePhase?: GamePhaseKind | string) => {
       try {
         const { message } = await getAIChatResponse({
           messages: [{
             role: "user",
-            content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". ${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Output only the announcement.`
+            content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". Game rules (use this language for your announcement):\n${rulesForLang || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Output only the announcement.`
           }],
           hostId: currentGame?.config.hostId,
           hostPersonality: currentGame?.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -990,12 +1001,13 @@ The host (${gameMaster.name}) thinks you would naturally respond. Respond in cha
       checkWinConditions();
     }, 1000);
 
+    const elimRulesSnippet = (currentGame.config.rules || "").trim().slice(0, 500);
     const desc = `Announce that ${target.name} has been eliminated. Be brief and in character.`;
     try {
       const { message } = await getAIChatResponse({
         messages: [{
           role: "user",
-          content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
+          content: `You are ${gameMaster.name}, the host. Game rules (use this language for your announcement):\n${elimRulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Output only the announcement.`
         }],
         hostId: currentGame.config.hostId,
         hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -1030,12 +1042,13 @@ The host (${gameMaster.name}) thinks you would naturally respond. Respond in cha
     if (!gameMaster || !target || !currentGame) return;
 
     const role = target.role || "Unknown";
+    const revealRulesSnippet = (currentGame.config.rules || "").trim().slice(0, 500);
     const desc = `Announce that ${target.name} was a ${role}. Reveal their role to the group. Keep it brief.`;
     try {
       const { message } = await getAIChatResponse({
         messages: [{
           role: "user",
-          content: `You are ${gameMaster.name}, the host. ${desc} Output only the announcement.`
+          content: `You are ${gameMaster.name}, the host. Game rules (use this language for your announcement):\n${revealRulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Output only the announcement.`
         }],
         hostId: currentGame.config.hostId,
         hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,

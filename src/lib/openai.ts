@@ -18,6 +18,8 @@ export interface ChatRequest {
   hostId?: string;
   /** When set (e.g. host created via GM), used instead of hostId for host personality */
   hostPersonality?: HostPersonalityOverride;
+  /** Max tokens for completion; higher allows full rules in one response (e.g. GM rules editing) */
+  maxCompletionTokens?: number;
   gameContext?: {
     template?: string;
     playerCount?: number;
@@ -64,7 +66,8 @@ export async function getAIChatResponse(
             timestamp: msg.timestamp?.toISOString()
           })),
           hostPersonality,
-          gameContext: request.gameContext
+          gameContext: request.gameContext,
+          maxCompletionTokens: request.maxCompletionTokens
         }),
       });
 
@@ -125,7 +128,8 @@ export async function streamAIChatResponse(
             timestamp: msg.timestamp?.toISOString()
           })),
           hostPersonality,
-          gameContext: request.gameContext
+          gameContext: request.gameContext,
+          maxCompletionTokens: request.maxCompletionTokens
         }),
       });
 

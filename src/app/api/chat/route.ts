@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { messages, hostPersonality, gameContext } = body;
+    const { messages, hostPersonality, gameContext, maxCompletionTokens } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -132,7 +132,10 @@ export async function POST(request: NextRequest) {
     systemMessage += `- When using EDIT_RULES, write rules in natural, clear language - the AI Host will understand\n`;
     systemMessage += `- Write your conversational response naturally, then add editing tags separately\n`;
     systemMessage += `- The rules panel updates automatically when you use editing tags\n\n`;
-    
+    systemMessage += `PACING (节奏) — YOU DECIDE THE TIME:\n`;
+    systemMessage += `- You (the GM) should decide and write the specific time in the rules: per-question time, per-round time, or total game duration. Do not leave it as a vague range or "to be decided"—choose a concrete value (e.g. "每题 45 秒", "每回合 2 分钟", "整局 30 分钟") based on game type and user preference.\n`;
+    systemMessage += `- For quiz/brain/trivia games, when offering "optimization directions", include "节奏更从容" (slower pace) as an option; if the user wants slower pace or says 节奏太快, set longer times (e.g. 60–90 seconds per question, or no speed bonus).\n`;
+    systemMessage += `- When writing EDIT_RULES or ADD_TO_RULES, always include your chosen time(s) in the rules text so the Host and players know exactly how long they have.\n\n`;
     systemMessage += `PLAYER CONFIGURATION (NEW FEATURE):\n`;
     systemMessage += `You can now intelligently configure player details based on the game rules!\n\n`;
     systemMessage += `Use this format to configure players:\n`;
@@ -178,12 +181,16 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
+    const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
+      ? Math.min(4096, Math.max(256, maxCompletionTokens))
+      : 500;
+
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: 'gpt-5.2',
       messages: formattedMessages,
       temperature: 0.8,
-      max_completion_tokens: 500,
+      max_completion_tokens: maxTokens,
       stream: false,
     });
 
