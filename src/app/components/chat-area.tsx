@@ -1,15 +1,23 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, AlertCircle, User, Mic, MicOff, X, Check } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check, MessageSquare, ChevronDown, Reply, Copy, MessageCircle } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/app/components/ui/context-menu";
 import { useVoiceInput } from "@/lib/voice";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
+import { toast } from "sonner";
 
 // Helper function to parse inline formatting (bold, italic, code)
 function parseInlineFormatting(text: string): JSX.Element[] {
@@ -177,12 +185,16 @@ export interface Message {
   timestamp: Date;
   isAI: boolean;
   isSystemMessage?: boolean;
+  // Whisper (private message) support
+  isWhisper?: boolean;
+  whisperToId?: string;      // Target player ID for the whisper
+  whisperToName?: string;    // Target player name for display
 }
 
 interface ChatAreaProps {
   channelName: string;
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, whisperTo?: { id: string; name: string } | null) => void;
   isGameActive: boolean;
   currentSpeakerId?: string | null;
   userId: string;
@@ -221,10 +233,49 @@ export function ChatArea({
   lastVotedOutId
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
+  const [whisperTarget, setWhisperTarget] = useState<{ id: string; name: string } | null>(null);
+  const [replyTarget, setReplyTarget] = useState<{ id: string; name: string; content: string } | null>(null);
+  const [showWhisperMenu, setShowWhisperMenu] = useState(false);
+  const whisperMenuRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
   const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
+  
+  // Handle context menu actions
+  const handleWhisperTo = useCallback((senderId: string, senderName: string) => {
+    if (senderId === userId) return; // Can't whisper to self
+    setWhisperTarget({ id: senderId, name: senderName });
+    setReplyTarget(null);
+    inputRef.current?.focus();
+  }, [userId]);
+  
+  const handleReply = useCallback((messageId: string, senderName: string, content: string) => {
+    setReplyTarget({ id: messageId, name: senderName, content: content.slice(0, 100) });
+    setWhisperTarget(null);
+    inputRef.current?.focus();
+  }, []);
+  
+  const handleCopy = useCallback((content: string) => {
+    navigator.clipboard.writeText(content);
+    toast.success("Message copied to clipboard");
+  }, []);
+  
+  // Close whisper menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (whisperMenuRef.current && !whisperMenuRef.current.contains(event.target as Node)) {
+        setShowWhisperMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  
+  // Get available whisper targets (all players except self, including Host)
+  const hostPlayer = players.find(p => p.isGameMaster);
+  const otherPlayers = players.filter(p => p.id !== userId && !p.isGameMaster);
+  const whisperTargets = hostPlayer ? [hostPlayer, ...otherPlayers] : otherPlayers;
 
   const MIN_INPUT_HEIGHT = 44;
   const MAX_INPUT_HEIGHT = 160;
@@ -305,7 +356,14 @@ export function ChatArea({
     if (text) {
       // Clear input immediately to prevent double submission
       setInput("");
-      onSendMessage(text);
+      // If replying, prepend the reply reference
+      const messageContent = replyTarget 
+        ? `> Replying to ${replyTarget.name}: "${replyTarget.content.slice(0, 50)}${replyTarget.content.length > 50 ? '...' : ''}"\n\n${text}`
+        : text;
+      onSendMessage(messageContent, whisperTarget);
+      // Clear whisper and reply targets after sending
+      setWhisperTarget(null);
+      setReplyTarget(null);
       // Reset height after clearing input
       requestAnimationFrame(() => {
         resizeInput();
@@ -314,12 +372,12 @@ export function ChatArea({
   };
   const handleSend = useCallback((override?: string) => {
     handleSendRef.current?.(override);
-  }, [onSendMessage]);
+  }, [onSendMessage, whisperTarget, replyTarget]);
 
   const canSend = !isGameActive || !currentSpeakerId || currentSpeakerId === userId;
 
   return (
-    <div className="flex-1 flex flex-col bg-zinc-700 min-w-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-zinc-700 overflow-hidden">
       {/* Channel Header */}
       <div className="h-14 px-6 flex items-center justify-between border-b border-zinc-900/50 bg-zinc-800/50 shadow-sm">
         <div className="flex items-center gap-2.5">
@@ -348,8 +406,8 @@ export function ChatArea({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 px-6">
-        <div className="py-6 space-y-5">
+      <ScrollArea className="flex-1 min-h-0 px-6">
+        <div className="py-6 space-y-5" onContextMenu={(e) => e.preventDefault()}>
           {messages.map((message, index) => {
             const showAvatar = index === 0 || messages[index - 1].senderId !== message.senderId;
             
@@ -370,64 +428,131 @@ export function ChatArea({
               p => p.id === message.senderId || p.name === message.senderName
             ) : null;
             const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
+            
+            // Whisper visibility logic:
+            // - Sender can see their own whispers
+            // - Target can see whispers sent to them
+            // - Host can see all whispers (as game master)
+            // - Others see a "whispered" notice without content
+            const currentUserPlayer = players.find(p => p.id === userId);
+            const isCurrentUserHost = currentUserPlayer?.isGameMaster;
+            const canSeeWhisperContent = !message.isWhisper || 
+              message.senderId === userId || 
+              message.whisperToId === userId || 
+              isCurrentUserHost;
+            
+            // If it's a whisper that the current user cannot see content of
+            if (message.isWhisper && !canSeeWhisperContent) {
+              return (
+                <div key={message.id} className="flex items-center gap-3 my-3">
+                  <div className="flex-1 h-px bg-violet-500/20" />
+                  <div className="flex items-center gap-2 text-[11px] text-violet-400/60 px-3">
+                    <MessageSquare className="h-3 w-3" />
+                    <span>{message.senderName} whispered to {message.whisperToName}</span>
+                  </div>
+                  <div className="flex-1 h-px bg-violet-500/20" />
+                </div>
+              );
+            }
 
+            // Context menu for message actions
+            const canWhisperToSender = message.senderId !== userId && !message.isSystemMessage;
+            
             return (
-              <div key={message.id} className={showAvatar ? "mt-5" : "mt-2"}>
-                {showAvatar ? (
-                  <div className="flex gap-4">
-                    <div className="relative flex-shrink-0" title={message.senderName}>
-                      {(() => {
-                        const player = messagePlayer;
-                        const avatarColor = player?.avatar || message.senderAvatar;
-                        const avatarProps = getAvatarPropsForPlayer(player);
-                        return (
-                          <GeneratedAvatar
-                            {...avatarProps}
-                            name={avatarProps.name || message.senderName}
-                            gameId={gameId}
-                            enabled={true}
-                            className="h-11 w-11"
-                            fallbackColor={avatarColor}
-                          />
-                        );
-                      })()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1.5 min-h-[1.375rem]">
-                        <span
-                          className={`font-semibold text-sm shrink-0 leading-tight ${
-                            isHost
-                              ? "text-amber-200"
-                              : message.senderName === "You"
-                                ? "text-violet-300"
-                                : "text-white"
-                          }`}
-                        >
-                          {message.senderName}
-                        </span>
-                        {isHost && (
-                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full shrink-0 bg-amber-500/15 text-amber-300 border border-amber-500/40 h-[1.25rem] box-border">
-                            <span className="text-[11px] font-semibold uppercase tracking-wide leading-none">HOST</span>
-                          </span>
-                        )}
-                        <span className="text-xs text-zinc-500 shrink-0 leading-tight" aria-hidden="true">
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+              <ContextMenu key={message.id}>
+                <ContextMenuTrigger>
+                  <div className={`${showAvatar ? "mt-5" : "mt-2"} cursor-default`}>
+                    {showAvatar ? (
+                      <div className={`flex gap-4 ${message.isWhisper ? "bg-gradient-to-r from-violet-900/25 to-violet-800/10 -mx-3 px-3 py-2.5 rounded-lg border-l-2 border-violet-500/50" : ""}`}>
+                        <div className="relative flex-shrink-0" title={message.senderName}>
+                          {(() => {
+                            const player = messagePlayer;
+                            const avatarColor = player?.avatar || message.senderAvatar;
+                            const avatarProps = getAvatarPropsForPlayer(player);
+                            return (
+                              <GeneratedAvatar
+                                {...avatarProps}
+                                name={avatarProps.name || message.senderName}
+                                gameId={gameId}
+                                enabled={true}
+                                className="h-11 w-11"
+                                fallbackColor={avatarColor}
+                              />
+                            );
+                          })()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1.5 min-h-[1.375rem]">
+                            <span
+                              className={`font-semibold text-sm shrink-0 leading-tight ${
+                                isHost
+                                  ? "text-amber-200"
+                                  : message.senderName === "You"
+                                    ? "text-violet-300"
+                                    : "text-white"
+                              }`}
+                            >
+                              {message.senderName}
+                            </span>
+                            {isHost && (
+                              <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full shrink-0 bg-amber-500/15 text-amber-300 border border-amber-500/40 h-[1.25rem] box-border">
+                                <span className="text-[11px] font-semibold uppercase tracking-wide leading-none">HOST</span>
+                              </span>
+                            )}
+                            {message.isWhisper && (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded shrink-0 bg-violet-500/25 text-violet-300 text-[11px] font-medium">
+                                <MessageSquare className="h-3 w-3" />
+                                <span>whisper → {message.whisperToName}</span>
+                              </span>
+                            )}
+                            <span className="text-xs text-zinc-500 shrink-0 leading-tight" aria-hidden="true">
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className={`text-sm leading-relaxed break-words ${message.isWhisper ? "text-violet-200" : "text-zinc-100"}`}>
+                            {formatMessage(message.content)}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-zinc-100 text-sm leading-relaxed break-words">
-                        {formatMessage(message.content)}
+                    ) : (
+                      <div className={`flex gap-4 ${message.isWhisper ? "bg-gradient-to-r from-violet-900/25 to-violet-800/10 -mx-3 px-3 py-2 rounded-lg border-l-2 border-violet-500/50" : ""}`}>
+                        <div className="w-11 flex-shrink-0" />
+                        <div className={`flex-1 text-sm leading-relaxed break-words ${message.isWhisper ? "text-violet-200" : "text-zinc-100"}`}>
+                          {formatMessage(message.content)}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex gap-4">
-                    <div className="w-11 flex-shrink-0" />
-                    <div className="flex-1 text-zinc-100 text-sm leading-relaxed break-words">
-                      {formatMessage(message.content)}
-                    </div>
-                  </div>
-                )}
-              </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="w-48 bg-zinc-800 border-zinc-700">
+                  {canWhisperToSender && (
+                    <>
+                      <ContextMenuItem 
+                        className="text-zinc-200 focus:bg-violet-600/20 focus:text-violet-200 cursor-pointer"
+                        onClick={() => handleWhisperTo(message.senderId, message.senderName)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2 text-violet-400" />
+                        Whisper to {message.senderName}
+                      </ContextMenuItem>
+                      <ContextMenuSeparator className="bg-zinc-700" />
+                    </>
+                  )}
+                  <ContextMenuItem 
+                    className="text-zinc-200 focus:bg-zinc-700 focus:text-white cursor-pointer"
+                    onClick={() => handleReply(message.id, message.senderName, message.content)}
+                  >
+                    <Reply className="h-4 w-4 mr-2 text-blue-400" />
+                    Reply
+                  </ContextMenuItem>
+                  <ContextMenuItem 
+                    className="text-zinc-200 focus:bg-zinc-700 focus:text-white cursor-pointer"
+                    onClick={() => handleCopy(message.content)}
+                  >
+                    <Copy className="h-4 w-4 mr-2 text-zinc-400" />
+                    Copy
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             );
           })}
           {/* Typing Indicator */}
@@ -515,7 +640,90 @@ export function ChatArea({
             </Button>
           </div>
         )}
+        {/* Reply indicator */}
+        {replyTarget && (
+          <div className="mb-2 flex items-center gap-2 rounded-md bg-blue-500/15 border border-blue-500/30 px-3 py-1.5">
+            <Reply className="h-3.5 w-3.5 text-blue-400" />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-blue-300">Replying to <strong className="text-blue-200">{replyTarget.name}</strong></span>
+              <p className="text-xs text-zinc-400 truncate">{replyTarget.content}</p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-5 w-5 p-0 text-blue-400 hover:bg-blue-500/20 hover:text-blue-200 rounded-full flex-shrink-0"
+              onClick={() => setReplyTarget(null)}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+        {/* Whisper indicator */}
+        {whisperTarget && (
+          <div className="mb-2 flex items-center gap-2 rounded-md bg-violet-500/15 border border-violet-500/30 px-3 py-1.5">
+            <MessageSquare className="h-3.5 w-3.5 text-violet-400" />
+            <span className="text-xs text-violet-300">Whispering to <strong className="text-violet-200">{whisperTarget.name}</strong></span>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-5 w-5 p-0 text-violet-400 hover:bg-violet-500/20 hover:text-violet-200 ml-auto rounded-full"
+              onClick={() => setWhisperTarget(null)}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
         <div className="flex gap-2 items-end">
+          {/* Whisper button with dropdown */}
+          <div className="relative" ref={whisperMenuRef}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className={`h-11 w-11 flex-shrink-0 transition-colors ${whisperTarget ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-600 hover:bg-zinc-500 text-zinc-400 hover:text-zinc-200"}`}
+              onClick={() => setShowWhisperMenu(!showWhisperMenu)}
+              title="Send whisper"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            {showWhisperMenu && (
+              <div className="absolute bottom-full left-0 mb-2 w-52 bg-zinc-800 border border-zinc-700 rounded-lg shadow-2xl overflow-hidden z-50">
+                <div className="px-3 py-2 text-xs text-zinc-400 bg-zinc-800/80 border-b border-zinc-700 flex items-center gap-2">
+                  <MessageSquare className="h-3 w-3" />
+                  Whisper to...
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  <button
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-700/50 flex items-center gap-2.5 transition-colors ${!whisperTarget ? "text-green-400 bg-green-500/10" : "text-zinc-300"}`}
+                    onClick={() => {
+                      setWhisperTarget(null);
+                      setShowWhisperMenu(false);
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    Public message
+                  </button>
+                  <div className="h-px bg-zinc-700/50 mx-2" />
+                  {whisperTargets.map((player) => (
+                    <button
+                      key={player.id}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-700/50 flex items-center gap-2.5 transition-colors ${whisperTarget?.id === player.id ? "text-violet-300 bg-violet-500/15" : "text-zinc-300"}`}
+                      onClick={() => {
+                        setWhisperTarget({ id: player.id, name: player.name });
+                        setShowWhisperMenu(false);
+                      }}
+                    >
+                      <span 
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: player.avatar }}
+                      />
+                      <span className="flex-1 truncate">{player.name}</span>
+                      {player.isGameMaster && <span className="text-[10px] text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">Host</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <Textarea
             ref={inputRef}
             value={isRecording && voiceTranscript ? voiceTranscript : input}
@@ -536,8 +744,8 @@ export function ChatArea({
                 }
               }
             }}
-            placeholder={isRecording ? "Speaking…" : `Message #${channelName}`}
-            className="bg-zinc-600 border-none text-white placeholder:text-zinc-400 py-2.5 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide"
+            placeholder={isRecording ? "Speaking…" : whisperTarget ? `Whisper to ${whisperTarget.name}...` : replyTarget ? `Reply to ${replyTarget.name}...` : `Message #${channelName}`}
+            className={`border-none text-white placeholder:text-zinc-400 py-2.5 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide ${whisperTarget ? "bg-violet-900/30" : replyTarget ? "bg-blue-900/20" : "bg-zinc-600"}`}
             style={{ 
               minHeight: `${MIN_INPUT_HEIGHT}px`, 
               maxHeight: `${MAX_INPUT_HEIGHT}px`
@@ -563,7 +771,7 @@ export function ChatArea({
             onClick={() => handleSend()} 
             disabled={!input.trim() || !canSend || isRecording}
             size="icon"
-            className="bg-violet-600 hover:bg-violet-500 h-11 w-11 flex-shrink-0"
+            className={`h-11 w-11 flex-shrink-0 ${whisperTarget ? "bg-violet-600 hover:bg-violet-500" : "bg-violet-600 hover:bg-violet-500"}`}
           >
             <Send className="h-4 w-4" />
           </Button>

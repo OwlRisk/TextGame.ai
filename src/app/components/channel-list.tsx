@@ -50,7 +50,7 @@ export function ChannelList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<Channel | null>(null);
   return (
-    <div className="w-64 bg-zinc-800 flex flex-col">
+    <div className="w-64 flex-shrink-0 bg-zinc-800 flex flex-col min-h-0 overflow-hidden">
       {/* Game Header */}
       <div className="h-14 px-5 flex items-center justify-between border-b border-zinc-900/50 shadow-sm">
         <h2 className="font-semibold text-base text-white truncate">{gameName}</h2>
@@ -59,7 +59,7 @@ export function ChannelList({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-3">
           {/* Back to Arena Button */}
           {onBackToArena && (

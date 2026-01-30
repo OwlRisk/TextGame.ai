@@ -39,6 +39,44 @@ interface Game {
   isActive: boolean;
 }
 
+// Helper to parse AI response for whisper format
+// AI can use: [WHISPER:PlayerName] content [/WHISPER] to send private messages
+function parseAIWhisper(response: string, players: Player[]): { 
+  publicContent: string; 
+  whispers: Array<{ targetId: string; targetName: string; content: string }> 
+} {
+  const whispers: Array<{ targetId: string; targetName: string; content: string }> = [];
+  let publicContent = response;
+  
+  // Match [WHISPER:Name]...[/WHISPER] patterns
+  const whisperRegex = /\[WHISPER:([^\]]+)\]([\s\S]*?)\[\/WHISPER\]/gi;
+  let match;
+  
+  while ((match = whisperRegex.exec(response)) !== null) {
+    const targetName = match[1].trim();
+    const whisperContent = match[2].trim();
+    
+    // Find the player by name
+    const targetPlayer = players.find(p => 
+      p.name.toLowerCase() === targetName.toLowerCase() || 
+      p.name === targetName
+    );
+    
+    if (targetPlayer && whisperContent) {
+      whispers.push({
+        targetId: targetPlayer.id,
+        targetName: targetPlayer.name,
+        content: whisperContent
+      });
+    }
+    
+    // Remove whisper from public content
+    publicContent = publicContent.replace(match[0], '').trim();
+  }
+  
+  return { publicContent, whispers };
+}
+
 // AI personality templates; gender used for avatar generation to match name
 const AI_NAMES = [
   "Alex", "Blake", "Casey", "Drew", "Ellis", "Finley", "Gray", "Harper",
@@ -84,7 +122,6 @@ export default function HomePage() {
   const userId = "user-1";
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
   const isMountedRef = useRef(true);
-  const lastAIDecisionTime = useRef<number>(0); // Track last AI decision call
   const recentSpeakers = useRef<string[]>([]); // Track recent speakers for diversity
 
   // Load game state from localStorage on mount
@@ -466,7 +503,7 @@ export default function HomePage() {
   // Track last sent message to prevent duplicates
   const lastSentMessageRef = useRef<{ content: string; timestamp: number } | null>(null);
 
-  const handleSendMessage = useCallback((content: string) => {
+  const handleSendMessage = useCallback((content: string, whisperTo?: { id: string; name: string } | null) => {
     if (!isMountedRef.current) return;
     
     // Prevent duplicate messages within 500ms
@@ -482,7 +519,8 @@ export default function HomePage() {
     const isGameActive = currentGame?.isActive || false;
     
     // Check if user can speak (only if game is not active, or no speaker assigned, or user is the assigned speaker)
-    if (isGameActive && currentSpeakerId && currentSpeakerId !== userId) {
+    // Note: Whispers are always allowed regardless of turn
+    if (!whisperTo && isGameActive && currentSpeakerId && currentSpeakerId !== userId) {
       toast.warning("It's not your turn to speak. Wait for the Host to assign you.");
       return;
     }
@@ -492,7 +530,10 @@ export default function HomePage() {
       senderName: "You",
       senderAvatar: "#6366f1",
       content,
-      isAI: false
+      isAI: false,
+      isWhisper: !!whisperTo,
+      whisperToId: whisperTo?.id,
+      whisperToName: whisperTo?.name,
     });
     
     // Clear currentSpeakerId when user sends a message (so timeout knows user has spoken)
@@ -502,6 +543,81 @@ export default function HomePage() {
 
     // Get the Game Master
     const gameMaster = players.find(p => p.isGameMaster);
+    
+    // Handle whisper reply - if user sends a whisper, the target AI should reply
+    if (whisperTo && whisperTo.id !== userId) {
+      const targetPlayer = players.find(p => p.id === whisperTo.id);
+      if (targetPlayer?.isAI) {
+        const whisperReplyTimeout = setTimeout(async () => {
+          if (!isMountedRef.current) return;
+          
+          setTypingUsers([{ name: targetPlayer.name, avatar: targetPlayer.avatar }]);
+          
+          try {
+            const currentGame = games.find(g => g.id === selectedGameId);
+            const isTargetHost = targetPlayer.isGameMaster;
+            
+            const { message } = await getAIChatResponse({
+              messages: [{
+                role: "user",
+                content: isTargetHost
+                  ? `You are ${targetPlayer.name}, the host of "${currentGame?.name || "the game"}". A player named "You" (the human player) just sent you a private whisper: "${content}"
+
+Reply to this whisper privately. Keep your response brief (1-2 sentences). Stay in character as the host. You can give hints, acknowledge their message, or provide guidance. Emojis are allowed; use when appropriate.
+
+Output only your whisper reply, nothing else.`
+                  : `You are ${targetPlayer.name}, a player in "${currentGame?.name || "the game"}".
+Your role: ${targetPlayer.role || "Player"}
+Your personality: ${targetPlayer.personality || "Friendly and observant."}
+Your background: ${targetPlayer.background || "A game enthusiast."}
+
+A player named "You" (the human player) just sent you a private whisper: "${content}"
+
+Reply to this whisper privately. Keep your response brief (1-2 sentences). Stay in character. You might form an alliance, share suspicions, or respond based on your role. Emojis are allowed; use when appropriate.
+
+Output only your whisper reply, nothing else.`
+              }],
+              gameContext: {
+                template: currentGame?.config.template,
+                gameName: currentGame?.name,
+                conversationState: gamePhase
+              }
+            });
+            
+            if (!isMountedRef.current) return;
+            setTypingUsers([]);
+            
+            const reply = (message || "").trim() || "I understand.";
+            addMessage({
+              senderId: targetPlayer.id,
+              senderName: targetPlayer.name,
+              senderAvatar: targetPlayer.avatar,
+              content: reply,
+              isAI: true,
+              isWhisper: true,
+              whisperToId: userId,
+              whisperToName: "You",
+            });
+          } catch (e) {
+            if (!isMountedRef.current) return;
+            setTypingUsers([]);
+            // Fallback whisper reply
+            addMessage({
+              senderId: targetPlayer.id,
+              senderName: targetPlayer.name,
+              senderAvatar: targetPlayer.avatar,
+              content: targetPlayer.isGameMaster ? "Noted. I'll keep that in mind." : "Interesting... let's talk more later.",
+              isAI: true,
+              isWhisper: true,
+              whisperToId: userId,
+              whisperToName: "You",
+            });
+          }
+        }, 1500 + Math.random() * 1000);
+        timeoutRefs.current.push(whisperReplyTimeout);
+        return; // Don't proceed with normal message flow for whispers
+      }
+    }
 
     // Simulate AI responses
     if (gamePhase === "intro" && gameMaster) {
@@ -576,36 +692,8 @@ export default function HomePage() {
         
         if (alivePlayers.length === 0) return;
         
-        // Local rules engine - decide if we need AI decision or can use simple logic
-        const now = Date.now();
-        const timeSinceLastAIDecision = now - lastAIDecisionTime.current;
-        const aiPlayers = alivePlayers.filter(p => p.isAI);
-        
-        // Use local logic if:
-        // 1. AI decision was called recently (< 10 seconds ago) - reduce API calls
-        // 2. OR there are recent speakers we should avoid
         let selectedPlayer: typeof alivePlayers[0] | null = null;
-        
-        if (timeSinceLastAIDecision < 10000 && aiPlayers.length > 0) {
-          // Use simple local logic: select an AI player who hasn't spoken recently
-          const availableAIPlayers = aiPlayers.filter(p => 
-            !recentSpeakers.current.includes(p.id)
-          );
-          
-          if (availableAIPlayers.length > 0) {
-            selectedPlayer = availableAIPlayers[Math.floor(Math.random() * availableAIPlayers.length)];
-          } else {
-            // All AI players spoke recently, clear history and pick any
-            recentSpeakers.current = [];
-            selectedPlayer = aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
-          }
-          
-          // Add to recent speakers
-          recentSpeakers.current.push(selectedPlayer.id);
-          if (recentSpeakers.current.length > 3) {
-            recentSpeakers.current.shift(); // Keep only last 3 speakers
-          }
-        }
+        let hostBriefForPlayer = "";
         
         // Get recent conversation context
         const recentMessages = messages.slice(-5).map(m => ({
@@ -624,15 +712,12 @@ export default function HomePage() {
           isUser: p.id === userId
         }));
         
-        // If local logic didn't select a player, use AI Host decision
-        if (!selectedPlayer) {
-          try {
-            lastAIDecisionTime.current = now; // Update last AI decision time
-          // Ask AI Host to decide which player is most likely to respond
+        try {
+          // AI Host decides who speaks and provides a brief (info) for the selected player
           const { message: hostDecision } = await getAIChatResponse({
             messages: [{
               role: "user",
-              content: `You are ${gameMaster.name}, the host of "${currentGame.name}". As the host, you observe the conversation and naturally decide which player would most likely respond next.
+              content: `You are ${gameMaster.name}, the host of "${currentGame.name}". As the host, you decide who speaks next and what information to give that player.
 
 Game Rules:
 ${currentGame.config.rules || "No specific rules defined."}
@@ -645,14 +730,15 @@ ${playersInfo.map(p => `- ${p.name} (Role: ${p.role}, Type: ${p.isAI ? "AI" : "H
 
 Current game phase: ${gamePhase}
 
-As the host, analyze who would naturally want to respond based on:
-1. The conversation topic and who it relates to
-2. Each player's role and how it connects to the discussion
-3. Each player's personality - who would be most engaged or have something to say
-4. Game context and rules - who has relevant information or opinions
-5. Natural flow - who hasn't spoken recently and might want to contribute
+Your task:
+1. Choose who should speak next based on game flow, roles, and conversation context.
+2. Write a brief for that player - the key information they need to know for their turn (e.g. their role, night events, accusations against them, what to defend/accuse, etc.). The brief is private - only that player sees it.
+3. Optionally, you can send a WHISPER (private message) to any player. Use format: [WHISPER:PlayerName]Your private message[/WHISPER]. This is visible only to that player and you. Use whispers for role-specific information, private warnings, or secret instructions.
 
-IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-sensitive). If you think no one should respond right now (e.g., waiting for a game phase change), respond with "NONE".`
+Respond in this EXACT format (do not add markdown or extra text):
+NEXT_SPEAKER: [Player name exactly as listed, or NONE]
+BRIEF_FOR_PLAYER: [1-3 sentences of info the player needs. If NONE, write nothing after the colon.]
+WHISPER: [Optional - use [WHISPER:Name]message[/WHISPER] format if needed, or leave empty]`
             }],
             hostId: currentGame.config.hostId,
             hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -666,25 +752,51 @@ IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-se
           
             if (!isMountedRef.current) return;
             
-            const selectedPlayerName = (hostDecision || "").trim();
+            const raw = (hostDecision || "").trim();
+            const nextSpeakerMatch = raw.match(/NEXT_SPEAKER:\s*(.+?)(?:\n|$)/i);
+            const briefMatch = raw.match(/BRIEF_FOR_PLAYER:\s*([\s\S]+?)(?:\n[A-Z_]+:|$)/i);
+            const selectedPlayerName = nextSpeakerMatch ? nextSpeakerMatch[1].trim() : raw.split("\n")[0]?.trim() || "";
+            hostBriefForPlayer = briefMatch ? briefMatch[1].trim() : "";
             
-            // Find the selected player
+            // Parse and send any whispers from the Host
+            const { whispers: hostWhispers } = parseAIWhisper(raw, players);
+            for (const whisper of hostWhispers) {
+              addMessage({
+                senderId: "gm-1",
+                senderName: gameMaster.name,
+                senderAvatar: gameMaster.avatar,
+                content: whisper.content,
+                isAI: true,
+                isWhisper: true,
+                whisperToId: whisper.targetId,
+                whisperToName: whisper.targetName,
+              });
+            }
+            
             selectedPlayer = alivePlayers.find(p => 
               p.name.toLowerCase() === selectedPlayerName.toLowerCase() || 
               p.name === selectedPlayerName
             ) ?? null;
             
+            if (selectedPlayer) {
+              recentSpeakers.current.push(selectedPlayer.id);
+              if (recentSpeakers.current.length > 3) recentSpeakers.current.shift();
+            }
+            
             // If no valid player selected or host said "NONE", use fallback: random AI player or Host intervention
             if (!selectedPlayer || selectedPlayerName.toUpperCase() === "NONE") {
               const aiPlayers = alivePlayers.filter(p => p.isAI);
               if (aiPlayers.length > 0) {
-                // Fallback: randomly select an AI player who hasn't spoken recently
                 const availableAIPlayers = aiPlayers.filter(p => 
                   !recentSpeakers.current.includes(p.id)
                 );
                 selectedPlayer = availableAIPlayers.length > 0
                   ? availableAIPlayers[Math.floor(Math.random() * availableAIPlayers.length)]
                   : aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+                if (selectedPlayer) {
+                  recentSpeakers.current.push(selectedPlayer.id);
+                  if (recentSpeakers.current.length > 3) recentSpeakers.current.shift();
+                }
               } else {
                 // No AI players available, let Host make a comment to keep game moving
                 const hostCommentTimeout = setTimeout(async () => {
@@ -727,12 +839,6 @@ IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-se
                 return;
               }
             }
-            
-            // Add to recent speakers
-            recentSpeakers.current.push(selectedPlayer.id);
-            if (recentSpeakers.current.length > 3) {
-              recentSpeakers.current.shift();
-            }
           } catch (e) {
             // Fallback to random selection if AI Host decision fails
             console.error("Error getting AI Host decision:", e);
@@ -743,7 +849,6 @@ IMPORTANT: Respond with ONLY the player's name (exactly as listed above, case-se
               return;
             }
           }
-        }
         
         if (!selectedPlayer) return;
         
@@ -863,15 +968,16 @@ The conversation has paused. Respond naturally to keep the game moving. Stay in 
             return;
           }
           
-          // If selected player is AI, generate their response
+          // If selected player is AI, generate their response using Host's brief
           if (selectedPlayer.isAI) {
-            // Show typing indicator
             setTypingUsers([{ name: selectedPlayer.name, avatar: selectedPlayer.avatar }]);
             
-            // Generate AI player's response
             const messageTimeout = setTimeout(async () => {
               if (!isMountedRef.current) return;
               try {
+                const briefSection = hostBriefForPlayer
+                  ? `\n\nHOST'S BRIEF (information for you - use this to guide your response):\n${hostBriefForPlayer}\n`
+                  : "";
                 const { message } = await getAIChatResponse({
                   messages: [{
                     role: "user",
@@ -886,8 +992,12 @@ ${currentGame.config.rules || "No specific rules defined."}
 
 Recent conversation:
 ${recentMessages.map(m => `${m.role === "user" ? "Player" : m.role === "assistant" ? "Other player" : ""}: ${m.content}`).join("\n")}
+${briefSection}
+The host (${gameMaster.name}) has called on you to speak. Respond based on the above context and the host's brief. Stay in character. Keep it brief (1-2 sentences). Emojis are allowed; use when appropriate.
 
-The host (${gameMaster.name}) thinks you would naturally respond to this conversation. Respond naturally based on your personality, background, role, and the game rules. Stay in character. Keep it brief (1-2 sentences). Emojis are allowed; use when appropriate. Output only your response, nothing else.`
+WHISPER FEATURE: You can send a private message (whisper) to any player or the Host. Use format: [WHISPER:PlayerName]Your private message[/WHISPER]. Only that player can see it. Use whispers for secret alliances, private accusations, or sharing information discreetly.
+
+Output your public response. Optionally include whispers if strategically appropriate.`
                   }],
                   gameContext: {
                     template: currentGame.config.template,
@@ -898,14 +1008,35 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
                 });
                 if (!isMountedRef.current) return;
                 setTypingUsers([]);
-                const reply = (message || "").trim() || "I'm thinking...";
-                addMessage({
-                  senderId: selectedPlayer.id,
-                  senderName: selectedPlayer.name,
-                  senderAvatar: selectedPlayer.avatar,
-                  content: reply,
-                  isAI: true
-                });
+                const fullReply = (message || "").trim() || "I'm thinking...";
+                
+                // Parse whispers from AI Player response
+                const { publicContent, whispers: playerWhispers } = parseAIWhisper(fullReply, players);
+                
+                // Send whispers first
+                for (const whisper of playerWhispers) {
+                  addMessage({
+                    senderId: selectedPlayer.id,
+                    senderName: selectedPlayer.name,
+                    senderAvatar: selectedPlayer.avatar,
+                    content: whisper.content,
+                    isAI: true,
+                    isWhisper: true,
+                    whisperToId: whisper.targetId,
+                    whisperToName: whisper.targetName,
+                  });
+                }
+                
+                // Send public message if there's content
+                if (publicContent) {
+                  addMessage({
+                    senderId: selectedPlayer.id,
+                    senderName: selectedPlayer.name,
+                    senderAvatar: selectedPlayer.avatar,
+                    content: publicContent,
+                    isAI: true
+                  });
+                }
               } catch (e) {
                 if (!isMountedRef.current) return;
                 setTypingUsers([]);
@@ -1386,7 +1517,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
   };
 
   return (
-    <div className="h-screen flex bg-zinc-900 text-white">
+    <div className="h-screen flex overflow-hidden bg-zinc-900 text-white">
       <GameSidebar
         games={games}
         selectedGameId={selectedGameId}
@@ -1466,7 +1597,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
           onPresetApplied={() => setDiscoverPreset(null)}
         />
       ) : (
-        <>
+        <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden">
           <ChannelList
             gameName={currentGame?.name || "Game"}
             channels={channels}
@@ -1487,7 +1618,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
           />
 
           {selectedChannelId === "game-room" ? (
-            <div className="flex-1 flex min-w-0 h-full overflow-hidden">
+            <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden">
               <ChatArea
                 channelName="game-room"
                 messages={messages}
@@ -1518,7 +1649,7 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
               />
             </div>
           ) : selectedChannelId === "rules" ? (
-            <div className="flex-1 bg-zinc-700 p-10 overflow-y-auto">
+            <div className="flex-1 min-h-0 bg-zinc-700 p-10 overflow-y-auto">
               <div className="max-w-4xl mx-auto">
                 <h1 className="text-4xl font-bold mb-8 text-white">Game Rules</h1>
                 {currentGame?.config.rules && 
@@ -1574,14 +1705,14 @@ The host (${gameMaster.name}) thinks you would naturally respond to this convers
               </div>
             </div>
           ) : (
-            <div className="flex-1 bg-zinc-700 flex items-center justify-center">
+            <div className="flex-1 min-h-0 bg-zinc-700 flex items-center justify-center">
               <div className="text-center text-zinc-400">
                 <h2 className="text-xl mb-2">Welcome to {currentGame?.name}</h2>
                 <p>Select a channel to start</p>
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
