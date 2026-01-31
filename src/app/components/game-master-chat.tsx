@@ -1615,7 +1615,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         )}
       </div>
 
-      {/* Preview Panel - Always Editable */}
+      {/* Preview Panel - Read-only, shows AI edits in real-time */}
       {showPreview && (
         <div className="flex-[1.2] min-w-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
@@ -1768,34 +1768,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           </div>
 
           <div className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
-            {isRulesBeingEdited ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center space-y-3">
-                  <div className="flex items-center justify-center gap-2 text-amber-400">
-                    <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-sm font-medium">AI is editing rules...</span>
-                  </div>
-                  <p className="text-xs text-zinc-500 max-w-xs">
-                    Please wait for AI to finish editing. You can edit manually once AI is done.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <Textarea
-                key={currentSessionId || 'rules-editor'}
-                value={customRules || selectedTemplate?.defaultRules || ""}
-                onChange={(e) => setCustomRules(e.target.value)}
-                onBlur={() => {
-                  // Auto-save when user finishes editing
-                  if (currentSessionId) {
-                    saveCurrentSession();
-                  }
-                }}
-                placeholder="Type or edit game rules here... Rules will be saved automatically. You can also discuss with GM to update rules automatically."
-                className="flex-1 w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
-                disabled={isRulesBeingEdited}
-              />
-            )}
+            <Textarea
+              key={currentSessionId || 'rules-viewer'}
+              value={customRules || selectedTemplate?.defaultRules || ""}
+              readOnly
+              placeholder="Game rules will appear here as you discuss with the Game Master. Rules are updated automatically—you can watch the AI edit them in real-time."
+              className="flex-1 w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap cursor-default"
+            />
           </div>
         </div>
       )}
