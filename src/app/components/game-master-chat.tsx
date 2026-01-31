@@ -923,7 +923,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         {
           messages: apiMessages,
           hostId: selectedHostId,
-          gameContext: gameContext
+          gameContext: gameContext,
+          maxCompletionTokens: 2000
         },
           // onChunk: Update message content as chunks arrive - REAL-TIME EDITING like code agent
         (chunk: string) => {

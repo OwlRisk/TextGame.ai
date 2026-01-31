@@ -9,13 +9,6 @@ import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
-/**
- * In-game player. See docs/ROLES.md for the 4-role design:
- * - Game Master: rules design (chat UI); not a Player.
- * - Host: runs the game (events, speaking order, mute, etc.). isGameMaster === true.
- * - AI Player: isAI && !isGameMaster.
- * - User: !isAI ("You").
- */
 export interface Player {
   id: string;
   name: string;
@@ -24,7 +17,6 @@ export interface Player {
   status?: string;
   stats?: Record<string, string | number>;
   isMuted?: boolean;
-  /** Host role: runs the game (events, speaking order, mute, etc.). See docs/ROLES.md. */
   isGameMaster?: boolean;
   isAI: boolean;
   isOnline?: boolean;
@@ -32,7 +24,7 @@ export interface Player {
   personality?: string;
   /** AI-only: backstory / context (e.g. "Former debate champion") */
   background?: string;
-  /** Player gender (male, female, other) - can be configured by Game Master */
+  /** Player gender (male, female, other) - can be configured by GM */
   gender?: string;
 }
 
@@ -61,7 +53,7 @@ export function PlayerPanel({
 
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3">
-          {/* Host Section (runs game; see docs/ROLES.md) */}
+          {/* Game Master Section */}
           {players.filter(p => p.isGameMaster).map((player) => (
             <div key={player.id}>
               <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 flex items-center gap-2">
