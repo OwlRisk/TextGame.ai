@@ -194,7 +194,14 @@ export async function POST(request: NextRequest) {
       stream: false,
     });
 
-    const response = completion.choices[0]?.message?.content || 'I apologize, but I encountered an error. Please try again.';
+    const response = completion.choices[0]?.message?.content?.trim() ?? '';
+
+    if (!response) {
+      return NextResponse.json(
+        { error: 'The model returned no content. Please try again.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ 
       message: response,

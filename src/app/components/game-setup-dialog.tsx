@@ -30,6 +30,10 @@ export interface ConfiguredPlayer {
   gender?: string;
   personality?: string;
   background?: string;
+  /** Role assigned by LLM based on rules (e.g. Villager, Werewolf, Seer) */
+  role?: string;
+  /** Word for undercover game - actual word string */
+  word?: string;
 }
 
 export interface GameConfig {

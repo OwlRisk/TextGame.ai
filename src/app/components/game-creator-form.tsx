@@ -128,6 +128,7 @@ RULES:
 ];
 
 const PLAYER_COUNT_OPTIONS = [
+  { value: 0, label: "Let GM decide", description: "AI chooses based on rules" },
   { value: 4, label: "Small (4 AI players)", description: "Quick & intimate" },
   { value: 6, label: "Medium (6 AI players)", description: "Balanced & fun" },
   { value: 8, label: "Large (8 AI players)", description: "Epic & chaotic" },
@@ -146,7 +147,7 @@ type Step = "game-type" | "player-count" | "tone" | "rules" | "host" | "review";
 export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCreatorFormProps) {
   const [currentStep, setCurrentStep] = useState<Step>("game-type");
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
-  const [playerCount, setPlayerCount] = useState<number>(6);
+  const [playerCount, setPlayerCount] = useState<number>(0);
   const [selectedTone, setSelectedTone] = useState<string>("casual");
   const [customRules, setCustomRules] = useState<string>("");
   // Initialize host: try last selected, then recommended for template, then default
@@ -178,6 +179,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
       case "game-type":
         return selectedTemplate !== null;
       case "player-count":
+        if (playerCount === 0) return true;
         return playerCount >= (selectedTemplate?.minPlayers || 2) - 1;
       case "tone":
         return selectedTone !== "";
@@ -360,9 +362,11 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {PLAYER_COUNT_OPTIONS.map((option) => {
-                  const isValid = selectedTemplate 
-                    ? option.value >= selectedTemplate.minPlayers - 1 && option.value <= selectedTemplate.maxPlayers - 1
-                    : true;
+                  const isValid = option.value === 0
+                    ? true
+                    : selectedTemplate
+                      ? option.value >= selectedTemplate.minPlayers - 1 && option.value <= selectedTemplate.maxPlayers - 1
+                      : true;
                   
                   return (
                     <button
@@ -378,14 +382,14 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
                       }`}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <div className="text-3xl font-black text-white">{option.value + 1}</div>
+                        <div className="text-3xl font-black text-white">{option.value === 0 ? "?" : option.value + 1}</div>
                         {playerCount === option.value && (
                           <CheckCircle2 className="h-5 w-5 text-violet-400" />
                         )}
                       </div>
                       <h3 className="text-lg font-bold text-white mb-1">{option.label}</h3>
                       <p className="text-sm text-zinc-400">{option.description}</p>
-                      <p className="text-xs text-zinc-500 mt-2">Total: You + {option.value} AI</p>
+                      <p className="text-xs text-zinc-500 mt-2">{option.value === 0 ? "GM chooses based on rules" : `Total: You + ${option.value} AI`}</p>
                     </button>
                   );
                 })}
@@ -490,7 +494,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
                   </div>
                   <div className="flex items-center justify-between py-3 border-b border-white/10">
                     <span className="text-sm text-zinc-400">Total Players</span>
-                    <span className="text-base font-semibold text-white">You + {playerCount} AI</span>
+                    <span className="text-base font-semibold text-white">{playerCount === 0 ? "GM decides" : `You + ${playerCount} AI`}</span>
                   </div>
                   <div className="flex items-center justify-between py-3 border-b border-white/10">
                     <span className="text-sm text-zinc-400">Tone</span>

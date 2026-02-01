@@ -302,10 +302,11 @@ interface GameMasterChatProps {
 // Helper function to generate session title
 function generateSessionTitle(template: GameTemplate | null, playerCount: number, gameName?: string): string {
   const trimmedName = gameName?.trim();
-  if (trimmedName) return `${trimmedName} - ${playerCount + 1} Players`;
+  const countStr = playerCount === 0 ? "GM decides" : `${playerCount + 1} Players`;
+  if (trimmedName) return `${trimmedName} - ${countStr}`;
   if (!template) return "New Game Setup";
   if (template.id === "custom") return "Custom Game Setup";
-  return `${template.name} - ${playerCount + 1} Players`;
+  return `${template.name} - ${countStr}`;
 }
 
 export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
@@ -359,7 +360,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   }, []);
   // Game configuration being built
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
-  const [playerCount, setPlayerCount] = useState<number>(6);
+  const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
   const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
@@ -507,7 +508,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       messages: [],
       conversationState: "greeting",
       selectedTemplate: null,
-      playerCount: 6,
+      playerCount: 0,
       customRules: "",
       gameName: "",
       selectedHostId: getDefaultHostForTemplate(selectedTemplate?.id || null).id,
@@ -1642,6 +1643,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     }
                     
                     let finalConfiguredPlayers = configuredPlayers;
+                    let finalPlayerCount = configuredPlayers.length > 0 ? configuredPlayers.length : playerCount;
                     
                     // If no players configured, automatically generate them
                     if (configuredPlayers.length === 0) {
@@ -1651,16 +1653,20 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
-                            playerCount: playerCount,
+                            playerCount: playerCount || 0,
                             gameTemplate: selectedTemplate?.id || "custom",
-                            rules: customRules
+                            rules: customRules,
+                            minPlayers: selectedTemplate?.minPlayers ?? 2,
+                            maxPlayers: selectedTemplate?.maxPlayers ?? 20
                           })
                         });
                         
                         if (response.ok) {
                           const data = await response.json();
                           finalConfiguredPlayers = data.players;
+                          finalPlayerCount = data.players?.length ?? 6;
                           setConfiguredPlayers(data.players);
+                          if (playerCount === 0) setPlayerCount(finalPlayerCount);
                           toast.success(`Generated ${data.count} random players!`);
                         } else {
                           toast.error("Failed to generate players, using defaults");
@@ -1708,7 +1714,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     
                     const gameConfig: GameConfig = {
                       template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
-                      playerCount: playerCount,
+                      playerCount: finalPlayerCount || playerCount || 6,
                       rules: customRules,
                       name: gameName || selectedTemplate?.name || "Custom Game",
                       hostId: selectedHostId,
@@ -1728,7 +1734,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               
               {/* Player Count Info */}
               <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <span>Players: {playerCount}</span>
+                <span>Players: {playerCount === 0 ? "GM decides" : playerCount + 1}</span>
                 {configuredPlayers.length > 0 && (
                   <>
                     <span>•</span>

@@ -20,21 +20,79 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { playerCount, gameTemplate, rules } = body;
+    let { playerCount, gameTemplate, rules, minPlayers, maxPlayers } = body;
 
-    if (!playerCount || playerCount < 1) {
-      return NextResponse.json(
-        { error: 'playerCount is required and must be greater than 0' },
-        { status: 400 }
-      );
+    if (playerCount == null || playerCount < 1) {
+      playerCount = 0;
     }
 
     const openai = getOpenAI();
-
-    // Add randomness to ensure different results each time
     const randomSeed = Math.random().toString(36).substring(7);
-    
-    // Build prompt for generating diverse players
+
+    const needsRoles = gameTemplate === 'werewolf' || gameTemplate === 'mafia';
+    const needsWords = gameTemplate === 'undercover';
+
+    if (playerCount === 0) {
+      const minAI = typeof minPlayers === 'number' && minPlayers >= 1 ? minPlayers - 1 : 1;
+      const maxAI = typeof maxPlayers === 'number' && maxPlayers >= 2 ? maxPlayers - 1 : 19;
+      const decideCountPrompt = `You are a game master. Based on the game rules below, decide the optimal number of AI players (user + AI = total). 
+
+Game Template: ${gameTemplate || 'social deduction'}
+Valid AI player range: ${minAI}-${maxAI} (total players: ${minAI + 1}-${maxAI + 1})
+
+Game Rules:
+${rules || 'Standard social deduction game'}
+
+Consider: game balance, role distribution, pacing. Output ONLY a single number between ${minAI} and ${maxAI}, nothing else.`;
+
+      const decideCompletion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You decide optimal player count for games. Output only a number.' },
+          { role: 'user', content: decideCountPrompt }
+        ],
+        temperature: 0.7,
+        max_completion_tokens: 10,
+      });
+      const countStr = (decideCompletion.choices[0]?.message?.content || '').trim().replace(/\D/g, '');
+      const parsed = parseInt(countStr, 10);
+      playerCount = !isNaN(parsed) && parsed >= minAI && parsed <= maxAI ? parsed : Math.round((minAI + maxAI) / 2);
+    }
+
+    let outputFormat = `[
+  {
+    "name": "Player Name",
+    "gender": "male/female/other",
+    "personality": "Brief unique personality (5-8 words)",
+    "background": "Brief unique background (5-8 words)"`;
+    if (needsRoles) {
+      outputFormat += `,
+    "role": "Role from rules (e.g. Villager, Werewolf, Seer, Doctor)"`;
+    }
+    if (needsWords) {
+      outputFormat += `,
+    "word": "civilian" or "undercover"`;
+    }
+    outputFormat += `
+  }
+]`;
+
+    let roleInstructions = '';
+    if (needsRoles) {
+      roleInstructions = `
+6. ROLE ASSIGNMENT (required): Based on the game rules above, assign each player exactly one role. The rules define which roles exist (e.g. Villager, Werewolf, Seer, Doctor). Distribute roles fairly: most should be Villagers/Town, a few special roles as defined in rules, and Werewolves/Mafia as appropriate. Ensure the distribution makes the game balanced. Output each player's "role" in the JSON.`;
+    }
+
+    let wordInstructions = '';
+    let wordPairFormat = '';
+    if (needsWords) {
+      wordInstructions = `
+6. WORD PAIR: Generate ONE civilian word and ONE undercover word (similar but different, e.g. "Coffee"/"Tea"). These words are NOT in the player objects - output them separately at the top level: "civilianWord" and "undercoverWord".
+7. WORD ASSIGNMENT: Assign "word": "civilian" to most players (all but one), and "word": "undercover" to exactly one random player.`;
+      wordPairFormat = `
+Also include at top level: "civilianWord": "your civilian word", "undercoverWord": "your undercover word"`;
+    }
+
     const prompt = `Generate ${playerCount} diverse game players for a ${gameTemplate || 'social deduction'} game. (Seed: ${randomSeed})
 
 Game Rules:
@@ -43,70 +101,46 @@ ${rules || 'Standard social deduction game'}
 Requirements:
 1. Generate ${playerCount} COMPLETELY UNIQUE players - never repeat the same combinations
 2. Balance gender distribution (roughly 50/50 male/female, with some variety)
-3. Use culturally diverse names from different origins:
-   - Western: Alex, Sarah, Michael, Emma, David, Lisa
-   - Asian: Yuki, Kenji, Mei, Wei, Priya, Raj
-   - Hispanic: Sofia, Diego, Maria, Carlos
-   - Middle Eastern: Amir, Layla, Omar, Fatima
-   - African: Amara, Kwame, Zuri, Jabari
-4. Each player must have a UNIQUE personality (never duplicate):
-   - Strategic thinker
-   - Intuitive empath
-   - Bold risk-taker
-   - Cautious observer
-   - Charismatic leader
-   - Analytical detective
-   - Creative storyteller
-   - Diplomatic negotiator
-   - Quick-witted improviser
-   - Patient listener
-5. Backgrounds should be varied and interesting:
-   - Professional: detective, lawyer, doctor, teacher, engineer
-   - Academic: psychology student, philosophy major, debate champion
-   - Creative: theater actor, novelist, musician, comedian
-   - Strategic: poker player, chess master, military strategist
-   - Social: therapist, social worker, event planner, diplomat
+3. Use culturally diverse names from different origins (Western, Asian, Hispanic, Middle Eastern, African)
+4. Each player must have a UNIQUE personality (never duplicate)
+5. Backgrounds should be varied and interesting${roleInstructions}${wordInstructions}
 
-Output ONLY a valid JSON array in this exact format:
-[
-  {
-    "name": "Player Name",
-    "gender": "male/female/other",
-    "personality": "Brief unique personality (5-8 words)",
-    "background": "Brief unique background (5-8 words)"
-  }
-]
+Output ONLY a valid JSON object. For the players array use this format:${outputFormat}${wordPairFormat ? `
 
-Important: Output ONLY the JSON array, no other text. Ensure maximum diversity and uniqueness.`;
+Top-level structure: { "players": [ ... ], "civilianWord": "...", "undercoverWord": "..." }` : `
+
+Top-level structure: { "players": [ ... ] }`}
+
+Important: Output ONLY the JSON object, no other text. Ensure maximum diversity and uniqueness.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Use faster, cheaper model for this task
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: 'You are a game character generator. Output only valid JSON arrays, no other text.'
+          content: 'You are a game character generator. Output only valid JSON objects, no other text.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 1.0, // High creativity for diverse characters
-      max_completion_tokens: 800,
+      temperature: 1.0,
+      max_completion_tokens: 1200,
     });
 
-    const response = completion.choices[0]?.message?.content || '[]';
+    const response = completion.choices[0]?.message?.content || '{}';
     
     // Parse and validate JSON
     try {
-      const players = JSON.parse(response.trim());
+      const parsed = JSON.parse(response.trim());
+      const players = Array.isArray(parsed) ? parsed : (parsed.players || []);
       
       if (!Array.isArray(players)) {
         throw new Error('Response is not an array');
       }
 
-      // Validate each player has required fields
-      const validPlayers = players.filter(p => 
+      const validPlayers = players.filter((p: any) => 
         p.name && p.gender && p.personality && p.background
       );
 
@@ -114,10 +148,21 @@ Important: Output ONLY the JSON array, no other text. Ensure maximum diversity a
         throw new Error('No valid players generated');
       }
 
-      return NextResponse.json({ 
+      const result: { players: any[]; count: number; civilianWord?: string; undercoverWord?: string } = {
         players: validPlayers,
-        count: validPlayers.length 
-      });
+        count: validPlayers.length
+      };
+      if (needsWords && parsed.civilianWord && parsed.undercoverWord) {
+        result.civilianWord = parsed.civilianWord;
+        result.undercoverWord = parsed.undercoverWord;
+        validPlayers.forEach((p: any) => {
+          const isUndercover = p.word === 'undercover';
+          p.role = isUndercover ? 'Undercover' : 'Civilian';
+          p.word = isUndercover ? parsed.undercoverWord : parsed.civilianWord;
+        });
+      }
+
+      return NextResponse.json(result);
 
     } catch (parseError) {
       console.error('Error parsing player JSON:', parseError);

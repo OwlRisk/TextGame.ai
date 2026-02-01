@@ -168,7 +168,7 @@ function formatMessage(content: string): JSX.Element {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
-function PrivateMessagesSection({ messages }: { messages: Array<{ id: string; from: string; content: string; timestamp: Date }> }) {
+function PrivateMessagesSection({ messages, label = "Private from Host" }: { messages: Array<{ id: string; from: string; content: string; timestamp: Date }>; label?: string }) {
   const [open, setOpen] = useState(true);
   return (
     <div className="mb-3 rounded-lg border border-violet-500/40 bg-violet-950/30 overflow-hidden">
@@ -179,7 +179,7 @@ function PrivateMessagesSection({ messages }: { messages: Array<{ id: string; fr
       >
         <span className="flex items-center gap-2">
           <Mail className="h-4 w-4" />
-          Private from Host ({messages.length})
+          {label} ({messages.length})
         </span>
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
@@ -232,6 +232,8 @@ interface ChatAreaProps {
   lastVotedOutId?: string | null;
   /** Private messages from Host to the current user */
   privateMessagesFromHost?: Array<{ id: string; from: string; content: string; timestamp: Date }>;
+  /** Label for the private messages section (e.g. "Private from Host" / "来自主持人的私信") */
+  privateSectionLabel?: string;
 }
 
 export function ChatArea({ 
@@ -253,7 +255,8 @@ export function ChatArea({
   gamePhaseLabel,
   alivePlayers = [],
   lastVotedOutId,
-  privateMessagesFromHost = []
+  privateMessagesFromHost = [],
+  privateSectionLabel = "Private from Host"
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -513,7 +516,7 @@ export function ChatArea({
       {/* Input */}
       <div className="p-5 border-t border-zinc-900/50">
         {privateMessagesFromHost.length > 0 && (
-          <PrivateMessagesSection messages={privateMessagesFromHost} />
+          <PrivateMessagesSection messages={privateMessagesFromHost} label={privateSectionLabel} />
         )}
         {!canSend && isGameActive && !isRecording && (
           <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
