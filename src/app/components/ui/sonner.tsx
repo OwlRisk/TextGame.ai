@@ -3,24 +3,29 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, ToasterProps } from "sonner";
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+/** Dark zinc theme to match game room (bg-zinc-900) - app is always dark */
+const DARK_CLASSES = {
+  toast: "group toast group-[.toaster]:bg-zinc-800 group-[.toaster]:text-zinc-100 group-[.toaster]:border-zinc-600/50 group-[.toaster]:shadow-xl group-[.toaster]:backdrop-blur-sm group-[.toaster]:rounded-xl group-[.toaster]:py-3 group-[.toaster]:px-4",
+  description: "group-[.toast]:text-zinc-400 group-[.toast]:text-sm",
+  actionButton: "group-[.toast]:bg-violet-600 group-[.toast]:text-white group-[.toast]:hover:bg-violet-500 group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-sm group-[.toast]:font-medium",
+  cancelButton: "group-[.toast]:bg-zinc-700 group-[.toast]:text-zinc-300 group-[.toast]:hover:bg-zinc-600 group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-sm group-[.toast]:font-medium",
+  error: "group-[.toaster]:bg-zinc-800 group-[.toaster]:text-red-400 group-[.toaster]:border-red-500/40",
+  success: "group-[.toaster]:bg-zinc-800 group-[.toaster]:text-emerald-400 group-[.toaster]:border-emerald-500/40",
+  warning: "group-[.toaster]:bg-zinc-800 group-[.toaster]:text-amber-400 group-[.toaster]:border-amber-500/40",
+  info: "group-[.toaster]:bg-zinc-800 group-[.toaster]:text-violet-300 group-[.toaster]:border-violet-500/40",
+};
+
+const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
+  const { theme } = useTheme();
+  const effectiveTheme = (theme === "light" ? "light" : "dark") as ToasterProps["theme"];
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={effectiveTheme}
       className="toaster group"
       toastOptions={{
-        classNames: {
-          toast: "group toast group-[.toaster]:bg-white group-[.toaster]:text-zinc-900 group-[.toaster]:border-zinc-200 group-[.toaster]:shadow-2xl group-[.toaster]:backdrop-blur-xl group-[.toaster]:rounded-2xl group-[.toaster]:py-4 group-[.toaster]:px-5",
-          description: "group-[.toast]:text-zinc-600 group-[.toast]:text-sm",
-          actionButton: "group-[.toast]:bg-violet-600 group-[.toast]:text-white group-[.toast]:hover:bg-violet-700 group-[.toast]:rounded-lg group-[.toast]:px-4 group-[.toast]:py-2 group-[.toast]:font-medium",
-          cancelButton: "group-[.toast]:bg-zinc-100 group-[.toast]:text-zinc-700 group-[.toast]:hover:bg-zinc-200 group-[.toast]:rounded-lg group-[.toast]:px-4 group-[.toast]:py-2 group-[.toast]:font-medium",
-          error: "group-[.toaster]:bg-white group-[.toaster]:text-red-600 group-[.toaster]:border-red-100",
-          success: "group-[.toaster]:bg-white group-[.toaster]:text-emerald-600 group-[.toaster]:border-emerald-100",
-          warning: "group-[.toaster]:bg-white group-[.toaster]:text-amber-600 group-[.toaster]:border-amber-100",
-          info: "group-[.toaster]:bg-white group-[.toaster]:text-indigo-600 group-[.toaster]:border-indigo-100",
-        },
+        ...toastOptions,
+        classNames: { ...DARK_CLASSES, ...toastOptions?.classNames },
       }}
       {...props}
     />

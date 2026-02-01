@@ -37,10 +37,11 @@ export function getAvatarPropsForPlayer(player: Player | undefined | null) {
   }
 
   // Host vs AI Player: Host uses background if provided; AI Player uses role-based default
+  // Avoid "game", "player" plural to reduce multi-face avatar output
   const normalizedBackground = player.background?.trim() || undefined;
   const background = player.isGameMaster
-    ? normalizedBackground
-    : (normalizedBackground ?? `Social deduction game player. Role: ${player.role ?? "Player"}.`);
+    ? (normalizedBackground ?? `Professional presenter, charismatic host.`)
+    : (normalizedBackground ?? `Avatar portrait. Role: ${player.role ?? "Player"}.`);
 
   // Normalize role, personality, gender for consistency
   const normalizedRole = player.role?.trim() || undefined;

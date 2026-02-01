@@ -60,9 +60,16 @@ export function GeneratedAvatar({
   const initials = name ? name.substring(0, 2).toUpperCase() : "??";
   const showImage = src && !loading;
   const showFallback = !showImage;
+  const isHost = type === "host";
 
   return (
-    <Avatar className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}>
+    <Avatar
+      className={cn(
+        "flex-shrink-0 overflow-hidden rounded-full",
+        isHost && "ring-2 ring-amber-500/50 ring-offset-2 ring-offset-zinc-800",
+        className
+      )}
+    >
       {showImage && <AvatarImage src={src} alt={name ?? "Avatar"} className="object-cover" />}
       {showFallback && (
         <AvatarFallback

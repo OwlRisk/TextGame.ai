@@ -49,7 +49,7 @@ const NO_TEXT =
   'Pure visual portrait only. The image must contain ONLY the character portrait with absolutely no written content whatsoever. ' +
   'If any text appears in the image, the generation is invalid.';
 
-/** Universal anime/manga style for all avatars */
+/** Universal anime/manga style for all avatars - avoid "game", "player" plural connotations */
 const ANIME_STYLE =
   SINGLE_PERSON + ' ' +
   'Anime/manga art style. Japanese animation aesthetic. ' +
@@ -58,21 +58,6 @@ const ANIME_STYLE =
   'Head and shoulders portrait, circular crop suitable. ' +
   'Single character only, no background details. ' +
   'ONE PERSON. ONE FACE. ' + NO_TEXT;
-
-/** Style for Game Master / Host - anime style */
-const HOST_STYLE =
-  'Anime/manga style game master host. ' +
-  'Confident, professional presenter vibe. ' +
-  'Colorful hair, expressive eyes, game show host aesthetic. ' +
-  ANIME_STYLE;
-
-/** Style for players - anime style */
-const PLAYER_STYLE =
-  'Anime/manga style character portrait. ' +
-  'Japanese animation art style. ' +
-  'Colorful hair, expressive large eyes, unique design. ' +
-  'Diverse anime character appearance. ' +
-  ANIME_STYLE;
 
 /** Gender phrase for prompt: avatar appearance must match name gender */
 function genderPhrase(gender?: string): string {
@@ -95,12 +80,13 @@ function buildPrompt(
   // DALL-E 2 has a 1000 character limit for prompts
   const MAX_PROMPT_LENGTH = 1000;
 
-  // Core style rules (shorter version to save space)
-  const coreStyle = 'Anime/manga art style. One person only. One face. Head and shoulders portrait. Colorful hair, expressive eyes. No text.';
+  // Core style: single avatar portrait only; avoid "game", "player" (plural) to reduce multi-face output
+  const coreStyle = 'Anime/manga art style. One person only. One face. Single avatar portrait. Head and shoulders. Colorful hair, expressive eyes. No text.';
 
-  // Base prompts with strong single-person emphasis; gender first so appearance matches name
-  const baseHostPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game master host character. ${coreStyle} ONE PERSON. ONE FACE.`;
-  const basePlayerPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game player character. ${coreStyle} ONE PERSON. ONE FACE.`;
+  // Host: presenter/emcee look - confident, charismatic, professional host aesthetic
+  const hostStyle = 'Presenter, emcee style. Confident, charismatic. Professional host aesthetic.';
+  const baseHostPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime host avatar portrait. ${hostStyle} ${coreStyle} ONE PERSON. ONE FACE.`;
+  const basePlayerPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime player avatar portrait. ${coreStyle} ONE PERSON. ONE FACE.`;
 
   if (!background || !background.trim()) {
     const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
@@ -112,8 +98,8 @@ function buildPrompt(
   // Truncate background to fit within limit, but preserve single-person rules
   const trimmedBackground = background.trim();
   const prefix = type === 'host'
-    ? `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game master host character. Background: `
-    : `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime/manga style game player character. Background: `;
+    ? `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime host avatar portrait. ${hostStyle} Character: `
+    : `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime player avatar portrait. Background: `;
   const suffix = `. ${coreStyle} ONE PERSON. ONE FACE.`;
 
   const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;

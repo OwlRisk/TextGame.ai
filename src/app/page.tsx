@@ -402,7 +402,7 @@ export default function HomePage() {
             const { message } = await getAIChatResponse({
               messages: [{
                 role: "user",
-                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} Game rules (for language—reply in this language):\n${rulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\nThe host just explained the rules and asked if everyone is ready. Write a short, natural response (1-2 sentences max) showing you're ready to play. Stay in character. Output only your response, nothing else.`
+                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} Game rules (for language—reply in this language):\n${rulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\nThe host just explained the rules and asked if everyone is ready. Respond naturally—vary phrasing based on your personality. Sound like a real person, not robotic. Short (1-2 sentences). Output only your response, nothing else.`
               }],
               gameContext: {
                 template: config.template,
@@ -440,7 +440,7 @@ export default function HomePage() {
         const { message } = await getAIChatResponse({
           messages: [{
             role: "user",
-            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\n${LANG_MATCH_RULES}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules above, and ask if everyone is ready. Stay in character. Output only the greeting, no other commentary.`
+            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\n${LANG_MATCH_RULES}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules, and ask if everyone is ready. Speak naturally—like a real host would, spontaneous and warm. Avoid sounding scripted or stiff. Output only the greeting, nothing else.`
           }],
           hostId: config.hostId,
           hostPersonality: config.generatedHost ? { name: config.generatedHost.name, description: config.generatedHost.personality, personality: config.generatedHost.voiceStyle } : undefined,
@@ -591,7 +591,7 @@ export default function HomePage() {
       const recentNames = recentSpeakers.current.map(id => alivePlayersList.find(p => p.id === id)?.name).filter(Boolean);
       const lastFewFromUser = messages.slice(-6).some(m => m.senderId === userId);
       const pacingHint = !lastFewFromUser && messages.length >= 4
-        ? "\n\nThe human player (You) hasn't spoken recently; consider NEXT_SPEAKER: You so they can participate, or NONE for a short pause."
+        ? "\n\nIf the human (You) hasn't spoken in a while, you may optionally give them a turn—but don't over-call them. Run the game flow; let AI players participate."
         : "";
       const languageRule = LANG_MATCH_RULES.replace("above", "below").replace("write all your output", "write all your output (NEXT_SPEAKER line, PRIVATE_TO_... content, POST_EVENT content)");
 
@@ -602,7 +602,11 @@ export default function HomePage() {
         const { message: hostDecision } = await getAIChatResponse({
           messages: [{
             role: "user",
-            content: `You are ${gameMaster.name}, the host of "${currentGame.name}". You may:
+            content: `You are ${gameMaster.name}, the host of "${currentGame.name}". You are in control—announce the flow, let AI players respond; don't keep asking the human for confirmation.
+
+REALISM: Speak naturally and authentically, like a real host. Vary your phrasing—don't sound scripted or formulaic. Be spontaneous and engaging. POST_EVENT text should feel human, conversational, not robotic.
+
+You may:
 1) Decide who speaks next
 2) Optionally send private messages to specific players (e.g. clues, role info, secrets)
 3) Optionally post a public event/announcement to the channel
@@ -621,14 +625,14 @@ ${playersInfo.map(p => `- ${p.name} (Role: ${p.role}, Type: ${p.isAI ? "AI" : "H
 Recent speakers: ${recentNames.length ? recentNames.join(", ") : "none yet"}
 Current game phase: ${gamePhase}
 
-Pacing: SLOW DOWN. Use longer NEXT_AFTER_SECONDS (8-15) and REPLY_AFTER_SECONDS (8-15). Don't flood—let players read. Reply NONE sometimes for natural pauses. Prefer giving the human (You) a turn. One speaker at a time.${pacingHint}
+Pacing: SLOW DOWN. Use longer NEXT_AFTER_SECONDS (8-15) and REPLY_AFTER_SECONDS (8-15). Don't flood—let players read. Reply NONE sometimes for natural pauses. Run the game autonomously: balance turns across AI players; only select You when the game flow genuinely requires the human's input (e.g. their turn to answer). Don't constantly direct questions at the human. One speaker at a time.${pacingHint}
 
 Reply using these lines (one per line). You MUST include exactly one next-speaker line. Optional lines can be in any order after it.
 - NEXT_SPEAKER: PlayerName   (exactly one; use a name from the list above, or NONE if no one should speak right now—use NONE to create a pause)
 - NEXT_AFTER_SECONDS: N      (optional; 5-18, how many seconds to wait before acting; default 8; USE LONGER values—don't rush, let players read)
 - REPLY_AFTER_SECONDS: N     (optional; 5-18, when the selected speaker replies (if AI); default 8; USE LONGER—players need time to process)
 - PRIVATE_TO_PlayerName: your private message to that player (can repeat for different players)
-- POST_EVENT: your public announcement to the channel (one line only)
+- POST_EVENT: your public announcement—write naturally, vary phrasing, avoid repetitive structure
 
 Example:
 NEXT_SPEAKER: Sofia
@@ -646,8 +650,8 @@ POST_EVENT: The moon rises. Night has fallen.`
         const raw = (hostDecision || "").trim();
         const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
         let nextSpeakerName: string | null = null;
-        let nextAfterSeconds = 8;
-        let replyAfterSeconds = 8;
+        nextAfterSeconds = 8;
+        replyAfterSeconds = 8;
         for (const line of lines) {
           if (line.toUpperCase().startsWith("NEXT_SPEAKER:")) {
             nextSpeakerName = line.slice("NEXT_SPEAKER:".length).trim();
@@ -659,6 +663,9 @@ POST_EVENT: The moon rises. Night has fallen.`
             if (!isNaN(n) && n >= 5 && n <= 18) replyAfterSeconds = n;
           }
         }
+        // Human-like variation: add slight random jitter (±1–2s) so timing feels natural
+        nextAfterSeconds = Math.max(5, Math.min(18, nextAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
+        replyAfterSeconds = Math.max(5, Math.min(18, replyAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
         if (!nextSpeakerName) nextSpeakerName = lines.find(l => !l.toUpperCase().startsWith("NEXT_AFTER_SECONDS:") && !l.toUpperCase().startsWith("REPLY_AFTER_SECONDS:") && !l.toUpperCase().startsWith("PRIVATE_TO_") && !l.toUpperCase().startsWith("POST_EVENT:"))?.trim() || null;
         selectedPlayer = nextSpeakerName && nextSpeakerName.toUpperCase() !== "NONE"
           ? alivePlayersList.find(p => p.name.toLowerCase() === nextSpeakerName!.toLowerCase() || p.name === nextSpeakerName) ?? null
@@ -712,7 +719,7 @@ POST_EVENT: The moon rises. Night has fallen.`
         setTimeout(() => {
           if (!isMountedRef.current) return;
           setTypingUsers([]);
-          addEventNotification(notifyLang(currentGame.config.rules, `${gameMaster.name} thinks you might want to respond. You can speak now!`, `${gameMaster.name} 认为你可能想发言了，现在轮到你了！`));
+          addEventNotification(notifyLang(currentGame.config.rules, "Your turn.", "轮到你了。"));
           window.dispatchEvent(new CustomEvent('focusGameInput'));
         }, 800);
         timeoutRefs.current = timeoutRefs.current.filter(x => x !== executeTimeout);
@@ -730,7 +737,7 @@ POST_EVENT: The moon rises. Night has fallen.`
             const { message } = await getAIChatResponse({
               messages: [{
                 role: "user",
-                content: `You are ${selectedPlayer.name}, a player in a social deduction game "${currentGame.name}".
+                content: `You are ${selectedPlayer.name}, a player in a game "${currentGame.name}".
 
 Your role: ${selectedPlayer.role || "Player"}
 Your personality: ${selectedPlayer.personality || "Friendly and observant."}
@@ -744,7 +751,7 @@ ${recentMessagesForAI.join("\n")}
 
 ${LANG_MATCH_RULES}
 
-The host (${gameMaster.name}) thinks you would naturally respond. Respond in character, briefly (1-2 sentences). Output only your response, nothing else.`
+REALISM: React to what was just said—don't give a generic reply. Be natural and human-like. Vary length (sometimes brief, sometimes longer). Don't sound robotic or use stock phrases. Stay in character but speak as a real person would. Output only your response, nothing else.`
               }],
               gameContext: { template: currentGame.config.template, gameName: currentGame.name, rules: currentGame.config.rules, conversationState: gamePhase }
             });
@@ -1673,10 +1680,11 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
         expand={false}
         richColors
         closeButton
+        offset={{ top: "72px", right: "20px" }}
+        gap={12}
         toastOptions={{
-          style: {
-            zIndex: 9999,
-          }
+          style: { zIndex: 9999 },
+          duration: 4000,
         }}
       />
 

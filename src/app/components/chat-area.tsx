@@ -314,21 +314,33 @@ export function ChatArea({
     }
   }, [resizeInput]);
 
+  // Debounce scroll to prevent flickering when many messages arrive rapidly
+  const scrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollMessagesRef = useRef(0);
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, typingUsers]);
+    if (!scrollRef.current) return;
+    const lastFromUser = messages.length > 0 && messages[messages.length - 1]?.senderId === userId;
+    if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
+    scrollDebounceRef.current = setTimeout(() => {
+      scrollDebounceRef.current = null;
+      if (scrollRef.current && messages.length !== lastScrollMessagesRef.current) {
+        lastScrollMessagesRef.current = messages.length;
+        // Use instant scroll when user just sent (avoid smooth animation jitter)
+        scrollRef.current.scrollIntoView({ behavior: lastFromUser ? "auto" : "smooth", block: "end" });
+      }
+    }, lastFromUser ? 50 : 150);
+    return () => { if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current); };
+  }, [messages, typingUsers, userId]);
 
   // Listen for focus input event (when user is prompted to speak)
   useEffect(() => {
     const handleFocusInput = () => {
       if (inputRef.current && !isRecording) {
         inputRef.current.focus();
-        // Flash the input border for attention
-        inputRef.current.classList.add('ring-2', 'ring-amber-500', 'ring-offset-2', 'ring-offset-zinc-700');
+        // Subtle focus highlight (outline doesn't cause layout shift)
+        inputRef.current.classList.add('outline', 'outline-2', 'outline-amber-500', 'outline-offset-2');
         setTimeout(() => {
-          inputRef.current?.classList.remove('ring-2', 'ring-amber-500', 'ring-offset-2', 'ring-offset-zinc-700');
+          inputRef.current?.classList.remove('outline', 'outline-2', 'outline-amber-500', 'outline-offset-2');
         }, 2000);
       }
     };
