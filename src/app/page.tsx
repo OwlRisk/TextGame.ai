@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { getHostById, getDefaultHost } from "@/app/config/host-config";
 import { getVoiceForHost, getVoiceForPlayer } from "@/lib/tts-voices";
 import { pickTraitsForPlayers } from "@/app/config/ai-player-personalities";
-import { getAIChatResponse } from "@/lib/openai";
+import { getAIChatResponse, streamAIChatResponse } from "@/lib/openai";
 import {
   type GamePhaseState,
   type GamePhaseKind,
@@ -272,6 +272,32 @@ export default function HomePage() {
       }
       return updated;
     });
+    return newMessage.id;
+  }, []);
+
+  /** Create a streaming message (starts with empty content, isStreaming = true) */
+  const addStreamingMessage = useCallback((msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">): string => {
+    if (!isMountedRef.current) return "";
+    const messageId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    const newMessage: Message = {
+      ...msg,
+      id: messageId,
+      content: "",
+      timestamp: new Date(),
+      isStreaming: true
+    };
+    setMessages(prev => [...prev, newMessage]);
+    return messageId;
+  }, []);
+
+  /** Update a streaming message's content */
+  const updateStreamingMessage = useCallback((messageId: string, content: string, isComplete: boolean = false) => {
+    if (!isMountedRef.current) return;
+    setMessages(prev => prev.map(m => 
+      m.id === messageId 
+        ? { ...m, content, isStreaming: !isComplete }
+        : m
+    ));
   }, []);
 
   const addEventNotification = useCallback((content: string) => {
@@ -620,7 +646,8 @@ export default function HomePage() {
       let nextAfterSeconds = 12;
       let replyAfterSeconds = 12;
       try {
-        const { message: hostDecision } = await getAIChatResponse({
+        let hostDecision = "";
+        await streamAIChatResponse({
           messages: [{
             role: "user",
             content: `You are ${gameMaster.name}, the host of "${currentGame.name}". You are in control—announce the flow, let AI players respond; don't keep asking the human for confirmation.
@@ -665,10 +692,17 @@ POST_EVENT: The moon rises. Night has fallen.`
           hostId: currentGame.config.hostId,
           hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
           gameContext: { template: currentGame.config.template, gameName: currentGame.name, rules: currentGame.config.rules, conversationState: gamePhase }
-        });
+        },
+        (chunk) => {
+          hostDecision += chunk;
+        },
+        () => {
+          if (!isMountedRef.current) return;
+          setTypingUsers([]);
+        }
+        );
         if (!isMountedRef.current) return;
-        setTypingUsers([]);
-        const raw = (hostDecision || "").trim();
+        const raw = hostDecision.trim();
         const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
         let nextSpeakerName: string | null = null;
         nextAfterSeconds = 12;
@@ -762,8 +796,19 @@ POST_EVENT: The moon rises. Night has fallen.`
           if (!isMountedRef.current) return;
           const messagesNow = messagesRef.current;
           const recentMessagesForAI = messagesNow.slice(-8).map(m => `${m.senderName}: ${m.content}`);
+          
+          // Create streaming message
+          const messageId = addStreamingMessage({ 
+            senderId: selectedPlayer.id, 
+            senderName: selectedPlayer.name, 
+            senderAvatar: selectedPlayer.avatar, 
+            isAI: true 
+          });
+          setTypingUsers([]);
+          
+          let fullContent = "";
           try {
-            const { message } = await getAIChatResponse({
+            await streamAIChatResponse({
               messages: [{
                 role: "user",
                 content: `You are ${selectedPlayer.name}, a player in a game "${currentGame.name}".
@@ -783,21 +828,33 @@ ${LANG_MATCH_RULES}
 REALISM: React to what was just said—don't give a generic reply. Be natural and human-like. Vary length (sometimes brief, sometimes longer). Don't sound robotic or use stock phrases. Stay in character but speak as a real person would. Output only your response, nothing else.`
               }],
               gameContext: { template: currentGame.config.template, gameName: currentGame.name, rules: currentGame.config.rules, conversationState: gamePhase }
-            });
-            if (!isMountedRef.current) return;
-            setTypingUsers([]);
-            let reply = (message || "").trim() || "I'm thinking...";
-            if (API_ERROR_PLACEHOLDER.test(reply)) {
-              reply = ["That's an interesting point...", "I'm not sure I agree with that.", "Can you explain more?", "I think we should consider all options.", "Based on what I've seen, I have my suspicions.", "Let's think about this carefully."][Math.floor(Math.random() * 6)];
+            },
+            (chunk) => {
+              if (!isMountedRef.current) return;
+              fullContent += chunk;
+              updateStreamingMessage(messageId, fullContent, false);
+            },
+            () => {
+              if (!isMountedRef.current) return;
+              const finalContent = fullContent.trim() || "I'm thinking...";
+              updateStreamingMessage(messageId, finalContent, true);
+              scheduleNextSpeaker();
+            },
+            (error) => {
+              if (!isMountedRef.current) return;
+              const fallback = ["That's an interesting point...", "I'm not sure I agree with that.", "Can you explain more?", "I think we should consider all options.", "Based on what I've seen, I have my suspicions.", "Let's think about this carefully."];
+              const errorMsg = fallback[Math.floor(Math.random() * fallback.length)];
+              updateStreamingMessage(messageId, errorMsg, true);
+              addEventNotification(notifyLang(currentGame.config.rules, `${selectedPlayer.name} gave a default reply.`, `${selectedPlayer.name} 给出了默认回复。`));
+              scheduleNextSpeaker();
             }
-            addMessage({ senderId: selectedPlayer.id, senderName: selectedPlayer.name, senderAvatar: selectedPlayer.avatar, content: reply, isAI: true });
-            scheduleNextSpeaker();
+            );
           } catch (e) {
             if (!isMountedRef.current) return;
-            setTypingUsers([]);
-            addEventNotification(notifyLang(currentGame.config.rules, `${selectedPlayer.name} gave a default reply.`, `${selectedPlayer.name} 给出了默认回复。`));
             const fallback = ["That's an interesting point...", "I'm not sure I agree with that.", "Can you explain more?", "I think we should consider all options.", "Based on what I've seen, I have my suspicions.", "Let's think about this carefully."];
-            addMessage({ senderId: selectedPlayer.id, senderName: selectedPlayer.name, senderAvatar: selectedPlayer.avatar, content: fallback[Math.floor(Math.random() * fallback.length)], isAI: true });
+            const errorMsg = fallback[Math.floor(Math.random() * fallback.length)];
+            updateStreamingMessage(messageId, errorMsg, true);
+            addEventNotification(notifyLang(currentGame.config.rules, `${selectedPlayer.name} gave a default reply.`, `${selectedPlayer.name} 给出了默认回复。`));
             scheduleNextSpeaker();
           }
           timeoutRefs.current = timeoutRefs.current.filter(x => x !== messageTimeout);
@@ -810,7 +867,7 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
       timeoutRefs.current = timeoutRefs.current.filter(x => x !== t);
     }, initialDelay);
     timeoutRefs.current.push(t);
-  }, [addMessage, addEventNotification, userId, addPrivateMessage]);
+  }, [addMessage, addEventNotification, userId, addPrivateMessage, addStreamingMessage, updateStreamingMessage]);
 
   const hostPostEventRef = useRef<(eventDescription: string, opts?: { nextSpeakerId?: string | null; setPhase?: GamePhaseKind | string; autoAdvance?: { afterMs: number; nextEvent: string; nextPhase: GamePhaseKind | string }; skipScheduleNextSpeaker?: boolean }) => Promise<void>>(null!);
 
@@ -967,8 +1024,17 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
     
     const rulesForLang = (currentGame?.config.rules || "").trim().slice(0, 600);
     const postOne = async (desc: string, updatePhase?: GamePhaseKind | string) => {
+      // Create streaming message for Host announcement
+      const messageId = addStreamingMessage({
+        senderId: "gm-1",
+        senderName: gameMaster!.name,
+        senderAvatar: gameMaster!.avatar,
+        isAI: true
+      });
+      
+      let fullContent = "";
       try {
-        const { message } = await getAIChatResponse({
+        await streamAIChatResponse({
           messages: [{
             role: "user",
             content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". Game rules (use this language for your announcement):\n${rulesForLang || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Output only the announcement.`
@@ -980,35 +1046,45 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
             gameName: currentGame?.name,
             conversationState: gamePhaseState.phase
           }
-        });
-        if (!isMountedRef.current) return;
-        const text = (message || "").trim() || desc;
-        addMessage({
-          senderId: "gm-1",
-          senderName: gameMaster!.name,
-          senderAvatar: gameMaster!.avatar,
-          content: text,
-          isAI: true
-        });
-        if (updatePhase) {
-          const phase = updatePhase as GamePhaseKind;
-          setGamePhaseState(s => ({
-            ...s,
-            phase,
-            ...(phase === "night" && s.phase === "elimination"
-              ? { round: s.round + 1, lastVotedOutId: null, lastNightVictimId: null }
-              : {})
-          }));
+        },
+        (chunk) => {
+          if (!isMountedRef.current) return;
+          fullContent += chunk;
+          updateStreamingMessage(messageId, fullContent, false);
+        },
+        () => {
+          if (!isMountedRef.current) return;
+          const finalText = fullContent.trim() || desc;
+          updateStreamingMessage(messageId, finalText, true);
+          if (updatePhase) {
+            const phase = updatePhase as GamePhaseKind;
+            setGamePhaseState(s => ({
+              ...s,
+              phase,
+              ...(phase === "night" && s.phase === "elimination"
+                ? { round: s.round + 1, lastVotedOutId: null, lastNightVictimId: null }
+                : {})
+            }));
+          }
+        },
+        (error) => {
+          if (!isMountedRef.current) return;
+          updateStreamingMessage(messageId, desc, true);
+          if (updatePhase) {
+            const phase = updatePhase as GamePhaseKind;
+            setGamePhaseState(s => ({
+              ...s,
+              phase,
+              ...(phase === "night" && s.phase === "elimination"
+                ? { round: s.round + 1, lastVotedOutId: null, lastNightVictimId: null }
+                : {})
+            }));
+          }
         }
+        );
       } catch (e) {
         if (!isMountedRef.current) return;
-        addMessage({
-          senderId: "gm-1",
-          senderName: gameMaster!.name,
-          senderAvatar: gameMaster!.avatar,
-          content: desc,
-          isAI: true
-        });
+        updateStreamingMessage(messageId, desc, true);
         if (updatePhase) {
           const phase = updatePhase as GamePhaseKind;
           setGamePhaseState(s => ({
@@ -1047,7 +1123,7 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
     // After Host announces (e.g. "discussion begins"), schedule who speaks next so the game doesn't get stuck.
     // Skip when next speaker is the user—wait for them to respond instead of looping.
     if (currentGame?.isActive && !opts?.skipScheduleNextSpeaker) scheduleNextSpeaker();
-  }, [players, games, selectedGameId, gamePhaseState.phase, addMessage, addEventNotification, scheduleNextSpeaker]);
+  }, [players, games, selectedGameId, gamePhaseState.phase, addMessage, addEventNotification, scheduleNextSpeaker, addStreamingMessage, updateStreamingMessage]);
 
   useEffect(() => {
     hostPostEventRef.current = hostPostEvent;

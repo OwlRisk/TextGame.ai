@@ -210,6 +210,7 @@ export interface Message {
   timestamp: Date;
   isAI: boolean;
   isSystemMessage?: boolean;
+  isStreaming?: boolean; // True while message is being generated (typewriter effect)
 }
 
 interface ChatAreaProps {
@@ -509,6 +510,9 @@ export function ChatArea({
                       </div>
                       <div className="text-zinc-100 text-sm leading-relaxed break-words">
                         {formatMessage(message.content)}
+                        {message.isStreaming && (
+                          <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -517,6 +521,9 @@ export function ChatArea({
                     <div className="w-11 flex-shrink-0" />
                     <div className="flex-1 text-zinc-100 text-sm leading-relaxed break-words">
                       {formatMessage(message.content)}
+                      {message.isStreaming && (
+                        <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
+                      )}
                     </div>
                   </div>
                 )}
