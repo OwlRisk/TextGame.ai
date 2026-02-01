@@ -20,6 +20,7 @@ import { Input } from "@/app/components/ui/input";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { getHostById, getDefaultHost } from "@/app/config/host-config";
+import { getVoiceForHost, getVoiceForPlayer } from "@/lib/tts-voices";
 import { pickTraitsForPlayers } from "@/app/config/ai-player-personalities";
 import { getAIChatResponse } from "@/lib/openai";
 import {
@@ -77,7 +78,9 @@ export default function HomePage() {
   const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
   /** Private messages from Host to players, keyed by playerId */
   const [privateMessages, setPrivateMessages] = useState<Record<string, Array<{ id: string; from: string; content: string; timestamp: Date }>>>({});
-  
+  /** TTS: speak new messages with OpenAI TTS (per-player voice); persisted in localStorage */
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+
   const userId = "user-1";
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
   const isMountedRef = useRef(true);
@@ -97,6 +100,24 @@ export default function HomePage() {
     gamePhaseStateRef.current = gamePhaseState;
     selectedGameIdRef.current = selectedGameId;
   }, [messages, players, games, gamePhase, gamePhaseState, selectedGameId]);
+
+  // Show toast once when TTS fails (e.g. missing OPENAI_API_KEY)
+  const ttsErrorShownRef = useRef(false);
+  useEffect(() => {
+    const onTtsError = (e: Event) => {
+      if (ttsErrorShownRef.current) return;
+      ttsErrorShownRef.current = true;
+      const msg = (e as CustomEvent<string>).detail;
+      toast.error(
+        msg?.includes('API key') || msg?.includes('OPENAI')
+          ? '语音需要配置 OPENAI_API_KEY'
+          : '语音播放失败，请检查网络或稍后再试',
+        { duration: 5000 }
+      );
+    };
+    window.addEventListener('tts-error', onTtsError);
+    return () => window.removeEventListener('tts-error', onTtsError);
+  }, []);
 
   // Load game state from localStorage on mount
   useEffect(() => {
@@ -124,6 +145,7 @@ export default function HomePage() {
           }
           setPrivateMessages(pm);
         }
+        if (typeof state.voiceEnabled === 'boolean') setVoiceEnabled(state.voiceEnabled);
       }
     } catch (e) {
       console.error('Error loading game state:', e);
@@ -165,6 +187,7 @@ export default function HomePage() {
           gamePhase,
           gamePhaseState,
           privateMessages: trimmedPrivateMessages,
+          voiceEnabled,
           savedAt: new Date().toISOString()
         };
         localStorage.setItem('gameRoomState', JSON.stringify(state));
@@ -199,6 +222,7 @@ export default function HomePage() {
               gamePhase,
               gamePhaseState,
               privateMessages: minPm,
+              voiceEnabled,
               savedAt: new Date().toISOString()
             }));
           } catch {
@@ -211,7 +235,7 @@ export default function HomePage() {
     }, 1000); // Debounce saves
     
     return () => clearTimeout(timeoutId);
-  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, isHydrated]);
+  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, voiceEnabled, isHydrated]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -299,6 +323,7 @@ export default function HomePage() {
       isMuted: false,
       background: host.description ?? undefined,
       gender: "gender" in host ? host.gender : undefined,
+      ttsVoice: getVoiceForHost(config.hostId, host.name, host.description ?? config.generatedHost?.personality),
     };
 
     const aiPlayers: Player[] = [];
@@ -326,6 +351,7 @@ export default function HomePage() {
           personality: configPlayer.personality || "Friendly and observant",
           background: configPlayer.background || "A game enthusiast",
           gender: configPlayer.gender as "male" | "female" | "other" | undefined,
+          ttsVoice: getVoiceForPlayer(configPlayer.gender, configPlayer.name, configPlayer.personality),
         });
       });
     } else {
@@ -345,6 +371,7 @@ export default function HomePage() {
           personality: traits.personality,
           background: traits.background,
           gender: "other",
+          ttsVoice: getVoiceForPlayer("other", `Player ${i + 1}`, traits.personality),
         });
       }
     }
@@ -475,14 +502,14 @@ export default function HomePage() {
   }, [userId, addMessage]);
 
   const handleCreateGame = useCallback(async (config: GameConfig) => {
-    // Show loading toast
-    const loadingToast = toast.loading("Creating game...");
-    
+    const toastId = "create-game";
+    toast.loading("Creating game...", { id: toastId });
+
     try {
       // Generate game icon with AI
       let gameIcon = "🎮"; // Default fallback
       try {
-        toast.loading("AI is generating game icon...", { id: loadingToast });
+        toast.loading("Generating icon...", { id: toastId });
         const iconResponse = await fetch('/api/generate-game-icon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -492,29 +519,23 @@ export default function HomePage() {
             rules: config.rules
           })
         });
-        
+
         if (iconResponse.ok) {
           const iconData = await iconResponse.json();
           gameIcon = iconData.icon;
-          toast.success("Game icon generated!", { id: loadingToast });
         } else {
-          console.warn('Failed to generate icon, using fallback');
-          // Use emoji fallback
           gameIcon = config.template === "werewolf" ? "🐺" : config.template === "undercover" ? "🕵️" : "🎮";
-          toast.dismiss(loadingToast);
         }
       } catch (error) {
         console.error('Error generating game icon:', error);
-        // Use emoji fallback
         gameIcon = config.template === "werewolf" ? "🐺" : config.template === "undercover" ? "🕵️" : "🎮";
-        toast.dismiss(loadingToast);
       }
 
-      // Generate players via LLM when not configured (names, roles, words from rules)
+      // Generate players via LLM when not configured
       let finalConfig = config;
       if (!config.configuredPlayers || config.configuredPlayers.length === 0) {
         try {
-          toast.loading("AI is generating players...", { id: loadingToast });
+          toast.loading("Setting up players...", { id: toastId });
           const playersRes = await fetch('/api/generate-players', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -551,10 +572,10 @@ export default function HomePage() {
       setShowGameMasterChat(false);
       setShowGameCreatorForm(false);
       initializeGame(finalConfig);
-      toast.success(`Game "${config.name}" created!`, { id: loadingToast });
+      toast.success(`"${config.name}" is ready!`, { id: toastId });
     } catch (error) {
       console.error('Error creating game:', error);
-      toast.error("Failed to create game", { id: loadingToast });
+      toast.error("Failed to create game", { id: toastId });
     }
   }, [initializeGame]);
 
@@ -563,7 +584,7 @@ export default function HomePage() {
 
   /** Schedules Host to pick next speaker; Host decides when to act via NEXT_AFTER_SECONDS and REPLY_AFTER_SECONDS. */
   const scheduleNextSpeaker = useCallback(() => {
-    const initialDelay = 2000 + Math.random() * 2000;
+    const initialDelay = 6000 + Math.random() * 4000;
     const t = setTimeout(async () => {
       if (!isMountedRef.current) return;
       const messages = messagesRef.current;
@@ -596,8 +617,8 @@ export default function HomePage() {
       const languageRule = LANG_MATCH_RULES.replace("above", "below").replace("write all your output", "write all your output (NEXT_SPEAKER line, PRIVATE_TO_... content, POST_EVENT content)");
 
       let selectedPlayer: typeof alivePlayersList[0] | null = null;
-      let nextAfterSeconds = 5;
-      let replyAfterSeconds = 5;
+      let nextAfterSeconds = 12;
+      let replyAfterSeconds = 12;
       try {
         const { message: hostDecision } = await getAIChatResponse({
           messages: [{
@@ -625,19 +646,19 @@ ${playersInfo.map(p => `- ${p.name} (Role: ${p.role}, Type: ${p.isAI ? "AI" : "H
 Recent speakers: ${recentNames.length ? recentNames.join(", ") : "none yet"}
 Current game phase: ${gamePhase}
 
-Pacing: SLOW DOWN. Use longer NEXT_AFTER_SECONDS (8-15) and REPLY_AFTER_SECONDS (8-15). Don't flood—let players read. Reply NONE sometimes for natural pauses. Run the game autonomously: balance turns across AI players; only select You when the game flow genuinely requires the human's input (e.g. their turn to answer). Don't constantly direct questions at the human. One speaker at a time.${pacingHint}
+Pacing: SLOW DOWN. Use longer NEXT_AFTER_SECONDS (10-20) and REPLY_AFTER_SECONDS (10-20). Don't flood—let players read. Reply NONE sometimes for natural pauses. Run the game autonomously: balance turns across AI players; only select You when the game flow genuinely requires the human's input (e.g. their turn to answer). Don't constantly direct questions at the human. One speaker at a time. Output at most ONE POST_EVENT per turn—one short announcement, not multiple.${pacingHint}
 
 Reply using these lines (one per line). You MUST include exactly one next-speaker line. Optional lines can be in any order after it.
 - NEXT_SPEAKER: PlayerName   (exactly one; use a name from the list above, or NONE if no one should speak right now—use NONE to create a pause)
-- NEXT_AFTER_SECONDS: N      (optional; 5-18, how many seconds to wait before acting; default 8; USE LONGER values—don't rush, let players read)
-- REPLY_AFTER_SECONDS: N     (optional; 5-18, when the selected speaker replies (if AI); default 8; USE LONGER—players need time to process)
+- NEXT_AFTER_SECONDS: N      (optional; 10-20 seconds to wait before acting; default 12; USE 12 OR MORE—don't rush, let players read)
+- REPLY_AFTER_SECONDS: N     (optional; 10-20 seconds before the selected speaker's reply appears; default 12; USE 12 OR MORE)
 - PRIVATE_TO_PlayerName: your private message to that player (can repeat for different players)
 - POST_EVENT: your public announcement—write naturally, vary phrasing, avoid repetitive structure
 
 Example:
 NEXT_SPEAKER: Sofia
-NEXT_AFTER_SECONDS: 10
-REPLY_AFTER_SECONDS: 8
+NEXT_AFTER_SECONDS: 12
+REPLY_AFTER_SECONDS: 12
 PRIVATE_TO_Kenji: You are the werewolf. Your teammates are Omar and Zuri.
 POST_EVENT: The moon rises. Night has fallen.`
           }],
@@ -650,22 +671,22 @@ POST_EVENT: The moon rises. Night has fallen.`
         const raw = (hostDecision || "").trim();
         const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
         let nextSpeakerName: string | null = null;
-        nextAfterSeconds = 8;
-        replyAfterSeconds = 8;
+        nextAfterSeconds = 12;
+        replyAfterSeconds = 12;
         for (const line of lines) {
           if (line.toUpperCase().startsWith("NEXT_SPEAKER:")) {
             nextSpeakerName = line.slice("NEXT_SPEAKER:".length).trim();
           } else if (line.toUpperCase().startsWith("NEXT_AFTER_SECONDS:")) {
             const n = parseInt(line.slice("NEXT_AFTER_SECONDS:".length).trim(), 10);
-            if (!isNaN(n) && n >= 5 && n <= 18) nextAfterSeconds = n;
+            if (!isNaN(n) && n >= 10 && n <= 20) nextAfterSeconds = n;
           } else if (line.toUpperCase().startsWith("REPLY_AFTER_SECONDS:")) {
             const n = parseInt(line.slice("REPLY_AFTER_SECONDS:".length).trim(), 10);
-            if (!isNaN(n) && n >= 5 && n <= 18) replyAfterSeconds = n;
+            if (!isNaN(n) && n >= 10 && n <= 20) replyAfterSeconds = n;
           }
         }
         // Human-like variation: add slight random jitter (±1–2s) so timing feels natural
-        nextAfterSeconds = Math.max(5, Math.min(18, nextAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
-        replyAfterSeconds = Math.max(5, Math.min(18, replyAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
+        nextAfterSeconds = Math.max(10, Math.min(20, nextAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
+        replyAfterSeconds = Math.max(10, Math.min(20, replyAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
         if (!nextSpeakerName) nextSpeakerName = lines.find(l => !l.toUpperCase().startsWith("NEXT_AFTER_SECONDS:") && !l.toUpperCase().startsWith("REPLY_AFTER_SECONDS:") && !l.toUpperCase().startsWith("PRIVATE_TO_") && !l.toUpperCase().startsWith("POST_EVENT:"))?.trim() || null;
         selectedPlayer = nextSpeakerName && nextSpeakerName.toUpperCase() !== "NONE"
           ? alivePlayersList.find(p => p.name.toLowerCase() === nextSpeakerName!.toLowerCase() || p.name === nextSpeakerName) ?? null
@@ -682,6 +703,7 @@ POST_EVENT: The moon rises. Night has fallen.`
         if (!selectedPlayer) return;
         recentSpeakers.current.push(selectedPlayer.id);
         if (recentSpeakers.current.length > 5) recentSpeakers.current.shift();
+        const postEventTexts: string[] = [];
         for (const line of lines) {
           if (line.toUpperCase().startsWith("PRIVATE_TO_")) {
             const rest = line.slice("PRIVATE_TO_".length);
@@ -694,13 +716,20 @@ POST_EVENT: The moon rises. Night has fallen.`
           }
           if (line.toUpperCase().startsWith("POST_EVENT:")) {
             const text = line.slice("POST_EVENT:".length).trim();
-            if (text) hostPostEventRef.current?.(text, { skipScheduleNextSpeaker: selectedPlayer?.id === userId });
+            if (text) postEventTexts.push(text);
           }
+        }
+        // Single host announcement per turn: merge all POST_EVENT lines into one to avoid flood
+        if (postEventTexts.length > 0) {
+          const merged = postEventTexts.join("\n\n");
+          hostPostEventRef.current?.(merged, { skipScheduleNextSpeaker: true });
         }
       } catch (e) {
         console.error("AI Host decision failed:", e);
         if (!isMountedRef.current) return;
         setTypingUsers([]);
+        nextAfterSeconds = 12;
+        replyAfterSeconds = 12;
         addEventNotification(notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host 随机选择了下一位发言者。"));
         const aiOnly = alivePlayersList.filter(p => p.isAI);
         const pool = aiOnly.length > 0 ? aiOnly : alivePlayersList;
@@ -1571,6 +1600,8 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
                 lastVotedOutId={gamePhaseState.lastVotedOutId}
                 privateMessagesFromHost={privateMessages[userId] ?? []}
                 privateSectionLabel={notifyLang(currentGame?.config?.rules, "Private from Host", "来自主持人的私信")}
+                voiceEnabled={voiceEnabled}
+                onToggleVoice={() => setVoiceEnabled(v => !v)}
               />
               <PlayerPanelWithBoard
                 players={players}

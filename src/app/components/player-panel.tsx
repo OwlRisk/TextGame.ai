@@ -26,6 +26,8 @@ export interface Player {
   background?: string;
   /** Player gender (male, female, other) - can be configured by GM */
   gender?: string;
+  /** OpenAI TTS voice id for this player (e.g. alloy, nova) */
+  ttsVoice?: string;
 }
 
 interface PlayerPanelProps {

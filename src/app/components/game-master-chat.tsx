@@ -414,6 +414,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   // Preview panel
   const [showPreview, setShowPreview] = useState(true);
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
+  const [isStartingGame, setIsStartingGame] = useState(false);
 
   // Load sessions from localStorage on mount
   useEffect(() => {
@@ -1636,18 +1637,20 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 </div>
                 <Button
                   onClick={async () => {
-                    // Create game config from current state
                     if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
                       toast.error("Please define game rules first");
                       return;
                     }
-                    
+                    setIsStartingGame(true);
+                    const startToastId = "start-game";
+                    toast.loading("Preparing game...", { id: startToastId });
+                    try {
                     let finalConfiguredPlayers = configuredPlayers;
                     let finalPlayerCount = configuredPlayers.length > 0 ? configuredPlayers.length : playerCount;
-                    
+
                     // If no players configured, automatically generate them
                     if (configuredPlayers.length === 0) {
-                      toast.info("AI is generating player configurations...");
+                      toast.loading("Setting up players...", { id: startToastId });
                       try {
                         const response = await fetch('/api/generate-players', {
                           method: 'POST',
@@ -1667,20 +1670,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           finalPlayerCount = data.players?.length ?? 6;
                           setConfiguredPlayers(data.players);
                           if (playerCount === 0) setPlayerCount(finalPlayerCount);
-                          toast.success(`Generated ${data.count} random players!`);
-                        } else {
-                          toast.error("Failed to generate players, using defaults");
                         }
                       } catch (error) {
                         console.error('Error generating players:', error);
-                        toast.error("Failed to generate players, using defaults");
                       }
                     }
-                    
+
                     // Generate AI Host based on game rules
                     type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string };
                     let generatedHostData: GeneratedHost | null = null;
-                    toast.info("Generating AI Host...");
+                    toast.loading("Generating host...", { id: startToastId });
                     try {
                       const response = await fetch('/api/generate-host', {
                         method: 'POST',
@@ -1696,22 +1695,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         generatedHostData = host;
                         console.log('[Game Master] Generated host:', host);
 
-                        // Save generated host to current session
                         setSessions(prev => prev.map(s =>
                           s.id === currentSessionId
                             ? { ...s, generatedHost: host }
                             : s
                         ));
-
-                        toast.success(`Host "${host.name}" is ready!`);
-                      } else {
-                        toast.error('Failed to generate host, using default');
                       }
                     } catch (error) {
                       console.error('[Game Master] Failed to generate host:', error);
-                      toast.error('Failed to generate host, using default');
                     }
-                    
+
+                    toast.dismiss(startToastId);
                     const gameConfig: GameConfig = {
                       template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
                       playerCount: finalPlayerCount || playerCount || 6,
@@ -1722,13 +1716,15 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
                       generatedHost: generatedHostData || undefined
                     };
-                    
-                    onCreateGame(gameConfig);
+                    await onCreateGame(gameConfig);
+                    } finally {
+                      setIsStartingGame(false);
+                    }
                   }}
-                  disabled={isRulesBeingEdited}
+                  disabled={isRulesBeingEdited || isStartingGame}
                   className="h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Start Game
+                  {isStartingGame ? "Starting…" : "Start Game"}
                 </Button>
               </div>
               

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { useVoiceInput } from "@/lib/voice";
+import { speak, unlockAudio } from "@/lib/tts";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
@@ -234,6 +235,10 @@ interface ChatAreaProps {
   privateMessagesFromHost?: Array<{ id: string; from: string; content: string; timestamp: Date }>;
   /** Label for the private messages section (e.g. "Private from Host" / "来自主持人的私信") */
   privateSectionLabel?: string;
+  /** Enable TTS: speak new messages with OpenAI TTS (per-player voice) */
+  voiceEnabled?: boolean;
+  /** Toggle TTS on/off */
+  onToggleVoice?: () => void;
 }
 
 export function ChatArea({ 
@@ -256,12 +261,41 @@ export function ChatArea({
   alivePlayers = [],
   lastVotedOutId,
   privateMessagesFromHost = [],
-  privateSectionLabel = "Private from Host"
+  privateSectionLabel = "Private from Host",
+  voiceEnabled = false,
+  onToggleVoice
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLenRef = useRef(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
+
+  // TTS: when a new message is added and voice is enabled, speak it (skip system and user's own)
+  useEffect(() => {
+    if (!voiceEnabled) {
+      prevMessagesLenRef.current = messages.length;
+      return;
+    }
+    // Skip when no new messages (same or fewer than last run)
+    if (messages.length <= prevMessagesLenRef.current) {
+      prevMessagesLenRef.current = messages.length;
+      return;
+    }
+    // Avoid speaking a whole batch on restore (e.g. localStorage): only skip when we had 0 and now have many
+    const isBulkRestore = prevMessagesLenRef.current === 0 && messages.length > 1;
+    if (isBulkRestore) {
+      prevMessagesLenRef.current = messages.length;
+      return;
+    }
+    const last = messages[messages.length - 1];
+    prevMessagesLenRef.current = messages.length;
+    if (last.isSystemMessage || last.senderId === userId) return;
+    const player = players.find(p => p.id === last.senderId || p.name === last.senderName);
+    const voiceId = (player as Player & { ttsVoice?: string })?.ttsVoice ?? "alloy";
+    const plain = last.content.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/`(.*?)`/g, "$1").replace(/~~(.*?)~~/g, "$1").trim();
+    if (plain) speak(plain, voiceId);
+  }, [messages, voiceEnabled, userId, players]);
   const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   const MIN_INPUT_HEIGHT = 44;
@@ -387,7 +421,21 @@ export function ChatArea({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Host Actions menu removed - these actions are now controlled automatically by AI host */}
+          {onToggleVoice && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (!voiceEnabled) unlockAudio();
+                onToggleVoice();
+              }}
+              title={voiceEnabled ? "Turn off voice (TTS)" : "Turn on voice (TTS)"}
+              className="hover:bg-zinc-700 text-zinc-300 hover:text-white gap-1.5"
+            >
+              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              <span className="text-xs">{voiceEnabled ? "Voice On" : "Voice Off"}</span>
+            </Button>
+          )}
           {onOpenPlayerBoard && (
             <Button
               variant="ghost"
