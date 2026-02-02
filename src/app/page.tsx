@@ -110,8 +110,8 @@ export default function HomePage() {
       const msg = (e as CustomEvent<string>).detail;
       toast.error(
         msg?.includes('API key') || msg?.includes('OPENAI')
-          ? '语音需要配置 OPENAI_API_KEY'
-          : '语音播放失败，请检查网络或稍后再试',
+          ? 'Voice requires OPENAI_API_KEY to be configured'
+          : 'Voice playback failed. Please check your network or try again later.',
         { duration: 5000 }
       );
     };

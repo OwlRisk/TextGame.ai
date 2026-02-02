@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-/** OpenAI TTS built-in voices (supported by createSpeech API) */
-export const TTS_VOICES = [
-  'alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse', 'marin', 'cedar',
-] as const;
-export type TTSVoice = (typeof TTS_VOICES)[number];
+/** OpenAI TTS voices supported by tts-1 / tts-1-hd (used by this route) */
+const TTS_1_VOICES = ['alloy', 'ash', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer'] as const;
+type TTS1Voice = (typeof TTS_1_VOICES)[number];
 
-const VOICES_SET = new Set<string>(TTS_VOICES);
+/** Map voices only available in gpt-4o-mini-tts to tts-1-compatible voices */
+const VOICE_FALLBACK: Record<string, TTS1Voice> = {
+  ballad: 'coral',   // female
+  verse: 'echo',     // male
+  marin: 'nova',     // female
+  cedar: 'onyx',     // male
+};
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -41,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'text is empty' }, { status: 400 });
     }
 
-    const voiceId = VOICES_SET.has(voice) ? voice : 'alloy';
+    const voiceId: TTS1Voice = VOICE_FALLBACK[voice] ?? (TTS_1_VOICES.includes(voice as TTS1Voice) ? (voice as TTS1Voice) : 'alloy');
     const openai = getOpenAI();
     const ttsModel = model === 'tts-1-hd' ? 'tts-1-hd' : 'tts-1';
     const speedNum = Math.max(0.25, Math.min(4, Number(speed) || 1));
@@ -50,7 +54,7 @@ export async function POST(request: NextRequest) {
     const response = await openai.audio.speech.create({
       model: ttsModel,
       input: trimmed,
-      voice: voiceId as TTSVoice,
+      voice: voiceId,
       response_format: 'mp3',
       speed: speedNum,
       stream_format: 'audio',
