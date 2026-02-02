@@ -23,6 +23,19 @@ const FEMALE_VOICES: TTSVoice[] = ['nova', 'shimmer', 'coral', 'fable', 'ballad'
 /** Neutral / other */
 const NEUTRAL_VOICES: TTSVoice[] = ['alloy', 'ash', 'ballad', 'coral', 'verse', 'marin'];
 
+/** When gender is "other", infer from first name so avatar and voice match (e.g. Liam -> male) */
+const COMMON_MALE_FIRST_NAMES = new Set(['liam', 'james', 'carlos', 'jin', 'alex', 'marcus', 'david', 'ryan', 'noah', 'ethan', 'daniel', 'michael', 'william', 'oliver', 'jack', 'ben', 'leo', 'lucas', 'henry', 'oscar']);
+const COMMON_FEMALE_FIRST_NAMES = new Set(['amina', 'zuri', 'sarah', 'emma', 'olivia', 'ava', 'sophia', 'sofia', 'isabella', 'mia', 'charlotte', 'lily', 'zoe', 'ella', 'aria', 'luna', 'jacqueline', 'brooke', 'tessa', 'nova']);
+
+function inferGenderFromName(name: string | undefined): 'male' | 'female' | null {
+  if (!name || typeof name !== 'string') return null;
+  const first = name.trim().split(/\s+/)[0]?.toLowerCase();
+  if (!first) return null;
+  if (COMMON_MALE_FIRST_NAMES.has(first)) return 'male';
+  if (COMMON_FEMALE_FIRST_NAMES.has(first)) return 'female';
+  return null;
+}
+
 function hashStr(s: string): number {
   let h = 0;
   const str = s.trim().toLowerCase();
@@ -34,30 +47,38 @@ function hashStr(s: string): number {
 }
 
 /**
- * Get TTS voice for Host: preset host uses map; generated host uses name + personality.
+ * Get TTS voice for Host: preset host uses map; generated host uses gender + name + personality.
  */
 export function getVoiceForHost(
   hostId: string,
   name?: string,
-  personality?: string
+  personality?: string,
+  gender?: string
 ): TTSVoice {
   const preset = HOST_VOICE_MAP[hostId];
   if (preset) return preset;
+  const g = (gender || '').toLowerCase();
+  const list = g === 'female' ? FEMALE_VOICES : g === 'male' ? MALE_VOICES : TTS_VOICES;
   const seed = `${name ?? ''}|${personality ?? ''}`;
-  const idx = hashStr(seed) % TTS_VOICES.length;
-  return TTS_VOICES[idx];
+  const idx = hashStr(seed) % list.length;
+  return list[idx];
 }
 
 /**
  * Get TTS voice for a player from gender, name, and personality.
  * Same character (name+personality) gets the same voice; gender picks male/female pool.
+ * When gender is "other" or missing, infer from first name so voice matches avatar (e.g. Liam -> male voice).
  */
 export function getVoiceForPlayer(
   gender: string | undefined,
   name?: string,
   personality?: string
 ): TTSVoice {
-  const g = (gender || '').toLowerCase();
+  let g = (gender || '').toLowerCase();
+  if (g !== 'male' && g !== 'female') {
+    const inferred = inferGenderFromName(name);
+    if (inferred) g = inferred;
+  }
   const list = g === 'female' ? FEMALE_VOICES : g === 'male' ? MALE_VOICES : NEUTRAL_VOICES;
   const seed = `${name ?? ''}|${personality ?? ''}`;
   const idx = hashStr(seed) % list.length;

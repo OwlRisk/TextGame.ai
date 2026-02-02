@@ -1,7 +1,17 @@
 'use client';
 
-/** Queue of { text, voice } to play one after another */
-let queue: { text: string; voice: string }[] = [];
+/** Gap between queue items (ms) for natural "breath" between speakers */
+const GAP_BETWEEN_MS = 380;
+
+export interface SpeakOptions {
+  /** Pause before this line (ms) — e.g. "character is about to speak" */
+  preDelayMs?: number;
+  /** TTS speed 0.25–4, default 0.97 for calmer narrative */
+  speed?: number;
+}
+
+/** Queue item: text, voice, and optional immersion options */
+let queue: { text: string; voice: string; speed?: number; preDelayMs?: number }[] = [];
 let isPlaying = false;
 let audioUnlocked = false;
 
@@ -88,18 +98,29 @@ async function playStreamedMp3(reader: ReadableStreamDefaultReader<Uint8Array>):
   });
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 async function playNext() {
   if (queue.length === 0) {
     isPlaying = false;
     return;
   }
   isPlaying = true;
-  const { text, voice } = queue.shift()!;
+  const item = queue.shift()!;
+  const { text, voice, speed = 0.97, preDelayMs = 0 } = item;
   try {
+    if (preDelayMs > 0) await delay(preDelayMs);
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.slice(0, 4096), voice, stream: true }),
+      body: JSON.stringify({
+        text: text.slice(0, 4096),
+        voice,
+        speed: Math.max(0.25, Math.min(4, speed)),
+        stream: true,
+      }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -111,10 +132,17 @@ async function playNext() {
       playNext();
       return;
     }
+    const contentLength = res.headers.get('content-length');
+    if (contentLength === '0' || (contentLength && parseInt(contentLength, 10) === 0)) {
+      await delay(GAP_BETWEEN_MS);
+      playNext();
+      return;
+    }
     const reader = res.body?.getReader();
     if (!reader) {
       const blob = await res.blob();
       await playBlob(blob);
+      await delay(GAP_BETWEEN_MS);
       playNext();
       return;
     }
@@ -127,20 +155,22 @@ async function playNext() {
       const res2 = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.slice(0, 4096), voice }),
+        body: JSON.stringify({ text: text.slice(0, 4096), voice, speed: Math.max(0.25, Math.min(4, speed)) }),
       });
       if (res2.ok) {
         const blob = await res2.blob();
         await playBlob(blob);
       }
     }
-
+    // Natural pause between queue items before starting next
+    await delay(GAP_BETWEEN_MS);
     playNext();
   } catch (e) {
     console.warn('[TTS] Play error:', e);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('tts-error', { detail: e instanceof Error ? e.message : 'TTS failed' }));
     }
+    await delay(GAP_BETWEEN_MS);
     playNext();
   }
 }
@@ -149,6 +179,15 @@ function playBlob(blob: Blob): Promise<void> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+    audio.volume = 0;
+    const rampSteps = 8;
+    const stepMs = 15;
+    let step = 0;
+    const ramp = () => {
+      step++;
+      audio.volume = Math.min(1, (step / rampSteps) * 1.15);
+      if (step < rampSteps) setTimeout(ramp, stepMs);
+    };
     audio.onended = () => {
       URL.revokeObjectURL(url);
       resolve();
@@ -158,7 +197,7 @@ function playBlob(blob: Blob): Promise<void> {
       URL.revokeObjectURL(url);
       resolve(); // Continue to next even on error
     };
-    audio.play().catch((e) => {
+    audio.play().then(() => setTimeout(ramp, stepMs)).catch((e) => {
       console.warn('[TTS] Audio play() failed:', e);
       URL.revokeObjectURL(url);
       resolve(); // Continue to next even if play fails
@@ -180,13 +219,26 @@ export function unlockAudio(): void {
   } catch (e) {}
 }
 
+/** Cartesia rejects "empty or only punctuation" — don't enqueue such text */
+function hasSpeakableContent(s: string): boolean {
+  const t = s.trim();
+  if (!t) return false;
+  return /[\p{L}\p{N}]/u.test(t);
+}
+
 /**
  * Enqueue text to be spoken with the given voice. Plays in order; no overlap.
+ * Options: preDelayMs (pause before speaking), speed (0.25–4, default 0.97 for calmer narrative).
  */
-export function speak(text: string, voice: string): void {
+export function speak(text: string, voice: string, options?: SpeakOptions): void {
   const t = (text || '').trim();
-  if (!t) return;
-  queue.push({ text: t, voice: voice || 'alloy' });
+  if (!t || !hasSpeakableContent(t)) return;
+  queue.push({
+    text: t,
+    voice: voice || 'alloy',
+    speed: options?.speed ?? 0.97,
+    preDelayMs: options?.preDelayMs ?? 0,
+  });
   if (!isPlaying) playNext();
 }
 

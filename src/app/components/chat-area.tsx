@@ -8,7 +8,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
-import { useVoiceInput } from "@/lib/voice";
+import { useVoiceInput, prepareTextForTTS } from "@/lib/voice";
 import { speak, unlockAudio } from "@/lib/tts";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
@@ -241,6 +241,8 @@ interface ChatAreaProps {
   voiceEnabled?: boolean;
   /** Toggle TTS on/off */
   onToggleVoice?: () => void;
+  /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
+  quickReplies?: string[];
 }
 
 export function ChatArea({ 
@@ -265,38 +267,43 @@ export function ChatArea({
   privateMessagesFromHost = [],
   privateSectionLabel = "Private from Host",
   voiceEnabled = false,
-  onToggleVoice
+  onToggleVoice,
+  quickReplies = []
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessagesLenRef = useRef(0);
+  const spokenMessageIdsRef = useRef<Set<string>>(new Set());
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
 
-  // TTS: when a new message is added and voice is enabled, speak it (skip system and user's own)
+  // TTS: speak new messages and when streaming completes (e.g. AI Host announcements)
   useEffect(() => {
     if (!voiceEnabled) {
       prevMessagesLenRef.current = messages.length;
       return;
     }
-    // Skip when no new messages (same or fewer than last run)
-    if (messages.length <= prevMessagesLenRef.current) {
-      prevMessagesLenRef.current = messages.length;
-      return;
-    }
-    // Avoid speaking a whole batch on restore (e.g. localStorage): only skip when we had 0 and now have many
-    const isBulkRestore = prevMessagesLenRef.current === 0 && messages.length > 1;
-    if (isBulkRestore) {
-      prevMessagesLenRef.current = messages.length;
-      return;
-    }
+    if (messages.length === 0) return;
     const last = messages[messages.length - 1];
+    const prevLen = prevMessagesLenRef.current;
     prevMessagesLenRef.current = messages.length;
     if (last.isSystemMessage || last.senderId === userId) return;
+    if (last.isStreaming) return;
+    if (!last.content?.trim()) return;
+    if (spokenMessageIdsRef.current.has(last.id)) return;
+    // Avoid speaking a whole batch on restore (e.g. localStorage): had 0 messages, now many
+    if (prevLen === 0 && messages.length > 1) return;
     const player = players.find(p => p.id === last.senderId || p.name === last.senderName);
     const voiceId = (player as Player & { ttsVoice?: string })?.ttsVoice ?? "alloy";
-    const plain = last.content.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/`(.*?)`/g, "$1").replace(/~~(.*?)~~/g, "$1").trim();
-    if (plain) speak(plain, voiceId);
+    const plain = prepareTextForTTS(last.content, 3000);
+    if (plain) {
+      speak(plain, voiceId, { preDelayMs: 380, speed: 0.97 });
+      spokenMessageIdsRef.current.add(last.id);
+      if (spokenMessageIdsRef.current.size > 50) {
+        const ids = Array.from(spokenMessageIdsRef.current);
+        spokenMessageIdsRef.current = new Set(ids.slice(-30));
+      }
+    }
   }, [messages, voiceEnabled, userId, players]);
   const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
@@ -392,16 +399,28 @@ export function ChatArea({
     const text = (override ?? input.trim()).trim();
     if (text) {
       sendingLockRef.current = true;
-      flushSync(() => setInput("")); // Clear synchronously so input is empty before parent re-renders
+      flushSync(() => setInput(""));
       onSendMessage(text);
-      requestAnimationFrame(() => {
-        resizeInput();
-      });
+      requestAnimationFrame(() => resizeInput());
       setTimeout(() => {
         sendingLockRef.current = false;
       }, 400);
     }
   };
+
+  // Safety: clear input when user's message was just added and input still shows it (handles edge cases)
+  const prevMsgLenRef = useRef(0);
+  useEffect(() => {
+    if (messages.length > prevMsgLenRef.current) {
+      prevMsgLenRef.current = messages.length;
+      const last = messages[messages.length - 1];
+      if (last?.senderId === userId && input.trim() && last.content.trim() === input.trim()) {
+        setInput("");
+      }
+    } else {
+      prevMsgLenRef.current = messages.length;
+    }
+  }, [messages, userId, input]);
   const handleSend = useCallback((override?: string) => {
     handleSendRef.current?.(override);
   }, [onSendMessage]);
@@ -600,6 +619,21 @@ export function ChatArea({
               <Button size="sm" variant="ghost" className="h-7 px-2 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>Close</Button>
               <Button size="sm" className="h-7 px-2 bg-red-600 hover:bg-red-500" onClick={() => { voiceCancel(); setTimeout(voiceStart, 100); }}>Retry</Button>
             </div>
+          </div>
+        )}
+        {quickReplies.length > 0 && canSend && !isRecording && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {quickReplies.map((text) => (
+              <Button
+                key={text}
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-sm border-zinc-600 bg-zinc-700/80 hover:bg-zinc-600 text-zinc-200 hover:text-white"
+                onClick={() => handleSend(text)}
+              >
+                {text}
+              </Button>
+            ))}
           </div>
         )}
         {isRecording && !voiceError && (

@@ -150,8 +150,13 @@ export async function streamAIChatResponse(
             // Fallback to default message
           }
         }
-        // Log original for debugging
-        console.error(`[OpenAI] API error (${response.status}):`, errorMessage);
+        // Log original for debugging (warn for connection/network, error for auth/server)
+        const isConnectionError = /connection|network|timeout|refused|fetch failed/i.test(errorMessage);
+        if (isConnectionError) {
+          console.warn(`[OpenAI] Connection/network issue (${response.status}):`, errorMessage);
+        } else {
+          console.error(`[OpenAI] API error (${response.status}):`, errorMessage);
+        }
         // User-friendly messages by type
         if (response.status === 401 || /invalid.*api.*key|incorrect.*api.*key|authentication/i.test(errorMessage)) {
           errorMessage = 'OpenAI API key is invalid or expired. Please check OPENAI_API_KEY in your .env file.';
@@ -159,7 +164,9 @@ export async function streamAIChatResponse(
           errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
         } else if (response.status >= 502 && response.status <= 504) {
           errorMessage = 'OpenAI service is temporarily unavailable. Please try again later.';
-        } else if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|socket hang up|fetch failed|network/i.test(errorMessage)) {
+        } else if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|socket hang up|fetch failed|network|^connection error\.?$/i.test(errorMessage)) {
+          errorMessage = 'Unable to connect. Please check your network and OpenAI API key, then try again.';
+        } else if (isConnectionError) {
           errorMessage = 'Unable to connect. Please check your network and OpenAI API key, then try again.';
         }
         // Otherwise keep the server's error message (often helpful)

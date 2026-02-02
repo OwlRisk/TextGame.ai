@@ -16,6 +16,42 @@ export function stripMarkdownForTTS(text: string): string {
     .trim();
 }
 
+/**
+ * Prepare text for immersive TTS: strip markdown, links, code blocks, and normalize
+ * for natural speech (ellipsis, em-dash, extra spaces). Use this for all spoken content.
+ */
+export function prepareTextForTTS(text: string, maxLength = 4096): string {
+  if (!text || typeof text !== 'string') return '';
+  let out = text
+    // Inline formatting
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/~~(.*?)~~/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    // Links: [label](url) -> "label"; bare URLs can stay or be dropped
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/[^\s]+/g, '')
+    // Headers and list markers
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^[-*•]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    // Code blocks: replace with pause (optional: say "code" or skip)
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`]+`/g, ' ')
+    // Normalize for speech
+    .replace(/\n{2,}/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\u2026/g, '...')
+    .replace(/\u2014|\u2013/g, ', ')
+    .trim();
+  if (maxLength > 0 && out.length > maxLength) {
+    out = out.slice(0, maxLength).trim();
+    const lastSpace = out.lastIndexOf(' ');
+    if (lastSpace > maxLength * 0.8) out = out.slice(0, lastSpace + 1);
+  }
+  return out;
+}
+
 export interface UseVoiceInputOptions {
   onConfirm?: (transcript: string) => void;
   lang?: string;
@@ -112,6 +148,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
 export function useVoiceOutput() {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  /** Speak and replace any current utterance (cancels previous) */
   const speak = useCallback((text: string, options?: { lang?: string; rate?: number }) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     const plain = stripMarkdownForTTS(text);
@@ -124,6 +161,17 @@ export function useVoiceOutput() {
     window.speechSynthesis.speak(u);
   }, []);
 
+  /** Queue utterance without cancelling current — use for sentence-by-sentence TTS during streaming */
+  const speakQueued = useCallback((text: string, options?: { lang?: string; rate?: number }) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const plain = stripMarkdownForTTS(text);
+    if (!plain) return;
+    const u = new SpeechSynthesisUtterance(plain);
+    u.lang = options?.lang ?? 'en-US';
+    u.rate = options?.rate ?? 1;
+    window.speechSynthesis.speak(u);
+  }, []);
+
   const stop = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -133,5 +181,5 @@ export function useVoiceOutput() {
 
   const supported = typeof window !== 'undefined' && !!window.speechSynthesis;
 
-  return { speak, stop, supported };
+  return { speak, speakQueued, stop, supported };
 }

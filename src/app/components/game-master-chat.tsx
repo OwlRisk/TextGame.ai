@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -29,7 +30,7 @@ import {
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
-import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
+import { useVoiceInput, useVoiceOutput, prepareTextForTTS } from "@/lib/voice";
 
 interface ChatMessage {
   id: string;
@@ -382,7 +383,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
   const voiceOutputEnabledRef = useRef(voiceOutputEnabled);
   voiceOutputEnabledRef.current = voiceOutputEnabled;
-  const { speak: speakTTS, stop: stopTTS, supported: ttsSupported } = useVoiceOutput();
+  const { speak: speakTTS, speakQueued, stop: stopTTS, supported: ttsSupported } = useVoiceOutput();
 
   // Only render client-only UI (e.g. TTS button) after mount to avoid hydration mismatch.
   const [mounted, setMounted] = useState(false);
@@ -415,6 +416,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [showPreview, setShowPreview] = useState(true);
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
   const [isStartingGame, setIsStartingGame] = useState(false);
+  const rulesPanelRef = useRef<HTMLDivElement>(null); // Scroll into view when GM edits rules
 
   // Load sessions from localStorage on mount
   useEffect(() => {
@@ -920,7 +922,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       let tempMessageAdded = false;
       let lastProcessedLength = 0; // Track what we've already processed
       let processedEditTags = new Set<string>(); // Track which edit tags we've already processed to avoid duplicates
-      
+      let lastRulesPanelUpdate = 0; // Throttle rules panel updates (ms)
+      const RULES_UPDATE_THROTTLE_MS = 80; // Min interval between incremental rules updates
+      let lastSpokenSentenceCount = 0; // For sentence-by-sentence TTS (don't wait for full response)
+
+      stopTTS(); // Clear any TTS from previous response before streaming
+
       await streamAIChatResponse(
         {
           messages: apiMessages,
@@ -941,37 +948,36 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             // Real-time rule editing - like a code agent writing code
             let hasEditActivity = false;
             
-            // 1. Check for EDIT_RULES - can process incrementally
-            // Use a more robust regex that handles multiline content better
+            // 1. Check for EDIT_RULES - update rules panel incrementally as content streams (no "stuck" until end)
             const editRulesMatch = fullResponse.match(/<EDIT_RULES>([\s\S]*?)(<\/EDIT_RULES>|$)/i);
             if (editRulesMatch) {
               hasEditActivity = true;
               const rulesContent = editRulesMatch[1];
-              const tagKey = `EDIT_RULES_${editRulesMatch.index || 0}`;
-              
-              // If we have closing tag, ALWAYS update with complete content (even if processed before)
-              // This ensures we get the final, complete version
-              if (editRulesMatch[2] === '</EDIT_RULES>') {
-                const newRules = rulesContent.trim();
-                if (newRules) {
-                  // Always update when we have complete tag, even if we've seen it before
-                  // This ensures we get the latest complete version
-                  setCustomRules(newRules);
-                  setIsRulesBeingEdited(true);
-                  // Don't add to processedEditTags here - we want to allow updates if content changes
-                }
-              } else if (rulesContent.length > 0) {
-                // Show that we're in the middle of editing
+              const newRules = rulesContent.trim();
+              const isComplete = editRulesMatch[2] === '</EDIT_RULES>';
+              const now = Date.now();
+              if (newRules && (isComplete || now - lastRulesPanelUpdate >= RULES_UPDATE_THROTTLE_MS)) {
+                lastRulesPanelUpdate = now;
                 setIsRulesBeingEdited(true);
-                // Update incrementally if we have substantial content (even without closing tag)
-                // Use a lower threshold and don't block updates
-                if (rulesContent.length > 30) {
-                  const newRules = rulesContent.trim();
-                  if (newRules && !processedEditTags.has(tagKey + '_partial')) {
-                    setCustomRules(newRules);
-                    processedEditTags.add(tagKey + '_partial');
-                  }
-                }
+                flushSync(() => setCustomRules(newRules));
+                rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              }
+              if (isComplete) {
+                processedEditTags.add(`EDIT_RULES_done_${editRulesMatch.index || 0}`);
+              }
+            }
+
+            // 1b. UPDATE_RULES (legacy) - also stream incrementally so rules don't "stick" until end
+            const updateRulesMatch = fullResponse.match(/<UPDATE_RULES>([\s\S]*?)(<\/UPDATE_RULES>|$)/i);
+            if (updateRulesMatch && !editRulesMatch) {
+              hasEditActivity = true;
+              const rulesContent = updateRulesMatch[1].trim();
+              const now = Date.now();
+              if (rulesContent && (updateRulesMatch[2] === '</UPDATE_RULES>' || now - lastRulesPanelUpdate >= RULES_UPDATE_THROTTLE_MS)) {
+                lastRulesPanelUpdate = now;
+                setIsRulesBeingEdited(true);
+                flushSync(() => setCustomRules(rulesContent));
+                rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
               }
             }
             
@@ -985,16 +991,18 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               // Only apply if we have closing tag (to avoid partial additions)
               if (section && content && match[3] === '</ADD_TO_RULES>' && !processedEditTags.has(tagKey)) {
                 hasEditActivity = true;
-                setIsRulesBeingEdited(true);
                 processedEditTags.add(tagKey);
-                setCustomRules(prevRules => {
-                  const currentRules = prevRules || selectedTemplate?.defaultRules || "";
-                  // Only add if not already added (avoid duplicates)
-                  if (!currentRules.includes(content)) {
-                    return addContentToSection(currentRules, section, content);
-                  }
-                  return currentRules;
+                flushSync(() => {
+                  setIsRulesBeingEdited(true);
+                  setCustomRules(prevRules => {
+                    const currentRules = prevRules || selectedTemplate?.defaultRules || "";
+                    if (!currentRules.includes(content)) {
+                      return addContentToSection(currentRules, section, content);
+                    }
+                    return currentRules;
+                  });
                 });
+                rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
               } else if (section && content && content.length > 0) {
                 // Show editing indicator even for partial content
                 hasEditActivity = true;
@@ -1010,16 +1018,19 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               // Only process if we have the closing tag (REPLACE needs complete instruction)
               if (match[4] === '</REPLACE_IN_RULES>' && !processedEditTags.has(tagKey)) {
                 hasEditActivity = true;
-                setIsRulesBeingEdited(true);
                 processedEditTags.add(tagKey);
                 const section = match[1]?.trim();
                 const oldContent = match[2]?.trim();
                 const newContent = match[3]?.trim();
                 if (section && oldContent && newContent) {
-                  setCustomRules(prevRules => {
-                    const currentRules = prevRules || selectedTemplate?.defaultRules || "";
-                    return replaceContentInSection(currentRules, section, oldContent, newContent);
+                  flushSync(() => {
+                    setIsRulesBeingEdited(true);
+                    setCustomRules(prevRules => {
+                      const currentRules = prevRules || selectedTemplate?.defaultRules || "";
+                      return replaceContentInSection(currentRules, section, oldContent, newContent);
+                    });
                   });
+                  rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 }
               } else if (match[1]) {
                 // We're in the middle of a replace instruction
@@ -1044,8 +1055,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               }
             }
             
-            // Keep editing indicator active if we detect any edit tags (even incomplete)
-            const hasAnyEditTag = /<(EDIT_RULES|ADD_TO_RULES|REPLACE_IN_RULES)/i.test(fullResponse);
+            const hasAnyEditTag = /<(EDIT_RULES|UPDATE_RULES|ADD_TO_RULES|REPLACE_IN_RULES)/i.test(fullResponse);
             if (hasAnyEditTag) {
               setIsRulesBeingEdited(true);
             } else if (!hasEditActivity && fullResponse.length > 200) {
@@ -1078,6 +1088,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           };
           
           const displayContent = cleanForDisplay(fullResponse);
+
+          // Sentence-by-sentence TTS: speak each complete sentence as it arrives (no need to wait for full response)
+          if (voiceOutputEnabledRef.current && displayContent.trim()) {
+            const parts = displayContent.split(/(?<=[。！？.!?\n])/);
+            const completeSentences = parts.slice(0, -1).map((s) => s.trim()).filter(Boolean);
+            for (let i = lastSpokenSentenceCount; i < completeSentences.length; i++) {
+              const sentence = completeSentences[i];
+              if (sentence && /[\p{L}\p{N}]/u.test(sentence)) speakQueued(sentence, { rate: 0.94 });
+            }
+            lastSpokenSentenceCount = completeSentences.length;
+          }
           
           // Add temp message only when first chunk with content arrives
           setMessages(prev => {
@@ -1123,22 +1144,27 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           if (finalEditMatch && finalEditMatch[1]) {
             const finalRules = finalEditMatch[1].trim();
             if (finalRules) {
-              setCustomRules(finalRules);
+              flushSync(() => setCustomRules(finalRules));
+              rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
           }
           
           setIsRulesBeingEdited(false); // Reset editing indicator after final update
           
-          // Clean response for TTS (remove all editing tags)
-          const cleanForTTS = cleanedResponse
+          // TTS: speak any remainder (incomplete last sentence) — complete sentences already spoken in onChunk
+          const rawForTTS = cleanedResponse
             .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
             .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
             .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
             .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
             .trim();
-          
-          if (voiceOutputEnabledRef.current && cleanForTTS.trim()) {
-            speakTTS(cleanForTTS);
+          if (voiceOutputEnabledRef.current && rawForTTS) {
+            const parts = rawForTTS.split(/(?<=[。！？.!?\n])/);
+            const remainder = (parts[parts.length - 1] || '').trim();
+            const plainRemainder = remainder ? prepareTextForTTS(remainder, 4000) : '';
+            if (plainRemainder && /[\p{L}\p{N}]/u.test(plainRemainder)) {
+              setTimeout(() => speakQueued(plainRemainder, { rate: 0.94 }), 120);
+            }
           }
           
           // Replace temp message with final message (ensure only one message)
@@ -1618,9 +1644,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         )}
       </div>
 
-      {/* Preview Panel - Read-only, shows AI edits in real-time */}
+      {/* Preview Panel - Read-only, shows AI edits in real-time; scrolls into view when GM edits */}
       {showPreview && (
-        <div className="flex-[1.2] min-w-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
+        <div ref={rulesPanelRef} className="flex-[1.2] min-w-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
           <div className="px-4 py-3 border-b border-white/10 relative flex-shrink-0">

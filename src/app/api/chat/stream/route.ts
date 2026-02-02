@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
     systemMessage += `=== END OF CURRENT RULES ===\n`;
 
-    systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Guide the user through the game setup process step by step. You may use emojis when they fit naturally.`;
+    systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Guide the user through the game setup process step by step. Users are human—keep replies short (a few sentences); don't write long paragraphs. Talk like a real person—whether you use emojis (or not) is entirely up to your character.`;
 
     systemMessage += `\n\nContext: This chat is for game setup. The actual game (phases, roles, etc.) runs on a separate screen after the user clicks "Create Game". Use your judgment to guide appropriately.`;
     
@@ -86,11 +86,12 @@ export async function POST(request: NextRequest) {
     const isSetupPhase = gameContext?.conversationState && setupStates.includes(gameContext.conversationState);
 
     if (!isSetupPhase) {
-      systemMessage += `\n\nRULES ARE LOCKED: You are the Host running an active game. Do NOT output <EDIT_RULES>, <ADD_TO_RULES>, or <REPLACE_IN_RULES>. The rules are fixed for this session. Only narrate, manage turns, and run the game—never modify the rules.`;
-      systemMessage += `\n\nYou may use emojis in your announcements and narrative when they fit naturally—they make the game livelier.`;
+      systemMessage += `\n\nRULES ARE LOCKED: Rules are decided in GM chat (setup) before the game starts; the Host has NO authority to change rules—only to run the game. Once the game has started, rules are immutable. Do NOT output <EDIT_RULES>, <ADD_TO_RULES>, or <REPLACE_IN_RULES>. Only narrate, manage turns, and run the game—never modify the rules.`;
+      systemMessage += `\n\nTalk like a real person in your announcements and narrative. Keep announcements short—one or two sentences often enough; users are human. Whether you use emojis (or not) is entirely up to your character.`;
     }
 
     if (isSetupPhase) {
+    systemMessage += `\n\nRULES ARE DECIDED HERE: In GM chat (this conversation), you and the user decide the game rules. Once the user creates the game and it starts, the Host has NO authority to change rules—only to run the game. So get the rules right here.\n\n`;
     // Add instructions for intelligent rule editing (AI decides how to edit)
     systemMessage += `\n\nCRITICAL: You are an intelligent game rules editor agent. You MUST analyze the current rules above and decide HOW to edit them based on the user's request.\n\n`;
     systemMessage += `IMPORTANT ABOUT RULES FORMAT:\n`;
@@ -199,9 +200,11 @@ export async function POST(request: NextRequest) {
       ? Math.min(4096, Math.max(256, maxCompletionTokens))
       : 500;
 
+    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-4o';
+
     // Create streaming response
     const stream = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: chatModel,
       messages: formattedMessages,
       temperature: 0.8,
       max_completion_tokens: maxTokens,
@@ -237,15 +240,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('OpenAI streaming error:', error);
-    
+    let message = error.message || 'Failed to stream AI response';
+    if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
+      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-4o in .env if the default model fails.';
+    }
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Failed to stream AI response' 
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
