@@ -539,7 +539,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   const createSessionFromPreset = useCallback((preset: DiscoverPreset) => {
     const resolvedTemplate = GAME_TEMPLATES.find(t => t.id === (preset.templateId || "custom")) || null;
-    const nextPlayerCount = preset.playerCount ?? 6;
+    const nextPlayerCount = preset.playerCount ?? 0;
     // Use preset rules if available, otherwise fall back to template default rules
     const nextRules = preset.rules?.trim() || resolvedTemplate?.defaultRules || "";
     const nextGameName = preset.name?.trim() || "";
@@ -1667,7 +1667,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         if (response.ok) {
                           const data = await response.json();
                           finalConfiguredPlayers = data.players;
-                          finalPlayerCount = data.players?.length ?? 6;
+                          finalPlayerCount = data.players?.length ?? (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6);
                           setConfiguredPlayers(data.players);
                           if (playerCount === 0) setPlayerCount(finalPlayerCount);
                         }
@@ -1708,7 +1708,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     toast.dismiss(startToastId);
                     const gameConfig: GameConfig = {
                       template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
-                      playerCount: finalPlayerCount || playerCount || 6,
+                      playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
                       rules: customRules,
                       name: gameName || selectedTemplate?.name || "Custom Game",
                       hostId: selectedHostId,

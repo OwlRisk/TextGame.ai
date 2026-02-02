@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -388,12 +389,11 @@ export function ChatArea({
   const sendingLockRef = useRef(false);
   handleSendRef.current = (override?: string) => {
     if (sendingLockRef.current) return;
-    const text = override ?? input.trim();
+    const text = (override ?? input.trim()).trim();
     if (text) {
       sendingLockRef.current = true;
-      setInput("");
+      flushSync(() => setInput("")); // Clear synchronously so input is empty before parent re-renders
       onSendMessage(text);
-      // Reset height after clearing input
       requestAnimationFrame(() => {
         resizeInput();
       });
@@ -530,8 +530,10 @@ export function ChatArea({
               </div>
             );
           })}
-          {/* Typing Indicator */}
-          {typingUsers && typingUsers.length > 0 && (
+          {/* Typing Indicator - hide when that user already has a streaming message (avoid duplicate display) */}
+          {typingUsers && typingUsers.length > 0 && !messages.some(m => 
+            m.senderName === typingUsers[0].name && m.isStreaming
+          ) && (
             <div className="flex gap-3 mt-4">
               {typingUsers[0].name === "You" ? (
                 <Avatar className="h-10 w-10 flex-shrink-0">

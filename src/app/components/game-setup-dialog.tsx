@@ -135,7 +135,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
   
   // Game configuration being built
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
-  const [playerCount, setPlayerCount] = useState<number>(6);
+  const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
   // Initialize host: try last selected, then recommended for template, then default
@@ -215,16 +215,16 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
           setConversationState("player-count");
           addGMMessage(
             "Excellent choice! Werewolf is a classic game of deception and deduction.\n\n" +
-            "For this game, I recommend 5-12 players (including you). How many AI players would you like to join? " +
-            "Just give me a number between 4 and 11."
+            "For this game, I recommend 5-12 players (including you). How many AI players would you like? " +
+            "Give me a number between 4 and 11, or say \"you decide\" and I'll pick based on the rules."
           );
         } else if (lowerInput.includes("undercover") || lowerInput.includes("spy") || lowerInput.includes("卧底")) {
           setSelectedTemplate(GAME_TEMPLATES[1]);
           setConversationState("player-count");
           addGMMessage(
             "Great! Undercover is a fantastic word-guessing game where one player has a different word.\n\n" +
-            "This game works best with 4-10 players (including you). How many AI players should I create? " +
-            "Give me a number between 3 and 9."
+            "This game works best with 4-10 players (including you). How many AI players would you like? " +
+            "Give me a number between 3 and 9, or say \"you decide\" and I'll pick based on the rules."
           );
         } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("自定义")) {
           setSelectedTemplate(GAME_TEMPLATES[2]);
@@ -247,39 +247,55 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
           );
         }
       } else if (conversationState === "player-count") {
-        // Extract number from input
-        const numbers = userInput.match(/\d+/);
-        if (numbers) {
-          const count = parseInt(numbers[0]);
-          const min = selectedTemplate!.minPlayers - 1;
-          const max = selectedTemplate!.maxPlayers - 1;
-          
-          if (count >= min && count <= max) {
-            setPlayerCount(count);
-            setConversationState("rules-discussion");
-            addGMMessage(
-              `Perfect! I'll create ${count} AI players for you.\n\n` +
-              `Now, let's discuss the rules. Here are the standard rules for ${selectedTemplate!.name}:\n\n` +
-              `${selectedTemplate!.defaultRules}\n\n` +
-              `Would you like to:\n` +
-              `• **Keep these rules** (just say "yes" or "keep them")\n` +
-              `• **Modify something** (tell me what you'd like to change)\n` +
-              `• **Start fresh** (describe your own rules)`
-            );
+        // "GM decides" / "you decide" → keep playerCount 0
+        if (lowerInput.includes("you decide") || lowerInput.includes("gm decide") || lowerInput.includes("up to you") ||
+            lowerInput.includes("your choice") || lowerInput.includes("decide for me") || lowerInput.includes("你来定") ||
+            lowerInput.includes("你决定") || lowerInput.includes("随便")) {
+          setPlayerCount(0);
+          setConversationState("rules-discussion");
+          addGMMessage(
+            "Perfect! I'll decide the player count based on the rules to keep the game balanced.\n\n" +
+            `Now, let's discuss the rules. Here are the standard rules for ${selectedTemplate!.name}:\n\n` +
+            `${selectedTemplate!.defaultRules}\n\n` +
+            `Would you like to:\n` +
+            `• **Keep these rules** (just say "yes" or "keep them")\n` +
+            `• **Modify something** (tell me what you'd like to change)\n` +
+            `• **Start fresh** (describe your own rules)`
+          );
+        } else {
+          const numbers = userInput.match(/\d+/);
+          if (numbers) {
+            const count = parseInt(numbers[0]);
+            const min = selectedTemplate!.minPlayers - 1;
+            const max = selectedTemplate!.maxPlayers - 1;
+            if (count >= min && count <= max) {
+              setPlayerCount(count);
+              setConversationState("rules-discussion");
+              addGMMessage(
+                `Perfect! I'll create ${count} AI players for you.\n\n` +
+                `Now, let's discuss the rules. Here are the standard rules for ${selectedTemplate!.name}:\n\n` +
+                `${selectedTemplate!.defaultRules}\n\n` +
+                `Would you like to:\n` +
+                `• **Keep these rules** (just say "yes" or "keep them")\n` +
+                `• **Modify something** (tell me what you'd like to change)\n` +
+                `• **Start fresh** (describe your own rules)`
+              );
+            } else {
+              addGMMessage(
+                `Hmm, ${count} players might not work well for this game. ` +
+                `I recommend between ${min} and ${max} AI players (plus you makes ${min + 1} to ${max + 1} total). ` +
+                `Could you choose a number in that range?`
+              );
+            }
           } else {
             addGMMessage(
-              `Hmm, ${count} players might not work well for this game. ` +
-              `I recommend between ${min} and ${max} AI players (plus you makes ${min + 1} to ${max + 1} total). ` +
-              `Could you choose a number in that range?`
+              "I didn't catch a number there. How many AI players would you like? " +
+              `(Or say "you decide" to let me choose based on the rules.) ` +
+              `Please give me a number between ${selectedTemplate!.minPlayers - 1} and ${selectedTemplate!.maxPlayers - 1}.`
             );
           }
-        } else {
-          addGMMessage(
-            "I didn't catch a number there. How many AI players would you like? " +
-            `Please give me a number between ${selectedTemplate!.minPlayers - 1} and ${selectedTemplate!.maxPlayers - 1}.`
-          );
         }
-        } else if (conversationState === "rules-discussion") {
+      } else if (conversationState === "rules-discussion") {
         if (lowerInput.includes("yes") || lowerInput.includes("keep") || lowerInput.includes("standard") || 
             lowerInput.includes("ok") || lowerInput.includes("good") || lowerInput.includes("fine")) {
           setCustomRules(selectedTemplate!.defaultRules);
@@ -289,7 +305,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
           addGMMessage(
             `Excellent! Let me summarize your game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${playerCount + 1} (${playerCount} AI + you)\n` +
+            `**Total Players:** ${playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
             `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
@@ -329,7 +345,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
           addGMMessage(
             `Perfect! Here's your complete game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${playerCount + 1} (${playerCount} AI + you)\n` +
+            `**Total Players:** ${playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:**\n${finalRules}\n\n` +
             `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
@@ -397,7 +413,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
     } else if (conversationState === "player-count") {
       const min = selectedTemplate!.minPlayers - 1;
       const mid = Math.floor((selectedTemplate!.minPlayers + selectedTemplate!.maxPlayers) / 2) - 1;
-      return [`${min} players`, `${mid} players`];
+      return ["You decide", `${min} players`, `${mid} players`];
     } else if (conversationState === "rules-discussion") {
       return ["Keep standard rules", "Modify rules"];
     } else if (conversationState === "confirmation") {

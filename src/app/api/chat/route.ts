@@ -78,6 +78,16 @@ export async function POST(request: NextRequest) {
       systemMessage += `\n\nYou are in the confirmation state. Configuration is complete. A "Create Game" button will appear when the user is ready to proceed—use your judgment to help them get there.`;
     }
 
+    // Only allow rule editing during setup. During gameplay (intro, night, day, etc.), rules are LOCKED.
+    const setupStates = ['greeting', 'game-type', 'player-count', 'rules-discussion', 'confirmation', 'completed'];
+    const isSetupPhase = gameContext?.conversationState && setupStates.includes(gameContext.conversationState);
+
+    if (!isSetupPhase) {
+      systemMessage += `\n\nRULES ARE LOCKED: You are the Host running an active game. Do NOT output <EDIT_RULES>, <ADD_TO_RULES>, or <REPLACE_IN_RULES>. The rules are fixed for this session. Only narrate, manage turns, and run the game—never modify the rules.`;
+      systemMessage += `\n\nYou may use emojis in your announcements and narrative when they fit naturally—they make the game livelier.`;
+    }
+
+    if (isSetupPhase) {
     // Add instructions for intelligent rule editing (AI decides how to edit)
     systemMessage += `\n\nCRITICAL: You are an intelligent game rules editor agent. You MUST analyze the current rules above and decide HOW to edit them based on the user's request.\n\n`;
     systemMessage += `IMPORTANT ABOUT RULES FORMAT:\n`;
@@ -171,6 +181,7 @@ export async function POST(request: NextRequest) {
     systemMessage += `- When user says "you decide", "how many?", "recommend", or "up to you", output this tag with your chosen N.\n`;
     systemMessage += `- The tag is invisible to the user; your message should still say something like "I'll set it to 8 players (you + 7 AI)."\n`;
     systemMessage += `- Example: "I think 8 works great for Werewolf! <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>" (7 AI + user = 8 total).\n`;
+    }
 
     // Format messages for OpenAI
     const formattedMessages = [

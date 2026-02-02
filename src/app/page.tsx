@@ -36,12 +36,22 @@ const API_ERROR_PLACEHOLDER = /I apologize,? but I encountered an error/i;
 
 /** Instruction so Host and AI speak in the same language as the game rules (any language). */
 const LANG_MATCH_RULES =
-  "LANGUAGE: The game rules above are written in a specific language. You MUST write all your output in the SAME language as the rules (e.g. if the rules are in Chinese, write only in Chinese; if in Japanese, only in Japanese; if in Spanish, only in Spanish). Do not mix languages. Match the rules' language exactly.";
+  "LANGUAGE (CRITICAL): The game rules above are written in one language. You MUST write ALL your output in that SAME language only. Regardless of character name or cultural background (e.g. Maria, Akira, Zuri), every player speaks in the rules' language—never Spanish, Japanese, or another language. If rules are in English, write only in English. If rules are in Chinese, write only in Chinese. One language for the entire game.";
 
 /** Pick notification text based on rules language (Chinese vs English) */
 function notifyLang(rules: string | undefined, en: string, zh: string): string {
   if (!rules) return en;
   return /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(rules) ? zh : en;
+}
+
+/** Fallback AI count when GM/API hasn't decided—based on template midpoint (werewolf 7, undercover 6, mafia 9, custom 6) */
+function getDefaultAICountForTemplate(template?: string): number {
+  switch (template) {
+    case "werewolf": return 7;
+    case "undercover": return 6;
+    case "mafia": return 9;
+    default: return 6;
+  }
 }
 
 interface Game {
@@ -80,6 +90,8 @@ export default function HomePage() {
   const [privateMessages, setPrivateMessages] = useState<Record<string, Array<{ id: string; from: string; content: string; timestamp: Date }>>>({});
   /** TTS: speak new messages with OpenAI TTS (per-player voice); persisted in localStorage */
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  /** Game progress text — editable by AI Host only; keyed by gameId */
+  const [gameProgressByGameId, setGameProgressByGameId] = useState<Record<string, string>>({});
 
   const userId = "user-1";
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
@@ -146,6 +158,9 @@ export default function HomePage() {
           setPrivateMessages(pm);
         }
         if (typeof state.voiceEnabled === 'boolean') setVoiceEnabled(state.voiceEnabled);
+        if (state.gameProgressByGameId && typeof state.gameProgressByGameId === 'object') {
+          setGameProgressByGameId(state.gameProgressByGameId);
+        }
       }
     } catch (e) {
       console.error('Error loading game state:', e);
@@ -188,6 +203,7 @@ export default function HomePage() {
           gamePhaseState,
           privateMessages: trimmedPrivateMessages,
           voiceEnabled,
+          gameProgressByGameId,
           savedAt: new Date().toISOString()
         };
         localStorage.setItem('gameRoomState', JSON.stringify(state));
@@ -223,6 +239,7 @@ export default function HomePage() {
               gamePhaseState,
               privateMessages: minPm,
               voiceEnabled,
+              gameProgressByGameId,
               savedAt: new Date().toISOString()
             }));
           } catch {
@@ -235,7 +252,7 @@ export default function HomePage() {
     }, 1000); // Debounce saves
     
     return () => clearTimeout(timeoutId);
-  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, voiceEnabled, isHydrated]);
+  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, voiceEnabled, gameProgressByGameId, isHydrated]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -382,7 +399,7 @@ export default function HomePage() {
       });
     } else {
       // Fallback when API fails: placeholders (LLM decides normally via generate-players)
-      const fallbackCount = config.playerCount > 0 ? config.playerCount : 6;
+      const fallbackCount = config.playerCount > 0 ? config.playerCount : getDefaultAICountForTemplate(config.template);
       const traitsList = pickTraitsForPlayers(fallbackCount);
       for (let i = 0; i < fallbackCount; i++) {
         const traits = traitsList[i];
@@ -455,7 +472,14 @@ export default function HomePage() {
             const { message } = await getAIChatResponse({
               messages: [{
                 role: "user",
-                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."} Game rules (for language—reply in this language):\n${rulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\nThe host just explained the rules and asked if everyone is ready. Respond naturally—vary phrasing based on your personality. Sound like a real person, not robotic. Short (1-2 sentences). Output only your response, nothing else.`
+                content: `You are ${player.name}, a player in a social deduction game. Your personality: ${player.personality || "Friendly and enthusiastic."} Your background: ${player.background || "A game enthusiast."}
+
+Game rules (the language below is the ONLY language you may use):
+${rulesSnippet || "No rules."}
+
+${LANG_MATCH_RULES}
+
+The host just explained the rules and asked if everyone is ready. Respond naturally in the SAME language as the rules above—do NOT use Spanish, Japanese, or any other language. Short (1-2 sentences). Output only your response.`
               }],
               gameContext: {
                 template: config.template,
@@ -489,40 +513,58 @@ export default function HomePage() {
     };
 
     (async () => {
+      let fullContent = "";
       try {
-        const { message } = await getAIChatResponse({
-          messages: [{
-            role: "user",
-            content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\n${LANG_MATCH_RULES}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules, and ask if everyone is ready. Speak naturally—like a real host would, spontaneous and warm. Avoid sounding scripted or stiff. Output only the greeting, nothing else.`
-          }],
-          hostId: config.hostId,
-          hostPersonality: config.generatedHost ? { name: config.generatedHost.name, description: config.generatedHost.personality, personality: config.generatedHost.voiceStyle } : undefined,
-          gameContext: {
-            template: config.template,
-            playerCount: config.playerCount,
-            gameName: config.name,
-            rules: config.rules,
-            conversationState: "intro"
+        await streamAIChatResponse(
+          {
+            messages: [{
+              role: "user",
+              content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\n${LANG_MATCH_RULES}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules, and ask if everyone is ready. Speak naturally—like a real host would, spontaneous and warm. Avoid sounding scripted or stiff. You may use emojis when they fit. Output only the greeting, nothing else.`
+            }],
+            hostId: config.hostId,
+            hostPersonality: config.generatedHost ? { name: config.generatedHost.name, description: config.generatedHost.personality, personality: config.generatedHost.voiceStyle } : undefined,
+            gameContext: {
+              template: config.template,
+              playerCount: config.playerCount,
+              gameName: config.name,
+              rules: config.rules,
+              conversationState: "intro"
+            }
+          },
+          (chunk) => {
+            fullContent += chunk;
+            if (isMountedRef.current) {
+              setMessages(prev => prev.map((m) =>
+                m.id === "msg-1" ? { ...m, content: fullContent, isStreaming: true } : m
+              ));
+            }
+          },
+          () => {
+            if (!isMountedRef.current) return;
+            const greeting = fullContent.trim() || fallbackGreeting;
+            setMessages(prev => prev.map((m) =>
+              m.id === "msg-1" ? { ...m, content: greeting, isStreaming: false } : m
+            ));
+            const mainTimeout = setTimeout(scheduleReadyReplies, 2000);
+            timeoutRefs.current.push(mainTimeout);
+          },
+          (e) => {
+            if (!isMountedRef.current) return;
+            setMessages(prev => prev.map((m) =>
+              m.id === "msg-1" ? { ...m, content: fallbackGreeting, isStreaming: false } : m
+            ));
+            const mainTimeout = setTimeout(scheduleReadyReplies, 2000);
+            timeoutRefs.current.push(mainTimeout);
           }
-        });
-        if (!isMountedRef.current) return;
-        const greeting = (message || "").trim() || fallbackGreeting;
-        setMessages(prev =>
-          prev.map((m) =>
-            m.id === "msg-1" ? { ...m, content: greeting } : m
-          )
         );
       } catch (e) {
         if (!isMountedRef.current) return;
-        setMessages(prev =>
-          prev.map((m) =>
-            m.id === "msg-1" ? { ...m, content: fallbackGreeting } : m
-          )
-        );
+        setMessages(prev => prev.map((m) =>
+          m.id === "msg-1" ? { ...m, content: fallbackGreeting, isStreaming: false } : m
+        ));
+        const mainTimeout = setTimeout(scheduleReadyReplies, 2000);
+        timeoutRefs.current.push(mainTimeout);
       }
-      if (!isMountedRef.current) return;
-      const mainTimeout = setTimeout(scheduleReadyReplies, 2000);
-      timeoutRefs.current.push(mainTimeout);
     })();
 
   }, [userId, addMessage]);
@@ -595,6 +637,7 @@ export default function HomePage() {
       setGames(prev => [...prev, newGame]);
       setSelectedGameId(newGame.id);
       setSelectedChannelId("game-room");
+      setGameProgressByGameId(prev => ({ ...prev, [newGame.id]: "" }));
       setShowGameMasterChat(false);
       setShowGameCreatorForm(false);
       initializeGame(finalConfig);
@@ -640,7 +683,7 @@ export default function HomePage() {
       const pacingHint = !lastFewFromUser && messages.length >= 4
         ? "\n\nIf the human (You) hasn't spoken in a while, you may optionally give them a turn—but don't over-call them. Run the game flow; let AI players participate."
         : "";
-      const languageRule = LANG_MATCH_RULES.replace("above", "below").replace("write all your output", "write all your output (NEXT_SPEAKER line, PRIVATE_TO_... content, POST_EVENT content)");
+      const languageRule = LANG_MATCH_RULES.replace("above", "below").replace("write all your output", "write all your output (NEXT_SPEAKER, PRIVATE_TO_..., POST_EVENT, UPDATE_PROGRESS)");
 
       let selectedPlayer: typeof alivePlayersList[0] | null = null;
       let nextAfterSeconds = 12;
@@ -652,7 +695,7 @@ export default function HomePage() {
             role: "user",
             content: `You are ${gameMaster.name}, the host of "${currentGame.name}". You are in control—announce the flow, let AI players respond; don't keep asking the human for confirmation.
 
-REALISM: Speak naturally and authentically, like a real host. Vary your phrasing—don't sound scripted or formulaic. Be spontaneous and engaging. POST_EVENT text should feel human, conversational, not robotic.
+REALISM: Speak naturally and authentically, like a real host. Vary your phrasing—don't sound scripted or formulaic. Be spontaneous and engaging. POST_EVENT text should feel human, conversational, not robotic. You may use emojis when they fit naturally.
 
 You may:
 1) Decide who speaks next
@@ -681,6 +724,7 @@ Reply using these lines (one per line). You MUST include exactly one next-speake
 - REPLY_AFTER_SECONDS: N     (optional; 10-20 seconds before the selected speaker's reply appears; default 12; USE 12 OR MORE)
 - PRIVATE_TO_PlayerName: your private message to that player (can repeat for different players)
 - POST_EVENT: your public announcement—write naturally, vary phrasing, avoid repetitive structure
+- UPDATE_PROGRESS: summary for the # progress channel (optional). Brief text: round, phase, eliminations, key events. Use the same language as the rules. This is the only way to update the progress board—players see it but cannot edit it.
 
 Example:
 NEXT_SPEAKER: Sofia
@@ -721,7 +765,7 @@ POST_EVENT: The moon rises. Night has fallen.`
         // Human-like variation: add slight random jitter (±1–2s) so timing feels natural
         nextAfterSeconds = Math.max(10, Math.min(20, nextAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
         replyAfterSeconds = Math.max(10, Math.min(20, replyAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
-        if (!nextSpeakerName) nextSpeakerName = lines.find(l => !l.toUpperCase().startsWith("NEXT_AFTER_SECONDS:") && !l.toUpperCase().startsWith("REPLY_AFTER_SECONDS:") && !l.toUpperCase().startsWith("PRIVATE_TO_") && !l.toUpperCase().startsWith("POST_EVENT:"))?.trim() || null;
+        if (!nextSpeakerName) nextSpeakerName = lines.find(l => !l.toUpperCase().startsWith("NEXT_AFTER_SECONDS:") && !l.toUpperCase().startsWith("REPLY_AFTER_SECONDS:") && !l.toUpperCase().startsWith("PRIVATE_TO_") && !l.toUpperCase().startsWith("POST_EVENT:") && !l.toUpperCase().startsWith("UPDATE_PROGRESS:"))?.trim() || null;
         selectedPlayer = nextSpeakerName && nextSpeakerName.toUpperCase() !== "NONE"
           ? alivePlayersList.find(p => p.name.toLowerCase() === nextSpeakerName!.toLowerCase() || p.name === nextSpeakerName) ?? null
           : null;
@@ -752,6 +796,12 @@ POST_EVENT: The moon rises. Night has fallen.`
             const text = line.slice("POST_EVENT:".length).trim();
             if (text) postEventTexts.push(text);
           }
+          if (line.toUpperCase().startsWith("UPDATE_PROGRESS:")) {
+            const text = line.slice("UPDATE_PROGRESS:".length).trim();
+            if (text && selectedGameId) {
+              setGameProgressByGameId(prev => ({ ...prev, [selectedGameId]: text }));
+            }
+          }
         }
         // Single host announcement per turn: merge all POST_EVENT lines into one to avoid flood
         if (postEventTexts.length > 0) {
@@ -759,12 +809,14 @@ POST_EVENT: The moon rises. Night has fallen.`
           hostPostEventRef.current?.(merged, { skipScheduleNextSpeaker: true });
         }
       } catch (e) {
-        console.error("AI Host decision failed:", e);
+        const err = e instanceof Error ? e : new Error(String(e));
+        console.error("AI Host decision failed:", err);
         if (!isMountedRef.current) return;
         setTypingUsers([]);
         nextAfterSeconds = 12;
         replyAfterSeconds = 12;
-        addEventNotification(notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host 随机选择了下一位发言者。"));
+        const shortMsg = err.message?.slice(0, 120) || notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host 随机选择了下一位发言者。");
+        addEventNotification(shortMsg);
         const aiOnly = alivePlayersList.filter(p => p.isAI);
         const pool = aiOnly.length > 0 ? aiOnly : alivePlayersList;
         selectedPlayer = pool[Math.floor(Math.random() * pool.length)];
@@ -825,7 +877,9 @@ ${recentMessagesForAI.join("\n")}
 
 ${LANG_MATCH_RULES}
 
-REALISM: React to what was just said—don't give a generic reply. Be natural and human-like. Vary length (sometimes brief, sometimes longer). Don't sound robotic or use stock phrases. Stay in character but speak as a real person would. Output only your response, nothing else.`
+REALISM: React to what was just said—don't give a generic reply. Be natural and human-like. Stay in character. You may use emojis when they fit naturally.
+
+CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Spanish, Japanese, or any other language—everyone in this game speaks the rules' language. Output only your response.`
               }],
               gameContext: { template: currentGame.config.template, gameName: currentGame.name, rules: currentGame.config.rules, conversationState: gamePhase }
             },
@@ -921,7 +975,7 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
           const { message } = await getAIChatResponse({
             messages: [{
               role: "user",
-              content: `You are ${gameMaster.name}, the host. The game "${currentGame?.name || "this game"}" is about to begin—everyone has said they're ready. ${LANG_MATCH_RULES}\n\nWrite a brief announcement (1-3 sentences) to officially start the game. Mention that you'll guide phases and control speaking order. Stay in character.\n\nOptional: add DELAY_SECONDS: N (2-8) on a line to control when you appear to reply (seconds to wait). If omitted, 4.\n\nOutput format: optional "DELAY_SECONDS: N" line, then your announcement.`
+              content: `You are ${gameMaster.name}, the host. The game "${currentGame?.name || "this game"}" is about to begin—everyone has said they're ready. ${LANG_MATCH_RULES}\n\nWrite a brief announcement (1-3 sentences) to officially start the game. Mention that you'll guide phases and control speaking order. Stay in character. You may use emojis when they fit.\n\nOptional: add DELAY_SECONDS: N (2-8) on a line to control when you appear to reply (seconds to wait). If omitted, 4.\n\nOutput format: optional "DELAY_SECONDS: N" line, then your announcement.`
             }],
             hostId: currentGame?.config.hostId,
             hostPersonality: currentGame?.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -1037,7 +1091,7 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
         await streamAIChatResponse({
           messages: [{
             role: "user",
-            content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". Game rules (use this language for your announcement):\n${rulesForLang || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Announce this to the players in character. Keep it brief (2-3 sentences). Output only the announcement.`
+            content: `You are ${gameMaster!.name}, the host of "${currentGame?.name || "the game"}". Game rules (use this language for your announcement):\n${rulesForLang || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Announce this to the players in character. Keep it brief (2-3 sentences). You may use emojis when they fit. Output only the announcement.`
           }],
           hostId: currentGame?.config.hostId,
           hostPersonality: currentGame?.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -1219,36 +1273,44 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
 
     const elimRulesSnippet = (currentGame.config.rules || "").trim().slice(0, 500);
     const desc = `Announce that ${target.name} has been eliminated. Be brief and in character.`;
+    const messageId = addStreamingMessage({
+      senderId: "gm-1",
+      senderName: gameMaster.name,
+      senderAvatar: gameMaster.avatar,
+      isAI: true
+    });
+    let fullContent = "";
     try {
-      const { message } = await getAIChatResponse({
-        messages: [{
-          role: "user",
-          content: `You are ${gameMaster.name}, the host. Game rules (use this language for your announcement):\n${elimRulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Output only the announcement.`
-        }],
-        hostId: currentGame.config.hostId,
-        hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
-        gameContext: { template: currentGame.config.template, gameName: currentGame.name }
-      });
-      if (!isMountedRef.current) return;
-      addMessage({
-        senderId: "gm-1",
-        senderName: gameMaster.name,
-        senderAvatar: gameMaster.avatar,
-        content: (message || "").trim() || `${target.name} has been eliminated.`,
-        isAI: true
-      });
+      await streamAIChatResponse(
+        {
+          messages: [{
+            role: "user",
+            content: `You are ${gameMaster.name}, the host. Game rules (use this language for your announcement):\n${elimRulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} You may use emojis when they fit. Output only the announcement.`
+          }],
+          hostId: currentGame.config.hostId,
+          hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
+          gameContext: { template: currentGame.config.template, gameName: currentGame.name }
+        },
+        (chunk) => {
+          fullContent += chunk;
+          if (isMountedRef.current) updateStreamingMessage(messageId, fullContent, false);
+        },
+        () => {
+          if (!isMountedRef.current) return;
+          const final = fullContent.trim() || `${target.name} has been eliminated.`;
+          updateStreamingMessage(messageId, final, true);
+        },
+        () => {
+          if (!isMountedRef.current) return;
+          updateStreamingMessage(messageId, `${target.name} has been eliminated.`, true);
+        }
+      );
     } catch {
       if (!isMountedRef.current) return;
-      addMessage({
-        senderId: "gm-1",
-        senderName: gameMaster.name,
-        senderAvatar: gameMaster.avatar,
-        content: `${target.name} has been eliminated.`,
-        isAI: true
-      });
+      updateStreamingMessage(messageId, `${target.name} has been eliminated.`, true);
     }
     addEventNotification(notifyLang(currentGame.config.rules, `${target.name} eliminated`, `${target.name} 被淘汰`));
-  }, [players, games, selectedGameId, addMessage, addEventNotification]);
+  }, [players, games, selectedGameId, addMessage, addEventNotification, addStreamingMessage, updateStreamingMessage]);
 
   const hostRevealRole = useCallback(async (playerId: string) => {
     if (!isMountedRef.current) return;
@@ -1260,35 +1322,43 @@ REALISM: React to what was just said—don't give a generic reply. Be natural an
     const role = target.role || "Unknown";
     const revealRulesSnippet = (currentGame.config.rules || "").trim().slice(0, 500);
     const desc = `Announce that ${target.name} was a ${role}. Reveal their role to the group. Keep it brief.`;
+    const messageId = addStreamingMessage({
+      senderId: "gm-1",
+      senderName: gameMaster.name,
+      senderAvatar: gameMaster.avatar,
+      isAI: true
+    });
+    let fullContent = "";
     try {
-      const { message } = await getAIChatResponse({
-        messages: [{
-          role: "user",
-          content: `You are ${gameMaster.name}, the host. Game rules (use this language for your announcement):\n${revealRulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} Output only the announcement.`
-        }],
-        hostId: currentGame.config.hostId,
-        hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
-        gameContext: { template: currentGame.config.template, gameName: currentGame.name }
-      });
-      if (!isMountedRef.current) return;
-      addMessage({
-        senderId: "gm-1",
-        senderName: gameMaster.name,
-        senderAvatar: gameMaster.avatar,
-        content: (message || "").trim() || `${target.name} was a ${role}.`,
-        isAI: true
-      });
+      await streamAIChatResponse(
+        {
+          messages: [{
+            role: "user",
+            content: `You are ${gameMaster.name}, the host. Game rules (use this language for your announcement):\n${revealRulesSnippet || "No rules."}\n\n${LANG_MATCH_RULES}\n\n${desc} You may use emojis when they fit. Output only the announcement.`
+          }],
+          hostId: currentGame.config.hostId,
+          hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
+          gameContext: { template: currentGame.config.template, gameName: currentGame.name }
+        },
+        (chunk) => {
+          fullContent += chunk;
+          if (isMountedRef.current) updateStreamingMessage(messageId, fullContent, false);
+        },
+        () => {
+          if (!isMountedRef.current) return;
+          const final = fullContent.trim() || `${target.name} was a ${role}.`;
+          updateStreamingMessage(messageId, final, true);
+        },
+        () => {
+          if (!isMountedRef.current) return;
+          updateStreamingMessage(messageId, `${target.name} was a ${role}.`, true);
+        }
+      );
     } catch {
       if (!isMountedRef.current) return;
-      addMessage({
-        senderId: "gm-1",
-        senderName: gameMaster.name,
-        senderAvatar: gameMaster.avatar,
-        content: `${target.name} was a ${role}.`,
-        isAI: true
-      });
+      updateStreamingMessage(messageId, `${target.name} was a ${role}.`, true);
     }
-  }, [players, games, selectedGameId, addMessage]);
+  }, [players, games, selectedGameId, addStreamingMessage, updateStreamingMessage]);
 
   // AI Host Auto-Decision System - automatically advances game phases and makes decisions
   const aiHostAutoDecision = useCallback(async () => {
@@ -1509,6 +1579,7 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
   const [channels, setChannels] = useState([
     { id: "general", name: "general", type: "text" as const },
     { id: "rules", name: "rules", type: "text" as const },
+    { id: "progress", name: "progress", type: "text" as const },
     { id: "game-room", name: "game-room", type: "game" as const },
   ]);
 
@@ -1688,6 +1759,37 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
                 onSelectSpeaker={setCurrentSpeakerId}
                 playerBoardData={playerBoardData}
               />
+            </div>
+          ) : selectedChannelId === "progress" ? (
+            <div className="flex-1 bg-zinc-700 p-10 overflow-y-auto">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between gap-4 mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-xl bg-emerald-600/20 flex items-center justify-center border border-emerald-500/30">
+                      <span className="text-2xl">📊</span>
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold text-white">Game Progress</h1>
+                      <p className="text-zinc-400 text-sm mt-0.5">Text record — editable by AI Host only</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-zinc-800 rounded-xl border border-zinc-600/80 overflow-hidden">
+                  <textarea
+                    readOnly
+                    value={selectedGameId ? (gameProgressByGameId[selectedGameId] ?? "") : ""}
+                    placeholder="Game progress will appear here as the AI Host updates it. Only the Host can edit this."
+                    className="w-full min-h-[320px] p-6 font-mono text-sm text-zinc-300 bg-transparent border-0 resize-none focus:outline-none focus:ring-0 placeholder:text-zinc-500"
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="mt-4 p-4 rounded-lg bg-zinc-800/60 border border-zinc-600/50">
+                  <p className="text-zinc-500 text-xs flex items-center gap-2">
+                    <span>🔒</span>
+                    <span>This board is read-only for players. Only the AI Host can update it via UPDATE_PROGRESS in its responses.</span>
+                  </p>
+                </div>
+              </div>
             </div>
           ) : selectedChannelId === "rules" ? (
             <div className="flex-1 bg-zinc-700 p-10 overflow-y-auto">

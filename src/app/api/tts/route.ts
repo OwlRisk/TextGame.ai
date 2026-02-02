@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-/** OpenAI TTS voices supported by tts-1 / tts-1-hd (used by this route) */
-const TTS_1_VOICES = ['alloy', 'ash', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer'] as const;
-type TTS1Voice = (typeof TTS_1_VOICES)[number];
-
-/** Map voices only available in gpt-4o-mini-tts to tts-1-compatible voices */
-const VOICE_FALLBACK: Record<string, TTS1Voice> = {
-  ballad: 'coral',   // female
-  verse: 'echo',     // male
-  marin: 'nova',     // female
-  cedar: 'onyx',     // male
-};
+/** All 13 OpenAI TTS voices */
+const ALL_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse', 'marin', 'cedar'] as const;
+type TTSVoice = (typeof ALL_VOICES)[number];
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
   return new OpenAI({ apiKey });
+}
+
+function resolveVoice(voice: string): TTSVoice {
+  return ALL_VOICES.includes(voice as TTSVoice) ? (voice as TTSVoice) : 'alloy';
 }
 
 export async function POST(request: NextRequest) {
@@ -45,12 +41,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'text is empty' }, { status: 400 });
     }
 
-    const voiceId: TTS1Voice = VOICE_FALLBACK[voice] ?? (TTS_1_VOICES.includes(voice as TTS1Voice) ? (voice as TTS1Voice) : 'alloy');
+    const voiceId = resolveVoice(voice);
     const openai = getOpenAI();
-    const ttsModel = model === 'tts-1-hd' ? 'tts-1-hd' : 'tts-1';
     const speedNum = Math.max(0.25, Math.min(4, Number(speed) || 1));
 
-    // Always use streaming: lower time-to-first-byte, better perceived latency
+    // Use gpt-4o-mini-tts for ballad/verse/marin/cedar (native support; tts-1 doesn't have these)
+    const useGpt4oMini = ['ballad', 'verse', 'marin', 'cedar'].includes(voiceId);
+    const ttsModel = useGpt4oMini ? 'gpt-4o-mini-tts' : (model === 'tts-1-hd' ? 'tts-1-hd' : 'tts-1');
+
     const response = await openai.audio.speech.create({
       model: ttsModel,
       input: trimmed,

@@ -51,7 +51,7 @@ export async function getAIChatResponse(
     try {
       const hostPersonality = request.hostPersonality ?? (request.hostId ? (() => {
         const host = getHostById(request.hostId);
-        return host ? { name: host.name, description: host.description, personality: `${host.tagline}. ${host.voiceStyle}` } : null;
+        return host ? { name: host.name, description: host.description, personality: `${host.tagline ?? ''}. ${host.voiceStyle ?? ''}`.trim() || undefined } : null;
       })() : null);
       
       const response = await fetch('/api/chat', {
@@ -113,7 +113,7 @@ export async function streamAIChatResponse(
     try {
       const hostPersonality = request.hostPersonality ?? (request.hostId ? (() => {
         const host = getHostById(request.hostId);
-        return host ? { name: host.name, description: host.description, personality: `${host.tagline}. ${host.voiceStyle}` } : null;
+        return host ? { name: host.name, description: host.description, personality: `${host.tagline ?? ''}. ${host.voiceStyle ?? ''}`.trim() || undefined } : null;
       })() : null);
       
       const response = await fetch('/api/chat/stream', {
@@ -139,7 +139,6 @@ export async function streamAIChatResponse(
           const error = await response.json();
           errorMessage = error.error || errorMessage;
         } catch (e) {
-          // If response is not JSON, try to get text
           try {
             const text = await response.text();
             if (text.includes('OPENAI_API_KEY')) {
@@ -151,6 +150,19 @@ export async function streamAIChatResponse(
             // Fallback to default message
           }
         }
+        // Log original for debugging
+        console.error(`[OpenAI] API error (${response.status}):`, errorMessage);
+        // User-friendly messages by type
+        if (response.status === 401 || /invalid.*api.*key|incorrect.*api.*key|authentication/i.test(errorMessage)) {
+          errorMessage = 'OpenAI API key is invalid or expired. Please check OPENAI_API_KEY in your .env file.';
+        } else if (response.status === 429 || /rate limit|too many requests/i.test(errorMessage)) {
+          errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+        } else if (response.status >= 502 && response.status <= 504) {
+          errorMessage = 'OpenAI service is temporarily unavailable. Please try again later.';
+        } else if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|socket hang up|fetch failed|network/i.test(errorMessage)) {
+          errorMessage = 'Unable to connect. Please check your network and OpenAI API key, then try again.';
+        }
+        // Otherwise keep the server's error message (often helpful)
         throw new Error(errorMessage);
       }
 
