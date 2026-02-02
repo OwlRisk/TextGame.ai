@@ -35,6 +35,10 @@ interface ChannelListProps {
   onSettings: () => void;
   onBackToArena?: () => void;
   onDeleteChannel?: (channelId: string) => void;
+  /** Label for the text sections (intro, rules, progress). Default: "Sections" */
+  textSectionLabel?: string;
+  /** Label for game rooms. Default: "Game Rooms" */
+  gameSectionLabel?: string;
 }
 
 export function ChannelList({ 
@@ -45,7 +49,9 @@ export function ChannelList({
   onShare,
   onSettings,
   onBackToArena,
-  onDeleteChannel
+  onDeleteChannel,
+  textSectionLabel = "Sections",
+  gameSectionLabel = "Game Rooms",
 }: ChannelListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<Channel | null>(null);
@@ -75,10 +81,10 @@ export function ChannelList({
             </div>
           )}
           
-          {/* Text Channels */}
+          {/* Text sections (intro, rules, progress) */}
           <div className="mb-5">
             <div className="flex items-center justify-between px-3 mb-2">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Channels</span>
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{textSectionLabel}</span>
             </div>
             {channels.filter(c => c.type === "text").map((channel) => (
               <ContextMenu key={channel.id}>
@@ -105,7 +111,7 @@ export function ChannelList({
                     }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Channel
+                    Delete {textSectionLabel === "信息" ? "分区" : "Section"}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -117,7 +123,7 @@ export function ChannelList({
           {/* Game Rooms */}
           <div>
             <div className="flex items-center justify-between px-3 mb-2">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Game Rooms</span>
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{gameSectionLabel}</span>
             </div>
             {channels.filter(c => c.type === "game").map((channel) => (
               <ContextMenu key={channel.id}>
@@ -144,7 +150,7 @@ export function ChannelList({
                     }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Channel
+                    Delete {gameSectionLabel === "游戏房间" ? "房间" : "Room"}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -173,9 +179,13 @@ export function ChannelList({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-700 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Channel</AlertDialogTitle>
+            <AlertDialogTitle>
+              {channelToDelete?.type === "game"
+                ? (gameSectionLabel === "游戏房间" ? "删除房间" : "Delete Room")
+                : (textSectionLabel === "信息" ? "删除分区" : "Delete Section")}
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete "{channelToDelete?.name}"? All messages in this channel will be lost. This action cannot be undone.
+              Are you sure you want to delete "{channelToDelete?.name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

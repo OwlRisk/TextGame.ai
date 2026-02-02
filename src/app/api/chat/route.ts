@@ -181,7 +181,14 @@ export async function POST(request: NextRequest) {
     systemMessage += `- When a game template is selected, use the template's recommended range (e.g. Werewolf 4-11 AI, Undercover 3-9 AI, Custom 1-19).\n`;
     systemMessage += `- When user says "you decide", "how many?", "recommend", or "up to you", output this tag with your chosen N.\n`;
     systemMessage += `- The tag is invisible to the user; your message should still say something like "I'll set it to 8 players (you + 7 AI)."\n`;
-    systemMessage += `- Example: "I think 8 works great for Werewolf! <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>" (7 AI + user = 8 total).\n`;
+    systemMessage += `- Example: "I think 8 works great for Werewolf! <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>" (7 AI + user = 8 total).\n\n`;
+    systemMessage += `GAME BACKGROUND (GM ONLY — YOU DECIDE):\n`;
+    systemMessage += `You decide whether this game needs a story background. Only add one when it fits.\n`;
+    systemMessage += `- Add background (use <UPDATE_GENERAL>) for narrative/thematic games: werewolf, mafia, detective, escape room, murder mystery, story-driven custom. A short world/premise/atmosphere helps immersion.\n`;
+    systemMessage += `- Skip background for purely mechanical or light games: trivia, quick party games, word games, or when the user doesn't care about setting. Do not force it.\n`;
+    systemMessage += `- If the user explicitly asks for a background or setting, add one. Otherwise use your judgment.\n`;
+    systemMessage += `Use: <UPDATE_GENERAL>\n[Game background—world setting, story premise, atmosphere. One or a few short paragraphs.]\n</UPDATE_GENERAL>\n`;
+    systemMessage += `Only the GM can set this; the Host cannot change it during the game. The tag is invisible to the user.\n`;
     }
 
     // Format messages for OpenAI

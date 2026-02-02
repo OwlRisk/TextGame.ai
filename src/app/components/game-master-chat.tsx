@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs";
 import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Volume2, VolumeX } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import type { DiscoverPreset } from "@/app/components/discover-page";
@@ -363,6 +364,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
   const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
+  const [customIntro, setCustomIntro] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
   const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
     name: string;
@@ -414,6 +416,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   // Preview panel
   const [showPreview, setShowPreview] = useState(true);
+  const [previewTab, setPreviewTab] = useState<"rules" | "intro">("rules"); // Switch between Game Rules and Background
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
   const [isStartingGame, setIsStartingGame] = useState(false);
   const rulesPanelRef = useRef<HTMLDivElement>(null); // Scroll into view when GM edits rules
@@ -527,6 +530,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setSelectedTemplate(null);
     setPlayerCount(6);
     setCustomRules("");
+    setCustomIntro("");
     setGameName("");
     setSelectedHostId(getDefaultHostForTemplate(null).id);
 
@@ -788,6 +792,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         setPlayerCount(clamped);
       }
       cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '').trim();
+    }
+
+    // 5. Handle UPDATE_GENERAL - GM sets game background (only GM can set; Host cannot change during game)
+    const updateGeneralMatch = response.match(/<UPDATE_GENERAL>([\s\S]*?)<\/UPDATE_GENERAL>/i);
+    if (updateGeneralMatch && updateGeneralMatch[1]) {
+      const intro = updateGeneralMatch[1].trim();
+      setCustomIntro(intro);
+      cleanedResponse = cleanedResponse.replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '').trim();
     }
 
     return cleanedResponse;
@@ -1077,12 +1089,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
               .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
+              .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
               // Also remove incomplete tags
               .replace(/<EDIT_RULES>[\s\S]*$/i, '')
               .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
               .replace(/<SET_PLAYER_COUNT>\d*$/i, '')
+              .replace(/<UPDATE_GENERAL>[\s\S]*$/i, '')
               .trim();
             return cleaned;
           };
@@ -1148,6 +1162,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
           }
+          const finalGeneralMatch = fullResponse.match(/<UPDATE_GENERAL>([\s\S]*?)<\/UPDATE_GENERAL>/i);
+          if (finalGeneralMatch && finalGeneralMatch[1]) {
+            const intro = finalGeneralMatch[1].trim();
+            if (intro) flushSync(() => setCustomIntro(intro));
+          }
           
           setIsRulesBeingEdited(false); // Reset editing indicator after final update
           
@@ -1157,6 +1176,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
             .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
             .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
+            .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
             .trim();
           if (voiceOutputEnabledRef.current && rawForTTS) {
             const parts = rawForTTS.split(/(?<=[。！？.!?\n])/);
@@ -1644,23 +1664,35 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         )}
       </div>
 
-      {/* Preview Panel - Read-only, shows AI edits in real-time; scrolls into view when GM edits */}
-      {showPreview && (
+      {/* Preview Panel - Editable before starting game; scrolls into view when GM edits */}
+      {showPreview && (() => {
+        const rulesLangZh = (customRules || "").match(/[\u4e00-\u9fff]/);
+        return (
         <div ref={rulesPanelRef} className="flex-[1.2] min-w-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
           <div className="px-4 py-3 border-b border-white/10 relative flex-shrink-0">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">Game Rules</h2>
-                  {isRulesBeingEdited && (
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as "rules" | "intro")} className="flex-1 min-w-0">
+                  <TabsList className="bg-white/10 border border-white/10 h-9 p-0.5 rounded-lg">
+                    <TabsTrigger value="rules" className="rounded-md px-3 text-sm data-[state=active]:bg-violet-600/30 data-[state=active]:text-white text-zinc-400">
+                      {rulesLangZh ? "规则" : "Game Rules"}
+                    </TabsTrigger>
+                    <TabsTrigger value="intro" className="rounded-md px-3 text-sm data-[state=active]:bg-violet-600/30 data-[state=active]:text-white text-zinc-400">
+                      {rulesLangZh ? "背景" : "Background"}
+                    </TabsTrigger>
+                  </TabsList>
+                  <span className="ml-2 text-xs text-zinc-500 whitespace-nowrap">
+                    {rulesLangZh ? "玩家可直接编辑" : "You can edit directly"}
+                  </span>
+                </Tabs>
+                {isRulesBeingEdited && previewTab === "rules" && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md flex-shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
+                  </div>
+                )}
                 <Button
                   onClick={async () => {
                     if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
@@ -1736,6 +1768,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
                       playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
                       rules: customRules,
+                      intro: customIntro.trim() || undefined,
                       name: gameName || selectedTemplate?.name || "Custom Game",
                       hostId: selectedHostId,
                       tone: "balanced", // Default tone
@@ -1796,17 +1829,60 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             </div>
           </div>
 
-          <div className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
-            <Textarea
-              key={currentSessionId || 'rules-viewer'}
-              value={customRules || selectedTemplate?.defaultRules || ""}
-              readOnly
-              placeholder="Game rules will appear here as you discuss with the Game Master. Rules are updated automatically—you can watch the AI edit them in real-time."
-              className="flex-1 w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap cursor-default"
-            />
-          </div>
+          <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as "rules" | "intro")} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <TabsContent value="rules" className="flex-1 min-h-0 m-0 p-0 overflow-hidden data-[state=inactive]:hidden">
+              <Textarea
+                key={currentSessionId || 'rules-viewer'}
+                value={customRules || selectedTemplate?.defaultRules || ""}
+                onChange={(e) => setCustomRules(e.target.value)}
+                placeholder={rulesLangZh ? "规则将随 GM 对话在此显示；开局前你和 GM 都可编辑，开局后不可编辑。" : "Game rules will appear here as you discuss with the Game Master. You and the GM can edit before starting the game; after starting, rules are locked."}
+                className="flex-1 w-full h-full min-h-0 bg-white/5 backdrop-blur-xl border-0 border-white/10 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
+              />
+            </TabsContent>
+            <TabsContent value="intro" className="flex-1 min-h-0 m-0 p-4 overflow-auto data-[state=inactive]:hidden flex flex-col gap-3">
+              <Textarea
+                value={customIntro}
+                onChange={(e) => setCustomIntro(e.target.value)}
+                placeholder={rulesLangZh
+                  ? "可以写：故事发生在哪里？什么时代？有什么氛围？角色们是谁、面临什么？一两段即可。也可和 GM 聊「加个背景」，GM 会帮你写。"
+                  : "Try: Where does the story take place? What era or mood? Who are the characters and what do they face? One or two short paragraphs. Or ask the GM to \"add a background\" and it will write one for you."}
+                className="flex-1 w-full min-h-[160px] bg-white/5 border border-white/10 text-zinc-300 placeholder:text-zinc-500 text-sm rounded-lg px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
+              />
+              <div className="flex-shrink-0">
+                <p className="text-xs text-zinc-500 mb-2">{rulesLangZh ? "快速起笔（点击插入）：" : "Quick prompts (click to insert):"}</p>
+                <div className="flex flex-wrap gap-2">
+                  {(rulesLangZh
+                    ? [
+                        { label: "中世纪村庄", seed: "故事发生在一个中世纪村庄，村民们正面临未知的威胁……" },
+                        { label: "太空/科幻", seed: "故事发生在星际飞船/殖民地，船员们发现异常……" },
+                        { label: "民国侦探", seed: "故事发生在民国时期，一桩离奇案件将众人卷入……" },
+                        { label: "密室逃脱", seed: "众人醒来发现自己被困在一处密室，必须合作才能逃出生天……" },
+                        { label: "古堡惊魂", seed: "一场暴风雨将众人困在古老城堡中，传说与秘密逐渐浮现……" },
+                      ]
+                    : [
+                        { label: "Medieval village", seed: "The story takes place in a medieval village where the townsfolk face an unknown threat…" },
+                        { label: "Space / Sci-fi", seed: "Aboard a starship or colony, the crew discovers something is wrong…" },
+                        { label: "Detective noir", seed: "In a noir setting, a mysterious case draws everyone in…" },
+                        { label: "Escape room", seed: "Everyone wakes to find themselves trapped; they must work together to escape…" },
+                        { label: "Haunted manor", seed: "A storm strands everyone at an old manor; legends and secrets emerge…" },
+                      ]
+                  ).map(({ label, seed }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setCustomIntro((prev) => (prev ? prev + "\n\n" + seed : seed))}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-violet-600/30 border border-white/10 hover:border-violet-500/40 text-zinc-300 hover:text-white transition-colors"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-      )}
+        );
+      })()}
       </div>
 
       {/* Delete Confirmation Dialog */}

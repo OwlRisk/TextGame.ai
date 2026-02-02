@@ -1,5 +1,5 @@
 /**
- * OpenAI TTS voice assignment by personality, gender, and name.
+ * TTS voice assignment by gender, name, and personality.
  * Voices: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar
  */
 
@@ -7,14 +7,6 @@ export const TTS_VOICES = [
   'alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse', 'marin', 'cedar',
 ] as const;
 export type TTSVoice = (typeof TTS_VOICES)[number];
-
-/** Preset host id -> default voice (used when no generated host) */
-const HOST_VOICE_MAP: Record<string, TTSVoice> = {
-  echo: 'onyx',
-  nova: 'nova',
-  sage: 'sage',
-  spark: 'shimmer',
-};
 
 /** Male-leaning voices */
 const MALE_VOICES: TTSVoice[] = ['alloy', 'echo', 'onyx', 'sage', 'cedar', 'ash', 'verse'];
@@ -47,18 +39,22 @@ function hashStr(s: string): number {
 }
 
 /**
- * Get TTS voice for Host: preset host uses map; generated host uses gender + name + personality.
+ * Get TTS voice for Host by gender, name, and personality.
+ * Same as players: no preset voices; gender picks pool, name+personality hash picks stable voice.
+ * When gender is missing or "other", infer from name so voice matches avatar.
  */
 export function getVoiceForHost(
-  hostId: string,
+  _hostId: string,
   name?: string,
   personality?: string,
   gender?: string
 ): TTSVoice {
-  const preset = HOST_VOICE_MAP[hostId];
-  if (preset) return preset;
-  const g = (gender || '').toLowerCase();
-  const list = g === 'female' ? FEMALE_VOICES : g === 'male' ? MALE_VOICES : TTS_VOICES;
+  let g = (gender || '').toLowerCase();
+  if (g !== 'male' && g !== 'female') {
+    const inferred = inferGenderFromName(name);
+    if (inferred) g = inferred;
+  }
+  const list = g === 'female' ? FEMALE_VOICES : g === 'male' ? MALE_VOICES : NEUTRAL_VOICES;
   const seed = `${name ?? ''}|${personality ?? ''}`;
   const idx = hashStr(seed) % list.length;
   return list[idx];

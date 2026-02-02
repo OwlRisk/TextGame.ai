@@ -41,6 +41,8 @@ export interface GameConfig {
   template: string;
   playerCount: number;
   rules: string;
+  /** Game background — set by GM during setup only; shown in # general (Background) */
+  intro?: string;
   customRoles?: string[];
   hostId: string;
   tone?: string;
