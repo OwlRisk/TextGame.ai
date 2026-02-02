@@ -41,7 +41,7 @@ export interface GameConfig {
   template: string;
   playerCount: number;
   rules: string;
-  /** Game background — set by GM during setup only; shown in # general (Background) */
+  /** Game background — merged into Rules (deprecated, kept for backward compatibility) */
   intro?: string;
   customRoles?: string[];
   hostId: string;

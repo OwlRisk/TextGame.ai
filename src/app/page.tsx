@@ -92,8 +92,7 @@ export default function HomePage() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   /** Game progress text — editable by AI Host only; keyed by gameId */
   const [gameProgressByGameId, setGameProgressByGameId] = useState<Record<string, string>>({});
-  /** # general (Background): game background — set by GM at setup only; keyed by gameId */
-  const [gameGeneralByGameId, setGameGeneralByGameId] = useState<Record<string, string>>({});
+  // Background merged into Rules - no separate state needed
   /** My Board content per player per game — written by AI Host via MY_BOARD_FOR; keyed by gameId then playerId */
   const [myBoardContentByGameId, setMyBoardContentByGameId] = useState<Record<string, Record<string, string>>>({});
 
@@ -165,9 +164,6 @@ export default function HomePage() {
         if (state.gameProgressByGameId && typeof state.gameProgressByGameId === 'object') {
           setGameProgressByGameId(state.gameProgressByGameId);
         }
-        if (state.gameGeneralByGameId && typeof state.gameGeneralByGameId === 'object') {
-          setGameGeneralByGameId(state.gameGeneralByGameId);
-        }
         if (state.myBoardContentByGameId && typeof state.myBoardContentByGameId === 'object') {
           setMyBoardContentByGameId(state.myBoardContentByGameId);
         }
@@ -214,7 +210,6 @@ export default function HomePage() {
           privateMessages: trimmedPrivateMessages,
           voiceEnabled,
           gameProgressByGameId,
-          gameGeneralByGameId,
           myBoardContentByGameId,
           savedAt: new Date().toISOString()
         };
@@ -252,7 +247,6 @@ export default function HomePage() {
               privateMessages: minPm,
               voiceEnabled,
               gameProgressByGameId,
-              gameGeneralByGameId,
               myBoardContentByGameId,
               savedAt: new Date().toISOString()
             }));
@@ -266,7 +260,7 @@ export default function HomePage() {
     }, 1000); // Debounce saves
     
     return () => clearTimeout(timeoutId);
-  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, voiceEnabled, gameProgressByGameId, gameGeneralByGameId, myBoardContentByGameId, isHydrated]);
+  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, voiceEnabled, gameProgressByGameId, myBoardContentByGameId, isHydrated]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -639,13 +633,12 @@ The host just explained the rules and asked if everyone is ready. Respond natura
         }
       }
       
-      const configWithIntro = { ...finalConfig, intro: config.intro ?? "" };
       const newGame: Game = {
         id: `game-${Date.now()}`,
         name: config.name,
         icon: gameIcon,
         color: config.template === "werewolf" ? "#7c3aed" : config.template === "undercover" ? "#0ea5e9" : "#ec4899",
-        config: configWithIntro,
+        config: finalConfig,
         isActive: false
       };
 
@@ -653,7 +646,6 @@ The host just explained the rules and asked if everyone is ready. Respond natura
       setSelectedGameId(newGame.id);
       setSelectedChannelId("game-room");
       setGameProgressByGameId(prev => ({ ...prev, [newGame.id]: "" }));
-      setGameGeneralByGameId(prev => ({ ...prev, [newGame.id]: config.intro ?? "" }));
       setShowGameMasterChat(false);
       setShowGameCreatorForm(false);
       initializeGame(finalConfig);
@@ -744,7 +736,7 @@ Reply using these lines (one per line). You MUST include exactly one next-speake
 - PRIVATE_TO_PlayerName: your private message to that player (can repeat for different players)
 - MY_BOARD_FOR_PlayerName: one line (or short text) to show on that player's My Board only. Use for hidden-role games (e.g. "Your role: Werewolf. Teammates: Kenji, Zuri." or "You saw Luna as Werewolf."). You decide what each player sees—only that player sees it. Use "You" for the human player (MY_BOARD_FOR_You: ...). Use underscores in names if needed (e.g. MY_BOARD_FOR_Sofia_Mendez: ...).
 - POST_EVENT: your public announcement—one short sentence or two; write naturally, no long paragraphs (players are human)
-- UPDATE_PROGRESS: in-game progress summary for the # progress channel (optional). One short line—round, phase, what players discovered. No long paragraphs; players are human. Only the Host can update progress; Rules and Background are set by the GM and cannot be changed during the game.
+- UPDATE_PROGRESS: in-game progress summary for the # progress channel (optional). One short line—round, phase, what players discovered. No long paragraphs; players are human. Only the Host can update progress; Rules (including background story if any) are set by the GM and cannot be changed during the game.
 
 Example:
 NEXT_SPEAKER: Sofia
@@ -1622,15 +1614,12 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
 
   const currentGame = games.find(g => g.id === selectedGameId);
   const [channels, setChannels] = useState([
-    { id: "general", name: "background", type: "text" as const },
     { id: "rules", name: "rules", type: "text" as const },
     { id: "progress", name: "progress", type: "text" as const },
     { id: "game-room", name: "game-room", type: "game" as const },
   ]);
   const rulesLangIsZh = /[\u4e00-\u9fff]/.test(currentGame?.config?.rules ?? "");
-  const channelsWithLabels = channels.map(c =>
-    c.id === "general" ? { ...c, name: rulesLangIsZh ? "背景" : "Background" } : c
-  );
+  const channelsWithLabels = channels;
 
   // Player board data (dynamically generated based on current game)
   const playerBoardData: PlayerBoardData = {
@@ -1814,51 +1803,6 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
                 isHiddenRoleGame={currentGame?.config.template === "werewolf" || currentGame?.config.template === "mafia"}
                 currentUserId={userId}
               />
-            </div>
-          ) : selectedChannelId === "general" ? (
-            <div className="flex-1 bg-zinc-700 p-10 overflow-y-auto">
-              <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-violet-600/20 flex items-center justify-center border border-violet-500/30">
-                      <span className="text-2xl">📖</span>
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-white">
-                        {/[\u4e00-\u9fff]/.test(currentGame?.config?.rules ?? "") ? "背景" : "Background"}
-                      </h1>
-                      <p className="text-zinc-400 text-sm mt-0.5">
-                        {rulesLangIsZh ? "进入游戏后不可编辑，仅开局前可修改" : "Locked after entering the game—editable only before starting"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-zinc-800 rounded-xl border border-zinc-600/80 overflow-hidden">
-                  <div className="p-6">
-                    {(selectedGameId && (gameGeneralByGameId[selectedGameId] ?? currentGame?.config?.intro ?? "")?.trim()) ? (
-                      <pre className="whitespace-pre-wrap font-sans text-sm text-zinc-300 leading-relaxed">
-                        {gameGeneralByGameId[selectedGameId] ?? currentGame?.config?.intro ?? ""}
-                      </pre>
-                    ) : (
-                      <p className="text-zinc-500 text-sm">
-                        {rulesLangIsZh
-                          ? "背景将显示在这里。仅 GM 在创建游戏前可填写（与规则一样）。"
-                          : "Game background will appear here. Only the GM can set this during setup (same as rules)."}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 p-4 rounded-lg bg-zinc-800/60 border border-zinc-600/50">
-                  <p className="text-zinc-500 text-xs flex items-center gap-2">
-                    <span>📖</span>
-                    <span>
-                      {rulesLangIsZh
-                        ? "进入游戏后不可编辑（与 Rules 相同）；开局前可在 GM 聊天里编辑。适合写世界观、剧情前提或氛围。"
-                        : "Locked after entering the game (same as Rules). Editable in GM chat before starting. Good for world setting, story premise, or atmosphere."}
-                    </span>
-                  </p>
-                </div>
-              </div>
             </div>
           ) : selectedChannelId === "progress" ? (
             <div className="flex-1 bg-zinc-700 p-10 overflow-y-auto">
