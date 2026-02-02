@@ -25,13 +25,14 @@ The host should:
 - Have a distinctive personality that enhances the game experience
 - Have an appropriate voice style for the game type
 - Have a system prompt that defines how they interact with players
+- The host's system prompt should describe how they speak and express themselves like a real person (no fixed rules about emojis—their call)
 
 Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 {
   "name": "Host name (2-8 characters)",
   "personality": "Brief personality description (20-40 words)",
   "voiceStyle": "Voice style description (5-15 words)",
-  "systemPrompt": "Detailed system prompt for the host's behavior (50-150 words)",
+  "systemPrompt": "Detailed system prompt for the host's behavior (50-150 words). Describe how they speak and express themselves like a real person.",
   "icon": "Single emoji that represents the host",
   "color": "Hex color code (e.g., #6366f1)"
 }`;

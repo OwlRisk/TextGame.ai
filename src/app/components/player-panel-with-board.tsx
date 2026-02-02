@@ -20,6 +20,12 @@ interface PlayerPanelWithBoardProps {
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
   playerBoardData: PlayerBoardData;
+  /** Content written by AI Host for this player's My Board (e.g. role, night result). Only this player sees it. */
+  myBoardContentFromHost?: string;
+  /** If true (e.g. werewolf/mafia), hide other players' roles in the list—only show own role. */
+  isHiddenRoleGame?: boolean;
+  /** Current user's player id—used to show own role and hide others' in hidden-role games. */
+  currentUserId?: string;
 }
 
 const rarityColors = {
@@ -44,7 +50,10 @@ export function PlayerPanelWithBoard({
   gameId,
   onToggleMute,
   onSelectSpeaker,
-  playerBoardData
+  playerBoardData,
+  myBoardContentFromHost = "",
+  isHiddenRoleGame = false,
+  currentUserId
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -98,6 +107,8 @@ export function PlayerPanelWithBoard({
                     onToggleMute={onToggleMute}
                     onSelectSpeaker={onSelectSpeaker}
                     onViewProfile={openProfile}
+                    isHiddenRoleGame={isHiddenRoleGame}
+                    currentUserId={currentUserId}
                   />
                   <Separator className="mt-3 bg-zinc-700/50" />
                 </div>
@@ -119,6 +130,8 @@ export function PlayerPanelWithBoard({
                       onToggleMute={onToggleMute}
                       onSelectSpeaker={onSelectSpeaker}
                       onViewProfile={openProfile}
+                      isHiddenRoleGame={isHiddenRoleGame}
+                      currentUserId={currentUserId}
                     />
                   ))}
                 </div>
@@ -131,6 +144,16 @@ export function PlayerPanelWithBoard({
         <TabsContent value="board" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-3 space-y-3">
+              {/* Info from Host (e.g. role, night result) — only this player sees it; AI Host decides what to show */}
+              {myBoardContentFromHost.trim() && (
+                <div className="rounded-xl p-4 border border-amber-500/30 bg-amber-950/20 shadow-lg">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase mb-2 tracking-wide flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5" />
+                    From Host
+                  </h4>
+                  <p className="text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed">{myBoardContentFromHost.trim()}</p>
+                </div>
+              )}
               {/* Character Info */}
               <div className="relative bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 rounded-xl p-4 border border-zinc-700/50 overflow-hidden shadow-lg">
                 {/* Decorative Background */}
@@ -334,6 +357,8 @@ function PlayerCard({
   onToggleMute,
   onSelectSpeaker,
   onViewProfile,
+  isHiddenRoleGame,
+  currentUserId,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -342,6 +367,8 @@ function PlayerCard({
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
   onViewProfile?: (player: Player) => void;
+  isHiddenRoleGame?: boolean;
+  currentUserId?: string;
 }) {
   const canViewProfile = !!onViewProfile;
   const handleRowClick = () => {
@@ -402,8 +429,11 @@ function PlayerCard({
               <Info className="h-3.5 w-3.5 text-zinc-500 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
             )}
           </div>
-          {player.role && (
+          {(player.role && (!isHiddenRoleGame || player.id === currentUserId)) && (
             <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
+          )}
+          {isHiddenRoleGame && player.id !== currentUserId && (
+            <div className="text-xs text-zinc-500 font-medium">—</div>
           )}
           {player.status && (
             <div className={`text-xs mt-0.5 font-medium ${isEliminated ? "text-red-400" : "text-emerald-400"}`}>
