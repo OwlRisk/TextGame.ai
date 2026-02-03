@@ -74,23 +74,27 @@ const GAME_TEMPLATES: GameTemplate[] = [
     description: "A classic social deduction game where villagers try to find the werewolves among them.",
     minPlayers: 5,
     maxPlayers: 12,
-    defaultRules: `OBJECTIVE: Villagers must find and eliminate all Werewolves. Werewolves must eliminate all Villagers.
+    defaultRules: `SETTING: A village is plagued by werewolves. By day you are neighbors; by night the wolves hunt. Find them before they devour the town.
+
+OBJECTIVE: Villagers must eliminate all Werewolves by day vote. Werewolves must eliminate Villagers at night until they outnumber the town.
 
 PHASES:
-1. Night Phase - Werewolves choose a victim
-2. Day Phase - All players discuss and vote to eliminate someone
+1. Night — Werewolves choose one victim; Seer may check one player; Doctor may protect one.
+2. Day — Everyone discusses and votes to eliminate one player. Tied vote = no elimination.
 
 ROLES:
-- Villagers: Innocent townspeople
-- Werewolves: Kill one villager each night
-- Seer: Can check one player's role each night
-- Doctor: Can protect one player each night
+- Villager: Innocent; no special power.
+- Werewolf: Each night, with other wolves, choose one player to eliminate.
+- Seer: Each night, learn one player's true role (Villager or Werewolf).
+- Doctor: Each night, protect one player (including self once per game). They cannot be eliminated that night.
 
 RULES:
-- Once rules are set, they cannot be changed
-- Host controls all phases
-- Dead players cannot communicate
-- Majority vote eliminates a player`,
+- Host runs phases in order. Dead players cannot speak or vote.
+- Once rules are set, they cannot be changed.
+
+WINNING:
+- Villagers win when all Werewolves are eliminated.
+- Werewolves win when they equal or outnumber the living Villagers.`,
     roles: ["Villager", "Werewolf", "Seer", "Doctor"]
   },
   {
@@ -99,23 +103,27 @@ RULES:
     description: "Find the undercover agent who has a different word while blending in with the group.",
     minPlayers: 4,
     maxPlayers: 10,
-    defaultRules: `OBJECTIVE: Civilians find the Undercover. Undercover tries to blend in and survive.
+    defaultRules: `SETTING: Everyone shares a secret word—except one Undercover with a different word, and optionally Mr. White with no word. Describe your word without saying it; find the spy or blend in to survive.
+
+OBJECTIVE: Civilians must find and vote out the Undercover. Undercover must blend in and survive to the final round.
 
 SETUP:
-- Most players get the same word (Civilians)
-- One player gets a similar but different word (Undercover)
-- One player gets a completely different word (Mr. White - optional)
+- Most players receive the same word (Civilians).
+- One player receives a similar but different word (Undercover).
+- Optionally, one player receives no word (Mr. White).
 
 GAMEPLAY:
-1. Each player describes their word in one sentence
-2. Vote to eliminate the suspected Undercover
-3. Eliminated player reveals their role
-4. Continue until Undercover is found or wins
+1. In turn, each player describes their word in one sentence (no saying the word).
+2. After all speak, everyone votes to eliminate one player. Highest votes eliminated; reveal role.
+3. Repeat until Undercover is eliminated (Civilians win) or only a few remain (Undercover wins).
+
+RULES:
+- Host assigns words and runs rounds. Descriptions must be one sentence only.
 
 WINNING:
-- Civilians win if they eliminate the Undercover
-- Undercover wins if they survive to final 3 players
-- Mr. White wins if they correctly guess the civilian word when eliminated`,
+- Civilians win if the Undercover is eliminated.
+- Undercover wins if still alive when 3 or fewer players remain.
+- Mr. White (if in game) wins by correctly guessing the civilian word when eliminated.`,
     roles: ["Civilian", "Undercover", "Mr. White"]
   },
   {
