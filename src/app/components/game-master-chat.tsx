@@ -1775,13 +1775,15 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     }
 
                     toast.dismiss(startToastId);
+                    const tid = selectedTemplate?.id || "custom";
                     const gameConfig: GameConfig = {
-                      template: (selectedTemplate?.id || "custom") as "werewolf" | "undercover" | "custom",
+                      template: tid as "werewolf" | "undercover" | "custom",
                       playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
                       rules: customRules,
                       name: gameName || selectedTemplate?.name || "Custom Game",
                       hostId: selectedHostId,
                       tone: "balanced", // Default tone
+                      hideRolesInPlayerList: tid === "werewolf" || tid === "mafia",
                       configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
                       generatedHost: generatedHostData || undefined
                     };

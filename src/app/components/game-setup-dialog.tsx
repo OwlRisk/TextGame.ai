@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { Checkbox } from "@/app/components/ui/checkbox";
 
 export interface GameTemplate {
   id: string;
@@ -46,6 +47,8 @@ export interface GameConfig {
   customRoles?: string[];
   hostId: string;
   tone?: string;
+  /** When true, only each player sees their own role in the player list; Host decides at game creation. */
+  hideRolesInPlayerList?: boolean;
   configuredPlayers?: ConfiguredPlayer[];
   generatedHost?: {
     name: string;
@@ -147,6 +150,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
     return getDefaultHost().id;
   });
   const [showHostSelector, setShowHostSelector] = useState(false);
+  /** Hide roles in player list (only each player sees own role); default by template, Host can override. */
+  const [hideRolesInPlayerList, setHideRolesInPlayerList] = useState(true);
   
   // Update host when template changes (use recommended host for the template)
   useEffect(() => {
@@ -302,6 +307,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             lowerInput.includes("ok") || lowerInput.includes("good") || lowerInput.includes("fine")) {
           setCustomRules(selectedTemplate!.defaultRules);
           setConversationState("confirmation");
+          setHideRolesInPlayerList(selectedTemplate!.id === "werewolf" || selectedTemplate!.id === "mafia");
           // Show host selector immediately when entering confirmation
           setShowHostSelector(true);
           addGMMessage(
@@ -341,6 +347,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
         
         if (lowerInput.includes("summarize") || lowerInput.includes("done") || lowerInput.includes("finalize")) {
           setConversationState("confirmation");
+          setHideRolesInPlayerList(selectedTemplate!.id === "werewolf" || selectedTemplate!.id === "mafia");
           const finalRules = customRules || selectedTemplate!.defaultRules;
           // Show host selector immediately when entering confirmation
           setShowHostSelector(true);
@@ -366,7 +373,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             playerCount: playerCount,
             rules: finalRules,
             customRoles: selectedTemplate!.roles,
-            hostId: selectedHostId!
+            hostId: selectedHostId!,
+            hideRolesInPlayerList
           });
           setConversationState("completed");
           addGMMessage(
@@ -455,7 +463,13 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                   }}
                   templateId={selectedTemplate?.id}
                 />
-                
+                <label className="mt-6 flex cursor-pointer items-center gap-3 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800">
+                  <Checkbox
+                    checked={hideRolesInPlayerList}
+                    onCheckedChange={(v) => setHideRolesInPlayerList(v === true)}
+                  />
+                  <span>Hide roles in player list (only each player sees their own role)</span>
+                </label>
                 {/* Confirmation Buttons - Prominent Position */}
                 <div className="mt-10 flex justify-center gap-4">
                   <Button
@@ -491,7 +505,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                           playerCount: playerCount,
                           rules: customRules || selectedTemplate!.defaultRules,
                           customRoles: selectedTemplate!.roles,
-                          hostId: selectedHostId!
+                          hostId: selectedHostId!,
+                          hideRolesInPlayerList
                         });
                         
                         // Reset state

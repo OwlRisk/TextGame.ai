@@ -222,7 +222,8 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
       playerCount: playerCount,
       rules: finalRules + toneInstruction,
       customRoles: selectedTemplate.roles,
-      hostId: selectedHostId
+      hostId: selectedHostId,
+      hideRolesInPlayerList: selectedTemplate.id === "werewolf" || selectedTemplate.id === "mafia"
     });
   };
 

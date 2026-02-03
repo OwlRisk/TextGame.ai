@@ -1800,7 +1800,7 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
                 onSelectSpeaker={setCurrentSpeakerId}
                 playerBoardData={playerBoardData}
                 myBoardContentFromHost={selectedGameId ? (myBoardContentByGameId[selectedGameId]?.[userId] ?? "") : ""}
-                isHiddenRoleGame={currentGame?.config.template === "werewolf" || currentGame?.config.template === "mafia"}
+                isHiddenRoleGame={currentGame?.config.hideRolesInPlayerList ?? (currentGame?.config.template === "werewolf" || currentGame?.config.template === "mafia")}
                 currentUserId={userId}
               />
             </div>
