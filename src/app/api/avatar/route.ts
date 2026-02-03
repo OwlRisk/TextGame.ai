@@ -117,20 +117,18 @@ function buildPrompt(
     : result;
 }
 
-async function generateWithDalle3(prompt: string): Promise<string> {
+/** Retry once on 5xx (transient server error); delay in ms */
+async function generateWithDalle3(prompt: string, retried = false): Promise<string> {
   // Use DALL-E 2 with 256x256 for lowest cost and fastest generation
   // Prompt already includes strong single-person emphasis from buildPrompt
-  
-  // Ensure prompt doesn't exceed 1000 characters (DALL-E 2 limit)
+
   const finalPrompt = prompt.length > 1000 ? prompt.substring(0, 1000) : prompt;
-  
-  console.log(`[DALL-E] Generating with prompt length: ${finalPrompt.length}`);
-  
+
   try {
     const resp = await openai.images.generate({
       model: 'dall-e-2',
       prompt: finalPrompt,
-      size: '256x256', // Min size for DALL-E 2; we resize to 128 before returning
+      size: '256x256',
       response_format: 'b64_json',
       n: 1,
     });
@@ -142,15 +140,17 @@ async function generateWithDalle3(prompt: string): Promise<string> {
 
     return `data:image/png;base64,${b64}`;
   } catch (error: any) {
-    console.error('[DALL-E] API Error:', error);
-    console.error('[DALL-E] Error details:', {
-      message: error.message,
-      status: error.status,
-      code: error.code,
-      type: error.type
-    });
-    // Re-throw with more context
-    throw new Error(`DALL-E API error: ${error.message || 'Unknown error'}`);
+    const status = error?.status ?? error?.code;
+    const is5xx = typeof status === 'number' && status >= 500 && status < 600;
+    if (is5xx && !retried) {
+      console.warn('[DALL-E] Server error (5xx), retrying once after 2s...', status, error?.message);
+      await new Promise((r) => setTimeout(r, 2000));
+      return generateWithDalle3(prompt, true);
+    }
+    console.error('[DALL-E] API Error:', error?.message || error);
+    const err = new Error(error?.message ? `DALL-E API error: ${error.message}` : 'DALL-E API error') as Error & { status?: number };
+    err.status = 503;
+    throw err;
   }
 }
 

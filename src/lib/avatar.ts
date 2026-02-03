@@ -108,6 +108,11 @@ export async function fetchGeneratedAvatar(
         const errorMessage = (err as { error?: string; details?: string }).error || 'Failed to generate avatar';
         const details = (err as { details?: string }).details;
         const fullError = details ? `${errorMessage} (${details})` : errorMessage;
+        const is5xx = res.status >= 500 && res.status < 600;
+        if (is5xx) {
+          console.warn('[Avatar] Service temporarily unavailable (', res.status, '). Showing initials. You can retry later.');
+          throw new Error('Avatar service temporarily unavailable. Showing initials—you can retry later.');
+        }
         console.error('[Avatar] API error:', res.status, fullError);
         throw new Error(fullError);
       }

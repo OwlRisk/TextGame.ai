@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
       ? Math.min(4096, Math.max(256, maxCompletionTokens))
       : 500;
 
-    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-4o';
+    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
 
     let message = error.message || 'Failed to get AI response';
     if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
-      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-4o in .env if the default model fails.';
+      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.2 in .env if the default model fails.';
     }
     return NextResponse.json(
       { error: message },

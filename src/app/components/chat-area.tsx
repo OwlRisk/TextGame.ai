@@ -9,7 +9,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { useVoiceInput, prepareTextForTTS } from "@/lib/voice";
-import { speak, unlockAudio } from "@/lib/tts";
+import { speak, unlockAudio, resumeSafariPlayback } from "@/lib/tts";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
@@ -212,6 +212,8 @@ export interface Message {
   isAI: boolean;
   isSystemMessage?: boolean;
   isStreaming?: boolean; // True while message is being generated (typewriter effect)
+  /** When true, TTS was already triggered elsewhere (e.g. page); chat-area skips speaking */
+  ttsHandled?: boolean;
 }
 
 interface ChatAreaProps {
@@ -243,6 +245,16 @@ interface ChatAreaProps {
   onToggleVoice?: () => void;
   /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
   quickReplies?: string[];
+  /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
+  introYourTurnHint?: string;
+  /** One-click reply text shown next to intro your-turn hint (e.g. "准备好了！" / "Ready!") */
+  introYourTurnReply?: string;
+  /** When everyone has spoken in intro, show this hint above quick replies */
+  introEveryoneSpokenHint?: string;
+  /** AI-generated suggestion prompts (e.g. theme, round length) — shown as tappable chips */
+  aiSuggestedPrompts?: string[];
+  /** Label for AI suggestions row (e.g. "AI 建议" or "AI suggestions") */
+  aiSuggestionsLabel?: string;
 }
 
 export function ChatArea({ 
@@ -268,9 +280,15 @@ export function ChatArea({
   privateSectionLabel = "Private from Host",
   voiceEnabled = false,
   onToggleVoice,
-  quickReplies = []
+  quickReplies = [],
+  introYourTurnHint,
+  introYourTurnReply,
+  introEveryoneSpokenHint,
+  aiSuggestedPrompts = [],
+  aiSuggestionsLabel = 'AI suggestions',
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
+  const [showSafariPlayButton, setShowSafariPlayButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessagesLenRef = useRef(0);
   const spokenMessageIdsRef = useRef<Set<string>>(new Set());
@@ -290,14 +308,14 @@ export function ChatArea({
     if (last.isSystemMessage || last.senderId === userId) return;
     if (last.isStreaming) return;
     if (!last.content?.trim()) return;
-    if (spokenMessageIdsRef.current.has(last.id)) return;
+    if (last.ttsHandled || spokenMessageIdsRef.current.has(last.id)) return;
     // Avoid speaking a whole batch on restore (e.g. localStorage): had 0 messages, now many
     if (prevLen === 0 && messages.length > 1) return;
     const player = players.find(p => p.id === last.senderId || p.name === last.senderName);
     const voiceId = (player as Player & { ttsVoice?: string })?.ttsVoice ?? "alloy";
     const plain = prepareTextForTTS(last.content, 3000);
     if (plain) {
-      speak(plain, voiceId, { preDelayMs: 380, speed: 0.97 });
+      speak(plain, voiceId, { preDelayMs: 0, speed: 0.97 });
       spokenMessageIdsRef.current.add(last.id);
       if (spokenMessageIdsRef.current.size > 50) {
         const ids = Array.from(spokenMessageIdsRef.current);
@@ -392,6 +410,15 @@ export function ChatArea({
     return () => window.removeEventListener('focusGameInput', handleFocusInput);
   }, [isRecording]);
 
+  // Safari: listen for play blocked event and show manual play button
+  useEffect(() => {
+    const handleSafariBlocked = () => {
+      setShowSafariPlayButton(true);
+    };
+    window.addEventListener('safari-play-blocked', handleSafariBlocked);
+    return () => window.removeEventListener('safari-play-blocked', handleSafariBlocked);
+  }, []);
+
   const handleSendRef = useRef<(override?: string) => void>();
   const sendingLockRef = useRef(false);
   handleSendRef.current = (override?: string) => {
@@ -442,19 +469,35 @@ export function ChatArea({
         </div>
         <div className="flex items-center gap-2">
           {onToggleVoice && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (!voiceEnabled) unlockAudio();
-                onToggleVoice();
-              }}
-              title={voiceEnabled ? "Turn off voice (TTS)" : "Turn on voice (TTS)"}
-              className="hover:bg-zinc-700 text-zinc-300 hover:text-white gap-1.5"
-            >
-              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              <span className="text-xs">{voiceEnabled ? "Voice On" : "Voice Off"}</span>
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (!voiceEnabled) unlockAudio();
+                  onToggleVoice();
+                }}
+                title={voiceEnabled ? "Turn off voice (TTS)" : "Turn on voice (Safari: tap once to allow sound)"}
+                className="hover:bg-zinc-700 text-zinc-300 hover:text-white gap-1.5"
+              >
+                {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                <span className="text-xs">{voiceEnabled ? "Voice On" : "Voice Off"}</span>
+              </Button>
+              {showSafariPlayButton && voiceEnabled && (
+                <Button
+                  size="sm"
+                  className="h-8 px-3 text-sm bg-orange-500 hover:bg-orange-500/90 text-white font-medium gap-1.5 animate-pulse"
+                  onClick={() => {
+                    resumeSafariPlayback();
+                    setShowSafariPlayButton(false);
+                  }}
+                  title="Safari 拦截了声音，点这里手动播放"
+                >
+                  <Volume2 className="h-3.5 w-3.5" />
+                  点击播放
+                </Button>
+              )}
+            </>
           )}
           {onOpenPlayerBoard && (
             <Button
@@ -618,6 +661,45 @@ export function ChatArea({
             <div className="flex gap-1">
               <Button size="sm" variant="ghost" className="h-7 px-2 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>Close</Button>
               <Button size="sm" className="h-7 px-2 bg-red-600 hover:bg-red-500" onClick={() => { voiceCancel(); setTimeout(voiceStart, 100); }}>Retry</Button>
+            </div>
+          </div>
+        )}
+        {introYourTurnHint && canSend && !isRecording && (
+          <div className="mb-2 flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <span className="text-sm text-amber-200">{introYourTurnHint}</span>
+            {introYourTurnReply && (
+              <Button
+                size="sm"
+                className="h-8 px-4 text-sm bg-amber-500 hover:bg-amber-500/90 text-zinc-900 font-medium shrink-0"
+                onClick={() => handleSend(introYourTurnReply)}
+              >
+                {introYourTurnReply}
+              </Button>
+            )}
+          </div>
+        )}
+        {introEveryoneSpokenHint && canSend && !isRecording && (
+          <div className="mb-2 px-2 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-200">
+            {introEveryoneSpokenHint}
+          </div>
+        )}
+        {aiSuggestedPrompts.length > 0 && canSend && !isRecording && (
+          <div className="mb-2">
+            <p className="text-xs text-zinc-500 mb-1.5">
+              {aiSuggestionsLabel}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {aiSuggestedPrompts.map((text) => (
+                <Button
+                  key={text}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-sm border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-200"
+                  onClick={() => handleSend(text)}
+                >
+                  {text}
+                </Button>
+              ))}
             </div>
           </div>
         )}

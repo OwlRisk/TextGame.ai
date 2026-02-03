@@ -18,36 +18,39 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Generate Host] Generating host for game: ${gameName || "Unknown"}`);
 
-    const systemPrompt = `You are a creative game design assistant. Your task is to generate a unique AI host personality based on the provided game rules.
+    const systemPrompt = `You are a creative game design assistant. Generate a unique AI host for this game.
 
-The host should:
-- Have a unique name that fits the game's theme
-- Have a distinctive personality that enhances the game experience
-- Have an appropriate voice style for the game type
-- Have a system prompt that defines how they interact with players
-- The host's system prompt should describe how they speak and express themselves like a real person (no fixed rules about emojis—their call)
+Based on the game's theme and rules, decide:
+- What kind of name fits best (short modern name, role title, character name, etc.)
+- What personality would enhance the experience
+- How they should speak and interact with players
+- What emoji and color represent them
+- The host's gender (male/female/other) so voice and avatar match
+- Which TTS voice fits best: pick ONE from exactly: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar (e.g. female host → shimmer/coral/fable/nova/ballad/marin; male → echo/onyx/sage/cedar/alloy/ash/verse)
 
-Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
+Be creative and adaptive. For abstract games use simple names; for themed games use atmospheric names/titles that match the setting.
+
+Respond ONLY with valid JSON (no markdown, no code blocks):
 {
-  "name": "Host name (2-8 characters)",
+  "name": "Host name or title that fits the game",
   "personality": "Brief personality description (20-40 words)",
-  "voiceStyle": "Voice style description (5-15 words)",
-  "systemPrompt": "Detailed system prompt for the host's behavior (50-150 words). Describe how they speak and express themselves like a real person.",
-  "icon": "Single emoji that represents the host",
-  "color": "Hex color code (e.g., #6366f1)"
+  "voiceStyle": "How they sound (5-15 words)",
+  "systemPrompt": "How they behave and speak (50-150 words)",
+  "icon": "Single emoji",
+  "color": "Hex color code",
+  "gender": "male or female or other",
+  "ttsVoice": "exactly one of: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar"
 }`;
 
-    const userPrompt = `Generate a unique AI host for this game:
+    const userPrompt = `Game: ${gameName || "Custom Game"}
 
-Game Name: ${gameName || "Custom Game"}
-
-Game Rules:
+Rules:
 ${gameRules}
 
-Create a host that perfectly matches the game's theme and atmosphere. Make the personality unique and memorable.`;
+Create a host that perfectly fits this game's theme and atmosphere.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -86,6 +89,13 @@ Create a host that perfectly matches the game's theme and atmosphere. Make the p
           { status: 500 }
         );
       }
+    }
+    const validVoices = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"];
+    if (hostConfig.ttsVoice && !validVoices.includes(String(hostConfig.ttsVoice).toLowerCase())) {
+      delete hostConfig.ttsVoice; // fallback to gender-based selection
+    }
+    if (hostConfig.gender && !["male", "female", "other"].includes(String(hostConfig.gender).toLowerCase())) {
+      delete hostConfig.gender;
     }
 
     console.log("[Generate Host] Generated host:", hostConfig.name);

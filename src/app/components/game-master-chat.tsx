@@ -1692,7 +1692,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
       {/* Preview Panel - Editable before starting game; scrolls into view when GM edits */}
       {showPreview && (() => {
-        const rulesLangZh = (customRules || "").match(/[\u4e00-\u9fff]/);
         return (
         <div ref={rulesPanelRef} className="flex-[1.2] min-w-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
@@ -1701,9 +1700,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">{rulesLangZh ? "规则" : "Game Rules"}</h2>
+                  <h2 className="text-lg font-bold text-white">Game Rules</h2>
                   <span className="text-xs text-zinc-500">
-                    {rulesLangZh ? "玩家可直接编辑" : "You can edit directly"}
+                    You can edit directly
                   </span>
                 </div>
                 {isRulesBeingEdited && (
@@ -1854,7 +1853,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               key={currentSessionId || 'rules-viewer'}
               value={customRules || selectedTemplate?.defaultRules || ""}
               onChange={(e) => setCustomRules(e.target.value)}
-              placeholder={rulesLangZh ? "规则将随 GM 对话在此显示；开局前你和 GM 都可编辑，开局后不可编辑。\n\n提示：可以在规则开头写背景故事（世界观、时代、氛围等），GM 也会帮你添加。" : "Game rules will appear here as you discuss with the Game Master. You and the GM can edit before starting the game; after starting, rules are locked.\n\nTip: You can write background story (world, era, atmosphere) at the beginning of the rules. The GM can also add it for you."}
+              placeholder="Game rules will appear here as you discuss with the Game Master. You and the GM can edit before starting the game; after starting, rules are locked.\n\nTip: You can write background story (world, era, atmosphere) at the beginning of the rules. The GM can also add it for you."
               className="flex-1 w-full h-full min-h-0 bg-white/5 backdrop-blur-xl border-0 border-white/10 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
             />
           </div>

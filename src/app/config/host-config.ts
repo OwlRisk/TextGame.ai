@@ -3,8 +3,10 @@ export interface HostPersonality {
   name: string;
   icon: string;
   color: string;
-  /** male / female / other - for avatar generation to match name */
+  /** male / female / other - for avatar and TTS voice */
   gender?: 'male' | 'female' | 'other';
+  /** When set (e.g. by AI), use this TTS voice directly; otherwise derived from gender/name */
+  ttsVoice?: string;
   tagline?: string; // Optional for generated hosts
   description?: string; // Optional, uses personality for generated hosts
   personality?: string; // For generated hosts

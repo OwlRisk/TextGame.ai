@@ -46,7 +46,7 @@ ${rules || 'Standard social deduction game'}
 Consider: game balance, role distribution, pacing. Output ONLY a single number between ${minAI} and ${maxAI}, nothing else.`;
 
       const decideCompletion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5.2',
         messages: [
           { role: 'system', content: 'You decide optimal player count for games. Output only a number.' },
           { role: 'user', content: decideCountPrompt }
@@ -61,13 +61,13 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
 
     let outputFormat = `[
   {
-    "name": "Player Name",
+    "name": "Name or character title that fits the game",
     "gender": "male/female/other",
-    "personality": "Brief unique personality (5-8 words)",
-    "background": "Brief unique background (5-8 words)"`;
+    "personality": "Unique personality (5-10 words)",
+    "background": "Unique background (5-10 words)"`;
     if (needsRoles) {
       outputFormat += `,
-    "role": "Role from rules (e.g. Villager, Werewolf, Seer, Doctor)"`;
+    "role": "Role from rules"`;
     }
     if (needsWords) {
       outputFormat += `,
@@ -93,28 +93,33 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
 Also include at top level: "civilianWord": "your civilian word", "undercoverWord": "your undercover word"`;
     }
 
-    const prompt = `Generate ${playerCount} diverse game players for a ${gameTemplate || 'social deduction'} game. (Seed: ${randomSeed})
+    const prompt = `Generate ${playerCount} unique AI players for this game. (Seed: ${randomSeed})
 
-Game Rules:
+Game: ${gameTemplate || 'social deduction'}
+
+Rules:
 ${rules || 'Standard social deduction game'}
 
-Requirements:
-1. Generate ${playerCount} COMPLETELY UNIQUE players - never repeat the same combinations
-2. Balance gender distribution (roughly 50/50 male/female, with some variety)
-3. Use culturally diverse names from different origins (Western, Asian, Hispanic, Middle Eastern, African)
-4. Each player must have a UNIQUE personality (never duplicate)
-5. Backgrounds should be varied and interesting${roleInstructions}${wordInstructions}
+Based on this game's theme and setting, decide what naming style fits best:
+- Modern/abstract games → modern names (Emma, Lucas, Sofia)
+- Fantasy/historical → themed names with roles/titles (Sir Aldric, Witch Elara)
+- Story-based → names that match the narrative setting
+- Any other theme → adapt accordingly
 
-Output ONLY a valid JSON object. For the players array use this format:${outputFormat}${wordPairFormat ? `
+Requirements:
+1. ${playerCount} completely unique, diverse players
+2. Mix genders naturally
+3. Each personality must be distinct and memorable
+4. Create backgrounds that enhance the game experience${roleInstructions}${wordInstructions}
+
+Output ONLY valid JSON:${outputFormat}${wordPairFormat ? `
 
 Top-level structure: { "players": [ ... ], "civilianWord": "...", "undercoverWord": "..." }` : `
 
-Top-level structure: { "players": [ ... ] }`}
-
-Important: Output ONLY the JSON object, no other text. Ensure maximum diversity and uniqueness.`;
+Top-level structure: { "players": [ ... ] }`}`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.2',
       messages: [
         {
           role: 'system',

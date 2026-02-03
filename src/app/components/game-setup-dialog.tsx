@@ -470,6 +470,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                     saveLastSelectedHostId(hostId); // Save immediately when selected
                   }}
                   templateId={selectedTemplate?.id}
+                  gameRules={customRules || selectedTemplate?.defaultRules}
+                  gameName={gameName || selectedTemplate?.name}
                 />
                 <label className="mt-6 flex cursor-pointer items-center gap-3 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800">
                   <Checkbox

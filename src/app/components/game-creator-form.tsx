@@ -483,6 +483,8 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
                   saveLastSelectedHostId(hostId);
                 }}
                 templateId={selectedTemplate?.id}
+                gameRules={customRules || selectedTemplate?.defaultRules}
+                gameName={selectedTemplate?.name}
               />
             </div>
           )}
