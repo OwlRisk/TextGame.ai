@@ -1,6 +1,0 @@
-feat(ui): My Board 与玩家身份显示由 Host 决定
-
-- player-panel: 修复 Heart 未导入；My Board 改为英文并移除空状态提示文案
-- config: 新增 hideRolesInPlayerList，由创建游戏时 Host 决定是否在玩家列表中隐藏身份
-- game-setup-dialog: 确认步骤增加「Hide roles in player list」选项，狼人/黑手党默认勾选
-- page/game-master-chat/game-creator-form: 创建游戏时传入 hideRolesInPlayerList，页面按 config 决定 isHiddenRoleGame
