@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Crown, Volume2, VolumeX, User, Package, Info, Heart } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
@@ -42,6 +42,22 @@ export function PlayerPanelWithBoard({
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [tabValue, setTabValue] = useState("players");
+  const [hasBoardUpdate, setHasBoardUpdate] = useState(false);
+  const prevBoardContentRef = useRef<string>("");
+
+  useEffect(() => {
+    const trimmed = myBoardContentFromHost.trim();
+    if (trimmed && trimmed !== prevBoardContentRef.current) {
+      setHasBoardUpdate(true);
+    }
+    prevBoardContentRef.current = trimmed;
+  }, [myBoardContentFromHost]);
+
+  const handleTabChange = (value: string) => {
+    setTabValue(value);
+    if (value === "board") setHasBoardUpdate(false);
+  };
 
   const openProfile = (p: Player) => {
     setProfilePlayer(p);
@@ -56,16 +72,19 @@ export function PlayerPanelWithBoard({
         onOpenChange={setProfileOpen}
         gameId={gameId}
       />
-      <Tabs defaultValue="players" className="flex flex-col h-full overflow-hidden">
+      <Tabs value={tabValue} onValueChange={handleTabChange} className="flex flex-col h-full overflow-hidden">
         <div className="h-14 px-5 flex items-center border-b border-zinc-900/50 bg-zinc-900/30">
           <TabsList className="grid w-full grid-cols-2 bg-zinc-900 h-10">
             <TabsTrigger value="players" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 text-xs">
               <User className="h-3.5 w-3.5 mr-2" />
               Players
             </TabsTrigger>
-            <TabsTrigger value="board" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 text-xs">
+            <TabsTrigger value="board" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 text-xs relative">
               <Package className="h-3 w-3 mr-1.5" />
               My Board
+              {hasBoardUpdate && (
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-zinc-900" aria-hidden />
+              )}
             </TabsTrigger>
           </TabsList>
         </div>
