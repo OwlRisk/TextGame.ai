@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -47,6 +47,7 @@ export interface GameSession {
   selectedTemplate: GameTemplate | null;
   playerCount: number;
   customRules: string;
+  gameStory?: string;
   gameName: string;
   selectedHostId: string;
   generatedHost?: {
@@ -371,7 +372,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
   const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
+  const [gameStory, setGameStory] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
+  const [isDocFocused, setIsDocFocused] = useState(false);
   const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
     name: string;
     gender?: string;
@@ -385,6 +388,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     if (lastHostId) return lastHostId;
     return getDefaultHost().id;
   });
+
+  const getCombinedRules = useCallback((rulesOverride?: string): string => {
+    const baseRules = (rulesOverride ?? customRules) || selectedTemplate?.defaultRules || "";
+    const story = gameStory.trim();
+    if (!story) return baseRules;
+    if (!baseRules) return `STORY:\n${story}`;
+    const strippedRules = baseRules.replace(/^(STORY|BACKGROUND|WORLD|SETTING|故事|背景|世界观)[\s\S]*?\n\n/i, "");
+    return `STORY:\n${story}\n\n${strippedRules}`;
+  }, [customRules, selectedTemplate, gameStory]);
+
+  const gameDocValue = useMemo(() => getCombinedRules(), [getCombinedRules]);
 
   // Voice output (TTS): GM reads replies aloud. Init false to avoid hydration mismatch;
   // sync from localStorage after mount.
@@ -480,7 +494,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [messages, conversationState, selectedTemplate, playerCount, customRules, gameName, selectedHostId, currentSessionId]);
+  }, [messages, conversationState, selectedTemplate, playerCount, customRules, gameStory, gameName, selectedHostId, currentSessionId]);
 
   // Save current session to state and localStorage
   const saveCurrentSession = () => {
@@ -496,6 +510,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       selectedTemplate: selectedTemplate,
       playerCount: playerCount,
       customRules: customRules,
+      gameStory: gameStory,
       gameName: gameName,
       selectedHostId: selectedHostId,
       createdAt: sessions.find(s => s.id === currentSessionId)?.createdAt || new Date(),
@@ -536,6 +551,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setSelectedTemplate(null);
     setPlayerCount(6);
     setCustomRules("");
+    setGameStory("");
     setGameName("");
     setSelectedHostId(getDefaultHostForTemplate(null).id);
 
@@ -566,6 +582,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       selectedTemplate: resolvedTemplate,
       playerCount: nextPlayerCount,
       customRules: nextRules,
+      gameStory: "",
       gameName: nextGameName,
       selectedHostId: recommendedHost.id,
       createdAt: new Date(),
@@ -579,6 +596,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setSelectedTemplate(resolvedTemplate);
     setPlayerCount(nextPlayerCount);
     setCustomRules(nextRules);
+    setGameStory("");
     setGameName(nextGameName);
     setSelectedHostId(recommendedHost.id);
 
@@ -637,6 +655,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setSelectedTemplate(session.selectedTemplate);
     setPlayerCount(session.playerCount);
     setCustomRules(session.customRules);
+    setGameStory(session.gameStory || "");
     setGameName(session.gameName);
     setSelectedHostId(session.selectedHostId);
     setIsGMTyping(session.messages.length === 0);
@@ -706,7 +725,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           template: selectedTemplate?.id,
           playerCount: playerCount,
           gameName: gameName || undefined,
-          rules: customRules || selectedTemplate?.defaultRules || undefined,
+          rules: getCombinedRules() || undefined,
           conversationState: "greeting"
         },
         maxCompletionTokens: 500
@@ -773,7 +792,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     selectedTemplate,
     playerCount,
     gameName,
-    customRules
+    customRules,
+    gameStory,
+    getCombinedRules
   ]);
 
   useEffect(() => {
@@ -904,20 +925,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '').trim();
     }
 
-    // 5. Handle UPDATE_GENERAL - GM adds background to Rules (prepend to rules)
+    // 5. Handle UPDATE_GENERAL - GM adds background/setting (stored separately from rules)
     const updateGeneralMatch = response.match(/<UPDATE_GENERAL>([\s\S]*?)<\/UPDATE_GENERAL>/i);
     if (updateGeneralMatch && updateGeneralMatch[1]) {
       const background = updateGeneralMatch[1].trim();
       if (background) {
-        setCustomRules((prevRules) => {
-          const existing = prevRules || selectedTemplate?.defaultRules || "";
-          // If rules already start with background-like content, replace it; otherwise prepend
-          const hasBackground = existing.match(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}/i);
-          if (hasBackground) {
-            return background + "\n\n" + existing.replace(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}\n\n/i, '');
-          }
-          return background + (existing ? "\n\n" + existing : "");
-        });
+        setGameStory(background);
       }
       cleanedResponse = cleanedResponse.replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '').trim();
     }
@@ -1045,7 +1058,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         template: selectedTemplate?.id || undefined,
         playerCount: playerCount,
         gameName: gameName || undefined,
-        rules: customRules || selectedTemplate?.defaultRules || undefined,
+        rules: getCombinedRules() || undefined,
         conversationState: conversationState
       };
 
@@ -1285,16 +1298,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           if (finalGeneralMatch && finalGeneralMatch[1]) {
             const background = finalGeneralMatch[1].trim();
             if (background) {
-              flushSync(() => {
-                setCustomRules((prevRules) => {
-                  const existing = prevRules || selectedTemplate?.defaultRules || "";
-                  const hasBackground = existing.match(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}/i);
-                  if (hasBackground) {
-                    return background + "\n\n" + existing.replace(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}\n\n/i, '');
-                  }
-                  return background + (existing ? "\n\n" + existing : "");
-                });
-              });
+              flushSync(() => setGameStory(background));
             }
           }
           
@@ -1801,23 +1805,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
           <div className="px-4 py-3 border-b border-white/10 relative flex-shrink-0">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">Game Rules</h2>
-                  <span className="text-xs text-zinc-500">
-                    You can edit directly
-                  </span>
+            <div className="flex items-center justify-end gap-2">
+              {isRulesBeingEdited && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md flex-shrink-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
                 </div>
-                {isRulesBeingEdited && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md flex-shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
-                  </div>
-                )}
-                <Button
+              )}
+              <Button
                   onClick={async () => {
-                    if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
+                    const rulesForStart = getCombinedRules();
+                    if (!rulesForStart.trim() || rulesForStart === "Custom game rules will be defined through conversation") {
                       toast.error("Please define game rules first");
                       return;
                     }
@@ -1838,7 +1836,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           body: JSON.stringify({
                             playerCount: playerCount || 0,
                             gameTemplate: selectedTemplate?.id || "custom",
-                            rules: customRules,
+                            rules: getCombinedRules(),
                             minPlayers: selectedTemplate?.minPlayers ?? 2,
                             maxPlayers: selectedTemplate?.maxPlayers ?? 20
                           })
@@ -1865,7 +1863,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          gameRules: customRules,
+                          gameRules: getCombinedRules(),
                           gameName: gameName || selectedTemplate?.name || "Custom Game"
                         })
                       });
@@ -1890,7 +1888,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     const gameConfig: GameConfig = {
                       template: tid as "werewolf" | "undercover" | "custom",
                       playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
-                      rules: customRules,
+                      rules: getCombinedRules(),
                       name: gameName || selectedTemplate?.name || "Custom Game",
                       hostId: selectedHostId,
                       tone: "balanced", // Default tone
@@ -1907,57 +1905,26 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   className="h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isStartingGame ? "Starting…" : "Start Game"}
-                </Button>
-              </div>
-              
-              {/* Player Count Info */}
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <span>Players: {playerCount === 0 ? "GM decides" : playerCount + 1}</span>
-                {configuredPlayers.length > 0 && (
-                  <>
-                    <span>•</span>
-                    <span className="text-green-400">{configuredPlayers.length} configured</span>
-                    <button
-                      onClick={async () => {
-                        toast.info("Regenerating players...");
-                        try {
-                          const response = await fetch('/api/generate-players', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              playerCount: playerCount,
-                              gameTemplate: selectedTemplate?.id || "custom",
-                              rules: customRules
-                            })
-                          });
-                          
-                          if (response.ok) {
-                            const data = await response.json();
-                            setConfiguredPlayers(data.players);
-                            toast.success(`Regenerated ${data.count} players!`);
-                          } else {
-                            toast.error("Failed to regenerate");
-                          }
-                        } catch (error) {
-                          toast.error("Failed to regenerate");
-                        }
-                      }}
-                      className="text-violet-400 hover:text-violet-300 underline"
-                    >
-                      Regenerate
-                    </button>
-                  </>
-                )}
-              </div>
+              </Button>
             </div>
           </div>
 
-          <div className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 p-0 overflow-hidden flex flex-col min-h-0 relative">
+            {!isDocFocused && !gameDocValue.trim() && (
+              <div className="absolute top-3 left-4 right-4 text-zinc-500/70 text-sm sm:text-base italic pointer-events-none select-none">
+                Start with a premise, then add roles, phases, and win conditions.
+              </div>
+            )}
             <Textarea
-              key={currentSessionId || 'rules-viewer'}
-              value={customRules || selectedTemplate?.defaultRules || ""}
-              onChange={(e) => setCustomRules(e.target.value)}
-              placeholder="Game rules will appear here as you discuss with the Game Master. You and the GM can edit before starting the game; after starting, rules are locked.\n\nTip: You can write background story (world, era, atmosphere) at the beginning of the rules. The GM can also add it for you."
+              key={currentSessionId || 'game-doc'}
+              value={gameDocValue}
+              onFocus={() => setIsDocFocused(true)}
+              onBlur={() => setIsDocFocused(false)}
+              onChange={(e) => {
+                setCustomRules(e.target.value);
+                if (gameStory) setGameStory("");
+              }}
+              placeholder=""
               className="flex-1 w-full h-full min-h-0 bg-white/5 backdrop-blur-xl border-0 border-white/10 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
             />
           </div>

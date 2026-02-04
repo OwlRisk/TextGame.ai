@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
+import { getGMHintsPrompt } from '@/app/config/gm-hints';
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -41,8 +42,10 @@ export async function POST(request: NextRequest) {
     // When hostPersonality is present: this is the in-game Host (Echo, Nova, etc.) running the game.
     // When hostPersonality is absent: this is the Game Master chat (design phase only)—neutral identity, no named host.
     let systemMessage = hostPersonality
-      ? `You are the game Host: ${hostPersonality.name}. ${hostPersonality.description || ''}${hostPersonality.personality ? ` Personality: ${hostPersonality.personality}` : ''} Run the game, narrate phases, and manage turns. Never break character.`
-      : `You are the Game Master for a social deduction game platform. Your role is to help the user design the game (rules, template, player count) in this chat. Introduce yourself only as "Game Master"—do not use a character name or Host persona. The Host who will run the game (e.g. Echo, Nova) is chosen separately when they start the game. Be friendly, concise, and helpful.`;
+      ? `You are the game Host: ${hostPersonality.name}. ${hostPersonality.description || ''}${hostPersonality.personality ? ` Personality: ${hostPersonality.personality}` : ''} Run the game, narrate phases, and manage turns. Never break character. Reply in English unless the user or game context is clearly in another language.`
+      : `You are the Game Master for a social deduction game platform. Your role is to help the user design the game (rules, template, player count) in this chat. Introduce yourself only as "Game Master"—do not use a character name or Host persona. The Host who will run the game (e.g. Echo, Nova) is chosen separately when they start the game. Be friendly, concise, and helpful.
+
+LANGUAGE (required): The product default is English. You MUST reply in English unless the user writes to you primarily in another language (e.g. Chinese)—then you may match their language. Do not mix Chinese (or other languages) into an otherwise English reply. Use English terms for game concepts (e.g. Werewolf, Undercover, custom; roles, phases, win conditions), not 狼人杀/卧底/自定义 or 流程/胜利条件.`;
 
     if (gameContext) {
       systemMessage += `\n\nGame Context:\n`;
@@ -74,6 +77,7 @@ export async function POST(request: NextRequest) {
 
     if (!hostPersonality) {
       systemMessage += `\n\nContext: This chat is for game setup. The actual game (phases, roles, etc.) runs on a separate screen after the user clicks "Create Game". Use your judgment to guide appropriately.`;
+      systemMessage += getGMHintsPrompt();
     }
     if (gameContext?.conversationState === "confirmation") {
       systemMessage += `\n\nYou are in the confirmation state. Configuration is complete. A "Create Game" button will appear when the user is ready to proceed—use your judgment to help them get there.`;
