@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Volume2, VolumeX } from "lucide-react";
+import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import type { DiscoverPreset } from "@/app/components/discover-page";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -30,7 +30,8 @@ import {
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
-import { useVoiceInput, useVoiceOutput, prepareTextForTTS } from "@/lib/voice";
+import { useVoiceInput } from "@/lib/voice";
+import { VoiceWaveform } from "@/app/components/voice-waveform";
 
 interface ChatMessage {
   id: string;
@@ -400,26 +401,134 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   const gameDocValue = useMemo(() => getCombinedRules(), [getCombinedRules]);
 
-  // Voice output (TTS): GM reads replies aloud. Init false to avoid hydration mismatch;
-  // sync from localStorage after mount.
-  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
-  const voiceOutputEnabledRef = useRef(voiceOutputEnabled);
-  voiceOutputEnabledRef.current = voiceOutputEnabled;
-  const { speak: speakTTS, speakQueued, stop: stopTTS, supported: ttsSupported } = useVoiceOutput();
+  /** Quick reply chips shown when GM has sent the first message but no A)/B) options were parsed */
+  const DEFAULT_FIRST_CHAT_CHIPS: { label: string; value: string; fullLabel?: string }[] = [
+    { label: "Werewolf", value: "I want to play Werewolf." },
+    { label: "Undercover", value: "I want to play Undercover." },
+    { label: "Custom game", value: "I'd like a fully custom social deduction game." },
+    { label: "What can I do?", value: "What can I do?" },
+  ];
 
-  // Only render client-only UI (e.g. TTS button) after mount to avoid hydration mismatch.
+  /** Strip markdown from quick-reply labels so "**Mini Werewolf**" shows as "Mini Werewolf" */
+  const stripChipLabel = (raw: string): string =>
+    (raw || "")
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/\*(.*?)\*/g, "$1")
+      .replace(/`(.*?)`/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const MAX_CHIP_LABEL = 52;
+
+  /** Parse last GM message for option prompts (e.g. "A)", "B)" or "1.", "2.") to show as clickable chips; fallback to default first-chat chips when none parsed. */
+  const suggestionChips = useMemo(() => {
+    const lastGM = [...messages].reverse().find((m) => m.role === "gm" && m.content?.trim());
+    if (!lastGM?.content) return [];
+    const text = lastGM.content.trim();
+    const chips: { label: string; value: string; fullLabel?: string }[] = [];
+    const seen = new Set<string>();
+    const trimLabel = (rest: string) =>
+      rest.length > MAX_CHIP_LABEL ? rest.slice(0, MAX_CHIP_LABEL).trim() + "…" : rest;
+    // A) / B) / A. / B. or Option A: style
+    const letterOption = /^\s*([A-Z])[).]\s*(.+)$/gm;
+    let m;
+    while ((m = letterOption.exec(text)) !== null) {
+      const key = m[1].toUpperCase();
+      const rest = stripChipLabel(m[2] || "");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      chips.push({ label: trimLabel(rest) || key, value: key, fullLabel: rest.length > MAX_CHIP_LABEL ? rest : undefined });
+    }
+    // Option A: / Option B:
+    if (chips.length === 0) {
+      const optionLabel = /^\s*Option\s+([A-Z]):\s*(.+)$/gim;
+      while ((m = optionLabel.exec(text)) !== null) {
+        const key = m[1].toUpperCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const rest = stripChipLabel(m[2] || "");
+        chips.push({ label: trimLabel(rest) || key, value: key, fullLabel: rest.length > MAX_CHIP_LABEL ? rest : undefined });
+      }
+    }
+    // 1. / 2. numbered style
+    if (chips.length === 0) {
+      const numbered = /^\s*(\d+)[).]\s*(.+)$/gm;
+      while ((m = numbered.exec(text)) !== null) {
+        const num = m[1];
+        const rest = stripChipLabel(m[2] || "");
+        if (seen.has(num)) continue;
+        seen.add(num);
+        chips.push({ label: trimLabel(rest) || num, value: num, fullLabel: rest.length > MAX_CHIP_LABEL ? rest : undefined });
+      }
+    }
+    if (chips.length >= 2 && chips.length <= 8) return chips;
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === "gm") return DEFAULT_FIRST_CHAT_CHIPS;
+    return [];
+  }, [messages]);
+
+  /** LLM-generated quick replies; when set, they replace parsed/default chips */
+  const [llmQuickReplies, setLlmQuickReplies] = useState<string[]>([]);
+  const lastGMContentForSuggestionsRef = useRef<string>("");
+  const isStreamingRef = useRef(false);
+  const isGMTypingRef = useRef(false);
+  isStreamingRef.current = isStreaming;
+  isGMTypingRef.current = isGMTyping;
+
+  useEffect(() => {
+    if (isGMTypingRef.current || isStreamingRef.current) return;
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg || lastMsg.role !== "gm" || !lastMsg.content?.trim()) {
+      setLlmQuickReplies([]);
+      lastGMContentForSuggestionsRef.current = "";
+      return;
+    }
+    const content = lastMsg.content.trim().slice(0, 500);
+    if (content === lastGMContentForSuggestionsRef.current) return;
+    lastGMContentForSuggestionsRef.current = content;
+
+    setLlmQuickReplies([]);
+    const lang = /[\u4e00-\u9fff]/.test(content) ? "zh" : "en";
+    fetch("/api/suggest-gm-replies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+        language: lang,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed"))))
+      .then((data: { suggestions?: string[] }) => {
+        if (Array.isArray(data.suggestions)) {
+          setLlmQuickReplies(data.suggestions.slice(0, 5));
+        }
+      })
+      .catch(() => {});
+  }, [messages]);
+
+  /** Chips to show: LLM suggestions first, else parsed/default. Strip ** and * from LLM text so no asterisks show. */
+  const displayChips = useMemo(() => {
+    if (llmQuickReplies.length > 0) {
+      return llmQuickReplies.map((text) => {
+        const clean = stripChipLabel(text);
+        return {
+          label: clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean,
+          value: clean,
+          fullLabel: clean.length > 52 ? clean : undefined,
+        };
+      });
+    }
+    return suggestionChips;
+  }, [llmQuickReplies, suggestionChips]);
+
+  // Only render client-only UI after mount to avoid hydration mismatch.
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
-  useEffect(() => {
-    if (!mounted) return;
-    setVoiceOutputEnabled(localStorage.getItem("gmVoiceOutput") === "1");
-  }, [mounted]);
-
   // Voice input (STT)
   const voice = useVoiceInput();
-  const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
+  const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   // Resize on mount and input change
   useEffect(() => {
@@ -1069,10 +1178,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       let processedEditTags = new Set<string>(); // Track which edit tags we've already processed to avoid duplicates
       let lastRulesPanelUpdate = 0; // Throttle rules panel updates (ms)
       const RULES_UPDATE_THROTTLE_MS = 80; // Min interval between incremental rules updates
-      let lastSpokenSentenceCount = 0; // For sentence-by-sentence TTS (don't wait for full response)
-
-      stopTTS(); // Clear any TTS from previous response before streaming
-
       await streamAIChatResponse(
         {
           messages: apiMessages,
@@ -1235,17 +1340,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           
           const displayContent = cleanForDisplay(fullResponse);
 
-          // Sentence-by-sentence TTS: speak each complete sentence as it arrives (no need to wait for full response)
-          if (voiceOutputEnabledRef.current && displayContent.trim()) {
-            const parts = displayContent.split(/(?<=[。！？.!?\n])/);
-            const completeSentences = parts.slice(0, -1).map((s) => s.trim()).filter(Boolean);
-            for (let i = lastSpokenSentenceCount; i < completeSentences.length; i++) {
-              const sentence = completeSentences[i];
-              if (sentence && /[\p{L}\p{N}]/u.test(sentence)) speakQueued(sentence, { rate: 0.94 });
-            }
-            lastSpokenSentenceCount = completeSentences.length;
-          }
-          
           // Add temp message only when first chunk with content arrives
           setMessages(prev => {
             const hasTempMessage = prev.some(msg => msg.id === tempMessageId);
@@ -1303,23 +1397,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           }
           
           setIsRulesBeingEdited(false); // Reset editing indicator after final update
-          
-          // TTS: speak any remainder (incomplete last sentence) — complete sentences already spoken in onChunk
-          const rawForTTS = cleanedResponse
-            .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
-            .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
-            .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
-            .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
-            .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
-            .trim();
-          if (voiceOutputEnabledRef.current && rawForTTS) {
-            const parts = rawForTTS.split(/(?<=[。！？.!?\n])/);
-            const remainder = (parts[parts.length - 1] || '').trim();
-            const plainRemainder = remainder ? prepareTextForTTS(remainder, 4000) : '';
-            if (plainRemainder && /[\p{L}\p{N}]/u.test(plainRemainder)) {
-              setTimeout(() => speakQueued(plainRemainder, { rate: 0.94 }), 120);
-            }
-          }
           
           // Replace temp message with final message (ensure only one message)
           // Use cleaned response which has all editing tags removed
@@ -1574,22 +1651,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               </div>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {mounted && ttsSupported && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    const next = !voiceOutputEnabled;
-                    setVoiceOutputEnabled(next);
-                    if (typeof window !== "undefined") localStorage.setItem("gmVoiceOutput", next ? "1" : "0");
-                    if (!next) stopTTS();
-                  }}
-                  className={`h-9 w-9 rounded-lg transition-all ${voiceOutputEnabled ? "text-amber-400 hover:bg-amber-500/10" : "text-zinc-500 hover:text-white hover:bg-white/5"}`}
-                  title={voiceOutputEnabled ? "Turn off read aloud" : "Read aloud GM replies"}
-                >
-                  {voiceOutputEnabled ? <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" /> : <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" />}
-                </Button>
-              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -1675,124 +1736,121 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5 pointer-events-none" />
             
             <div className="max-w-none mx-auto relative space-y-3">
-              {isRecording && !voiceError && (
-                <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3 bg-red-500/10 border border-red-500/30 rounded-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
-                  <div className="relative flex-shrink-0">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-full bg-red-500/50 animate-ping" />
-                      <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white relative z-10" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-medium text-red-300">Recording</span>
-                      <div className="flex items-center gap-0.5">
-                        {[0, 1, 2, 3, 4].map((i) => (
-                          <div
-                            key={i}
-                            className="w-1 bg-red-400 rounded-full animate-pulse"
-                            style={{ height: "6px", animationDelay: `${i * 80}ms` }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm text-white truncate">{voiceTranscript || "Listening..."}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+              {(isRecording || isTranscribing) && !voiceError ? (
+                <div className="relative w-full px-1">
+                  <div
+                    className="flex items-center gap-2 w-full rounded-full bg-white/[0.08] backdrop-blur-xl border border-white/20 px-2 py-2 shadow-xl"
+                    style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}
+                  >
                     <Button
-                      onClick={voiceCancel}
-                      size="sm"
+                      type="button"
                       variant="ghost"
-                      className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-lg hover:bg-red-500/20 text-red-300 hover:text-red-200"
+                      size="icon"
+                      className="flex-shrink-0 h-11 w-11 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+                      onClick={voiceCancel}
+                      disabled={isTranscribing}
+                      title="Cancel"
                     >
-                      <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <X className="h-5 w-5" />
                     </Button>
+                    <div className="flex-1 min-w-0 relative flex items-center h-11 px-3">
+                      <VoiceWaveform 
+                        analyser={voice.liveAnalyser}
+                        duration={voice.duration}
+                        className="w-full h-full"
+                        barClassName="bg-violet-400/90"
+                        waveColor="rgba(192, 132, 252, 0.95)"
+                      />
+                    </div>
                     <Button
+                      type="button"
+                      size="icon"
+                      className="flex-shrink-0 h-11 w-11 rounded-full bg-white hover:bg-zinc-100 text-zinc-900 disabled:opacity-40 shadow-lg transition-all"
+                      disabled={isTranscribing}
+                      title="Finish and insert"
                       onClick={async () => {
-                        const t = voiceTranscript.trim();
-                        if (t) await handleSend(t);
-                        voiceConfirm();
+                        const t = await voiceConfirm();
+                        if (t) {
+                          setInput(t);
+                          requestAnimationFrame(() => { inputRef.current?.focus(); resizeInput(); });
+                        }
                       }}
-                      size="sm"
-                      disabled={!voiceTranscript.trim()}
-                      className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                     >
-                      <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <Check className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
-              )}
-              
-              <div className="flex gap-2 sm:gap-3 items-end">
-                <div className="flex-1 relative group min-w-0">
-                  <div className="absolute inset-0 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 rounded-xl sm:rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-                  <Textarea
-                    ref={inputRef}
-                    value={isRecording && voiceTranscript ? voiceTranscript : input}
-                    onChange={(e) => {
-                      if (!isRecording) {
-                        setInput(e.target.value);
-                        requestAnimationFrame(() => resizeInput());
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey && !isRecording) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    placeholder={
-                      isGMTyping || isStreaming
-                        ? "GM is thinking..."
-                        : isRecording
-                          ? "Speaking..."
-                          : "Message Game Master…"
-                    }
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-xl sm:rounded-2xl px-4 sm:px-5 py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
-                    style={{ minHeight: `${MIN_INPUT_H}px`, maxHeight: `${MAX_INPUT_H}px` }}
-                    disabled={isGMTyping || isRecording}
-                    rows={1}
-                  />
-                </div>
-                <Button
-                  onClick={() => {
-                    if (isRecording) {
-                      voiceCancel();
-                      return;
-                    }
-                    if (!voiceSupported) {
-                      toast.error("Voice input is not supported in your browser");
-                      return;
-                    }
-                    voiceStart();
-                  }}
-                  disabled={isGMTyping || (!mounted ? true : !voiceSupported)}
-                  size="icon"
-                  className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 transition-all duration-200 disabled:opacity-50 disabled:shadow-none relative overflow-hidden group ${
-                    isRecording
-                      ? "bg-gradient-to-br from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-red-500/30 ring-2 ring-red-500/50"
-                      : "bg-zinc-700/80 hover:bg-zinc-600/80 border border-white/10 hover:border-white/20"
-                  }`}
-                  title={isRecording ? "Cancel recording" : "Voice input"}
-                >
-                  {isRecording ? (
-                    <>
-                      <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-red-500/20 animate-ping" />
-                      <MicOff className="h-4 w-4 sm:h-5 sm:w-5 relative z-10 text-white" />
-                    </>
-                  ) : (
-                    <Mic className="h-4 w-4 sm:h-5 sm:w-5 relative z-10 text-zinc-300" />
+              ) : (
+                <>
+                  {displayChips.length > 0 && !isGMTyping && !isStreaming && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <span className="text-xs text-zinc-500 self-center mr-1">Quick reply:</span>
+                      {displayChips.map((chip) => (
+                        <Button
+                          key={chip.value}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          title={chip.fullLabel ?? chip.label}
+                          className="h-auto min-h-8 max-w-[280px] sm:max-w-[320px] px-3 py-1.5 text-sm text-left whitespace-normal border-white/20 bg-white/5 hover:bg-white/10 text-zinc-200 hover:text-white leading-snug"
+                          onClick={() => handleSend(chip.value)}
+                        >
+                          {chip.label}
+                        </Button>
+                      ))}
+                    </div>
                   )}
-                </Button>
-                <Button
-                  onClick={() => handleSend()}
-                  disabled={!input.trim() || isGMTyping}
-                  size="icon"
-                  className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 bg-violet-600 hover:bg-violet-500 border border-violet-500/30 hover:border-violet-400/40 transition-all duration-200 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
-                >
-                  <Send className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                </Button>
-              </div>
+                  <div className="flex gap-2 sm:gap-3 items-end">
+                    <div className="flex-1 relative group min-w-0">
+                      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 rounded-xl sm:rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                      <Textarea
+                        ref={inputRef}
+                        value={input}
+                        onChange={(e) => {
+                          setInput(e.target.value);
+                          requestAnimationFrame(() => resizeInput());
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend();
+                          }
+                        }}
+                        placeholder={
+                          isGMTyping || isStreaming ? "GM is thinking..." : "Message Game Master…"
+                        }
+                        className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-xl sm:rounded-2xl px-4 sm:px-5 py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
+                        style={{ minHeight: `${MIN_INPUT_H}px`, maxHeight: `${MAX_INPUT_H}px` }}
+                        disabled={isGMTyping}
+                        rows={1}
+                      />
+                    </div>
+                    <Button
+                      onClick={() => {
+                        if (!voiceSupported) {
+                          toast.error("Voice input is not supported in your browser");
+                          return;
+                        }
+                        voiceStart();
+                      }}
+                      disabled={isGMTyping || (!mounted ? true : !voiceSupported)}
+                      size="icon"
+                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 transition-all duration-200 disabled:opacity-50 disabled:shadow-none bg-zinc-700/80 hover:bg-zinc-600/80 border border-white/10 hover:border-white/20"
+                      title="Voice input"
+                    >
+                      <Mic className="h-4 w-4 sm:h-5 sm:w-5 relative z-10 text-zinc-300" />
+                    </Button>
+                    <Button
+                      onClick={() => handleSend()}
+                      disabled={!input.trim() || isGMTyping}
+                      size="icon"
+                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 bg-violet-600 hover:bg-violet-500 border border-violet-500/30 hover:border-violet-400/40 transition-all duration-200 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
+                    >
+                      <Send className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

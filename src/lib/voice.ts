@@ -64,85 +64,166 @@ function getDefaultLang(): string {
   return 'en-US';
 }
 
+/** Map full locale to Whisper language code (e.g. zh-CN -> zh, en-US -> en) */
+function langToWhisperCode(lang: string): string {
+  const base = lang.split('-')[0].toLowerCase();
+  return base || 'en';
+}
+
 export function useVoiceInput(options: UseVoiceInputOptions = {}) {
   const { onConfirm, lang } = options;
   const langToUse = lang ?? getDefaultLang();
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<any>(null);
+  /** AnalyserNode for waveform viz; created synchronously with stream to avoid zero data */
+  const [liveAnalyser, setLiveAnalyser] = useState<AnalyserNode | null>(null);
+  /** Recording duration in seconds */
+  const [duration, setDuration] = useState(0);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const startTimeRef = useRef<number>(0);
+  const timerRef = useRef<number>(0);
 
-  useEffect(() => {
-    const SR = typeof window !== 'undefined' ? ((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition) : undefined;
-    if (!SR) return;
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = langToUse;
-    rec.maxAlternatives = 1;
-    rec.onresult = (e: any) => {
-      const results = e.results;
-      if (!results?.length) return;
-      let full = '';
-      for (let i = 0; i < results.length; i++) {
-        const r = results[i][0];
-        if (r?.transcript) full += (full ? ' ' : '') + r.transcript;
-      }
-      if (full) {
-        setTranscript(full);
-        setError(null);
-      }
-    };
-    rec.onerror = (e: any) => {
-      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
-        setError('Microphone access denied. Please allow mic in browser settings.');
-      } else if (e.error === 'no-speech') {
-        setError('No speech detected. Try again.');
-      } else {
-        setError('Voice input failed. Try again.');
-      }
-    };
-    rec.onend = () => {
-      // Keep UI in recording state; user confirms or cancels.
-    };
-    recognitionRef.current = rec;
-    return () => {
-      try { rec.abort(); } catch (_) {}
-      recognitionRef.current = null;
-    };
-  }, [langToUse]);
-
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     setError(null);
     setTranscript('');
-    setIsRecording(true);
+    setDuration(0);
+    chunksRef.current = [];
+    setLiveAnalyser(null);
+    sourceNodeRef.current = null;
     try {
-      recognitionRef.current?.start();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const ctx = new AudioContext();
+      if (ctx.state === "suspended") await ctx.resume();
+      audioContextRef.current = ctx;
+
+      // Use a clone for visualization so MediaRecorder and Analyser don't compete for the same stream
+      const streamForViz = stream.clone();
+      const source = ctx.createMediaStreamSource(streamForViz);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.3;
+      analyser.minDecibels = -80;
+      analyser.maxDecibels = -10;
+      source.connect(analyser);
+
+      sourceNodeRef.current = source;
+      setLiveAnalyser(analyser);
+
+      const recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size) chunksRef.current.push(e.data);
+      };
+      recorderRef.current = recorder;
+      recorder.start(200);
+      setIsRecording(true);
+
+      startTimeRef.current = Date.now();
+      timerRef.current = window.setInterval(() => {
+        setDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }, 1000);
     } catch (e) {
       setError('Could not start microphone. Please allow mic access.');
-      setIsRecording(false);
+      streamRef.current = null;
+      audioContextRef.current?.close();
+      audioContextRef.current = null;
+      recorderRef.current = null;
+      setLiveAnalyser(null);
     }
   }, []);
 
-  const cancel = useCallback(() => {
-    try { recognitionRef.current?.stop(); } catch (_) {}
-    setIsRecording(false);
-    setTranscript('');
-    setError(null);
+  const stopRecording = useCallback(() => {
+    const rec = recorderRef.current;
+    const stream = streamRef.current;
+    const ctx = audioContextRef.current;
+    const sourceNode = sourceNodeRef.current;
+    recorderRef.current = null;
+    streamRef.current = null;
+    audioContextRef.current = null;
+    sourceNodeRef.current = null;
+    setLiveAnalyser(null);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = 0;
+    }
+    try {
+      sourceNode?.disconnect();
+    } catch (_) {}
+    try {
+      if (rec?.state !== 'inactive') rec?.stop();
+    } catch (_) {}
+    stream?.getTracks().forEach((t) => t.stop());
+    ctx?.close();
   }, []);
 
-  const confirm = useCallback(() => {
-    try { recognitionRef.current?.stop(); } catch (_) {}
-    const t = transcript.trim();
-    if (t && onConfirm) onConfirm(t);
+  const cancel = useCallback(() => {
+    stopRecording();
+    chunksRef.current = [];
     setIsRecording(false);
+    setIsTranscribing(false);
     setTranscript('');
     setError(null);
-  }, [transcript, onConfirm]);
+    setDuration(0);
+  }, [stopRecording]);
 
-  const supported = typeof window !== 'undefined' && !!((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition);
+  const confirm = useCallback(async (): Promise<string | null> => {
+    stopRecording();
+    const chunks = chunksRef.current;
+    chunksRef.current = [];
+    setIsRecording(false);
+    if (!chunks.length) {
+      setError('No audio recorded. Try again.');
+      return null;
+    }
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    if (blob.size < 1000) {
+      setError('Recording too short. Speak for at least a second.');
+      return null;
+    }
+    setIsTranscribing(true);
+    setError(null);
+    try {
+      // Whisper expects a file with a name and correct extension
+      const file = new File([blob], 'audio.webm', { type: blob.type });
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('language', langToWhisperCode(langToUse));
+      const res = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data?.error || 'Transcription failed';
+        setError(msg);
+        return null;
+      }
+      const text = (data?.text ?? '').trim();
+      setTranscript(text);
+      if (text && onConfirm) onConfirm(text);
+      return text || null;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Transcription failed';
+      setError(msg);
+      return null;
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, [langToUse, onConfirm, stopRecording]);
 
-  return { isRecording, transcript, error, start, cancel, confirm, supported };
+  const supported =
+    typeof window !== 'undefined' &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    !!window.MediaRecorder;
+
+  return { isRecording, isTranscribing, transcript, error, start, cancel, confirm, supported, liveAnalyser, duration };
 }
 
 export function useVoiceOutput() {

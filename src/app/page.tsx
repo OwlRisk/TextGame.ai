@@ -20,11 +20,8 @@ import { Input } from "@/app/components/ui/input";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { getHostById, getDefaultHost } from "@/app/config/host-config";
-import { getVoiceForHost, getVoiceForPlayer } from "@/lib/tts-voices";
 import { pickTraitsForPlayers } from "@/app/config/ai-player-personalities";
 import { getAIChatResponse, streamAIChatResponse } from "@/lib/openai";
-import { stopTTS, speak, speakBySentences } from "@/lib/tts";
-import { prepareTextForTTS } from "@/lib/voice";
 import {
   type GamePhaseState,
   type GamePhaseKind,
@@ -53,21 +50,6 @@ function getDefaultAICountForTemplate(template?: string): number {
     case "mafia": return 9;
     default: return 6;
   }
-}
-
-/** Get TTS voice for the current game host: use AI-chosen ttsVoice if present, else gender/name-based. */
-function getHostVoice(
-  config: { hostId?: string; generatedHost?: { name?: string; personality?: string; gender?: string; ttsVoice?: string } },
-  hostName: string
-): string {
-  const effectiveHost = config.generatedHost ?? (config.hostId ? getHostById(config.hostId) : undefined);
-  if (effectiveHost?.ttsVoice) return effectiveHost.ttsVoice;
-  return getVoiceForHost(
-    config.hostId ?? "",
-    hostName,
-    config.generatedHost?.personality ?? effectiveHost?.description,
-    effectiveHost?.gender
-  );
 }
 
 interface Game {
@@ -104,8 +86,6 @@ export default function HomePage() {
   const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
   /** Private messages from Host to players, keyed by playerId */
   const [privateMessages, setPrivateMessages] = useState<Record<string, Array<{ id: string; from: string; content: string; timestamp: Date }>>>({});
-  /** TTS: speak new messages with OpenAI TTS (per-player voice); persisted in localStorage */
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
   /** Game progress text — editable by AI Host only; keyed by gameId */
   const [gameProgressByGameId, setGameProgressByGameId] = useState<Record<string, string>>({});
   // Background merged into Rules - no separate state needed
@@ -138,24 +118,6 @@ export default function HomePage() {
     gamePhaseStateRef.current = gamePhaseState;
     selectedGameIdRef.current = selectedGameId;
   }, [messages, players, games, gamePhase, gamePhaseState, selectedGameId]);
-
-  // Show toast once when TTS fails (e.g. missing OPENAI_API_KEY)
-  const ttsErrorShownRef = useRef(false);
-  useEffect(() => {
-    const onTtsError = (e: Event) => {
-      if (ttsErrorShownRef.current) return;
-      ttsErrorShownRef.current = true;
-      const msg = (e as CustomEvent<string>).detail;
-      toast.error(
-        msg?.includes('API key') || msg?.includes('OPENAI')
-          ? 'Voice requires OPENAI_API_KEY to be configured'
-          : 'Voice playback failed. Please check your network or try again later.',
-        { duration: 5000 }
-      );
-    };
-    window.addEventListener('tts-error', onTtsError);
-    return () => window.removeEventListener('tts-error', onTtsError);
-  }, []);
 
   // Fetch AI-generated suggestion prompts when in intro and host has sent a message
   useEffect(() => {
@@ -220,7 +182,6 @@ export default function HomePage() {
           }
           setPrivateMessages(pm);
         }
-        if (typeof state.voiceEnabled === 'boolean') setVoiceEnabled(state.voiceEnabled);
         if (state.gameProgressByGameId && typeof state.gameProgressByGameId === 'object') {
           setGameProgressByGameId(state.gameProgressByGameId);
         }
@@ -271,7 +232,6 @@ export default function HomePage() {
           gamePhase,
           gamePhaseState,
           privateMessages: trimmedPrivateMessages,
-          voiceEnabled,
           gameProgressByGameId,
           myBoardContentByGameId,
           sectionsByGameId,
@@ -309,7 +269,6 @@ export default function HomePage() {
               gamePhase,
               gamePhaseState,
               privateMessages: minPm,
-              voiceEnabled,
               gameProgressByGameId,
               myBoardContentByGameId,
               sectionsByGameId,
@@ -325,7 +284,7 @@ export default function HomePage() {
     }, 1000); // Debounce saves
     
     return () => clearTimeout(timeoutId);
-  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, voiceEnabled, gameProgressByGameId, myBoardContentByGameId, sectionsByGameId, isHydrated]);
+  }, [games, selectedGameId, selectedChannelId, messages, players, gamePhase, gamePhaseState, privateMessages, gameProgressByGameId, myBoardContentByGameId, sectionsByGameId, isHydrated]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -336,19 +295,6 @@ export default function HomePage() {
       timeoutRefs.current = [];
     };
   }, []);
-
-  // Stop TTS when leaving game room (e.g. to Discover / Home / My Games or another channel)
-  useEffect(() => {
-    const inGameRoom =
-      selectedGameId &&
-      selectedGameId !== "home" &&
-      selectedGameId !== "discover" &&
-      selectedGameId !== "my-games" &&
-      selectedChannelId === "game-room";
-    if (!inGameRoom) {
-      stopTTS();
-    }
-  }, [selectedGameId, selectedChannelId]);
 
   // Fetch AI-suggested sections when entering a game that has no sections yet
   useEffect(() => {
@@ -433,12 +379,13 @@ export default function HomePage() {
     return messageId;
   }, []);
 
-  /** Update a streaming message's content (optional ttsHandled: mark as already spoken so chat-area skips TTS) */
-  const updateStreamingMessage = useCallback((messageId: string, content: string, isComplete: boolean = false, opts?: { ttsHandled?: boolean }) => {
+  /** Update a streaming message's content. When completing, empty content is replaced with "…" so messages never appear blank. */
+  const updateStreamingMessage = useCallback((messageId: string, content: string, isComplete: boolean = false) => {
     if (!isMountedRef.current) return;
+    const displayContent = isComplete && !content?.trim() ? "…" : content;
     setMessages(prev => prev.map(m => 
       m.id === messageId 
-        ? { ...m, content, isStreaming: !isComplete, ...(opts?.ttsHandled ? { ttsHandled: true } : {}) }
+        ? { ...m, content: displayContent, isStreaming: !isComplete }
         : m
     ));
   }, []);
@@ -492,7 +439,6 @@ export default function HomePage() {
       isMuted: false,
       background: host.description ?? undefined,
       gender: "gender" in host ? host.gender : undefined,
-      ttsVoice: (host as { ttsVoice?: string }).ttsVoice ?? getVoiceForHost(config.hostId, host.name, host.description ?? config.generatedHost?.personality, "gender" in host ? host.gender : undefined),
     };
 
     const aiPlayers: Player[] = [];
@@ -520,7 +466,6 @@ export default function HomePage() {
           personality: configPlayer.personality || "Friendly and observant",
           background: configPlayer.background || "A game enthusiast",
           gender: configPlayer.gender as "male" | "female" | "other" | undefined,
-          ttsVoice: getVoiceForPlayer(configPlayer.gender, configPlayer.name, configPlayer.personality),
         });
       });
     } else {
@@ -540,7 +485,6 @@ export default function HomePage() {
           personality: traits.personality,
           background: traits.background,
           gender: "other",
-          ttsVoice: getVoiceForPlayer("other", `Player ${i + 1}`, traits.personality),
         });
       }
     }
@@ -655,42 +599,6 @@ The host just explained the rules and asked if everyone is ready. Respond natura
     };
 
     (async () => {
-      if (voiceEnabled) {
-        try {
-          const { message } = await getAIChatResponse(greetingRequest);
-          if (!isMountedRef.current) return;
-          const greeting = (message || "").trim() || fallbackGreeting;
-          const plain = prepareTextForTTS(greeting, 3000);
-          const voiceId = getHostVoice(config, host.name);
-          const show = () => {
-            if (!isMountedRef.current) return;
-            setMessages(prev => prev.map((m) =>
-              m.id === "msg-1" ? { ...m, content: plain || greeting, isStreaming: false, ttsHandled: true } : m
-            ));
-            const mainTimeout = setTimeout(scheduleReadyReplies, 2000);
-            timeoutRefs.current.push(mainTimeout);
-          };
-          if (plain) {
-            speakBySentences(plain, voiceId, {
-              onSentenceShown: (textSoFar) => {
-                if (!isMountedRef.current) return;
-                setMessages(prev => prev.map((m) =>
-                  m.id === "msg-1" ? { ...m, content: textSoFar, isStreaming: true } : m
-                ));
-              },
-              onComplete: show,
-            });
-          } else show();
-        } catch (e) {
-          if (!isMountedRef.current) return;
-          setMessages(prev => prev.map((m) =>
-            m.id === "msg-1" ? { ...m, content: fallbackGreeting, isStreaming: false } : m
-          ));
-          const mainTimeout = setTimeout(scheduleReadyReplies, 2000);
-          timeoutRefs.current.push(mainTimeout);
-        }
-        return;
-      }
       let fullContent = "";
       try {
         await streamAIChatResponse(
@@ -731,7 +639,7 @@ The host just explained the rules and asked if everyone is ready. Respond natura
       }
     })();
 
-  }, [userId, addMessage, voiceEnabled]);
+  }, [userId, addMessage]);
 
   const handleCreateGame = useCallback(async (config: GameConfig) => {
     const toastId = "create-game";
@@ -1080,35 +988,16 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
             scheduleNextSpeaker();
           };
 
-          if (voiceEnabled) {
-            try {
-              const { message } = await getAIChatResponse(playerChatReq);
-              if (!isMountedRef.current) return;
-              const finalText = (message || "").trim() || "I'm thinking...";
-              const plain = prepareTextForTTS(finalText, 3000);
-              const voiceId = (selectedPlayer as Player & { ttsVoice?: string })?.ttsVoice ?? getVoiceForPlayer(selectedPlayer.gender, selectedPlayer.name, selectedPlayer.personality);
-              const show = () => { if (isMountedRef.current) { updateStreamingMessage(messageId, plain || finalText, true, { ttsHandled: true }); scheduleNextSpeaker(); } };
-              if (plain) {
-                speakBySentences(plain, voiceId, {
-                  onSentenceShown: (textSoFar) => { if (isMountedRef.current) updateStreamingMessage(messageId, textSoFar, false); },
-                  onComplete: show,
-                });
-              } else show();
-            } catch (e) {
-              onError();
-            }
-          } else {
-            let fullContent = "";
-            try {
-              await streamAIChatResponse(
-                playerChatReq,
-                (chunk) => { if (isMountedRef.current) { fullContent += chunk; updateStreamingMessage(messageId, fullContent, false); } },
-                () => { if (isMountedRef.current) { updateStreamingMessage(messageId, fullContent.trim() || "I'm thinking...", true); scheduleNextSpeaker(); } },
-                onError
-              );
-            } catch (e) {
-              onError();
-            }
+          let fullContent = "";
+          try {
+            await streamAIChatResponse(
+              playerChatReq,
+              (chunk) => { if (isMountedRef.current) { fullContent += chunk; updateStreamingMessage(messageId, fullContent, false); } },
+              () => { if (isMountedRef.current) { updateStreamingMessage(messageId, fullContent.trim() || "I'm thinking...", true); scheduleNextSpeaker(); } },
+              onError
+            );
+          } catch (e) {
+            onError();
           }
           timeoutRefs.current = timeoutRefs.current.filter(x => x !== messageTimeout);
         }, aiReplyDelayMs);
@@ -1120,7 +1009,7 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
       timeoutRefs.current = timeoutRefs.current.filter(x => x !== t);
     }, initialDelay);
     timeoutRefs.current.push(t);
-  }, [addMessage, addEventNotification, userId, voiceEnabled, addPrivateMessage, addStreamingMessage, updateStreamingMessage]);
+  }, [addMessage, addEventNotification, userId, addPrivateMessage, addStreamingMessage, updateStreamingMessage]);
 
   const hostPostEventRef = useRef<(eventDescription: string, opts?: { nextSpeakerId?: string | null; setPhase?: GamePhaseKind | string; autoAdvance?: { afterMs: number; nextEvent: string; nextPhase: GamePhaseKind | string }; skipScheduleNextSpeaker?: boolean }) => Promise<void>>(null!);
 
@@ -1309,38 +1198,6 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
         }
       };
 
-      // When voice is on: sentence-by-sentence so text appears in sync with voice; show exactly what we speak
-      if (voiceEnabled) {
-        const messageId = addStreamingMessage(msgPayload);
-        try {
-          const { message } = await getAIChatResponse(chatRequest);
-          if (!isMountedRef.current) return;
-          const finalText = (message || "").trim() || desc;
-          const plain = prepareTextForTTS(finalText, 3000);
-          const voiceId = getHostVoice(currentGame?.config ?? {}, gameMaster?.name ?? "");
-          const showAndPhase = () => {
-            if (!isMountedRef.current) return;
-            updateStreamingMessage(messageId, plain || finalText, true, { ttsHandled: true });
-            applyPhase();
-          };
-          if (plain) {
-            speakBySentences(plain, voiceId, {
-              onSentenceShown: (textSoFar) => {
-                if (isMountedRef.current) updateStreamingMessage(messageId, textSoFar, false);
-              },
-              onComplete: showAndPhase,
-            });
-          } else {
-            showAndPhase();
-          }
-        } catch (e) {
-          if (!isMountedRef.current) return;
-          updateStreamingMessage(messageId, desc, true);
-          applyPhase();
-        }
-        return;
-      }
-
       const messageId = addStreamingMessage(msgPayload);
       let fullContent = "";
       try {
@@ -1395,7 +1252,7 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
     // After Host announces (e.g. "discussion begins"), schedule who speaks next so the game doesn't get stuck.
     // Skip when next speaker is the user—wait for them to respond instead of looping.
     if (currentGame?.isActive && !opts?.skipScheduleNextSpeaker) scheduleNextSpeaker();
-  }, [players, games, selectedGameId, gamePhaseState.phase, voiceEnabled, addMessage, addEventNotification, scheduleNextSpeaker, addStreamingMessage, updateStreamingMessage]);
+  }, [players, games, selectedGameId, gamePhaseState.phase, addMessage, addEventNotification, scheduleNextSpeaker, addStreamingMessage, updateStreamingMessage]);
 
   useEffect(() => {
     hostPostEventRef.current = hostPostEvent;
@@ -1504,38 +1361,19 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
       hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
       gameContext: { template: currentGame.config.template, gameName: currentGame.name }
     };
-    if (voiceEnabled) {
-      try {
-        const { message } = await getAIChatResponse(chatReq);
-        if (!isMountedRef.current) return;
-        const finalText = (message || "").trim() || fallback;
-        const plain = prepareTextForTTS(finalText, 3000);
-        const voiceId = getHostVoice(currentGame.config, gameMaster.name);
-        const show = () => { if (isMountedRef.current) updateStreamingMessage(messageId, plain || finalText, true, { ttsHandled: true }); };
-        if (plain) {
-          speakBySentences(plain, voiceId, {
-            onSentenceShown: (textSoFar) => { if (isMountedRef.current) updateStreamingMessage(messageId, textSoFar, false); },
-            onComplete: show,
-          });
-        } else show();
-      } catch {
-        if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true);
-      }
-    } else {
-      let fullContent = "";
-      try {
-        await streamAIChatResponse(
-          chatReq,
-          (chunk) => { fullContent += chunk; if (isMountedRef.current) updateStreamingMessage(messageId, fullContent, false); },
-          () => { if (isMountedRef.current) updateStreamingMessage(messageId, fullContent.trim() || fallback, true); },
-          () => { if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true); }
-        );
-      } catch {
-        if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true);
-      }
+    let fullContent = "";
+    try {
+      await streamAIChatResponse(
+        chatReq,
+        (chunk) => { fullContent += chunk; if (isMountedRef.current) updateStreamingMessage(messageId, fullContent, false); },
+        () => { if (isMountedRef.current) updateStreamingMessage(messageId, fullContent.trim() || fallback, true); },
+        () => { if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true); }
+      );
+    } catch {
+      if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true);
     }
     addEventNotification(notifyLang(currentGame.config.rules, `${target.name} eliminated`, `${target.name} 被淘汰`));
-  }, [players, games, selectedGameId, voiceEnabled, addMessage, addEventNotification, addStreamingMessage, updateStreamingMessage]);
+  }, [players, games, selectedGameId, addMessage, addEventNotification, addStreamingMessage, updateStreamingMessage]);
 
   const hostRevealRole = useCallback(async (playerId: string) => {
     if (!isMountedRef.current) return;
@@ -1560,37 +1398,18 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
       hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
       gameContext: { template: currentGame.config.template, gameName: currentGame.name }
     };
-    if (voiceEnabled) {
-      try {
-        const { message } = await getAIChatResponse(chatReq);
-        if (!isMountedRef.current) return;
-        const finalText = (message || "").trim() || fallback;
-        const plain = prepareTextForTTS(finalText, 3000);
-        const voiceId = getHostVoice(currentGame.config, gameMaster.name);
-        const show = () => { if (isMountedRef.current) updateStreamingMessage(messageId, plain || finalText, true, { ttsHandled: true }); };
-        if (plain) {
-          speakBySentences(plain, voiceId, {
-            onSentenceShown: (textSoFar) => { if (isMountedRef.current) updateStreamingMessage(messageId, textSoFar, false); },
-            onComplete: show,
-          });
-        } else show();
-      } catch {
-        if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true);
-      }
-    } else {
-      let fullContent = "";
-      try {
-        await streamAIChatResponse(
-          chatReq,
-          (chunk) => { fullContent += chunk; if (isMountedRef.current) updateStreamingMessage(messageId, fullContent, false); },
-          () => { if (isMountedRef.current) updateStreamingMessage(messageId, fullContent.trim() || fallback, true); },
-          () => { if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true); }
-        );
-      } catch {
-        if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true);
-      }
+    let fullContent = "";
+    try {
+      await streamAIChatResponse(
+        chatReq,
+        (chunk) => { fullContent += chunk; if (isMountedRef.current) updateStreamingMessage(messageId, fullContent, false); },
+        () => { if (isMountedRef.current) updateStreamingMessage(messageId, fullContent.trim() || fallback, true); },
+        () => { if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true); }
+      );
+    } catch {
+      if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true);
     }
-  }, [players, games, selectedGameId, voiceEnabled, addStreamingMessage, updateStreamingMessage]);
+  }, [players, games, selectedGameId, addStreamingMessage, updateStreamingMessage]);
 
   // AI Host Auto-Decision System - automatically advances game phases and makes decisions
   const aiHostAutoDecision = useCallback(async () => {
@@ -2006,11 +1825,6 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
                 lastVotedOutId={gamePhaseState.lastVotedOutId}
                 privateMessagesFromHost={privateMessages[userId] ?? []}
                 privateSectionLabel="Private from Host"
-                voiceEnabled={voiceEnabled}
-                onToggleVoice={() => {
-                  if (voiceEnabled) stopTTS();
-                  setVoiceEnabled(v => !v);
-                }}
                 quickReplies={gamePhase === "intro" && currentGame?.isActive ? ["Ready!", "Let's go!", "I'm in!"] : undefined}
                 introYourTurnHint={yourTurnInIntro ? "Your turn—tap the button or a quick reply below to start." : undefined}
                 introYourTurnReply={yourTurnInIntro ? "Ready!" : undefined}

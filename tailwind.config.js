@@ -48,6 +48,15 @@ module.exports = {
         md: 'var(--radius-md)',
         sm: 'var(--radius-sm)',
       },
+      keyframes: {
+        'voice-bar': {
+          '0%, 100%': { transform: 'scaleY(0.4)', opacity: '0.6' },
+          '50%': { transform: 'scaleY(1)', opacity: '1' },
+        },
+      },
+      animation: {
+        'voice-bar': 'voice-bar 600ms ease-in-out infinite',
+      },
     },
   },
   plugins: [

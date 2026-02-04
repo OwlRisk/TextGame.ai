@@ -2,14 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { flushSync } from "react-dom";
-import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Volume2, VolumeX } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
-import { useVoiceInput, prepareTextForTTS } from "@/lib/voice";
-import { speak, unlockAudio, resumeSafariPlayback } from "@/lib/tts";
+import { useVoiceInput } from "@/lib/voice";
+import { VoiceWaveform } from "@/app/components/voice-waveform";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
@@ -212,8 +212,6 @@ export interface Message {
   isAI: boolean;
   isSystemMessage?: boolean;
   isStreaming?: boolean; // True while message is being generated (typewriter effect)
-  /** When true, TTS was already triggered elsewhere (e.g. page); chat-area skips speaking */
-  ttsHandled?: boolean;
 }
 
 interface ChatAreaProps {
@@ -239,10 +237,6 @@ interface ChatAreaProps {
   privateMessagesFromHost?: Array<{ id: string; from: string; content: string; timestamp: Date }>;
   /** Label for the private messages section (e.g. "Private from Host" / "来自主持人的私信") */
   privateSectionLabel?: string;
-  /** Enable TTS: speak new messages with OpenAI TTS (per-player voice) */
-  voiceEnabled?: boolean;
-  /** Toggle TTS on/off */
-  onToggleVoice?: () => void;
   /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
   quickReplies?: string[];
   /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
@@ -278,8 +272,6 @@ export function ChatArea({
   lastVotedOutId,
   privateMessagesFromHost = [],
   privateSectionLabel = "Private from Host",
-  voiceEnabled = false,
-  onToggleVoice,
   quickReplies = [],
   introYourTurnHint,
   introYourTurnReply,
@@ -288,42 +280,10 @@ export function ChatArea({
   aiSuggestionsLabel = 'AI suggestions',
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
-  const [showSafariPlayButton, setShowSafariPlayButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const prevMessagesLenRef = useRef(0);
-  const spokenMessageIdsRef = useRef<Set<string>>(new Set());
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
-
-  // TTS: speak new messages and when streaming completes (e.g. AI Host announcements)
-  useEffect(() => {
-    if (!voiceEnabled) {
-      prevMessagesLenRef.current = messages.length;
-      return;
-    }
-    if (messages.length === 0) return;
-    const last = messages[messages.length - 1];
-    const prevLen = prevMessagesLenRef.current;
-    prevMessagesLenRef.current = messages.length;
-    if (last.isSystemMessage || last.senderId === userId) return;
-    if (last.isStreaming) return;
-    if (!last.content?.trim()) return;
-    if (last.ttsHandled || spokenMessageIdsRef.current.has(last.id)) return;
-    // Avoid speaking a whole batch on restore (e.g. localStorage): had 0 messages, now many
-    if (prevLen === 0 && messages.length > 1) return;
-    const player = players.find(p => p.id === last.senderId || p.name === last.senderName);
-    const voiceId = (player as Player & { ttsVoice?: string })?.ttsVoice ?? "alloy";
-    const plain = prepareTextForTTS(last.content, 3000);
-    if (plain) {
-      speak(plain, voiceId, { preDelayMs: 0, speed: 0.97 });
-      spokenMessageIdsRef.current.add(last.id);
-      if (spokenMessageIdsRef.current.size > 50) {
-        const ids = Array.from(spokenMessageIdsRef.current);
-        spokenMessageIdsRef.current = new Set(ids.slice(-30));
-      }
-    }
-  }, [messages, voiceEnabled, userId, players]);
-  const { isRecording, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
+  const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   const MIN_INPUT_HEIGHT = 44;
   const MAX_INPUT_HEIGHT = 160;
@@ -410,15 +370,6 @@ export function ChatArea({
     return () => window.removeEventListener('focusGameInput', handleFocusInput);
   }, [isRecording]);
 
-  // Safari: listen for play blocked event and show manual play button
-  useEffect(() => {
-    const handleSafariBlocked = () => {
-      setShowSafariPlayButton(true);
-    };
-    window.addEventListener('safari-play-blocked', handleSafariBlocked);
-    return () => window.removeEventListener('safari-play-blocked', handleSafariBlocked);
-  }, []);
-
   const handleSendRef = useRef<(override?: string) => void>();
   const sendingLockRef = useRef(false);
   handleSendRef.current = (override?: string) => {
@@ -468,37 +419,6 @@ export function ChatArea({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {onToggleVoice && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (!voiceEnabled) unlockAudio();
-                  onToggleVoice();
-                }}
-                title={voiceEnabled ? "Turn off voice (TTS)" : "Turn on voice (Safari: tap once to allow sound)"}
-                className="hover:bg-zinc-700 text-zinc-300 hover:text-white gap-1.5"
-              >
-                {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                <span className="text-xs">{voiceEnabled ? "Voice On" : "Voice Off"}</span>
-              </Button>
-              {showSafariPlayButton && voiceEnabled && (
-                <Button
-                  size="sm"
-                  className="h-8 px-3 text-sm bg-orange-500 hover:bg-orange-500/90 text-white font-medium gap-1.5 animate-pulse"
-                  onClick={() => {
-                    resumeSafariPlayback();
-                    setShowSafariPlayButton(false);
-                  }}
-                  title="Safari 拦截了声音，点这里手动播放"
-                >
-                  <Volume2 className="h-3.5 w-3.5" />
-                  点击播放
-                </Button>
-              )}
-            </>
-          )}
           {onOpenPlayerBoard && (
             <Button
               variant="ghost"
@@ -571,7 +491,7 @@ export function ChatArea({
                         </span>
                       </div>
                       <div className="text-zinc-100 text-sm leading-relaxed break-words">
-                        {formatMessage(message.content)}
+                        {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">（无内容）</span>}
                         {message.isStreaming && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
@@ -582,7 +502,7 @@ export function ChatArea({
                   <div className="flex gap-4">
                     <div className="w-11 flex-shrink-0" />
                     <div className="flex-1 text-zinc-100 text-sm leading-relaxed break-words">
-                      {formatMessage(message.content)}
+                      {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">（无内容）</span>}
                       {message.isStreaming && (
                         <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}
@@ -655,7 +575,7 @@ export function ChatArea({
             Wait for your turn to speak
           </div>
         )}
-        {voiceError && isRecording && (
+        {voiceError && (
           <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
             <span className="text-xs text-red-300">{voiceError}</span>
             <div className="flex gap-1">
@@ -718,77 +638,94 @@ export function ChatArea({
             ))}
           </div>
         )}
-        {isRecording && !voiceError && (
-          <div className="mb-3 flex items-center gap-3 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
-            <div className="relative w-7 h-7 rounded-full bg-red-600 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-red-500/50 animate-ping" />
-              <Mic className="h-3.5 w-3.5 text-white relative z-10" />
+        {(isRecording || isTranscribing) && !voiceError ? (
+          <div className="relative w-full px-1">
+            <div
+              className="flex items-center gap-2 w-full rounded-full bg-zinc-800/95 border border-zinc-700/80 px-2 py-2 shadow-lg backdrop-blur-sm"
+              style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.4)" }}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0 h-10 w-10 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-700/60 transition-colors"
+                onClick={voiceCancel}
+                disabled={isTranscribing}
+                title="Cancel"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              <div className="flex-1 min-w-0 relative flex items-center h-10 px-3">
+                <VoiceWaveform 
+                  analyser={voice.liveAnalyser}
+                  duration={voice.duration}
+                  className="w-full h-full"
+                  waveColor="rgba(255, 255, 255, 0.85)"
+                />
+              </div>
+              <Button
+                type="button"
+                size="icon"
+                className="flex-shrink-0 h-10 w-10 rounded-full bg-white hover:bg-zinc-100 text-zinc-900 disabled:opacity-40 shadow-lg transition-all"
+                disabled={isTranscribing}
+                title="Finish and insert"
+                onClick={async () => {
+                  const t = await voiceConfirm();
+                  if (t) {
+                    setInput(t);
+                    requestAnimationFrame(() => { inputRef.current?.focus(); resizeInput(); });
+                  }
+                }}
+              >
+                <Check className="h-5 w-5" />
+              </Button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-red-300 mb-0.5">Recording</p>
-              <p className="text-sm text-white truncate">{voiceTranscript || "Listening…"}</p>
-            </div>
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>
-              <X className="h-4 w-4" />
-            </Button>
-            <Button size="sm" className="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50" disabled={!voiceTranscript.trim()} onClick={() => { handleSend(voiceTranscript.trim()); voiceConfirm(); }}>
-              <Check className="h-4 w-4" />
+          </div>
+        ) : (
+          <div className="flex gap-2 items-end">
+            <Textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                requestAnimationFrame(() => resizeInput());
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (canSend) handleSend();
+                }
+              }}
+              placeholder={`Message #${channelName}`}
+              className="bg-zinc-600 border-none text-white placeholder:text-zinc-400 py-2.5 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide"
+              style={{ 
+                minHeight: `${MIN_INPUT_HEIGHT}px`, 
+                maxHeight: `${MAX_INPUT_HEIGHT}px`
+              }}
+              disabled={!canSend}
+              rows={1}
+            />
+            {voiceSupported && (
+              <Button
+                size="icon"
+                className="h-11 w-11 flex-shrink-0 bg-zinc-600 hover:bg-zinc-500"
+                disabled={!canSend}
+                onClick={voiceStart}
+                title="Voice input"
+              >
+                <Mic className="h-4 w-4 text-zinc-300" />
+              </Button>
+            )}
+            <Button 
+              onClick={() => handleSend()} 
+              disabled={!input.trim() || !canSend}
+              size="icon"
+              className="bg-indigo-600 hover:bg-indigo-500 h-11 w-11 flex-shrink-0"
+            >
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         )}
-        <div className="flex gap-2 items-end">
-          <Textarea
-            ref={inputRef}
-            value={isRecording && voiceTranscript ? voiceTranscript : input}
-            onChange={(e) => {
-              if (!isRecording) {
-                setInput(e.target.value);
-                // Immediately resize on change
-                requestAnimationFrame(() => {
-                  resizeInput();
-                });
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (canSend && !isRecording) {
-                  handleSend();
-                }
-              }
-            }}
-            placeholder={isRecording ? "Speaking…" : `Message #${channelName}`}
-            className="bg-zinc-600 border-none text-white placeholder:text-zinc-400 py-2.5 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide"
-            style={{ 
-              minHeight: `${MIN_INPUT_HEIGHT}px`, 
-              maxHeight: `${MAX_INPUT_HEIGHT}px`
-            }}
-            disabled={!canSend || isRecording}
-            rows={1}
-          />
-          {voiceSupported && (
-            <Button
-              size="icon"
-              className={`h-11 w-11 flex-shrink-0 ${isRecording ? "bg-red-600 hover:bg-red-500" : "bg-zinc-600 hover:bg-zinc-500"}`}
-              disabled={!canSend}
-              onClick={() => {
-                if (isRecording) { voiceCancel(); return; }
-                voiceStart();
-              }}
-              title={isRecording ? "Cancel" : "Voice input"}
-            >
-              {isRecording ? <MicOff className="h-4 w-4 text-white" /> : <Mic className="h-4 w-4 text-zinc-300" />}
-            </Button>
-          )}
-          <Button 
-            onClick={() => handleSend()} 
-            disabled={!input.trim() || !canSend || isRecording}
-            size="icon"
-            className="bg-indigo-600 hover:bg-indigo-500 h-11 w-11 flex-shrink-0"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </div>
   );
