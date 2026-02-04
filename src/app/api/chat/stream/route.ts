@@ -38,14 +38,11 @@ export async function POST(request: NextRequest) {
     const openai = getOpenAI();
 
     // Build system message
-    let systemMessage = `You are an AI Game Master for a social deduction game platform. Your role is to guide players through game setup and gameplay in a friendly, engaging manner.`;
-
-    if (hostPersonality) {
-      systemMessage += `\n\nYour personality: ${hostPersonality.name} - ${hostPersonality.description}`;
-      if (hostPersonality.personality) {
-        systemMessage += `\nPersonality traits: ${hostPersonality.personality}`;
-      }
-    }
+    // When hostPersonality is present: this is the in-game Host (Echo, Nova, etc.) running the game.
+    // When hostPersonality is absent: this is the Game Master chat (design phase only)—neutral identity, no named host.
+    let systemMessage = hostPersonality
+      ? `You are the game Host: ${hostPersonality.name}. ${hostPersonality.description || ''}${hostPersonality.personality ? ` Personality: ${hostPersonality.personality}` : ''} Run the game, narrate phases, and manage turns. Never break character.`
+      : `You are the Game Master for a social deduction game platform. Your role is to help the user design the game (rules, template, player count) in this chat. Introduce yourself only as "Game Master"—do not use a character name or Host persona. The Host who will run the game (e.g. Echo, Nova) is chosen separately when they start the game. Be friendly, concise, and helpful.`;
 
     if (gameContext) {
       systemMessage += `\n\nGame Context:\n`;
@@ -73,10 +70,11 @@ export async function POST(request: NextRequest) {
     }
     systemMessage += `=== END OF CURRENT RULES ===\n`;
 
-    systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Guide the user through the game setup process step by step. Users are human—keep replies short (a few sentences); don't write long paragraphs. Talk like a real person—whether you use emojis (or not) is entirely up to your character.`;
+    systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Users are human—keep replies short (a few sentences); don't write long paragraphs. Talk like a real person—whether you use emojis (or not) is entirely up to your character.`;
 
-    systemMessage += `\n\nContext: This chat is for game setup. The actual game (phases, roles, etc.) runs on a separate screen after the user clicks "Create Game". Use your judgment to guide appropriately.`;
-    
+    if (!hostPersonality) {
+      systemMessage += `\n\nContext: This chat is for game setup. The actual game (phases, roles, etc.) runs on a separate screen after the user clicks "Create Game". Use your judgment to guide appropriately.`;
+    }
     if (gameContext?.conversationState === "confirmation") {
       systemMessage += `\n\nYou are in the confirmation state. Configuration is complete. A "Create Game" button will appear when the user is ready to proceed—use your judgment to help them get there.`;
     }

@@ -662,21 +662,126 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     toast.success("Session deleted");
   };
 
-  // Show initial greeting when messages are empty
+  // Ref to avoid requesting welcome twice for the same session
+  const welcomeRequestedForSessionRef = useRef<string | null>(null);
+
+  // Stream initial greeting from LLM when messages are empty
+  const streamWelcomeMessage = useCallback(() => {
+    if (!currentSessionId || welcomeRequestedForSessionRef.current === currentSessionId) return;
+    welcomeRequestedForSessionRef.current = currentSessionId;
+
+    const WELCOME_TRIGGER =
+      "The user just opened this chat. Reply with a brief, friendly welcome as the Game Master. " +
+      "Mention that you help design games and that the rules panel on the right updates in real time as you discuss. " +
+      "Keep it to one short paragraph. Do not output any editing tags (no EDIT_RULES, etc.).";
+
+    setIsGMTyping(true);
+    setIsStreaming(true);
+    const tempMessageId = `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    const tempMessage: ChatMessage = {
+      id: tempMessageId,
+      role: "gm",
+      content: "",
+      timestamp: new Date()
+    };
+    let fullResponse = "";
+    let tempMessageAdded = false;
+
+    const cleanForDisplay = (text: string): string => {
+      return text
+        .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
+        .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
+        .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
+        .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
+        .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
+        .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
+        .replace(/<EDIT_RULES>[\s\S]*$/i, '')
+        .trim();
+    };
+
+    streamAIChatResponse(
+      {
+        messages: [{ role: "user", content: WELCOME_TRIGGER, timestamp: new Date() }],
+        gameContext: {
+          template: selectedTemplate?.id,
+          playerCount: playerCount,
+          gameName: gameName || undefined,
+          rules: customRules || selectedTemplate?.defaultRules || undefined,
+          conversationState: "greeting"
+        },
+        maxCompletionTokens: 500
+      },
+      (chunk: string) => {
+        fullResponse += chunk;
+        const displayContent = cleanForDisplay(fullResponse);
+        setMessages(prev => {
+          const hasTemp = prev.some(m => m.id === tempMessageId);
+          if (!hasTemp && displayContent.trim()) {
+            tempMessageAdded = true;
+            return [...prev, { ...tempMessage, content: displayContent }];
+          }
+          if (hasTemp) {
+            return prev.map(msg =>
+              msg.id === tempMessageId ? { ...msg, content: displayContent } : msg
+            );
+          }
+          return prev;
+        });
+        setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      },
+      () => {
+        setIsGMTyping(false);
+        setIsStreaming(false);
+        const cleaned = cleanForDisplay(fullResponse);
+        setMessages(prev => {
+          if (!cleaned.trim()) return prev.filter(m => m.id !== tempMessageId);
+          return prev.map(msg =>
+            msg.id === tempMessageId
+              ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, content: cleaned }
+              : msg
+          );
+        });
+      },
+      (error: Error) => {
+        welcomeRequestedForSessionRef.current = null;
+        setIsGMTyping(false);
+        setIsStreaming(false);
+        setMessages(prev => {
+          const withoutTemp = prev.filter(m => m.id !== tempMessageId);
+          const isConfigError = error.message?.includes("OPENAI_API_KEY") || error.message?.includes("API key");
+          const fallbackContent = isConfigError
+            ? "⚠️ **Configuration Error**\n\nThe OpenAI API key is not configured. Please add OPENAI_API_KEY to your .env file and restart."
+            : "👋 Welcome! I'm your Game Master. I'll help you design and create any game you can imagine. " +
+              "Choose a quick option below or describe your game idea—the rules panel on the right updates in real time as we discuss.";
+          const fallbackMessage: ChatMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+            role: "gm",
+            content: fallbackContent,
+            timestamp: new Date()
+          };
+          return [...withoutTemp, fallbackMessage];
+        });
+        if (error.message?.includes("OPENAI_API_KEY") || error.message?.includes("API key")) {
+          toast.error("OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.");
+        } else {
+          toast.error(error.message || "Failed to load welcome.");
+        }
+      }
+    );
+  }, [
+    currentSessionId,
+    selectedTemplate,
+    playerCount,
+    gameName,
+    customRules
+  ]);
+
   useEffect(() => {
     if (messages.length === 0 && currentSessionId) {
-      setTimeout(() => {
-        addGMMessage(
-          "👋 **Welcome! I'm your Game Master.**\n\n" +
-          "I'll help you design and create any game you can imagine.\n\n" +
-          "**How to start:**\n" +
-          "• Choose a quick option below, or\n" +
-          "• Simply describe your game idea to me\n\n" +
-          "As we discuss, I'll automatically update the game rules panel on the right in real-time, just like a code editor! 🎮"
-        );
-      }, 300);
+      const t = setTimeout(streamWelcomeMessage, 400);
+      return () => clearTimeout(t);
     }
-  }, [currentSessionId]);
+  }, [currentSessionId, messages.length, streamWelcomeMessage]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -958,7 +1063,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       await streamAIChatResponse(
         {
           messages: apiMessages,
-          hostId: selectedHostId,
           gameContext: gameContext,
           maxCompletionTokens: 2000
         },
