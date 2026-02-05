@@ -511,9 +511,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       .catch(() => {});
   }, [messages]);
 
-  /** Chips to show: 完全由 AI 决定是否出现、出现几条、内容；仅使用 LLM 返回的 suggestions，无解析/默认回退。 */
+  /** 快速回复最多展示条数，避免占满屏幕 */
+  const MAX_DISPLAY_CHIPS = 3;
+
+  /** Chips to show: 完全由 AI 决定是否出现、出现几条、内容；仅使用 LLM 返回的 suggestions，无解析/默认回退；展示时截断到上限。 */
   const displayChips = useMemo(() => {
-    return llmQuickReplies.map((text) => {
+    return llmQuickReplies.slice(0, MAX_DISPLAY_CHIPS).map((text) => {
       const clean = stripChipLabel(text);
       return {
         label: clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean,
@@ -549,6 +552,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [showPreview, setShowPreview] = useState(true);
   // Background merged into Rules - no separate tab needed
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
+  const [docViewMode, setDocViewMode] = useState<"edit" | "preview">("edit"); // Document: edit raw or preview Markdown
   const [isStartingGame, setIsStartingGame] = useState(false);
   const rulesPanelRef = useRef<HTMLDivElement>(null); // Scroll into view when GM edits rules
 
@@ -1878,10 +1882,23 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">Game Rules</h2>
-                  <span className="text-xs text-zinc-500">
-                    You can edit directly
-                  </span>
+                  <h2 className="text-lg font-bold text-white">Game Document</h2>
+                  <div className="flex rounded-lg border border-white/20 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setDocViewMode("edit")}
+                      className={`px-2.5 py-1 text-xs font-medium ${docViewMode === "edit" ? "bg-violet-600 text-white" : "bg-white/5 text-zinc-400 hover:text-white"}`}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocViewMode("preview")}
+                      className={`px-2.5 py-1 text-xs font-medium ${docViewMode === "preview" ? "bg-violet-600 text-white" : "bg-white/5 text-zinc-400 hover:text-white"}`}
+                    >
+                      Preview
+                    </button>
+                  </div>
                 </div>
                 {isRulesBeingEdited && (
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md flex-shrink-0">
@@ -1892,7 +1909,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 <Button
                   onClick={async () => {
                     if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
-                      toast.error("Please define game rules first");
+                      toast.error("Please add some document content first");
                       return;
                     }
                     setIsStartingGame(true);
@@ -1983,57 +2000,25 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   {isStartingGame ? "Starting…" : "Start Game"}
                 </Button>
               </div>
-              
-              {/* Player Count Info */}
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <span>Players: {playerCount === 0 ? "GM decides" : playerCount + 1}</span>
-                {configuredPlayers.length > 0 && (
-                  <>
-                    <span>•</span>
-                    <span className="text-green-400">{configuredPlayers.length} configured</span>
-                    <button
-                      onClick={async () => {
-                        toast.info("Regenerating players...");
-                        try {
-                          const response = await fetch('/api/generate-players', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              playerCount: playerCount,
-                              gameTemplate: selectedTemplate?.id || "custom",
-                              rules: customRules
-                            })
-                          });
-                          
-                          if (response.ok) {
-                            const data = await response.json();
-                            setConfiguredPlayers(data.players);
-                            toast.success(`Regenerated ${data.count} players!`);
-                          } else {
-                            toast.error("Failed to regenerate");
-                          }
-                        } catch (error) {
-                          toast.error("Failed to regenerate");
-                        }
-                      }}
-                      className="text-violet-400 hover:text-violet-300 underline"
-                    >
-                      Regenerate
-                    </button>
-                  </>
-                )}
-              </div>
             </div>
           </div>
 
           <div className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
+            {docViewMode === "preview" ? (
+              <div className="flex-1 overflow-auto min-h-0 px-4 py-3 text-sm sm:text-base leading-relaxed text-zinc-200 prose prose-invert prose-sm max-w-none">
+                {(customRules || selectedTemplate?.defaultRules || "").trim()
+                  ? formatMessage(customRules || selectedTemplate?.defaultRules || "")
+                  : <span className="text-zinc-500 italic">Nothing yet. Switch to Edit to add content (Markdown supported).</span>}
+              </div>
+            ) : (
             <Textarea
               key={currentSessionId || 'rules-viewer'}
               value={customRules || selectedTemplate?.defaultRules || ""}
               onChange={(e) => setCustomRules(e.target.value)}
-              placeholder="Game rules will appear here as you discuss with the Game Master. You and the GM can edit before starting the game; after starting, rules are locked.\n\nTip: You can write background story (world, era, atmosphere) at the beginning of the rules. The GM can also add it for you."
+              placeholder="Document content will appear here as you chat with the GM. Write anything in Markdown: **bold**, # headings, - lists, etc. You and the GM can edit before starting; after start, it’s locked."
               className="flex-1 w-full h-full min-h-0 bg-white/5 backdrop-blur-xl border-0 border-white/10 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
             />
+            )}
           </div>
         </div>
         );
