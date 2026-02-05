@@ -634,17 +634,45 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     return md;
   };
 
-  // 当 GM 或外部更新 customRules 时，同步到编辑器（如果编辑器未聚焦）
+  // 当 GM 或外部更新 customRules 时，同步到编辑器（节流：流式时最多 500ms 写一次，结束立刻写一次）
+  const gameDocSyncThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevRulesBeingEditedRef = useRef(isRulesBeingEdited);
   useEffect(() => {
     if (!gameDocEditor || gameDocEditor.isFocused) return;
     const markdown = customRules || selectedTemplate?.defaultRules || "";
     const newContentHtml = markdownToHtml(markdown);
-    // 如果当前内容不同，才更新（避免循环）
-    const currentHtml = gameDocEditor.getHTML();
-    if (currentHtml !== newContentHtml) {
-      gameDocEditor.commands.setContent(newContentHtml);
+    const apply = () => {
+      if (gameDocEditor && !gameDocEditor.isFocused) {
+        const currentHtml = gameDocEditor.getHTML();
+        if (currentHtml !== newContentHtml) gameDocEditor.commands.setContent(newContentHtml);
+      }
+    };
+    const justStoppedEditing = prevRulesBeingEditedRef.current && !isRulesBeingEdited;
+    prevRulesBeingEditedRef.current = isRulesBeingEdited;
+    if (justStoppedEditing) {
+      if (gameDocSyncThrottleRef.current) {
+        clearTimeout(gameDocSyncThrottleRef.current);
+        gameDocSyncThrottleRef.current = null;
+      }
+      apply();
+      return () => {};
     }
-  }, [customRules, selectedTemplate?.defaultRules, gameDocEditor, markdownToHtml]);
+    if (isRulesBeingEdited) {
+      if (gameDocSyncThrottleRef.current) clearTimeout(gameDocSyncThrottleRef.current);
+      gameDocSyncThrottleRef.current = setTimeout(() => {
+        gameDocSyncThrottleRef.current = null;
+        apply();
+      }, 500);
+      return () => {
+        if (gameDocSyncThrottleRef.current) {
+          clearTimeout(gameDocSyncThrottleRef.current);
+          gameDocSyncThrottleRef.current = null;
+        }
+      };
+    }
+    apply();
+    return () => {};
+  }, [customRules, selectedTemplate?.defaultRules, gameDocEditor, markdownToHtml, isRulesBeingEdited]);
 
   // Load sessions from localStorage on mount
   useEffect(() => {
@@ -912,9 +940,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
         .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
         .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
+        .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
         .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
         .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
         .replace(/<EDIT_RULES>[\s\S]*$/i, '')
+        .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
         .trim();
     };
 
@@ -1140,6 +1170,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       }
       cleanedResponse = cleanedResponse.replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '').trim();
     }
+
+    // 6. Remove CONFIG_PLAYERS from display (players aren't programmers; only show natural language)
+    cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '').trim();
+    cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '').trim();
 
     return cleanedResponse;
   };
