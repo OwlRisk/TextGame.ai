@@ -1610,8 +1610,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       
       <div className="flex flex-1 min-w-0 relative z-10 h-full">
       
-      {/* Voice Error Toast */}
-      {voiceError && isRecording && (
+      {/* Voice Error Toast — show for mic errors and transcription failures */}
+      {voiceError && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2">
           <div className="bg-red-500/90 backdrop-blur-xl border border-red-400/50 rounded-xl p-4 shadow-2xl max-w-md">
             <div className="flex items-start gap-3">
@@ -1628,17 +1628,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     variant="outline"
                     className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs h-7 px-3"
                   >
-                    Close
+                    Dismiss
                   </Button>
                   <Button
                     onClick={() => {
                       voiceCancel();
-                      setTimeout(() => voiceStart(), 100);
+                      setTimeout(() => voiceStart(), 400);
                     }}
                     size="sm"
                     className="bg-white/20 hover:bg-white/30 text-white text-xs h-7 px-3"
                   >
-                    Try Again
+                    Try again
                   </Button>
                 </div>
               </div>
@@ -1860,13 +1860,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       <X className="h-5 w-5" />
                     </Button>
                     <div className="flex-1 min-w-0 relative flex items-center h-11 px-3">
-                      <VoiceWaveform 
-                        analyser={voice.liveAnalyser}
-                        duration={voice.duration}
-                        className="w-full h-full"
-                        barClassName="bg-violet-400/90"
-                        waveColor="rgba(192, 132, 252, 0.95)"
-                      />
+                      {voice.isTranscribing ? (
+                        <span className="text-sm text-zinc-400">Transcribing...</span>
+                      ) : (
+                        <VoiceWaveform 
+                          analyser={voice.liveAnalyser}
+                          duration={voice.duration}
+                          className="w-full h-full"
+                          barClassName="bg-violet-400/90"
+                          waveColor="rgba(192, 132, 252, 0.95)"
+                        />
+                      )}
                     </div>
                     <Button
                       type="button"

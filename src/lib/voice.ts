@@ -89,13 +89,35 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<number>(0);
 
+  /** Release stream and context so the next start() gets a clean device. Call at start of start() to fix "second time" failures. */
+  const releaseOnly = useCallback(() => {
+    const stream = streamRef.current;
+    const ctx = audioContextRef.current;
+    const sourceNode = sourceNodeRef.current;
+    streamRef.current = null;
+    audioContextRef.current = null;
+    sourceNodeRef.current = null;
+    recorderRef.current = null;
+    setLiveAnalyser(null);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = 0;
+    }
+    try {
+      sourceNode?.disconnect();
+    } catch (_) {}
+    stream?.getTracks().forEach((t) => t.stop());
+    try {
+      ctx?.close();
+    } catch (_) {}
+  }, []);
+
   const start = useCallback(async () => {
     setError(null);
     setTranscript('');
     setDuration(0);
     chunksRef.current = [];
-    setLiveAnalyser(null);
-    sourceNodeRef.current = null;
+    releaseOnly();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -104,7 +126,6 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
       if (ctx.state === "suspended") await ctx.resume();
       audioContextRef.current = ctx;
 
-      // Use a clone for visualization so MediaRecorder and Analyser don't compete for the same stream
       const streamForViz = stream.clone();
       const source = ctx.createMediaStreamSource(streamForViz);
       const analyser = ctx.createAnalyser();
@@ -131,13 +152,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
       }, 1000);
     } catch (e) {
       setError('Could not start microphone. Please allow mic access.');
-      streamRef.current = null;
-      audioContextRef.current?.close();
-      audioContextRef.current = null;
-      recorderRef.current = null;
-      setLiveAnalyser(null);
+      releaseOnly();
     }
-  }, []);
+  }, [releaseOnly]);
 
   const stopRecording = useCallback(() => {
     const rec = recorderRef.current;
@@ -160,7 +177,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
       if (rec?.state !== 'inactive') rec?.stop();
     } catch (_) {}
     stream?.getTracks().forEach((t) => t.stop());
-    ctx?.close();
+    try {
+      ctx?.close();
+    } catch (_) {}
   }, []);
 
   const cancel = useCallback(() => {
@@ -174,10 +193,38 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
   }, [stopRecording]);
 
   const confirm = useCallback(async (): Promise<string | null> => {
-    stopRecording();
-    const chunks = chunksRef.current;
-    chunksRef.current = [];
+    const rec = recorderRef.current;
+    const stream = streamRef.current;
+    const ctx = audioContextRef.current;
+    const sourceNode = sourceNodeRef.current;
+    recorderRef.current = null;
+    streamRef.current = null;
+    audioContextRef.current = null;
+    sourceNodeRef.current = null;
+    setLiveAnalyser(null);
     setIsRecording(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = 0;
+    }
+    try {
+      sourceNode?.disconnect();
+    } catch (_) {}
+    // Wait for recorder 'stop' so ondataavailable has flushed; then read chunks before releasing stream
+    const chunks = await new Promise<Blob[]>((resolve) => {
+      if (!rec || rec.state === 'inactive') {
+        resolve(chunksRef.current);
+        return;
+      }
+      rec.onstop = () => resolve([...chunksRef.current]);
+      rec.stop();
+    });
+    chunksRef.current = [];
+    stream?.getTracks().forEach((t) => t.stop());
+    try {
+      ctx?.close();
+    } catch (_) {}
+
     if (!chunks.length) {
       setError('No audio recorded. Try again.');
       return null;
@@ -190,11 +237,10 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
     setIsTranscribing(true);
     setError(null);
     try {
-      // Whisper expects a file with a name and correct extension
       const file = new File([blob], 'audio.webm', { type: blob.type });
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('language', langToWhisperCode(langToUse));
+      // Don't send language: Whisper auto-detects, so all languages are supported
       const res = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
@@ -216,7 +262,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
     } finally {
       setIsTranscribing(false);
     }
-  }, [langToUse, onConfirm, stopRecording]);
+  }, [onConfirm]);
 
   const supported =
     typeof window !== 'undefined' &&
