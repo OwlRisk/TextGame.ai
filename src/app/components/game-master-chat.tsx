@@ -388,6 +388,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   const getCombinedRules = useCallback((rulesOverride?: string): string => {
     const baseRules = (rulesOverride ?? customRules) || selectedTemplate?.defaultRules || "";
     const story = gameStory.trim();
@@ -407,6 +408,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     { label: "What can I do?", value: "What can I do?" },
   ];
 =======
+=======
+>>>>>>> parent of 160fcec (feat(gm): 右侧改为可编辑游戏文档并加入淡提示)
   // Voice output (TTS): GM reads replies aloud. Init false to avoid hydration mismatch;
   // sync from localStorage after mount.
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
