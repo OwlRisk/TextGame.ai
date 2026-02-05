@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -30,7 +30,7 @@ import {
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
-import { useVoiceInput } from "@/lib/voice";
+import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
 
 interface ChatMessage {
@@ -373,6 +373,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
+  const [gameStory, setGameStory] = useState<string>(""); // Optional narrative/story prepended to rules
   const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
     name: string;
     gender?: string;
@@ -387,8 +388,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     return getDefaultHost().id;
   });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   const getCombinedRules = useCallback((rulesOverride?: string): string => {
     const baseRules = (rulesOverride ?? customRules) || selectedTemplate?.defaultRules || "";
     const story = gameStory.trim();
@@ -407,16 +406,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     { label: "Custom game", value: "I'd like a fully custom social deduction game." },
     { label: "What can I do?", value: "What can I do?" },
   ];
-=======
-=======
->>>>>>> parent of 160fcec (feat(gm): 右侧改为可编辑游戏文档并加入淡提示)
+
   // Voice output (TTS): GM reads replies aloud. Init false to avoid hydration mismatch;
   // sync from localStorage after mount.
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
   const voiceOutputEnabledRef = useRef(voiceOutputEnabled);
   voiceOutputEnabledRef.current = voiceOutputEnabled;
   const { speak: speakTTS, speakQueued, stop: stopTTS, supported: ttsSupported } = useVoiceOutput();
->>>>>>> parent of 160fcec (feat(gm): 右侧改为可编辑游戏文档并加入淡提示)
 
   /** Strip markdown from quick-reply labels so "**Mini Werewolf**" shows as "Mini Werewolf" */
   const stripChipLabel = (raw: string): string =>
@@ -509,26 +505,23 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed"))))
       .then((data: { suggestions?: string[] }) => {
         if (Array.isArray(data.suggestions)) {
-          setLlmQuickReplies(data.suggestions.slice(0, 5));
+          setLlmQuickReplies(data.suggestions.slice(0, 8));
         }
       })
       .catch(() => {});
   }, [messages]);
 
-  /** Chips to show: LLM suggestions first, else parsed/default. Strip ** and * from LLM text so no asterisks show. */
+  /** Chips to show: 完全由 AI 决定是否出现、出现几条、内容；仅使用 LLM 返回的 suggestions，无解析/默认回退。 */
   const displayChips = useMemo(() => {
-    if (llmQuickReplies.length > 0) {
-      return llmQuickReplies.map((text) => {
-        const clean = stripChipLabel(text);
-        return {
-          label: clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean,
-          value: clean,
-          fullLabel: clean.length > 52 ? clean : undefined,
-        };
-      });
-    }
-    return suggestionChips;
-  }, [llmQuickReplies, suggestionChips]);
+    return llmQuickReplies.map((text) => {
+      const clean = stripChipLabel(text);
+      return {
+        label: clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean,
+        value: clean,
+        fullLabel: clean.length > 52 ? clean : undefined,
+      };
+    });
+  }, [llmQuickReplies]);
 
   // Only render client-only UI after mount to avoid hydration mismatch.
   const [mounted, setMounted] = useState(false);
