@@ -32,6 +32,11 @@ import { HostSelector } from "@/app/components/host-selector";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Typography from "@tiptap/extension-typography";
+import Placeholder from "@tiptap/extension-placeholder";
+import { marked } from "marked";
 
 interface ChatMessage {
   id: string;
@@ -552,9 +557,94 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [showPreview, setShowPreview] = useState(true);
   // Background merged into Rules - no separate tab needed
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
-  const [docViewMode, setDocViewMode] = useState<"edit" | "preview">("edit"); // Document: edit raw or preview Markdown
   const [isStartingGame, setIsStartingGame] = useState(false);
   const rulesPanelRef = useRef<HTMLDivElement>(null); // Scroll into view when GM edits rules
+
+  // 把 Markdown 转为 HTML（用于 Tiptap 初始内容和外部同步）
+  const markdownToHtml = useCallback((md: string): string => {
+    if (!md || md.trim() === "") return "<p></p>";
+    try {
+      return marked.parse(md) as string;
+    } catch (e) {
+      console.error("Markdown parse error:", e);
+      return `<p>${md}</p>`;
+    }
+  }, []);
+
+  // Tiptap 编辑器：Notion / Lark 式，输入 ## + 空格自动变标题
+  const gameDocEditor = useEditor({
+    immediatelyRender: false, // Next.js SSR 兼容
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
+      Typography,
+      Placeholder.configure({
+        placeholder: "Click here to edit game rules...",
+      }),
+    ],
+    content: markdownToHtml(customRules || selectedTemplate?.defaultRules || ""),
+    editorProps: {
+      attributes: {
+        class: "focus:outline-none min-h-full",
+      },
+    },
+    onUpdate: ({ editor }) => {
+      // 用户编辑时，把 HTML 转为 Markdown 存入 customRules
+      const html = editor.getHTML();
+      // 简单处理：如果是空的 <p></p> 就存空字符串
+      if (html === "<p></p>" || html.trim() === "") {
+        setCustomRules("");
+      } else {
+        // Tiptap 输出的 HTML 是干净的（h1, h2, ul, li 等），可以用简单的转换
+        // 这里我们用一个简易的 HTML → Markdown（或者你可以用 turndown，但 Tiptap 的 HTML 结构简单）
+        // 为了保持和之前一致，继续用之前的方法（需要 turndown 或自己写转换）
+        // 由于我们移除了 turndown 引用，这里先用简单的文本提取（后续可优化）
+        const md = htmlToMarkdown(html);
+        setCustomRules(md);
+      }
+    },
+  }, []);
+
+  // 简易 HTML → Markdown 转换（Tiptap 的 HTML 结构简单：<h1> → # xxx，<ul><li> → - xxx，<strong> → **xxx**）
+  const htmlToMarkdown = (html: string): string => {
+    let md = html;
+    // h1-h3
+    md = md.replace(/<h1>([\s\S]*?)<\/h1>/g, "# $1\n");
+    md = md.replace(/<h2>([\s\S]*?)<\/h2>/g, "## $1\n");
+    md = md.replace(/<h3>([\s\S]*?)<\/h3>/g, "### $1\n");
+    // 列表
+    md = md.replace(/<ul>([\s\S]*?)<\/ul>/g, (_match: string, content: string) => {
+      return content.replace(/<li>(.*?)<\/li>/g, "- $1\n");
+    });
+    md = md.replace(/<ol>([\s\S]*?)<\/ol>/g, (_match: string, content: string) => {
+      let i = 1;
+      return content.replace(/<li>(.*?)<\/li>/g, (_: string, item: string) => `${i++}. ${item}\n`);
+    });
+    // 粗体、斜体、代码
+    md = md.replace(/<strong>(.*?)<\/strong>/g, "**$1**");
+    md = md.replace(/<em>(.*?)<\/em>/g, "*$1*");
+    md = md.replace(/<code>(.*?)<\/code>/g, "`$1`");
+    // 段落
+    md = md.replace(/<p>(.*?)<\/p>/g, "$1\n\n");
+    // 清理多余的空行和标签
+    md = md.replace(/<[^>]+>/g, "").trim();
+    return md;
+  };
+
+  // 当 GM 或外部更新 customRules 时，同步到编辑器（如果编辑器未聚焦）
+  useEffect(() => {
+    if (!gameDocEditor || gameDocEditor.isFocused) return;
+    const markdown = customRules || selectedTemplate?.defaultRules || "";
+    const newContentHtml = markdownToHtml(markdown);
+    // 如果当前内容不同，才更新（避免循环）
+    const currentHtml = gameDocEditor.getHTML();
+    if (currentHtml !== newContentHtml) {
+      gameDocEditor.commands.setContent(newContentHtml);
+    }
+  }, [customRules, selectedTemplate?.defaultRules, gameDocEditor, markdownToHtml]);
 
   // Load sessions from localStorage on mount
   useEffect(() => {
@@ -1730,7 +1820,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       >
                         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
                         <div className="text-[15px] sm:text-base leading-relaxed relative z-10 font-normal">
-                          {message.role === "gm" ? formatMessage(message.content) : message.content}
+                          {formatMessage(message.content)}
                         </div>
                       </div>
                       <div className={`text-[11px] text-zinc-500 mt-1.5 ${isUser ? "pr-1" : "pl-1"}`}>
@@ -1833,7 +1923,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           }
                         }}
                         placeholder={
-                          isGMTyping || isStreaming ? "GM is thinking..." : "Message Game Master…"
+                          isGMTyping || isStreaming ? "GM is thinking..." : "Chat with Game Master, design your game rules..."
                         }
                         className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-xl sm:rounded-2xl px-4 sm:px-5 py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
                         style={{ minHeight: `${MIN_INPUT_H}px`, maxHeight: `${MAX_INPUT_H}px` }}
@@ -1881,29 +1971,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           <div className="px-4 py-3 border-b border-white/10 relative flex-shrink-0">
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">Game Document</h2>
-                  <div className="flex rounded-lg border border-white/20 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setDocViewMode("edit")}
-                      className={`px-2.5 py-1 text-xs font-medium ${docViewMode === "edit" ? "bg-violet-600 text-white" : "bg-white/5 text-zinc-400 hover:text-white"}`}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDocViewMode("preview")}
-                      className={`px-2.5 py-1 text-xs font-medium ${docViewMode === "preview" ? "bg-violet-600 text-white" : "bg-white/5 text-zinc-400 hover:text-white"}`}
-                    >
-                      Preview
-                    </button>
-                  </div>
-                </div>
+                <h2 className="text-lg font-bold text-white">Game Document</h2>
                 {isRulesBeingEdited && (
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md flex-shrink-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-xs text-amber-400 font-medium">AI Editing...</span>
+                    <span className="text-xs text-amber-400 font-medium">AI editing...</span>
                   </div>
                 )}
                 <Button
@@ -2003,22 +2075,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             </div>
           </div>
 
-          <div className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
-            {docViewMode === "preview" ? (
-              <div className="flex-1 overflow-auto min-h-0 px-4 py-3 text-sm sm:text-base leading-relaxed text-zinc-200 prose prose-invert prose-sm max-w-none">
-                {(customRules || selectedTemplate?.defaultRules || "").trim()
-                  ? formatMessage(customRules || selectedTemplate?.defaultRules || "")
-                  : <span className="text-zinc-500 italic">Nothing yet. Switch to Edit to add content (Markdown supported).</span>}
-              </div>
-            ) : (
-            <Textarea
-              key={currentSessionId || 'rules-viewer'}
-              value={customRules || selectedTemplate?.defaultRules || ""}
-              onChange={(e) => setCustomRules(e.target.value)}
-              placeholder="Document content will appear here as you chat with the GM. Write anything in Markdown: **bold**, # headings, - lists, etc. You and the GM can edit before starting; after start, it’s locked."
-              className="flex-1 w-full h-full min-h-0 bg-white/5 backdrop-blur-xl border-0 border-white/10 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-none px-4 py-3 font-normal resize-none leading-relaxed whitespace-pre-wrap"
-            />
-            )}
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
+            <div className="flex-1 overflow-auto min-h-0 px-4 py-4">
+              <EditorContent editor={gameDocEditor} />
+            </div>
           </div>
         </div>
         );
