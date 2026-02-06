@@ -67,6 +67,64 @@ export interface GameSession {
   updatedAt: Date;
 }
 
+// Notion 式：按 Enter 时把当前行从「# / - 开头」的段落转为标题/列表，再换行（无空格也能识别）
+function handleGameDocEnter(editor: unknown): boolean {
+  const ed = editor as { state: { selection: { $from: { depth: number; before: (d: number) => number; node: (d: number) => { type: { name: string }; textContent: string; nodeSize: number } } } }; commands: { insertContentAt: (pos: unknown, content: unknown, opts?: unknown) => boolean } } | null;
+  if (!ed) return false;
+  const { state, commands } = ed;
+  const $from = state.selection.$from;
+  const depth = $from.depth;
+  const node = $from.node(depth);
+  if (node.type.name !== "paragraph") return false;
+  const text = node.textContent;
+  const from = $from.before(depth);
+  const to = from + node.nodeSize;
+
+  let insert: { type: string; attrs?: Record<string, number>; content: unknown[] }[] | null = null;
+
+  const hMatch = text.match(/^(#{1,6})\s*(.*)$/);
+  if (hMatch) {
+    const level = Math.min(hMatch[1].length, 3);
+    const rest = (hMatch[2] ?? "").trim();
+    insert = [
+      { type: "heading", attrs: { level }, content: rest ? [{ type: "text", text: rest }] : [] },
+      { type: "paragraph", content: [] },
+    ];
+  } else if (/^[-*]\s*(.*)$/.test(text)) {
+    const rest = text.replace(/^[-*]\s*/, "").trim();
+    insert = [
+      {
+        type: "bulletList",
+        content: [
+          {
+            type: "listItem",
+            content: [{ type: "paragraph", content: rest ? [{ type: "text", text: rest }] : [] }],
+          },
+        ],
+      },
+      { type: "paragraph", content: [] },
+    ];
+  } else if (/^\d+\.\s*(.*)$/.test(text)) {
+    const rest = text.replace(/^\d+\.\s*/, "").trim();
+    insert = [
+      {
+        type: "orderedList",
+        content: [
+          {
+            type: "listItem",
+            content: [{ type: "paragraph", content: rest ? [{ type: "text", text: rest }] : [] }],
+          },
+        ],
+      },
+      { type: "paragraph", content: [] },
+    ];
+  }
+
+  if (!insert) return false;
+  commands.insertContentAt({ from, to }, insert, { updateSelection: true });
+  return true;
+}
+
 // Format message content with markdown-like syntax
 function formatMessage(content: string) {
   const lines = content.split('\n');
@@ -561,15 +619,33 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const rulesPanelRef = useRef<HTMLDivElement>(null); // Scroll into view when GM edits rules
 
   // 把 Markdown 转为 HTML（用于 Tiptap 初始内容和外部同步）
+  // 预处理：让 #word / -word 即使没有空格也能被解析为标题和列表，结构更清晰
   const markdownToHtml = useCallback((md: string): string => {
     if (!md || md.trim() === "") return "<p></p>";
     try {
-      return marked.parse(md) as string;
+      const normalized = md
+        .split("\n")
+        .map((line) => {
+          // # / ## / ### 后直接跟非空格：补一个空格，便于 marked 识别为标题
+          if (/\s*#{1,6}[^\s#]/.test(line)) {
+            return line.replace(/^(\s*)(#{1,6})([^\s#].*)$/, "$1$2 $3");
+          }
+          // - 或 * 行首后直接跟非空格：补一个空格，便于识别为列表
+          if (/\s*[-*]\S/.test(line)) {
+            return line.replace(/^(\s*)([-*])(\S.*)$/, "$1$2 $3");
+          }
+          return line;
+        })
+        .join("\n");
+      return marked.parse(normalized) as string;
     } catch (e) {
       console.error("Markdown parse error:", e);
       return `<p>${md}</p>`;
     }
   }, []);
+
+  // Ref 供 handleKeyDown 使用（Enter 时格式化 # / - 行）
+  const gameDocEditorRef = useRef<ReturnType<typeof useEditor>>(null);
 
   // Tiptap 编辑器：Notion / Lark 式，输入 ## + 空格自动变标题
   const gameDocEditor = useEditor({
@@ -590,6 +666,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       attributes: {
         class: "focus:outline-none min-h-full",
       },
+      handleKeyDown: (_view, event) => {
+        if (event.key !== "Enter" || event.shiftKey) return;
+        const editor = gameDocEditorRef.current;
+        if (editor && handleGameDocEnter(editor)) event.preventDefault();
+      },
     },
     onUpdate: ({ editor }) => {
       // 用户编辑时，把 HTML 转为 Markdown 存入 customRules
@@ -599,14 +680,15 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         setCustomRules("");
       } else {
         // Tiptap 输出的 HTML 是干净的（h1, h2, ul, li 等），可以用简单的转换
-        // 这里我们用一个简易的 HTML → Markdown（或者你可以用 turndown，但 Tiptap 的 HTML 结构简单）
-        // 为了保持和之前一致，继续用之前的方法（需要 turndown 或自己写转换）
-        // 由于我们移除了 turndown 引用，这里先用简单的文本提取（后续可优化）
         const md = htmlToMarkdown(html);
         setCustomRules(md);
       }
     },
   }, []);
+
+  useEffect(() => {
+    gameDocEditorRef.current = gameDocEditor;
+  }, [gameDocEditor]);
 
   // 简易 HTML → Markdown 转换（Tiptap 的 HTML 结构简单：<h1> → # xxx，<ul><li> → - xxx，<strong> → **xxx**）
   const htmlToMarkdown = (html: string): string => {
