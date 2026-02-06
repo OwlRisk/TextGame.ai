@@ -64,7 +64,7 @@ Return JSON with a "sections" array. Always include id "rules" and "progress"; a
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 300,
+      max_completion_tokens: 300,
       temperature: 0.4,
     });
 

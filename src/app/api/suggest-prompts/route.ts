@@ -55,7 +55,7 @@ Output only the suggestions, one per line. No numbering, no quotes, no extra tex
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 200,
+      max_completion_tokens: 200,
       temperature: 0.7,
     });
 

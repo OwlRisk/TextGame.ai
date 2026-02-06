@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Crown, Volume2, VolumeX, User, Package, Info, Heart } from "lucide-react";
+import { Volume2, VolumeX, User, Package, Info, Heart } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
@@ -93,17 +93,13 @@ export function PlayerPanelWithBoard({
         <TabsContent value="players" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-3 space-y-3">
-              {/* Game Master Section */}
-              {players.filter(p => p.isGameMaster).map((player) => (
-                <div key={player.id}>
-                  <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 flex items-center gap-2">
-                    <Crown className="h-3 w-3 text-amber-400" />
-                    <span>{player.name}</span>
-                    <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 rounded text-[10px] font-bold tracking-wider border border-amber-500/30 shadow-sm">
-                      HOST
-                    </span>
-                  </div>
+              <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 tracking-wide">
+                Players — {players.length}
+              </div>
+              <div className="space-y-1.5">
+                {players.map((player) => (
                   <PlayerCard
+                    key={player.id}
                     player={player}
                     isSpeaking={currentSpeakerId === player.id}
                     isUserGameMaster={isUserGameMaster}
@@ -114,31 +110,7 @@ export function PlayerPanelWithBoard({
                     isHiddenRoleGame={isHiddenRoleGame}
                     currentUserId={currentUserId}
                   />
-                  <Separator className="mt-3 bg-zinc-700/50" />
-                </div>
-              ))}
-
-              {/* Regular Players */}
-              <div>
-                <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 tracking-wide">
-                  Players — {players.filter(p => !p.isGameMaster).length}
-                </div>
-                <div className="space-y-1.5">
-                  {players.filter(p => !p.isGameMaster).map((player) => (
-                    <PlayerCard
-                      key={player.id}
-                      player={player}
-                      isSpeaking={currentSpeakerId === player.id}
-                      isUserGameMaster={isUserGameMaster}
-                      gameId={gameId}
-                      onToggleMute={onToggleMute}
-                      onSelectSpeaker={onSelectSpeaker}
-                      onViewProfile={openProfile}
-                      isHiddenRoleGame={isHiddenRoleGame}
-                      currentUserId={currentUserId}
-                    />
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           </ScrollArea>
@@ -238,10 +210,21 @@ function PlayerCard({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="text-sm font-semibold text-white truncate">{player.name}</span>
+          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+            <span
+              className={`text-sm font-semibold truncate ${
+                player.isGameMaster ? "text-amber-300" : !player.isAI ? "text-blue-200" : "text-white"
+              }`}
+            >
+              {player.name}
+            </span>
+            {player.isGameMaster && (
+              <Badge className="inline-flex items-center justify-center leading-none bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wider shadow-sm rounded-md">
+                HOST
+              </Badge>
+            )}
             {!player.isAI && (
-              <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-1.5 py-0 h-4 font-bold tracking-wide shadow-sm">
+              <Badge className="inline-flex items-center justify-center leading-none bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
                 YOU
               </Badge>
             )}

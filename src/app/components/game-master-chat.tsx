@@ -125,6 +125,26 @@ function handleGameDocEnter(editor: unknown): boolean {
   return true;
 }
 
+/** Strip GM control tags so they are never shown in the chat bubble. */
+function cleanGMMessageContentForDisplay(content: string): string {
+  if (!content?.trim()) return content;
+  return content
+    .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
+    .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
+    .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
+    .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
+    .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
+    .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
+    .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
+    .replace(/<EDIT_RULES>[\s\S]*$/i, '')
+    .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
+    .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
+    .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
+    .replace(/<SET_PLAYER_COUNT>\s*\d*\s*$/i, '')
+    .replace(/<UPDATE_GENERAL>[\s\S]*$/i, '')
+    .trim();
+}
+
 // Format message content with markdown-like syntax
 function formatMessage(content: string) {
   const lines = content.split('\n');
@@ -1023,7 +1043,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
         .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
         .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
-        .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
+        .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
         .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
         .replace(/<EDIT_RULES>[\s\S]*$/i, '')
         .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
@@ -1223,7 +1243,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
 
     // 4. Handle SET_PLAYER_COUNT - GM decides number of AI players
-    const setPlayerCountMatch = response.match(/<SET_PLAYER_COUNT>(\d+)<\/SET_PLAYER_COUNT>/i);
+    const setPlayerCountMatch = response.match(/<SET_PLAYER_COUNT>\s*(\d+)\s*<\/SET_PLAYER_COUNT>/i);
     if (setPlayerCountMatch && setPlayerCountMatch[1]) {
       const n = parseInt(setPlayerCountMatch[1], 10);
       if (!Number.isNaN(n)) {
@@ -1232,7 +1252,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         const clamped = Math.min(max, Math.max(min, n));
         setPlayerCount(clamped);
       }
-      cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '').trim();
+      cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '').trim();
     }
 
     // 5. Handle UPDATE_GENERAL - GM adds background to Rules (prepend to rules)
@@ -1502,7 +1522,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             }
 
             // 4. Handle SET_PLAYER_COUNT - GM decides number of AI players (real-time)
-            const setPlayerCountMatches = Array.from(fullResponse.matchAll(/<SET_PLAYER_COUNT>(\d+)<\/SET_PLAYER_COUNT>/gi));
+            const setPlayerCountMatches = Array.from(fullResponse.matchAll(/<SET_PLAYER_COUNT>\s*(\d+)\s*<\/SET_PLAYER_COUNT>/gi));
             for (const match of setPlayerCountMatches) {
               const tagKey = `SET_PLAYER_COUNT_${match.index}`;
               if (!processedEditTags.has(tagKey)) {
@@ -1538,14 +1558,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
               .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
-              .replace(/<SET_PLAYER_COUNT>\d+<\/SET_PLAYER_COUNT>/gi, '')
+              .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
               .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
               // Also remove incomplete tags
               .replace(/<EDIT_RULES>[\s\S]*$/i, '')
               .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
-              .replace(/<SET_PLAYER_COUNT>\d*$/i, '')
+              .replace(/<SET_PLAYER_COUNT>\s*\d*\s*$/i, '')
               .replace(/<UPDATE_GENERAL>[\s\S]*$/i, '')
               .trim();
             return cleaned;
@@ -1936,7 +1956,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       >
                         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
                         <div className="text-[15px] sm:text-base leading-relaxed relative z-10 font-normal">
-                          {formatMessage(message.content)}
+                          {formatMessage(message.role === "gm" ? cleanGMMessageContentForDisplay(message.content) : message.content)}
                         </div>
                       </div>
                       <div className={`text-[11px] text-zinc-500 mt-1.5 ${isUser ? "pr-1" : "pl-1"}`}>
@@ -2156,16 +2176,21 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       if (response.ok) {
                         const host = await response.json() as GeneratedHost;
                         generatedHostData = host;
-                        console.log('[Game Master] Generated host:', host);
+                        console.log('[Game Master] ✅ Generated host:', host.name);
 
                         setSessions(prev => prev.map(s =>
                           s.id === currentSessionId
                             ? { ...s, generatedHost: host }
                             : s
                         ));
+                      } else {
+                        const errorText = await response.text();
+                        console.error('[Game Master] ❌ Host generation failed. Status:', response.status, 'Response:', errorText);
+                        toast.warning("⚠️ Host generation failed. Will use default host (Echo).", { id: startToastId, duration: 4000 });
                       }
                     } catch (error) {
-                      console.error('[Game Master] Failed to generate host:', error);
+                      console.error('[Game Master] ❌ Failed to generate host:', error);
+                      toast.warning("⚠️ Host generation error. Will use default host (Echo).", { id: startToastId, duration: 4000 });
                     }
 
                     toast.dismiss(startToastId);

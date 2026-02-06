@@ -56,7 +56,7 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
         { role: "user", content: userPrompt },
       ],
       temperature: 1.0, // High creativity for diverse hosts
-      max_tokens: 500,
+      max_completion_tokens: 500,
     });
 
     const response = completion.choices[0]?.message?.content;
@@ -103,8 +103,13 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
     return NextResponse.json(hostConfig);
   } catch (error) {
     console.error("[Generate Host] Error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to generate host";
+    const errorDetails = error instanceof Error && 'response' in error 
+      ? JSON.stringify((error as any).response?.data) 
+      : String(error);
+    console.error("[Generate Host] Full error details:", errorDetails);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate host" },
+      { error: errorMessage, details: errorDetails },
       { status: 500 }
     );
   }

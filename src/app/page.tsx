@@ -492,18 +492,31 @@ export default function HomePage() {
       }
     }
 
-    // Add user
+    // Add user — only assign template-specific roles for werewolf/undercover/mafia; custom games (e.g. murder mystery) get no role label
+    const userRole =
+      config.template === "werewolf" ? "Villager"
+      : config.template === "undercover" ? "Civilian"
+      : config.template === "mafia" ? "Town Member"
+      : undefined;
     const userPlayer: Player = {
       id: userId,
       name: "You",
       avatar: "#6366f1",
-      role: config.template === "werewolf" ? "Villager" : "Civilian",
+      role: userRole,
       stats: config.template === "werewolf" ? { Status: "Alive" } : {},
       isAI: false,
       isMuted: false
     };
 
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
+
+    // Display name: avoid "Custom Game"; use "the game" so welcome reads naturally
+    const welcomeGameName = (config.name?.trim() === "Custom Game" || (config.template === "custom" && !config.name?.trim()))
+      ? null
+      : config.name?.trim() || null;
+    const welcomeText = welcomeGameName
+      ? `Welcome to ${welcomeGameName}! ${host.name} will guide you through the game.`
+      : `Welcome! ${host.name} will guide you through the game.`;
 
     // Initial game message
     const initialMessages: Message[] = [
@@ -512,7 +525,7 @@ export default function HomePage() {
         senderId: "system",
         senderName: "System",
         senderAvatar: host.color,
-        content: `Welcome to ${config.name}! ${host.name} will guide you through the game.`,
+        content: welcomeText,
         timestamp: new Date(),
         isAI: false,
         isSystemMessage: true
@@ -533,7 +546,9 @@ export default function HomePage() {
     setGamePhase("intro");
     setGamePhaseState({ ...DEFAULT_GAME_PHASE, phase: "intro" });
 
-    const fallbackGreeting = `Hey everyone, ${host.name} here. Here's how we'll play ${config.name}:\n\n${config.rules}\n\nReady when you are - let's go!`;
+    const fallbackGreeting = welcomeGameName
+      ? `Hey everyone, ${host.name} here. Here's how we'll play ${welcomeGameName}:\n\n${config.rules}\n\nReady when you are - let's go!`
+      : `Hey everyone, ${host.name} here. Here's how we'll play:\n\n${config.rules}\n\nReady when you are - let's go!`;
 
     const scheduleReadyReplies = () => {
       if (!isMountedRef.current) return;
@@ -588,7 +603,7 @@ The host just explained the rules and asked if everyone is ready. Respond natura
     const greetingRequest = {
       messages: [{
         role: "user" as const,
-        content: `You are ${host.name}, the host. The game is "${config.name}". Rules:\n\n${config.rules}\n\n${LANG_MATCH_RULES}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules, and ask if everyone is ready. Speak naturally—like a real host would, spontaneous and warm. Keep it short—a few sentences at most; players are human, don't write a long intro. Whether you use emojis or not is up to your character. Output only the greeting, nothing else.`
+        content: `You are ${host.name}, the host. ${welcomeGameName ? `The game is "${welcomeGameName}".` : "Do not call the game 'Custom Game'. You may refer to it as 'the game' or invent a short, catchy title based on the rules and use that when you introduce it."} Rules:\n\n${config.rules}\n\n${LANG_MATCH_RULES}\n\nWrite a short opening greeting to the players: introduce yourself, briefly explain the rules, and ask if everyone is ready. Speak naturally—like a real host would, spontaneous and warm. Keep it short—a few sentences at most; players are human, don't write a long intro. Whether you use emojis or not is up to your character. Output only the greeting, nothing else.`
       }],
       hostId: config.hostId,
       hostPersonality: config.generatedHost ? { name: config.generatedHost.name, description: config.generatedHost.personality, personality: config.generatedHost.voiceStyle } : undefined,
@@ -647,6 +662,14 @@ The host just explained the rules and asked if everyone is ready. Respond natura
   const handleCreateGame = useCallback(async (config: GameConfig) => {
     const toastId = "create-game";
     toast.loading("Creating game...", { id: toastId });
+    
+    console.log('[handleCreateGame] Starting with config:', {
+      hasGeneratedHost: !!config.generatedHost,
+      generatedHostName: config.generatedHost?.name,
+      hostId: config.hostId,
+      hasRules: !!config.rules?.trim(),
+      rulesLength: config.rules?.length
+    });
 
     try {
       // Generate game icon with AI
@@ -674,8 +697,40 @@ The host just explained the rules and asked if everyone is ready. Respond natura
         gameIcon = config.template === "werewolf" ? "🐺" : config.template === "undercover" ? "🕵️" : "🎮";
       }
 
-      // Generate players via LLM when not configured
+      // Generate host from story/rules when not already provided (no fixed template name)
       let finalConfig = config;
+      if (!config.generatedHost && config.rules?.trim()) {
+        console.log('[handleCreateGame] No generated host yet, attempting to generate from rules...');
+        try {
+          toast.loading("Creating host from story...", { id: toastId });
+          const hostRes = await fetch('/api/generate-host', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gameRules: config.rules,
+              gameName: config.name || (config.template === "custom" ? "Game" : config.template === "werewolf" ? "Werewolf" : config.template === "undercover" ? "Undercover" : "Game")
+            })
+          });
+          if (hostRes.ok) {
+            const generatedHost = await hostRes.json();
+            finalConfig = { ...finalConfig, generatedHost };
+            console.log('[handleCreateGame] ✅ Generated host from story:', generatedHost.name);
+          } else {
+            const errorText = await hostRes.text();
+            console.error('[handleCreateGame] ❌ Host generation failed. Status:', hostRes.status, 'Response:', errorText);
+            toast.warning("⚠️ Using default host (API error)", { id: toastId, duration: 4000 });
+          }
+        } catch (err) {
+          console.error('[handleCreateGame] ❌ Failed to generate host from story:', err);
+          toast.warning("⚠️ Using default host (network error)", { id: toastId, duration: 4000 });
+        }
+      } else if (!config.generatedHost) {
+        console.log('[handleCreateGame] ⚠️ No rules provided, using default host');
+      } else {
+        console.log('[handleCreateGame] ✅ Using pre-generated host:', config.generatedHost.name);
+      }
+
+      // Generate players via LLM when not configured
       if (!config.configuredPlayers || config.configuredPlayers.length === 0) {
         try {
           toast.loading("Setting up players...", { id: toastId });
@@ -693,7 +748,7 @@ The host just explained the rules and asked if everyone is ready. Respond natura
           if (playersRes.ok) {
             const data = await playersRes.json();
             const aiCount = data.players?.length ?? config.playerCount;
-            finalConfig = { ...config, playerCount: aiCount, configuredPlayers: data.players };
+            finalConfig = { ...finalConfig, playerCount: aiCount, configuredPlayers: data.players };
           }
         } catch (err) {
           console.warn('Failed to generate players:', err);
@@ -716,7 +771,8 @@ The host just explained the rules and asked if everyone is ready. Respond natura
       setShowGameMasterChat(false);
       setShowGameCreatorForm(false);
       initializeGame(finalConfig);
-      toast.success(`"${config.name}" is ready!`, { id: toastId });
+      const isGenericName = config.name?.trim() === "Custom Game" || (config.template === "custom" && !config.name?.trim());
+      toast.success(isGenericName ? "Game is ready!" : `"${config.name}" is ready!`, { id: toastId });
     } catch (error) {
       console.error('Error creating game:', error);
       toast.error("Failed to create game", { id: toastId });
@@ -759,6 +815,12 @@ The host just explained the rules and asked if everyone is ready. Respond natura
         ? "\n\nIf the human (You) hasn't spoken in a while, you may optionally give them a turn—but don't over-call them. Run the game flow; let AI players participate."
         : "";
       const languageRule = LANG_MATCH_RULES.replace("above", "below").replace("write all your output", "write all your output (NEXT_SPEAKER, PRIVATE_TO_..., MY_BOARD_FOR_..., POST_EVENT, UPDATE_PROGRESS)");
+      
+      // Check if this is the first decision (game just started) - require My Board initialization
+      const isFirstDecision = messages.length <= 3 && gamePhase === 'intro';
+      const myBoardHint = isFirstDecision 
+        ? "\n\n🔴 CRITICAL - FIRST TURN: You MUST initialize My Board for EVERY player. Set myBoard with each player's role/secret information. This is required for hidden-role games. Example: {\"You\": \"Your role: Villager\", \"Kenji\": \"Your role: Werewolf. Teammate: Zuri\", \"Zuri\": \"Your role: Werewolf. Teammate: Kenji\"}. Do NOT skip this—every player must see their role on My Board from the start."
+        : "";
 
       let selectedPlayer: typeof alivePlayersList[0] | null = null;
       let nextAfterSeconds = 12;
@@ -794,24 +856,39 @@ ${playersInfo.map(p => `- ${p.name} (Role: ${p.role}, Type: ${p.isAI ? "AI" : "H
 Recent speakers: ${recentNames.length ? recentNames.join(", ") : "none yet"}
 Current game phase: ${gamePhase}
 
-Pacing: SLOW DOWN. Use longer NEXT_AFTER_SECONDS (10-20) and REPLY_AFTER_SECONDS (10-20). Don't flood—let players read. Reply NONE sometimes for natural pauses. Run the game autonomously: balance turns across AI players; only select You when the game flow genuinely requires the human's input (e.g. their turn to answer). Don't constantly direct questions at the human. One speaker at a time. Output at most ONE POST_EVENT per turn—one short sentence or two; never a long paragraph.${pacingHint}
+Pacing: SLOW DOWN. Use longer delays (10-20s). Don't flood—let players read. Use NONE for natural pauses. Run the game autonomously: balance turns across AI players; only select You when the game flow genuinely requires the human's input (e.g. their turn to answer). Don't constantly direct questions at the human. One speaker at a time. Keep POST_EVENT short—one sentence or two; never a long paragraph.${pacingHint}${myBoardHint}
 
-Reply using these lines (one per line). You MUST include exactly one next-speaker line. Optional lines can be in any order after it.
-- NEXT_SPEAKER: PlayerName   (exactly one; use a name from the list above, or NONE if no one should speak right now—use NONE to create a pause)
-- NEXT_AFTER_SECONDS: N      (optional; 10-20 seconds to wait before acting; default 12; USE 12 OR MORE—don't rush, let players read)
-- REPLY_AFTER_SECONDS: N     (optional; 10-20 seconds before the selected speaker's reply appears; default 12; USE 12 OR MORE)
-- PRIVATE_TO_PlayerName: your private message to that player (can repeat for different players)
-- MY_BOARD_FOR_PlayerName: one line (or short text) to show on that player's My Board only. Use for hidden-role games (e.g. "Your role: Werewolf. Teammates: Kenji, Zuri." or "You saw Luna as Werewolf."). You decide what each player sees—only that player sees it. Use "You" for the human player (MY_BOARD_FOR_You: ...). Use underscores in names if needed (e.g. MY_BOARD_FOR_Sofia_Mendez: ...).
-- POST_EVENT: your public announcement—one short sentence or two; write naturally, no long paragraphs (players are human)
-- UPDATE_PROGRESS: in-game progress summary for the # progress channel (optional). One short line—round, phase, what players discovered. No long paragraphs; players are human. Only the Host can update progress; Rules (including background story if any) are set by the GM and cannot be changed during the game.
+CRITICAL: Reply with VALID JSON ONLY (no markdown, no code blocks, no extra text). Use this exact structure:
+
+{
+  "nextSpeaker": "PlayerName or NONE",
+  "nextAfterSeconds": 12,
+  "replyAfterSeconds": 12,
+  "privateMessages": {
+    "PlayerName": "Private message text"
+  },
+  "myBoard": {
+    "PlayerName": "My Board content for that player"
+  },
+  "postEvent": "Public announcement (short, 1-2 sentences)",
+  "updateProgress": "Progress summary (optional, short)"
+}
 
 Example:
-NEXT_SPEAKER: Sofia
-NEXT_AFTER_SECONDS: 12
-REPLY_AFTER_SECONDS: 12
-PRIVATE_TO_Kenji: You are the werewolf. Your teammates are Omar and Zuri.
-MY_BOARD_FOR_Kenji: Your role: Werewolf. Teammates: Omar, Zuri.
-POST_EVENT: The moon rises. Night has fallen.`
+{
+  "nextSpeaker": "Sofia",
+  "nextAfterSeconds": 12,
+  "replyAfterSeconds": 12,
+  "privateMessages": {
+    "Kenji": "You are the werewolf. Your teammates are Omar and Zuri."
+  },
+  "myBoard": {
+    "Kenji": "Your role: Werewolf. Teammates: Omar, Zuri.",
+    "You": "Your role: Villager. Find the werewolves!"
+  },
+  "postEvent": "The moon rises. Night has fallen.",
+  "updateProgress": "Night 1 - Werewolves choose their victim"
+}`
           }],
           hostId: currentGame.config.hostId,
           hostPersonality: currentGame.config.generatedHost ? { name: currentGame.config.generatedHost.name, description: currentGame.config.generatedHost.personality, personality: currentGame.config.generatedHost.voiceStyle } : undefined,
@@ -827,31 +904,71 @@ POST_EVENT: The moon rises. Night has fallen.`
         );
         if (!isMountedRef.current) return;
         const raw = hostDecision.trim();
-        const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+        
+        // Try JSON parsing first (new format)
+        let parsedDecision: {
+          nextSpeaker?: string;
+          nextAfterSeconds?: number;
+          replyAfterSeconds?: number;
+          privateMessages?: Record<string, string>;
+          myBoard?: Record<string, string>;
+          postEvent?: string;
+          updateProgress?: string;
+        } | null = null;
+        
         let nextSpeakerName: string | null = null;
         nextAfterSeconds = 12;
         replyAfterSeconds = 12;
-        for (const line of lines) {
-          if (line.toUpperCase().startsWith("NEXT_SPEAKER:")) {
-            nextSpeakerName = line.slice("NEXT_SPEAKER:".length).trim();
-          } else if (line.toUpperCase().startsWith("NEXT_AFTER_SECONDS:")) {
-            const n = parseInt(line.slice("NEXT_AFTER_SECONDS:".length).trim(), 10);
-            if (!isNaN(n) && n >= 10 && n <= 20) nextAfterSeconds = n;
-          } else if (line.toUpperCase().startsWith("REPLY_AFTER_SECONDS:")) {
-            const n = parseInt(line.slice("REPLY_AFTER_SECONDS:".length).trim(), 10);
-            if (!isNaN(n) && n >= 10 && n <= 20) replyAfterSeconds = n;
+        const postEventTexts: string[] = [];
+        
+        try {
+          // Try to parse as JSON (strip markdown code blocks if present)
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed && typeof parsed === 'object') {
+              parsedDecision = parsed;
+              nextSpeakerName = parsed.nextSpeaker || null;
+              if (parsed.nextAfterSeconds && parsed.nextAfterSeconds >= 10 && parsed.nextAfterSeconds <= 20) {
+                nextAfterSeconds = parsed.nextAfterSeconds;
+              }
+              if (parsed.replyAfterSeconds && parsed.replyAfterSeconds >= 10 && parsed.replyAfterSeconds <= 20) {
+                replyAfterSeconds = parsed.replyAfterSeconds;
+              }
+              if (parsed.postEvent) postEventTexts.push(parsed.postEvent);
+            }
           }
+        } catch (e) {
+          console.warn('Failed to parse JSON decision, falling back to line-based parsing:', e);
         }
+        
+        // Fallback: line-based parsing (old format)
+        if (!parsedDecision) {
+          const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+          for (const line of lines) {
+            if (line.toUpperCase().startsWith("NEXT_SPEAKER:")) {
+              nextSpeakerName = line.slice("NEXT_SPEAKER:".length).trim();
+            } else if (line.toUpperCase().startsWith("NEXT_AFTER_SECONDS:")) {
+              const n = parseInt(line.slice("NEXT_AFTER_SECONDS:".length).trim(), 10);
+              if (!isNaN(n) && n >= 10 && n <= 20) nextAfterSeconds = n;
+            } else if (line.toUpperCase().startsWith("REPLY_AFTER_SECONDS:")) {
+              const n = parseInt(line.slice("REPLY_AFTER_SECONDS:".length).trim(), 10);
+              if (!isNaN(n) && n >= 10 && n <= 20) replyAfterSeconds = n;
+            }
+          }
+          if (!nextSpeakerName) nextSpeakerName = lines.find(l => !l.toUpperCase().startsWith("NEXT_AFTER_SECONDS:") && !l.toUpperCase().startsWith("REPLY_AFTER_SECONDS:") && !l.toUpperCase().startsWith("PRIVATE_TO_") && !l.toUpperCase().startsWith("MY_BOARD_FOR_") && !l.toUpperCase().startsWith("POST_EVENT:") && !l.toUpperCase().startsWith("UPDATE_PROGRESS:"))?.trim() || null;
+        }
+        
         // Human-like variation: add slight random jitter (±1–2s) so timing feels natural
         nextAfterSeconds = Math.max(10, Math.min(20, nextAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
         replyAfterSeconds = Math.max(10, Math.min(20, replyAfterSeconds + Math.floor((Math.random() - 0.5) * 4)));
-        if (!nextSpeakerName) nextSpeakerName = lines.find(l => !l.toUpperCase().startsWith("NEXT_AFTER_SECONDS:") && !l.toUpperCase().startsWith("REPLY_AFTER_SECONDS:") && !l.toUpperCase().startsWith("PRIVATE_TO_") && !l.toUpperCase().startsWith("MY_BOARD_FOR_") && !l.toUpperCase().startsWith("POST_EVENT:") && !l.toUpperCase().startsWith("UPDATE_PROGRESS:"))?.trim() || null;
         selectedPlayer = nextSpeakerName && nextSpeakerName.toUpperCase() !== "NONE"
           ? alivePlayersList.find(p => p.name.toLowerCase() === nextSpeakerName!.toLowerCase() || p.name === nextSpeakerName) ?? null
           : null;
         if (!selectedPlayer) {
           const isErrorOrEmpty = !raw || API_ERROR_PLACEHOLDER.test(raw);
           if (isErrorOrEmpty) {
+            toast.warning("⚠️ Host encountered an issue, selecting next speaker randomly", { duration: 4000 });
             addEventNotification(notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host 随机选择了下一位发言者。"));
           }
           const aiOnly = alivePlayersList.filter(p => p.isAI);
@@ -861,42 +978,79 @@ POST_EVENT: The moon rises. Night has fallen.`
         if (!selectedPlayer) return;
         recentSpeakers.current.push(selectedPlayer.id);
         if (recentSpeakers.current.length > 5) recentSpeakers.current.shift();
-        const postEventTexts: string[] = [];
-        for (const line of lines) {
-          if (line.toUpperCase().startsWith("PRIVATE_TO_")) {
-            const rest = line.slice("PRIVATE_TO_".length);
-            const colon = rest.indexOf(":");
-            if (colon >= 0) {
-              const toName = rest.slice(0, colon).trim();
-              const msg = rest.slice(colon + 1).trim();
+        
+        // Process private messages, My Board, events, progress
+        if (parsedDecision) {
+          // JSON format
+          if (parsedDecision.privateMessages) {
+            for (const [toName, msg] of Object.entries(parsedDecision.privateMessages)) {
               if (toName && msg) addPrivateMessage(toName, msg, gameMaster.name);
             }
           }
-          if (line.toUpperCase().startsWith("MY_BOARD_FOR_")) {
-            const rest = line.slice("MY_BOARD_FOR_".length);
-            const colonSpace = rest.indexOf(": ");
-            if (colonSpace >= 0 && selectedGameId) {
-              const namePart = rest.slice(0, colonSpace).trim().replace(/_/g, " ");
-              const content = rest.slice(colonSpace + 2).trim();
+          if (parsedDecision.myBoard && selectedGameId) {
+            for (const [namePart, content] of Object.entries(parsedDecision.myBoard)) {
               const target = namePart.toLowerCase() === "you"
                 ? alivePlayersList.find(p => p.id === userId)
                 : alivePlayersList.find(p => p.name.toLowerCase() === namePart.toLowerCase() || p.name.replace(/\s+/g, " ").toLowerCase() === namePart.toLowerCase());
               if (target && content) {
+                const prevContent = myBoardContentByGameId[selectedGameId]?.[target.id];
                 setMyBoardContentByGameId(prev => ({
                   ...prev,
                   [selectedGameId]: { ...(prev[selectedGameId] || {}), [target.id]: content }
                 }));
+                // Show notification for My Board updates (only for the current user)
+                if (target.id === userId && content !== prevContent) {
+                  toast.info("📋 My Board updated", { duration: 3000 });
+                }
               }
             }
           }
-          if (line.toUpperCase().startsWith("POST_EVENT:")) {
-            const text = line.slice("POST_EVENT:".length).trim();
-            if (text) postEventTexts.push(text);
+          if (parsedDecision.updateProgress && selectedGameId) {
+            setGameProgressByGameId(prev => ({ ...prev, [selectedGameId]: parsedDecision.updateProgress! }));
           }
-          if (line.toUpperCase().startsWith("UPDATE_PROGRESS:")) {
-            const text = line.slice("UPDATE_PROGRESS:".length).trim();
-            if (text && selectedGameId) {
-              setGameProgressByGameId(prev => ({ ...prev, [selectedGameId]: text }));
+        } else {
+          // Fallback: line-based parsing
+          const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+          for (const line of lines) {
+            if (line.toUpperCase().startsWith("PRIVATE_TO_")) {
+              const rest = line.slice("PRIVATE_TO_".length);
+              const colon = rest.indexOf(":");
+              if (colon >= 0) {
+                const toName = rest.slice(0, colon).trim();
+                const msg = rest.slice(colon + 1).trim();
+                if (toName && msg) addPrivateMessage(toName, msg, gameMaster.name);
+              }
+            }
+            if (line.toUpperCase().startsWith("MY_BOARD_FOR_")) {
+              const rest = line.slice("MY_BOARD_FOR_".length);
+              const colonSpace = rest.indexOf(": ");
+              if (colonSpace >= 0 && selectedGameId) {
+                const namePart = rest.slice(0, colonSpace).trim().replace(/_/g, " ");
+                const content = rest.slice(colonSpace + 2).trim();
+                const target = namePart.toLowerCase() === "you"
+                  ? alivePlayersList.find(p => p.id === userId)
+                  : alivePlayersList.find(p => p.name.toLowerCase() === namePart.toLowerCase() || p.name.replace(/\s+/g, " ").toLowerCase() === namePart.toLowerCase());
+                if (target && content) {
+                  const prevContent = myBoardContentByGameId[selectedGameId]?.[target.id];
+                  setMyBoardContentByGameId(prev => ({
+                    ...prev,
+                    [selectedGameId]: { ...(prev[selectedGameId] || {}), [target.id]: content }
+                  }));
+                  if (target.id === userId && content !== prevContent) {
+                    toast.info("📋 My Board updated", { duration: 3000 });
+                  }
+                }
+              }
+            }
+            if (line.toUpperCase().startsWith("POST_EVENT:")) {
+              const text = line.slice("POST_EVENT:".length).trim();
+              if (text) postEventTexts.push(text);
+            }
+            if (line.toUpperCase().startsWith("UPDATE_PROGRESS:")) {
+              const text = line.slice("UPDATE_PROGRESS:".length).trim();
+              if (text && selectedGameId) {
+                setGameProgressByGameId(prev => ({ ...prev, [selectedGameId]: text }));
+              }
             }
           }
         }
@@ -918,6 +1072,7 @@ POST_EVENT: The moon rises. Night has fallen.`
         setTypingUsers([]);
         nextAfterSeconds = 12;
         replyAfterSeconds = 12;
+        toast.error("⚠️ Host encountered an error. Selecting next speaker randomly.", { duration: 4000 });
         const shortMsg = err.message?.slice(0, 120) || notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host 随机选择了下一位发言者。");
         addEventNotification(shortMsg);
         const aiOnly = alivePlayersList.filter(p => p.isAI);

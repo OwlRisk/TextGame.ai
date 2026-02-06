@@ -66,7 +66,7 @@ Rules:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: 280,
+      max_completion_tokens: 280,
       temperature: 0.6,
     });
 
