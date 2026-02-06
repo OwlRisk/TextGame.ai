@@ -491,7 +491,7 @@ export function ChatArea({
                         </span>
                       </div>
                       <div className="text-zinc-100 text-sm leading-relaxed break-words">
-                        {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">（无内容）</span>}
+                        {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">(No content)</span>}
                         {message.isStreaming && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
@@ -502,7 +502,7 @@ export function ChatArea({
                   <div className="flex gap-4">
                     <div className="w-11 flex-shrink-0" />
                     <div className="flex-1 text-zinc-100 text-sm leading-relaxed break-words">
-                      {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">（无内容）</span>}
+                      {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">(No content)</span>}
                       {message.isStreaming && (
                         <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}

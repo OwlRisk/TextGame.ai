@@ -75,7 +75,7 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
   const handleGenerateHost = async () => {
     if (isGenerating) return;
     if (!gameRules) {
-      alert('请先填写游戏规则');
+      alert('Please fill in the game rules first.');
       return;
     }
 
@@ -114,11 +114,11 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
           onHostGenerated(newHost);
         }
       } else {
-        alert('生成失败，请重试');
+        alert('Generation failed. Please try again.');
       }
     } catch (error) {
       console.error('Error generating host:', error);
-      alert('生成失败，请重试');
+      alert('Generation failed. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -150,12 +150,12 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
-                <span className="text-sm font-medium text-purple-300">AI 生成中...</span>
+                <span className="text-sm font-medium text-purple-300">AI generating...</span>
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4 text-purple-400" />
-                <span className="text-sm font-medium text-purple-300">🎲 AI 随机生成</span>
+                <span className="text-sm font-medium text-purple-300">🎲 Random AI Host</span>
               </>
             )}
           </button>
@@ -211,7 +211,7 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
                     <button
                       onClick={(e) => handleDeleteHost(host.id, e)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20 rounded"
-                      title="删除这个 Host"
+                      title="Remove this Host"
                     >
                       <Trash2 className="h-3.5 w-3.5 text-red-400" />
                     </button>
@@ -247,12 +247,12 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
           {isGenerating ? (
             <div className="flex items-center justify-center gap-2">
               <Loader2 className="h-5 w-5 animate-spin text-purple-400" />
-              <span className="text-base font-medium text-purple-300">AI 正在生成个性化 Host...</span>
+              <span className="text-base font-medium text-purple-300">AI is generating a personalized Host...</span>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2">
               <Sparkles className="h-5 w-5 text-purple-400" />
-              <span className="text-base font-medium text-purple-300">🎲 AI 随机生成个性化 Host</span>
+              <span className="text-base font-medium text-purple-300">🎲 Random AI Host</span>
             </div>
           )}
         </button>
@@ -340,7 +340,7 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
               <button
                 onClick={(e) => handleDeleteHost(host.id, e)}
                 className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/30"
-                title="删除这个 Host"
+                title="Remove this Host"
               >
                 <Trash2 className="h-4 w-4 text-red-400" />
               </button>

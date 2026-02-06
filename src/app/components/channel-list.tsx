@@ -111,7 +111,7 @@ export function ChannelList({
                     }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {textSectionLabel === "信息" ? "分区" : "Section"}
+                    Delete Section
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -150,7 +150,7 @@ export function ChannelList({
                     }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {gameSectionLabel === "游戏房间" ? "房间" : "Room"}
+                    Delete Room
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -181,8 +181,8 @@ export function ChannelList({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {channelToDelete?.type === "game"
-                ? (gameSectionLabel === "游戏房间" ? "删除房间" : "Delete Room")
-                : (textSectionLabel === "信息" ? "删除分区" : "Delete Section")}
+                ? "Delete Room"
+                : "Delete Section"}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
               Are you sure you want to delete "{channelToDelete?.name}"? This action cannot be undone.
