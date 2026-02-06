@@ -119,15 +119,18 @@ export default function HomePage() {
     selectedGameIdRef.current = selectedGameId;
   }, [messages, players, games, gamePhase, gamePhaseState, selectedGameId]);
 
-  // Fetch AI-generated suggestion prompts when in intro and host has sent a message
+  // Fetch AI-generated suggestion prompts when in game-room and host has sent a message (all phases, not only intro)
   useEffect(() => {
-    if (gamePhase !== 'intro' || selectedChannelId !== 'game-room' || !selectedGameId) {
-      if (gamePhase !== 'intro') lastHostMessageForSuggestionsRef.current = '';
+    if (selectedChannelId !== 'game-room' || !selectedGameId) {
+      lastHostMessageForSuggestionsRef.current = '';
       setAiSuggestedPrompts([]);
       return;
     }
     const currentGame = games.find(g => g.id === selectedGameId);
-    if (!currentGame?.isActive) return;
+    if (!currentGame?.isActive) {
+      setAiSuggestedPrompts([]);
+      return;
+    }
     const hostId = players.find(p => p.isGameMaster)?.id ?? 'gm-1';
     const hostMessages = messages.filter(m => m.senderId === hostId && !m.isStreaming);
     const lastHostMsg = hostMessages[hostMessages.length - 1];
@@ -1825,7 +1828,11 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
                 lastVotedOutId={gamePhaseState.lastVotedOutId}
                 privateMessagesFromHost={privateMessages[userId] ?? []}
                 privateSectionLabel="Private from Host"
-                quickReplies={gamePhase === "intro" && currentGame?.isActive ? ["Ready!", "Let's go!", "I'm in!"] : undefined}
+                quickReplies={
+                  gamePhase === "intro" && currentGame?.isActive
+                    ? ["Ready!", "Let's go!", "I'm in!"]
+                    : (currentGame?.isActive && aiSuggestedPrompts.length > 0 ? aiSuggestedPrompts : undefined)
+                }
                 introYourTurnHint={yourTurnInIntro ? "Your turn—tap the button or a quick reply below to start." : undefined}
                 introYourTurnReply={yourTurnInIntro ? "Ready!" : undefined}
                 introEveryoneSpokenHint={everyoneHasSpokenInIntro ? "Everyone has spoken. Click \"Let's go!\" or send any message to start the game." : undefined}
