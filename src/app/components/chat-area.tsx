@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { flushSync } from "react-dom";
-import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus, Lock } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -212,6 +212,7 @@ export interface Message {
   isAI: boolean;
   isSystemMessage?: boolean;
   isStreaming?: boolean; // True while message is being generated (typewriter effect)
+  isPrivate?: boolean; // True for private messages from Host to this player only
 }
 
 interface ChatAreaProps {
@@ -233,10 +234,6 @@ interface ChatAreaProps {
   gamePhaseLabel?: string;
   alivePlayers?: Player[];
   lastVotedOutId?: string | null;
-  /** Private messages from Host to the current user */
-  privateMessagesFromHost?: Array<{ id: string; from: string; content: string; timestamp: Date }>;
-  /** Label for the private messages section (e.g. "Private from Host" / "来自主持人的私信") */
-  privateSectionLabel?: string;
   /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
   quickReplies?: string[];
   /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
@@ -270,8 +267,6 @@ export function ChatArea({
   gamePhaseLabel,
   alivePlayers = [],
   lastVotedOutId,
-  privateMessagesFromHost = [],
-  privateSectionLabel = "Private from Host",
   quickReplies = [],
   introYourTurnHint,
   introYourTurnReply,
@@ -454,6 +449,33 @@ export function ChatArea({
               );
             }
 
+            // Private message styling (🔒 only visible to you)
+            if (message.isPrivate) {
+              return (
+                <div key={message.id} className="my-5">
+                  <div className="flex items-start gap-3 rounded-xl border border-violet-500/40 bg-gradient-to-br from-violet-950/50 to-violet-900/20 px-4 py-3 shadow-md">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-violet-500/20">
+                      <Lock className="h-4 w-4 text-violet-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-semibold text-sm text-violet-300">{message.senderName}</span>
+                        <span className="inline-flex items-center justify-center leading-none min-h-[18px] px-2 py-0.5 bg-violet-500/30 border border-violet-400/40 rounded shrink-0 text-[10px] font-bold text-violet-200 uppercase tracking-wide">
+                          Private
+                        </span>
+                        <span className="text-[11px] text-violet-400/60 ml-auto shrink-0">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="text-violet-100 text-sm leading-[1.65] break-words">
+                        {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-violet-400/60">(No content)</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             const messagePlayer = showAvatar ? players.find(
               p => p.id === message.senderId || p.name === message.senderName
             ) : null;
@@ -578,9 +600,6 @@ export function ChatArea({
 
       {/* Input */}
       <div className="p-5 border-t border-zinc-700/80 bg-zinc-900/40">
-        {privateMessagesFromHost.length > 0 && (
-          <PrivateMessagesSection messages={privateMessagesFromHost} label={privateSectionLabel} />
-        )}
         {!canSend && isGameActive && !isRecording && (
           <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5" />
