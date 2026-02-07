@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2 } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -25,8 +25,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface Game {
   id: string;
@@ -46,9 +50,26 @@ interface GameSidebarProps {
 }
 
 export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onViewDrafts, onOpenProfile, onDeleteGame }: GameSidebarProps) {
+  const router = useRouter();
+  const { user, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out. Please try again.");
+      setIsSigningOut(false);
+    }
+  };
+
+  const username = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || "Guest";
+  const userAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
   return (
     <div className="w-20 flex-shrink-0 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950 border-r border-violet-900/20 flex flex-col items-center py-4 gap-3 overflow-hidden backdrop-blur-sm">
@@ -157,68 +178,70 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
 
         <div className="w-10 h-0.5 bg-zinc-700 rounded-full my-2" />
 
-        {/* Game List */}
-        <ScrollArea className="flex-1 w-full">
-          <div className="flex flex-col items-center gap-3 px-3">
-            {games.map((game) => (
-              <ContextMenu key={game.id}>
-                <ContextMenuTrigger>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-14 w-14 rounded-2xl transition-all duration-200 relative overflow-hidden ${
-                            selectedGameId === game.id
-                              ? "rounded-xl"
-                              : "hover:rounded-xl"
-                          } ${game.icon.startsWith('data:image') ? 'p-0' : ''}`}
-                          style={{ 
-                            backgroundColor: game.icon.startsWith('data:image') ? 'transparent' : game.color,
-                          }}
-                          onClick={() => onSelectGame(game.id)}
-                        >
-                          {game.icon.startsWith('data:image') ? (
-                            <img 
-                              src={game.icon} 
-                              alt={game.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-4xl">{game.icon}</span>
-                          )}
-                          {selectedGameId === game.id && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                          )}
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent 
-                      side="right"
-                      sideOffset={8}
-                      className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
+        {/* Game List - Only show when user is logged in */}
+        {user && (
+          <ScrollArea className="flex-1 w-full">
+            <div className="flex flex-col items-center gap-3 px-3">
+              {games.map((game) => (
+                <ContextMenu key={game.id}>
+                  <ContextMenuTrigger>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-14 w-14 rounded-2xl transition-all duration-200 relative overflow-hidden ${
+                              selectedGameId === game.id
+                                ? "rounded-xl"
+                                : "hover:rounded-xl"
+                            } ${game.icon.startsWith('data:image') ? 'p-0' : ''}`}
+                            style={{ 
+                              backgroundColor: game.icon.startsWith('data:image') ? 'transparent' : game.color,
+                            }}
+                            onClick={() => onSelectGame(game.id)}
+                          >
+                            {game.icon.startsWith('data:image') ? (
+                              <img 
+                                src={game.icon} 
+                                alt={game.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-4xl">{game.icon}</span>
+                            )}
+                            {selectedGameId === game.id && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                            )}
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="right"
+                        sideOffset={8}
+                        className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
+                      >
+                        {game.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                    <ContextMenuItem 
+                      className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                      onClick={() => {
+                        setGameToDelete(game);
+                        setDeleteDialogOpen(true);
+                      }}
                     >
-                      {game.name}
-                    </TooltipContent>
-                  </Tooltip>
-                </ContextMenuTrigger>
-                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
-                  <ContextMenuItem 
-                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
-                    onClick={() => {
-                      setGameToDelete(game);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Game
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
-          </div>
-        </ScrollArea>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Game
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
 
         {/* Drafts */}
         {onViewDrafts && (
@@ -251,100 +274,133 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
 
         {/* User Profile - Bottom */}
         <div className="mt-auto">
-          <Popover open={userMenuOpen} onOpenChange={setUserMenuOpen}>
-            <PopoverTrigger asChild>
-              <div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-14 w-14 rounded-full overflow-hidden p-0 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-200 ring-2 ring-white/10 hover:ring-violet-500/40"
-                >
-                  <GeneratedAvatar
-                    name="You"
-                    type="player"
-                    gameId={selectedGameId && !["home", "my-games", "discover"].includes(selectedGameId) ? selectedGameId : undefined}
-                    enabled={true}
-                    className="h-full w-full rounded-full"
-                    fallbackColor="#6366f1"
-                  />
-                </Button>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent 
-              side="right" 
-              align="end" 
-              className="w-80 bg-zinc-900 border-zinc-800 text-white p-0 ml-2"
-            >
-              <div className="p-4 space-y-4">
-                {/* User Avatar & Info */}
-                <div className="flex items-center gap-3 pb-3 border-b border-zinc-800">
-                  <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0 shadow-lg ring-2 ring-zinc-700">
-                    <GeneratedAvatar
-                      name="You"
-                      type="player"
-                      gameId={selectedGameId && !["home", "my-games", "discover"].includes(selectedGameId) ? selectedGameId : undefined}
-                      enabled={true}
-                      className="h-full w-full rounded-full"
-                      fallbackColor="#6366f1"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold">Player</h3>
-                    <p className="text-zinc-400 text-xs">Member since 2024</p>
-                  </div>
+          {loading ? (
+            <div className="h-14 w-14 rounded-full bg-zinc-800 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 text-zinc-400 animate-spin" />
+            </div>
+          ) : user ? (
+            <Popover open={userMenuOpen} onOpenChange={setUserMenuOpen}>
+              <PopoverTrigger asChild>
+                <div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-14 w-14 rounded-full overflow-hidden p-0 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-200 ring-2 ring-white/10 hover:ring-violet-500/40"
+                  >
+                    <Avatar className="h-full w-full">
+                      <AvatarImage src={userAvatar} alt={username} />
+                      <AvatarFallback className="bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white text-xl font-bold">
+                        {username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
                 </div>
+              </PopoverTrigger>
+              <PopoverContent 
+                side="right" 
+                align="end" 
+                className="w-80 bg-zinc-900 border-zinc-800 text-white p-0 ml-2"
+              >
+                <div className="p-4 space-y-4">
+                  {/* User Avatar & Info */}
+                  <div className="flex items-center gap-3 pb-3 border-b border-zinc-800">
+                    <Avatar className="h-16 w-16 flex-shrink-0 shadow-lg ring-2 ring-zinc-700">
+                      <AvatarImage src={userAvatar} alt={username} />
+                      <AvatarFallback className="bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white text-2xl font-bold">
+                        {username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold truncate">{username}</h3>
+                      <p className="text-zinc-400 text-xs truncate">{user.email}</p>
+                    </div>
+                  </div>
 
-                {/* Menu Options */}
-                <div className="space-y-1">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      onOpenProfile?.();
-                    }}
-                  >
-                    <UserCircle className="mr-3 h-4 w-4 text-blue-400" />
-                    <span className="text-sm">Edit Profile</span>
-                  </Button>
-
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                  >
-                    <Crown className="mr-3 h-4 w-4 text-amber-500" />
-                    <span className="text-sm">Upgrade to Pro</span>
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                  >
-                    <Settings className="mr-3 h-4 w-4" />
-                    <span className="text-sm">Settings</span>
-                  </Button>
-
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                  >
-                    <HelpCircle className="mr-3 h-4 w-4 text-green-400" />
-                    <span className="text-sm">Help & Support</span>
-                  </Button>
-                  
-                  <div className="pt-1 border-t border-zinc-800 mt-2">
+                  {/* Menu Options */}
+                  <div className="space-y-1">
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-start h-10 hover:bg-zinc-800 text-red-400 hover:text-red-300"
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        onOpenProfile?.();
+                      }}
                     >
-                      <LogOut className="mr-3 h-4 w-4" />
-                      <span className="text-sm">Log Out</span>
+                      <UserCircle className="mr-3 h-4 w-4 text-blue-400" />
+                      <span className="text-sm">Edit Profile</span>
                     </Button>
+
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                    >
+                      <Crown className="mr-3 h-4 w-4 text-amber-500" />
+                      <span className="text-sm">Upgrade to Pro</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                    >
+                      <Settings className="mr-3 h-4 w-4" />
+                      <span className="text-sm">Settings</span>
+                    </Button>
+
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                    >
+                      <HelpCircle className="mr-3 h-4 w-4 text-green-400" />
+                      <span className="text-sm">Help & Support</span>
+                    </Button>
+                    
+                    <div className="pt-1 border-t border-zinc-800 mt-2">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start h-10 hover:bg-zinc-800 text-red-400 hover:text-red-300"
+                        onClick={handleSignOut}
+                        disabled={isSigningOut}
+                      >
+                        {isSigningOut ? (
+                          <>
+                            <Loader2 className="mr-3 h-4 w-4 animate-spin" />
+                            <span className="text-sm">Signing out...</span>
+                          </>
+                        ) : (
+                          <>
+                            <LogOut className="mr-3 h-4 w-4" />
+                            <span className="text-sm">Log Out</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-14 w-14 rounded-full bg-zinc-800 hover:bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30"
+                    onClick={() => router.push('/signin')}
+                  >
+                    <LogIn className="h-7 w-7 text-white" />
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="right" 
+                sideOffset={8}
+                className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
+              >
+                Sign In
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </TooltipProvider>
 
