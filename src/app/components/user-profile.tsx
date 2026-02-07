@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, User, History, Palette, Bell, Languages, Camera, X, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, User, History, Palette, Bell, Languages, Camera, X, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -9,6 +9,9 @@ import { Label } from "@/app/components/ui/label";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Switch } from "@/app/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { toast } from "sonner";
 
 interface UserProfileProps {
   onClose: () => void;
@@ -17,13 +20,41 @@ interface UserProfileProps {
 type ActiveTab = "account" | "history" | "appearance" | "language" | "notifications";
 
 export function UserProfile({ onClose }: UserProfileProps) {
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("account");
-  const [username, setUsername] = useState("Player");
-  const [email, setEmail] = useState("player@example.com");
-  const [bio, setBio] = useState("Passionate gamer who loves strategy and social games!");
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  
+  // Use actual user data from auth - Update when user changes
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [bio, setBio] = useState("");
+  
+  // Update state when user data changes
+  useEffect(() => {
+    if (user) {
+      console.log("User data in profile:", user);
+      console.log("User metadata:", user.user_metadata);
+      setUsername(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "Player");
+      setEmail(user.email || "");
+      setBio(user.user_metadata?.bio || "Passionate gamer who loves strategy and social games!");
+    }
+  }, [user]);
+  
   const [language, setLanguage] = useState("en");
   const [theme, setTheme] = useState("dark");
   const [notifications, setNotifications] = useState(true);
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+      // Don't show toast here as page will reload
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out. Please try again.");
+      setIsSigningOut(false);
+    }
+  };
 
   // Mock data
   const gameHistory = [
@@ -125,11 +156,21 @@ export function UserProfile({ onClose }: UserProfileProps) {
           <div className="h-px bg-zinc-700 my-2" />
 
           <button
-            onClick={onClose}
-            className="w-full flex items-center gap-3 px-2 py-2 rounded text-left text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-sm font-medium"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="w-full flex items-center gap-3 px-2 py-2 rounded text-left text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <LogOut className="h-4 w-4" />
-            Log Out
+            {isSigningOut ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Signing out...
+              </>
+            ) : (
+              <>
+                <LogOut className="h-4 w-4" />
+                Log Out
+              </>
+            )}
           </button>
         </div>
 
@@ -164,9 +205,15 @@ export function UserProfile({ onClose }: UserProfileProps) {
                     <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">Profile Picture</h2>
                     <div className="flex items-center gap-6">
                       <div className="relative group">
-                        <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center shadow-lg">
-                          <User className="h-10 w-10 text-white" />
-                        </div>
+                        <Avatar className="h-20 w-20">
+                          <AvatarImage 
+                            src={user?.user_metadata?.avatar_url || user?.user_metadata?.picture} 
+                            alt={username} 
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-cyan-600 text-white text-2xl">
+                            {username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         <button className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Camera className="h-6 w-6 text-white" />
                         </button>

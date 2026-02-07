@@ -56,7 +56,7 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
         { role: "user", content: userPrompt },
       ],
       temperature: 1.0, // High creativity for diverse hosts
-      max_tokens: 500,
+      max_completion_tokens: 500,
     });
 
     const response = completion.choices[0]?.message?.content;

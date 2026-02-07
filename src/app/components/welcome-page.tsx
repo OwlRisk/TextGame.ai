@@ -1,13 +1,20 @@
+"use client";
+
 import { Button } from "@/app/components/ui/button";
-import { Sparkles, Lightbulb, MessageSquare, Shield, Users, Zap, Wand2, Target, ChevronRight, Gamepad2, Crown, Eye } from "lucide-react";
+import { Sparkles, Lightbulb, MessageSquare, Shield, Users, Zap, Wand2, Target, ChevronRight, Gamepad2, Crown, Eye, LogIn } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { useRouter } from "next/navigation";
+import { User } from "@supabase/supabase-js";
 
 interface WelcomePageProps {
   onCreateGame: () => void;
   onExploreGames: () => void;
+  user: User | null;
+  loading: boolean;
 }
 
-export function WelcomePage({ onCreateGame, onExploreGames }: WelcomePageProps) {
+export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: WelcomePageProps) {
+  const router = useRouter();
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 relative">
       {/* Animated Background */}
@@ -38,29 +45,48 @@ export function WelcomePage({ onCreateGame, onExploreGames }: WelcomePageProps) 
 
             {/* Primary CTAs */}
             <div className="flex items-center justify-center gap-4 mb-8">
-              <Button
-                onClick={onCreateGame}
-                size="lg"
-                className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xl px-12 py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-105"
-              >
-                <Sparkles className="h-6 w-6 mr-3" />
-                Create Your Game
-              </Button>
-              
-              <Button
-                onClick={onExploreGames}
-                size="lg"
-                variant="outline"
-                className="bg-white/5 border-white/20 hover:bg-white/10 text-white text-xl px-12 py-8 h-auto"
-              >
-                <Lightbulb className="h-6 w-6 mr-3" />
-                Browse Examples
-              </Button>
+              {!user && !loading ? (
+                <Button
+                  onClick={() => router.push("/signin")}
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xl px-12 py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-105"
+                >
+                  <LogIn className="h-6 w-6 mr-3" />
+                  Sign in with Google
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={onCreateGame}
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xl px-12 py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-105"
+                  >
+                    <Sparkles className="h-6 w-6 mr-3" />
+                    Create Your Game
+                  </Button>
+                  
+                  <Button
+                    onClick={onExploreGames}
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/5 border-white/20 hover:bg-white/10 text-white text-xl px-12 py-8 h-auto"
+                  >
+                    <Lightbulb className="h-6 w-6 mr-3" />
+                    Browse Examples
+                  </Button>
+                </>
+              )}
             </div>
 
-            <p className="text-sm text-zinc-500">
-              🎉 <span className="text-purple-400 font-semibold">New here?</span> Click "Create Your Game" and our Game Master will guide you through!
-            </p>
+            {!user && !loading ? (
+              <p className="text-sm text-zinc-500">
+                🎉 <span className="text-purple-400 font-semibold">New here?</span> Sign in to start creating amazing games!
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-500">
+                🎉 <span className="text-purple-400 font-semibold">New here?</span> Click "Create Your Game" and our Game Master will guide you through!
+              </p>
+            )}
           </div>
 
           {/* How It Works - 3 Steps */}
