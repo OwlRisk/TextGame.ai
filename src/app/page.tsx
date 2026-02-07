@@ -1841,7 +1841,7 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
   };
 
   return (
-    <div className="h-screen flex bg-zinc-900 text-white">
+    <div className="h-screen flex bg-gradient-to-br from-zinc-900 via-[#0a0510] to-zinc-900 text-white">
       <GameSidebar
         games={games}
         selectedGameId={selectedGameId}

@@ -51,7 +51,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
 
   return (
-    <div className="w-20 flex-shrink-0 bg-zinc-950 border-r border-white/5 flex flex-col items-center py-4 gap-3 overflow-hidden">
+    <div className="w-20 flex-shrink-0 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950 border-r border-violet-900/20 flex flex-col items-center py-4 gap-3 overflow-hidden backdrop-blur-sm">
       <TooltipProvider delayDuration={100}>
         {/* Top Section: Home + Create */}
         <div className="flex flex-col items-center gap-3">

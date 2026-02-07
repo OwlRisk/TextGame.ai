@@ -65,7 +65,7 @@ export function PlayerPanelWithBoard({
   };
 
   return (
-    <div className="w-80 flex-shrink-0 bg-zinc-850 flex flex-col border-l border-zinc-900/50 h-full overflow-hidden">
+    <div className="w-80 flex-shrink-0 bg-gradient-to-b from-zinc-900/95 via-[#120820]/95 to-zinc-900/95 flex flex-col border-l border-violet-900/20 h-full overflow-hidden backdrop-blur-sm">
       <PlayerProfileDialog
         player={profilePlayer}
         open={profileOpen}
@@ -73,13 +73,13 @@ export function PlayerPanelWithBoard({
         gameId={gameId}
       />
       <Tabs value={tabValue} onValueChange={handleTabChange} className="flex flex-col h-full overflow-hidden">
-        <div className="h-14 px-5 flex items-center border-b border-zinc-900/50 bg-zinc-900/30">
-          <TabsList className="grid w-full grid-cols-2 bg-zinc-900 h-10">
-            <TabsTrigger value="players" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 text-xs">
+        <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
+          <TabsList className="grid w-full grid-cols-2 bg-zinc-900/80 backdrop-blur-sm h-10">
+            <TabsTrigger value="players" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-white text-zinc-400 text-xs">
               <User className="h-3.5 w-3.5 mr-2" />
               Players
             </TabsTrigger>
-            <TabsTrigger value="board" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 text-xs relative">
+            <TabsTrigger value="board" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-white text-zinc-400 text-xs relative">
               <Package className="h-3 w-3 mr-1.5" />
               My Board
               {hasBoardUpdate && (
@@ -120,7 +120,7 @@ export function PlayerPanelWithBoard({
         <TabsContent value="board" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-3">
-              <div className="rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-950/25 to-zinc-900/40 p-4 shadow-lg">
+              <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#1a0f0a]/40 to-zinc-900/50 p-4 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
                     <Info className="h-3.5 w-3.5" />
@@ -178,7 +178,7 @@ function PlayerCard({
         isEliminated ? "opacity-50 bg-zinc-800/50" :
         isSpeaking 
           ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
-          : "hover:bg-zinc-700/40 hover:shadow-sm"
+          : "hover:bg-zinc-800/40 hover:shadow-sm"
       } ${canViewProfile ? "cursor-pointer" : ""}`}
       title={canViewProfile ? "View profile" : undefined}
     >

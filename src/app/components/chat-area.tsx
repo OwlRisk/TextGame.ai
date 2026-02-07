@@ -173,7 +173,7 @@ function formatMessage(content: string): JSX.Element {
 function PrivateMessagesSection({ messages, label = "Private from Host" }: { messages: Array<{ id: string; from: string; content: string; timestamp: Date }>; label?: string }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="mb-3 rounded-lg border border-violet-500/40 bg-violet-950/30 overflow-hidden">
+    <div className="mb-3 rounded-lg border border-violet-500/40 bg-gradient-to-br from-violet-950/40 via-[#1a0820]/40 to-violet-900/30 overflow-hidden backdrop-blur-sm">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -275,6 +275,8 @@ export function ChatArea({
   aiSuggestionsLabel = 'AI suggestions',
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
+  const [quickReplyOpen, setQuickReplyOpen] = useState(true);
+  const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
@@ -401,9 +403,9 @@ export function ChatArea({
   const canSend = !isGameActive || !currentSpeakerId || currentSpeakerId === userId;
 
   return (
-    <div className="flex-1 flex flex-col bg-zinc-800/95 min-w-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col bg-gradient-to-b from-zinc-900/90 via-[#0f0818]/95 to-zinc-900/90 min-w-0 h-full overflow-hidden backdrop-blur-sm">
       {/* Channel Header */}
-      <div className="h-14 px-6 flex items-center justify-between border-b border-zinc-700/80 bg-zinc-900/60 shadow-sm">
+      <div className="h-14 px-6 flex items-center justify-between border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md shadow-sm">
         <div className="flex items-center gap-2.5">
           <span className="text-zinc-400 text-lg">#</span>
           <h2 className="font-semibold text-base text-white">{channelName}</h2>
@@ -437,7 +439,7 @@ export function ChatArea({
             if (message.isSystemMessage) {
               return (
                 <div key={message.id} className="my-5">
-                  <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-orange-500/5 px-4 py-3 shadow-sm">
+                  <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-[#1a0f0a]/10 to-orange-500/5 px-4 py-3 shadow-sm backdrop-blur-sm">
                     <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-500/20">
                       <AlertCircle className="h-4 w-4 text-amber-400" />
                     </div>
@@ -453,7 +455,7 @@ export function ChatArea({
             if (message.isPrivate) {
               return (
                 <div key={message.id} className="my-5">
-                  <div className="flex items-start gap-3 rounded-xl border border-violet-500/40 bg-gradient-to-br from-violet-950/50 to-violet-900/20 px-4 py-3 shadow-md">
+                  <div className="flex items-start gap-3 rounded-xl border border-violet-500/40 bg-gradient-to-br from-violet-950/50 via-[#1a0820]/40 to-violet-900/20 px-4 py-3 shadow-md backdrop-blur-sm">
                     <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-violet-500/20">
                       <Lock className="h-4 w-4 text-violet-400" />
                     </div>
@@ -523,7 +525,7 @@ export function ChatArea({
                         </span>
                       </div>
                       <div
-                        className={`text-zinc-100 text-sm break-words ${isHost ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-white/[0.03] pl-3 py-1 -ml-0.5" : "leading-relaxed"}`}
+                        className={`text-zinc-100 text-sm break-words ${isHost ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : "leading-relaxed"}`}
                       >
                         {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">(No content)</span>}
                         {message.isStreaming && (
@@ -535,7 +537,7 @@ export function ChatArea({
                 ) : (
                   <div className="flex gap-4">
                     <div className="w-11 flex-shrink-0" />
-                    <div className={`flex-1 text-zinc-100 text-sm leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-white/[0.03] pl-3 py-1 -ml-0.5" : ""}`}>
+                    <div className={`flex-1 text-zinc-100 text-sm leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : ""}`}>
                       {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">(No content)</span>}
                       {message.isStreaming && (
                         <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
@@ -599,7 +601,7 @@ export function ChatArea({
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-5 border-t border-zinc-700/80 bg-zinc-900/40">
+      <div className="p-5 border-t border-violet-900/20 bg-zinc-900/50 backdrop-blur-md">
         {!canSend && isGameActive && !isRecording && (
           <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5" />
@@ -607,7 +609,7 @@ export function ChatArea({
           </div>
         )}
         {voiceError && (
-          <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-red-500/30 px-3 py-2 backdrop-blur-sm">
             <span className="text-xs text-red-300">{voiceError}</span>
             <div className="flex gap-1">
               <Button size="sm" variant="ghost" className="h-7 px-2 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>Close</Button>
@@ -616,7 +618,7 @@ export function ChatArea({
           </div>
         )}
         {introYourTurnHint && canSend && !isRecording && (
-          <div className="mb-2 flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <div className="mb-2 flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 backdrop-blur-sm">
             <span className="text-sm text-amber-200">{introYourTurnHint}</span>
             {introYourTurnReply && (
               <Button
@@ -630,52 +632,78 @@ export function ChatArea({
           </div>
         )}
         {introEveryoneSpokenHint && canSend && !isRecording && (
-          <div className="mb-2 px-2 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-200">
+          <div className="mb-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 text-sm text-emerald-200 backdrop-blur-sm">
             {introEveryoneSpokenHint}
           </div>
         )}
         {aiSuggestedPrompts.length > 0 && canSend && !isRecording && (
-          <div className="mb-2">
-            <p className="text-xs text-zinc-500 mb-1.5">
-              {aiSuggestionsLabel}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {aiSuggestedPrompts.map((text) => (
-                <Button
-                  key={text}
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-sm border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-200"
-                  onClick={() => handleSend(text)}
-                >
-                  {text}
-                </Button>
-              ))}
-            </div>
+          <div className="mb-2 rounded-lg border border-zinc-700/60 bg-zinc-800/50 overflow-hidden backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => setAiSuggestionsOpen(!aiSuggestionsOpen)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700/40 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-zinc-500">✨</span>
+                {aiSuggestionsLabel} ({aiSuggestedPrompts.length})
+              </span>
+              {aiSuggestionsOpen ? <ChevronUp className="h-4 w-4 text-zinc-500" /> : <ChevronDown className="h-4 w-4 text-zinc-500" />}
+            </button>
+            {aiSuggestionsOpen && (
+              <div className="px-3 pb-3">
+                <div className="flex flex-wrap gap-2">
+                  {aiSuggestedPrompts.map((text) => (
+                    <Button
+                      key={text}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200"
+                      onClick={() => handleSend(text)}
+                    >
+                      {text}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {quickReplies.length > 0 && canSend && !isRecording && (
-          <div className="mb-3">
-            <p className="text-xs font-medium text-zinc-500 mb-2">Quick reply</p>
-            <div className="flex flex-wrap gap-2">
-              {quickReplies.map((text) => (
-                <Button
-                  key={text}
-                  variant="outline"
-                  size="sm"
-                  className="h-9 px-4 text-sm border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 hover:text-amber-100 rounded-lg transition-colors"
-                  onClick={() => handleSend(text)}
-                >
-                  {text}
-                </Button>
-              ))}
-            </div>
+          <div className="mb-3 rounded-lg border border-zinc-700/60 bg-zinc-800/50 overflow-hidden backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => setQuickReplyOpen(!quickReplyOpen)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700/40 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-zinc-500">⚡</span>
+                Quick reply ({quickReplies.length})
+              </span>
+              {quickReplyOpen ? <ChevronUp className="h-4 w-4 text-zinc-500" /> : <ChevronDown className="h-4 w-4 text-zinc-500" />}
+            </button>
+            {quickReplyOpen && (
+              <div className="px-3 pb-3">
+                <div className="flex flex-wrap gap-2">
+                  {quickReplies.map((text) => (
+                    <Button
+                      key={text}
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-4 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200 rounded-lg transition-colors"
+                      onClick={() => handleSend(text)}
+                    >
+                      {text}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {(isRecording || isTranscribing) && !voiceError ? (
           <div className="relative w-full px-1">
             <div
-              className="flex items-center gap-2 w-full rounded-full bg-zinc-800/95 border border-zinc-700/80 px-2 py-2 shadow-lg backdrop-blur-sm"
+              className="flex items-center gap-2 w-full rounded-full bg-zinc-800/90 border border-violet-900/30 px-2 py-2 shadow-lg backdrop-blur-md"
               style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.4)" }}
             >
               <Button
@@ -731,7 +759,7 @@ export function ChatArea({
                 }
               }}
               placeholder={`Message #${channelName}`}
-              className="min-h-0 bg-zinc-700/90 border border-zinc-600 focus:border-amber-500/40 text-white placeholder:text-zinc-500 py-2 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
+              className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 text-white placeholder:text-zinc-500 py-2 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
               style={{ 
                 minHeight: `${MIN_INPUT_HEIGHT}px`, 
                 maxHeight: `${MAX_INPUT_HEIGHT}px`
@@ -742,7 +770,7 @@ export function ChatArea({
             {voiceSupported && (
               <Button
                 size="icon"
-                className="h-10 w-10 flex-shrink-0 bg-zinc-600 hover:bg-zinc-500"
+                className="h-10 w-10 flex-shrink-0 bg-zinc-700/80 hover:bg-zinc-600 backdrop-blur-sm border border-violet-900/20"
                 disabled={!canSend}
                 onClick={voiceStart}
                 title="Voice input"
