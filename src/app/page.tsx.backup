@@ -1,0 +1,15 @@
+import { WelcomePage } from "@/app/components/welcome-page";
+
+export default function Home() {
+  return (
+    <WelcomePage
+      onCreateGame={() => {
+        // This will be handled by the game-master-chat component
+        // User will navigate via button clicks
+      }}
+      onExploreGames={() => {
+        // Navigate to discover page
+      }}
+    />
+  );
+}

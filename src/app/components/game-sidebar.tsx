@@ -27,6 +27,8 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { useState } from "react";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 
 interface Game {
   id: string;
@@ -49,6 +51,17 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
+  const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setUserMenuOpen(false);
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  };
 
   return (
     <div className="w-20 flex-shrink-0 bg-zinc-950 border-r border-white/5 flex flex-col items-center py-4 gap-3 overflow-hidden">
@@ -289,8 +302,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Player</h3>
-                    <p className="text-zinc-400 text-xs">Member since 2024</p>
+                    <h3 className="text-lg font-bold">{user?.email?.split("@")[0] || "Player"}</h3>
+                    <p className="text-zinc-400 text-xs">{user?.email || "Not signed in"}</p>
                   </div>
                 </div>
 
@@ -336,6 +349,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-red-400 hover:text-red-300"
+                      onClick={handleLogout}
                     >
                       <LogOut className="mr-3 h-4 w-4" />
                       <span className="text-sm">Log Out</span>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../styles/index.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Game Master",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" className="h-full overflow-hidden">
-      <body className="antialiased h-full overflow-hidden" suppressHydrationWarning>{children}</body>
+      <body className="antialiased h-full overflow-hidden" suppressHydrationWarning>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

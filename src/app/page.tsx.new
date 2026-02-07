@@ -1,0 +1,22 @@
+"use client";
+
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect } from "react";
+
+/**
+ * Main page that routes to the appropriate section based on URL
+ * This component acts as a router for the entire application
+ */
+export default function HomePage() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // If on root path, redirect to /home
+    if (pathname === "/") {
+      router.replace("/home");
+    }
+  }, [pathname, router]);
+
+  return null; // Redirect happens automatically
+}
