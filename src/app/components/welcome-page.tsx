@@ -135,7 +135,7 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading, games
               How It Works
             </h2>
             <p className="text-base sm:text-lg text-zinc-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
-              From idea to gameplay in 3 simple steps. No coding, no complexity.
+              From idea to gameplay in 3 simple steps.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -398,8 +398,8 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading, games
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">No code</div>
-              <div className="text-sm text-zinc-400">Just describe your game</div>
+              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">Describe</div>
+              <div className="text-sm text-zinc-400">Tell the Game Master your idea</div>
             </div>
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
               <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">∞</div>

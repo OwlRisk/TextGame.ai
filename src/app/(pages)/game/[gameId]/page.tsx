@@ -6,8 +6,10 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { GameSidebar } from "@/app/components/game-sidebar";
+import { ChannelList } from "@/app/components/channel-list";
 import { ChatArea } from "@/app/components/chat-area";
 import { PlayerPanel } from "@/app/components/player-panel";
+import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 
@@ -23,6 +25,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gamePhase,
     setGamePhase,
     selectedChannelId,
+    setSelectedChannelId,
+    gameProgress,
     userId,
   } = useGameRoomContext();
 
@@ -232,14 +236,27 @@ Guide the player through the game. Be engaging and maintain the game atmosphere.
     );
   }
 
+  const gameChannels = [
+    { id: "rules", name: "Rules", type: "text" as const },
+    { id: "progress", name: "Progress", type: "text" as const },
+    { id: "game-room", name: "game-room", type: "game" as const },
+  ];
+
+  const handleShare = () => {
+    const url = typeof window !== "undefined" ? `${window.location.origin}/game/${gameId}` : "";
+    navigator.clipboard.writeText(url);
+    toast.success("Link copied to clipboard");
+  };
+
   return (
     <div className="h-screen flex bg-zinc-900 text-white overflow-hidden">
+      {/* Left app sidebar: Home, My games, Discover, game list */}
       <GameSidebar
         games={games}
         selectedGameId={selectedGameId}
         onSelectGame={(gameId: string) => {
           if (gameId === "home") {
-            router.push("/");
+            router.push("/create");
           } else if (gameId === "discover") {
             router.push("/discover");
           } else if (gameId === "my-games") {
@@ -253,15 +270,61 @@ Guide the player through the game. Be engaging and maintain the game atmosphere.
         onOpenProfile={() => router.push("/profile")}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ChatArea
-          channelName="General"
-          messages={messages}
-          players={players}
-          onSendMessage={handleSendMessage}
-          isGameActive={gamePhase !== "ended"}
-          userId={userId}
-        />
+      {/* Game sidebar: Back to Arena, # Rules, # Progress, # game-room */}
+      <ChannelList
+        gameName={currentGame?.name ?? "Game"}
+        channels={gameChannels}
+        selectedChannelId={selectedChannelId}
+        onSelectChannel={(id) => setSelectedChannelId(id)}
+        onShare={handleShare}
+        onSettings={() => toast.info("Settings coming soon")}
+        onBackToArena={() => router.push("/create")}
+        textSectionLabel="Sections"
+        gameSectionLabel="Game Rooms"
+        onDeleteChannel={(id) => {
+          if (id === "game-room") return;
+          toast.info("Default sections cannot be removed");
+        }}
+      />
+
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {selectedChannelId === "game-room" ? (
+          <ChatArea
+            channelName="game-room"
+            messages={messages}
+            players={players}
+            onSendMessage={handleSendMessage}
+            isGameActive={gamePhase !== "ended"}
+            userId={userId}
+            gameId={gameId}
+          />
+        ) : selectedChannelId === "rules" ? (
+          <ScrollArea className="flex-1 p-6">
+            <div className="prose prose-invert max-w-none">
+              <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
+                {currentGame?.config?.rules ?? "No rules defined for this game."}
+              </pre>
+            </div>
+          </ScrollArea>
+        ) : selectedChannelId === "progress" ? (
+          <ScrollArea className="flex-1 p-6">
+            <div className="prose prose-invert max-w-none">
+              <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
+                {gameProgress || "Game progress will appear here as the game unfolds."}
+              </pre>
+            </div>
+          </ScrollArea>
+        ) : (
+          <ChatArea
+            channelName="game-room"
+            messages={messages}
+            players={players}
+            onSendMessage={handleSendMessage}
+            isGameActive={gamePhase !== "ended"}
+            userId={userId}
+            gameId={gameId}
+          />
+        )}
       </div>
 
       <PlayerPanel players={players} />

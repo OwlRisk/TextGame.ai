@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { GameMasterChat } from "@/app/components/game-master-chat";
@@ -25,6 +26,11 @@ function CreateGamePageContent() {
   const { games, selectedGameId, selectGame, addGame } = useGameContext();
 
   const presetId = searchParams.get("preset");
+
+  // When on /create (Game Master chat), highlight "Home" in sidebar
+  useEffect(() => {
+    selectGame("home");
+  }, [selectGame]);
 
   // You can load preset data here based on presetId
   // For now, we'll pass it to GameMasterChat
@@ -142,7 +148,7 @@ function CreateGamePageContent() {
         selectedGameId={selectedGameId}
         onSelectGame={(gameId) => {
           if (gameId === "home") {
-            router.push("/");
+            router.push("/create");
           } else if (gameId === "discover") {
             router.push("/discover");
           } else if (gameId === "my-games") {

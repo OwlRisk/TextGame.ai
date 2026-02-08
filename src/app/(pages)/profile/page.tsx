@@ -26,7 +26,7 @@ function ProfilePageContent() {
         selectedGameId={selectedGameId}
         onSelectGame={(gameId) => {
           if (gameId === "home") {
-            router.push("/");
+            router.push("/create");
           } else if (gameId === "discover") {
             router.push("/discover");
           } else if (gameId === "my-games") {

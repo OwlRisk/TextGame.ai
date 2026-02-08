@@ -27,6 +27,19 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
    - **anon public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - **service_role** key → `SUPABASE_SERVICE_ROLE_KEY` (用于服务器端操作)
 
+### 2.1 Google 登录与 Redirect URL（必做才能用「用 Google 登录」）
+
+1. Supabase Dashboard → **Authentication** → **Providers** → **Google**：填好 Client ID、Client Secret，并确保 **Callback URL** 为 Supabase 提供的 `https://<项目ref>.supabase.co/auth/v1/callback`（与上图一致即可）。
+2. **Authentication** → **URL Configuration**：
+   - **Site URL**：本地开发可填 `http://localhost:3000`，上线后改为你的生产域名（如 `https://yourdomain.com`）。
+   - **Redirect URLs**：必须把应用的回调地址加入白名单，否则登录后会报错。请至少添加：
+     - 本地：`http://localhost:3000/auth/callback`
+     - 生产：`https://你的域名/auth/callback`
+   - 若用 Vercel 等预览环境，可再加一条如 `https://*.vercel.app/auth/callback`（按 Supabase 支持的通配符规则）。
+3. Google Cloud Console 里 OAuth 客户端的 **已授权的重定向 URI** 中，要有上面 Supabase 的 Callback URL（即 `https://<项目ref>.supabase.co/auth/v1/callback`），不要直接写 `http://localhost:3000/auth/callback`。
+
+做完以上后，再在应用里点「Continue with Google」重试登录。
+
 ### 3. 数据库 Schema 设置
 
 如果控制台出现 **"Could not find the table 'public.games' in the schema cache"**，按下面做（注意：**必须用和 `.env` 里 `NEXT_PUBLIC_SUPABASE_URL` 对应的同一个项目**）：

@@ -13,10 +13,14 @@ export default function HomePage() {
   const { selectGame, games } = useGameContext();
   const { user, loading } = useAuth();
 
+  // Logged-in users: "/" redirects to /create (Game Master) so "home" is one place
   useEffect(() => {
-    // Reset selected game when on home page
+    if (!loading && user) {
+      router.replace("/create");
+      return;
+    }
     selectGame(null);
-  }, [selectGame]);
+  }, [loading, user, router, selectGame]);
 
   const handleCreateGame = (presetId?: string) => {
     if (!user && !loading) {
@@ -37,7 +41,7 @@ export default function HomePage() {
         selectedGameId={null}
         onSelectGame={(gameId) => {
           if (gameId === "home") {
-            router.push("/");
+            router.push("/create");
           } else if (gameId === "discover") {
             router.push("/discover");
           } else if (gameId === "my-games") {
