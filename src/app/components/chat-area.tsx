@@ -254,6 +254,8 @@ interface ChatAreaProps {
   lastFailedSendContent?: string | null;
   /** Call to retry sending the last failed message */
   onRetryLastMessage?: () => void;
+  /** True while Host + AI are replying (game room); keeps send disabled and shows "Host & AI 回复中…" */
+  isRoundInProgress?: boolean;
 }
 
 export function ChatArea({ 
@@ -284,6 +286,7 @@ export function ChatArea({
   quickRepliesLoading = false,
   lastFailedSendContent,
   onRetryLastMessage,
+  isRoundInProgress = false,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [quickReplyOpen, setQuickReplyOpen] = useState(true);
@@ -415,6 +418,7 @@ export function ChatArea({
   }, [onSendMessage]);
 
   const canSend = !isGameActive || !currentSpeakerId || currentSpeakerId === userId;
+  const sendDisabled = !canSend || isSending || isRoundInProgress;
 
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-b from-zinc-900/90 via-[#0f0818]/95 to-zinc-900/90 min-w-0 h-full overflow-hidden backdrop-blur-sm">
@@ -794,20 +798,20 @@ export function ChatArea({
                   if (canSend) handleSend();
                 }
               }}
-              placeholder={`Message #${channelName}`}
+              placeholder={isRoundInProgress ? "Host & AI 回复中…" : `Message #${channelName}`}
               className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
               style={{ 
                 minHeight: `${MIN_INPUT_HEIGHT}px`, 
                 maxHeight: `${MAX_INPUT_HEIGHT}px`
               }}
-              disabled={!canSend || isSending}
+              disabled={sendDisabled}
               rows={1}
             />
             {voiceSupported && (
               <Button
                 size="icon"
                 className="h-10 w-10 flex-shrink-0 bg-zinc-700/80 hover:bg-zinc-600 backdrop-blur-sm border border-violet-900/20 focus-visible:ring-2 focus-visible:ring-amber-500/50"
-                disabled={!canSend || isSending}
+                disabled={sendDisabled}
                 onClick={voiceStart}
                 title="Voice input"
               >
@@ -816,12 +820,12 @@ export function ChatArea({
             )}
             <Button 
               onClick={() => handleSend()} 
-              disabled={!input.trim() || !canSend || isSending}
+              disabled={!input.trim() || sendDisabled}
               size="icon"
               className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-              title={isSending ? "Sending…" : "Send"}
+              title={isRoundInProgress ? "Host & AI 回复中…" : isSending ? "Sending…" : "Send"}
             >
-              {isSending ? (
+              {(isSending || isRoundInProgress) ? (
                 <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />

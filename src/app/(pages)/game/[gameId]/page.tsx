@@ -39,6 +39,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [quickRepliesLoading, setQuickRepliesLoading] = useState(false);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
+  const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const { gameId } = use(params);
 
   // Find current game
@@ -220,136 +222,176 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     // Get AI response (host reply in same channel)
     setLastFailedSendContent(null);
+    setIsRoundInProgress(true);
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          messages: [
-            {
-              role: "system",
-              content: `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results. Keep replies short and in character.
+      // Build recent context so Host can choose next speaker based on current discussion
+      const channelMessages = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
+      const recentSlice = channelMessages.slice(-12);
+      const recentContext =
+        recentSlice.length === 0
+          ? "(No prior messages in this channel.)"
+          : recentSlice
+              .map((m) => `- ${m.senderName}: ${m.content}`)
+              .join("\n");
+
+      const gmName = currentGame?.config?.generatedHost?.name || "Game Master";
+      const gmColor = currentGame?.config?.template === "werewolf"
+        ? "#7c3aed"
+        : currentGame?.config?.template === "undercover"
+          ? "#0ea5e9"
+          : "#ec4899";
+      const aiOnly = players.filter((p) => p.isAI && !p.isGameMaster);
+      const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results. Keep replies short and in character.
 
 When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
 
-You decide who may speak next. At the end of EVERY reply, add exactly one line (no other text after it):
+You decide who may speak next based on the current discussion (who just spoke, who was suggested, what was said). At the end of EVERY reply, add exactly one line (no other text after it):
 NEXT_SPEAKER: <name>
 
 All non-host player names (use exactly as written): ${players.filter((p) => !p.isGameMaster).map((p) => p.name).join(", ")}. For the human player use: NEXT_SPEAKER: You. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
 
-CRITICAL — Rotate so every AI player speaks: You MUST frequently assign different AI players by name. Do NOT keep choosing the same 1–2 AI players. Each reply, prefer NEXT_SPEAKER: <an AI name who has spoken less recently>. Use the full list: ${players.filter((p) => !p.isGameMaster && p.isAI).map((p) => p.name).join(", ")}. Mix in the human with NEXT_SPEAKER: You sometimes, but most of the time pick one of the AI names above so all of them participate in the discussion.
+CRITICAL — Keep the discussion going among players: Most of the time assign an AI to speak (NEXT_SPEAKER: <AI name>) so the conversation flows without always waiting for the human. Only occasionally use NEXT_SPEAKER: You to give the human player a turn. Rotate among AI players so different names speak; do NOT keep choosing the same 1–2. Prefer NEXT_SPEAKER: <an AI who has spoken less recently>. When someone suggests a specific person, prefer that choice when appropriate.
 
 Game Rules (do not modify, only enforce):
-${currentGame?.config?.rules || "No specific rules defined."}`,
-            },
-            {
-              role: "user",
-              content,
-            },
-          ],
-        }),
-      });
+${currentGame?.config?.rules || "No specific rules defined."}`;
 
-      if (response.ok) {
-        const data = await response.json();
+      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null }> => {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+          body: JSON.stringify({
+            messages: [
+              { role: "system", content: hostSystemPrompt },
+              { role: "user", content: userContent },
+            ],
+          }),
+        });
+        if (!res.ok) return { hostContent: "", who: null, nextSpeakerPlayer: null };
+        const data = await res.json();
         let hostContent = (data.message || "").trim();
-        let nextSpeakerPlayer: typeof players[0] | null = null;
         const nextSpeakerMatch = hostContent.match(/\nNEXT_SPEAKER:\s*(.+?)\s*$/im);
+        let who: string | null = null;
+        let nextSpeakerPlayer: typeof players[0] | null = null;
         if (nextSpeakerMatch) {
-          const who = nextSpeakerMatch[1].trim();
+          who = nextSpeakerMatch[1].trim();
           hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
           if (who.toLowerCase() === "you") {
-            setCurrentSpeakerId(userId);
+            nextSpeakerPlayer = null; // human's turn
           } else if (who.toLowerCase() === "everyone") {
-            setCurrentSpeakerId(null);
-            // Have one random AI player speak during "Everyone" so the discussion feels active
-            const aiOnly = players.filter((p) => p.isAI && !p.isGameMaster);
-            if (aiOnly.length > 0) {
-              nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
-            }
+            if (aiOnly.length > 0) nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
           } else {
             const player = players.find((p) => !p.isGameMaster && p.name === who);
             nextSpeakerPlayer = player ?? null;
-            setCurrentSpeakerId(player ? player.id : null);
           }
         }
+        return { hostContent, who, nextSpeakerPlayer };
+      };
 
-        const gmName = currentGame?.config?.generatedHost?.name || "Game Master";
-        const gmColor = currentGame?.config?.template === "werewolf" 
-          ? "#7c3aed" 
-          : currentGame?.config?.template === "undercover" 
-          ? "#0ea5e9" 
-          : "#ec4899";
+      const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>): Promise<string | null> => {
+        try {
+          const res = await fetch("/api/chat/player-speak", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({
+              gameName: currentGame?.name,
+              rules: currentGame?.config?.rules,
+              player: { name: speaker.name, role: speaker.role, personality: speaker.personality, background: speaker.background },
+              recentMessages: recent,
+            }),
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          return (data.message || "").trim() || null;
+        } catch (err) {
+          console.error("Error generating AI player reply:", err);
+          return null;
+        }
+      };
 
-        addMessage(
-          {
-            senderId: "gm-1",
-            senderName: gmName,
-            senderAvatar: gmColor,
-            content: hostContent,
-            isAI: true,
-          },
-          channelId
-        );
+      const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
+      const firstUserContent = `Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
+      let { hostContent, who, nextSpeakerPlayer } = await callHost(firstUserContent);
+      if (!hostContent) {
+        setIsRoundInProgress(false);
+        return;
+      }
 
-        // If Host assigned an AI player to speak, generate that player's message so they participate in the discussion
-        if (nextSpeakerPlayer?.isAI && !nextSpeakerPlayer.isGameMaster) {
-          const nextSpeaker = nextSpeakerPlayer;
-          try {
-            const cfgChannels = currentGame?.config?.channels;
-            const roomIds = cfgChannels?.length ? new Set(cfgChannels.map((c) => c.id)) : new Set(["game-room"]);
-            const chId = selectedChannelId && roomIds.has(selectedChannelId) ? selectedChannelId : (cfgChannels?.[0]?.id ?? "game-room");
-            const channelMessages = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === chId);
-            const recentWithNew = [
-              ...channelMessages.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
-              { senderName: "You", content },
-              { senderName: gmName, content: hostContent },
-            ];
-            const headers: Record<string, string> = { "Content-Type": "application/json" };
-            if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
-            const playerRes = await fetch("/api/chat/player-speak", {
-              method: "POST",
-              headers,
-              body: JSON.stringify({
-                gameName: currentGame?.name,
-                rules: currentGame?.config?.rules,
-                player: {
-                  name: nextSpeaker.name,
-                  role: nextSpeaker.role,
-                  personality: nextSpeaker.personality,
-                  background: nextSpeaker.background,
-                },
-                recentMessages: recentWithNew,
-              }),
-            });
-            if (playerRes.ok) {
-              const data = await playerRes.json();
-              const aiContent = (data.message || "").trim();
-              if (aiContent) {
-                addMessage(
-                  {
-                    senderId: nextSpeaker.id,
-                    senderName: nextSpeaker.name,
-                    senderAvatar: nextSpeaker.avatar ?? "#8b5cf6",
-                    content: aiContent,
-                    isAI: true,
-                  },
-                  channelId
-                );
-              }
+      if (who?.toLowerCase() === "you") setCurrentSpeakerId(userId);
+      else if (who?.toLowerCase() === "everyone") setCurrentSpeakerId(null);
+      else if (nextSpeakerPlayer) setCurrentSpeakerId(nextSpeakerPlayer.id);
+
+      addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: hostContent, isAI: true }, channelId);
+      let recentForNext = [
+        ...channelMessagesForRecent.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
+        { senderName: "You", content },
+        { senderName: gmName, content: hostContent },
+      ] as Array<{ senderName: string; content: string }>;
+
+      const runAiThenMaybeSecond = async (firstSpeaker: typeof players[0]): Promise<void> => {
+        const firstContent = await runPlayerSpeak(firstSpeaker, recentForNext);
+        if (firstContent) {
+          addMessage({ senderId: firstSpeaker.id, senderName: firstSpeaker.name, senderAvatar: firstSpeaker.avatar ?? "#8b5cf6", content: firstContent, isAI: true }, channelId);
+          recentForNext = [...recentForNext, { senderName: firstSpeaker.name, content: firstContent }];
+          const others = aiOnly.filter((p) => p.id !== firstSpeaker.id);
+          if (others.length > 0) {
+            const secondSpeaker = others[Math.floor(Math.random() * others.length)];
+            const secondContent = await runPlayerSpeak(secondSpeaker, recentForNext);
+            if (secondContent) {
+              addMessage({ senderId: secondSpeaker.id, senderName: secondSpeaker.name, senderAvatar: secondSpeaker.avatar ?? "#8b5cf6", content: secondContent, isAI: true }, channelId);
+              recentForNext = [...recentForNext, { senderName: secondSpeaker.name, content: secondContent }];
             }
-          } catch (err) {
-            console.error("Error generating AI player reply:", err);
           }
+        }
+      };
+
+      if (nextSpeakerPlayer?.isAI && !nextSpeakerPlayer.isGameMaster) {
+        await runAiThenMaybeSecond(nextSpeakerPlayer);
+      } else if (who?.toLowerCase() === "everyone" && nextSpeakerPlayer?.isAI) {
+        await runPlayerSpeak(nextSpeakerPlayer, recentForNext).then((txt) => {
+          if (txt) {
+            addMessage({ senderId: nextSpeakerPlayer!.id, senderName: nextSpeakerPlayer!.name, senderAvatar: nextSpeakerPlayer!.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+            recentForNext = [...recentForNext, { senderName: nextSpeakerPlayer!.name, content: txt }];
+          }
+        });
+      }
+
+      const MAX_CONTINUATION_ROUNDS = 2;
+      for (let r = 0; r < MAX_CONTINUATION_ROUNDS; r++) {
+        const continuationUserContent = `The discussion continues. Latest messages:\n${recentForNext.slice(-14).map((m) => `${m.senderName}: ${m.content}`).join("\n")}\n\nAs host, briefly respond to what was just said (or move the phase). Then assign NEXT_SPEAKER. Prefer an AI name so the discussion keeps going; use NEXT_SPEAKER: You only when it's a natural moment for the human to speak.`;
+        const next = await callHost(continuationUserContent);
+        if (!next.hostContent) break;
+        const nextWho = next.who?.toLowerCase();
+        addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: next.hostContent, isAI: true }, channelId);
+        recentForNext = [...recentForNext, { senderName: gmName, content: next.hostContent }];
+        if (nextWho === "you") {
+          setCurrentSpeakerId(userId);
+          break;
+        }
+        if (nextWho === "everyone") {
           setCurrentSpeakerId(null);
+          if (next.nextSpeakerPlayer?.isAI) {
+            const txt = await runPlayerSpeak(next.nextSpeakerPlayer, recentForNext);
+            if (txt) {
+              addMessage({ senderId: next.nextSpeakerPlayer.id, senderName: next.nextSpeakerPlayer.name, senderAvatar: next.nextSpeakerPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+              recentForNext = [...recentForNext, { senderName: next.nextSpeakerPlayer.name, content: txt }];
+            }
+          }
+          break;
+        }
+        if (next.nextSpeakerPlayer?.isAI && !next.nextSpeakerPlayer.isGameMaster) {
+          await runAiThenMaybeSecond(next.nextSpeakerPlayer);
+        } else {
+          break;
         }
       }
+
+      setCurrentSpeakerId((id) => (id === userId ? id : null));
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast.error("Failed to get response from Game Master");
       setLastFailedSendContent(content);
+    } finally {
+      setIsRoundInProgress(false);
     }
   };
 
@@ -534,6 +576,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
             quickRepliesLoading={quickRepliesLoading}
             lastFailedSendContent={lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
+            isRoundInProgress={isRoundInProgress}
           />
         ) : null}
       </div>
