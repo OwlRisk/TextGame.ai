@@ -9,7 +9,7 @@ import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, 
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import type { DiscoverPreset } from "@/app/components/discover-page";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
 import {
   ContextMenu,
@@ -406,8 +406,9 @@ function generateSessionTitle(template: GameTemplate | null, playerCount: number
 }
 
 export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const authToken = session?.access_token;
+  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
   // Session management
   const [sessions, setSessions] = useState<GameSession[]>([]);
@@ -2006,6 +2007,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     />
                     ) : (
                       <Avatar className="h-10 w-10 sm:h-11 sm:w-11 border-2 shadow-lg relative border-violet-500/20">
+                        {userAvatarUrl ? (
+                          <AvatarImage src={userAvatarUrl} alt="You" className="object-cover" />
+                        ) : null}
                         <AvatarFallback className="bg-gradient-to-br from-violet-500 via-indigo-500 to-violet-600 text-white font-semibold text-xs">
                           YOU
                         </AvatarFallback>
