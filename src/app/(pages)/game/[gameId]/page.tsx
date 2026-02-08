@@ -33,6 +33,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [quickReplies, setQuickReplies] = useState<string[]>(["Continue.", "What's next?", "Ready!"]);
   const { gameId } = use(params);
 
   // Find current game
@@ -195,9 +196,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               role: "system",
               content: `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results. Keep replies short and in character.
 
+When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
+
 You decide who may speak next. At the end of EVERY reply, add exactly one line (no other text after it):
 NEXT_SPEAKER: <name>
 Use the exact player names: ${players.filter((p) => !p.isGameMaster).map((p) => p.name).join(", ")}. For the human player use: NEXT_SPEAKER: You. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
+
+IMPORTANT — Get AI players talking: Often assign an AI player to speak (e.g. NEXT_SPEAKER: Maya Patel, NEXT_SPEAKER: Jordan Reyes) so the discussion feels alive. Don't always say NEXT_SPEAKER: You or NEXT_SPEAKER: Everyone; rotate between the human and the AI players so everyone participates.
 
 Game Rules (do not modify, only enforce):
 ${currentGame?.config?.rules || "No specific rules defined."}`,
@@ -222,6 +227,11 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
             setCurrentSpeakerId(userId);
           } else if (who.toLowerCase() === "everyone") {
             setCurrentSpeakerId(null);
+            // Have one random AI player speak during "Everyone" so the discussion feels active
+            const aiOnly = players.filter((p) => p.isAI && !p.isGameMaster);
+            if (aiOnly.length > 0) {
+              nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
+            }
           } else {
             const player = players.find((p) => !p.isGameMaster && p.name === who);
             nextSpeakerPlayer = player ?? null;
@@ -338,6 +348,33 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
     ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
     : messages;
 
+  // AI-generated quick replies based on rules and current conversation (max 3)
+  useEffect(() => {
+    if (!isGameChannel || !currentGame?.config) return;
+    const abort = new AbortController();
+    const recent = messagesForChannel.slice(-8).map((m) => ({ senderName: m.senderName, content: m.content }));
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+    fetch("/api/suggest-quick-replies", {
+      method: "POST",
+      headers,
+      signal: abort.signal,
+      body: JSON.stringify({
+        gameName: currentGame.name,
+        rules: currentGame.config.rules,
+        recentMessages: recent,
+        gamePhase,
+      }),
+    })
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error("Failed")))
+      .then((data: { suggestions?: string[] }) => {
+        const list = Array.isArray(data.suggestions) ? data.suggestions.filter((s) => s && s.length <= 120).slice(0, 3) : [];
+        setQuickReplies(list.length > 0 ? list : ["Continue.", "What's next?", "Ready!"]);
+      })
+      .catch(() => setQuickReplies(["Continue.", "What's next?", "Ready!"]));
+    return () => abort.abort();
+  }, [isGameChannel, selectedChannelId, currentGame?.id, currentGame?.name, currentGame?.config?.rules, gamePhase, messagesForChannel.length, session?.access_token]);
+
   const handleShare = () => {
     const url = typeof window !== "undefined" ? `${window.location.origin}/game/${gameId}` : "";
     navigator.clipboard.writeText(url);
@@ -413,6 +450,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
             currentSpeakerId={currentSpeakerId}
             userId={userId}
             gameId={gameId}
+            quickReplies={quickReplies}
           />
         ) : null}
       </div>
