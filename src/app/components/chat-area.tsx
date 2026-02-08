@@ -537,6 +537,11 @@ export function ChatArea({
                               HOST
                             </span>
                           )}
+                          {message.senderId === userId && !isHost && (
+                            <span className="inline-flex items-center justify-center leading-none min-h-[20px] px-2 py-0.5 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full shrink-0 text-[10px] font-bold text-white uppercase tracking-wide shadow-sm">
+                              YOU
+                            </span>
+                          )}
                         </div>
                         <span className="text-[11px] text-zinc-500 shrink-0" aria-hidden="true">
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
