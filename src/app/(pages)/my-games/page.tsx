@@ -27,17 +27,7 @@ export default function MyGamesPageRoute() {
         <GameSidebar
           games={games}
           selectedGameId={selectedGameId}
-          onSelectGame={(gameId) => {
-            if (gameId === "home") {
-              router.push("/create");
-            } else if (gameId === "discover") {
-              router.push("/discover");
-            } else if (gameId === "my-games") {
-              router.push("/my-games");
-            } else {
-              router.push("/signin");
-            }
-          }}
+          onSelectGame={(gameId) => selectGame(gameId)}
           onCreateGame={() => router.push("/signin")}
           onOpenProfile={() => router.push("/signin")}
           onUpdateGame={updateGame}
@@ -84,18 +74,7 @@ export default function MyGamesPageRoute() {
       <GameSidebar
         games={games}
         selectedGameId={selectedGameId}
-        onSelectGame={(gameId) => {
-          if (gameId === "home") {
-            router.push("/create");
-          } else if (gameId === "discover") {
-            router.push("/discover");
-          } else if (gameId === "my-games") {
-            router.push("/my-games");
-          } else {
-            selectGame(gameId);
-            router.push(`/game/${gameId}`);
-          }
-        }}
+        onSelectGame={(gameId) => selectGame(gameId)}
         onCreateGame={() => router.push("/create")}
         onOpenProfile={() => router.push("/profile")}
         onUpdateGame={updateGame}

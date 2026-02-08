@@ -1,5 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import OpenAI from 'openai';
+import sharp from 'sharp';
+import { supabaseAdmin } from '@/lib/supabase';
+
+const GAME_ICON_BUCKET = 'avatars';
+const GAME_ICON_SIZE = 64;
+
+/** Storage path: by gameId if provided, else by hash of name+template+rules (create flow) */
+function gameIconPath(gameId: string | undefined, gameName: string, gameTemplate?: string, rules?: string): string {
+  if (gameId) return `game-icons/${gameId}.png`;
+  const payload = JSON.stringify({
+    n: String(gameName).slice(0, 200),
+    t: gameTemplate || '',
+    r: (rules || '').trim().slice(0, 300),
+  });
+  const hash = crypto.createHash('sha256').update(payload).digest('hex').slice(0, 16);
+  return `game-icons/${hash}.png`;
+}
+
+/** Data URL -> buffer (resized) for Storage upload */
+async function dataUrlToIconBuffer(dataUrl: string): Promise<Buffer> {
+  const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64, 'base64');
+  return sharp(buffer)
+    .resize(GAME_ICON_SIZE, GAME_ICON_SIZE)
+    .png()
+    .toBuffer();
+}
 
 // Lazy initialization
 function getOpenAI() {
@@ -20,13 +48,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { gameName, gameTemplate, rules } = body;
+    const { gameName, gameTemplate, rules, gameId } = body as {
+      gameName?: string;
+      gameTemplate?: string;
+      rules?: string;
+      gameId?: string;
+    };
 
     if (!gameName) {
       return NextResponse.json(
         { error: 'gameName is required' },
         { status: 400 }
       );
+    }
+
+    const path = gameIconPath(gameId, gameName, gameTemplate, rules);
+
+    // 先查 Storage：若已有则直接返回公网 URL
+    if (supabaseAdmin) {
+      const { data: urlData } = supabaseAdmin.storage.from(GAME_ICON_BUCKET).getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      try {
+        const head = await fetch(publicUrl, { method: 'HEAD' });
+        if (head.ok) {
+          return NextResponse.json({ icon: publicUrl });
+        }
+      } catch (_) {
+        // 忽略，继续生成
+      }
     }
 
     const openai = getOpenAI();
@@ -85,6 +134,23 @@ export async function POST(request: NextRequest) {
         'Abstract geometric app icon, flat design, single vibrant color on dark background, no text, no people, game theme. ' + safeSuffix;
       iconPrompt = safePrompt;
       imageUrl = await generateWithPrompt(safePrompt);
+    }
+
+    // 存 Supabase Storage，返回公网 URL
+    if (supabaseAdmin) {
+      try {
+        const buffer = await dataUrlToIconBuffer(imageUrl);
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from(GAME_ICON_BUCKET)
+          .upload(path, buffer, { contentType: 'image/png', upsert: true });
+        if (!uploadError) {
+          const { data: urlData } = supabaseAdmin.storage.from(GAME_ICON_BUCKET).getPublicUrl(path);
+          return NextResponse.json({ icon: urlData.publicUrl, prompt: iconPrompt });
+        }
+        console.warn('[GameIcon] Storage upload failed:', uploadError.message);
+      } catch (e) {
+        console.warn('[GameIcon] Storage save failed:', e);
+      }
     }
 
     return NextResponse.json({

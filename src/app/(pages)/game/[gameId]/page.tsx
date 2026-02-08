@@ -427,18 +427,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
       <GameSidebar
         games={games}
         selectedGameId={selectedGameId}
-        onSelectGame={(gameId: string) => {
-          if (gameId === "home") {
-            router.push("/create");
-          } else if (gameId === "discover") {
-            router.push("/discover");
-          } else if (gameId === "my-games") {
-            router.push("/my-games");
-          } else {
-            selectGame(gameId);
-            router.push(`/game/${gameId}`);
-          }
-        }}
+        onSelectGame={(gameId: string) => selectGame(gameId)}
         onCreateGame={() => router.push("/create")}
         onOpenProfile={() => router.push("/profile")}
         onUpdateGame={updateGame}

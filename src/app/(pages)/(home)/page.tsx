@@ -39,17 +39,7 @@ export default function HomePage() {
       <GameSidebar
         games={games}
         selectedGameId={null}
-        onSelectGame={(gameId) => {
-          if (gameId === "home") {
-            router.push("/create");
-          } else if (gameId === "discover") {
-            router.push("/discover");
-          } else if (gameId === "my-games") {
-            router.push("/my-games");
-          } else {
-            router.push(`/game/${gameId}`);
-          }
-        }}
+        onSelectGame={(gameId) => selectGame(gameId)}
         onCreateGame={handleCreateGame}
         onOpenProfile={() => router.push("/profile")}
         onUpdateGame={updateGame}

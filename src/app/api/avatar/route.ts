@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import OpenAI from 'openai';
 import Replicate from 'replicate';
 import sharp from 'sharp';
+import { supabaseAdmin } from '@/lib/supabase';
 
+const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 64;
 
 /** DALL-E 2 minimum is 256x256; we resize to 64 to save bandwidth and storage */
@@ -16,6 +19,16 @@ async function resizeAvatarTo64(dataUrl: string): Promise<string> {
   return `data:image/png;base64,${resized.toString('base64')}`;
 }
 
+/** Resize to buffer for Supabase Storage upload */
+async function resizeAvatarToBuffer(dataUrl: string): Promise<Buffer> {
+  const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64, 'base64');
+  return sharp(buffer)
+    .resize(AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE)
+    .png()
+    .toBuffer();
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -26,6 +39,18 @@ const replicate = process.env.REPLICATE_API_TOKEN
 
 type AvatarType = 'host' | 'player';
 type AvatarModel = 'dalle-3' | 'flux' | 'stable-diffusion';
+
+/** Same identity key as client (name|type) for cache lookup */
+function avatarCacheKey(name: string, type: AvatarType): string {
+  return `${name}|${type}`;
+}
+
+/** Deterministic storage path for upsert */
+function avatarStoragePath(name: string, type: AvatarType): string {
+  const key = avatarCacheKey(name, type);
+  const hash = crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
+  return `${type}/${hash}.png`;
+}
 
 /** Get the model to use from env, default to dalle-3 */
 function getModel(): AvatarModel {
@@ -233,7 +258,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = buildPrompt(name, type ?? 'player', {
+    const avatarType: AvatarType = type === 'host' ? 'host' : 'player';
+    const path = avatarStoragePath(name, avatarType);
+
+    // 先查 Storage：若已有文件则直接返回公网 URL
+    if (supabaseAdmin) {
+      const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      try {
+        const head = await fetch(publicUrl, { method: 'HEAD' });
+        if (head.ok) {
+          return NextResponse.json({ image: publicUrl });
+        }
+      } catch (_) {
+        // 忽略网络错误，继续生成
+      }
+    }
+
+    const prompt = buildPrompt(name, avatarType, {
       background: typeof background === 'string' ? background : undefined,
       gender: typeof gender === 'string' ? gender : undefined,
     });
@@ -283,6 +325,24 @@ export async function POST(request: NextRequest) {
     }
 
     const image64 = await resizeAvatarTo64(imageDataUrl);
+
+    // 只存 Supabase Storage，不再用表
+    if (supabaseAdmin) {
+      try {
+        const buffer = await resizeAvatarToBuffer(imageDataUrl);
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from(AVATAR_BUCKET)
+          .upload(path, buffer, { contentType: 'image/png', upsert: true });
+        if (!uploadError) {
+          const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+          return NextResponse.json({ image: urlData.publicUrl });
+        }
+        console.warn('[Avatar] Supabase Storage upload failed:', uploadError.message);
+      } catch (supabaseErr) {
+        console.warn('[Avatar] Supabase Storage save failed:', supabaseErr);
+      }
+    }
+
     return NextResponse.json({ image: image64 });
   } catch (e: unknown) {
     console.error('Avatar generation error:', e);

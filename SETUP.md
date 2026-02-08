@@ -71,6 +71,20 @@ npm run db:setup
 
 脚本会在执行完 schema 后自动发送 `NOTIFY pgrst, 'reload schema'`。若仍报错，请用方式 A 在同一项目的 SQL Editor 里执行 `database/schema.sql` 并执行一次 `NOTIFY pgrst, 'reload schema';`。
 
+### 4. 头像与游戏图标存储（仅用 Supabase Storage）
+
+AI 玩家/主持人头像和游戏图标都保存在同一个 Supabase **Storage** 桶里，路径规则固定，重复请求会先查 Storage 是否已有文件。
+
+- **头像**：`player/{hash}.png`、`host/{hash}.png`
+- **游戏图标**：`game-icons/{gameId}.png` 或创建时 `game-icons/{hash}.png`
+
+1. **创建 Storage 桶**：在 Supabase Dashboard → **Storage** 中新建一个名为 **avatars** 的桶，并设为 **Public**。  
+   或在项目根目录执行一次：
+   ```bash
+   node scripts/create-avatar-bucket.js
+   ```
+2. 确保 `.env` 中已配置 **SUPABASE_SERVICE_ROLE_KEY**，服务端才能上传头像和游戏图标到 Storage。
+
 ## 功能说明
 
 ### OpenAI API 集成

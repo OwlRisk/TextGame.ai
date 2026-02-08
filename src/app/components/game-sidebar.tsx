@@ -27,6 +27,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -72,6 +73,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           gameName: game.name,
           gameTemplate: game.config?.template,
           rules: game.config?.rules,
+          gameId: game.id,
         }),
       });
       if (!res.ok) {
@@ -121,26 +123,30 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
       <TooltipProvider delayDuration={100}>
         {/* Top Section: Home + Create */}
         <div className="flex flex-col items-center gap-3">
-          {/* Home */}
+          {/* Home - Link for prefetch, faster tab switch */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="relative group">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
-                    selectedGameId === "home"
-                      ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!bg-gradient-to-br hover:!from-violet-600 hover:!to-fuchsia-600 hover:brightness-110"
-                      : "bg-zinc-800 hover:bg-gradient-to-br hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30 hover:scale-105"
-                  }`}
-                  onClick={() => onSelectGame("home")}
-                >
-                  <Home className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
-                  {selectedGameId === "home" && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                  )}
-                </Button>
-              </div>
+              <Link href="/create" prefetch onClick={() => onSelectGame("home")} className="block">
+                <div className="relative group">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
+                      selectedGameId === "home"
+                        ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!bg-gradient-to-br hover:!from-violet-600 hover:!to-fuchsia-600 hover:brightness-110"
+                        : "bg-zinc-800 hover:bg-gradient-to-br hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30 hover:scale-105"
+                    }`}
+                    asChild
+                  >
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl">
+                      <Home className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                      {selectedGameId === "home" && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                      )}
+                    </span>
+                  </Button>
+                </div>
+              </Link>
             </TooltipTrigger>
             <TooltipContent 
               side="right" 
@@ -151,26 +157,30 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
-          {/* My Games */}
+          {/* My Games - Link for prefetch */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="relative group">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
-                    selectedGameId === "my-games"
-                      ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50 hover:!bg-blue-600 hover:brightness-110"
-                      : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105"
-                  }`}
-                  onClick={() => onSelectGame("my-games")}
-                >
-                  <Gamepad2 className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
-                  {selectedGameId === "my-games" && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                  )}
-                </Button>
-              </div>
+              <Link href="/my-games" prefetch onClick={() => onSelectGame("my-games")} className="block">
+                <div className="relative group">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
+                      selectedGameId === "my-games"
+                        ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50 hover:!bg-blue-600 hover:brightness-110"
+                        : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105"
+                    }`}
+                    asChild
+                  >
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl">
+                      <Gamepad2 className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                      {selectedGameId === "my-games" && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                      )}
+                    </span>
+                  </Button>
+                </div>
+              </Link>
             </TooltipTrigger>
             <TooltipContent 
               side="right" 
@@ -181,26 +191,30 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
-          {/* Discover */}
+          {/* Discover - Link for prefetch */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="relative group">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
-                    selectedGameId === "discover"
-                      ? "bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/50 hover:!bg-gradient-to-br hover:!from-amber-500 hover:!to-orange-500 hover:brightness-110"
-                      : "bg-zinc-800 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:rounded-xl hover:shadow-lg hover:shadow-amber-500/40 hover:scale-105"
-                  }`}
-                  onClick={() => onSelectGame("discover")}
-                >
-                  <Compass className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
-                  {selectedGameId === "discover" && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                  )}
-                </Button>
-              </div>
+              <Link href="/discover" prefetch onClick={() => onSelectGame("discover")} className="block">
+                <div className="relative group">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
+                      selectedGameId === "discover"
+                        ? "bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/50 hover:!bg-gradient-to-br hover:!from-amber-500 hover:!to-orange-500 hover:brightness-110"
+                        : "bg-zinc-800 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:rounded-xl hover:shadow-lg hover:shadow-amber-500/40 hover:scale-105"
+                    }`}
+                    asChild
+                  >
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl">
+                      <Compass className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                      {selectedGameId === "discover" && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                      )}
+                    </span>
+                  </Button>
+                </div>
+              </Link>
             </TooltipTrigger>
             <TooltipContent 
               side="right" 
@@ -224,20 +238,20 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <ContextMenuTrigger>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-14 w-14 rounded-2xl transition-all duration-200 relative overflow-hidden ${
-                              selectedGameId === game.id
-                                ? "rounded-xl"
-                                : "hover:rounded-xl"
-                            } ${game.icon.startsWith('data:image') ? 'p-0' : ''}`}
-                            style={{ 
-                              backgroundColor: game.icon.startsWith('data:image') ? 'transparent' : game.color,
-                            }}
-                            onClick={() => onSelectGame(game.id)}
-                          >
+                        <Link href={`/game/${game.id}`} prefetch onClick={() => onSelectGame(game.id)} className="block">
+                          <div className="relative group">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-14 w-14 rounded-2xl transition-all duration-200 relative overflow-hidden ${
+                                selectedGameId === game.id
+                                  ? "rounded-xl"
+                                  : "hover:rounded-xl"
+                              } ${game.icon.startsWith('data:image') ? 'p-0' : ''}`}
+                              style={{ 
+                                backgroundColor: game.icon.startsWith('data:image') ? 'transparent' : game.color,
+                              }}
+                            >
                             {iconGeneratingId === game.id ? (
                               <Loader2 className="size-7 text-white animate-spin" />
                             ) : game.icon.startsWith('data:image') ? (
@@ -249,11 +263,12 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                             ) : (
                               <span className="text-4xl">{game.icon}</span>
                             )}
+                            </Button>
                             {selectedGameId === game.id && (
                               <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                             )}
-                          </Button>
-                        </div>
+                          </div>
+                        </Link>
                       </TooltipTrigger>
                       <TooltipContent 
                         side="right"
