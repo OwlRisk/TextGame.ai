@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { DiscoverPage, type DiscoverPreset } from "@/app/components/discover-page";
@@ -12,6 +13,11 @@ export default function DiscoverPageRoute() {
   const router = useRouter();
   const { games, selectedGameId, selectGame } = useGameContext();
   const { user, loading } = useAuth();
+
+  // 进入 Discover 页时同步侧边栏高亮为 "discover"
+  useEffect(() => {
+    selectGame("discover");
+  }, [selectGame]);
 
   const handleCreateGame = (preset: DiscoverPreset) => {
     if (!user && !loading) {

@@ -76,7 +76,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
       <TooltipProvider delayDuration={100}>
         {/* Top Section: Home + Create */}
         <div className="flex flex-col items-center gap-3">
-          {/* Home */}
+          {/* Home - 未选中灰底，选中/悬停用紫色渐变（与悬浮色一致） */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="relative group">
@@ -85,8 +85,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   size="icon"
                   className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
                     selectedGameId === "home"
-                      ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50"
-                      : "bg-gradient-to-br from-violet-600/80 to-fuchsia-600/80 hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30 hover:scale-105"
+                      ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!bg-gradient-to-br hover:!from-violet-600 hover:!to-fuchsia-600 hover:brightness-110"
+                      : "bg-zinc-800 hover:bg-gradient-to-br hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30 hover:scale-105"
                   }`}
                   onClick={() => onSelectGame("home")}
                 >
@@ -106,7 +106,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
-          {/* My Games */}
+          {/* My Games - 未选中灰底，选中/悬停用蓝色（与悬浮色一致） */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="relative group">
@@ -115,7 +115,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   size="icon"
                   className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
                     selectedGameId === "my-games"
-                      ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50"
+                      ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50 hover:!bg-blue-600 hover:brightness-110"
                       : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105"
                   }`}
                   onClick={() => onSelectGame("my-games")}
@@ -123,10 +123,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Gamepad2 className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
                   {selectedGameId === "my-games" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                  )}
-                  {/* Hover glow effect */}
-                  {selectedGameId !== "my-games" && (
-                    <div className="absolute inset-0 rounded-xl bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
                   )}
                 </Button>
               </div>
@@ -140,7 +136,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
-          {/* Discover */}
+          {/* Discover - 未选中灰底，选中/悬停用琥珀橙渐变（与悬浮色一致） */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="relative group">
@@ -149,7 +145,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   size="icon"
                   className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
                     selectedGameId === "discover"
-                      ? "bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/50"
+                      ? "bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/50 hover:!bg-gradient-to-br hover:!from-amber-500 hover:!to-orange-500 hover:brightness-110"
                       : "bg-zinc-800 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:rounded-xl hover:shadow-lg hover:shadow-amber-500/40 hover:scale-105"
                   }`}
                   onClick={() => onSelectGame("discover")}
@@ -157,10 +153,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Compass className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
                   {selectedGameId === "discover" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                  )}
-                  {/* Hover glow effect */}
-                  {selectedGameId !== "discover" && (
-                    <div className="absolute inset-0 rounded-xl bg-amber-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
                   )}
                 </Button>
               </div>

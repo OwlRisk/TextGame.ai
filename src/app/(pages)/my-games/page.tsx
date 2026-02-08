@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { MyGamesPage } from "@/app/components/my-games-page";
@@ -13,6 +14,11 @@ export default function MyGamesPageRoute() {
   const router = useRouter();
   const { games, selectedGameId, selectGame } = useGameContext();
   const { user, loading } = useAuth();
+
+  // 进入 My Games 页时同步侧边栏高亮为 "my-games"
+  useEffect(() => {
+    selectGame("my-games");
+  }, [selectGame]);
 
   // Show sign-in prompt if not authenticated
   if (!user && !loading) {
