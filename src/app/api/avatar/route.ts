@@ -94,6 +94,22 @@ function genderPhrase(gender?: string): string {
   return '';
 }
 
+/** 去掉易触发“多人/双脸”的措辞，避免模型画出两个人 */
+function sanitizeSinglePersonDescription(text: string): string {
+  if (!text || !text.trim()) return text;
+  let s = text.trim();
+  const replace: [RegExp | string, string][] = [
+    [/\b(players?|teammates?|group|team|pair|duo|two|both|together with|with others?|and friends?)\b/gi, ''],
+    [/\b(multiple|several|many|two|three)\s+(people|persons|faces|characters)\b/gi, 'one character'],
+    [/\b(group|team)\s*(photo|shot|portrait)?/gi, 'portrait'],
+    [/,?\s*and\s+another\s+(person|character|face)/gi, ''],
+  ];
+  for (const [from, to] of replace) {
+    s = typeof from === 'string' ? s.replace(new RegExp(from, 'gi'), to) : s.replace(from, to);
+  }
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+
 function buildPrompt(
   _name: string,
   type: AvatarType,
@@ -105,13 +121,15 @@ function buildPrompt(
   // DALL-E 2 has a 1000 character limit for prompts
   const MAX_PROMPT_LENGTH = 1000;
 
-  // Core style: single avatar portrait only; avoid "game", "player" (plural) to reduce multi-face output
+  // 开头和结尾都强调“单人单脸”，且用 close-up 减少画面空间
+  const singleStart = 'Close-up portrait of exactly ONE person. Only one face visible in frame. ';
+  const singleEnd = ' Single person only. No second face. No other people. No mirror or reflection with face.';
+
   const coreStyle = 'Anime/manga art style. One person only. One face. Single avatar portrait. Head and shoulders. Colorful hair, expressive eyes. No text.';
 
-  // Host: presenter/emcee look - confident, charismatic, professional host aesthetic
   const hostStyle = 'Presenter, emcee style. Confident, charismatic. Professional host aesthetic.';
-  const baseHostPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime host avatar portrait. ${hostStyle} ${coreStyle} ONE PERSON. ONE FACE.`;
-  const basePlayerPrompt = `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime player avatar portrait. ${coreStyle} ONE PERSON. ONE FACE.`;
+  const baseHostPrompt = singleStart + genderPrefix + 'Anime host avatar portrait. ' + hostStyle + ' ' + coreStyle + singleEnd;
+  const basePlayerPrompt = singleStart + genderPrefix + 'Anime player avatar portrait. ' + coreStyle + singleEnd;
 
   if (!background || !background.trim()) {
     const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
@@ -120,12 +138,11 @@ function buildPrompt(
       : result;
   }
 
-  // Truncate background to fit within limit, but preserve single-person rules
-  const trimmedBackground = background.trim();
+  const trimmedBackground = sanitizeSinglePersonDescription(background.trim());
   const prefix = type === 'host'
-    ? `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime host avatar portrait. ${hostStyle} Character: `
-    : `${genderPrefix}ONE PERSON ONLY. ONE FACE. Anime player avatar portrait. Background: `;
-  const suffix = `. ${coreStyle} ONE PERSON. ONE FACE.`;
+    ? singleStart + genderPrefix + 'Anime host avatar portrait. ' + hostStyle + ' Character: '
+    : singleStart + genderPrefix + 'Anime player avatar portrait. Description: ';
+  const suffix = '.' + coreStyle + singleEnd;
 
   const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;
   if (availableLength <= 0) {
@@ -190,8 +207,10 @@ async function generateWithReplicate(
   let modelId: `${string}/${string}` | `${string}/${string}:${string}`;
   let input: Record<string, any>;
 
-  // Negative prompt to prevent text in images
-  const negativePrompt = 'text, letters, words, characters, writing, symbols, labels, name tags, captions, subtitles, speech bubbles, signs, banners, written content';
+  // Negative prompt: 禁止文字 + 禁止多人/双脸
+  const negativePrompt =
+    'text, letters, words, characters, writing, symbols, labels, name tags, captions, subtitles, speech bubbles, signs, banners, written content, ' +
+    'two people, two faces, multiple people, multiple faces, group photo, crowd, duo, pair of people, second face, another person, reflection with face, mirror with face, double face';
   
   if (model === 'flux') {
     // FLUX.1 [dev] - high quality, realistic

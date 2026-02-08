@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Crown, Volume2, VolumeX, User, Package } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
@@ -7,6 +8,7 @@ import { PlayerBoardData } from "@/app/components/player-board";
 import { Badge } from "@/app/components/ui/badge";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
 export interface Player {
@@ -50,8 +52,22 @@ export function PlayerPanel({
   onSelectSpeaker,
   humanGameIdentity,
 }: PlayerPanelProps) {
+  const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const openProfile = (player: Player) => {
+    setProfilePlayer(player);
+    setProfileOpen(true);
+  };
+
   return (
     <div className="w-60 bg-zinc-850 flex flex-col border-l border-zinc-900/50">
+      <PlayerProfileDialog
+        player={profilePlayer}
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        gameId={gameId}
+      />
       <div className="h-12 px-4 flex items-center border-b border-zinc-900/50 bg-zinc-900/30">
         <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Players — {players.length}</h3>
       </div>
@@ -75,6 +91,7 @@ export function PlayerPanel({
                 gameId={gameId}
                 onToggleMute={onToggleMute}
                 onSelectSpeaker={onSelectSpeaker}
+                onOpenProfile={openProfile}
               />
               <Separator className="mt-3 bg-zinc-700/50" />
             </div>
@@ -94,6 +111,7 @@ export function PlayerPanel({
                   onToggleMute={onToggleMute}
                   onSelectSpeaker={onSelectSpeaker}
                   humanGameIdentity={humanGameIdentity}
+                  onOpenProfile={openProfile}
                 />
               ))}
             </div>
@@ -112,6 +130,7 @@ function PlayerCard({
   onToggleMute,
   onSelectSpeaker,
   humanGameIdentity,
+  onOpenProfile,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -120,14 +139,23 @@ function PlayerCard({
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
   humanGameIdentity?: { name: string } | null;
+  onOpenProfile?: (player: Player) => void;
 }) {
   const useGameAvatarForHuman = !player.isAI && humanGameIdentity?.name && gameId;
+  const isClickable = !!onOpenProfile;
   return (
-    <div className={`group p-2 rounded-lg transition-all duration-200 ${
-      isSpeaking 
-        ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
-        : "hover:bg-zinc-700/40 hover:shadow-sm"
-    }`}>
+    <div
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? () => onOpenProfile?.(player) : undefined}
+      onKeyDown={isClickable ? (e) => e.key === "Enter" && onOpenProfile?.(player) : undefined}
+      className={`group p-2 rounded-lg transition-all duration-200 ${
+        isSpeaking 
+          ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
+          : "hover:bg-zinc-700/40 hover:shadow-sm"
+      } ${isClickable ? "cursor-pointer" : ""}`}
+      title={player.isAI && (player.personality || player.background) ? "点击查看性格与背景" : isClickable ? "点击查看资料" : undefined}
+    >
       <div className="flex items-start gap-2.5">
         <div className="relative flex-shrink-0">
           {!player.isAI && !useGameAvatarForHuman ? (
@@ -180,7 +208,7 @@ function PlayerCard({
           )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
-          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon"
