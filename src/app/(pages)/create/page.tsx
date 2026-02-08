@@ -23,7 +23,7 @@ export default function CreateGamePage() {
 function CreateGamePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { games, selectedGameId, selectGame, addGame } = useGameContext();
+  const { games, selectedGameId, selectGame, addGame, updateGame } = useGameContext();
 
   const presetId = searchParams.get("preset");
 
@@ -160,6 +160,7 @@ function CreateGamePageContent() {
         }}
         onCreateGame={() => router.push("/create")}
         onOpenProfile={() => router.push("/profile")}
+        onUpdateGame={updateGame}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">

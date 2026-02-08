@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 export default function DiscoverPageRoute() {
   const router = useRouter();
-  const { games, selectedGameId, selectGame } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
   const { user, loading } = useAuth();
 
   // 进入 Discover 页时同步侧边栏高亮为 "discover"
@@ -48,6 +48,7 @@ export default function DiscoverPageRoute() {
         }}
         onCreateGame={() => router.push("/create")}
         onOpenProfile={() => router.push("/profile")}
+        onUpdateGame={updateGame}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">

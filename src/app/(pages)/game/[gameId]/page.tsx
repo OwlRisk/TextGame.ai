@@ -16,7 +16,7 @@ import { toast } from "sonner";
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   const { session } = useAuth();
-  const { games, selectedGameId, selectGame } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
   const {
     messages,
     players,
@@ -300,9 +300,10 @@ Guide the player through the game. Be engaging and maintain the game atmosphere.
         }}
         onCreateGame={() => router.push("/create")}
         onOpenProfile={() => router.push("/profile")}
+        onUpdateGame={updateGame}
       />
 
-      {/* Game sidebar: Back to Arena, # Rules, # Progress, # game-room */}
+      {/* Game sidebar: # Rules, # Progress, # game-room */}
       <ChannelList
         gameName={currentGame?.name ?? "Game"}
         channels={gameChannels}
@@ -310,7 +311,6 @@ Guide the player through the game. Be engaging and maintain the game atmosphere.
         onSelectChannel={(id) => setSelectedChannelId(id)}
         onShare={handleShare}
         onSettings={() => toast.info("Settings coming soon")}
-        onBackToArena={() => router.push("/create")}
         textSectionLabel="Sections"
         gameSectionLabel="Game Rooms"
         onDeleteChannel={(id) => {

@@ -788,9 +788,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       // Convert date strings back to Date objects and ensure unique IDs
       const sessionsWithDates = parsed.map((s: any) => ({
         ...s,
-        messages: s.messages.map((m: any) => ({
+        messages: (s.messages || []).map((m: any, msgIndex: number) => ({
           ...m,
-          id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, // Regenerate unique IDs
+          id: `msg-${s.id}-${msgIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           timestamp: new Date(m.timestamp)
         })),
         createdAt: new Date(s.createdAt),
@@ -978,12 +978,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
   }, [initialPreset, createSessionFromPreset, onPresetApplied]);
 
-  // Load a session
-  const loadSession = (sessionId: string, sessionsList?: GameSession[]) => {
+  // Load a session. When fromHistoryClick is true, we skip auto-welcome for empty sessions.
+  const loadSession = (sessionId: string, sessionsList?: GameSession[], fromHistoryClick?: boolean) => {
     const sessionsToSearch = sessionsList || sessions;
     const session = sessionsToSearch.find(s => s.id === sessionId);
     if (!session) return;
 
+    if (fromHistoryClick) didLoadSessionRef.current = true;
     setCurrentSessionId(session.id);
     setMessages(session.messages);
     setConversationState(session.conversationState);
@@ -992,7 +993,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setCustomRules(session.customRules);
     setGameName(session.gameName);
     setSelectedHostId(session.selectedHostId);
-    setIsGMTyping(session.messages.length === 0);
+    setIsGMTyping(session.messages.length === 0 && !fromHistoryClick);
   };
 
   // Delete a session
@@ -1017,11 +1018,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   // Ref to avoid requesting welcome twice for the same session
   const welcomeRequestedForSessionRef = useRef<string | null>(null);
+  // Ref to avoid scheduling welcome effect twice when streamWelcomeMessage identity changes
+  const welcomeScheduledForSessionRef = useRef<string | null>(null);
+  // 从历史列表点进某会话时不要自动发欢迎消息，只对「新建会话」发欢迎
+  const didLoadSessionRef = useRef(false);
 
   // Stream initial greeting from LLM when messages are empty
   const streamWelcomeMessage = useCallback(() => {
     if (!currentSessionId || welcomeRequestedForSessionRef.current === currentSessionId) return;
     welcomeRequestedForSessionRef.current = currentSessionId;
+    welcomeScheduledForSessionRef.current = null;
 
     const WELCOME_TRIGGER =
       "The user just opened this chat. Reply with a brief, friendly welcome as the Game Master. " +
@@ -1091,6 +1097,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         const cleaned = cleanForDisplay(fullResponse);
         setMessages(prev => {
           if (!cleaned.trim()) return prev.filter(m => m.id !== tempMessageId);
+          const alreadyHasWelcome = prev.some(
+            m => m.role === "gm" && m.id !== tempMessageId && /welcome|here—welcome|here - welcome/i.test(m.content ?? "")
+          );
+          if (alreadyHasWelcome) return prev.filter(m => m.id !== tempMessageId);
           return prev.map(msg =>
             msg.id === tempMessageId
               ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, content: cleaned }
@@ -1100,10 +1110,15 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       },
       (error: Error) => {
         welcomeRequestedForSessionRef.current = null;
+        welcomeScheduledForSessionRef.current = null;
         setIsGMTyping(false);
         setIsStreaming(false);
         setMessages(prev => {
           const withoutTemp = prev.filter(m => m.id !== tempMessageId);
+          const alreadyHasWelcome = withoutTemp.some(
+            m => m.role === "gm" && /welcome|here—welcome|here - welcome|Configuration Error/i.test(m.content ?? "")
+          );
+          if (alreadyHasWelcome) return withoutTemp;
           const isConfigError = error.message?.includes("OPENAI_API_KEY") || error.message?.includes("API key");
           const fallbackContent = isConfigError
             ? "⚠️ **Configuration Error**\n\nThe OpenAI API key is not configured. Please add OPENAI_API_KEY to your .env file and restart."
@@ -1132,12 +1147,27 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     customRules
   ]);
 
+  const streamWelcomeMessageRef = useRef(streamWelcomeMessage);
+  streamWelcomeMessageRef.current = streamWelcomeMessage;
+
   useEffect(() => {
-    if (messages.length === 0 && currentSessionId) {
-      const t = setTimeout(streamWelcomeMessage, 400);
-      return () => clearTimeout(t);
+    if (messages.length !== 0 || !currentSessionId) return;
+    if (didLoadSessionRef.current) {
+      didLoadSessionRef.current = false;
+      return;
     }
-  }, [currentSessionId, messages.length, streamWelcomeMessage]);
+    if (welcomeScheduledForSessionRef.current === currentSessionId) return;
+    welcomeScheduledForSessionRef.current = currentSessionId;
+    const t = setTimeout(() => {
+      streamWelcomeMessageRef.current();
+    }, 400);
+    return () => {
+      clearTimeout(t);
+      if (welcomeScheduledForSessionRef.current === currentSessionId) {
+        welcomeScheduledForSessionRef.current = null;
+      }
+    };
+  }, [currentSessionId, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -1816,7 +1846,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     }`}
                   >
                     <button
-                      onClick={() => loadSession(session.id)}
+                      onClick={() => loadSession(session.id, undefined, true)}
                       className="w-full p-2 text-left"
                     >
                       <div className="text-xs font-medium text-white mb-0.5 line-clamp-1 pr-6">

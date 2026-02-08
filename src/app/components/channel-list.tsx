@@ -1,4 +1,4 @@
-import { Hash, Settings, Share2, Users, ArrowLeft, Home, Trash2 } from "lucide-react";
+import { Hash, Settings, Share2, Users, Home, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Separator } from "@/app/components/ui/separator";
@@ -33,7 +33,6 @@ interface ChannelListProps {
   onSelectChannel: (channelId: string) => void;
   onShare: () => void;
   onSettings: () => void;
-  onBackToArena?: () => void;
   onDeleteChannel?: (channelId: string) => void;
   /** Label for the text sections (intro, rules, progress). Default: "Sections" */
   textSectionLabel?: string;
@@ -48,7 +47,6 @@ export function ChannelList({
   onSelectChannel,
   onShare,
   onSettings,
-  onBackToArena,
   onDeleteChannel,
   textSectionLabel = "Sections",
   gameSectionLabel = "Game Rooms",
@@ -67,20 +65,6 @@ export function ChannelList({
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3">
-          {/* Back to Arena Button */}
-          {onBackToArena && (
-            <div className="mb-4">
-              <Button
-                variant="ghost"
-                className="w-full justify-start px-3 h-10 text-zinc-300 hover:bg-violet-600/20 hover:text-violet-300 border border-zinc-700/50 hover:border-violet-500/50 transition-all group rounded-lg"
-                onClick={onBackToArena}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-0.5 transition-transform" />
-                <span className="text-sm font-semibold">Back to Arena</span>
-              </Button>
-            </div>
-          )}
-          
           {/* Text sections (intro, rules, progress) */}
           <div className="mb-5">
             <div className="flex items-center justify-between px-3 mb-2">

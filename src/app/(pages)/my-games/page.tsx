@@ -12,7 +12,7 @@ import { Lock, LogIn } from "lucide-react";
 
 export default function MyGamesPageRoute() {
   const router = useRouter();
-  const { games, selectedGameId, selectGame } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
   const { user, loading } = useAuth();
 
   // 进入 My Games 页时同步侧边栏高亮为 "my-games"
@@ -40,6 +40,7 @@ export default function MyGamesPageRoute() {
           }}
           onCreateGame={() => router.push("/signin")}
           onOpenProfile={() => router.push("/signin")}
+          onUpdateGame={updateGame}
         />
 
         <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
@@ -97,6 +98,7 @@ export default function MyGamesPageRoute() {
         }}
         onCreateGame={() => router.push("/create")}
         onOpenProfile={() => router.push("/profile")}
+        onUpdateGame={updateGame}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">

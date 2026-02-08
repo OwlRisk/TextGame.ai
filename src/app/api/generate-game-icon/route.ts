@@ -31,66 +31,79 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI();
 
-    // Build prompt for game icon
-    let iconPrompt = `A simple, clean game icon for "${gameName}". `;
-    
-    if (gameTemplate === 'werewolf') {
-      iconPrompt += 'Werewolf theme with moon and wolf silhouette. ';
-    } else if (gameTemplate === 'undercover') {
-      iconPrompt += 'Spy/detective theme with mysterious silhouette and magnifying glass. ';
-    } else {
-      // Analyze rules to determine theme
-      const rulesLower = (rules || '').toLowerCase();
-      if (rulesLower.includes('werewolf') || rulesLower.includes('wolf')) {
-        iconPrompt += 'Werewolf theme with moon and wolf. ';
-      } else if (rulesLower.includes('spy') || rulesLower.includes('detective') || rulesLower.includes('undercover')) {
-        iconPrompt += 'Spy/detective theme with mystery elements. ';
-      } else if (rulesLower.includes('mafia')) {
-        iconPrompt += 'Mafia theme with hat and shadows. ';
-      } else {
-        iconPrompt += 'Social deduction game theme with multiple player silhouettes. ';
-      }
-    }
-
-    iconPrompt += 'Flat design, minimal, icon style, solid colors, no text, no words, no letters. ';
-    iconPrompt += 'Perfect for app icon. Dark background with vibrant accent colors. ';
-    iconPrompt += 'Professional game icon aesthetic.';
-
-    // Generate icon using DALL-E 2 with lowest resolution
-    const response = await openai.images.generate({
-      model: 'dall-e-2',
-      prompt: iconPrompt,
-      size: '256x256', // Smallest size, lowest cost
-      response_format: 'b64_json',
-      n: 1,
-    });
-
-    const b64 = response.data?.[0]?.b64_json;
-    if (!b64) {
-      throw new Error('No image data returned from DALL-E');
-    }
-
-    const imageUrl = `data:image/png;base64,${b64}`;
-
-    return NextResponse.json({ 
-      icon: imageUrl,
-      prompt: iconPrompt
-    });
-
-  } catch (error: any) {
-    console.error('Error generating game icon:', error);
-    
-    if (error.status === 401) {
-      return NextResponse.json(
-        { error: 'Invalid API key' },
-        { status: 401 }
+    function isSafetyRejection(err: any): boolean {
+      const msg = (err?.message || err?.error?.message || '').toString();
+      return (
+        err?.status === 400 &&
+        (msg.includes('safety') || msg.includes('rejected') || msg.includes('not allowed'))
       );
     }
-    
+
+    async function generateWithPrompt(iconPrompt: string): Promise<string> {
+      const response = await openai.images.generate({
+        model: 'dall-e-2',
+        prompt: iconPrompt,
+        size: '256x256',
+        response_format: 'b64_json',
+        n: 1,
+      });
+      const b64 = response.data?.[0]?.b64_json;
+      if (!b64) throw new Error('No image data returned from DALL-E');
+      return `data:image/png;base64,${b64}`;
+    }
+
+    const safeSuffix =
+      'Flat design, minimal, no text no letters. Single clear motif. Square icon, suitable for app icon.';
+
+    let iconPrompt: string;
+    let imageUrl: string;
+
+    try {
+      const rulesSnippet = (rules || '').trim().slice(0, 400);
+      const systemPrompt = `You are an expert at designing app icon concepts for games. Given a game name and optional rules summary, output exactly one short image prompt (1-2 sentences, in English) for DALL-E to draw. Decide yourself: subject (character, object, scene, symbol), style, mood, and colors. Be creative and specific. Do not mention game controller, joystick, or gamepad. Output only the image description, no other text. Keep content safe and family-friendly.`;
+      const userPrompt = `Game name: "${String(gameName).slice(0, 100)}".${gameTemplate ? ` Template: ${gameTemplate}.` : ''}${rulesSnippet ? ` Rules summary: ${rulesSnippet}` : ''}\n\nWrite one short DALL-E image prompt that captures this game.`;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 150,
+        temperature: 0.8,
+      });
+
+      const aiConcept = completion.choices?.[0]?.message?.content?.trim() || '';
+      const basePrompt = aiConcept
+        ? `${aiConcept} `
+        : `A distinctive app icon that represents the game "${String(gameName).slice(0, 80)}". `;
+      iconPrompt = basePrompt + safeSuffix;
+      imageUrl = await generateWithPrompt(iconPrompt);
+    } catch (firstErr: any) {
+      if (!isSafetyRejection(firstErr)) throw firstErr;
+      const safePrompt =
+        'Abstract geometric app icon, flat design, single vibrant color on dark background, no text, no people, game theme. ' + safeSuffix;
+      iconPrompt = safePrompt;
+      imageUrl = await generateWithPrompt(safePrompt);
+    }
+
+    return NextResponse.json({
+      icon: imageUrl,
+      prompt: iconPrompt,
+    });
+  } catch (error: any) {
+    console.error('Error generating game icon:', error);
+
+    if (error.status === 401) {
+      return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
+    }
     if (error.status === 429) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    }
+    if (error.status === 400) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded' },
-        { status: 429 }
+        { error: 'Image request was rejected. Try again or use a different game name.' },
+        { status: 400 }
       );
     }
 

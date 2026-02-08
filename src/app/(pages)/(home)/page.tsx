@@ -10,7 +10,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function HomePage() {
   const router = useRouter();
-  const { selectGame, games } = useGameContext();
+  const { selectGame, games, updateGame } = useGameContext();
   const { user, loading } = useAuth();
 
   // Logged-in users: "/" redirects to /create (Game Master) so "home" is one place
@@ -52,6 +52,7 @@ export default function HomePage() {
         }}
         onCreateGame={handleCreateGame}
         onOpenProfile={() => router.push("/profile")}
+        onUpdateGame={updateGame}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">

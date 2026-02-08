@@ -47,7 +47,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [gamesLoading, setGamesLoading] = useState(false);
 
-  // Load: from DB when logged in, from localStorage when not
+  // Load: from DB when logged in (games + icons), from localStorage when not
   useEffect(() => {
     if (user) {
       setGamesLoading(true);

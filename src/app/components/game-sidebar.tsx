@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, Sparkles } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -37,6 +37,7 @@ interface Game {
   name: string;
   icon: string;
   color: string;
+  config?: { rules?: string; template?: string };
 }
 
 interface GameSidebarProps {
@@ -47,15 +48,59 @@ interface GameSidebarProps {
   onViewDrafts?: () => void;
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
+  onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onViewDrafts, onOpenProfile, onDeleteGame }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onViewDrafts, onOpenProfile, onDeleteGame, onUpdateGame }: GameSidebarProps) {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [iconGeneratingId, setIconGeneratingId] = useState<string | null>(null);
+  const autoIconRequestedRef = useRef<Set<string>>(new Set());
+
+  const handleGenerateIcon = async (game: Game, silent = false) => {
+    if (!onUpdateGame) return;
+    setIconGeneratingId(game.id);
+    try {
+      const res = await fetch("/api/generate-game-icon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameName: game.name,
+          gameTemplate: game.config?.template,
+          rules: game.config?.rules,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to generate");
+      }
+      const data = await res.json();
+      if (data.icon) {
+        onUpdateGame(game.id, { icon: data.icon });
+        if (!silent) toast.success(`Icon updated for "${game.name}"`);
+      }
+    } catch (e) {
+      console.error("Generate game icon error:", e);
+      if (!silent) toast.error(e instanceof Error ? e.message : "Failed to generate icon. Try again later.");
+    } finally {
+      setIconGeneratingId(null);
+    }
+  };
+
+  // Auto-generate AI icon in background for games that still use emoji (once per game)
+  useEffect(() => {
+    if (!onUpdateGame || iconGeneratingId !== null) return;
+    const needIcon = games.find(
+      (g) => !g.icon.startsWith("data:image") && !autoIconRequestedRef.current.has(g.id)
+    );
+    if (!needIcon) return;
+    autoIconRequestedRef.current.add(needIcon.id);
+    handleGenerateIcon(needIcon, true);
+  }, [games, onUpdateGame, iconGeneratingId]);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -76,7 +121,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
       <TooltipProvider delayDuration={100}>
         {/* Top Section: Home + Create */}
         <div className="flex flex-col items-center gap-3">
-          {/* Home - 未选中灰底，选中/悬停用紫色渐变（与悬浮色一致） */}
+          {/* Home */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="relative group">
@@ -106,7 +151,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
-          {/* My Games - 未选中灰底，选中/悬停用蓝色（与悬浮色一致） */}
+          {/* My Games */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="relative group">
@@ -136,7 +181,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
-          {/* Discover - 未选中灰底，选中/悬停用琥珀橙渐变（与悬浮色一致） */}
+          {/* Discover */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="relative group">
@@ -193,7 +238,9 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                             }}
                             onClick={() => onSelectGame(game.id)}
                           >
-                            {game.icon.startsWith('data:image') ? (
+                            {iconGeneratingId === game.id ? (
+                              <Loader2 className="size-7 text-white animate-spin" />
+                            ) : game.icon.startsWith('data:image') ? (
                               <img 
                                 src={game.icon} 
                                 alt={game.name}
@@ -218,6 +265,20 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     </Tooltip>
                   </ContextMenuTrigger>
                   <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                    {onUpdateGame && (
+                      <ContextMenuItem
+                        className="cursor-pointer focus:bg-zinc-800"
+                        onClick={() => handleGenerateIcon(game)}
+                        disabled={iconGeneratingId === game.id}
+                      >
+                        {iconGeneratingId === game.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="mr-2 h-4 w-4 text-amber-400" />
+                        )}
+                        Generate icon with AI
+                      </ContextMenuItem>
+                    )}
                     <ContextMenuItem 
                       className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                       onClick={() => {

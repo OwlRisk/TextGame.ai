@@ -17,7 +17,7 @@ export default function ProfilePage() {
 
 function ProfilePageContent() {
   const router = useRouter();
-  const { games, selectedGameId, selectGame } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
 
   return (
     <div className="h-screen flex bg-zinc-900 text-white overflow-hidden">
@@ -38,6 +38,7 @@ function ProfilePageContent() {
         }}
         onCreateGame={() => router.push("/create")}
         onOpenProfile={() => router.push("/profile")}
+        onUpdateGame={updateGame}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
