@@ -238,13 +238,13 @@ interface ChatAreaProps {
   quickReplies?: string[];
   /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
   introYourTurnHint?: string;
-  /** One-click reply text shown next to intro your-turn hint (e.g. "准备好了！" / "Ready!") */
+  /** One-click reply text shown next to intro your-turn hint (e.g. "Ready!") */
   introYourTurnReply?: string;
   /** When everyone has spoken in intro, show this hint above quick replies */
   introEveryoneSpokenHint?: string;
   /** AI-generated suggestion prompts (e.g. theme, round length) — shown as tappable chips */
   aiSuggestedPrompts?: string[];
-  /** Label for AI suggestions row (e.g. "AI 建议" or "AI suggestions") */
+  /** Label for AI suggestions row (e.g. "AI suggestions") */
   aiSuggestionsLabel?: string;
 }
 

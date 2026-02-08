@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { Message } from "@/app/components/chat-area";
 import { Player } from "@/app/components/player-panel";
 import {
@@ -72,7 +73,8 @@ interface GameRoomProviderProps {
 }
 
 export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
-  const userId = "user-1"; // TODO: Get from auth context
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);

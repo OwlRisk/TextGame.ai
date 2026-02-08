@@ -33,6 +33,14 @@ async function executeSchema() {
     // Execute the entire schema
     await client.query(schema);
 
+    // Reload PostgREST schema cache so the API sees the new tables immediately
+    try {
+      await client.query("NOTIFY pgrst, 'reload schema';");
+      console.log('🔄 PostgREST schema cache reload requested.');
+    } catch (notifyErr) {
+      console.warn('⚠️  Could not notify pgrst (non-fatal):', notifyErr.message);
+    }
+
     console.log('✅ Schema executed successfully!');
     console.log('\n📊 Created:');
     console.log('   - game_sessions table');

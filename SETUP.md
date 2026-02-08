@@ -29,18 +29,34 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 
 ### 3. 数据库 Schema 设置
 
-运行以下 SQL 在 Supabase 数据库中创建表结构：
+如果控制台出现 **"Could not find the table 'public.games' in the schema cache"**，按下面做（注意：**必须用和 `.env` 里 `NEXT_PUBLIC_SUPABASE_URL` 对应的同一个项目**）：
 
-1. 登录 Supabase Dashboard
-2. 进入 **SQL Editor**
-3. 复制 `database/schema.sql` 文件的内容
-4. 在 SQL Editor 中执行
+**方式 A：Supabase SQL Editor（最稳妥，推荐）**
 
-或者使用 Supabase CLI：
+1. 打开 [Supabase Dashboard](https://app.supabase.com)，选中 **与 `NEXT_PUBLIC_SUPABASE_URL` 一致** 的项目（例如 `https://xxxx.supabase.co` 里的 `xxxx` 就是项目 ref）。
+2. 左侧进入 **SQL Editor** → New query。
+3. 复制并粘贴 **`database/schema.sql`** 的**完整**内容，点击 **Run**。
+4. 再新建一个 query，执行下面一句并 Run，刷新 API 的 schema 缓存：
+   ```sql
+   NOTIFY pgrst, 'reload schema';
+   ```
+5. 刷新你的应用页面。
+
+**方式 B：本地脚本**
+
+确保 `.env` 里的 **`DATABASE_URL`（或 `DIRECT_URL`）和 `NEXT_PUBLIC_SUPABASE_URL` 是同一个 Supabase 项目**（Dashboard → Settings → Database → Connection string → URI）：
+
+```env
+DATABASE_URL=postgresql://postgres.[project-ref]:[password]@...pooler.supabase.com:6543/postgres
+```
+
+然后执行：
 
 ```bash
-supabase db push
+npm run db:setup
 ```
+
+脚本会在执行完 schema 后自动发送 `NOTIFY pgrst, 'reload schema'`。若仍报错，请用方式 A 在同一项目的 SQL Editor 里执行 `database/schema.sql` 并执行一次 `NOTIFY pgrst, 'reload schema';`。
 
 ## 功能说明
 

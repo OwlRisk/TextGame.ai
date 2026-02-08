@@ -233,7 +233,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             "For this game, I recommend 5-12 players (including you). How many AI players would you like? " +
             "Give me a number between 4 and 11, or say \"you decide\" and I'll pick based on the rules."
           );
-        } else if (lowerInput.includes("undercover") || lowerInput.includes("spy") || lowerInput.includes("卧底")) {
+        } else if (lowerInput.includes("undercover") || lowerInput.includes("spy")) {
           setSelectedTemplate(GAME_TEMPLATES[1]);
           setConversationState("player-count");
           addGMMessage(
@@ -241,7 +241,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             "This game works best with 4-10 players (including you). How many AI players would you like? " +
             "Give me a number between 3 and 9, or say \"you decide\" and I'll pick based on the rules."
           );
-        } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("自定义")) {
+        } else if (lowerInput.includes("custom") || lowerInput.includes("create")) {
           setSelectedTemplate(GAME_TEMPLATES[2]);
           setConversationState("rules-discussion");
           addGMMessage(
@@ -264,8 +264,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
       } else if (conversationState === "player-count") {
         // "GM decides" / "you decide" → keep playerCount 0
         if (lowerInput.includes("you decide") || lowerInput.includes("gm decide") || lowerInput.includes("up to you") ||
-            lowerInput.includes("your choice") || lowerInput.includes("decide for me") || lowerInput.includes("你来定") ||
-            lowerInput.includes("你决定") || lowerInput.includes("随便")) {
+            lowerInput.includes("your choice") || lowerInput.includes("decide for me") ||
+            lowerInput.includes("up to you") || lowerInput.includes("whatever")) {
           setPlayerCount(0);
           setConversationState("rules-discussion");
           addGMMessage(

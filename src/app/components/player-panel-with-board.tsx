@@ -116,7 +116,7 @@ export function PlayerPanelWithBoard({
           </ScrollArea>
         </TabsContent>
 
-        {/* My Board Tab — 纯文本，仅由 AI Host 通过 MY_BOARD_FOR_xxx 编辑 */}
+        {/* My Board Tab — plain text, edited only by AI Host via MY_BOARD_FOR_xxx */}
         <TabsContent value="board" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-3">

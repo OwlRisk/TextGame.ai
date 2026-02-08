@@ -46,10 +46,12 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers for updated_at
+-- Create triggers for updated_at (drop first so schema is re-runnable)
+DROP TRIGGER IF EXISTS update_game_sessions_updated_at ON game_sessions;
 CREATE TRIGGER update_game_sessions_updated_at BEFORE UPDATE ON game_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_games_updated_at ON games;
 CREATE TRIGGER update_games_updated_at BEFORE UPDATE ON games
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -58,39 +60,45 @@ ALTER TABLE game_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE games ENABLE ROW LEVEL SECURITY;
 
 -- Create policies (adjust based on your auth setup)
--- For now, allow all operations if user_id matches
--- You should update these when you implement proper authentication
-
+-- Drop first so schema is re-runnable
 -- Game Sessions policies
+DROP POLICY IF EXISTS "Users can view their own game sessions" ON game_sessions;
 CREATE POLICY "Users can view their own game sessions"
   ON game_sessions FOR SELECT
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
+DROP POLICY IF EXISTS "Users can insert their own game sessions" ON game_sessions;
 CREATE POLICY "Users can insert their own game sessions"
   ON game_sessions FOR INSERT
   WITH CHECK (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
+DROP POLICY IF EXISTS "Users can update their own game sessions" ON game_sessions;
 CREATE POLICY "Users can update their own game sessions"
   ON game_sessions FOR UPDATE
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
+DROP POLICY IF EXISTS "Users can delete their own game sessions" ON game_sessions;
 CREATE POLICY "Users can delete their own game sessions"
   ON game_sessions FOR DELETE
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
 -- Games policies
+DROP POLICY IF EXISTS "Users can view their own games" ON games;
 CREATE POLICY "Users can view their own games"
   ON games FOR SELECT
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
+DROP POLICY IF EXISTS "Users can insert their own games" ON games;
 CREATE POLICY "Users can insert their own games"
   ON games FOR INSERT
   WITH CHECK (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
+DROP POLICY IF EXISTS "Users can update their own games" ON games;
 CREATE POLICY "Users can update their own games"
   ON games FOR UPDATE
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
+DROP POLICY IF EXISTS "Users can delete their own games" ON games;
 CREATE POLICY "Users can delete their own games"
   ON games FOR DELETE
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));

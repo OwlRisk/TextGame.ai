@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { GameSidebar } from "@/app/components/game-sidebar";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
+  const { session } = useAuth();
   const { games, selectedGameId, selectGame } = useGameContext();
   const {
     messages,
@@ -21,6 +23,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gamePhase,
     setGamePhase,
     selectedChannelId,
+    userId,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -166,9 +169,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     // Get AI response
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           messages: [
             {
@@ -255,7 +260,7 @@ Guide the player through the game. Be engaging and maintain the game atmosphere.
           players={players}
           onSendMessage={handleSendMessage}
           isGameActive={gamePhase !== "ended"}
-          userId="user-1"
+          userId={userId}
         />
       </div>
 

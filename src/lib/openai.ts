@@ -20,6 +20,8 @@ export interface ChatRequest {
   hostPersonality?: HostPersonalityOverride;
   /** Max tokens for completion; higher allows full rules in one response (e.g. GM rules editing) */
   maxCompletionTokens?: number;
+  /** Supabase session access_token; required for API auth */
+  authToken?: string;
   gameContext?: {
     template?: string;
     playerCount?: number;
@@ -54,11 +56,11 @@ export async function getAIChatResponse(
         return host ? { name: host.name, description: host.description, personality: `${host.tagline ?? ''}. ${host.voiceStyle ?? ''}`.trim() || undefined } : null;
       })() : null);
       
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (request.authToken) headers['Authorization'] = `Bearer ${request.authToken}`;
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           messages: request.messages.map(msg => ({
             role: msg.role,
@@ -116,11 +118,11 @@ export async function streamAIChatResponse(
         return host ? { name: host.name, description: host.description, personality: `${host.tagline ?? ''}. ${host.voiceStyle ?? ''}`.trim() || undefined } : null;
       })() : null);
       
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (request.authToken) headers['Authorization'] = `Bearer ${request.authToken}`;
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           messages: request.messages.map(msg => ({
             role: msg.role,

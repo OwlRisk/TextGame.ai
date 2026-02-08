@@ -4,8 +4,8 @@ const CARTESIA_VERSION = '2025-04-16';
 
 /**
  * GET /api/cartesia-voices
- * 从 Cartesia 拉取可用声音列表，方便把更多 voice id 填到 TTS 里，一局多人用不同声音。
- * 需要 CARTESIA_API_KEY。
+ * Fetch available voices from Cartesia for TTS; use different voice ids per player in a game.
+ * Requires CARTESIA_API_KEY.
  */
 export async function GET() {
   const apiKey = process.env.CARTESIA_API_KEY;

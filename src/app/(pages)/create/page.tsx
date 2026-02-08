@@ -110,7 +110,7 @@ function CreateGamePageContent() {
       }
 
       const newGame = {
-        id: `game-${Date.now()}`,
+        id: crypto.randomUUID(),
         name: config.name,
         icon: gameIcon,
         color:

@@ -1,20 +1,30 @@
 "use client";
 
 import { Button } from "@/app/components/ui/button";
-import { Sparkles, Lightbulb, MessageSquare, Shield, Users, Zap, Wand2, Target, ChevronRight, Gamepad2, Crown, Eye, LogIn } from "lucide-react";
+import { Sparkles, Lightbulb, MessageSquare, Shield, Users, Zap, Wand2, Target, ChevronRight, Gamepad2, Crown, Eye, LogIn, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
 
+export interface WelcomeGame {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+}
+
 interface WelcomePageProps {
-  onCreateGame: () => void;
+  onCreateGame: (presetId?: string) => void;
   onExploreGames: () => void;
   user: User | null;
   loading: boolean;
+  games?: WelcomeGame[];
 }
 
-export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: WelcomePageProps) {
+export function WelcomePage({ onCreateGame, onExploreGames, user, loading, games = [] }: WelcomePageProps) {
   const router = useRouter();
+  const recentGames = games.slice(0, 3);
+
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 relative">
       {/* Animated Background */}
@@ -22,15 +32,35 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
       
       <ScrollArea className="flex-1 h-full">
-        <div className="max-w-7xl mx-auto px-8 py-16 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 relative z-10">
+          {/* Continue playing (logged-in with games) */}
+          {user && !loading && recentGames.length > 0 && (
+            <div className="mb-10 rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-5">
+              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">Continue</h2>
+              <div className="flex flex-wrap gap-3">
+                {recentGames.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => router.push(`/game/${g.id}`)}
+                    className="flex items-center gap-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/30 px-4 py-3 text-left transition-all min-w-0"
+                  >
+                    <span className="text-2xl shrink-0">{g.icon || "🎮"}</span>
+                    <span className="font-medium text-white truncate">{g.name}</span>
+                    <ChevronRight className="h-4 w-4 text-zinc-500 shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Hero Section */}
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-6">
-              <Sparkles className="h-4 w-4 text-purple-400" />
+          <div className="text-center mb-16 sm:mb-20">
+            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-4 sm:mb-6">
+              <Sparkles className="h-4 w-4 text-purple-400 shrink-0" />
               <span className="text-sm text-purple-300 font-semibold">Welcome to the Future of Gaming</span>
             </div>
             
-            <h1 className="text-7xl font-black text-white mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4 sm:mb-6 leading-tight px-1">
               <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
                 Create & Play
               </span>
@@ -38,30 +68,35 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
               <span className="text-white">ANY Game You Imagine</span>
             </h1>
             
-            <p className="text-2xl text-zinc-300 mb-12 font-medium max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl md:text-2xl text-zinc-300 mb-8 sm:mb-12 font-medium max-w-3xl mx-auto px-2">
               Design custom games, set your own rules, and dive into immersive experiences. 
               You're the game designer.
             </p>
 
             {/* Primary CTAs */}
-            <div className="flex items-center justify-center gap-4 mb-8">
-              {!user && !loading ? (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+              {loading ? (
+                <div className="flex items-center gap-2 text-zinc-400">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-sm">Loading…</span>
+                </div>
+              ) : !user ? (
                 <Button
                   onClick={() => router.push("/signin")}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xl px-12 py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-105"
+                  className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-[1.02] sm:hover:scale-105"
                 >
-                  <LogIn className="h-6 w-6 mr-3" />
+                  <LogIn className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 shrink-0" />
                   Sign in with Google
                 </Button>
               ) : (
                 <>
                   <Button
-                    onClick={onCreateGame}
+                    onClick={() => onCreateGame()}
                     size="lg"
-                    className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xl px-12 py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-105"
+                    className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-[1.02] sm:hover:scale-105"
                   >
-                    <Sparkles className="h-6 w-6 mr-3" />
+                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 shrink-0" />
                     Create Your Game
                   </Button>
                   
@@ -69,32 +104,37 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
                     onClick={onExploreGames}
                     size="lg"
                     variant="outline"
-                    className="bg-white/5 border-white/20 hover:bg-white/10 text-white text-xl px-12 py-8 h-auto"
+                    className="w-full sm:w-auto bg-white/5 border-white/20 hover:bg-white/10 text-white text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 h-auto"
                   >
-                    <Lightbulb className="h-6 w-6 mr-3" />
+                    <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 shrink-0" />
                     Browse Examples
                   </Button>
                 </>
               )}
             </div>
 
-            {!user && !loading ? (
-              <p className="text-sm text-zinc-500">
-                🎉 <span className="text-purple-400 font-semibold">New here?</span> Sign in to start creating amazing games!
-              </p>
-            ) : (
-              <p className="text-sm text-zinc-500">
-                🎉 <span className="text-purple-400 font-semibold">New here?</span> Click "Create Your Game" and our Game Master will guide you through!
-              </p>
+            {!loading && (
+              !user ? (
+                <p className="text-sm text-zinc-500">
+                  <span className="text-purple-400 font-semibold">New here?</span> Sign in to start creating amazing games.
+                </p>
+              ) : (
+                <p className="text-sm text-zinc-500">
+                  <span className="text-purple-400 font-semibold">New here?</span> Click &quot;Create Your Game&quot; and our Game Master will guide you through.
+                </p>
+              )
             )}
           </div>
 
+          {/* Section divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-16 sm:mb-24" aria-hidden />
+
           {/* How It Works - 3 Steps */}
-          <div className="mb-24">
-            <h2 className="text-4xl font-black text-white text-center mb-4">
+          <div className="mb-16 sm:mb-24">
+            <h2 className="text-3xl sm:text-4xl font-black text-white text-center mb-3 sm:mb-4">
               How It Works
             </h2>
-            <p className="text-lg text-zinc-400 text-center mb-12 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-zinc-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
               From idea to gameplay in 3 simple steps. No coding, no complexity.
             </p>
 
@@ -180,11 +220,11 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
           </div>
 
           {/* Key Features */}
-          <div className="mb-24">
-            <h2 className="text-4xl font-black text-white text-center mb-4">
+          <div className="mb-16 sm:mb-24">
+            <h2 className="text-3xl sm:text-4xl font-black text-white text-center mb-3 sm:mb-4">
               Why You'll Love It
             </h2>
-            <p className="text-lg text-zinc-400 text-center mb-12 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-zinc-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
               Powerful features that make game creation effortless and gameplay immersive.
             </p>
 
@@ -236,19 +276,19 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
           </div>
 
           {/* Popular Game Examples */}
-          <div className="mb-20">
-            <h2 className="text-4xl font-black text-white text-center mb-4">
+          <div className="mb-16 sm:mb-20">
+            <h2 className="text-3xl sm:text-4xl font-black text-white text-center mb-3 sm:mb-4">
               Popular Game Templates
             </h2>
-            <p className="text-lg text-zinc-400 text-center mb-12 max-w-2xl mx-auto">
-              Try these fan favorites or create your own unique experience.
+            <p className="text-base sm:text-lg text-zinc-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
+              Start from a template or create your own unique experience.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Werewolf */}
               <button
-                onClick={onCreateGame}
-                className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-left hover:border-purple-500/50 hover:bg-white/10 transition-all duration-300 relative overflow-hidden"
+                onClick={() => onCreateGame("werewolf-classic")}
+                className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 text-left hover:border-purple-500/50 hover:bg-white/10 transition-all duration-300 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
@@ -283,8 +323,8 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
 
               {/* Who's the Spy */}
               <button
-                onClick={onCreateGame}
-                className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-left hover:border-blue-500/50 hover:bg-white/10 transition-all duration-300 relative overflow-hidden"
+                onClick={() => onCreateGame("undercover-party")}
+                className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 text-left hover:border-blue-500/50 hover:bg-white/10 transition-all duration-300 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
@@ -319,8 +359,8 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
 
               {/* Custom Game */}
               <button
-                onClick={onCreateGame}
-                className="group bg-gradient-to-br from-purple-500/10 via-fuchsia-500/10 to-pink-500/10 backdrop-blur-xl border border-purple-500/20 rounded-3xl p-8 text-left hover:border-purple-500/50 hover:from-purple-500/20 hover:via-fuchsia-500/20 hover:to-pink-500/20 transition-all duration-300 relative overflow-hidden"
+                onClick={() => onCreateGame()}
+                className="group bg-gradient-to-br from-purple-500/10 via-fuchsia-500/10 to-pink-500/10 backdrop-blur-xl border border-purple-500/20 rounded-3xl p-6 sm:p-8 text-left hover:border-purple-500/50 hover:from-purple-500/20 hover:via-fuchsia-500/20 hover:to-pink-500/20 transition-all duration-300 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
@@ -356,18 +396,18 @@ export function WelcomePage({ onCreateGame, onExploreGames, user, loading }: Wel
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 text-center">
-              <div className="text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-2">1,234</div>
-              <div className="text-sm text-zinc-400">Games Created</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">No code</div>
+              <div className="text-sm text-zinc-400">Just describe your game</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 text-center">
-              <div className="text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-2">∞</div>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">∞</div>
               <div className="text-sm text-zinc-400">Possibilities</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 text-center">
-              <div className="text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-2">2 min</div>
-              <div className="text-sm text-zinc-400">To Start</div>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">~2 min</div>
+              <div className="text-sm text-zinc-400">To start playing</div>
             </div>
           </div>
         </div>

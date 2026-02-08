@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { GameConfig } from "@/app/components/game-setup-dialog";
+import { getGames, createGame, updateGame as updateGameDb, deleteGame } from "@/lib/db";
+import { toast } from "sonner";
 
 export interface Game {
   id: string;
@@ -21,40 +24,72 @@ interface GameContextType {
   selectGame: (id: string | null) => void;
   getGame: (id: string) => Game | undefined;
   isHydrated: boolean;
+  gamesLoading: boolean;
+}
+
+function rowToGame(row: { id: string; name: string; icon: string; color: string; config: unknown; is_active: boolean }): Game {
+  return {
+    id: row.id,
+    name: row.name,
+    icon: row.icon,
+    color: row.color,
+    config: (row.config ?? {}) as GameConfig,
+    isActive: row.is_active,
+  };
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export function GameProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [games, setGames] = useState<Game[]>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [gamesLoading, setGamesLoading] = useState(false);
 
-  // Load from localStorage on mount
+  // Load: from DB when logged in, from localStorage when not
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("gamesList");
-      if (saved) {
-        const parsedGames = JSON.parse(saved);
-        setGames(parsedGames);
-      }
-      
+    if (user) {
+      setGamesLoading(true);
+      getGames(user.id)
+        .then(({ data, error }) => {
+          if (error) {
+            setGames([]);
+            const msg = (error as { message?: string })?.message ?? "";
+            const isTableMissing = /relation.*does not exist|does not exist|Could not find the table/i.test(msg);
+            if (!isTableMissing) {
+              toast.error("Failed to load game list");
+            }
+            return;
+          }
+          if (data) setGames(data.map(rowToGame));
+        })
+        .finally(() => {
+          setGamesLoading(false);
+          setIsHydrated(true);
+        });
       const savedSelectedId = localStorage.getItem("selectedGameId");
-      if (savedSelectedId) {
-        setSelectedGameId(savedSelectedId);
+      if (savedSelectedId) setSelectedGameId(savedSelectedId);
+    } else {
+      try {
+        const saved = localStorage.getItem("gamesList");
+        if (saved) {
+          const parsedGames = JSON.parse(saved);
+          setGames(parsedGames);
+        }
+        const savedSelectedId = localStorage.getItem("selectedGameId");
+        if (savedSelectedId) setSelectedGameId(savedSelectedId);
+      } catch (e) {
+        console.error("Error loading games from localStorage:", e);
       }
-    } catch (e) {
-      console.error("Error loading games from localStorage:", e);
+      setIsHydrated(true);
     }
-    setIsHydrated(true);
-  }, []);
+  }, [user?.id]);
 
-  // Save to localStorage whenever games change
+  // Save to localStorage when not logged in
   useEffect(() => {
-    if (!isHydrated) return;
-    
+    if (!isHydrated || user) return;
     try {
-      // Trim games to prevent localStorage overflow
       const trimmedGames = games.slice(-20).map((g) => ({
         ...g,
         config: g.config?.rules
@@ -65,12 +100,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error("Error saving games to localStorage:", e);
     }
-  }, [games, isHydrated]);
+  }, [games, isHydrated, user]);
 
   // Save selected game ID
   useEffect(() => {
     if (!isHydrated) return;
-    
     if (selectedGameId) {
       localStorage.setItem("selectedGameId", selectedGameId);
     } else {
@@ -80,20 +114,52 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const addGame = useCallback((game: Game) => {
     setGames((prev) => [...prev, game]);
-  }, []);
+    if (user) {
+      createGame({
+        id: game.id,
+        user_id: user.id,
+        name: game.name,
+        icon: game.icon,
+        color: game.color,
+        config: game.config as Record<string, unknown>,
+        is_active: game.isActive,
+      }).then(({ error }) => {
+        if (error) {
+          toast.error("Failed to save game");
+          setGames((prev) => prev.filter((g) => g.id !== game.id));
+        }
+      });
+    }
+  }, [user]);
 
   const updateGame = useCallback((id: string, updates: Partial<Game>) => {
     setGames((prev) =>
       prev.map((game) => (game.id === id ? { ...game, ...updates } : game))
     );
-  }, []);
+    if (user) {
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
+      if (updates.color !== undefined) dbUpdates.color = updates.color;
+      if (updates.config !== undefined) dbUpdates.config = updates.config;
+      if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+      if (Object.keys(dbUpdates).length > 0) {
+        updateGameDb(id, dbUpdates).then(({ error }) => {
+          if (error) toast.error("Failed to update game");
+        });
+      }
+    }
+  }, [user]);
 
   const removeGame = useCallback((id: string) => {
     setGames((prev) => prev.filter((game) => game.id !== id));
-    if (selectedGameId === id) {
-      setSelectedGameId(null);
+    if (selectedGameId === id) setSelectedGameId(null);
+    if (user) {
+      deleteGame(id, user.id).then(({ error }) => {
+        if (error) toast.error("Failed to delete game");
+      });
     }
-  }, [selectedGameId]);
+  }, [selectedGameId, user]);
 
   const selectGame = useCallback((id: string | null) => {
     setSelectedGameId(id);
@@ -117,6 +183,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         selectGame,
         getGame,
         isHydrated,
+        gamesLoading,
       }}
     >
       {children}

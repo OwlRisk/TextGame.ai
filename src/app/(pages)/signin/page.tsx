@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
@@ -12,19 +12,32 @@ import { Toaster } from "@/app/components/ui/sonner";
 export default function SignInPage() {
   const { user, loading, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSigningIn, setIsSigningIn] = useState(false);
+
+  // Show error when redirected back with ?error=auth_error (e.g. OAuth callback failed)
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "auth_error") {
+      toast.error("Sign-in failed. Please try again.");
+      window.history.replaceState({}, "", "/signin");
+    }
+  }, [searchParams]);
+
+  const rawReturn = searchParams.get("returnUrl") ?? "";
+  const returnUrl = rawReturn.startsWith("/") && !rawReturn.startsWith("//") ? rawReturn : "/";
 
   useEffect(() => {
     // Redirect if already logged in
     if (!loading && user) {
-      router.push("/");
+      router.push(returnUrl);
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, returnUrl]);
 
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(returnUrl);
     } catch (error) {
       console.error("Sign in error:", error);
       toast.error("Failed to sign in with Google. Please try again.");
@@ -102,7 +115,10 @@ export default function SignInPage() {
           </Button>
 
           <p className="text-xs text-center text-zinc-500 leading-relaxed">
-            By signing in, you agree to our Terms of Service and Privacy Policy
+            By signing in, you agree to our{" "}
+            <a href="/terms" className="underline hover:text-zinc-400">Terms of Service</a>
+            {" "}and{" "}
+            <a href="/privacy" className="underline hover:text-zinc-400">Privacy Policy</a>
           </p>
         </CardContent>
       </Card>

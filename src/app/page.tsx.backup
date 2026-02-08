@@ -969,7 +969,7 @@ Example:
           const isErrorOrEmpty = !raw || API_ERROR_PLACEHOLDER.test(raw);
           if (isErrorOrEmpty) {
             toast.warning("⚠️ Host encountered an issue, selecting next speaker randomly", { duration: 4000 });
-            addEventNotification(notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host 随机选择了下一位发言者。"));
+            addEventNotification(notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host chose who speaks next at random."));
           }
           const aiOnly = alivePlayersList.filter(p => p.isAI);
           const pool = aiOnly.length > 0 ? aiOnly : alivePlayersList;
@@ -1073,7 +1073,7 @@ Example:
         nextAfterSeconds = 12;
         replyAfterSeconds = 12;
         toast.error("⚠️ Host encountered an error. Selecting next speaker randomly.", { duration: 4000 });
-        const shortMsg = err.message?.slice(0, 120) || notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host 随机选择了下一位发言者。");
+        const shortMsg = err.message?.slice(0, 120) || notifyLang(currentGame.config.rules, "Host chose who speaks next at random.", "Host chose who speaks next at random.");
         addEventNotification(shortMsg);
         const aiOnly = alivePlayersList.filter(p => p.isAI);
         const pool = aiOnly.length > 0 ? aiOnly : alivePlayersList;
@@ -1092,7 +1092,7 @@ Example:
         setTimeout(() => {
           if (!isMountedRef.current) return;
           setTypingUsers([]);
-          addEventNotification(notifyLang(currentGame.config.rules, "Your turn.", "轮到你了。"));
+          addEventNotification(notifyLang(currentGame.config.rules, "Your turn.", "Your turn."));
           window.dispatchEvent(new CustomEvent('focusGameInput'));
         }, 800);
         timeoutRefs.current = timeoutRefs.current.filter(x => x !== executeTimeout);
@@ -1142,7 +1142,7 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
             if (!isMountedRef.current) return;
             const errorMsg = defaultReplies[Math.floor(Math.random() * defaultReplies.length)];
             updateStreamingMessage(messageId, errorMsg, true);
-            addEventNotification(notifyLang(currentGame.config.rules, `${selectedPlayer.name} gave a default reply.`, `${selectedPlayer.name} 给出了默认回复。`));
+            addEventNotification(notifyLang(currentGame.config.rules, `${selectedPlayer.name} gave a default reply.`, `${selectedPlayer.name} gave a default reply.`));
             scheduleNextSpeaker();
           };
 
@@ -1188,7 +1188,7 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
     
     // Check if user can speak (only if game is not active, or no speaker assigned, or user is the assigned speaker)
     if (isGameActive && currentSpeakerId && currentSpeakerId !== userId) {
-      addEventNotification(notifyLang(currentGame?.config.rules, "It's not your turn to speak. Wait for the Host to assign you.", "还没轮到你发言，请等待 Host 指定。"));
+      addEventNotification(notifyLang(currentGame?.config.rules, "It's not your turn to speak. Wait for the Host to assign you.", "It's not your turn to speak. Wait for the Host to assign you."));
       return;
     }
     
@@ -1301,7 +1301,7 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
     const player = players.find(p => p.id === playerId);
     const cg = games.find(g => g.id === selectedGameId);
     if (player) {
-      addEventNotification(notifyLang(cg?.config.rules, `${player.name} has been ${player.isMuted ? "unmuted" : "muted"}`, `${player.name} 已被${player.isMuted ? "取消静音" : "静音"}`));
+      addEventNotification(notifyLang(cg?.config.rules, `${player.name} has been ${player.isMuted ? "unmuted" : "muted"}`, `${player.name} has been ${player.isMuted ? "unmuted" : "muted"}`));
     }
   };
 
@@ -1391,9 +1391,9 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
       setCurrentSpeakerId(opts.nextSpeakerId);
       if (opts?.nextSpeakerId) {
         const nextPlayer = players.find(p => p.id === opts!.nextSpeakerId);
-        if (nextPlayer) addEventNotification(notifyLang(currentGame?.config.rules, `${nextPlayer.name} is now speaking`, `${nextPlayer.name} 正在发言`));
+        if (nextPlayer) addEventNotification(notifyLang(currentGame?.config.rules, `${nextPlayer.name} is now speaking`, `${nextPlayer.name} is now speaking`));
       } else {
-        addEventNotification(notifyLang(currentGame?.config.rules, "Speaking is now open to all", "现在大家可以自由发言"));
+        addEventNotification(notifyLang(currentGame?.config.rules, "Speaking is now open to all", "Speaking is now open to all"));
       }
     }
 
@@ -1421,9 +1421,9 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
     const cg = games.find(g => g.id === selectedGameId);
     if (playerId) {
       const player = players.find(p => p.id === playerId);
-      if (player) addEventNotification(notifyLang(cg?.config.rules, `${player.name} is now speaking`, `${player.name} 正在发言`));
+      if (player) addEventNotification(notifyLang(cg?.config.rules, `${player.name} is now speaking`, `${player.name} is now speaking`));
     } else {
-      addEventNotification(notifyLang(cg?.config.rules, "Speaking is now open to all", "现在大家可以自由发言"));
+      addEventNotification(notifyLang(cg?.config.rules, "Speaking is now open to all", "Speaking is now open to all"));
     }
   }, [players, games, selectedGameId, addEventNotification]);
 
@@ -1530,7 +1530,7 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
     } catch {
       if (isMountedRef.current) updateStreamingMessage(messageId, fallback, true);
     }
-    addEventNotification(notifyLang(currentGame.config.rules, `${target.name} eliminated`, `${target.name} 被淘汰`));
+    addEventNotification(notifyLang(currentGame.config.rules, `${target.name} eliminated`, `${target.name} eliminated`));
   }, [players, games, selectedGameId, addMessage, addEventNotification, addStreamingMessage, updateStreamingMessage]);
 
   const hostRevealRole = useCallback(async (playerId: string) => {
@@ -1611,7 +1611,7 @@ CRITICAL: Write ONLY in the same language as the Game Rules above. Do NOT use Sp
             }
             toast.dismiss("night-decision");
             if (!victim) {
-              addEventNotification(notifyLang(currentGame.config.rules, "Night target chosen at random.", "夜间目标为随机选择。"));
+              addEventNotification(notifyLang(currentGame.config.rules, "Night target chosen at random.", "Night target chosen at random."));
               victim = possibleVictims[Math.floor(Math.random() * possibleVictims.length)];
             }
             if (victim) {
@@ -1708,7 +1708,7 @@ Reply with ONLY the exact name of the player to eliminate (the one the village v
             }
             toast.dismiss("vote-decision");
             if (!votedOut) {
-              addEventNotification(notifyLang(currentGame.config.rules, "Vote result chosen at random.", "投票结果为随机选择。"));
+              addEventNotification(notifyLang(currentGame.config.rules, "Vote result chosen at random.", "Vote result chosen at random."));
               votedOut = candidates[Math.floor(Math.random() * candidates.length)];
             }
             if (votedOut) await hostEliminatePlayer(votedOut.id);

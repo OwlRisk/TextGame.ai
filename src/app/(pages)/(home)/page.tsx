@@ -18,11 +18,11 @@ export default function HomePage() {
     selectGame(null);
   }, [selectGame]);
 
-  const handleCreateGame = () => {
+  const handleCreateGame = (presetId?: string) => {
     if (!user && !loading) {
       router.push("/signin");
     } else {
-      router.push("/create");
+      router.push(presetId ? `/create?preset=${presetId}` : "/create");
     }
   };
 
@@ -56,6 +56,7 @@ export default function HomePage() {
           onExploreGames={handleExploreGames}
           user={user}
           loading={loading}
+          games={games}
         />
       </div>
 

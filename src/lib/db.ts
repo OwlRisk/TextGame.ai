@@ -1,6 +1,17 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase';
 
+/** Log Supabase/PostgREST error with message, code, details (avoids empty {} in console). */
+function logDbError(context: string, err: unknown) {
+  const e = err as { message?: string; code?: string; details?: string };
+  console.error(
+    `[db] ${context}:`,
+    e?.message ?? (typeof err === 'object' && err !== null ? JSON.stringify(err) : err)
+  );
+  if (e?.code) console.error('[db] code:', e.code);
+  if (e?.details) console.error('[db] details:', e.details);
+}
+
 type GameSession = Database['public']['Tables']['game_sessions']['Row'];
 type GameSessionInsert = Database['public']['Tables']['game_sessions']['Insert'];
 type GameSessionUpdate = Database['public']['Tables']['game_sessions']['Update'];
@@ -18,7 +29,7 @@ export async function getGameSessions(userId: string) {
     .order('updated_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching game sessions:', error);
+    logDbError('getGameSessions', error);
     return { data: null, error };
   }
 
@@ -34,7 +45,7 @@ export async function getGameSession(sessionId: string, userId: string) {
     .single();
 
   if (error) {
-    console.error('Error fetching game session:', error);
+    logDbError('getGameSession', error);
     return { data: null, error };
   }
 
@@ -49,7 +60,7 @@ export async function createGameSession(session: GameSessionInsert) {
     .single();
 
   if (error) {
-    console.error('Error creating game session:', error);
+    logDbError('createGameSession', error);
     return { data: null, error };
   }
 
@@ -68,7 +79,7 @@ export async function updateGameSession(sessionId: string, updates: GameSessionU
     .single();
 
   if (error) {
-    console.error('Error updating game session:', error);
+    logDbError('updateGameSession', error);
     return { data: null, error };
   }
 
@@ -83,7 +94,7 @@ export async function deleteGameSession(sessionId: string, userId: string) {
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error deleting game session:', error);
+    logDbError('deleteGameSession', error);
     return { error };
   }
 
@@ -99,7 +110,7 @@ export async function getGames(userId: string) {
     .order('updated_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching games:', error);
+    logDbError('getGames', error);
     return { data: null, error };
   }
 
@@ -115,7 +126,7 @@ export async function getGame(gameId: string, userId: string) {
     .single();
 
   if (error) {
-    console.error('Error fetching game:', error);
+    logDbError('getGame', error);
     return { data: null, error };
   }
 
@@ -130,7 +141,7 @@ export async function createGame(game: GameInsert) {
     .single();
 
   if (error) {
-    console.error('Error creating game:', error);
+    logDbError('createGame', error);
     return { data: null, error };
   }
 
@@ -149,7 +160,7 @@ export async function updateGame(gameId: string, updates: GameUpdate) {
     .single();
 
   if (error) {
-    console.error('Error updating game:', error);
+    logDbError('updateGame', error);
     return { data: null, error };
   }
 
@@ -164,7 +175,7 @@ export async function deleteGame(gameId: string, userId: string) {
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error deleting game:', error);
+    logDbError('deleteGame', error);
     return { error };
   }
 

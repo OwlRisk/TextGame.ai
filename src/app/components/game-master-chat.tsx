@@ -29,6 +29,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
@@ -67,7 +68,7 @@ export interface GameSession {
   updatedAt: Date;
 }
 
-// Notion 式：按 Enter 时把当前行从「# / - 开头」的段落转为标题/列表，再换行（无空格也能识别）
+// Notion-style: on Enter, turn current line starting with # / - into heading/list, then newline (works without space)
 function handleGameDocEnter(editor: unknown): boolean {
   const ed = editor as { state: { selection: { $from: { depth: number; before: (d: number) => number; node: (d: number) => { type: { name: string }; textContent: string; nodeSize: number } } } }; commands: { insertContentAt: (pos: unknown, content: unknown, opts?: unknown) => boolean } } | null;
   if (!ed) return false;
@@ -403,6 +404,9 @@ function generateSessionTitle(template: GameTemplate | null, playerCount: number
 }
 
 export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
+  const { session } = useAuth();
+  const authToken = session?.access_token;
+
   // Session management
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
@@ -476,7 +480,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     const story = gameStory.trim();
     if (!story) return baseRules;
     if (!baseRules) return `STORY:\n${story}`;
-    const strippedRules = baseRules.replace(/^(STORY|BACKGROUND|WORLD|SETTING|故事|背景|世界观)[\s\S]*?\n\n/i, "");
+    const strippedRules = baseRules.replace(/^(STORY|BACKGROUND|WORLD|SETTING)[\s\S]*?\n\n/i, "");
     return `STORY:\n${story}\n\n${strippedRules}`;
   }, [customRules, selectedTemplate, gameStory]);
 
@@ -594,10 +598,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       .catch(() => {});
   }, [messages]);
 
-  /** 快速回复最多展示条数，避免占满屏幕 */
+  /** Max number of quick-reply chips to show */
   const MAX_DISPLAY_CHIPS = 3;
 
-  /** Chips to show: 完全由 AI 决定是否出现、出现几条、内容；仅使用 LLM 返回的 suggestions，无解析/默认回退；展示时截断到上限。 */
+  /** Chips to show: entirely decided by AI (count and content); use only LLM suggestions, no fallback; truncate to max. */
   const displayChips = useMemo(() => {
     return llmQuickReplies.slice(0, MAX_DISPLAY_CHIPS).map((text) => {
       const clean = stripChipLabel(text);
@@ -638,19 +642,19 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [isStartingGame, setIsStartingGame] = useState(false);
   const rulesPanelRef = useRef<HTMLDivElement>(null); // Scroll into view when GM edits rules
 
-  // 把 Markdown 转为 HTML（用于 Tiptap 初始内容和外部同步）
-  // 预处理：让 #word / -word 即使没有空格也能被解析为标题和列表，结构更清晰
+  // Convert Markdown to HTML (for Tiptap initial content and external sync)
+  // Preprocess: allow #word / -word to be parsed as heading/list even without space after
   const markdownToHtml = useCallback((md: string): string => {
     if (!md || md.trim() === "") return "<p></p>";
     try {
       const normalized = md
         .split("\n")
         .map((line) => {
-          // # / ## / ### 后直接跟非空格：补一个空格，便于 marked 识别为标题
+          // # / ## / ### followed by non-space: add space so marked parses as heading
           if (/\s*#{1,6}[^\s#]/.test(line)) {
             return line.replace(/^(\s*)(#{1,6})([^\s#].*)$/, "$1$2 $3");
           }
-          // - 或 * 行首后直接跟非空格：补一个空格，便于识别为列表
+          // - or * at line start followed by non-space: add space so it parses as list
           if (/\s*[-*]\S/.test(line)) {
             return line.replace(/^(\s*)([-*])(\S.*)$/, "$1$2 $3");
           }
@@ -664,12 +668,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
   }, []);
 
-  // Ref 供 handleKeyDown 使用（Enter 时格式化 # / - 行）
+  // Ref for handleKeyDown (format # / - lines on Enter)
   const gameDocEditorRef = useRef<ReturnType<typeof useEditor>>(null);
 
-  // Tiptap 编辑器：Notion / Lark 式，输入 ## + 空格自动变标题
+  // Tiptap editor: Notion-style, ## + space becomes heading
   const gameDocEditor = useEditor({
-    immediatelyRender: false, // Next.js SSR 兼容
+    immediatelyRender: false, // Next.js SSR compat
     extensions: [
       StarterKit.configure({
         heading: {
@@ -693,13 +697,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       },
     },
     onUpdate: ({ editor }) => {
-      // 用户编辑时，把 HTML 转为 Markdown 存入 customRules
+      // On user edit: convert HTML to Markdown and store in customRules
       const html = editor.getHTML();
-      // 简单处理：如果是空的 <p></p> 就存空字符串
+      // Empty <p></p> -> empty string
       if (html === "<p></p>" || html.trim() === "") {
         setCustomRules("");
       } else {
-        // Tiptap 输出的 HTML 是干净的（h1, h2, ul, li 等），可以用简单的转换
+        // Tiptap HTML is clean (h1, h2, ul, li); use simple conversion
         const md = htmlToMarkdown(html);
         setCustomRules(md);
       }
@@ -710,14 +714,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     gameDocEditorRef.current = gameDocEditor;
   }, [gameDocEditor]);
 
-  // 简易 HTML → Markdown 转换（Tiptap 的 HTML 结构简单：<h1> → # xxx，<ul><li> → - xxx，<strong> → **xxx**）
+  // Simple HTML → Markdown (Tiptap: <h1> → # xxx, <ul><li> → - xxx, <strong> → **xxx**)
   const htmlToMarkdown = (html: string): string => {
     let md = html;
     // h1-h3
     md = md.replace(/<h1>([\s\S]*?)<\/h1>/g, "# $1\n");
     md = md.replace(/<h2>([\s\S]*?)<\/h2>/g, "## $1\n");
     md = md.replace(/<h3>([\s\S]*?)<\/h3>/g, "### $1\n");
-    // 列表
+    // Lists
     md = md.replace(/<ul>([\s\S]*?)<\/ul>/g, (_match: string, content: string) => {
       return content.replace(/<li>(.*?)<\/li>/g, "- $1\n");
     });
@@ -725,18 +729,18 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       let i = 1;
       return content.replace(/<li>(.*?)<\/li>/g, (_: string, item: string) => `${i++}. ${item}\n`);
     });
-    // 粗体、斜体、代码
+    // Bold, italic, code
     md = md.replace(/<strong>(.*?)<\/strong>/g, "**$1**");
     md = md.replace(/<em>(.*?)<\/em>/g, "*$1*");
     md = md.replace(/<code>(.*?)<\/code>/g, "`$1`");
-    // 段落
+    // Paragraphs
     md = md.replace(/<p>(.*?)<\/p>/g, "$1\n\n");
-    // 清理多余的空行和标签
+    // Trim extra blank lines and tags
     md = md.replace(/<[^>]+>/g, "").trim();
     return md;
   };
 
-  // 当 GM 或外部更新 customRules 时，同步到编辑器（节流：流式时最多 500ms 写一次，结束立刻写一次）
+  // When GM or external updates customRules, sync to editor (throttle: 500ms during stream, then once at end)
   const gameDocSyncThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevRulesBeingEditedRef = useRef(isRulesBeingEdited);
   useEffect(() => {
@@ -1060,7 +1064,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           rules: customRules || selectedTemplate?.defaultRules || undefined,
           conversationState: "greeting"
         },
-        maxCompletionTokens: 500
+        maxCompletionTokens: 500,
+        authToken
       },
       (chunk: string) => {
         fullResponse += chunk;
@@ -1263,9 +1268,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         setCustomRules((prevRules) => {
           const existing = prevRules || selectedTemplate?.defaultRules || "";
           // If rules already start with background-like content, replace it; otherwise prepend
-          const hasBackground = existing.match(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}/i);
+          const hasBackground = existing.match(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}/i);
           if (hasBackground) {
-            return background + "\n\n" + existing.replace(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}\n\n/i, '');
+            return background + "\n\n" + existing.replace(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}\n\n/i, '');
           }
           return background + (existing ? "\n\n" + existing : "");
         });
@@ -1415,7 +1420,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         {
           messages: apiMessages,
           gameContext: gameContext,
-          maxCompletionTokens: 2000
+          maxCompletionTokens: 2000,
+          authToken
         },
           // onChunk: Update message content as chunks arrive - REAL-TIME EDITING like code agent
         (chunk: string) => {
@@ -1628,9 +1634,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               flushSync(() => {
                 setCustomRules((prevRules) => {
                   const existing = prevRules || selectedTemplate?.defaultRules || "";
-                  const hasBackground = existing.match(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}/i);
+                  const hasBackground = existing.match(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}/i);
                   if (hasBackground) {
-                    return background + "\n\n" + existing.replace(/^(背景|BACKGROUND|故事|STORY|世界观|WORLD)[\s\S]{0,200}\n\n/i, '');
+                    return background + "\n\n" + existing.replace(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}\n\n/i, '');
                   }
                   return background + (existing ? "\n\n" + existing : "");
                 });
