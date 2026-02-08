@@ -30,6 +30,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     userId,
     currentSpeakerId,
     setCurrentSpeakerId,
+    humanGameIdentity,
+    setHumanGameIdentity,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -76,6 +78,34 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
   }, [currentGame, isInitialized, players.length, gameId]);
 
+  // Fetch human in-game identity when missing (persisted with room state)
+  useEffect(() => {
+    if (!currentGame?.config || !session?.access_token || humanGameIdentity !== null) return;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+    fetch("/api/generate-human-game-identity", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        gameName: currentGame.name,
+        rules: currentGame.config.rules,
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Failed"))))
+      .then((data: { name?: string }) => {
+        const name = (data.name && data.name.trim()) ? data.name.trim().slice(0, 40) : "Player";
+        setHumanGameIdentity({ name });
+      })
+      .catch(() => setHumanGameIdentity({ name: "Player" }));
+  }, [currentGame?.id, currentGame?.name, currentGame?.config?.rules, session?.access_token, humanGameIdentity, setHumanGameIdentity]);
+
+  // When humanGameIdentity or session changes, sync human player display name
+  useEffect(() => {
+    if (players.length === 0) return;
+    const name = humanGameIdentity?.name || (session?.user ? (session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split("@")[0])?.trim() : null) || "You";
+    setPlayers((prev) => prev.map((p) => (p.id === userId ? { ...p, name } : p)));
+  }, [humanGameIdentity?.name, session?.user, players.length, userId, setPlayers]);
+
   const initializeGame = () => {
     if (!currentGame || !currentGame.config) return;
 
@@ -85,26 +115,27 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7"
     ];
 
-    // Create Game Master from host config
-    const hostColor = config.template === "werewolf" 
-      ? "#7c3aed" 
-      : config.template === "undercover" 
-      ? "#0ea5e9" 
-      : "#ec4899";
-
-    const hostName = config.generatedHost?.name || "Game Master";
+    // Host: use AI-generated name, avatar (same pipeline as AI players), and color/personality/gender from generate-host
+    const hostColor = config.generatedHost?.color || (config.template === "werewolf"
+      ? "#7c3aed"
+      : config.template === "undercover"
+      ? "#0ea5e9"
+      : "#ec4899");
+    const hostName = (config.generatedHost?.name || "Game Master").trim() || "Game Master";
     const hostPersonality = config.generatedHost?.personality || "A mysterious game master";
 
     const gameMaster = {
       id: "gm-1",
       name: hostName,
       avatar: hostColor,
-      role: hostName,
-      status: config.generatedHost?.voiceStyle || "Game Master",
+      role: "Host",
+      status: config.generatedHost?.voiceStyle || "Host",
       isGameMaster: true,
       isAI: true,
       isMuted: false,
       background: hostPersonality,
+      personality: config.generatedHost?.voiceStyle || config.generatedHost?.personality,
+      gender: config.generatedHost?.gender as "male" | "female" | "other" | undefined,
     };
 
     // Create AI players from configured players
@@ -134,10 +165,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       };
     });
 
+    const userName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "You";
     // Create user player (use userId so host-assigned "NEXT_SPEAKER: You" enables this player)
     const userPlayer = {
       id: userId,
-      name: "You",
+      name: userName,
       avatar: "#6366f1",
       role: config.template === "werewolf" ? "Villager" : "Civilian",
       stats: config.template === "werewolf" || config.template === "mafia" ? { Status: "Alive" } : undefined,
@@ -175,7 +207,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     addMessage(
       {
         senderId: userId,
-        senderName: "You",
+        senderName: humanGameIdentity?.name || "You",
         senderAvatar: "#6366f1",
         content,
         isAI: false,
@@ -315,23 +347,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
     }
   };
 
-  if (!currentGame) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-zinc-900 text-white">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
-          <button
-            onClick={() => router.push("/")}
-            className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // GM-defined game rooms from config (e.g. General, Mafia only, Werewolves only); fallback to single room for old games
+  // GM-defined game rooms (always compute so hook order is stable; safe when currentGame is null)
   const configChannels = currentGame?.config?.channels;
   const gameRoomEntries = configChannels?.length
     ? configChannels.map((c) => ({ id: c.id, name: c.name, type: "game" as const }))
@@ -348,9 +364,9 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
     ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
     : messages;
 
-  // AI-generated quick replies (max 3). Use fixed-length deps so React does not see array size change between renders.
+  // AI-generated quick replies (max 3). Run unconditionally so hook order is stable.
   useEffect(() => {
-    if (!isGameChannel || !currentGame?.config) return;
+    if (!currentGame?.config || !isGameChannel) return;
     const abort = new AbortController();
     const recent = messagesForChannel.slice(-8).map((m) => ({ senderName: m.senderName, content: m.content }));
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -389,6 +405,22 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
     toast.success("Link copied to clipboard");
   };
 
+  if (!currentGame) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-zinc-900 text-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
+          <button
+            onClick={() => router.push("/")}
+            className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex bg-zinc-900 text-white overflow-hidden">
       {/* Left app sidebar: Home, My games, Discover, game list */}
@@ -422,6 +454,9 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
         onSettings={() => toast.info("Settings coming soon")}
         textSectionLabel="Sections"
         gameSectionLabel="Game Rooms"
+        userDisplayName={session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null}
+        gameUserDisplayName={humanGameIdentity?.name || null}
+        gameId={gameId}
         onDeleteChannel={(id) => {
           if (id === "rules" || id === "progress") {
             toast.info("Sections cannot be removed");
@@ -463,7 +498,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
         ) : null}
       </div>
 
-      <PlayerPanel players={players} />
+      <PlayerPanel players={players} gameId={gameId} humanGameIdentity={humanGameIdentity} />
 
       <Toaster
         position="top-right"

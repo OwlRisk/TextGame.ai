@@ -24,10 +24,11 @@ export function getAvatarPropsForPlayer(player: Player | undefined | null) {
     };
   }
 
-  // Current user ("You"): use minimal props so sidebar and chat share the same avatar cache key
+  // Current user: use player.name (game identity when set, e.g. "Evelyn Hart") so chat and panel show the same avatar
   if (!player.isAI) {
+    const name = (player.name && player.name.trim() && player.name !== "You") ? player.name.trim() : "You";
     return {
-      name: "You",
+      name,
       type: "player" as const,
       background: undefined,
       personality: undefined,

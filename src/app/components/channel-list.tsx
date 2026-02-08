@@ -1,4 +1,5 @@
 import { Hash, Settings, Share2, Users, Home, Trash2 } from "lucide-react";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Separator } from "@/app/components/ui/separator";
@@ -38,6 +39,11 @@ interface ChannelListProps {
   textSectionLabel?: string;
   /** Label for game rooms. Default: "Game Rooms" */
   gameSectionLabel?: string;
+  /** Current user display name (e.g. from auth). When provided, shown instead of "Player". */
+  userDisplayName?: string | null;
+  /** In-game name for the human player (AI-generated). When set with gameId, show this name and use game avatar. */
+  gameUserDisplayName?: string | null;
+  gameId?: string;
 }
 
 export function ChannelList({ 
@@ -50,7 +56,13 @@ export function ChannelList({
   onDeleteChannel,
   textSectionLabel = "Sections",
   gameSectionLabel = "Game Rooms",
+  userDisplayName,
+  gameUserDisplayName,
+  gameId,
 }: ChannelListProps) {
+  const displayName = (gameUserDisplayName && gameUserDisplayName.trim()) || (userDisplayName && userDisplayName.trim()) ? (gameUserDisplayName || userDisplayName || "Player").trim() : "Player";
+  const shortLabel = (displayName !== "Player") ? "You" : "#0001";
+  const useGameAvatar = !!(gameUserDisplayName && gameUserDisplayName.trim() && gameId);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<Channel | null>(null);
   return (
@@ -146,12 +158,23 @@ export function ChannelList({
       {/* User Section */}
       <div className="h-16 bg-zinc-900/50 px-3 flex items-center justify-between border-t border-zinc-900/50">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-white">YOU</span>
-          </div>
+          {useGameAvatar ? (
+            <GeneratedAvatar
+              name={gameUserDisplayName!}
+              type="player"
+              gameId={gameId}
+              enabled={true}
+              className="h-10 w-10 flex-shrink-0"
+              fallbackColor="#6366f1"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-semibold text-white">{displayName.substring(0, 2).toUpperCase()}</span>
+            </div>
+          )}
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-white truncate">Player</div>
-            <div className="text-xs text-zinc-400">#0001</div>
+            <div className="text-sm font-semibold text-white truncate" title={displayName}>{displayName}</div>
+            <div className="text-xs text-zinc-400">{shortLabel}</div>
           </div>
         </div>
         <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" onClick={onSettings}>

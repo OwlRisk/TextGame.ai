@@ -33,6 +33,8 @@ interface GameRoomContextType {
   gameEnded: boolean;
   gameResult: { winner: string; message: string } | null;
   aiSuggestedPrompts: string[];
+  /** Human player's in-game name (and avatar key) for this game — AI-generated, persisted with room. */
+  humanGameIdentity: { name: string } | null;
 
   // Actions - Messages
   addMessage: (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => string | undefined;
@@ -59,6 +61,7 @@ interface GameRoomContextType {
   setGameEnded: React.Dispatch<React.SetStateAction<boolean>>;
   setGameResult: React.Dispatch<React.SetStateAction<{ winner: string; message: string } | null>>;
   setAiSuggestedPrompts: React.Dispatch<React.SetStateAction<string[]>>;
+  setHumanGameIdentity: React.Dispatch<React.SetStateAction<{ name: string } | null>>;
 
   // Utility
   resetGame: () => void;
@@ -91,6 +94,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [gameEnded, setGameEnded] = useState(false);
   const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
   const [aiSuggestedPrompts, setAiSuggestedPrompts] = useState<string[]>([]);
+  const [humanGameIdentity, setHumanGameIdentity] = useState<{ name: string } | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
 
   const isMountedRef = useRef(true);
@@ -136,6 +140,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           }
           setPrivateMessages(pm);
         }
+        if (state.humanGameIdentity && typeof state.humanGameIdentity.name === "string") {
+          setHumanGameIdentity({ name: state.humanGameIdentity.name });
+        }
       }
     } catch (e) {
       console.error("Error loading game room state:", e);
@@ -179,6 +186,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           myBoardContent,
           sections,
           privateMessages: trimmedPrivateMessages,
+          humanGameIdentity: humanGameIdentity || undefined,
           savedAt: new Date().toISOString(),
         };
 
@@ -200,6 +208,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     myBoardContent,
     sections,
     privateMessages,
+    humanGameIdentity,
     isHydrated,
   ]);
 
@@ -335,6 +344,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setGameEnded(false);
     setGameResult(null);
     setAiSuggestedPrompts([]);
+    setHumanGameIdentity(null);
   }, []);
 
   return (
@@ -355,6 +365,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         gameEnded,
         gameResult,
         aiSuggestedPrompts,
+        humanGameIdentity,
         addMessage,
         addStreamingMessage,
         updateStreamingMessage,
@@ -375,6 +386,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         setGameEnded,
         setGameResult,
         setAiSuggestedPrompts,
+        setHumanGameIdentity,
         resetGame,
         userId,
       }}

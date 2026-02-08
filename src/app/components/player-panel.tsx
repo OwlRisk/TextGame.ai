@@ -37,6 +37,8 @@ interface PlayerPanelProps {
   gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
+  /** When set, the human player uses this in-game name and an AI-generated avatar like other players. */
+  humanGameIdentity?: { name: string } | null;
 }
 
 export function PlayerPanel({ 
@@ -45,7 +47,8 @@ export function PlayerPanel({
   isUserGameMaster,
   gameId,
   onToggleMute,
-  onSelectSpeaker 
+  onSelectSpeaker,
+  humanGameIdentity,
 }: PlayerPanelProps) {
   return (
     <div className="w-60 bg-zinc-850 flex flex-col border-l border-zinc-900/50">
@@ -90,6 +93,7 @@ export function PlayerPanel({
                   gameId={gameId}
                   onToggleMute={onToggleMute}
                   onSelectSpeaker={onSelectSpeaker}
+                  humanGameIdentity={humanGameIdentity}
                 />
               ))}
             </div>
@@ -106,7 +110,8 @@ function PlayerCard({
   isUserGameMaster,
   gameId,
   onToggleMute,
-  onSelectSpeaker 
+  onSelectSpeaker,
+  humanGameIdentity,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -114,7 +119,9 @@ function PlayerCard({
   gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
+  humanGameIdentity?: { name: string } | null;
 }) {
+  const useGameAvatarForHuman = !player.isAI && humanGameIdentity?.name && gameId;
   return (
     <div className={`group p-2 rounded-lg transition-all duration-200 ${
       isSpeaking 
@@ -123,7 +130,7 @@ function PlayerCard({
     }`}>
       <div className="flex items-start gap-2.5">
         <div className="relative flex-shrink-0">
-          {!player.isAI ? (
+          {!player.isAI && !useGameAvatarForHuman ? (
             <Avatar
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
@@ -136,6 +143,17 @@ function PlayerCard({
                 {player.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
+          ) : !player.isAI && useGameAvatarForHuman ? (
+            <GeneratedAvatar
+              name={humanGameIdentity!.name}
+              type="player"
+              gameId={gameId}
+              enabled={true}
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
+                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+              }`}
+              fallbackColor={player.avatar}
+            />
           ) : (
             <GeneratedAvatar
               {...getAvatarPropsForPlayer(player)}
@@ -150,7 +168,7 @@ function PlayerCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="text-sm font-semibold text-white truncate">{player.name}</span>
+            <span className="text-sm font-semibold text-white truncate" title={player.name}>{player.name || (player.isGameMaster ? "Host" : "Player")}</span>
             {!player.isAI && (
               <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-1.5 py-0 h-4 font-bold tracking-wide shadow-sm">
                 YOU
