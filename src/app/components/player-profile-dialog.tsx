@@ -61,9 +61,6 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId }: Play
               {player.role && (
                 <p className="text-sm font-medium text-zinc-300">{player.role}</p>
               )}
-              {player.status && (
-                <p className="text-xs text-emerald-400/90 mt-0.5">Status: {player.status}</p>
-              )}
             </div>
           </div>
 

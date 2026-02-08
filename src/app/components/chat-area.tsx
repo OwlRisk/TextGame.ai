@@ -213,6 +213,8 @@ export interface Message {
   isSystemMessage?: boolean;
   isStreaming?: boolean; // True while message is being generated (typewriter effect)
   isPrivate?: boolean; // True for private messages from Host to this player only
+  /** Which game room/channel this message belongs to (e.g. general, werewolves-only). Omitted = legacy "game-room". */
+  channelId?: string;
 }
 
 interface ChatAreaProps {

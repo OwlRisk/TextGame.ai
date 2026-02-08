@@ -160,9 +160,6 @@ function PlayerCard({
           {player.role && (
             <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
           )}
-          {player.status && (
-            <div className="text-xs text-emerald-400 mt-0.5 font-medium">Status: {player.status}</div>
-          )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
           <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

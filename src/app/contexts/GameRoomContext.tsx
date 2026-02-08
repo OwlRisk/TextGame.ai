@@ -35,8 +35,8 @@ interface GameRoomContextType {
   aiSuggestedPrompts: string[];
 
   // Actions - Messages
-  addMessage: (msg: Omit<Message, "id" | "timestamp">) => string | undefined;
-  addStreamingMessage: (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">) => string;
+  addMessage: (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => string | undefined;
+  addStreamingMessage: (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
   addEventNotification: (content: string) => void;
   addPrivateMessage: (playerNameOrId: string, content: string, fromName: string) => void;
@@ -204,12 +204,13 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   ]);
 
   const addMessage = useCallback(
-    (msg: Omit<Message, "id" | "timestamp">) => {
+    (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => {
       if (!isMountedRef.current) return;
       const newMessage: Message = {
         ...msg,
         id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         timestamp: new Date(),
+        ...(channelId != null && { channelId }),
       };
       setMessages((prev) => {
         // Prevent duplicates
@@ -242,7 +243,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   );
 
   const addStreamingMessage = useCallback(
-    (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">): string => {
+    (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string): string => {
       if (!isMountedRef.current) return "";
       const messageId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       const newMessage: Message = {
@@ -251,6 +252,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         content: "",
         timestamp: new Date(),
         isStreaming: true,
+        ...(channelId != null && { channelId }),
       };
       setMessages((prev) => [...prev, newMessage]);
       return messageId;

@@ -238,11 +238,6 @@ function PlayerCard({
           {isHiddenRoleGame && player.id !== currentUserId && (
             <div className="text-xs text-zinc-500 font-medium">—</div>
           )}
-          {player.status && (
-            <div className={`text-xs mt-0.5 font-medium ${isEliminated ? "text-red-400" : "text-emerald-400"}`}>
-              Status: {player.status}
-            </div>
-          )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
           <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>

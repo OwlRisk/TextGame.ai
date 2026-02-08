@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { useNavIcon } from "@/lib/use-nav-icon";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -71,6 +72,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
   const username = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || "Guest";
   const userAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
+  const { src: homeIcon } = useNavIcon("home");
+  const { src: myGamesIcon } = useNavIcon("my-games");
+  const { src: discoverIcon } = useNavIcon("discover");
+
   return (
     <div className="w-20 min-w-[5rem] flex-shrink-0 z-10 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950 border-r border-violet-900/20 flex flex-col items-center py-4 gap-3 overflow-hidden backdrop-blur-sm">
       <TooltipProvider delayDuration={100}>
@@ -90,7 +95,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   }`}
                   onClick={() => onSelectGame("home")}
                 >
-                  <Home className="h-7 w-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                  {homeIcon ? (
+                    <img src={homeIcon} alt="Home" className="h-7 w-7 object-contain transition-transform duration-300 group-hover:scale-110" />
+                  ) : (
+                    <Home className="h-7 w-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                  )}
                   {selectedGameId === "home" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                   )}
@@ -120,7 +129,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   }`}
                   onClick={() => onSelectGame("my-games")}
                 >
-                  <Gamepad2 className="h-7 w-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                  {myGamesIcon ? (
+                    <img src={myGamesIcon} alt="My Games" className="h-7 w-7 object-contain transition-transform duration-300 group-hover:scale-110" />
+                  ) : (
+                    <Gamepad2 className="h-7 w-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                  )}
                   {selectedGameId === "my-games" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                   )}
@@ -154,7 +167,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   }`}
                   onClick={() => onSelectGame("discover")}
                 >
-                  <Compass className="h-7 w-7 text-white transition-transform duration-300 group-hover:rotate-12" />
+                  {discoverIcon ? (
+                    <img src={discoverIcon} alt="Discover" className="h-7 w-7 object-contain transition-transform duration-300 group-hover:scale-110" />
+                  ) : (
+                    <Compass className="h-7 w-7 text-white transition-transform duration-300 group-hover:rotate-12" />
+                  )}
                   {selectedGameId === "discover" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                   )}

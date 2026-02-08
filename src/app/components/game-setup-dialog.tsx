@@ -58,6 +58,8 @@ export interface GameConfig {
     icon: string;
     color: string;
   };
+  /** GM-defined game rooms (e.g. General, Mafia only, Werewolves only). Each room has its own chat. */
+  channels?: { id: string; name: string }[];
 }
 
 interface ChatMessage {

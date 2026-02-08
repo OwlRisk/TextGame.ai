@@ -2201,6 +2201,18 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
                     toast.dismiss(startToastId);
                     const tid = selectedTemplate?.id || "custom";
+                    const defaultChannelsByTemplate: Record<string, { id: string; name: string }[]> = {
+                      werewolf: [
+                        { id: "general", name: "General" },
+                        { id: "werewolves-only", name: "Werewolves only" },
+                      ],
+                      mafia: [
+                        { id: "general", name: "General" },
+                        { id: "mafia-only", name: "Mafia only" },
+                      ],
+                      undercover: [{ id: "general", name: "General" }],
+                      custom: [{ id: "general", name: "General" }],
+                    };
                     const gameConfig: GameConfig = {
                       template: tid as "werewolf" | "undercover" | "custom",
                       playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
@@ -2210,7 +2222,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       tone: "balanced", // Default tone
                       hideRolesInPlayerList: tid === "werewolf" || tid === "mafia",
                       configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
-                      generatedHost: generatedHostData || undefined
+                      generatedHost: generatedHostData || undefined,
+                      channels: defaultChannelsByTemplate[tid] ?? defaultChannelsByTemplate.custom,
                     };
                     await onCreateGame(gameConfig);
                     } finally {
