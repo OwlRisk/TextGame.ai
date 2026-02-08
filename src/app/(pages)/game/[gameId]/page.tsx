@@ -200,12 +200,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           messages: [
             {
               role: "system",
-              content: `You are ${currentGame?.config?.generatedHost?.name || "the Game Master"} for ${currentGame?.name}. 
+              content: `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Do NOT ask for player count, options like Mayor, or say "Create Game". Your only job is to run the game as written: run night/day phases, moderate voting, announce results. If players ask to change rules, say the rules are fixed for this game. Keep replies short and in character.
 
-Game Rules:
-${currentGame?.config?.rules || "No specific rules defined."}
-
-Guide the player through the game. Be engaging and maintain the game atmosphere. Keep responses concise and relevant to the game.`,
+Game Rules (do not modify, only enforce):
+${currentGame?.config?.rules || "No specific rules defined."}`,
             },
             {
               role: "user",
