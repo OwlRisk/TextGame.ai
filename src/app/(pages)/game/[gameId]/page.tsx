@@ -28,6 +28,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setSelectedChannelId,
     gameProgress,
     userId,
+    currentSpeakerId,
+    setCurrentSpeakerId,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -131,9 +133,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       };
     });
 
-    // Create user player
+    // Create user player (use userId so host-assigned "NEXT_SPEAKER: You" enables this player)
     const userPlayer = {
-      id: "user-1",
+      id: userId,
       name: "You",
       avatar: "#6366f1",
       role: config.template === "werewolf" ? "Villager" : "Civilian",
@@ -148,26 +150,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
     addMessage(
       {
-        senderId: "system",
-        senderName: "System",
-        senderAvatar: hostColor,
-        content: `Welcome to ${config.name}! ${hostName} will guide you through the game.`,
-        isAI: false,
-      },
-      defaultChannelId
-    );
-    addMessage(
-      {
         senderId: "gm-1",
         senderName: hostName,
         senderAvatar: hostColor,
-        content: `Hey everyone, ${hostName} here. Here's how we'll play ${config.name}:\n\n${config.rules || "Let's have fun!"}\n\nReady when you are - let's go!`,
+        content: `Hey everyone, ${hostName} here. Rules are in the Rules section—ready when you are, let's go!`,
         isAI: true,
       },
       defaultChannelId
     );
 
-    // Initialize game phase
+    // No speaker assigned yet: anyone can speak until host assigns with NEXT_SPEAKER in their reply
+    setCurrentSpeakerId(null);
     setGamePhase("intro");
   };
 
@@ -200,7 +193,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           messages: [
             {
               role: "system",
-              content: `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Do NOT ask for player count, options like Mayor, or say "Create Game". Your only job is to run the game as written: run night/day phases, moderate voting, announce results. If players ask to change rules, say the rules are fixed for this game. Keep replies short and in character.
+              content: `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results. Keep replies short and in character.
+
+You decide who may speak next. At the end of EVERY reply, add exactly one line (no other text after it):
+NEXT_SPEAKER: <name>
+Use the exact player names: ${players.filter((p) => !p.isGameMaster).map((p) => p.name).join(", ")}. For the human player use: NEXT_SPEAKER: You. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
 
 Game Rules (do not modify, only enforce):
 ${currentGame?.config?.rules || "No specific rules defined."}`,
@@ -215,6 +212,23 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
 
       if (response.ok) {
         const data = await response.json();
+        let hostContent = (data.message || "").trim();
+        let nextSpeakerPlayer: typeof players[0] | null = null;
+        const nextSpeakerMatch = hostContent.match(/\nNEXT_SPEAKER:\s*(.+?)\s*$/im);
+        if (nextSpeakerMatch) {
+          const who = nextSpeakerMatch[1].trim();
+          hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
+          if (who.toLowerCase() === "you") {
+            setCurrentSpeakerId(userId);
+          } else if (who.toLowerCase() === "everyone") {
+            setCurrentSpeakerId(null);
+          } else {
+            const player = players.find((p) => !p.isGameMaster && p.name === who);
+            nextSpeakerPlayer = player ?? null;
+            setCurrentSpeakerId(player ? player.id : null);
+          }
+        }
+
         const gmName = currentGame?.config?.generatedHost?.name || "Game Master";
         const gmColor = currentGame?.config?.template === "werewolf" 
           ? "#7c3aed" 
@@ -227,11 +241,63 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
             senderId: "gm-1",
             senderName: gmName,
             senderAvatar: gmColor,
-            content: data.message,
+            content: hostContent,
             isAI: true,
           },
           channelId
         );
+
+        // If Host assigned an AI player to speak, generate that player's message so they participate in the discussion
+        if (nextSpeakerPlayer?.isAI && !nextSpeakerPlayer.isGameMaster) {
+          const nextSpeaker = nextSpeakerPlayer;
+          try {
+            const cfgChannels = currentGame?.config?.channels;
+            const roomIds = cfgChannels?.length ? new Set(cfgChannels.map((c) => c.id)) : new Set(["game-room"]);
+            const chId = selectedChannelId && roomIds.has(selectedChannelId) ? selectedChannelId : (cfgChannels?.[0]?.id ?? "game-room");
+            const channelMessages = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === chId);
+            const recentWithNew = [
+              ...channelMessages.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
+              { senderName: "You", content },
+              { senderName: gmName, content: hostContent },
+            ];
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+            const playerRes = await fetch("/api/chat/player-speak", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                gameName: currentGame?.name,
+                rules: currentGame?.config?.rules,
+                player: {
+                  name: nextSpeaker.name,
+                  role: nextSpeaker.role,
+                  personality: nextSpeaker.personality,
+                  background: nextSpeaker.background,
+                },
+                recentMessages: recentWithNew,
+              }),
+            });
+            if (playerRes.ok) {
+              const data = await playerRes.json();
+              const aiContent = (data.message || "").trim();
+              if (aiContent) {
+                addMessage(
+                  {
+                    senderId: nextSpeaker.id,
+                    senderName: nextSpeaker.name,
+                    senderAvatar: nextSpeaker.avatar ?? "#8b5cf6",
+                    content: aiContent,
+                    isAI: true,
+                  },
+                  channelId
+                );
+              }
+            }
+          } catch (err) {
+            console.error("Error generating AI player reply:", err);
+          }
+          setCurrentSpeakerId(null);
+        }
       }
     } catch (error) {
       console.error("Error getting AI response:", error);
@@ -344,6 +410,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
             players={players}
             onSendMessage={handleSendMessage}
             isGameActive={gamePhase !== "ended"}
+            currentSpeakerId={currentSpeakerId}
             userId={userId}
             gameId={gameId}
           />

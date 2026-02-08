@@ -190,6 +190,14 @@ export async function POST(request: NextRequest) {
       systemMessage += `- When user says "you decide", "how many?", "recommend", or "up to you", output this tag with your chosen N.\n`;
       systemMessage += `- The tag is invisible to the user; your message should still say something like "I'll set it to 8 players (you + 7 AI)."\n`;
       systemMessage += `- Example: "I think 8 works great for Werewolf! <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>" (7 AI + user = 8 total).\n\n`;
+      systemMessage += `GAME ROOMS (CHANNELS) — YOU DECIDE:\n`;
+      systemMessage += `You decide how many game rooms (channels) the game has. Same-team players often need a private room to communicate (e.g. Werewolves, Mafia).\n`;
+      systemMessage += `Use: <CONFIG_CHANNELS>[{"id":"general","name":"General"},{"id":"werewolves-only","name":"Werewolves only"}]</CONFIG_CHANNELS>\n`;
+      systemMessage += `- id: lowercase, hyphenated (e.g. general, werewolves-only, mafia-only). name: display name.\n`;
+      systemMessage += `- Always include at least one room (e.g. General) for everyone.\n`;
+      systemMessage += `- For werewolf/mafia/social deduction: add a faction-only room (e.g. "Werewolves only", "Mafia only") so that team can discuss in private.\n`;
+      systemMessage += `- For custom games: read the rules and add rooms if the game has teams or private phases (e.g. "Villagers", "Troublemakers"). If no teams, one "General" room is enough.\n`;
+      systemMessage += `- Output CONFIG_CHANNELS when rules are set (e.g. with EDIT_RULES or when confirming setup). The tag is invisible to the user.\n\n`;
       systemMessage += `GAME BACKGROUND (merged into Rules):\n`;
       systemMessage += `Background story is written in the Rules section (at the beginning). You decide whether this game needs a background.\n`;
       systemMessage += `- Add background (use <UPDATE_GENERAL>) for narrative/thematic games: werewolf, mafia, detective, escape room, murder mystery, story-driven custom. A short world/premise/atmosphere helps immersion.\n`;

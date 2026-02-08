@@ -135,12 +135,14 @@ function cleanGMMessageContentForDisplay(content: string): string {
     .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
     .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
     .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
+    .replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '')
     .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
     .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
     .replace(/<EDIT_RULES>[\s\S]*$/i, '')
     .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
     .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
     .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
+    .replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '')
     .replace(/<SET_PLAYER_COUNT>\s*\d*\s*$/i, '')
     .replace(/<UPDATE_GENERAL>[\s\S]*$/i, '')
     .trim();
@@ -467,6 +469,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     personality?: string;
     background?: string;
   }>>([]);
+  /** Channels (game rooms) decided by the GM via <CONFIG_CHANNELS>. null = use template default. */
+  const [gmChannels, setGmChannels] = useState<{ id: string; name: string }[] | null>(null);
 
   // Host personality - try last selected, then default
   const [selectedHostId, setSelectedHostId] = useState<string>(() => {
@@ -485,6 +489,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   }, [customRules, selectedTemplate, gameStory]);
 
   const gameDocValue = useMemo(() => getCombinedRules(), [getCombinedRules]);
+
+  // When template changes, clear GM-decided channels so we use template default until GM outputs CONFIG_CHANNELS again
+  useEffect(() => {
+    setGmChannels(null);
+  }, [selectedTemplate?.id]);
 
   /** Quick reply chips shown when GM has sent the first message but no A)/B) options were parsed */
   const DEFAULT_FIRST_CHAT_CHIPS: { label: string; value: string; fullLabel?: string }[] = [
@@ -1053,10 +1062,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
         .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
         .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
+        .replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '')
         .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
         .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
         .replace(/<EDIT_RULES>[\s\S]*$/i, '')
         .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
+        .replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '')
         .trim();
     };
 
@@ -1308,7 +1319,26 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       cleanedResponse = cleanedResponse.replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '').trim();
     }
 
-    // 6. Remove CONFIG_PLAYERS from display (players aren't programmers; only show natural language)
+    // 6. Handle CONFIG_CHANNELS - GM decides game rooms (e.g. General, Werewolves only)
+    const configChannelsMatch = response.match(/<CONFIG_CHANNELS>([\s\S]*?)<\/CONFIG_CHANNELS>/i);
+    if (configChannelsMatch && configChannelsMatch[1]) {
+      try {
+        const raw = configChannelsMatch[1].trim();
+        const arr = JSON.parse(raw) as Array<{ id: string; name: string }>;
+        if (Array.isArray(arr) && arr.length > 0) {
+          const valid = arr.filter((c): c is { id: string; name: string } =>
+            c && typeof c === 'object' && typeof c.id === 'string' && typeof c.name === 'string'
+          );
+          if (valid.length > 0) setGmChannels(valid);
+        }
+      } catch {
+        /* ignore parse errors */
+      }
+      cleanedResponse = cleanedResponse.replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '').trim();
+    }
+    cleanedResponse = cleanedResponse.replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '').trim();
+
+    // 7. Remove CONFIG_PLAYERS from display (players aren't programmers; only show natural language)
     cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '').trim();
     cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '').trim();
 
@@ -1594,6 +1624,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
               .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
+              .replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '')
               .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
               .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
               // Also remove incomplete tags
@@ -1601,6 +1632,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
               .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
+              .replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '')
               .replace(/<SET_PLAYER_COUNT>\s*\d*\s*$/i, '')
               .replace(/<UPDATE_GENERAL>[\s\S]*$/i, '')
               .trim();
@@ -2253,7 +2285,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       hideRolesInPlayerList: tid === "werewolf" || tid === "mafia",
                       configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
                       generatedHost: generatedHostData || undefined,
-                      channels: defaultChannelsByTemplate[tid] ?? defaultChannelsByTemplate.custom,
+                      channels: (gmChannels && gmChannels.length > 0) ? gmChannels : (defaultChannelsByTemplate[tid] ?? defaultChannelsByTemplate.custom),
                     };
                     await onCreateGame(gameConfig);
                     } finally {
