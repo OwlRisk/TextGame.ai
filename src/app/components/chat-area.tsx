@@ -248,6 +248,12 @@ interface ChatAreaProps {
   aiSuggestedPrompts?: string[];
   /** Label for AI suggestions row (e.g. "AI suggestions") */
   aiSuggestionsLabel?: string;
+  /** True while quick replies are being fetched */
+  quickRepliesLoading?: boolean;
+  /** When last send failed, show retry banner with this content */
+  lastFailedSendContent?: string | null;
+  /** Call to retry sending the last failed message */
+  onRetryLastMessage?: () => void;
 }
 
 export function ChatArea({ 
@@ -275,10 +281,14 @@ export function ChatArea({
   introEveryoneSpokenHint,
   aiSuggestedPrompts = [],
   aiSuggestionsLabel = 'AI suggestions',
+  quickRepliesLoading = false,
+  lastFailedSendContent,
+  onRetryLastMessage,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [quickReplyOpen, setQuickReplyOpen] = useState(true);
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
@@ -376,12 +386,14 @@ export function ChatArea({
     const text = (override ?? input.trim()).trim();
     if (text) {
       sendingLockRef.current = true;
+      setIsSending(true);
       flushSync(() => setInput(""));
       onSendMessage(text);
       requestAnimationFrame(() => resizeInput());
       setTimeout(() => {
         sendingLockRef.current = false;
-      }, 400);
+        setIsSending(false);
+      }, 500);
     }
   };
 
@@ -604,10 +616,24 @@ export function ChatArea({
 
       {/* Input */}
       <div className="p-5 border-t border-violet-900/20 bg-zinc-900/50 backdrop-blur-md">
+        {canSend && isGameActive && currentSpeakerId === userId && (
+          <div className="mb-3 text-sm font-medium text-emerald-300 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            It's your turn to speak
+          </div>
+        )}
         {!canSend && isGameActive && !isRecording && (
           <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5" />
             Wait for your turn to speak
+          </div>
+        )}
+        {lastFailedSendContent && onRetryLastMessage && (
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
+            <span className="text-xs text-red-300">Send failed. Try again?</span>
+            <Button size="sm" variant="outline" className="h-7 px-3 border-red-500/50 text-red-300 hover:bg-red-500/20" onClick={onRetryLastMessage}>
+              Retry
+            </Button>
           </div>
         )}
         {voiceError && (
@@ -670,20 +696,22 @@ export function ChatArea({
             )}
           </div>
         )}
-        {quickReplies.length > 0 && canSend && !isRecording && (
+        {(quickRepliesLoading || quickReplies.length > 0) && canSend && !isRecording && (
           <div className="mb-3 rounded-lg border border-zinc-700/60 bg-zinc-800/50 overflow-hidden backdrop-blur-sm">
             <button
               type="button"
               onClick={() => setQuickReplyOpen(!quickReplyOpen)}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700/40 transition-colors"
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
             >
               <span className="flex items-center gap-2">
                 <span className="text-zinc-500">⚡</span>
-                Quick reply ({quickReplies.length})
+                {quickRepliesLoading && quickReplies.length === 0
+                  ? "Loading quick replies…"
+                  : "Quick reply"}
               </span>
-              {quickReplyOpen ? <ChevronUp className="h-4 w-4 text-zinc-500" /> : <ChevronDown className="h-4 w-4 text-zinc-500" />}
+              {quickReplies.length > 0 && (quickReplyOpen ? <ChevronUp className="h-4 w-4 text-zinc-500" /> : <ChevronDown className="h-4 w-4 text-zinc-500" />)}
             </button>
-            {quickReplyOpen && (
+            {quickReplyOpen && quickReplies.length > 0 && (
               <div className="px-3 pb-3">
                 <div className="flex flex-wrap gap-2">
                   {quickReplies.map((text) => (
@@ -691,13 +719,19 @@ export function ChatArea({
                       key={text}
                       variant="outline"
                       size="sm"
-                      className="h-9 px-4 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200 rounded-lg transition-colors"
+                      className="h-9 px-4 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/50"
                       onClick={() => handleSend(text)}
                     >
                       {text}
                     </Button>
                   ))}
                 </div>
+              </div>
+            )}
+            {quickReplyOpen && quickRepliesLoading && quickReplies.length === 0 && (
+              <div className="px-3 pb-3 flex items-center gap-2 text-xs text-zinc-500">
+                <span className="inline-block w-3 h-3 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+                Loading…
               </div>
             )}
           </div>
@@ -761,19 +795,19 @@ export function ChatArea({
                 }
               }}
               placeholder={`Message #${channelName}`}
-              className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 text-white placeholder:text-zinc-500 py-2 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
+              className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
               style={{ 
                 minHeight: `${MIN_INPUT_HEIGHT}px`, 
                 maxHeight: `${MAX_INPUT_HEIGHT}px`
               }}
-              disabled={!canSend}
+              disabled={!canSend || isSending}
               rows={1}
             />
             {voiceSupported && (
               <Button
                 size="icon"
-                className="h-10 w-10 flex-shrink-0 bg-zinc-700/80 hover:bg-zinc-600 backdrop-blur-sm border border-violet-900/20"
-                disabled={!canSend}
+                className="h-10 w-10 flex-shrink-0 bg-zinc-700/80 hover:bg-zinc-600 backdrop-blur-sm border border-violet-900/20 focus-visible:ring-2 focus-visible:ring-amber-500/50"
+                disabled={!canSend || isSending}
                 onClick={voiceStart}
                 title="Voice input"
               >
@@ -782,11 +816,16 @@ export function ChatArea({
             )}
             <Button 
               onClick={() => handleSend()} 
-              disabled={!input.trim() || !canSend}
+              disabled={!input.trim() || !canSend || isSending}
               size="icon"
-              className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0"
+              className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
+              title={isSending ? "Sending…" : "Send"}
             >
-              <Send className="h-4 w-4" />
+              {isSending ? (
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
         )}

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   const { session } = useAuth();
-  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame, gamesLoading } = useGameContext();
   const {
     messages,
     players,
@@ -36,6 +36,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
+  const [quickRepliesLoading, setQuickRepliesLoading] = useState(false);
+  const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   const { gameId } = use(params);
 
   // Find current game
@@ -216,6 +219,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     );
 
     // Get AI response (host reply in same channel)
+    setLastFailedSendContent(null);
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
@@ -232,9 +236,10 @@ When the user says things like "Continue", "What's next?", or "Ready", advance t
 
 You decide who may speak next. At the end of EVERY reply, add exactly one line (no other text after it):
 NEXT_SPEAKER: <name>
-Use the exact player names: ${players.filter((p) => !p.isGameMaster).map((p) => p.name).join(", ")}. For the human player use: NEXT_SPEAKER: You. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
 
-IMPORTANT — Get AI players talking: Often assign an AI player to speak (e.g. NEXT_SPEAKER: Maya Patel, NEXT_SPEAKER: Jordan Reyes) so the discussion feels alive. Don't always say NEXT_SPEAKER: You or NEXT_SPEAKER: Everyone; rotate between the human and the AI players so everyone participates.
+All non-host player names (use exactly as written): ${players.filter((p) => !p.isGameMaster).map((p) => p.name).join(", ")}. For the human player use: NEXT_SPEAKER: You. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
+
+CRITICAL — Rotate so every AI player speaks: You MUST frequently assign different AI players by name. Do NOT keep choosing the same 1–2 AI players. Each reply, prefer NEXT_SPEAKER: <an AI name who has spoken less recently>. Use the full list: ${players.filter((p) => !p.isGameMaster && p.isAI).map((p) => p.name).join(", ")}. Mix in the human with NEXT_SPEAKER: You sometimes, but most of the time pick one of the AI names above so all of them participate in the discussion.
 
 Game Rules (do not modify, only enforce):
 ${currentGame?.config?.rules || "No specific rules defined."}`,
@@ -344,6 +349,14 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast.error("Failed to get response from Game Master");
+      setLastFailedSendContent(content);
+    }
+  };
+
+  const handleRetryLastMessage = () => {
+    if (lastFailedSendContent) {
+      handleSendMessage(lastFailedSendContent);
+      setLastFailedSendContent(null);
     }
   };
 
@@ -366,8 +379,12 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
 
   // AI-generated quick replies (max 3). Run unconditionally so hook order is stable.
   useEffect(() => {
-    if (!currentGame?.config || !isGameChannel) return;
+    if (!currentGame?.config || !isGameChannel) {
+      setQuickRepliesLoading(false);
+      return;
+    }
     const abort = new AbortController();
+    setQuickRepliesLoading(true);
     const recent = messagesForChannel.slice(-8).map((m) => ({ senderName: m.senderName, content: m.content }));
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
@@ -387,8 +404,12 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
         const list = Array.isArray(data.suggestions) ? data.suggestions.filter((s) => s && s.length <= 120).slice(0, 3) : [];
         setQuickReplies(list.length > 0 ? list : []);
       })
-      .catch(() => setQuickReplies([]));
-    return () => abort.abort();
+      .catch(() => setQuickReplies([]))
+      .finally(() => setQuickRepliesLoading(false));
+    return () => {
+      abort.abort();
+      setQuickRepliesLoading(false);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fixed 6 items: no rules/name to avoid deps array size changing
   }, [
     isGameChannel,
@@ -403,19 +424,31 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
     const url = typeof window !== "undefined" ? `${window.location.origin}/game/${gameId}` : "";
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard");
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
   };
 
   if (!currentGame) {
     return (
       <div className="h-screen flex items-center justify-center bg-zinc-900 text-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
-          <button
-            onClick={() => router.push("/")}
-            className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700"
-          >
-            Go Home
-          </button>
+          {gamesLoading ? (
+            <>
+              <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-violet-500 border-t-transparent mb-4" aria-hidden />
+              <p className="text-zinc-400">Loading game…</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold mb-4">Game not found</h1>
+              <p className="text-zinc-400 text-sm mb-4">This game may have been deleted or the link is invalid.</p>
+              <button
+                onClick={() => router.push("/")}
+                className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700"
+              >
+                Go Home
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -440,6 +473,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
         selectedChannelId={selectedChannelId}
         onSelectChannel={(id) => setSelectedChannelId(id)}
         onShare={handleShare}
+        shareJustCopied={shareCopied}
         onSettings={() => toast.info("Settings coming soon")}
         textSectionLabel="Sections"
         gameSectionLabel="Game Rooms"
@@ -459,17 +493,31 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
         {selectedChannelId === "rules" ? (
           <ScrollArea className="flex-1 p-6">
             <div className="prose prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                {currentGame?.config?.rules ?? "No rules defined for this game."}
-              </pre>
+              {(currentGame?.config?.rules ?? "").trim() ? (
+                <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
+                  {currentGame?.config?.rules}
+                </pre>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
+                  <p className="text-sm font-medium">No rules defined for this game.</p>
+                  <p className="text-xs mt-1">The Game Master can add rules when creating the game.</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         ) : selectedChannelId === "progress" ? (
           <ScrollArea className="flex-1 p-6">
             <div className="prose prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                {gameProgress || "Game progress will appear here as the game unfolds."}
-              </pre>
+              {(gameProgress ?? "").trim() ? (
+                <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
+                  {gameProgress}
+                </pre>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
+                  <p className="text-sm font-medium">No progress yet.</p>
+                  <p className="text-xs mt-1">Game progress will appear here as the host runs the game.</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         ) : isGameChannel ? (
@@ -483,6 +531,9 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
             userId={userId}
             gameId={gameId}
             quickReplies={quickReplies}
+            quickRepliesLoading={quickRepliesLoading}
+            lastFailedSendContent={lastFailedSendContent}
+            onRetryLastMessage={handleRetryLastMessage}
           />
         ) : null}
       </div>

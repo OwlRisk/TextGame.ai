@@ -34,6 +34,8 @@ interface ChannelListProps {
   onSelectChannel: (channelId: string) => void;
   onShare: () => void;
   onSettings: () => void;
+  /** When true, show "Copied!" feedback on the share button for a short time */
+  shareJustCopied?: boolean;
   onDeleteChannel?: (channelId: string) => void;
   /** Label for the text sections (intro, rules, progress). Default: "Sections" */
   textSectionLabel?: string;
@@ -53,6 +55,7 @@ export function ChannelList({
   onSelectChannel,
   onShare,
   onSettings,
+  shareJustCopied = false,
   onDeleteChannel,
   textSectionLabel = "Sections",
   gameSectionLabel = "Game Rooms",
@@ -66,12 +69,22 @@ export function ChannelList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<Channel | null>(null);
   return (
-    <div className="w-64 flex-shrink-0 bg-zinc-800 flex flex-col min-h-0 overflow-hidden">
+    <div className="w-52 md:w-56 lg:w-64 flex-shrink-0 bg-zinc-800 flex flex-col min-h-0 overflow-hidden">
       {/* Game Header */}
       <div className="h-14 px-5 flex items-center justify-between border-b border-zinc-900/50 shadow-sm">
         <h2 className="font-semibold text-base text-white truncate">{gameName}</h2>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onShare}>
-          <Share2 className="h-4 w-4 text-zinc-400 hover:text-white" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`h-8 focus-visible:ring-2 focus-visible:ring-amber-500/50 ${shareJustCopied ? "min-w-[5rem]" : "w-8 px-0"}`}
+          onClick={onShare}
+          title={shareJustCopied ? "Copied!" : "Copy game link"}
+        >
+          {shareJustCopied ? (
+            <span className="text-xs font-medium text-emerald-400">Copied!</span>
+          ) : (
+            <Share2 className="h-4 w-4 text-zinc-400 hover:text-white" />
+          )}
         </Button>
       </div>
 
@@ -87,7 +100,7 @@ export function ChannelList({
                 <ContextMenuTrigger>
                   <Button
                     variant="ghost"
-                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
+                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
                       selectedChannelId === channel.id
                         ? "bg-zinc-700/50 text-white"
                         : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
@@ -126,7 +139,7 @@ export function ChannelList({
                 <ContextMenuTrigger>
                   <Button
                     variant="ghost"
-                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
+                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
                       selectedChannelId === channel.id
                         ? "bg-zinc-700/50 text-white"
                         : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"

@@ -61,7 +61,7 @@ export function PlayerPanel({
   };
 
   return (
-    <div className="w-60 bg-zinc-850 flex flex-col border-l border-zinc-900/50">
+    <div className="w-52 md:w-56 lg:w-60 bg-zinc-850 flex flex-col border-l border-zinc-900/50 flex-shrink-0">
       <PlayerProfileDialog
         player={profilePlayer}
         open={profileOpen}
@@ -153,7 +153,7 @@ function PlayerCard({
         isSpeaking 
           ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
           : "hover:bg-zinc-700/40 hover:shadow-sm"
-      } ${isClickable ? "cursor-pointer" : ""}`}
+      } ${isClickable ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-850" : ""}`}
       title={player.isAI && (player.personality || player.background) ? "点击查看性格与背景" : isClickable ? "点击查看资料" : undefined}
     >
       <div className="flex items-start gap-2.5">
@@ -203,8 +203,10 @@ function PlayerCard({
               </Badge>
             )}
           </div>
-          {player.role && (
-            <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
+          {(player.isGameMaster || player.role) && (
+            <div className="text-xs text-zinc-300 font-medium">
+              {player.isGameMaster ? "Host" : player.role}
+            </div>
           )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (

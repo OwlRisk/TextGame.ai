@@ -75,9 +75,10 @@ export function GeneratedAvatar({
         <AvatarFallback
           className={cn(
             "flex items-center justify-center text-sm font-semibold text-white",
-            fallbackColor && "bg-transparent"
+            loading && "bg-zinc-700 animate-pulse",
+            fallbackColor && !loading && "bg-transparent"
           )}
-          style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
+          style={!loading && fallbackColor ? { backgroundColor: fallbackColor } : undefined}
         >
           {loading ? (
             <div className="w-full h-full flex items-center justify-center">
