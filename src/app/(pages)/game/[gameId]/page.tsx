@@ -33,7 +33,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
-  const [quickReplies, setQuickReplies] = useState<string[]>(["Continue.", "What's next?", "Ready!"]);
+  const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const { gameId } = use(params);
 
   // Find current game
@@ -348,7 +348,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
     ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
     : messages;
 
-  // AI-generated quick replies based on rules and current conversation (max 3)
+  // AI-generated quick replies (max 3). Use fixed-length deps so React does not see array size change between renders.
   useEffect(() => {
     if (!isGameChannel || !currentGame?.config) return;
     const abort = new AbortController();
@@ -369,11 +369,19 @@ ${currentGame?.config?.rules || "No specific rules defined."}`,
       .then((r) => r.ok ? r.json() : Promise.reject(new Error("Failed")))
       .then((data: { suggestions?: string[] }) => {
         const list = Array.isArray(data.suggestions) ? data.suggestions.filter((s) => s && s.length <= 120).slice(0, 3) : [];
-        setQuickReplies(list.length > 0 ? list : ["Continue.", "What's next?", "Ready!"]);
+        setQuickReplies(list.length > 0 ? list : []);
       })
-      .catch(() => setQuickReplies(["Continue.", "What's next?", "Ready!"]));
+      .catch(() => setQuickReplies([]));
     return () => abort.abort();
-  }, [isGameChannel, selectedChannelId, currentGame?.id, currentGame?.name, currentGame?.config?.rules, gamePhase, messagesForChannel.length, session?.access_token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fixed 6 items: no rules/name to avoid deps array size changing
+  }, [
+    isGameChannel,
+    selectedChannelId ?? null,
+    currentGame?.id ?? null,
+    gamePhase,
+    messagesForChannel.length,
+    session?.access_token ?? null,
+  ]);
 
   const handleShare = () => {
     const url = typeof window !== "undefined" ? `${window.location.origin}/game/${gameId}` : "";
