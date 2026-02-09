@@ -419,9 +419,16 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
     ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
     : messages;
 
-  // AI-generated quick replies (max 3). Run unconditionally so hook order is stable.
+  // AI-generated quick replies (max 3). Only fetch when there are messages in the channel
+  // so we don't show generic "default" suggestions in an empty room.
   useEffect(() => {
     if (!currentGame?.config || !isGameChannel) {
+      setQuickRepliesLoading(false);
+      setQuickReplies([]);
+      return;
+    }
+    if (messagesForChannel.length === 0) {
+      setQuickReplies([]);
       setQuickRepliesLoading(false);
       return;
     }
