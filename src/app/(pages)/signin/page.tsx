@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Button } from "@/app/components/ui/button";
@@ -9,7 +9,15 @@ import { Gamepad2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/app/components/ui/sonner";
 
-export default function SignInPage() {
+function SignInLoading() {
+  return (
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+      <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+    </div>
+  );
+}
+
+function SignInPageInner() {
   const { user, loading, signInWithGoogle } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,11 +54,7 @@ export default function SignInPage() {
   };
 
   if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-      </div>
-    );
+    return <SignInLoading />;
   }
 
   if (user) {
@@ -123,12 +127,15 @@ export default function SignInPage() {
         </CardContent>
       </Card>
 
-      <Toaster
-        position="top-right"
-        expand={false}
-        richColors
-        closeButton
-      />
+      <Toaster position="top-right" expand={false} richColors closeButton />
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<SignInLoading />}>
+      <SignInPageInner />
+    </Suspense>
   );
 }

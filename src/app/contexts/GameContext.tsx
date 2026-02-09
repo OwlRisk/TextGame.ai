@@ -121,7 +121,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         name: game.name,
         icon: game.icon,
         color: game.color,
-        config: game.config as Record<string, unknown>,
+        config: game.config as unknown as Record<string, unknown>,
         is_active: game.isActive,
       }).then(({ error }) => {
         if (error) {

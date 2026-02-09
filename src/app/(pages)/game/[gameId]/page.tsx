@@ -140,7 +140,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       isMuted: false,
       background: hostPersonality,
       personality: config.generatedHost?.voiceStyle || config.generatedHost?.personality,
-      gender: config.generatedHost?.gender as "male" | "female" | "other" | undefined,
+      gender: (config.generatedHost as any)?.gender as "male" | "female" | "other" | undefined,
     };
 
     // Create AI players from configured players
@@ -275,9 +275,9 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
         if (nextSpeakerMatch) {
           who = nextSpeakerMatch[1].trim();
           hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
-          if (who.toLowerCase() === "you") {
+          if (who && who.toLowerCase() === "you") {
             nextSpeakerPlayer = null; // human's turn
-          } else if (who.toLowerCase() === "everyone") {
+          } else if (who && who.toLowerCase() === "everyone") {
             if (aiOnly.length > 0) nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
           } else {
             const player = players.find((p) => !p.isGameMaster && p.name === who);

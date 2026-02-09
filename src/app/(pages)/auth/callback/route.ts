@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-function isSafeReturnUrl(path: string | null): boolean {
+function isSafeReturnUrl(path: string | null): path is string {
   if (!path || typeof path !== "string") return false;
   const trimmed = path.trim();
   if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return false;
