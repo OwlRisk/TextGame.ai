@@ -1,7 +1,18 @@
 "use client";
 
 import { Button } from "@/app/components/ui/button";
-import { Sparkles, Lightbulb, MessageSquare, Shield, Users, Zap, Wand2, Target, ChevronRight, Gamepad2, Crown, Eye, LogIn, Loader2 } from "lucide-react";
+import {
+  Sparkles,
+  Lightbulb,
+  MessageSquare,
+  Wand2,
+  ChevronRight,
+  Gamepad2,
+  LogIn,
+  Loader2,
+  Users,
+  Target,
+} from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
@@ -21,395 +32,266 @@ interface WelcomePageProps {
   games?: WelcomeGame[];
 }
 
-export function WelcomePage({ onCreateGame, onExploreGames, user, loading, games = [] }: WelcomePageProps) {
+export function WelcomePage({
+  onCreateGame,
+  onExploreGames,
+  user,
+  loading,
+  games = [],
+}: WelcomePageProps) {
   const router = useRouter();
   const recentGames = games.slice(0, 3);
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
-      
-      <ScrollArea className="flex-1 h-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 relative z-10">
-          {/* Continue playing (logged-in with games) */}
+    <div className="flex-1 flex flex-col min-h-0 bg-[#08070a] relative">
+      {/* 背景：更柔和的光晕 */}
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(251,191,36,0.04)_0%,transparent_35%,transparent_65%,rgba(139,92,246,0.05)_100%)] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[70%] max-w-4xl h-[80vh] bg-amber-500/[0.07] rounded-full blur-[180px] pointer-events-none" />
+      <div className="absolute bottom-1/5 left-0 w-[50%] max-w-2xl h-[60vh] bg-violet-500/[0.06] rounded-full blur-[160px] pointer-events-none" />
+
+      <ScrollArea className="flex-1 min-h-0 h-full">
+        <div className="relative z-10">
+          {/* 顶栏：Continue（仅登录且有游戏时） */}
           {user && !loading && recentGames.length > 0 && (
-            <div className="mb-10 rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-5">
-              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">Continue</h2>
-              <div className="flex flex-wrap gap-3">
-                {recentGames.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => router.push(`/game/${g.id}`)}
-                    className="flex items-center gap-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/30 px-4 py-3 text-left transition-all min-w-0"
-                  >
-                    <span className="text-2xl shrink-0">{g.icon || "🎮"}</span>
-                    <span className="font-medium text-white truncate">{g.name}</span>
-                    <ChevronRight className="h-4 w-4 text-zinc-500 shrink-0" />
-                  </button>
-                ))}
+            <div className="border-b border-white/[0.06] bg-white/[0.02] px-6 sm:px-8 lg:px-12 py-4">
+              <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+                <span className="text-sm font-semibold text-zinc-500 uppercase tracking-[0.18em]">Jump back in</span>
+                <div className="flex flex-wrap gap-2">
+                  {recentGames.map((g) => (
+                    <button
+                      key={g.id}
+                      onClick={() => router.push(`/game/${g.id}`)}
+                      className="flex items-center gap-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] px-4 py-2.5 text-left transition-colors min-w-0"
+                    >
+                      <span className="text-xl shrink-0">{g.icon || "🎮"}</span>
+                      <span className="font-medium text-white truncate text-base">{g.name}</span>
+                      <ChevronRight className="h-4 w-4 text-zinc-500 shrink-0" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Hero Section */}
-          <div className="text-center mb-16 sm:mb-20">
-            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-4 sm:mb-6">
-              <Sparkles className="h-4 w-4 text-purple-400 shrink-0" />
-              <span className="text-sm text-purple-300 font-semibold">Welcome to the Future of Gaming</span>
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4 sm:mb-6 leading-tight px-1">
-              <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
-                Create & Play
-              </span>
-              <br />
-              <span className="text-white">ANY Game You Imagine</span>
-            </h1>
-            
-            <p className="text-lg sm:text-xl md:text-2xl text-zinc-300 mb-8 sm:mb-12 font-medium max-w-3xl mx-auto px-2">
-              Design custom games, set your own rules, and dive into immersive experiences. 
-              You're the game designer.
-            </p>
-
-            {/* Primary CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-              {loading ? (
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="text-sm">Loading…</span>
-                </div>
-              ) : !user ? (
-                <Button
-                  onClick={() => router.push("/signin")}
-                  size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-[1.02] sm:hover:scale-105"
-                >
-                  <LogIn className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 shrink-0" />
-                  Sign in with Google
-                </Button>
-              ) : (
-                <>
+          {/* Hero：左右分栏，更大留白与字号 */}
+          <section className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 pt-20 sm:pt-28 pb-20 sm:pb-28">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-12 lg:gap-20 items-center">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/20 px-5 py-2.5 text-base font-medium text-amber-300/90 mb-7">
+                  <Sparkles className="h-5 w-5" />
+                  Design a game in minutes
+                </span>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white tracking-tight leading-[1.1] mb-6">
+                  Turn an idea into a{" "}
+                  <span className="text-amber-400">playable game</span>.
+                  <br className="hidden sm:block" />
+                  In one conversation.
+                </h1>
+                <p className="text-zinc-300/90 text-xl sm:text-2xl max-w-2xl leading-relaxed">
+                  Describe the vibe. We’ll generate roles, rules, and flow—then host the session with AI players so you can start immediately.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-5 min-w-[260px]">
+                {loading ? (
+                  <div className="flex items-center gap-2 text-zinc-500 py-3">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="text-base">Loading…</span>
+                  </div>
+                ) : !user ? (
                   <Button
-                    onClick={() => onCreateGame()}
+                    onClick={() => router.push("/signin")}
                     size="lg"
-                    className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 h-auto shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/60 transition-all hover:scale-[1.02] sm:hover:scale-105"
+                    className="bg-amber-500 hover:bg-amber-400 text-zinc-900 font-semibold px-6 sm:px-8 lg:px-10 py-6 sm:py-7 lg:py-8 h-auto rounded-2xl w-full sm:w-auto lg:w-full text-lg sm:text-xl"
                   >
-                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 shrink-0" />
-                    Create Your Game
+                    <LogIn className="h-5 w-5 sm:h-6 sm:w-6 mr-2 shrink-0" />
+                    Sign in to start
                   </Button>
-                  
-                  <Button
-                    onClick={onExploreGames}
-                    size="lg"
-                    variant="outline"
-                    className="w-full sm:w-auto bg-white/5 border-white/20 hover:bg-white/10 text-white text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 h-auto"
-                  >
-                    <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 shrink-0" />
-                    Browse Examples
-                  </Button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => onCreateGame()}
+                      size="lg"
+                      className="bg-amber-500 hover:bg-amber-400 text-zinc-900 font-semibold px-10 py-8 h-auto rounded-2xl w-full sm:w-auto lg:w-full text-lg"
+                    >
+                      <Sparkles className="h-6 w-6 mr-2 shrink-0" />
+                      Create a new game
+                    </Button>
+                    <Button
+                      onClick={onExploreGames}
+                      size="lg"
+                      variant="outline"
+                      className="bg-transparent border-white/20 text-white hover:bg-white/10 rounded-2xl px-10 py-8 h-auto w-full sm:w-auto lg:w-full text-lg"
+                    >
+                      <Lightbulb className="h-6 w-6 mr-2 shrink-0" />
+                      Browse templates
+                    </Button>
+                  </>
+                )}
+                {!loading && (
+                  <p className="text-base text-zinc-500 lg:text-right">
+                    {!user ? (
+                      <span className="text-amber-400/90 font-medium">New here?</span>
+                    ) : (
+                      <span className="text-amber-400/90 font-medium">Tip:</span>
+                    )}{" "}
+                    {!user ? "Sign in to create and save your games." : "Start with a template, then customize anything."}
+                  </p>
+                )}
+              </div>
             </div>
+          </section>
 
-            {!loading && (
-              !user ? (
-                <p className="text-sm text-zinc-500">
-                  <span className="text-purple-400 font-semibold">New here?</span> Sign in to start creating amazing games.
-                </p>
-              ) : (
-                <p className="text-sm text-zinc-500">
-                  <span className="text-purple-400 font-semibold">New here?</span> Click &quot;Create Your Game&quot; and our Game Master will guide you through.
-                </p>
-              )
-            )}
-          </div>
-
-          {/* Section divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-16 sm:mb-24" aria-hidden />
-
-          {/* How It Works - 3 Steps */}
-          <div className="mb-16 sm:mb-24">
-            <h2 className="text-3xl sm:text-4xl font-black text-white text-center mb-3 sm:mb-4">
-              How It Works
-            </h2>
-            <p className="text-base sm:text-lg text-zinc-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
-              From idea to gameplay in 3 simple steps.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Step 1 */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative hover:border-purple-500/30 transition-all duration-300">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-purple-500/50">
-                    <MessageSquare className="h-8 w-8 text-white" />
+          {/* 步骤：更大留白与圆角 */}
+          <section className="border-y border-white/[0.06] bg-white/[0.02] py-16 sm:py-24">
+            <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
+              <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-[0.2em] mb-12">
+                From idea to play
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-12">
+                <div className="flex gap-5">
+                  <div className="flex-shrink-0">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-300 font-bold text-xl">1</span>
                   </div>
-                  
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                      <span className="text-sm font-black text-purple-300">1</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">Talk to Game Master</h3>
-                  </div>
-                  
-                  <p className="text-zinc-400 leading-relaxed mb-4">
-                    Simply describe the game you want to create. Our Game Master will ask you questions and help you design every detail.
-                  </p>
-                  
-                  <div className="flex items-center gap-2 text-sm text-purple-400">
-                    <Zap className="h-4 w-4" />
-                    <span className="font-semibold">Takes ~2 minutes</span>
+                  <div>
+                    <h3 className="font-semibold text-white mb-3 flex items-center gap-2 text-xl">
+                      <MessageSquare className="h-6 w-6 text-violet-400" />
+                      Describe your game
+                    </h3>
+                    <p className="text-zinc-300/90 leading-relaxed text-lg">
+                      Tell the Game Master the theme, player count, and what “fun” looks like.
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative hover:border-blue-500/30 transition-all duration-300">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-blue-500/50">
-                    <Shield className="h-8 w-8 text-white" />
+                <div className="flex gap-5">
+                  <div className="flex-shrink-0">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-300 font-bold text-xl">2</span>
                   </div>
-                  
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-                      <span className="text-sm font-black text-blue-300">2</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">Set the Rules</h3>
-                  </div>
-                  
-                  <p className="text-zinc-400 leading-relaxed mb-4">
-                    Define roles, winning conditions, and gameplay phases. Use our templates or create something completely unique.
-                  </p>
-                  
-                  <div className="flex items-center gap-2 text-sm text-blue-400">
-                    <Wand2 className="h-4 w-4" />
-                    <span className="font-semibold">Fully customizable</span>
+                  <div>
+                    <h3 className="font-semibold text-white mb-3 flex items-center gap-2 text-xl">
+                      <Wand2 className="h-6 w-6 text-amber-400" />
+                      Shape the rules
+                    </h3>
+                    <p className="text-zinc-300/90 leading-relaxed text-lg">
+                      We’ll draft roles, phases, and win conditions—then you tweak anything you want.
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-pink-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative hover:border-orange-500/30 transition-all duration-300">
-                  <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-pink-600 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-orange-500/50">
-                    <Gamepad2 className="h-8 w-8 text-white" />
+                <div className="flex gap-5">
+                  <div className="flex-shrink-0">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-300 font-bold text-xl">3</span>
                   </div>
-                  
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
-                      <span className="text-sm font-black text-orange-300">3</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">Start Playing</h3>
-                  </div>
-                  
-                  <p className="text-zinc-400 leading-relaxed mb-4">
-                    Jump into the game room and start playing. All characters are managed by our system - just focus on having fun!
-                  </p>
-                  
-                  <div className="flex items-center gap-2 text-sm text-orange-400">
-                    <Target className="h-4 w-4" />
-                    <span className="font-semibold">Instant gameplay</span>
+                  <div>
+                    <h3 className="font-semibold text-white mb-3 flex items-center gap-2 text-xl">
+                      <Gamepad2 className="h-6 w-6 text-emerald-400" />
+                      Start the session
+                    </h3>
+                    <p className="text-zinc-300/90 leading-relaxed text-lg">
+                      The host runs the flow, AI players participate, and you jump in when it’s your turn.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Key Features */}
-          <div className="mb-16 sm:mb-24">
-            <h2 className="text-3xl sm:text-4xl font-black text-white text-center mb-3 sm:mb-4">
-              Why You'll Love It
+          {/* 模板：Bento，更大字更大块 */}
+          <section className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 py-24 sm:py-32">
+            <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-[0.22em] mb-14">
+              Pick a starting point
             </h2>
-            <p className="text-base sm:text-lg text-zinc-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
-              Powerful features that make game creation effortless and gameplay immersive.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Feature 1 */}
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-purple-500/30 transition-all duration-300">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Wand2 className="h-6 w-6 text-purple-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">Create Any Game</h3>
-                <p className="text-sm text-zinc-400">
-                  Mystery, strategy, party games - if you can imagine it, you can build it.
-                </p>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-blue-500/30 transition-all duration-300">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Zap className="h-6 w-6 text-blue-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">Pre-built Templates</h3>
-                <p className="text-sm text-zinc-400">
-                  Start with classics like Werewolf or Who's the Spy and customize them your way.
-                </p>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-green-500/30 transition-all duration-300">
-                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Crown className="h-6 w-6 text-green-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">Smart Game Master</h3>
-                <p className="text-sm text-zinc-400">
-                  Our host controls game flow, enforces rules, and keeps everyone engaged.
-                </p>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-orange-500/30 transition-all duration-300">
-                <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Eye className="h-6 w-6 text-orange-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">Immersive Experience</h3>
-                <p className="text-sm text-zinc-400">
-                  Natural conversations and rich interactions make you forget you're playing alone.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Popular Game Examples */}
-          <div className="mb-16 sm:mb-20">
-            <h2 className="text-3xl sm:text-4xl font-black text-white text-center mb-3 sm:mb-4">
-              Popular Game Templates
-            </h2>
-            <p className="text-base sm:text-lg text-zinc-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
-              Start from a template or create your own unique experience.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Werewolf */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-7">
               <button
                 onClick={() => onCreateGame("werewolf-classic")}
-                className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 text-left hover:border-purple-500/50 hover:bg-white/10 transition-all duration-300 relative overflow-hidden"
+                className="group lg:col-span-2 rounded-3xl border border-white/[0.08] bg-white/[0.02] p-8 text-left hover:border-violet-500/30 hover:bg-violet-500/5 transition-all flex flex-col"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                <div className="flex items-start justify-between mb-4 relative z-10">
-                  <div className="text-4xl">🐺</div>
-                  <div className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full">
-                    <span className="text-xs font-bold text-purple-300">CLASSIC</span>
-                  </div>
+                <div className="flex items-start justify-between mb-6">
+                  <span className="text-[88px] leading-none -mt-1">🐺</span>
+                  <span className="rounded-full bg-violet-500/20 px-3 py-1 text-xs font-semibold uppercase text-violet-300">
+                    Classic
+                  </span>
                 </div>
-                
-                <h3 className="text-2xl font-bold text-white mb-3 relative z-10">Werewolf</h3>
-                <p className="text-zinc-400 mb-4 relative z-10">
-                  A thrilling game of deception where villagers hunt hidden werewolves through strategic discussion and voting.
+                <h3 className="font-semibold text-white mb-4 text-2xl">Werewolf</h3>
+                <p className="text-zinc-400 mb-6 flex-1 leading-relaxed">
+                  Classic social deduction. Bluff, accuse, survive.
                 </p>
-                
-                <div className="flex items-center gap-4 text-sm text-zinc-500 mb-4 relative z-10">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>5-12 players</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Target className="h-4 w-4" />
-                    <span>Strategy</span>
-                  </div>
+                <div className="flex items-center gap-2 text-base text-violet-400 font-medium">
+                  <Users className="h-5 w-5" />
+                  <span>5–12 players</span>
                 </div>
-                
-                <div className="flex items-center gap-2 text-purple-400 font-semibold relative z-10">
-                  <span>Create this game</span>
-                  <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+                <span className="mt-5 inline-flex items-center gap-1 text-base text-zinc-500 group-hover:text-violet-400 transition-colors">
+                  Create this game <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                </span>
               </button>
 
-              {/* Who's the Spy */}
-              <button
-                onClick={() => onCreateGame("undercover-party")}
-                className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 text-left hover:border-blue-500/50 hover:bg-white/10 transition-all duration-300 relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                <div className="flex items-start justify-between mb-4 relative z-10">
-                  <div className="text-4xl">🕵️</div>
-                  <div className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full">
-                    <span className="text-xs font-bold text-blue-300">PARTY</span>
+              <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-7">
+                <button
+                  onClick={() => onCreateGame("undercover-party")}
+                  className="group rounded-3xl border border-white/[0.08] bg-white/[0.02] p-7 text-left hover:border-amber-500/30 hover:bg-amber-500/5 transition-all"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="text-6xl">🕵️</span>
+                    <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold uppercase text-amber-300">
+                      Party
+                    </span>
                   </div>
-                </div>
-                
-                <h3 className="text-2xl font-bold text-white mb-3 relative z-10">Who's the Spy</h3>
-                <p className="text-zinc-400 mb-4 relative z-10">
-                  Find the undercover agent who has a different word. Quick rounds, endless laughs!
-                </p>
-                
-                <div className="flex items-center gap-4 text-sm text-zinc-500 mb-4 relative z-10">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>4-10 players</span>
+                  <h3 className="font-semibold text-white mb-3 text-xl">Who&apos;s the Spy</h3>
+                  <p className="text-zinc-300/90 mb-5 leading-relaxed text-lg">
+                    Quick rounds. One word is different. Spot the spy.
+                  </p>
+                  <div className="flex items-center gap-2 text-base text-amber-400 font-medium">
+                    <Users className="h-5 w-5" />
+                    <span>4–10 players</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Target className="h-4 w-4" />
-                    <span>Word Game</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 text-blue-400 font-semibold relative z-10">
-                  <span>Create this game</span>
-                  <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </button>
+                  <span className="mt-4 inline-flex items-center gap-1 text-base text-zinc-500 group-hover:text-amber-400 transition-colors">
+                    Create <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
+                </button>
 
-              {/* Custom Game */}
-              <button
-                onClick={() => onCreateGame()}
-                className="group bg-gradient-to-br from-purple-500/10 via-fuchsia-500/10 to-pink-500/10 backdrop-blur-xl border border-purple-500/20 rounded-3xl p-6 sm:p-8 text-left hover:border-purple-500/50 hover:from-purple-500/20 hover:via-fuchsia-500/20 hover:to-pink-500/20 transition-all duration-300 relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                <div className="flex items-start justify-between mb-4 relative z-10">
-                  <div className="text-4xl">✨</div>
-                  <div className="px-3 py-1 bg-gradient-to-r from-purple-500/30 to-fuchsia-500/30 border border-purple-500/40 rounded-full">
-                    <span className="text-xs font-bold text-purple-200">NEW</span>
+                <button
+                  onClick={() => onCreateGame()}
+                  className="group rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-7 text-left hover:border-white/20 hover:from-white/[0.08] hover:to-white/[0.04] transition-all"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="text-6xl">✨</span>
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase text-zinc-300">
+                      Custom
+                    </span>
                   </div>
-                </div>
-                
-                <h3 className="text-2xl font-bold text-white mb-3 relative z-10">Custom Game</h3>
-                <p className="text-zinc-400 mb-4 relative z-10">
-                  Have a unique idea? Design your own game from scratch with complete creative freedom.
-                </p>
-                
-                <div className="flex items-center gap-4 text-sm text-zinc-500 mb-4 relative z-10">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>2-20 players</span>
+                  <h3 className="font-semibold text-white mb-3 text-xl">Your own game</h3>
+                  <p className="text-zinc-300/90 mb-5 leading-relaxed text-lg">
+                    Any theme. Any mechanics. Start from a blank page.
+                  </p>
+                  <div className="flex items-center gap-2 text-base text-zinc-300/90 font-medium">
+                    <Target className="h-5 w-5" />
+                    <span>2–20 players</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Wand2 className="h-4 w-4" />
-                    <span>Your Rules</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 text-purple-400 font-semibold relative z-10">
-                  <span>Start creating</span>
-                  <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </button>
+                  <span className="mt-4 inline-flex items-center gap-1 text-base text-zinc-500 group-hover:text-white transition-colors">
+                    Start from scratch <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">Describe</div>
-              <div className="text-sm text-zinc-400">Tell the Game Master your idea</div>
+          {/* 底部数据条：更大字号与留白 */}
+          <section className="border-t border-white/[0.06] py-12 sm:py-16">
+            <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
+              <div className="flex flex-wrap items-center justify-center sm:justify-between gap-10 sm:gap-16 text-center sm:text-left">
+                <div>
+                  <span className="text-4xl sm:text-5xl font-bold text-amber-400">Describe</span>
+                  <span className="text-zinc-500 text-lg sm:text-xl ml-2">your idea</span>
+                </div>
+                <div>
+                  <span className="text-4xl sm:text-5xl font-bold text-amber-400">∞</span>
+                  <span className="text-zinc-500 text-lg sm:text-xl ml-2">possibilities</span>
+                </div>
+                <div>
+                  <span className="text-4xl sm:text-5xl font-bold text-amber-400">~2 min</span>
+                  <span className="text-zinc-500 text-lg sm:text-xl ml-2">to start playing</span>
+                </div>
+              </div>
             </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">∞</div>
-              <div className="text-sm text-zinc-400">Possibilities</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-1 sm:mb-2">~2 min</div>
-              <div className="text-sm text-zinc-400">To start playing</div>
-            </div>
-          </div>
+          </section>
         </div>
       </ScrollArea>
     </div>

@@ -123,10 +123,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
       <TooltipProvider delayDuration={100}>
         {/* Top Section: Home + Create */}
         <div className="flex flex-col items-center gap-3">
-          {/* Home - Link for prefetch, faster tab switch */}
+          {/* Home: 未登录去首页 /，已登录去 Game Master /create */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href="/create" prefetch onClick={() => onSelectGame("home")} className="block">
+              <Link href={user ? "/create" : "/"} prefetch onClick={() => onSelectGame("home")} className="block">
                 <div className="relative group">
                   <Button
                     variant="ghost"

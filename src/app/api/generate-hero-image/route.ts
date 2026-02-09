@@ -1,0 +1,69 @@
+import { NextResponse } from "next/server";
+import { writeFileSync, existsSync, mkdirSync } from "fs";
+import { join } from "path";
+import OpenAI from "openai";
+
+const HERO_PROMPT =
+  "A friendly fantasy game master character, warm and welcoming, standing beside a glowing tabletop game board with dice and cards, soft ambient lighting, cozy tavern atmosphere, digital illustration style, no text, suitable for a game creation app hero image.";
+
+/** 本地保存路径：项目根目录 public/hero.png，Next 会以 /hero.png 提供静态访问 */
+const HERO_FILENAME = "hero.png";
+
+function getHeroPath(): string {
+  return join(process.cwd(), "public", HERO_FILENAME);
+}
+
+function getPublicUrl(): string {
+  return `/${HERO_FILENAME}`;
+}
+
+function getOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set.");
+  return new OpenAI({ apiKey });
+}
+
+export async function GET() {
+  try {
+    const heroPath = getHeroPath();
+    const publicUrl = getPublicUrl();
+
+    // 本地已有文件则直接返回 URL，不再调用 DALL-E
+    if (existsSync(heroPath)) {
+      return NextResponse.json({ image: publicUrl });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "OpenAI API key is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const openai = getOpenAI();
+    const response = await openai.images.generate({
+      model: "dall-e-2",
+      prompt: HERO_PROMPT,
+      size: "512x512",
+      response_format: "b64_json",
+      n: 1,
+    });
+    const b64 = response.data?.[0]?.b64_json;
+    if (!b64) throw new Error("No image data from DALL-E");
+
+    const buffer = Buffer.from(b64, "base64");
+    const publicDir = join(process.cwd(), "public");
+    if (!existsSync(publicDir)) {
+      mkdirSync(publicDir, { recursive: true });
+    }
+    writeFileSync(heroPath, buffer);
+
+    return NextResponse.json({ image: publicUrl });
+  } catch (e) {
+    console.error("[generate-hero-image]", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to generate hero image" },
+      { status: 500 }
+    );
+  }
+}
