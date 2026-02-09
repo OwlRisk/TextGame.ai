@@ -22,21 +22,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check active session and sync user from server (avatar is persisted in callback via admin API)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log("Initial session check:", session);
       setSession(session);
-      setUser(session?.user ?? null);
+      let userToSet = session?.user ?? null;
+      // Always refetch user from server when we have a session but no avatar, so we pick up
+      // the avatar saved in /auth/callback (client does not receive the new session from server).
+      if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
+        const { data: { user: freshUser } } = await supabase.auth.getUser();
+        if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+          userToSet = freshUser;
+        }
+      }
+      setUser(userToSet);
       setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, session);
+      let userToSet = session?.user ?? null;
+      if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
+        const { data: { user: freshUser } } = await supabase.auth.getUser();
+        if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+          userToSet = freshUser;
+        }
+      }
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(userToSet);
       setLoading(false);
     });
 

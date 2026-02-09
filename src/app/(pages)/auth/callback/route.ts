@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
 
 function isSafeReturnUrl(path: string | null): path is string {
   if (!path || typeof path !== "string") return false;
@@ -35,11 +36,28 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
       console.error("Error exchanging code for session:", error.message, error.status);
       return NextResponse.redirect(new URL("/signin?error=auth_error", origin));
+    }
+
+    // Persist provider avatar into user_metadata so it survives session refresh and is
+    // returned by getUser() on the client (callback does not set browser session/cookies).
+    const meta = session?.user?.user_metadata as Record<string, unknown> | undefined;
+    const avatarUrl = meta ? ((meta.avatar_url ?? meta.picture) as string | undefined) : undefined;
+    if (session?.user?.id && avatarUrl && typeof avatarUrl === "string") {
+      const merged = { ...meta, avatar_url: avatarUrl, picture: avatarUrl };
+      if (supabaseAdmin) {
+        await supabaseAdmin.auth.admin.updateUserById(session.user.id, {
+          user_metadata: merged,
+        });
+      } else {
+        await supabase.auth.updateUser({
+          data: { avatar_url: avatarUrl, picture: avatarUrl },
+        });
+      }
     }
   }
 
