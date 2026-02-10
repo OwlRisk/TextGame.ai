@@ -69,7 +69,9 @@ export function ChannelList({
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = (gameUserDisplayName && gameUserDisplayName.trim()) || (userDisplayName && userDisplayName.trim()) ? (gameUserDisplayName || userDisplayName || "Player").trim() : "Player";
   const shortLabel = (displayName !== "Player") ? "You" : "#0001";
-  const useGameAvatar = !!(gameUserDisplayName && gameUserDisplayName.trim() && gameId);
+  // 统一风格：在游戏内用户也使用与 AI 相同的生成头像
+  const useGameAvatar = !!gameId;
+  const avatarName = (gameUserDisplayName && gameUserDisplayName.trim() && gameUserDisplayName !== "You") ? gameUserDisplayName : "Player";
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<Channel | null>(null);
   return (
@@ -177,7 +179,7 @@ export function ChannelList({
         <div className="flex items-center gap-3 min-w-0">
           {useGameAvatar ? (
             <GeneratedAvatar
-              name={gameUserDisplayName!}
+              name={avatarName}
               type="player"
               gameId={gameId}
               enabled={true}

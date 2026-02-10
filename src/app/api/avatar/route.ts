@@ -74,7 +74,7 @@ const NO_TEXT =
   'Pure visual portrait only. The image must contain ONLY the character portrait with absolutely no written content whatsoever. ' +
   'If any text appears in the image, the generation is invalid.';
 
-/** Universal anime/manga style for all avatars - avoid "game", "player" plural connotations */
+/** Universal anime/manga style for ALL avatars (Host + AI players + human in-game). Same style = unified look. */
 const ANIME_STYLE =
   SINGLE_PERSON + ' ' +
   'Anime/manga art style. Japanese animation aesthetic. ' +
@@ -83,6 +83,9 @@ const ANIME_STYLE =
   'Head and shoulders portrait, circular crop suitable. ' +
   'Single character only, no background details. ' +
   'ONE PERSON. ONE FACE. ' + NO_TEXT;
+
+/** Single shared style string for both Host and Player so they look identical in art style. */
+const SHARED_CORE_STYLE = 'Anime/manga art style. One person only. One face. Single avatar portrait. Head and shoulders. Colorful hair, expressive eyes. No text.';
 
 /** Gender phrase for prompt: avatar appearance must match name gender */
 function genderPhrase(gender?: string): string {
@@ -125,11 +128,10 @@ function buildPrompt(
   const singleStart = 'Close-up portrait of exactly ONE person. Only one face visible in frame. ';
   const singleEnd = ' Single person only. No second face. No other people. No mirror or reflection with face.';
 
-  // 统一画风：Host 和 Player 都用同一套 anime 描述，仅用简短角色词区分（避免 Host 的 "Presenter, emcee" 导致写实/不同画风）
-  const coreStyle = 'Anime/manga art style. One person only. One face. Single avatar portrait. Head and shoulders. Colorful hair, expressive eyes. No text.';
-  const hostRoleHint = 'Game host character. ';
-  const baseHostPrompt = singleStart + genderPrefix + hostRoleHint + 'Anime character portrait. ' + coreStyle + singleEnd;
-  const basePlayerPrompt = singleStart + genderPrefix + 'Anime character portrait. ' + coreStyle + singleEnd;
+  // 统一画风：Host 与 Player 使用完全相同的 SHARED_CORE_STYLE，仅用一词区分角色，保证头像风格一致
+  const hostRoleHint = 'Host character. ';
+  const baseHostPrompt = singleStart + genderPrefix + hostRoleHint + SHARED_CORE_STYLE + singleEnd;
+  const basePlayerPrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;
 
   if (!background || !background.trim()) {
     const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
@@ -140,13 +142,13 @@ function buildPrompt(
 
   const trimmedBackground = sanitizeSinglePersonDescription(background.trim());
   const prefix = type === 'host'
-    ? singleStart + genderPrefix + hostRoleHint + 'Anime character portrait. Character: '
-    : singleStart + genderPrefix + 'Anime character portrait. Description: ';
-  const suffix = '.' + coreStyle + singleEnd;
+    ? singleStart + genderPrefix + hostRoleHint + 'Character: '
+    : singleStart + genderPrefix + 'Description: ';
+  const suffix = '. ' + SHARED_CORE_STYLE + singleEnd;
 
   const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;
   if (availableLength <= 0) {
-    return `${genderPrefix}ONE PERSON ONLY. ONE FACE. ${coreStyle}`;
+    return `${genderPrefix}ONE PERSON ONLY. ONE FACE. ${SHARED_CORE_STYLE}`;
   }
 
   const truncatedBackground = trimmedBackground.length > availableLength

@@ -113,7 +113,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [selectedGameId, isHydrated]);
 
   const addGame = useCallback((game: Game) => {
-    setGames((prev) => [...prev, game]);
+    setGames((prev) => [game, ...prev]);
     if (user) {
       createGame({
         id: game.id,

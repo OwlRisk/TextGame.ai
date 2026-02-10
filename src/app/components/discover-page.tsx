@@ -10,7 +10,7 @@ export interface DiscoverPreset {
   id: string;
   name: string;
   rules: string;
-  templateId?: "werewolf" | "undercover" | "custom";
+  templateId?: "werewolf" | "undercover" | "mafia" | "tarot" | "custom";
   playerCount?: number;
 }
 
@@ -270,6 +270,7 @@ WINNING:
     icon: "🎭",
     color: "from-red-600 to-pink-600",
     activeGames: 156,
+    templateId: "mafia",
     rules: `OBJECTIVE: Townspeople eliminate all Mafia. Mafia eliminate all Townspeople.
 
 SETUP:
@@ -288,6 +289,27 @@ VOTING:
 WINNING:
 - Town wins if all Mafia are eliminated
 - Mafia wins when Mafia are equal to or outnumber Town`
+  },
+  {
+    id: "tarot-reading",
+    name: "Tarot Reading",
+    description: "A reflective Tarot reading with the Host as reader. Ask a question and receive card-based guidance.",
+    players: "1",
+    duration: "10-20 min",
+    difficulty: "Easy",
+    tags: ["Solo", "Reflection", "Mystical"],
+    icon: "🃏",
+    color: "from-amber-700 to-yellow-600",
+    activeGames: 87,
+    templateId: "tarot",
+    playerCount: 0,
+    rules: `SETTING: Calm, reflective space. Host acts as Tarot reader; you are the Querent (no other players).
+
+OBJECTIVE: Ask a question or request a general reading. Host uses a 78-card deck, draws according to a spread, and interprets each card.
+
+SPREADS: Single card, Three cards (Past/Present/Future), Celtic Cross, or as Host offers. Host names each card and interprets for your question. Tone: thoughtful, encouraging.
+
+No win/lose—session ends when the reading feels complete.`
   },
   {
     id: "detective-mystery",
@@ -487,6 +509,30 @@ GAMEPLAY:
 WINNING:
 - Decide how a winner is determined`;
 
+/** Resolve full preset by id so Create page can pass name, rules, templateId, playerCount to GameMasterChat. */
+export function getPresetById(presetId: string | null): DiscoverPreset | null {
+  if (!presetId) return null;
+  const fromFeatured = FEATURED_GAMES.find((g) => g.id === presetId);
+  if (fromFeatured) {
+    return {
+      id: fromFeatured.id,
+      name: fromFeatured.name,
+      rules: fromFeatured.rules,
+      templateId: fromFeatured.templateId ?? "custom",
+      playerCount: (fromFeatured as { playerCount?: number }).playerCount,
+    };
+  }
+  const fromCommunity = COMMUNITY_GAMES.find((g) => g.id === presetId);
+  if (fromCommunity) {
+    return {
+      id: fromCommunity.id,
+      name: fromCommunity.name,
+      rules: fromCommunity.rules,
+      templateId: "custom",
+    };
+  }
+  return null;
+}
 
 export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
   const [hoveredGameId, setHoveredGameId] = useState<string | null>(null);
@@ -617,7 +663,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                       id: category.id,
                       name: category.name,
                       rules: category.rules,
-                      templateId: (category.templateId ?? "custom") as "werewolf" | "undercover" | "custom"
+                      templateId: (category.templateId ?? "custom") as "werewolf" | "undercover" | "mafia" | "tarot" | "custom"
                     })}
                     className={`group relative bg-white/5 backdrop-blur-xl border-2 border-white/10 hover:border-violet-500/50 rounded-2xl p-7 transition-all duration-300 hover:scale-105 hover:bg-white/10 text-left overflow-hidden ${
                       selectedCategory === category.id ? 'border-violet-500/50 bg-white/10' : ''
@@ -895,7 +941,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                       id: game.id,
                       name: game.name,
                       rules: game.rules,
-                      templateId: (game.templateId ?? "custom") as "werewolf" | "undercover" | "custom"
+                      templateId: (game.templateId ?? "custom") as "werewolf" | "undercover" | "mafia" | "tarot" | "custom"
                     })}
                     onMouseEnter={() => setHoveredGameId(game.id)}
                     onMouseLeave={() => setHoveredGameId(null)}
@@ -931,7 +977,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                       id: game.id,
                       name: game.name,
                       rules: game.rules,
-                      templateId: (game.templateId ?? "custom") as "werewolf" | "undercover" | "custom"
+                      templateId: (game.templateId ?? "custom") as "werewolf" | "undercover" | "mafia" | "tarot" | "custom"
                     })}
                     onMouseEnter={() => setHoveredGameId(game.id)}
                     onMouseLeave={() => setHoveredGameId(null)}

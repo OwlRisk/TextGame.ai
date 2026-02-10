@@ -9,7 +9,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { getDefaultAICountForTemplate } from "@/lib/game-utils";
-import type { DiscoverPreset } from "@/app/components/discover-page";
+import { getPresetById, type DiscoverPreset } from "@/app/components/discover-page";
 import { ProtectedRoute } from "@/app/components/protected-route";
 
 export default function CreateGamePage() {
@@ -26,14 +26,12 @@ function CreateGamePageContent() {
   const { games, selectedGameId, selectGame, addGame, updateGame } = useGameContext();
 
   const presetId = searchParams.get("preset");
+  const initialPreset = presetId ? getPresetById(presetId) : null;
 
   // When on /create (Game Master chat), highlight "Home" in sidebar
   useEffect(() => {
     selectGame("home");
   }, [selectGame]);
-
-  // You can load preset data here based on presetId
-  // For now, we'll pass it to GameMasterChat
 
   const handleCreateGame = async (config: GameConfig) => {
     const toastId = "create-game";
@@ -63,6 +61,10 @@ function CreateGamePageContent() {
               ? "🐺"
               : config.template === "undercover"
               ? "🕵️"
+              : config.template === "mafia"
+              ? "🎭"
+              : config.template === "tarot"
+              ? "🃏"
               : "🎮";
         }
       } catch (error) {
@@ -154,7 +156,7 @@ function CreateGamePageContent() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <GameMasterChat
-          initialPreset={presetId ? { id: presetId } as DiscoverPreset : null}
+          initialPreset={initialPreset}
           onCreateGame={handleCreateGame}
           onBack={() => router.back()}
         />

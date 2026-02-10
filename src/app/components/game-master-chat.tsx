@@ -377,6 +377,36 @@ WINNING:
     roles: ["Civilian", "Undercover", "Mr. White"]
   },
   {
+    id: "mafia",
+    name: "Mafia",
+    description: "An intense game of lies and deception. Can the town survive the Mafia?",
+    minPlayers: 6,
+    maxPlayers: 15,
+    defaultRules: `SETTING: A small town is infiltrated by the Mafia. By day the town debates and votes; by night the Mafia strikes.
+
+OBJECTIVE: Town must eliminate all Mafia by day vote. Mafia must eliminate Town at night until they equal or outnumber the living.
+
+PHASES: 1. Night — Mafia choose one victim; Detective may investigate one player; Doctor may protect one. 2. Day — Everyone discusses and votes to eliminate one player.
+
+ROLES: Town Member, Mafia, Detective, Doctor. Host runs phases. Dead players cannot speak or vote.
+
+WINNING: Town wins when all Mafia are eliminated. Mafia wins when they equal or outnumber the living Town.`,
+    roles: ["Town Member", "Mafia", "Detective", "Doctor"]
+  },
+  {
+    id: "tarot",
+    name: "Tarot Reading",
+    description: "A reflective Tarot reading with the Host as reader. Ask a question and receive card-based guidance.",
+    minPlayers: 1,
+    maxPlayers: 1,
+    defaultRules: `SETTING: Calm, reflective space. The Host acts as the Tarot reader (no other AI players). The human is the Querent.
+
+OBJECTIVE: The Querent may ask a specific question or request a general reading. The Host uses a 78-card deck, draws cards according to the chosen spread, and interprets each card in context.
+
+SPREADS: Single card, Three cards (Past/Present/Future), Celtic Cross, or as Host offers. Host names each card and interprets for the question. Tone: thoughtful, encouraging. No win/lose—session ends when the reading is complete.`,
+    roles: ["Querent"]
+  },
+  {
     id: "custom",
     name: "Custom Game",
     description: "Create your own game with custom rules and roles.",

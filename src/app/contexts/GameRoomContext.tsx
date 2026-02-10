@@ -36,6 +36,8 @@ interface GameRoomContextType {
   aiSuggestedPrompts: string[];
   /** Human player's in-game name (and avatar key) for this game — AI-generated, persisted with room. */
   humanGameIdentity: { name: string } | null;
+  /** Persisted avatar image URLs (key = "name|type") so they sync across devices. */
+  avatarImageUrls: Record<string, string>;
 
   // Actions - Messages
   addMessage: (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => string | undefined;
@@ -63,6 +65,8 @@ interface GameRoomContextType {
   setGameResult: React.Dispatch<React.SetStateAction<{ winner: string; message: string } | null>>;
   setAiSuggestedPrompts: React.Dispatch<React.SetStateAction<string[]>>;
   setHumanGameIdentity: React.Dispatch<React.SetStateAction<{ name: string } | null>>;
+  /** Call when a generated avatar URL is first loaded so we persist it for this room (key = "name|type"). */
+  onAvatarUrlLoaded: (key: string, url: string) => void;
 
   // Utility
   resetGame: () => void;
@@ -96,8 +100,14 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
   const [aiSuggestedPrompts, setAiSuggestedPrompts] = useState<string[]>([]);
   const [humanGameIdentity, setHumanGameIdentity] = useState<{ name: string } | null>(null);
+  const [avatarImageUrls, setAvatarImageUrls] = useState<Record<string, string>>({});
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveTrigger, setSaveTrigger] = useState(0);
+
+  const onAvatarUrlLoaded = useCallback((key: string, url: string) => {
+    if (!key || !url || !url.startsWith("http")) return;
+    setAvatarImageUrls((prev) => (prev[key] === url ? prev : { ...prev, [key]: url }));
+  }, []);
 
   const isMountedRef = useRef(true);
 
@@ -141,6 +151,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       }
       if (state.humanGameIdentity && typeof (state.humanGameIdentity as any).name === "string") {
         setHumanGameIdentity({ name: (state.humanGameIdentity as any).name });
+      }
+      if (state.avatarImageUrls && typeof state.avatarImageUrls === "object") {
+        setAvatarImageUrls(state.avatarImageUrls as Record<string, string>);
       }
     }
 
@@ -187,6 +200,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     sections,
     privateMessages,
     humanGameIdentity,
+    avatarImageUrls,
   ]);
 
   // Save game room state: fixed dependency array to satisfy React strict rules
@@ -224,6 +238,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       sections,
       privateMessages: trimmedPrivateMessages,
       humanGameIdentity: humanGameIdentity || undefined,
+      avatarImageUrls: Object.keys(avatarImageUrls).length ? avatarImageUrls : undefined,
       savedAt: new Date().toISOString(),
     };
 
@@ -373,6 +388,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setGameResult(null);
     setAiSuggestedPrompts([]);
     setHumanGameIdentity(null);
+    setAvatarImageUrls({});
   }, []);
 
   return (
@@ -394,6 +410,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         gameResult,
         aiSuggestedPrompts,
         humanGameIdentity,
+        avatarImageUrls,
+        onAvatarUrlLoaded,
         addMessage,
         addStreamingMessage,
         updateStreamingMessage,

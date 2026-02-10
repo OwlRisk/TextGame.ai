@@ -129,6 +129,19 @@ WINNING:
     roles: ["Civilian", "Undercover", "Mr. White"]
   },
   {
+    id: "tarot",
+    name: "Tarot Reading",
+    description: "A reflective Tarot reading with the Host as reader. Ask a question and receive card-based guidance.",
+    minPlayers: 1,
+    maxPlayers: 1,
+    defaultRules: `SETTING: You are in a calm, reflective space. The Host acts as the Tarot reader (no other AI players). The human is the Querent—the one asking the question and receiving the reading.
+
+OBJECTIVE: The Querent may ask a specific question or request a general reading. The Host uses a 78-card deck (22 Major Arcana, 56 Minor Arcana), draws cards according to the chosen spread, and interprets each card in context.
+
+SPREADS: Single card, Three cards (Past/Present/Future), Celtic Cross, or other as the Host offers. Host names each card and interprets in relation to the question. Tone: thoughtful, encouraging, slightly mystical. No win/lose—session ends when the reading is complete.`,
+    roles: ["Querent"]
+  },
+  {
     id: "custom",
     name: "Custom Game",
     description: "Create your own game with custom rules and roles.",
@@ -182,10 +195,11 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
       setTimeout(() => {
         addGMMessage(
           "Greetings! I'm the Game Master, and I'll help you create an amazing game experience. " +
-          "I can set up classic games like Werewolf or Undercover, or we can design something completely custom together.\n\n" +
+          "I can set up classic games like Werewolf, Undercover, or Tarot, or we can design something completely custom together.\n\n" +
           "What type of game would you like to play today? You can choose:\n" +
           "• **Werewolf** - A thrilling social deduction game\n" +
           "• **Undercover** - Find the spy among you\n" +
+          "• **Tarot** - A reflective card reading with the Host as reader\n" +
           "• **Custom** - Let's create something unique!\n\n" +
           "Just tell me your preference, or describe what kind of game you have in mind!"
         );
@@ -243,8 +257,16 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             "This game works best with 4-10 players (including you). How many AI players would you like? " +
             "Give me a number between 3 and 9, or say \"you decide\" and I'll pick based on the rules."
           );
-        } else if (lowerInput.includes("custom") || lowerInput.includes("create")) {
+        } else if (lowerInput.includes("tarot") || lowerInput.includes("塔罗") || lowerInput.includes("card") && lowerInput.includes("read")) {
           setSelectedTemplate(GAME_TEMPLATES[2]);
+          setConversationState("player-count");
+          addGMMessage(
+            "A wonderful choice! In Tarot Reading, I'll act as your reader—just you and the cards. " +
+            "You can ask a specific question or request a general reading. No other players needed; it's a solo reflective experience.\n\n" +
+            "We'll use 0 AI players (only you and the Host). Say \"ok\" or \"let's go\" to continue, or ask to change the game type."
+          );
+        } else if (lowerInput.includes("custom") || lowerInput.includes("create") || lowerInput.includes("独特")) {
+          setSelectedTemplate(GAME_TEMPLATES[3]);
           setConversationState("rules-discussion");
           addGMMessage(
             "Wonderful! Let's create a custom game together. I love creativity!\n\n" +
@@ -259,13 +281,25 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             "I'm not sure which game you'd prefer. Let me help you:\n\n" +
             "🐺 **Werewolf** - Perfect for strategy lovers. Players debate to find hidden werewolves.\n" +
             "🕵️ **Undercover** - Quick and fun! Guess who has the different word.\n" +
+            "🃏 **Tarot** - A reflective card reading; just you and the Host.\n" +
             "🎮 **Custom** - Have a unique idea? Let's build it together!\n\n" +
             "Which one sounds interesting to you?"
           );
         }
       } else if (conversationState === "player-count") {
-        // "GM decides" / "you decide" → keep playerCount 0
-        if (lowerInput.includes("you decide") || lowerInput.includes("gm decide") || lowerInput.includes("up to you") ||
+        // Tarot: only 0 AI players; accept "ok", "let's go", "0"
+        if (selectedTemplate?.id === "tarot" && (
+          lowerInput.includes("ok") || lowerInput.includes("let's go") || lowerInput.includes("lets go") ||
+          lowerInput.includes("go") || lowerInput.includes("yes") || /^0$/.test(userInput.trim())
+        )) {
+          setPlayerCount(0);
+          setConversationState("rules-discussion");
+          addGMMessage(
+            "Perfect! Tarot Reading is just you and the Host—no other players. Here are the rules:\n\n" +
+            `${selectedTemplate!.defaultRules}\n\n` +
+            "Would you like to **keep these rules** (say \"yes\" or \"keep\"), or **modify** something?"
+          );
+        } else if (lowerInput.includes("you decide") || lowerInput.includes("gm decide") || lowerInput.includes("up to you") ||
             lowerInput.includes("your choice") || lowerInput.includes("decide for me") ||
             lowerInput.includes("up to you") || lowerInput.includes("whatever")) {
           setPlayerCount(0);
@@ -323,7 +357,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
           addGMMessage(
             `Excellent! Let me summarize your game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
+            `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
             `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
@@ -364,7 +398,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
           addGMMessage(
             `Perfect! Here's your complete game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
+            `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:**\n${finalRules}\n\n` +
             `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`

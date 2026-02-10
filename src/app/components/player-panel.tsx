@@ -6,7 +6,7 @@ import { Separator } from "@/app/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { PlayerBoardData } from "@/app/components/player-board";
 import { Badge } from "@/app/components/ui/badge";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
@@ -42,6 +42,10 @@ interface PlayerPanelProps {
   onSelectSpeaker?: (playerId: string) => void;
   /** When set, the human player uses this in-game name and AI-generated avatar. */
   humanGameIdentity?: { name: string } | null;
+  /** Persisted avatar URLs (key = "name|type") for cross-device. */
+  avatarImageUrls?: Record<string, string>;
+  /** Call when an avatar URL is loaded so the room can persist it. */
+  onAvatarUrlLoaded?: (key: string, url: string) => void;
 }
 
 export function PlayerPanel({ 
@@ -52,6 +56,8 @@ export function PlayerPanel({
   onToggleMute,
   onSelectSpeaker,
   humanGameIdentity,
+  avatarImageUrls = {},
+  onAvatarUrlLoaded,
 }: PlayerPanelProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -93,6 +99,8 @@ export function PlayerPanel({
                 onToggleMute={onToggleMute}
                 onSelectSpeaker={onSelectSpeaker}
                 onOpenProfile={openProfile}
+                avatarImageUrls={avatarImageUrls}
+                onAvatarUrlLoaded={onAvatarUrlLoaded}
               />
               <Separator className="mt-3 bg-zinc-700/50" />
             </div>
@@ -113,6 +121,8 @@ export function PlayerPanel({
                   onSelectSpeaker={onSelectSpeaker}
                   humanGameIdentity={humanGameIdentity}
                   onOpenProfile={openProfile}
+                  avatarImageUrls={avatarImageUrls}
+                  onAvatarUrlLoaded={onAvatarUrlLoaded}
                 />
               ))}
             </div>
@@ -132,6 +142,8 @@ function PlayerCard({
   onSelectSpeaker,
   humanGameIdentity,
   onOpenProfile,
+  avatarImageUrls = {},
+  onAvatarUrlLoaded,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -141,8 +153,12 @@ function PlayerCard({
   onSelectSpeaker?: (playerId: string) => void;
   humanGameIdentity?: { name: string } | null;
   onOpenProfile?: (player: Player) => void;
+  avatarImageUrls?: Record<string, string>;
+  onAvatarUrlLoaded?: (key: string, url: string) => void;
 }) {
-  const useGameAvatarForHuman = !player.isAI && humanGameIdentity?.name && gameId;
+  // 统一风格：在游戏房间内用户玩家也使用与 AI 相同的生成头像（动漫风），不再用 Google 真人照片
+  const useGameAvatarForHuman = !player.isAI && !!gameId;
+  const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
   const isClickable = !!onOpenProfile;
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -179,25 +195,34 @@ function PlayerCard({
             </Avatar>
           ) : !player.isAI && useGameAvatarForHuman ? (
             <GeneratedAvatar
-              name={humanGameIdentity!.name}
+              name={humanAvatarName}
               type="player"
               gameId={gameId}
               enabled={true}
+              initialUrl={avatarImageUrls[avatarCacheKey(humanAvatarName, "player")]}
+              onAvatarLoaded={onAvatarUrlLoaded}
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
               }`}
               fallbackColor={player.avatar}
             />
           ) : (
-            <GeneratedAvatar
-              {...getAvatarPropsForPlayer(player)}
-              gameId={gameId}
-              enabled={true}
-              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
-                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
-              }`}
-              fallbackColor={player.avatar}
-            />
+            (() => {
+              const avatarProps = getAvatarPropsForPlayer(player);
+              return (
+                <GeneratedAvatar
+                  {...avatarProps}
+                  gameId={gameId}
+                  enabled={true}
+                  initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
+                  onAvatarLoaded={onAvatarUrlLoaded}
+                  className={`h-9 w-9 shadow-md transition-transform duration-200 ${
+                    isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+                  }`}
+                  fallbackColor={player.avatar}
+                />
+              );
+            })()
           )}
         </div>
         <div className="flex-1 min-w-0">

@@ -26,7 +26,7 @@ export const HOST_PERSONALITIES: HostPersonality[] = [
     tagline: "Mysterious & Professional",
     description: "Male game show host. Mysterious, speaks with intrigue and suspense. Calm, enigmatic. Perfect for games that require tension and careful observation.",
     voiceStyle: "Calm, enigmatic, creates atmosphere",
-    suitableFor: ["Werewolf", "Mafia", "Murder Mystery", "Detective"],
+    suitableFor: ["Werewolf", "Mafia", "Murder Mystery", "Detective", "Tarot"],
     systemPrompt: `You are Echo, a mysterious and professional game host. Your speaking style:
 - Use poetic and enigmatic language
 - Create suspense and atmosphere
@@ -111,6 +111,8 @@ export function getDefaultHostForTemplate(templateId: string | null | undefined)
   const templateNameMap: Record<string, string> = {
     "werewolf": "Werewolf",
     "undercover": "Undercover",
+    "mafia": "Mafia",
+    "tarot": "Tarot",
     "custom": "Custom Game"
   };
   
@@ -136,6 +138,8 @@ export function isHostRecommendedForTemplate(hostId: string, templateId: string 
   const templateNameMap: Record<string, string> = {
     "werewolf": "Werewolf",
     "undercover": "Undercover",
+    "mafia": "Mafia",
+    "tarot": "Tarot",
     "custom": "Custom Game"
   };
   

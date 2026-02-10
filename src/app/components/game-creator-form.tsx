@@ -127,6 +127,35 @@ WINNING:
     estimatedTime: "45-60 min"
   },
   {
+    id: "tarot",
+    name: "Tarot Reading",
+    description: "A reflective Tarot reading with the Host as reader. Ask a question and receive card-based guidance.",
+    minPlayers: 1,
+    maxPlayers: 1,
+    defaultRules: `SETTING: You are in a calm, reflective space. The Host acts as the Tarot reader (no other AI players). The human is the Querent—the one asking the question and receiving the reading.
+
+OBJECTIVE: The Querent may ask a specific question or request a general reading. The Host shuffles the deck (78 cards: 22 Major Arcana, 56 Minor Arcana in four suits—Wands, Cups, Swords, Pentacles), draws cards according to the chosen spread, and interprets each card in context.
+
+SPREADS (Host may offer or choose):
+- Single card: One card for a quick insight or daily draw.
+- Three cards: Past / Present / Future, or Situation / Action / Outcome.
+- Celtic Cross (10 cards): Full spread for deeper questions.
+- Custom: Host can propose other spreads as appropriate.
+
+RULES:
+- Host speaks as the reader: set the mood, invite the Querent to ask a question or state an intention.
+- When drawing, name each card (e.g. "The Fool", "Three of Wands") and whether it is upright or reversed if you use reversals.
+- Interpret cards in relation to the Querent's question; be thoughtful and encouraging, never harsh or deterministic.
+- The reading is for reflection and perspective, not literal prediction. Keep tone respectful and slightly mystical.
+- No fixed "winning"—the session ends when the Querent is satisfied or after a natural conclusion (e.g. summary of the spread).
+
+WINNING: There is no win/lose. The session completes when the reading is finished and the Querent has received the interpretation.`,
+    roles: ["Querent"],
+    icon: "🃏",
+    color: "from-amber-700 to-yellow-600",
+    estimatedTime: "10-20 min"
+  },
+  {
     id: "custom",
     name: "Custom Game",
     description: "Create your own game with custom rules and roles.",
