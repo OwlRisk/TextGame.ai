@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Sparkles, Send, Mic, MicOff, Eye, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus } from "lucide-react";
+import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import type { DiscoverPreset } from "@/app/components/discover-page";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -645,8 +645,29 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
   }, [input, isRecording, voiceTranscript, resizeInput]);
 
-  // Preview panel
-  const [showPreview, setShowPreview] = useState(true);
+  // Resizable preview panel width (px); drag the divider to resize
+  const [previewWidth, setPreviewWidth] = useState(420);
+  const [isDraggingSplit, setIsDraggingSplit] = useState(false);
+  const splitDragRef = useRef({ startX: 0, startW: 0 });
+  const PREVIEW_MIN = 280;
+  const PREVIEW_MAX = 900;
+  useEffect(() => {
+    if (!isDraggingSplit) return;
+    const onMove = (e: MouseEvent) => {
+      const delta = e.clientX - splitDragRef.current.startX;
+      setPreviewWidth((w) => {
+        const next = splitDragRef.current.startW - delta;
+        return Math.min(PREVIEW_MAX, Math.max(PREVIEW_MIN, next));
+      });
+    };
+    const onUp = () => setIsDraggingSplit(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isDraggingSplit]);
   // Background merged into Rules - no separate tab needed
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
   const [isStartingGame, setIsStartingGame] = useState(false);
@@ -1930,8 +1951,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </ScrollArea>
       </div>
 
-      {/* Main Chat Area */}
-      <div className={`flex flex-col min-w-0 h-full ${showPreview ? 'flex-[1] min-w-0' : 'flex-1'}`}>
+      {/* Main Chat Area + resizable split */}
+      <div className="flex flex-1 min-w-0 h-full">
+      <div className="flex flex-col min-w-0 h-full flex-1 min-w-0">
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
@@ -1960,16 +1982,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   )}
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowPreview(!showPreview)}
-                className="h-9 w-9 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-              >
-                <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
             </div>
           </div>
         </div>
@@ -2174,22 +2186,38 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         )}
       </div>
 
+      {/* Draggable divider: drag to resize chat vs preview */}
+      <div
+        role="separator"
+        aria-label="调整规则预览宽度"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsDraggingSplit(true);
+          splitDragRef.current = { startX: e.clientX, startW: previewWidth };
+        }}
+        className={`flex-shrink-0 w-1.5 h-full bg-white/5 hover:bg-violet-500/30 cursor-col-resize select-none transition-colors ${isDraggingSplit ? "bg-violet-500/40" : ""}`}
+      />
+
       {/* Preview Panel - Editable before starting game; scrolls into view when GM edits */}
-      {showPreview && (() => {
-        return (
-        <div ref={rulesPanelRef} className="flex-[1.2] min-w-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full">
+        <div
+          ref={rulesPanelRef}
+          className="flex-shrink-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full min-w-0"
+          style={{ width: previewWidth, minWidth: PREVIEW_MIN }}
+        >
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
           
           <div className="px-4 py-3 border-b border-white/10 relative flex-shrink-0">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-white">Game Document</h2>
-                {isRulesBeingEdited && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md flex-shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-xs text-amber-400 font-medium">AI editing...</span>
-                  </div>
-                )}
+              <div className="flex items-center gap-3 flex-nowrap min-w-0">
+                <div className="min-w-0 flex-1 flex items-center gap-3 overflow-hidden">
+                  <h2 className="text-lg font-bold text-white truncate">Game Document</h2>
+                  {isRulesBeingEdited && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md shrink-0">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-xs text-amber-400 font-medium whitespace-nowrap">AI editing...</span>
+                    </div>
+                  )}
+                </div>
                 <Button
                   onClick={async () => {
                     if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
@@ -2297,7 +2325,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     }
                   }}
                   disabled={isRulesBeingEdited || isStartingGame}
-                  className="h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isStartingGame ? "Starting…" : "Start Game"}
                 </Button>
@@ -2311,8 +2339,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             </div>
           </div>
         </div>
-        );
-      })()}
+      </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
