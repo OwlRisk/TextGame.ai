@@ -45,7 +45,7 @@ interface ChannelListProps {
   gameSectionLabel?: string;
   /** Current user display name (e.g. from auth). When provided, shown instead of "Player". */
   userDisplayName?: string | null;
-  /** In-game name for the human player (AI-generated). When set with gameId, show this name and use game avatar. */
+  /** In-game name for the human player (AI-generated). When set with gameId, show this name and use generated avatar. */
   gameUserDisplayName?: string | null;
   gameId?: string;
 }

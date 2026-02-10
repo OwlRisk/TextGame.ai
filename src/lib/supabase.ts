@@ -124,6 +124,26 @@ export interface Database {
           updated_at?: string;
         };
       };
+      game_room_state: {
+        Row: {
+          game_id: string;
+          user_id: string;
+          state: any; // JSON: messages, players, gamePhase, etc.
+          updated_at: string;
+        };
+        Insert: {
+          game_id: string;
+          user_id: string;
+          state?: any;
+          updated_at?: string;
+        };
+        Update: {
+          game_id?: string;
+          user_id?: string;
+          state?: any;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

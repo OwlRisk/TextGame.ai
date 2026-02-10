@@ -30,12 +30,21 @@ CREATE TABLE IF NOT EXISTS games (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Game room state: in-game chat messages + players + phase (one row per game)
+CREATE TABLE IF NOT EXISTS game_room_state (
+  game_id UUID PRIMARY KEY REFERENCES games(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_game_sessions_user_id ON game_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_game_sessions_updated_at ON game_sessions(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_games_user_id ON games(user_id);
 CREATE INDEX IF NOT EXISTS idx_games_is_active ON games(is_active);
 CREATE INDEX IF NOT EXISTS idx_games_updated_at ON games(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_game_room_state_user_id ON game_room_state(user_id);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -55,9 +64,14 @@ DROP TRIGGER IF EXISTS update_games_updated_at ON games;
 CREATE TRIGGER update_games_updated_at BEFORE UPDATE ON games
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_game_room_state_updated_at ON game_room_state;
+CREATE TRIGGER update_game_room_state_updated_at BEFORE UPDATE ON game_room_state
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE game_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_room_state ENABLE ROW LEVEL SECURITY;
 
 -- Create policies (adjust based on your auth setup)
 -- Drop first so schema is re-runnable
@@ -101,4 +115,25 @@ CREATE POLICY "Users can update their own games"
 DROP POLICY IF EXISTS "Users can delete their own games" ON games;
 CREATE POLICY "Users can delete their own games"
   ON games FOR DELETE
+  USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
+
+-- Game room state: only for games owned by the user (user_id on row must match auth)
+DROP POLICY IF EXISTS "Users can view own game room state" ON game_room_state;
+CREATE POLICY "Users can view own game room state"
+  ON game_room_state FOR SELECT
+  USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
+
+DROP POLICY IF EXISTS "Users can insert own game room state" ON game_room_state;
+CREATE POLICY "Users can insert own game room state"
+  ON game_room_state FOR INSERT
+  WITH CHECK (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
+
+DROP POLICY IF EXISTS "Users can update own game room state" ON game_room_state;
+CREATE POLICY "Users can update own game room state"
+  ON game_room_state FOR UPDATE
+  USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
+
+DROP POLICY IF EXISTS "Users can delete own game room state" ON game_room_state;
+CREATE POLICY "Users can delete own game room state"
+  ON game_room_state FOR DELETE
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));

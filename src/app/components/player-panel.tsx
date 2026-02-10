@@ -40,7 +40,7 @@ interface PlayerPanelProps {
   gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
-  /** When set, the human player uses this in-game name and an AI-generated avatar like other players. */
+  /** When set, the human player uses this in-game name and AI-generated avatar. */
   humanGameIdentity?: { name: string } | null;
 }
 

@@ -45,6 +45,7 @@ async function executeSchema() {
     console.log('\n📊 Created:');
     console.log('   - game_sessions table');
     console.log('   - games table');
+    console.log('   - game_room_state table');
     console.log('   - Indexes');
     console.log('   - Triggers');
     console.log('   - Row Level Security policies');

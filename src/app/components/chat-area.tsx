@@ -298,6 +298,8 @@ export function ChatArea({
   const voice = useVoiceInput();
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const humanPlayer = players.find((p) => p.id === userId);
+  const useGeneratedAvatarForUser = !!(gameId && humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You");
   const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   const MIN_INPUT_HEIGHT = 40;
@@ -511,7 +513,19 @@ export function ChatArea({
                     <div className="relative flex-shrink-0" title={message.senderName}>
                       {(() => {
                         const isCurrentUser = message.senderId === userId;
-                        if (isCurrentUser && userAvatarUrl) {
+                        if (isCurrentUser) {
+                          if (useGeneratedAvatarForUser && humanPlayer) {
+                            return (
+                              <GeneratedAvatar
+                                name={humanPlayer.name}
+                                type="player"
+                                gameId={gameId}
+                                enabled={true}
+                                className="h-11 w-11 border-2 border-violet-500/20"
+                                fallbackColor={humanPlayer.avatar}
+                              />
+                            );
+                          }
                           return (
                             <Avatar className="h-11 w-11 border-2 border-violet-500/20">
                               <AvatarImage src={userAvatarUrl} alt="You" className="object-cover" />
@@ -591,14 +605,25 @@ export function ChatArea({
           ) && (
             <div className="flex gap-3 mt-4">
               {typingUsers[0].name === "You" ? (
-                <Avatar className="h-10 w-10 flex-shrink-0">
-                  <AvatarFallback
-                    className="text-sm font-semibold text-white"
-                    style={{ backgroundColor: typingUsers[0].avatar }}
-                  >
-                    {typingUsers[0].name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                useGeneratedAvatarForUser && humanPlayer ? (
+                  <GeneratedAvatar
+                    name={humanPlayer.name}
+                    type="player"
+                    gameId={gameId}
+                    enabled={true}
+                    className="h-10 w-10 flex-shrink-0 border-2 border-violet-500/20"
+                    fallbackColor={typingUsers[0].avatar || humanPlayer.avatar}
+                  />
+                ) : (
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarFallback
+                      className="text-sm font-semibold text-white"
+                      style={{ backgroundColor: typingUsers[0].avatar }}
+                    >
+                      {typingUsers[0].name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )
               ) : (
                 (() => {
                   // Find the player by name to get background and avatar

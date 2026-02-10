@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { getGameRoomState, saveGameRoomState } from "@/lib/db";
 import { Message } from "@/app/components/chat-area";
 import { Player } from "@/app/components/player-panel";
 import {
@@ -96,6 +97,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [aiSuggestedPrompts, setAiSuggestedPrompts] = useState<string[]>([]);
   const [humanGameIdentity, setHumanGameIdentity] = useState<{ name: string } | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [saveTrigger, setSaveTrigger] = useState(0);
 
   const isMountedRef = useRef(true);
 
@@ -106,99 +108,75 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     };
   }, []);
 
-  // Load game room state from localStorage
+  // Load game room state: from DB when logged in, else localStorage
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`gameRoom_${gameId}`);
-      if (saved) {
-        const state = JSON.parse(saved);
-        if (state.messages) {
-          setMessages(
-            state.messages.map((m: any) => ({
-              ...m,
-              timestamp: new Date(m.timestamp),
-            }))
-          );
-        }
-        if (state.players) setPlayers(state.players);
-        if (state.gamePhase) setGamePhase(state.gamePhase);
-        if (state.gamePhaseState) setGamePhaseState(state.gamePhaseState);
-        if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId);
-        if (state.gameProgress) setGameProgress(state.gameProgress);
-        if (state.myBoardContent) setMyBoardContent(state.myBoardContent);
-        if (state.sections) setSections(state.sections);
-        if (state.privateMessages) {
-          const pm: Record<string, PrivateMessage[]> = {};
-          for (const [pid, list] of Object.entries(state.privateMessages) as [
-            string,
-            Array<{ id: string; from: string; content: string; timestamp: string }>
-          ][]) {
-            pm[pid] = (list || []).map((m) => ({
-              ...m,
-              timestamp: new Date(m.timestamp),
-            }));
-          }
-          setPrivateMessages(pm);
-        }
-        if (state.humanGameIdentity && typeof state.humanGameIdentity.name === "string") {
-          setHumanGameIdentity({ name: state.humanGameIdentity.name });
-        }
+    function applyState(state: Record<string, unknown>) {
+      if (state.messages && Array.isArray(state.messages)) {
+        setMessages(
+          (state.messages as any[]).map((m: any) => ({
+            ...m,
+            timestamp: new Date(m.timestamp),
+          }))
+        );
       }
-    } catch (e) {
-      console.error("Error loading game room state:", e);
-    }
-    setIsHydrated(true);
-  }, [gameId]);
-
-  // Save game room state to localStorage
-  useEffect(() => {
-    if (!isHydrated) return;
-
-    const timeoutId = setTimeout(() => {
-      try {
-        const trimmedMessages = messages.slice(-60).map((m) => ({
-          ...m,
-          timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp,
-        }));
-
-        const trimmedPrivateMessages: Record<
+      if (state.players) setPlayers(state.players as Player[]);
+      if (state.gamePhase) setGamePhase(state.gamePhase as string);
+      if (state.gamePhaseState) setGamePhaseState(state.gamePhaseState as GamePhaseState);
+      if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId as string | null);
+      if (state.gameProgress) setGameProgress((state.gameProgress as string) ?? "");
+      if (state.myBoardContent) setMyBoardContent((state.myBoardContent as Record<string, string>) ?? {});
+      if (state.sections) setSections(state.sections as Array<{ id: string; name: string }>);
+      if (state.privateMessages && typeof state.privateMessages === "object") {
+        const pm: Record<string, PrivateMessage[]> = {};
+        for (const [pid, list] of Object.entries(state.privateMessages) as [
           string,
           Array<{ id: string; from: string; content: string; timestamp: string }>
-        > = {};
-        for (const [pid, list] of Object.entries(privateMessages)) {
-          const arr = (list || []).slice(-20).map((m) => ({
+        ][]) {
+          pm[pid] = (list || []).map((m) => ({
             ...m,
-            timestamp:
-              m.timestamp instanceof Date
-                ? m.timestamp.toISOString()
-                : new Date(m.timestamp).toISOString(),
+            timestamp: new Date(m.timestamp),
           }));
-          if (arr.length) trimmedPrivateMessages[pid] = arr;
         }
-
-        const state = {
-          messages: trimmedMessages,
-          players,
-          gamePhase,
-          gamePhaseState,
-          selectedChannelId,
-          gameProgress,
-          myBoardContent,
-          sections,
-          privateMessages: trimmedPrivateMessages,
-          humanGameIdentity: humanGameIdentity || undefined,
-          savedAt: new Date().toISOString(),
-        };
-
-        localStorage.setItem(`gameRoom_${gameId}`, JSON.stringify(state));
-      } catch (e) {
-        console.error("Error saving game room state:", e);
+        setPrivateMessages(pm);
       }
-    }, 1000); // Debounce
+      if (state.humanGameIdentity && typeof (state.humanGameIdentity as any).name === "string") {
+        setHumanGameIdentity({ name: (state.humanGameIdentity as any).name });
+      }
+    }
 
+    if (user?.id) {
+      getGameRoomState(gameId)
+        .then(({ data, error }) => {
+          if (error || data == null) {
+            try {
+              const saved = localStorage.getItem(`gameRoom_${gameId}`);
+              if (saved) {
+                applyState(JSON.parse(saved));
+              }
+            } catch (_) {}
+          } else {
+            applyState(data as Record<string, unknown>);
+          }
+          setIsHydrated(true);
+        });
+    } else {
+      try {
+        const saved = localStorage.getItem(`gameRoom_${gameId}`);
+        if (saved) applyState(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error loading game room state:", e);
+      }
+      setIsHydrated(true);
+    }
+  }, [gameId, user?.id]);
+
+  // Bump saveTrigger when state changes (debounced) so save effect runs with fixed deps
+  useEffect(() => {
+    if (!isHydrated) return;
+    const timeoutId = setTimeout(() => setSaveTrigger((s) => s + 1), 1000);
     return () => clearTimeout(timeoutId);
   }, [
-    gameId,
+    isHydrated,
     messages,
     players,
     gamePhase,
@@ -209,8 +187,58 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     sections,
     privateMessages,
     humanGameIdentity,
-    isHydrated,
   ]);
+
+  // Save game room state: fixed dependency array to satisfy React strict rules
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const trimmedMessages = messages.slice(-60).map((m) => ({
+      ...m,
+      timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp,
+    }));
+
+    const trimmedPrivateMessages: Record<
+      string,
+      Array<{ id: string; from: string; content: string; timestamp: string }>
+    > = {};
+    for (const [pid, list] of Object.entries(privateMessages)) {
+      const arr = (list || []).slice(-20).map((m) => ({
+        ...m,
+        timestamp:
+          m.timestamp instanceof Date
+            ? m.timestamp.toISOString()
+            : new Date(m.timestamp).toISOString(),
+      }));
+      if (arr.length) trimmedPrivateMessages[pid] = arr;
+    }
+
+    const state = {
+      messages: trimmedMessages,
+      players,
+      gamePhase,
+      gamePhaseState,
+      selectedChannelId,
+      gameProgress,
+      myBoardContent,
+      sections,
+      privateMessages: trimmedPrivateMessages,
+      humanGameIdentity: humanGameIdentity || undefined,
+      savedAt: new Date().toISOString(),
+    };
+
+    try {
+      if (user?.id) {
+        saveGameRoomState(gameId, user.id, state).catch((e) =>
+          console.error("Error saving game room state to DB:", e)
+        );
+      }
+      localStorage.setItem(`gameRoom_${gameId}`, JSON.stringify(state));
+    } catch (e) {
+      console.error("Error saving game room state:", e);
+    }
+    // Fixed length: gameId, userId, isHydrated, saveTrigger only
+  }, [gameId, userId, isHydrated, saveTrigger]);
 
   const addMessage = useCallback(
     (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => {

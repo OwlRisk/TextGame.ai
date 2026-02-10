@@ -30,6 +30,7 @@ import {
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { getGameSessions, createGameSession, updateGameSession, deleteGameSession } from "@/lib/db";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
@@ -811,12 +812,46 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     return () => {};
   }, [customRules, selectedTemplate?.defaultRules, gameDocEditor, markdownToHtml, isRulesBeingEdited]);
 
-  // Load sessions from localStorage on mount
+  // Map DB row to GameSession
+  const rowToSession = useCallback((row: { id: string; title: string; game_name: string; template_id: string; host_id: string; player_count: number; custom_rules: string | null; conversation_state: string; messages: any; created_at: string; updated_at: string }): GameSession => {
+    const msgs = (row.messages || []).map((m: any, msgIndex: number) => ({
+      ...m,
+      id: m.id || `msg-${row.id}-${msgIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      timestamp: new Date(m.timestamp)
+    }));
+    return {
+      id: row.id,
+      title: row.title,
+      messages: msgs,
+      conversationState: (row.conversation_state || "greeting") as GameSession["conversationState"],
+      selectedTemplate: GAME_TEMPLATES.find((t) => t.id === row.template_id) ?? null,
+      playerCount: row.player_count ?? 0,
+      customRules: row.custom_rules ?? "",
+      gameName: row.game_name ?? "",
+      selectedHostId: row.host_id ?? getDefaultHost().id,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at)
+    };
+  }, []);
+
+  // Load sessions: from DB when logged in, else localStorage
   useEffect(() => {
+    if (user?.id) {
+      getGameSessions(user.id).then(({ data, error }) => {
+        if (error || !data?.length) {
+          setSessions([]);
+          createNewSession();
+          return;
+        }
+        const sessionsWithDates = data.map((row) => rowToSession(row));
+        setSessions(sessionsWithDates);
+        loadSession(sessionsWithDates[0].id, sessionsWithDates);
+      });
+      return;
+    }
     const savedSessions = localStorage.getItem("gameMasterSessions");
     if (savedSessions) {
       const parsed = JSON.parse(savedSessions);
-      // Convert date strings back to Date objects and ensure unique IDs
       const sessionsWithDates = parsed.map((s: any) => ({
         ...s,
         messages: (s.messages || []).map((m: any, msgIndex: number) => ({
@@ -827,33 +862,22 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         createdAt: new Date(s.createdAt),
         updatedAt: new Date(s.updatedAt)
       }));
-      
-      // Auto-cleanup: Keep only the most recent 30 sessions
       const MAX_SESSIONS = 30;
-      const sortedSessions = sessionsWithDates.sort((a: GameSession, b: GameSession) => 
+      const sortedSessions = sessionsWithDates.sort((a: GameSession, b: GameSession) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );
       const sessionsToKeep = sortedSessions.slice(0, MAX_SESSIONS);
-      
       if (sessionsToKeep.length < sessionsWithDates.length) {
         localStorage.setItem("gameMasterSessions", JSON.stringify(sessionsToKeep));
       }
-      
       setSessions(sessionsToKeep);
-      
-      // Load the most recent session
-      if (sessionsToKeep.length > 0) {
-        loadSession(sessionsToKeep[0].id, sessionsToKeep);
-      } else {
-        // Create first session
-        createNewSession();
-      }
+      if (sessionsToKeep.length > 0) loadSession(sessionsToKeep[0].id, sessionsToKeep);
+      else createNewSession();
     } else {
-      // Create first session
       createNewSession();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.id]);
 
   // Auto-save current session
   useEffect(() => {
@@ -866,12 +890,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     return () => clearTimeout(timeoutId);
   }, [messages, conversationState, selectedTemplate, playerCount, customRules, gameName, selectedHostId, currentSessionId]);
 
-  // Save current session to state and localStorage
-  const saveCurrentSession = () => {
+  // Save current session to state, localStorage, and DB (when logged in)
+  const saveCurrentSession = useCallback(() => {
     if (!currentSessionId) return;
 
     const sessionTitle = generateSessionTitle(selectedTemplate, playerCount, gameName);
-    
+
     const updatedSession: GameSession = {
       id: currentSessionId,
       title: sessionTitle,
@@ -882,37 +906,69 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       customRules: customRules,
       gameName: gameName,
       selectedHostId: selectedHostId,
-      createdAt: sessions.find(s => s.id === currentSessionId)?.createdAt || new Date(),
+      createdAt: sessions.find((s) => s.id === currentSessionId)?.createdAt ?? new Date(),
       updatedAt: new Date()
     };
 
-    setSessions(prev => {
-      const filtered = prev.filter(s => s.id !== currentSessionId);
-      const updated = [updatedSession, ...filtered];
-      localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
-      return updated;
-    });
-  };
+    const filtered = sessions.filter((s) => s.id !== currentSessionId);
+    const updated = [updatedSession, ...filtered];
+    setSessions(updated);
 
-  // Create new session
-  const createNewSession = () => {
-    // Use timestamp + random to ensure unique ID
-    const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    if (user?.id) {
+      const messagesForDb = messages.map((m) => ({
+        ...m,
+        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : (m.timestamp as unknown as string)
+      }));
+      updateGameSession(currentSessionId, {
+        title: sessionTitle,
+        game_name: gameName,
+        template_id: selectedTemplate?.id ?? "",
+        host_id: selectedHostId,
+        player_count: playerCount,
+        custom_rules: customRules || null,
+        conversation_state: conversationState,
+        messages: messagesForDb
+      }).then(({ error }) => {
+        if (error) console.error("[Game Master] Failed to save session to DB:", error);
+      });
+    }
+    try {
+      localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
+    } catch (_) {}
+  }, [
+    currentSessionId,
+    messages,
+    conversationState,
+    selectedTemplate,
+    playerCount,
+    customRules,
+    gameName,
+    selectedHostId,
+    sessions,
+    user?.id
+  ]);
+
+  // Create new session (UUID when saving to DB, else client id for localStorage-only)
+  const createNewSession = useCallback(() => {
+    const newSessionId =
+      user?.id && typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    const defaultHostId = getDefaultHostForTemplate(null).id;
     const newSession: GameSession = {
       id: newSessionId,
       title: "New Game Setup",
       messages: [],
       conversationState: "greeting",
       selectedTemplate: null,
-      playerCount: 0,
+      playerCount: 6,
       customRules: "",
       gameName: "",
-      selectedHostId: getDefaultHostForTemplate(selectedTemplate?.id || null).id,
+      selectedHostId: defaultHostId,
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
-    // Reset all state
     setCurrentSessionId(newSessionId);
     setMessages([]);
     setConversationState("greeting");
@@ -921,27 +977,45 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setPlayerCount(6);
     setCustomRules("");
     setGameName("");
-    setSelectedHostId(getDefaultHostForTemplate(null).id);
+    setSelectedHostId(defaultHostId);
 
-    setSessions(prev => {
-      // Remove any existing session with the same ID (shouldn't happen, but just in case)
-      const filtered = prev.filter(s => s.id !== newSessionId);
+    if (user?.id) {
+      createGameSession({
+        id: newSessionId,
+        user_id: user.id,
+        title: "New Game Setup",
+        game_name: "",
+        template_id: "",
+        host_id: defaultHostId,
+        player_count: 6,
+        custom_rules: "",
+        conversation_state: "greeting",
+        messages: []
+      }).then(({ error }) => {
+        if (error) console.error("[Game Master] Failed to create session in DB:", error);
+      });
+    }
+    setSessions((prev) => {
+      const filtered = prev.filter((s) => s.id !== newSessionId);
       const updated = [newSession, ...filtered];
-      localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
+      try {
+        localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
+      } catch (_) {}
       return updated;
     });
-  };
+  }, [user?.id]);
 
   const createSessionFromPreset = useCallback((preset: DiscoverPreset) => {
-    const resolvedTemplate = GAME_TEMPLATES.find(t => t.id === (preset.templateId || "custom")) || null;
+    const resolvedTemplate = GAME_TEMPLATES.find((t) => t.id === (preset.templateId || "custom")) ?? null;
     const nextPlayerCount = preset.playerCount ?? 0;
-    // Use preset rules if available, otherwise fall back to template default rules
     const nextRules = preset.rules?.trim() || resolvedTemplate?.defaultRules || "";
     const nextGameName = preset.name?.trim() || "";
-    const recommendedHost = getDefaultHostForTemplate(resolvedTemplate?.id || null);
+    const recommendedHost = getDefaultHostForTemplate(resolvedTemplate?.id ?? null);
 
-    // Use timestamp + random to ensure unique ID
-    const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    const newSessionId =
+      user?.id && typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const newSession: GameSession = {
       id: newSessionId,
       title: generateSessionTitle(resolvedTemplate, nextPlayerCount, nextGameName),
@@ -966,14 +1040,31 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setGameName(nextGameName);
     setSelectedHostId(recommendedHost.id);
 
-    setSessions(prev => {
-      // Remove any existing session with the same ID (shouldn't happen, but just in case)
-      const filtered = prev.filter(s => s.id !== newSessionId);
+    if (user?.id) {
+      createGameSession({
+        id: newSessionId,
+        user_id: user.id,
+        title: newSession.title,
+        game_name: nextGameName,
+        template_id: resolvedTemplate?.id ?? "",
+        host_id: recommendedHost.id,
+        player_count: nextPlayerCount,
+        custom_rules: nextRules,
+        conversation_state: "greeting",
+        messages: []
+      }).then(({ error }) => {
+        if (error) console.error("[Game Master] Failed to create session in DB:", error);
+      });
+    }
+    setSessions((prev) => {
+      const filtered = prev.filter((s) => s.id !== newSessionId);
       const updated = [newSession, ...filtered];
-      localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
+      try {
+        localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
+      } catch (_) {}
       return updated;
     });
-  }, []);
+  }, [user?.id]);
 
   // Track the last applied preset to avoid duplicate applications
   const lastAppliedPresetRef = useRef<string | null>(null);
@@ -1029,19 +1120,20 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   // Delete a session
   const deleteSession = (sessionId: string) => {
-    setSessions(prev => {
-      const filtered = prev.filter(s => s.id !== sessionId);
-      localStorage.setItem("gameMasterSessions", JSON.stringify(filtered));
-      
-      // If deleting current session, switch to another or create new
+    if (user?.id) {
+      deleteGameSession(sessionId, user.id).then(({ error }) => {
+        if (error) console.error("[Game Master] Failed to delete session from DB:", error);
+      });
+    }
+    setSessions((prev) => {
+      const filtered = prev.filter((s) => s.id !== sessionId);
+      try {
+        localStorage.setItem("gameMasterSessions", JSON.stringify(filtered));
+      } catch (_) {}
       if (sessionId === currentSessionId) {
-        if (filtered.length > 0) {
-          loadSession(filtered[0].id, filtered);
-        } else {
-          createNewSession();
-        }
+        if (filtered.length > 0) loadSession(filtered[0].id, filtered);
+        else createNewSession();
       }
-      
       return filtered;
     });
     toast.success("Session deleted");

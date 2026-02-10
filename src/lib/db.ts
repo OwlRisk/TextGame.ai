@@ -181,3 +181,42 @@ export async function deleteGame(gameId: string, userId: string) {
 
   return { error: null };
 }
+
+// Game room state (chat messages + players + phase, etc.) — one row per game per user
+type GameRoomStateInsert = Database['public']['Tables']['game_room_state']['Insert'];
+
+export async function getGameRoomState(gameId: string) {
+  const { data, error } = await supabase
+    .from('game_room_state')
+    .select('state')
+    .eq('game_id', gameId)
+    .maybeSingle();
+
+  if (error) {
+    logDbError('getGameRoomState', error);
+    return { data: null, error };
+  }
+  return { data: data?.state ?? null, error: null };
+}
+
+export async function saveGameRoomState(
+  gameId: string,
+  userId: string,
+  state: GameRoomStateInsert['state']
+) {
+  const { error } = await supabase.from('game_room_state').upsert(
+    {
+      game_id: gameId,
+      user_id: userId,
+      state: state ?? {},
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'game_id' }
+  );
+
+  if (error) {
+    logDbError('saveGameRoomState', error);
+    return { error };
+  }
+  return { error: null };
+}
