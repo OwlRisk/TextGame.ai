@@ -773,7 +773,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   }, []);
 
   useEffect(() => {
-    gameDocEditorRef.current = gameDocEditor;
+    (gameDocEditorRef as React.MutableRefObject<ReturnType<typeof useEditor> | null>).current = gameDocEditor;
   }, [gameDocEditor]);
 
   // Simple HTML → Markdown (Tiptap: <h1> → # xxx, <ul><li> → - xxx, <strong> → **xxx**)

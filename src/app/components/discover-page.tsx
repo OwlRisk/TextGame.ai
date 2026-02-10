@@ -518,7 +518,7 @@ export function getPresetById(presetId: string | null): DiscoverPreset | null {
       id: fromFeatured.id,
       name: fromFeatured.name,
       rules: fromFeatured.rules,
-      templateId: fromFeatured.templateId ?? "custom",
+      templateId: (fromFeatured.templateId ?? "custom") as DiscoverPreset["templateId"],
       playerCount: (fromFeatured as { playerCount?: number }).playerCount,
     };
   }
