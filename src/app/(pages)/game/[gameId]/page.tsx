@@ -356,11 +356,11 @@ Role assignment: You assign each player's role (including the human). When you a
 ASSIGN_ROLE: <player name> -> <role>
 Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: You -> <role>. Example: ASSIGN_ROLE: You -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).
 
-Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image instead of (or in addition to) text. To do so, output exactly these tags on their own lines (no other content inside the tags):
+Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image. Output exactly these tags on their own lines:
 <REPLY_TYPE>image</REPLY_TYPE>
-<IMAGE_PROMPT>one short DALL-E style image description in English (e.g. "a medieval village at dusk, fantasy art")</IMAGE_PROMPT>
+<IMAGE_PROMPT>detailed DALL-E image description in English: describe subject, lighting, mood, style, and composition (e.g. "A dramatic tarot card design, golden edges, mystical fog, candlelit atmosphere, rich colors, fantasy art style, no text")</IMAGE_PROMPT>
 <CAPTION>optional short caption for the image</CAPTION>
-Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
+Write IMAGE_PROMPT with enough detail (style, lighting, mood, composition) so the image looks rich and atmospheric; no text inside the image. After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
 
       const applyHostRoleAssignments = (content: string): string => {
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
@@ -619,14 +619,28 @@ Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you
     session?.access_token ?? null,
   ]);
 
+  const copyToClipboard = async (text: string): Promise<boolean> => {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return false;
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleShare = async () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    if (!session?.access_token) {
-      const url = `${origin}/game/${gameId}`;
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied (sign in to create a share link others can open)");
+    const directUrl = `${origin}/game/${gameId}`;
+    const showCopied = () => {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
+    };
+
+    if (!session?.access_token) {
+      const ok = await copyToClipboard(directUrl);
+      toast.success(ok ? "Link copied (sign in to create a share link others can open)" : "Copy link: " + directUrl);
+      showCopied();
       return;
     }
     try {
@@ -635,25 +649,20 @@ Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
       });
       if (!res.ok) {
-        const url = `${origin}/game/${gameId}`;
-        await navigator.clipboard.writeText(url);
-        toast.info("Game not found in cloud; direct link copied. Save the game first if you need a share link.");
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 2000);
+        const ok = await copyToClipboard(directUrl);
+        toast.info(ok ? "Game not found in cloud; direct link copied. Save the game first if you need a share link." : "Game not in cloud. Save first. Link: " + directUrl);
+        showCopied();
         return;
       }
       const data = (await res.json()) as { shareUrl: string };
-      await navigator.clipboard.writeText(data.shareUrl);
-      toast.success("Share link copied! Anyone with the link can view this game.");
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
+      const ok = await copyToClipboard(data.shareUrl ?? directUrl);
+      toast.success(ok ? "Share link copied! Anyone with the link can view this game." : "Share link: " + (data.shareUrl ?? directUrl));
+      showCopied();
     } catch (e) {
       console.error("Share failed", e);
-      const url = `${origin}/game/${gameId}`;
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard");
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
+      const ok = await copyToClipboard(directUrl);
+      toast.error(ok ? "Link copied to clipboard" : "Share failed. Link: " + directUrl);
+      showCopied();
     }
   };
 

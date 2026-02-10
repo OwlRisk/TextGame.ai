@@ -80,10 +80,11 @@ export function ChannelList({
       <div className="h-14 px-5 flex items-center justify-between border-b border-zinc-900/50 shadow-sm">
         <h2 className="font-semibold text-base text-white truncate">{gameName}</h2>
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           className={`h-8 focus-visible:ring-2 focus-visible:ring-amber-500/50 ${shareJustCopied ? "min-w-[5rem]" : "w-8 px-0"}`}
-          onClick={onShare}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShare(); }}
           title={shareJustCopied ? "Copied!" : "Copy share link"}
         >
           {shareJustCopied ? (
