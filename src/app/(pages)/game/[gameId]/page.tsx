@@ -619,8 +619,12 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error || "Failed to create share link");
+        const url = `${origin}/game/${gameId}`;
+        await navigator.clipboard.writeText(url);
+        toast.info("Game not found in cloud; direct link copied. Save the game first if you need a share link.");
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+        return;
       }
       const data = (await res.json()) as { shareUrl: string };
       await navigator.clipboard.writeText(data.shareUrl);
