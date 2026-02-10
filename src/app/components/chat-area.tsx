@@ -7,8 +7,9 @@ import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useVoiceInput } from "@/lib/voice";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
@@ -295,6 +296,8 @@ export function ChatArea({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceInput();
+  const { user } = useAuth();
+  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   const MIN_INPUT_HEIGHT = 40;
@@ -507,6 +510,17 @@ export function ChatArea({
                   <div className="flex gap-4">
                     <div className="relative flex-shrink-0" title={message.senderName}>
                       {(() => {
+                        const isCurrentUser = message.senderId === userId;
+                        if (isCurrentUser && userAvatarUrl) {
+                          return (
+                            <Avatar className="h-11 w-11 border-2 border-violet-500/20">
+                              <AvatarImage src={userAvatarUrl} alt="You" className="object-cover" />
+                              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xs font-semibold">
+                                YOU
+                              </AvatarFallback>
+                            </Avatar>
+                          );
+                        }
                         const player = messagePlayer;
                         const avatarColor = player?.avatar || message.senderAvatar;
                         const avatarProps = getAvatarPropsForPlayer(player);

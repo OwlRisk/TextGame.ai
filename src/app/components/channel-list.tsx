@@ -1,6 +1,8 @@
 import { Hash, Settings, Share2, Users, Home, Trash2 } from "lucide-react";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Separator } from "@/app/components/ui/separator";
 import {
@@ -63,6 +65,8 @@ export function ChannelList({
   gameUserDisplayName,
   gameId,
 }: ChannelListProps) {
+  const { user } = useAuth();
+  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = (gameUserDisplayName && gameUserDisplayName.trim()) || (userDisplayName && userDisplayName.trim()) ? (gameUserDisplayName || userDisplayName || "Player").trim() : "Player";
   const shortLabel = (displayName !== "Player") ? "You" : "#0001";
   const useGameAvatar = !!(gameUserDisplayName && gameUserDisplayName.trim() && gameId);
@@ -181,9 +185,14 @@ export function ChannelList({
               fallbackColor="#6366f1"
             />
           ) : (
-            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-semibold text-white">{displayName.substring(0, 2).toUpperCase()}</span>
-            </div>
+            <Avatar className="h-10 w-10 flex-shrink-0 border-2 border-white/10">
+              {userAvatarUrl ? (
+                <AvatarImage src={userAvatarUrl} alt={displayName} className="object-cover" />
+              ) : null}
+              <AvatarFallback className="bg-indigo-600 text-xs font-semibold text-white">
+                {displayName.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
           )}
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white truncate" title={displayName}>{displayName}</div>

@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { PlayerBoardData } from "@/app/components/player-board";
 import { Badge } from "@/app/components/ui/badge";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export interface Player {
   id: string;
@@ -143,6 +144,8 @@ function PlayerCard({
 }) {
   const useGameAvatarForHuman = !player.isAI && humanGameIdentity?.name && gameId;
   const isClickable = !!onOpenProfile;
+  const { user } = useAuth();
+  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   return (
     <div
       role={isClickable ? "button" : undefined}
@@ -164,6 +167,9 @@ function PlayerCard({
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
               }`}
             >
+              {userAvatarUrl ? (
+                <AvatarImage src={userAvatarUrl} alt={player.name} className="object-cover" />
+              ) : null}
               <AvatarFallback
                 className="text-sm font-semibold text-white"
                 style={{ backgroundColor: player.avatar }}

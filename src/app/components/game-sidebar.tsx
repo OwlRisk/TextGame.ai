@@ -229,9 +229,9 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
 
         <div className="w-10 h-0.5 bg-zinc-700 rounded-full my-2" />
 
-        {/* Game List - Only show when user is logged in */}
+        {/* Game List - Only show when user is logged in; min-h-0 让 flex 子项可收缩，避免把底部用户区挤掉 */}
         {user && (
-          <ScrollArea className="flex-1 w-full">
+          <ScrollArea className="flex-1 min-h-0 w-full">
             <div className="flex flex-col items-center gap-3 px-3">
               {games.map((game) => (
                 <ContextMenu key={game.id}>
@@ -340,8 +340,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           </Tooltip>
         )}
 
-        {/* User Profile - Bottom */}
-        <div className="mt-auto">
+        {/* User Profile - Bottom，固定不参与收缩，避免被游戏列表挤掉 */}
+        <div className="mt-auto flex-shrink-0">
           {loading ? (
             <div className="h-14 w-14 rounded-full bg-zinc-800 flex items-center justify-center">
               <Loader2 className="h-6 w-6 text-zinc-400 animate-spin" />
