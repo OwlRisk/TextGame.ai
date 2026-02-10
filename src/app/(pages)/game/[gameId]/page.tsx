@@ -358,9 +358,10 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
 
 Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image. Output exactly these tags on their own lines:
 <REPLY_TYPE>image</REPLY_TYPE>
+<IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
 <IMAGE_PROMPT>detailed DALL-E image description in English: describe subject, lighting, mood, style, and composition (e.g. "A dramatic tarot card design, golden edges, mystical fog, candlelit atmosphere, rich colors, fantasy art style, no text")</IMAGE_PROMPT>
 <CAPTION>optional short caption for the image</CAPTION>
-Write IMAGE_PROMPT with enough detail (style, lighting, mood, composition) so the image looks rich and atmospheric; no text inside the image. After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
+Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, character, full-body); landscape (wide, e.g. scene, map, horizon). Write IMAGE_PROMPT with enough detail so the image looks rich; no text inside the image. After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
 
       const applyHostRoleAssignments = (content: string): string => {
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
@@ -565,8 +566,8 @@ Write IMAGE_PROMPT with enough detail (style, lighting, mood, composition) so th
     ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
     : messages;
 
-  // AI-generated quick replies (max 3). Only fetch when round is complete (not while Host/AI are replying)
-  // so suggestions stay stable until the user has replied; refetch when isRoundInProgress becomes false.
+  // Quick reply: only update when it's "user's turn" (round just ended, last message from Host/AI).
+  // Do not refetch when the user just sent a message — keep current suggestions until Host/AI reply again.
   useEffect(() => {
     if (!currentGame?.config || !isGameChannel) {
       setQuickRepliesLoading(false);
@@ -579,6 +580,11 @@ Write IMAGE_PROMPT with enough detail (style, lighting, mood, composition) so th
       return;
     }
     if (isRoundInProgress) {
+      setQuickRepliesLoading(false);
+      return;
+    }
+    const lastMessage = messagesForChannel[messagesForChannel.length - 1];
+    if (lastMessage?.senderId === userId) {
       setQuickRepliesLoading(false);
       return;
     }
@@ -615,6 +621,7 @@ Write IMAGE_PROMPT with enough detail (style, lighting, mood, composition) so th
     currentGame?.id ?? null,
     gamePhase,
     isRoundInProgress,
+    userId,
     messagesForChannel.length,
     session?.access_token ?? null,
   ]);
