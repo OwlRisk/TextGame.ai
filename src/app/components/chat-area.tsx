@@ -255,7 +255,7 @@ interface ChatAreaProps {
   lastFailedSendContent?: string | null;
   /** Call to retry sending the last failed message */
   onRetryLastMessage?: () => void;
-  /** True while Host + AI are replying (game room); keeps send disabled and shows "Host & AI 回复中…" */
+  /** True while Host + AI are replying (game room); keeps send disabled and shows "Host & AI replying…" */
   isRoundInProgress?: boolean;
 }
 
@@ -817,7 +817,7 @@ export function ChatArea({
                   if (canSend) handleSend();
                 }
               }}
-              placeholder={isRoundInProgress ? "Host & AI 回复中…" : `Message #${channelName}`}
+              placeholder={isRoundInProgress ? "Host & AI replying…" : `Message #${channelName}`}
               className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
               style={{ 
                 minHeight: `${MIN_INPUT_HEIGHT}px`, 
@@ -842,7 +842,7 @@ export function ChatArea({
               disabled={!input.trim() || sendDisabled}
               size="icon"
               className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-              title={isRoundInProgress ? "Host & AI 回复中…" : isSending ? "Sending…" : "Send"}
+              title={isRoundInProgress ? "Host & AI replying…" : isSending ? "Sending…" : "Send"}
             >
               {(isSending || isRoundInProgress) ? (
                 <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

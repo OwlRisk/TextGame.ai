@@ -199,7 +199,7 @@ export function ChannelList({
             <div className="text-xs text-zinc-400">{shortLabel}</div>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" onClick={onSettings}>
+        <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" onClick={onSettings} title="Coming soon">
           <Settings className="h-4 w-4 text-zinc-400" />
         </Button>
       </div>

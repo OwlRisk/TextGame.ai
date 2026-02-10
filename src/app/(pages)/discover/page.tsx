@@ -21,11 +21,11 @@ export default function DiscoverPageRoute() {
 
   const handleCreateGame = (preset: DiscoverPreset) => {
     if (!user && !loading) {
-      toast.info("Please sign in to create a game");
-      router.push("/signin");
+      const returnUrl = `/create?preset=${preset.id}`;
+      router.push(`/signin?returnUrl=${encodeURIComponent(returnUrl)}`);
+      toast.info("Sign in to create this game");
       return;
     }
-    // Navigate to create page with preset data
     router.push(`/create?preset=${preset.id}`);
   };
 

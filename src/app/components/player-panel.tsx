@@ -157,7 +157,7 @@ function PlayerCard({
           ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
           : "hover:bg-zinc-700/40 hover:shadow-sm"
       } ${isClickable ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-850" : ""}`}
-      title={player.isAI && (player.personality || player.background) ? "点击查看性格与背景" : isClickable ? "点击查看资料" : undefined}
+      title={player.isAI && (player.personality || player.background) ? "View personality & background" : isClickable ? "View profile" : undefined}
     >
       <div className="flex items-start gap-2.5">
         <div className="relative flex-shrink-0">

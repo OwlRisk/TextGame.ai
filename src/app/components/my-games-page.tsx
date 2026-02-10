@@ -27,16 +27,6 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
   const activeGames = games.filter(g => g.isActive);
   const completedGames = games.filter(g => !g.isActive);
   
-  // Mock statistics (in real app these would come from database)
-  const getGameStats = (gameId: string) => {
-    return {
-      timesPlayed: Math.floor(Math.random() * 50) + 1,
-      totalPlayers: Math.floor(Math.random() * 100) + 10,
-      rating: (Math.random() * 2 + 3).toFixed(1), // 3.0-5.0
-      lastPlayed: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // Random within last week
-    };
-  };
-  
   const handleDuplicateGame = (game: Game, e: React.MouseEvent) => {
     e.stopPropagation();
     toast.success(`"${game.name}" duplicated! Opening Game Master...`);
@@ -138,9 +128,7 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {activeGames.map((game) => {
-                      const stats = getGameStats(game.id);
-                      return (
+                    {activeGames.map((game) => (
                         <div
                           key={game.id}
                           className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-7 hover:border-purple-500/30 transition-all cursor-pointer"
@@ -168,20 +156,20 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
 
                           <h3 className="text-lg font-bold text-white mb-3">{game.name}</h3>
                           
-                          {/* Stats Row */}
+                          {/* Stats: show — until real data is available */}
                           <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-white/10">
                             <div className="flex items-center gap-2">
                               <TrendingUp className="h-4 w-4 text-violet-400" />
                               <div>
                                 <div className="text-xs text-zinc-500">Played</div>
-                                <div className="text-sm font-bold text-white">{stats.timesPlayed}x</div>
+                                <div className="text-sm font-bold text-white">—</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                               <div>
                                 <div className="text-xs text-zinc-500">Rating</div>
-                                <div className="text-sm font-bold text-white">{stats.rating}/5.0</div>
+                                <div className="text-sm font-bold text-white">—</div>
                               </div>
                             </div>
                           </div>
@@ -235,8 +223,7 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
                             </Button>
                           )}
                         </div>
-                      );
-                    })}
+                    ))}
                   </div>
                 </div>
               )}

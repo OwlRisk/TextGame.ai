@@ -2189,7 +2189,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       {/* Draggable divider: drag to resize chat vs preview */}
       <div
         role="separator"
-        aria-label="调整规则预览宽度"
+        aria-label="Resize rules preview"
         onMouseDown={(e) => {
           e.preventDefault();
           setIsDraggingSplit(true);
@@ -2218,10 +2218,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     </div>
                   )}
                 </div>
+                {(() => {
+                  const isRulesEmpty = !customRules || !customRules.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
+                  return (
+                    <>
                 <Button
                   onClick={async () => {
-                    if (!customRules || customRules.trim() === "" || customRules === "Custom game rules will be defined through conversation") {
-                      toast.error("Please add some document content first");
+                    if (isRulesEmpty) {
                       return;
                     }
                     setIsStartingGame(true);
@@ -2324,11 +2327,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       setIsStartingGame(false);
                     }
                   }}
-                  disabled={isRulesBeingEdited || isStartingGame}
+                  disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
                   className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isStartingGame ? "Starting…" : "Start Game"}
                 </Button>
+                {isRulesEmpty && (
+                  <p className="w-full text-xs text-zinc-500 mt-1.5 text-right">Chat with GM to generate rules first.</p>
+                )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
