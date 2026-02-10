@@ -360,7 +360,7 @@ Optional — Reply with an image: When a scene, card, map, or moment would be be
 <REPLY_TYPE>image</REPLY_TYPE>
 <IMAGE_PROMPT>one short DALL-E style image description in English (e.g. "a medieval village at dusk, fantasy art")</IMAGE_PROMPT>
 <CAPTION>optional short caption for the image</CAPTION>
-Keep IMAGE_PROMPT visual and short; no text inside the image. Use sparingly (e.g. revealing a card, showing a location). After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
+Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
 
       const applyHostRoleAssignments = (content: string): string => {
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;

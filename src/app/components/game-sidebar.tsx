@@ -280,20 +280,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     </Tooltip>
                   </ContextMenuTrigger>
                   <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
-                    {onUpdateGame && (
-                      <ContextMenuItem
-                        className="cursor-pointer focus:bg-zinc-800"
-                        onClick={() => handleGenerateIcon(game)}
-                        disabled={iconGeneratingId === game.id}
-                      >
-                        {iconGeneratingId === game.id ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="mr-2 h-4 w-4 text-amber-400" />
-                        )}
-                        Generate icon with AI
-                      </ContextMenuItem>
-                    )}
                     <ContextMenuItem 
                       className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                       onClick={() => {
