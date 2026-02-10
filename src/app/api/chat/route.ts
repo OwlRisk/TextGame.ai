@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
       stream: false,
     });
 
-    const response = completion.choices[0]?.message?.content?.trim() ?? '';
+    let response = completion.choices[0]?.message?.content?.trim() ?? '';
 
     if (!response) {
       return NextResponse.json(
@@ -230,9 +230,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let imageUrl: string | undefined;
+
+    const replyTypeMatch = response.match(/<REPLY_TYPE>\s*image\s*<\/REPLY_TYPE>/i);
+    const imagePromptMatch = response.match(/<IMAGE_PROMPT>([\s\S]*?)<\/IMAGE_PROMPT>/i);
+    const captionMatch = response.match(/<CAPTION>([\s\S]*?)<\/CAPTION>/i);
+
+    if (replyTypeMatch && imagePromptMatch) {
+      const imagePrompt = imagePromptMatch[1].trim().slice(0, 900);
+      if (imagePrompt) {
+        try {
+          const imgRes = await openai.images.generate({
+            model: 'dall-e-2',
+            prompt: imagePrompt,
+            size: '256x256',
+            response_format: 'b64_json',
+            n: 1,
+          });
+          const b64 = imgRes.data?.[0]?.b64_json;
+          if (b64) imageUrl = `data:image/png;base64,${b64}`;
+        } catch (imgErr: unknown) {
+          console.error('[chat] Image generation failed:', imgErr);
+        }
+      }
+      response = response
+        .replace(/<REPLY_TYPE>\s*[\s\S]*?<\/REPLY_TYPE>/gi, '')
+        .replace(/<IMAGE_PROMPT>[\s\S]*?<\/IMAGE_PROMPT>/gi, '')
+        .replace(/<CAPTION>[\s\S]*?<\/CAPTION>/gi, '')
+        .replace(/\n{2,}/g, '\n\n')
+        .trim();
+      if (captionMatch && captionMatch[1].trim()) response = captionMatch[1].trim();
+    }
+
     return NextResponse.json({ 
       message: response,
-      usage: completion.usage 
+      usage: completion.usage,
+      ...(imageUrl && { imageUrl }),
     });
 
   } catch (error: any) {

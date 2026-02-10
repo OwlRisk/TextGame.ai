@@ -6,7 +6,7 @@ import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, Chev
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useVoiceInput } from "@/lib/voice";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -216,6 +216,8 @@ export interface Message {
   isPrivate?: boolean; // True for private messages from Host to this player only
   /** Which game room/channel this message belongs to (e.g. general, werewolves-only). Omitted = legacy "game-room". */
   channelId?: string;
+  /** Optional image URL (e.g. Host chose to reply with an image). */
+  imageUrl?: string;
 }
 
 interface ChatAreaProps {
@@ -257,6 +259,10 @@ interface ChatAreaProps {
   onRetryLastMessage?: () => void;
   /** True while Host + AI are replying (game room); keeps send disabled and shows "Host & AI replying…" */
   isRoundInProgress?: boolean;
+  /** Persisted avatar URLs (key = "name|type") for cross-device; pass to GeneratedAvatar as initialUrl. */
+  avatarImageUrls?: Record<string, string>;
+  /** Call when an avatar URL is loaded so the room can persist it. */
+  onAvatarUrlLoaded?: (key: string, url: string) => void;
 }
 
 export function ChatArea({ 
@@ -288,6 +294,8 @@ export function ChatArea({
   lastFailedSendContent,
   onRetryLastMessage,
   isRoundInProgress = false,
+  avatarImageUrls = {},
+  onAvatarUrlLoaded,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [quickReplyOpen, setQuickReplyOpen] = useState(true);
@@ -299,7 +307,9 @@ export function ChatArea({
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const humanPlayer = players.find((p) => p.id === userId);
-  const useGeneratedAvatarForUser = !!(gameId && humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You");
+  // 统一风格：在游戏房间内用户玩家也使用与 AI Host/玩家相同的生成头像（动漫风）
+  const useGeneratedAvatarForUser = !!(gameId && humanPlayer);
+  const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
   const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   const MIN_INPUT_HEIGHT = 40;
@@ -517,10 +527,12 @@ export function ChatArea({
                           if (useGeneratedAvatarForUser && humanPlayer) {
                             return (
                               <GeneratedAvatar
-                                name={humanPlayer.name}
+                                name={userAvatarName}
                                 type="player"
                                 gameId={gameId}
                                 enabled={true}
+                                initialUrl={avatarImageUrls[avatarCacheKey(userAvatarName, "player")]}
+                                onAvatarLoaded={onAvatarUrlLoaded}
                                 className="h-11 w-11 border-2 border-violet-500/20"
                                 fallbackColor={humanPlayer.avatar}
                               />
@@ -544,6 +556,8 @@ export function ChatArea({
                             name={avatarProps.name || message.senderName}
                             gameId={gameId}
                             enabled={true}
+                            initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || message.senderName, avatarProps.type)]}
+                            onAvatarLoaded={onAvatarUrlLoaded}
                             className="h-11 w-11"
                             fallbackColor={avatarColor}
                           />
@@ -578,7 +592,13 @@ export function ChatArea({
                       <div
                         className={`text-zinc-100 text-sm break-words ${isHost ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : "leading-relaxed"}`}
                       >
-                        {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">(No content)</span>}
+                        {message.imageUrl && (
+                          <div className="my-2 rounded-lg overflow-hidden max-w-[280px] border border-white/10">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
+                          </div>
+                        )}
+                        {message.content?.trim() ? formatMessage(message.content) : !message.imageUrl ? <span className="italic text-zinc-500">(No content)</span> : null}
                         {message.isStreaming && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
@@ -589,7 +609,13 @@ export function ChatArea({
                   <div className="flex gap-4">
                     <div className="w-11 flex-shrink-0" />
                     <div className={`flex-1 text-zinc-100 text-sm leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : ""}`}>
-                      {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-zinc-500">(No content)</span>}
+                      {message.imageUrl && (
+                        <div className="my-2 rounded-lg overflow-hidden max-w-[280px] border border-white/10">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
+                        </div>
+                      )}
+                      {message.content?.trim() ? formatMessage(message.content) : !message.imageUrl ? <span className="italic text-zinc-500">(No content)</span> : null}
                       {message.isStreaming && (
                         <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}
@@ -607,10 +633,12 @@ export function ChatArea({
               {typingUsers[0].name === "You" ? (
                 useGeneratedAvatarForUser && humanPlayer ? (
                   <GeneratedAvatar
-                    name={humanPlayer.name}
+                    name={userAvatarName}
                     type="player"
                     gameId={gameId}
                     enabled={true}
+                    initialUrl={avatarImageUrls[avatarCacheKey(userAvatarName, "player")]}
+                    onAvatarLoaded={onAvatarUrlLoaded}
                     className="h-10 w-10 flex-shrink-0 border-2 border-violet-500/20"
                     fallbackColor={typingUsers[0].avatar || humanPlayer.avatar}
                   />
@@ -637,6 +665,8 @@ export function ChatArea({
                       name={avatarProps.name || typingUsers[0].name}
                       gameId={gameId}
                       enabled={true}
+                      initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || typingUsers[0].name, avatarProps.type)]}
+                      onAvatarLoaded={onAvatarUrlLoaded}
                       className="h-10 w-10 flex-shrink-0"
                       fallbackColor={avatarColor}
                     />

@@ -85,6 +85,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setCurrentSpeakerId,
     humanGameIdentity,
     setHumanGameIdentity,
+    avatarImageUrls,
+    onAvatarUrlLoaded,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -203,6 +205,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       ? "#7c3aed"
       : config.template === "undercover"
       ? "#0ea5e9"
+      : config.template === "tarot"
+      ? "#b45309"
       : "#ec4899");
     const hostName = (config.generatedHost?.name || "Game Master").trim() || "Game Master";
     const hostPersonality = config.generatedHost?.personality || "A mysterious game master";
@@ -264,7 +268,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
     const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
-    const hostGreeting = `Hey everyone, ${hostName} here. Rules are in the Rules section—ready when you are, let's go!`;
+    const hostGreeting = config.template === "tarot"
+      ? `Welcome. I'm ${hostName}, your reader today. Take a moment, then share a question or an area of your life you'd like insight on—or say you'd like a general reading. The cards are ready when you are.`
+      : `Hey everyone, ${hostName} here. Rules are in the Rules section—ready when you are, let's go!`;
     addMessage(
       {
         senderId: "gm-1",
@@ -348,7 +354,13 @@ ${currentGame?.config?.rules || "No specific rules defined."}
 
 Role assignment: You assign each player's role (including the human). When you assign or reveal a role, add one line per assignment (no other text on that line):
 ASSIGN_ROLE: <player name> -> <role>
-Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: You -> <role>. Example: ASSIGN_ROLE: You -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).`;
+Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: You -> <role>. Example: ASSIGN_ROLE: You -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).
+
+Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image instead of (or in addition to) text. To do so, output exactly these tags on their own lines (no other content inside the tags):
+<REPLY_TYPE>image</REPLY_TYPE>
+<IMAGE_PROMPT>one short DALL-E style image description in English (e.g. "a medieval village at dusk, fantasy art")</IMAGE_PROMPT>
+<CAPTION>optional short caption for the image</CAPTION>
+Keep IMAGE_PROMPT visual and short; no text inside the image. Use sparingly (e.g. revealing a card, showing a location). After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
 
       const applyHostRoleAssignments = (content: string): string => {
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
@@ -382,7 +394,7 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
         return keptLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
       };
 
-      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null }> => {
+      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null; imageUrl?: string }> => {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
@@ -411,7 +423,7 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
             nextSpeakerPlayer = player ?? null;
           }
         }
-        return { hostContent, who, nextSpeakerPlayer };
+        return { hostContent, who, nextSpeakerPlayer, imageUrl: data.imageUrl };
       };
 
       const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>): Promise<string | null> => {
@@ -437,8 +449,8 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
       const firstUserContent = `Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, nextSpeakerPlayer } = await callHost(firstUserContent);
-      if (!hostContent) {
+      let { hostContent, who, nextSpeakerPlayer, imageUrl: firstImageUrl } = await callHost(firstUserContent);
+      if (!hostContent && !firstImageUrl) {
         setIsRoundInProgress(false);
         return;
       }
@@ -448,7 +460,7 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
       else if (who?.toLowerCase() === "everyone") setCurrentSpeakerId(null);
       else if (nextSpeakerPlayer) setCurrentSpeakerId(nextSpeakerPlayer.id);
 
-      addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: hostContent, isAI: true }, channelId);
+      addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: hostContent || " ", isAI: true, ...(firstImageUrl && { imageUrl: firstImageUrl }) }, channelId);
       await hostPace();
       let recentForNext = [
         ...channelMessagesForRecent.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
@@ -490,10 +502,10 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
       for (let r = 0; r < MAX_CONTINUATION_ROUNDS; r++) {
         const continuationUserContent = `The discussion continues. Latest messages:\n${recentForNext.slice(-14).map((m) => `${m.senderName}: ${m.content}`).join("\n")}\n\nAs host, briefly respond to what was just said (or move the phase). Then assign NEXT_SPEAKER. Prefer an AI name so the discussion keeps going; use NEXT_SPEAKER: You only when it's a natural moment for the human to speak.`;
         const next = await callHost(continuationUserContent);
-        if (!next.hostContent) break;
+        if (!next.hostContent && !next.imageUrl) break;
         const nextWho = next.who?.toLowerCase();
-        const nextHostContent = applyHostRoleAssignments(next.hostContent);
-        addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: nextHostContent, isAI: true }, channelId);
+        const nextHostContent = applyHostRoleAssignments(next.hostContent || "");
+        addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: nextHostContent || " ", isAI: true, ...(next.imageUrl && { imageUrl: next.imageUrl }) }, channelId);
         await hostPace();
         recentForNext = [...recentForNext, { senderName: gmName, content: nextHostContent }];
         if (nextWho === "you") {
@@ -748,11 +760,19 @@ Use the exact player name from the list above; for the human player use: ASSIGN_
             lastFailedSendContent={lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
             isRoundInProgress={isRoundInProgress}
+            avatarImageUrls={avatarImageUrls}
+            onAvatarUrlLoaded={onAvatarUrlLoaded}
           />
         ) : null}
       </div>
 
-      <PlayerPanel players={players} gameId={gameId} humanGameIdentity={humanGameIdentity} />
+      <PlayerPanel
+        players={players}
+        gameId={gameId}
+        humanGameIdentity={humanGameIdentity}
+        avatarImageUrls={avatarImageUrls}
+        onAvatarUrlLoaded={onAvatarUrlLoaded}
+      />
 
       <Toaster
         position="top-right"
