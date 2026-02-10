@@ -100,6 +100,7 @@ export interface Database {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          share_token: string | null;
         };
         Insert: {
           id?: string;
@@ -111,6 +112,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          share_token?: string | null;
         };
         Update: {
           id?: string;
@@ -120,6 +122,30 @@ export interface Database {
           color?: string;
           config?: any;
           is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          share_token?: string | null;
+        };
+      };
+      game_drafts: {
+        Row: {
+          id: string;
+          user_id: string;
+          config: any; // JSON GameConfig
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          config?: any;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          config?: any;
           created_at?: string;
           updated_at?: string;
         };

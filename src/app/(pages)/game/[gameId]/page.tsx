@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
@@ -17,10 +17,59 @@ import { toast } from "sonner";
 const HOST_PACE_MS = 2200;
 const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
 
+/** Number of AI players to reply right after the host's initial greeting */
+const INITIAL_PLAYER_REPLIES = 3;
+
+/** After host greeting, have a few AI players reply so the room feels active from the start. */
+async function seedInitialPlayerReplies(
+  opts: {
+    channelId: string;
+    hostName: string;
+    hostContent: string;
+    aiPlayers: Array<{ id: string; name: string; avatar?: string; role?: string; personality?: string; background?: string }>;
+    gameName: string;
+    rules?: string;
+    addMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; content: string; isAI: boolean }, channelId: string) => void;
+    sessionToken: string | undefined;
+  }
+) {
+  const { channelId, hostName, hostContent, aiPlayers, gameName, rules, addMessage, sessionToken } = opts;
+  if (!sessionToken || aiPlayers.length === 0) return;
+  const toReply = aiPlayers.slice(0, INITIAL_PLAYER_REPLIES);
+  const recent = [{ senderName: hostName, content: hostContent }];
+  for (const player of toReply) {
+    try {
+      const res = await fetch("/api/chat/player-speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({
+          gameName,
+          rules: rules ?? "",
+          player: { name: player.name, role: player.role, personality: player.personality, background: player.background },
+          recentMessages: recent,
+        }),
+      });
+      if (!res.ok) continue;
+      const data = (await res.json()) as { message?: string };
+      const text = (data.message ?? "").trim();
+      if (text) {
+        addMessage(
+          { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", content: text, isAI: true },
+          channelId
+        );
+        recent.push({ senderName: player.name, content: text });
+        await hostPace();
+      }
+    } catch (e) {
+      console.warn("[seedInitialReplies]", e);
+    }
+  }
+}
+
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   const { session } = useAuth();
-  const { games, selectedGameId, selectGame, updateGame, gamesLoading } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame, addGame, gamesLoading } = useGameContext();
   const {
     messages,
     players,
@@ -53,6 +102,31 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   useEffect(() => {
     selectGame(gameId);
   }, [gameId, selectGame]);
+
+  // If game is not in my list but has a share link, load it so "Open in GameMaster" from /play/[token] works
+  const [sharedLoadPending, setSharedLoadPending] = useState(false);
+  const sharedLoadTriedRef = useRef(false);
+  useEffect(() => {
+    if (gamesLoading || currentGame || !gameId || sharedLoadTriedRef.current) return;
+    sharedLoadTriedRef.current = true;
+    setSharedLoadPending(true);
+    fetch(`/api/games/${gameId}/public`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((row) => {
+        if (row?.id) {
+          addGame({
+            id: row.id,
+            name: row.name,
+            icon: row.icon,
+            color: row.color,
+            config: row.config ?? {},
+            isActive: true,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setSharedLoadPending(false));
+  }, [gamesLoading, currentGame, gameId, addGame]);
 
   // When game has GM-defined channels and context still has legacy "game-room", switch to first channel
   useEffect(() => {
@@ -175,12 +249,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     });
 
     const userName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "You";
-    // Create user player (use userId so host-assigned "NEXT_SPEAKER: You" enables this player)
+    // Create user player (use userId so host-assigned "NEXT_SPEAKER: You" enables this player). Role is left unset; Host assigns it via ASSIGN_ROLE in a message.
     const userPlayer = {
       id: userId,
       name: userName,
       avatar: "#6366f1",
-      role: config.template === "werewolf" ? "Villager" : "Civilian",
+      role: undefined as string | undefined,
       stats: config.template === "werewolf" || config.template === "mafia" ? { Status: "Alive" } : undefined,
       isAI: false,
       isMuted: false,
@@ -190,12 +264,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
     const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
+    const hostGreeting = `Hey everyone, ${hostName} here. Rules are in the Rules section—ready when you are, let's go!`;
     addMessage(
       {
         senderId: "gm-1",
         senderName: hostName,
         senderAvatar: hostColor,
-        content: `Hey everyone, ${hostName} here. Rules are in the Rules section—ready when you are, let's go!`,
+        content: hostGreeting,
         isAI: true,
       },
       defaultChannelId
@@ -204,6 +279,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     // No speaker assigned yet: anyone can speak until host assigns with NEXT_SPEAKER in their reply
     setCurrentSpeakerId(null);
     setGamePhase("intro");
+
+    // Let a few AI players reply to the host so the room feels active from the start
+    seedInitialPlayerReplies({
+      channelId: defaultChannelId,
+      hostName,
+      hostContent: hostGreeting,
+      aiPlayers,
+      gameName: currentGame.name,
+      rules: config.rules,
+      addMessage,
+      sessionToken: session?.access_token,
+    }).catch((e) => console.warn("Initial player replies failed", e));
   };
 
   const handleSendMessage = async (content: string) => {
@@ -257,7 +344,43 @@ All non-host player names (use exactly as written): ${players.filter((p) => !p.i
 CRITICAL — Keep the discussion going among players: Most of the time assign an AI to speak (NEXT_SPEAKER: <AI name>) so the conversation flows without always waiting for the human. Only occasionally use NEXT_SPEAKER: You to give the human player a turn. Rotate among AI players so different names speak; do NOT keep choosing the same 1–2. Prefer NEXT_SPEAKER: <an AI who has spoken less recently>. When someone suggests a specific person, prefer that choice when appropriate.
 
 Game Rules (do not modify, only enforce):
-${currentGame?.config?.rules || "No specific rules defined."}`;
+${currentGame?.config?.rules || "No specific rules defined."}
+
+Role assignment: You assign each player's role (including the human). When you assign or reveal a role, add one line per assignment (no other text on that line):
+ASSIGN_ROLE: <player name> -> <role>
+Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: You -> <role>. Example: ASSIGN_ROLE: You -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).`;
+
+      const applyHostRoleAssignments = (content: string): string => {
+        const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
+        const updates: { playerId: string; role: string }[] = [];
+        const lines = content.split(/\r?\n/);
+        const keptLines: string[] = [];
+        for (const line of lines) {
+          const match = line.match(assignLineRegex);
+          if (match) {
+            const namePart = match[1].trim();
+            const rolePart = match[2].trim();
+            if (!rolePart) continue;
+            const isYou = namePart.toLowerCase() === "you";
+            const player = isYou
+              ? players.find((p) => p.id === userId)
+              : players.find((p) => p.name === namePart || (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart));
+            const targetId = isYou ? userId : player?.id;
+            if (targetId) updates.push({ playerId: targetId, role: rolePart });
+          } else {
+            keptLines.push(line);
+          }
+        }
+        if (updates.length > 0) {
+          setPlayers((prev) =>
+            prev.map((p) => {
+              const u = updates.find((r) => r.playerId === p.id);
+              return u ? { ...p, role: u.role } : p;
+            })
+          );
+        }
+        return keptLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
+      };
 
       const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null }> => {
         const res = await fetch("/api/chat", {
@@ -319,6 +442,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
         setIsRoundInProgress(false);
         return;
       }
+      hostContent = applyHostRoleAssignments(hostContent);
 
       if (who?.toLowerCase() === "you") setCurrentSpeakerId(userId);
       else if (who?.toLowerCase() === "everyone") setCurrentSpeakerId(null);
@@ -368,9 +492,10 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
         const next = await callHost(continuationUserContent);
         if (!next.hostContent) break;
         const nextWho = next.who?.toLowerCase();
-        addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: next.hostContent, isAI: true }, channelId);
+        const nextHostContent = applyHostRoleAssignments(next.hostContent);
+        addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: nextHostContent, isAI: true }, channelId);
         await hostPace();
-        recentForNext = [...recentForNext, { senderName: gmName, content: next.hostContent }];
+        recentForNext = [...recentForNext, { senderName: gmName, content: nextHostContent }];
         if (nextWho === "you") {
           setCurrentSpeakerId(userId);
           break;
@@ -478,19 +603,45 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
     session?.access_token ?? null,
   ]);
 
-  const handleShare = () => {
-    const url = typeof window !== "undefined" ? `${window.location.origin}/game/${gameId}` : "";
-    navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard");
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2000);
+  const handleShare = async () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    if (!session?.access_token) {
+      const url = `${origin}/game/${gameId}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied (sign in to create a share link others can open)");
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/games/${gameId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || "Failed to create share link");
+      }
+      const data = (await res.json()) as { shareUrl: string };
+      await navigator.clipboard.writeText(data.shareUrl);
+      toast.success("Share link copied! Anyone with the link can view this game.");
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (e) {
+      console.error("Share failed", e);
+      const url = `${origin}/game/${gameId}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard");
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
   };
 
   if (!currentGame) {
     return (
       <div className="h-screen flex items-center justify-center bg-zinc-900 text-white">
         <div className="text-center">
-          {gamesLoading ? (
+          {gamesLoading || sharedLoadPending ? (
             <>
               <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-violet-500 border-t-transparent mb-4" aria-hidden />
               <p className="text-zinc-400">Loading game…</p>

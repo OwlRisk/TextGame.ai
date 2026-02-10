@@ -220,3 +220,65 @@ export async function saveGameRoomState(
   }
   return { error: null };
 }
+
+// Game drafts (saved configs not yet created as games)
+type GameDraftInsert = Database['public']['Tables']['game_drafts']['Insert'];
+type GameDraftUpdate = Database['public']['Tables']['game_drafts']['Update'];
+
+export async function getDrafts(userId: string) {
+  const { data, error } = await supabase
+    .from('game_drafts')
+    .select('*')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    logDbError('getDrafts', error);
+    return { data: null, error };
+  }
+  return { data, error: null };
+}
+
+export async function createDraft(userId: string, config: GameDraftInsert['config']) {
+  const { data, error } = await supabase
+    .from('game_drafts')
+    .insert({ user_id: userId, config: config ?? {} })
+    .select()
+    .single();
+
+  if (error) {
+    logDbError('createDraft', error);
+    return { data: null, error };
+  }
+  return { data, error: null };
+}
+
+export async function updateDraft(draftId: string, userId: string, config: GameDraftUpdate['config']) {
+  const { data, error } = await supabase
+    .from('game_drafts')
+    .update({ config: config ?? {}, updated_at: new Date().toISOString() })
+    .eq('id', draftId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    logDbError('updateDraft', error);
+    return { data: null, error };
+  }
+  return { data, error: null };
+}
+
+export async function deleteDraft(draftId: string, userId: string) {
+  const { error } = await supabase
+    .from('game_drafts')
+    .delete()
+    .eq('id', draftId)
+    .eq('user_id', userId);
+
+  if (error) {
+    logDbError('deleteDraft', error);
+    return { error };
+  }
+  return { error: null };
+}

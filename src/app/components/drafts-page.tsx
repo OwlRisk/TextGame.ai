@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -16,6 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { getDrafts, createDraft, deleteDraft } from "@/lib/db";
 
 export interface GameDraft {
   id: string;
@@ -29,25 +31,55 @@ interface DraftsPageProps {
   onCreateFromDraft: (config: GameConfig) => void;
 }
 
+function rowToDraft(row: { id: string; config: unknown; created_at: string; updated_at: string }): GameDraft {
+  return {
+    id: row.id,
+    config: row.config as GameConfig,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  };
+}
+
 export function DraftsPage({ onEditDraft, onCreateFromDraft }: DraftsPageProps) {
+  const { user } = useAuth();
   const [drafts, setDrafts] = useState<GameDraft[]>([]);
+  const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
 
-  // Load drafts from localStorage
-  useEffect(() => {
-    const savedDrafts = localStorage.getItem("gameDrafts");
-    if (savedDrafts) {
-      const parsed = JSON.parse(savedDrafts);
-      // Convert date strings back to Date objects
-      const draftsWithDates = parsed.map((draft: any) => ({
-        ...draft,
-        createdAt: new Date(draft.createdAt),
-        updatedAt: new Date(draft.updatedAt),
-      }));
-      setDrafts(draftsWithDates);
+  const loadDrafts = useCallback(() => {
+    if (user?.id) {
+      setLoading(true);
+      getDrafts(user.id).then(({ data, error }) => {
+        if (error) {
+          setDrafts([]);
+          return;
+        }
+        setDrafts((data ?? []).map(rowToDraft));
+      }).finally(() => setLoading(false));
+    } else {
+      try {
+        const savedDrafts = localStorage.getItem("gameDrafts");
+        if (savedDrafts) {
+          const parsed = JSON.parse(savedDrafts);
+          setDrafts(parsed.map((draft: any) => ({
+            ...draft,
+            createdAt: new Date(draft.createdAt),
+            updatedAt: new Date(draft.updatedAt),
+          })));
+        } else {
+          setDrafts([]);
+        }
+      } catch {
+        setDrafts([]);
+      }
+      setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadDrafts();
+  }, [loadDrafts]);
 
   const handleDeleteDraft = (id: string) => {
     setDraftToDelete(id);
@@ -55,13 +87,30 @@ export function DraftsPage({ onEditDraft, onCreateFromDraft }: DraftsPageProps) 
   };
 
   const confirmDelete = () => {
-    if (draftToDelete) {
-      const updatedDrafts = drafts.filter((d) => d.id !== draftToDelete);
-      setDrafts(updatedDrafts);
-      localStorage.setItem("gameDrafts", JSON.stringify(updatedDrafts));
-      setDraftToDelete(null);
+    if (!draftToDelete) {
+      setDeleteDialogOpen(false);
+      return;
     }
+    const id = draftToDelete;
+    setDraftToDelete(null);
     setDeleteDialogOpen(false);
+
+    setDrafts((prev) => prev.filter((d) => d.id !== id));
+
+    if (user?.id) {
+      deleteDraft(id, user.id).catch((e) => {
+        console.error("Failed to delete draft from DB", e);
+        loadDrafts();
+      });
+    }
+    try {
+      const fromStorage = localStorage.getItem("gameDrafts");
+      if (fromStorage) {
+        const parsed = JSON.parse(fromStorage);
+        const updated = parsed.filter((d: GameDraft) => d.id !== id);
+        localStorage.setItem("gameDrafts", JSON.stringify(updated));
+      }
+    } catch (_) {}
   };
 
   const formatDate = (date: Date) => {
@@ -104,7 +153,9 @@ export function DraftsPage({ onEditDraft, onCreateFromDraft }: DraftsPageProps) 
         </div>
 
         {/* Drafts Grid */}
-        {drafts.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-24 text-zinc-500">Loading drafts…</div>
+        ) : drafts.length === 0 ? (
           <div className="text-center py-24">
             <div className="mb-6">
               <FileText className="h-24 w-24 text-zinc-700 mx-auto" />

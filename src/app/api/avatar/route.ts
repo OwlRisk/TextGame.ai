@@ -125,11 +125,11 @@ function buildPrompt(
   const singleStart = 'Close-up portrait of exactly ONE person. Only one face visible in frame. ';
   const singleEnd = ' Single person only. No second face. No other people. No mirror or reflection with face.';
 
+  // 统一画风：Host 和 Player 都用同一套 anime 描述，仅用简短角色词区分（避免 Host 的 "Presenter, emcee" 导致写实/不同画风）
   const coreStyle = 'Anime/manga art style. One person only. One face. Single avatar portrait. Head and shoulders. Colorful hair, expressive eyes. No text.';
-
-  const hostStyle = 'Presenter, emcee style. Confident, charismatic. Professional host aesthetic.';
-  const baseHostPrompt = singleStart + genderPrefix + 'Anime host avatar portrait. ' + hostStyle + ' ' + coreStyle + singleEnd;
-  const basePlayerPrompt = singleStart + genderPrefix + 'Anime player avatar portrait. ' + coreStyle + singleEnd;
+  const hostRoleHint = 'Game host character. ';
+  const baseHostPrompt = singleStart + genderPrefix + hostRoleHint + 'Anime character portrait. ' + coreStyle + singleEnd;
+  const basePlayerPrompt = singleStart + genderPrefix + 'Anime character portrait. ' + coreStyle + singleEnd;
 
   if (!background || !background.trim()) {
     const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
@@ -140,8 +140,8 @@ function buildPrompt(
 
   const trimmedBackground = sanitizeSinglePersonDescription(background.trim());
   const prefix = type === 'host'
-    ? singleStart + genderPrefix + 'Anime host avatar portrait. ' + hostStyle + ' Character: '
-    : singleStart + genderPrefix + 'Anime player avatar portrait. Description: ';
+    ? singleStart + genderPrefix + hostRoleHint + 'Anime character portrait. Character: '
+    : singleStart + genderPrefix + 'Anime character portrait. Description: ';
   const suffix = '.' + coreStyle + singleEnd;
 
   const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;
@@ -280,17 +280,14 @@ export async function POST(request: NextRequest) {
     const avatarType: AvatarType = type === 'host' ? 'host' : 'player';
     const path = avatarStoragePath(name, avatarType);
 
-    // 先查 Storage：若已有文件则直接返回公网 URL
+    // 用服务端 Supabase API 检查是否已存在，避免公网 HEAD 失败导致重复生成
     if (supabaseAdmin) {
-      const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
-      try {
-        const head = await fetch(publicUrl, { method: 'HEAD' });
-        if (head.ok) {
-          return NextResponse.json({ image: publicUrl });
-        }
-      } catch (_) {
-        // 忽略网络错误，继续生成
+      const { data: blob, error: downloadError } = await supabaseAdmin.storage
+        .from(AVATAR_BUCKET)
+        .download(path);
+      if (!downloadError && blob && blob.size > 0) {
+        const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+        return NextResponse.json({ image: urlData.publicUrl });
       }
     }
 

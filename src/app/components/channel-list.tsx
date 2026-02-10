@@ -82,7 +82,7 @@ export function ChannelList({
           size="sm"
           className={`h-8 focus-visible:ring-2 focus-visible:ring-amber-500/50 ${shareJustCopied ? "min-w-[5rem]" : "w-8 px-0"}`}
           onClick={onShare}
-          title={shareJustCopied ? "Copied!" : "Copy game link"}
+          title={shareJustCopied ? "Copied!" : "Copy share link"}
         >
           {shareJustCopied ? (
             <span className="text-xs font-medium text-emerald-400">Copied!</span>
