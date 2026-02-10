@@ -498,7 +498,7 @@ Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you
         }
       }
 
-      const MAX_CONTINUATION_ROUNDS = 2;
+      const MAX_CONTINUATION_ROUNDS = 0;
       for (let r = 0; r < MAX_CONTINUATION_ROUNDS; r++) {
         const continuationUserContent = `The discussion continues. Latest messages:\n${recentForNext.slice(-14).map((m) => `${m.senderName}: ${m.content}`).join("\n")}\n\nAs host, briefly respond to what was just said (or move the phase). Then assign NEXT_SPEAKER. Prefer an AI name so the discussion keeps going; use NEXT_SPEAKER: You only when it's a natural moment for the human to speak.`;
         const next = await callHost(continuationUserContent);
@@ -565,8 +565,8 @@ Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you
     ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
     : messages;
 
-  // AI-generated quick replies (max 3). Only fetch when there are messages in the channel
-  // so we don't show generic "default" suggestions in an empty room.
+  // AI-generated quick replies (max 3). Only fetch when round is complete (not while Host/AI are replying)
+  // so suggestions stay stable until the user has replied; refetch when isRoundInProgress becomes false.
   useEffect(() => {
     if (!currentGame?.config || !isGameChannel) {
       setQuickRepliesLoading(false);
@@ -575,6 +575,10 @@ Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you
     }
     if (messagesForChannel.length === 0) {
       setQuickReplies([]);
+      setQuickRepliesLoading(false);
+      return;
+    }
+    if (isRoundInProgress) {
       setQuickRepliesLoading(false);
       return;
     }
@@ -605,12 +609,12 @@ Keep IMAGE_PROMPT visual and short; no text inside the image. After the tags you
       abort.abort();
       setQuickRepliesLoading(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fixed 6 items: no rules/name to avoid deps array size changing
   }, [
     isGameChannel,
     selectedChannelId ?? null,
     currentGame?.id ?? null,
     gamePhase,
+    isRoundInProgress,
     messagesForChannel.length,
     session?.access_token ?? null,
   ]);
