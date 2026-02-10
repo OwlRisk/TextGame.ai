@@ -13,6 +13,10 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 
+/** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
+const HOST_PACE_MS = 2200;
+const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
+
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   const { session } = useAuth();
@@ -321,6 +325,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
       else if (nextSpeakerPlayer) setCurrentSpeakerId(nextSpeakerPlayer.id);
 
       addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: hostContent, isAI: true }, channelId);
+      await hostPace();
       let recentForNext = [
         ...channelMessagesForRecent.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
         { senderName: "You", content },
@@ -331,6 +336,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
         const firstContent = await runPlayerSpeak(firstSpeaker, recentForNext);
         if (firstContent) {
           addMessage({ senderId: firstSpeaker.id, senderName: firstSpeaker.name, senderAvatar: firstSpeaker.avatar ?? "#8b5cf6", content: firstContent, isAI: true }, channelId);
+          await hostPace();
           recentForNext = [...recentForNext, { senderName: firstSpeaker.name, content: firstContent }];
           const others = aiOnly.filter((p) => p.id !== firstSpeaker.id);
           if (others.length > 0) {
@@ -338,6 +344,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
             const secondContent = await runPlayerSpeak(secondSpeaker, recentForNext);
             if (secondContent) {
               addMessage({ senderId: secondSpeaker.id, senderName: secondSpeaker.name, senderAvatar: secondSpeaker.avatar ?? "#8b5cf6", content: secondContent, isAI: true }, channelId);
+              await hostPace();
               recentForNext = [...recentForNext, { senderName: secondSpeaker.name, content: secondContent }];
             }
           }
@@ -347,12 +354,12 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
       if (nextSpeakerPlayer?.isAI && !nextSpeakerPlayer.isGameMaster) {
         await runAiThenMaybeSecond(nextSpeakerPlayer);
       } else if (who?.toLowerCase() === "everyone" && nextSpeakerPlayer?.isAI) {
-        await runPlayerSpeak(nextSpeakerPlayer, recentForNext).then((txt) => {
-          if (txt) {
-            addMessage({ senderId: nextSpeakerPlayer!.id, senderName: nextSpeakerPlayer!.name, senderAvatar: nextSpeakerPlayer!.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
-            recentForNext = [...recentForNext, { senderName: nextSpeakerPlayer!.name, content: txt }];
-          }
-        });
+        const txt = await runPlayerSpeak(nextSpeakerPlayer, recentForNext);
+        if (txt) {
+          addMessage({ senderId: nextSpeakerPlayer.id, senderName: nextSpeakerPlayer.name, senderAvatar: nextSpeakerPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+          await hostPace();
+          recentForNext = [...recentForNext, { senderName: nextSpeakerPlayer.name, content: txt }];
+        }
       }
 
       const MAX_CONTINUATION_ROUNDS = 2;
@@ -362,6 +369,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
         if (!next.hostContent) break;
         const nextWho = next.who?.toLowerCase();
         addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: next.hostContent, isAI: true }, channelId);
+        await hostPace();
         recentForNext = [...recentForNext, { senderName: gmName, content: next.hostContent }];
         if (nextWho === "you") {
           setCurrentSpeakerId(userId);
@@ -373,6 +381,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}`;
             const txt = await runPlayerSpeak(next.nextSpeakerPlayer, recentForNext);
             if (txt) {
               addMessage({ senderId: next.nextSpeakerPlayer.id, senderName: next.nextSpeakerPlayer.name, senderAvatar: next.nextSpeakerPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+              await hostPace();
               recentForNext = [...recentForNext, { senderName: next.nextSpeakerPlayer.name, content: txt }];
             }
           }
