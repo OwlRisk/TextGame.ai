@@ -7,6 +7,14 @@ import {
   LogIn,
   Loader2,
   ChevronRight,
+  Save,
+  Smartphone,
+  Share2,
+  MessageSquare,
+  FileText,
+  Users,
+  LayoutTemplate,
+  Bot,
 } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
@@ -109,6 +117,21 @@ export function WelcomePage({
                   <p className="mt-4 text-xs text-zinc-500">
                     Free to start · No credit card required
                   </p>
+                  {/* 登录后你可以 */}
+                  <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-500">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Save className="h-3.5 w-3.5 text-amber-500/80" />
+                      Save games
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Smartphone className="h-3.5 w-3.5 text-violet-500/80" />
+                      Sync across devices
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Share2 className="h-3.5 w-3.5 text-amber-500/80" />
+                      Share links to play with friends
+                    </span>
+                  </div>
                 </header>
 
                 {/* Try it: chat — right on lg, below hero on mobile */}
@@ -121,6 +144,71 @@ export function WelcomePage({
                   </div>
                 </section>
               </div>
+
+              {/* Feature highlights */}
+              <section className="mb-16 sm:mb-20">
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4 sm:mb-5">
+                  Why GameMaster
+                </p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+                    <MessageSquare className="h-6 w-6 text-amber-400/90 mb-3" />
+                    <h3 className="font-semibold text-white text-sm mb-1">Conversation-first</h3>
+                    <p className="text-xs text-zinc-500">Design by chatting—no forms or config hell.</p>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+                    <LayoutTemplate className="h-6 w-6 text-violet-400/90 mb-3" />
+                    <h3 className="font-semibold text-white text-sm mb-1">Templates</h3>
+                    <p className="text-xs text-zinc-500">Werewolf, Spy, and more—one click to start.</p>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+                    <Bot className="h-6 w-6 text-amber-400/90 mb-3" />
+                    <h3 className="font-semibold text-white text-sm mb-1">AI host</h3>
+                    <p className="text-xs text-zinc-500">AI runs the game and can fill as players.</p>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+                    <Users className="h-6 w-6 text-violet-400/90 mb-3" />
+                    <h3 className="font-semibold text-white text-sm mb-1">Multiplayer</h3>
+                    <p className="text-xs text-zinc-500">Share a link; friends join in the browser.</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* How it works */}
+              <section className="mb-16 sm:mb-20">
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-6">
+                  How it works
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+                  <div className="flex gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+                      <MessageSquare className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white mb-1">1. Describe your idea</h3>
+                      <p className="text-sm text-zinc-500">Chat with the AI Game Master. No game design experience needed.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white mb-1">2. Get roles & rules</h3>
+                      <p className="text-sm text-zinc-500">Rules and player roles are generated and shown in real time.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white mb-1">3. Host & play</h3>
+                      <p className="text-sm text-zinc-500">Start a room. Invite friends or play with AI players.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
               {/* Templates: compact row, consistent card height */}
               <section className="mb-16 sm:mb-20">
