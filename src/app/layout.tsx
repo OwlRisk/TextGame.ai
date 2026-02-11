@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
+  manifest: "/site.webmanifest",
   openGraph: {
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
