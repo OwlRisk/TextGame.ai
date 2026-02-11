@@ -21,13 +21,13 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">1. Acceptance</h2>
             <p>
-              By using Game Master you agree to these terms. If you do not agree, please do not use the service.
+              By using textgame.ai you agree to these terms. If you do not agree, please do not use the service.
             </p>
           </section>
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">2. Service Description</h2>
             <p>
-              Game Master provides AI-powered social deduction game experiences, including creating games and interacting with AI hosts and players. We may update or change the service at any time.
+              textgame.ai provides AI-powered text-based game experiences: you design games in conversation and play with an AI host and AI players. We may update or change the service at any time.
             </p>
           </section>
           <section>

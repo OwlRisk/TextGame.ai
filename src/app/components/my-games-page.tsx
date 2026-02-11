@@ -29,8 +29,8 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
   
   const handleDuplicateGame = (game: Game, e: React.MouseEvent) => {
     e.stopPropagation();
-    toast.success(`"${game.name}" duplicated! Opening Game Master...`);
-    // In real app, this would pre-fill the Game Master chat with this game's config
+    toast.success(`"${game.name}" duplicated! Opening...`);
+    // In real app, this would pre-fill the create-game chat with this game's config
     setTimeout(() => {
       onCreateGame();
     }, 500);

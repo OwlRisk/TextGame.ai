@@ -68,7 +68,7 @@ export default function PlayTokenPage({ params }: { params: Promise<{ token: str
           <Link href="/">
             <Button className="bg-violet-600 hover:bg-violet-500 text-white">
               <Home className="h-4 w-4 mr-2" />
-              Go to GameMaster
+              Go to textgame.ai
             </Button>
           </Link>
         </div>
@@ -87,7 +87,7 @@ export default function PlayTokenPage({ params }: { params: Promise<{ token: str
           className="inline-flex items-center text-sm text-zinc-400 hover:text-white mb-8"
         >
           <Home className="h-4 w-4 mr-2" />
-          GameMaster
+          textgame.ai
         </Link>
 
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 overflow-hidden">
@@ -129,7 +129,7 @@ export default function PlayTokenPage({ params }: { params: Promise<{ token: str
                 onClick={() => router.push(`/game/${game.id}`)}
                 className="flex-1 bg-violet-600 hover:bg-violet-500 text-white h-11"
               >
-                在 GameMaster 中打开
+                在 textgame.ai 中打开
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Link href="/" className="flex-1 sm:flex-none">

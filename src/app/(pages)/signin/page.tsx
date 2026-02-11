@@ -75,9 +75,9 @@ function SignInPageInner() {
             </div>
           </div>
           <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold text-white">Welcome to Game Master</CardTitle>
+            <CardTitle className="text-3xl font-bold text-white">Welcome to textgame.ai</CardTitle>
             <CardDescription className="text-zinc-400">
-              Sign in to create and join AI-powered social deduction games
+              Sign in to design and play text-based games with an AI host
             </CardDescription>
           </div>
         </CardHeader>
