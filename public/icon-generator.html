@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>textgame.ai 站点图标</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, #0c0814 0%, #1a0f24 100%);
+      color: #e4e4e7;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 0;
+      color: #a1a1aa;
+    }
+    .hero {
+      width: 160px;
+      height: 160px;
+      border-radius: 24px;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .hero img { width: 100%; height: 100%; display: block; border-radius: 24px; }
+    .previews {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .preview-item {
+      text-align: center;
+    }
+    .preview-item label {
+      display: block;
+      font-size: 0.7rem;
+      color: #71717a;
+      margin-bottom: 0.5rem;
+    }
+    .preview-box {
+      background: #18181b;
+      border-radius: 10px;
+      padding: 14px;
+      display: inline-block;
+    }
+    .preview-box img { display: block; border-radius: 6px; }
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .btns button {
+      padding: 0.65rem 1.25rem;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: linear-gradient(135deg, #6d28d9, #7c3aed);
+      color: white;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btns button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(109, 40, 217, 0.35);
+    }
+    .btns button.secondary {
+      background: #27272a;
+      color: #e4e4e7;
+    }
+  </style>
+</head>
+<body>
+  <h1>textgame.ai 站点图标</h1>
+  <div class="hero">
+    <img src="icon.svg" alt="textgame.ai icon" />
+  </div>
+  <div class="previews">
+    <div class="preview-item">
+      <label>32×32</label>
+      <div class="preview-box">
+        <img src="icon.svg" alt="" width="32" height="32" style="width:32px;height:32px" />
+      </div>
+    </div>
+    <div class="preview-item">
+      <label>64×64</label>
+      <div class="preview-box">
+        <img src="icon.svg" alt="" width="64" height="64" style="width:64px;height:64px" />
+      </div>
+    </div>
+    <div class="preview-item">
+      <label>180×180</label>
+      <div class="preview-box">
+        <img src="icon.svg" alt="" width="180" height="180" style="width:180px;height:180px" />
+      </div>
+    </div>
+  </div>
+  <div class="btns">
+    <button onclick="dl(32)">下载 32×32 PNG</button>
+    <button onclick="dl(64)">下载 64×64 PNG</button>
+    <button onclick="dl(180)">下载 180×180 PNG</button>
+    <button class="secondary" onclick="window.open('icon.svg','_blank')">打开 SVG</button>
+  </div>
+
+  <script>
+    function roundRect(ctx, x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+    function drawIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const s = size / 64;
+      const bgR = 12 * s;
+
+      const g = ctx.createLinearGradient(0, 0, size, size);
+      g.addColorStop(0, '#5b21b6');
+      g.addColorStop(1, '#c2410c');
+      roundRect(ctx, 0, 0, size, size, bgR);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      // 对话气泡：加粗描边，小尺寸更清晰
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 6.5 * s;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      roundRect(ctx, 8 * s, 12 * s, 48 * s, 30 * s, 8 * s);
+      ctx.stroke();
+
+      // 气泡尾巴：稍大一点
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.moveTo(28 * s, 42 * s);
+      ctx.lineTo(22 * s, 52 * s);
+      ctx.lineTo(34 * s, 42 * s);
+      ctx.closePath();
+      ctx.fill();
+      return canvas;
+    }
+    function dl(size) {
+      const a = document.createElement('a');
+      a.download = size <= 32 ? 'favicon.png' : 'icon-' + size + '.png';
+      a.href = drawIcon(size).toDataURL('image/png');
+      a.click();
+    }
+  </script>
+</body>
+</html>

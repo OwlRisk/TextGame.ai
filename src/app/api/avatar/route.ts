@@ -45,11 +45,14 @@ function avatarCacheKey(name: string, type: AvatarType): string {
   return `${name}|${type}`;
 }
 
+/** Version prefix: bump to force regeneration when style/prompt changes (e.g. unified anime + both eyes) */
+const AVATAR_STORAGE_VERSION = 'v2';
+
 /** Deterministic storage path for upsert */
 function avatarStoragePath(name: string, type: AvatarType): string {
   const key = avatarCacheKey(name, type);
   const hash = crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
-  return `${type}/${hash}.png`;
+  return `${type}/${AVATAR_STORAGE_VERSION}/${hash}.png`;
 }
 
 /** Get the model to use from env, default to dalle-3 */
@@ -84,8 +87,17 @@ const ANIME_STYLE =
   'Single character only, no background details. ' +
   'ONE PERSON. ONE FACE. ' + NO_TEXT;
 
-/** Single shared style string for both Host and Player so they look identical in art style. */
-const SHARED_CORE_STYLE = 'Anime/manga art style. One person only. One face. Single avatar portrait. Head and shoulders. Colorful hair, expressive eyes. No text.';
+/** 强制双眼可见：避免只画一只眼、头发挡眼、侧脸只露一眼等 */
+const BOTH_EYES_REQUIRED =
+  'Both eyes must be clearly visible. Face the viewer or slight 3/4 view. ' +
+  'No hair covering either eye. No one-eye, no winking, no profile showing only one eye. Two eyes visible.';
+
+/** Single shared style for Host and Player — identical so all avatars look the same (anime, not realistic). */
+const SHARED_CORE_STYLE =
+  'Anime/manga illustration style only. Not photorealistic. Not realistic photography. ' +
+  'One person, one face. Single avatar portrait. Head and shoulders. Colorful hair, expressive large eyes, clean line art. ' +
+  BOTH_EYES_REQUIRED + ' ' +
+  'No text.';
 
 /** Gender phrase for prompt: avatar appearance must match name gender */
 function genderPhrase(gender?: string): string {
@@ -212,7 +224,8 @@ async function generateWithReplicate(
   // Negative prompt: 禁止文字 + 禁止多人/双脸
   const negativePrompt =
     'text, letters, words, characters, writing, symbols, labels, name tags, captions, subtitles, speech bubbles, signs, banners, written content, ' +
-    'two people, two faces, multiple people, multiple faces, group photo, crowd, duo, pair of people, second face, another person, reflection with face, mirror with face, double face';
+    'two people, two faces, multiple people, multiple faces, group photo, crowd, duo, pair of people, second face, another person, reflection with face, mirror with face, double face, ' +
+    'photorealistic, realistic, photograph, real person, hyperrealistic, photo, cinematic';
   
   if (model === 'flux') {
     // FLUX.1 [dev] - high quality, realistic
