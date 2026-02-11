@@ -30,7 +30,7 @@ import {
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { getGameSessions, createGameSession, updateGameSession, deleteGameSession, createDraft } from "@/lib/db";
+import { getGameSessions, createGameSession, updateGameSession, deleteGameSession } from "@/lib/db";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
@@ -2453,58 +2453,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isStartingGame ? "Starting…" : "Start Game"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={async () => {
-                    const tid = selectedTemplate?.id || "custom";
-                    const defaultChannelsByTemplate: Record<string, { id: string; name: string }[]> = {
-                      werewolf: [{ id: "general", name: "General" }, { id: "werewolves-only", name: "Werewolves only" }],
-                      mafia: [{ id: "general", name: "General" }, { id: "mafia-only", name: "Mafia only" }],
-                      undercover: [{ id: "general", name: "General" }],
-                      custom: [{ id: "general", name: "General" }],
-                    };
-                    const config: GameConfig = {
-                      template: tid as "werewolf" | "undercover" | "custom",
-                      playerCount: playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
-                      rules: customRules,
-                      name: gameName || selectedTemplate?.name || "Custom Game",
-                      hostId: selectedHostId,
-                      tone: "balanced",
-                      hideRolesInPlayerList: tid === "werewolf" || tid === "mafia",
-                      configuredPlayers: configuredPlayers.length > 0 ? configuredPlayers : undefined,
-                      generatedHost: undefined,
-                      channels: (gmChannels && gmChannels.length > 0) ? gmChannels : (defaultChannelsByTemplate[tid] ?? defaultChannelsByTemplate.custom),
-                    };
-                    if (user?.id) {
-                      const { data, error } = await createDraft(user.id, config);
-                      if (error) {
-                        toast.error("Failed to save draft");
-                        return;
-                      }
-                      toast.success("Draft saved");
-                    } else {
-                      try {
-                        const saved = localStorage.getItem("gameDrafts");
-                        const list: any[] = saved ? JSON.parse(saved) : [];
-                        list.unshift({
-                          id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-                          config,
-                          createdAt: new Date().toISOString(),
-                          updatedAt: new Date().toISOString(),
-                        });
-                        localStorage.setItem("gameDrafts", JSON.stringify(list.slice(0, 30)));
-                        toast.success("Draft saved");
-                      } catch {
-                        toast.error("Failed to save draft");
-                      }
-                    }
-                  }}
-                  disabled={isRulesBeingEdited || isRulesEmpty}
-                  className="shrink-0 h-9 px-4 border-white/20 text-zinc-300 hover:bg-white/10 hover:text-white text-sm font-medium rounded-lg disabled:opacity-50"
-                >
-                  Save as draft
                 </Button>
                 {isRulesEmpty && (
                   <p className="w-full text-xs text-zinc-500 mt-1.5 text-right">Chat with GM to generate rules first.</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, FileText, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, Sparkles } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, Sparkles } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -46,13 +46,12 @@ interface GameSidebarProps {
   selectedGameId: string | null;
   onSelectGame: (gameId: string) => void;
   onCreateGame: () => void;
-  onViewDrafts?: () => void;
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
   onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onViewDrafts, onOpenProfile, onDeleteGame, onUpdateGame }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onUpdateGame }: GameSidebarProps) {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -295,35 +294,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               ))}
             </div>
           </ScrollArea>
-        )}
-
-        {/* Drafts */}
-        {onViewDrafts && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-14 w-14 rounded-2xl transition-all duration-200 ${
-                    selectedGameId === "drafts"
-                      ? "bg-amber-600 rounded-xl"
-                      : "bg-zinc-800 hover:bg-amber-600 hover:rounded-xl"
-                  }`}
-                  onClick={onViewDrafts}
-                >
-                  <FileText className="h-7 w-7 text-amber-400" />
-                </Button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent 
-              side="right"
-              sideOffset={8}
-              className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
-            >
-              My Drafts
-            </TooltipContent>
-          </Tooltip>
         )}
 
         {/* User Profile - Bottom，固定不参与收缩，避免被游戏列表挤掉 */}
