@@ -676,9 +676,9 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
                 <Button
                   onClick={onSignIn}
                   size="lg"
-                  className="relative bg-white hover:bg-zinc-100 text-violet-600 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl transition-all hover:scale-105"
+                  className="relative bg-white hover:bg-zinc-100 text-violet-600 font-bold text-xl px-12 py-8 rounded-xl shadow-2xl transition-all hover:scale-105"
                 >
-                  <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24">
+                  <svg className="h-8 w-8 mr-4" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
