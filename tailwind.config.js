@@ -53,9 +53,14 @@ module.exports = {
           '0%, 100%': { transform: 'scaleY(0.4)', opacity: '0.6' },
           '50%': { transform: 'scaleY(1)', opacity: '1' },
         },
+        gradient: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
       },
       animation: {
         'voice-bar': 'voice-bar 600ms ease-in-out infinite',
+        gradient: 'gradient 4s ease infinite',
       },
     },
   },

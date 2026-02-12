@@ -1,0 +1,780 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Sparkles,
+  MessageCircle,
+  Users,
+  Crown,
+  Zap,
+  Star,
+  Play,
+  ChevronDown,
+  Lightbulb,
+} from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/app/components/ui/button";
+import { BRAND_CONFIG } from "@/app/config/brand-config";
+
+interface LandingPageProps {
+  onSignIn: () => void;
+  onExploreGames?: () => void;
+}
+
+const GAME_SCENARIOS = {
+  werewolf: {
+    title: "Werewolf",
+    messages: [
+      {
+        avatar: "GM",
+        color: "from-violet-500 to-fuchsia-500",
+        name: "Game Master",
+        time: "12:30 PM",
+        text: "Welcome to Werewolf! I'll be your host today. The villagers must identify the werewolves before it's too late. Let's begin the night phase...",
+      },
+      {
+        avatar: null,
+        color: "bg-blue-500",
+        name: "Alex",
+        time: "12:31 PM",
+        text: "I think Blake is acting suspicious...",
+      },
+      {
+        avatar: null,
+        color: "bg-green-500",
+        name: "Casey",
+        time: "12:31 PM",
+        text: "I was with Blake during the night phase. It can't be them!",
+      },
+    ],
+  },
+  spy: {
+    title: "Who's the Spy",
+    messages: [
+      {
+        avatar: "GM",
+        color: "from-violet-500 to-fuchsia-500",
+        name: "Game Master",
+        time: "2:15 PM",
+        text: "Your word is 'Coffee'. The spy has a different word. Describe yours without being too obvious!",
+      },
+      {
+        avatar: null,
+        color: "bg-purple-500",
+        name: "Jordan",
+        time: "2:16 PM",
+        text: "Mine is a hot beverage people drink in the morning...",
+      },
+      {
+        avatar: null,
+        color: "bg-pink-500",
+        name: "Riley",
+        time: "2:16 PM",
+        text: "I think Jordan might be the spy. That's too vague!",
+      },
+    ],
+  },
+  mystery: {
+    title: "Mystery",
+    messages: [
+      {
+        avatar: "GM",
+        color: "from-violet-500 to-fuchsia-500",
+        name: "Detective Kate",
+        time: "4:20 PM",
+        text: "A priceless diamond has been stolen from the museum. Everyone here is a suspect. Let's start investigating...",
+      },
+      {
+        avatar: null,
+        color: "bg-red-500",
+        name: "Morgan",
+        time: "4:21 PM",
+        text: "I saw someone near the display case around 9 PM...",
+      },
+      {
+        avatar: null,
+        color: "bg-yellow-600",
+        name: "Taylor",
+        time: "4:22 PM",
+        text: "That's impossible! The museum closes at 8 PM!",
+      },
+    ],
+  },
+  custom: {
+    title: "Custom Game",
+    messages: [
+      {
+        avatar: "GM",
+        color: "from-violet-500 to-fuchsia-500",
+        name: "Game Master",
+        time: "6:00 PM",
+        text: "Welcome to 'Time Travelers Council'! Each of you is from a different era. Work together to fix the timeline...",
+      },
+      {
+        avatar: null,
+        color: "bg-indigo-500",
+        name: "Nova",
+        time: "6:01 PM",
+        text: "As someone from 2124, I can confirm this paradox is serious.",
+      },
+      {
+        avatar: null,
+        color: "bg-teal-500",
+        name: "Echo",
+        time: "6:01 PM",
+        text: "In my timeline, we solved this using quantum mechanics...",
+      },
+    ],
+  },
+};
+
+export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
+  const [selectedGame, setSelectedGame] = useState<
+    keyof typeof GAME_SCENARIOS
+  >("werewolf");
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  const quickStarts = [
+    { id: "werewolf" as const, emoji: "🐺", label: "Werewolf" },
+    { id: "spy" as const, emoji: "🕵️", label: "Who's the Spy" },
+    { id: "mystery" as const, emoji: "🔍", label: "Mystery" },
+    { id: "custom" as const, emoji: "✨", label: "Custom" },
+  ];
+
+  const features = [
+    {
+      icon: MessageCircle,
+      title: "Conversation-first",
+      description:
+        "Pure dialogue gameplay. No cards, no complex mechanics - just talk.",
+      gradient: "from-violet-500 to-purple-500",
+    },
+    {
+      icon: Sparkles,
+      title: "20+ Game Templates",
+      description:
+        "Start with classics like Werewolf or design something completely new.",
+      gradient: "from-blue-500 to-cyan-500",
+    },
+    {
+      icon: Crown,
+      title: "Response in <2s",
+      description:
+        "Lightning-fast AI responses keep the game flowing naturally.",
+      gradient: "from-orange-500 to-pink-500",
+    },
+    {
+      icon: Users,
+      title: "45min avg session",
+      description: "Players stay engaged with rich character interactions.",
+      gradient: "from-green-500 to-emerald-500",
+    },
+  ];
+
+  const testimonials = [
+    { name: "Sarah K.", games: 12, rating: 5, text: "Best AI game platform I've tried" },
+    { name: "Mike T.", games: 8, rating: 5, text: "My friends are addicted to this!" },
+    { name: "Emma L.", games: 23, rating: 5, text: "Created a murder mystery for my party" },
+  ];
+
+  const featuredGames = [
+    { emoji: "🧛", title: "Vampire Court", author: "Jordan", plays: 1234, rating: 4.9 },
+    { emoji: "🚀", title: "Space Mutiny", author: "Alex", plays: 892, rating: 4.8 },
+    { emoji: "🏰", title: "Kingdom Intrigue", author: "Sam", plays: 2103, rating: 4.9 },
+  ];
+
+  const howItWorks = [
+    { number: "1", title: "Sign in", subtitle: "with Google", icon: "👤" },
+    { number: "2", title: "Describe game", subtitle: "to Game Master", icon: "💬" },
+    { number: "3", title: "Play instantly", subtitle: "with AI characters", icon: "🎮" },
+  ];
+
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    const games = Object.keys(GAME_SCENARIOS) as Array<keyof typeof GAME_SCENARIOS>;
+    let currentIndex = games.indexOf(selectedGame);
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % games.length;
+      setSelectedGame(games[currentIndex]);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, selectedGame]);
+
+  const currentScenario = GAME_SCENARIOS[selectedGame];
+
+  return (
+    <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.1),transparent_50%)] pointer-events-none animate-pulse"
+        style={{ animationDuration: "4s" }}
+      />
+      <div
+        className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.08),transparent_50%)] pointer-events-none animate-pulse"
+        style={{ animationDuration: "6s", animationDelay: "1s" }}
+      />
+
+      <div className="relative max-w-6xl mx-auto px-8 py-16">
+        {/* Hero - Two Column */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24">
+          <div>
+            <div className="mb-8">
+              <h1 className="text-4xl font-black text-white tracking-tight">
+                TextGame.ai
+              </h1>
+              <p className="text-sm text-zinc-400 font-medium mt-1">
+                {BRAND_CONFIG.tagline}
+              </p>
+            </div>
+
+            <h2 className="text-5xl font-black text-white mb-6 leading-tight">
+              Create multiplayer{" "}
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+                AI games
+              </span>{" "}
+              in 2 minutes
+            </h2>
+
+            <p className="text-xl text-zinc-400 mb-8 leading-relaxed">
+              No coding. No setup. Just describe your game and play with AI
+              characters in seconds.
+            </p>
+
+            <div className="mb-6 p-5 bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-700/50 rounded-xl">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 bg-violet-500/10 rounded-lg">
+                    <Users className="h-5 w-5 text-violet-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">AI characters</div>
+                    <div className="text-xs text-zinc-500">Up to 10 players</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 bg-fuchsia-500/10 rounded-lg">
+                    <Sparkles className="h-5 w-5 text-fuchsia-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">20+ templates</div>
+                    <div className="text-xs text-zinc-500">Ready to use</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-500/10 rounded-lg">
+                    <MessageCircle className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">Custom rules</div>
+                    <div className="text-xs text-zinc-500">Full control</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 bg-green-500/10 rounded-lg">
+                    <Star className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">Free to start</div>
+                    <div className="text-xs text-zinc-500">No card needed</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6 flex flex-col items-center">
+              <Button
+                onClick={onSignIn}
+                size="lg"
+                className="w-full max-w-xl bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-6 rounded-xl shadow-lg transition-all"
+              >
+                <svg className="h-6 w-6 mr-3 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                Sign in with Google
+              </Button>
+              {onExploreGames && (
+                <Button
+                  onClick={onExploreGames}
+                  size="lg"
+                  className="mt-3 w-full max-w-xl bg-violet-600/90 hover:bg-violet-500 border border-violet-400/60 text-white font-bold text-lg py-6 rounded-xl transition-all"
+                >
+                  <Lightbulb className="h-5 w-5 mr-2 shrink-0" />
+                  Browse templates
+                </Button>
+              )}
+              <p className="mt-4 text-center text-sm text-zinc-400">
+                Join {testimonials[0].name}, {testimonials[1].name}, and thousands
+                of others
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 px-1">
+                <Zap className="h-4 w-4 text-violet-400" />
+                <p className="text-sm font-bold text-zinc-400">Try these examples:</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {quickStarts.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedGame(item.id);
+                      setIsAutoPlaying(false);
+                    }}
+                    className={`group relative bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-300 hover:scale-[1.02] rounded-xl px-4 py-3 overflow-hidden ${
+                      selectedGame === item.id
+                        ? "border-violet-500 shadow-lg shadow-violet-500/20"
+                        : "border-zinc-800 hover:border-violet-500/50"
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {selectedGame === item.id && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
+                    )}
+                    <div className="relative flex items-center gap-3">
+                      <span
+                        className={`text-3xl transition-transform ${selectedGame === item.id ? "scale-110" : "group-hover:scale-110"}`}
+                      >
+                        {item.emoji}
+                      </span>
+                      <span
+                        className={`text-sm font-bold transition-colors ${selectedGame === item.id ? "text-white" : "text-zinc-300 group-hover:text-white"}`}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right - Chat preview */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-3xl" />
+            <div className="relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
+              <div className="bg-zinc-800/50 px-4 py-3 border-b border-zinc-700 flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                </div>
+                <span className="text-sm font-bold text-zinc-400"># game-room</span>
+                <div className="ml-auto text-xs text-zinc-600">
+                  {currentScenario.title}
+                </div>
+              </div>
+              <div className="p-6 space-y-4 h-[400px] overflow-y-auto">
+                {currentScenario.messages.map((msg, index) => (
+                  <div key={index} className="flex gap-3">
+                    {msg.avatar === "GM" ? (
+                      <div
+                        className={`w-10 h-10 rounded-full bg-gradient-to-br ${msg.color} flex-shrink-0 flex items-center justify-center text-white font-bold text-xs`}
+                      >
+                        GM
+                      </div>
+                    ) : (
+                      <div
+                        className={`w-10 h-10 rounded-full ${msg.color} flex-shrink-0`}
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="font-bold text-white text-sm">
+                          {msg.name}
+                        </span>
+                        <span className="text-xs text-zinc-600">{msg.time}</span>
+                      </div>
+                      <p className="text-sm text-zinc-300 leading-relaxed">
+                        {msg.text}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="font-bold text-white text-sm">Drew</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <div
+                        className="w-2 h-2 bg-zinc-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-zinc-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-zinc-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-zinc-800/50 px-4 py-3 border-t border-zinc-700">
+                <div className="bg-zinc-900/50 rounded-lg px-4 py-2 text-sm text-zinc-600">
+                  Type your message...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* How It Works */}
+        <div className="mb-32">
+          <div className="text-center mb-16">
+            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+              <span className="text-sm font-bold text-violet-400">
+                HOW IT WORKS
+              </span>
+            </div>
+            <h3 className="text-4xl font-black text-white mb-4">
+              Get Started in 3 Simple Steps
+            </h3>
+            <p className="text-lg text-zinc-400">
+              From idea to gameplay in under 2 minutes
+            </p>
+          </div>
+          <div className="relative max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+              {howItWorks.map((step, index) => (
+                <div key={index} className="relative">
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full text-white font-black text-xl shadow-xl">
+                        {step.number}
+                      </div>
+                      {index < howItWorks.length - 1 && (
+                        <div className="hidden md:block absolute left-full top-1/2 -translate-y-1/2 w-[calc(100vw/3-8rem)] max-w-[200px]">
+                          <div className="flex items-center gap-2 px-4">
+                            <div className="flex-1 h-[2px] bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-30" />
+                            <svg
+                              className="w-4 h-4 text-violet-500 opacity-50"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="group relative bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
+                    <div className="flex justify-center mb-6">
+                      <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg">
+                        {step.number === "1" && (
+                          <svg
+                            className="w-10 h-10 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        )}
+                        {step.number === "2" && (
+                          <svg
+                            className="w-10 h-10 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            />
+                          </svg>
+                        )}
+                        {step.number === "3" && (
+                          <svg
+                            className="w-10 h-10 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <h4 className="text-xl font-bold text-white mb-2">
+                        {step.title}
+                      </h4>
+                      <p className="text-sm text-zinc-500">{step.subtitle}</p>
+                    </div>
+                  </div>
+                  {index < howItWorks.length - 1 && (
+                    <div className="md:hidden flex justify-center my-6">
+                      <svg
+                        className="w-6 h-6 text-violet-500 opacity-50"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div className="mb-32">
+          <div className="text-center mb-16">
+            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+              <span className="text-sm font-bold text-violet-400">FEATURES</span>
+            </div>
+            <h3 className="text-4xl font-black text-white mb-4">
+              Why You&apos;ll Love It
+            </h3>
+            <p className="text-lg text-zinc-400">
+              Everything you need to create amazing game experiences
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={index}
+                  className="group relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 hover:border-violet-500/30 rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
+                  <div
+                    className={`relative w-12 h-12 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-4 shadow-lg`}
+                  >
+                    <Icon className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="relative text-lg font-bold text-white mb-2">
+                    {feature.title}
+                  </h4>
+                  <p className="relative text-sm text-zinc-400 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Trending Games */}
+        <div className="mb-32">
+          <div className="text-center mb-12">
+            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+              <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
+            </div>
+            <h3 className="text-3xl font-black text-white mb-3">Trending Games</h3>
+            <p className="text-lg text-zinc-400">See what others are creating</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {featuredGames.map((game, index) => (
+              <div
+                key={index}
+                className="group bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl">{game.emoji}</div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-white truncate">{game.title}</h4>
+                    <p className="text-xs text-zinc-500">by {game.author}</p>
+                    <div className="flex items-center gap-3 mt-2 text-xs">
+                      <span className="flex items-center gap-1 text-zinc-400">
+                        <Play className="h-3 w-3" />
+                        {game.plays.toLocaleString()}
+                      </span>
+                      <span className="flex items-center gap-1 text-yellow-500">
+                        <Star className="h-3 w-3 fill-yellow-500" />
+                        {game.rating}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <FAQSection />
+
+        {/* Final CTA */}
+        <div className="mb-24">
+          <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-3xl p-12 md:p-16">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div className="relative text-center">
+              <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
+                Ready to Create Your Game?
+              </h3>
+              <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
+                Join thousands of creators building multiplayer AI games in
+                minutes
+              </p>
+              <div className="relative inline-block">
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-white/50 to-white/50 rounded-xl blur-xl opacity-40 animate-pulse"
+                  style={{ animationDuration: "3s" }}
+                />
+                <Button
+                  onClick={onSignIn}
+                  size="lg"
+                  className="relative bg-white hover:bg-zinc-100 text-violet-600 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl transition-all hover:scale-105"
+                >
+                  <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Sign in with Google
+                </Button>
+              </div>
+              <p className="text-sm text-violet-100 mt-4">
+                No credit card required • 2 minutes to your first game
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <footer className="border-t border-zinc-800 pt-8 pb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
+            <p>
+              © 2026 {BRAND_CONFIG.name} • Made for gamers, by gamers
+            </p>
+            <div className="flex gap-6">
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function FAQSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const faqs = [
+    {
+      question: "Do I need coding skills?",
+      answer:
+        "Not at all! Just describe your game idea in plain English to the Game Master. The platform handles all the technical stuff automatically.",
+    },
+    {
+      question: "How long does it take to create a game?",
+      answer:
+        "About 2 minutes from concept to playable game. Simply tell the Game Master your idea, customize a few settings, and you're ready to play.",
+    },
+    {
+      question: "Can I play with real friends?",
+      answer:
+        "Absolutely! Share your game link with anyone. You can mix human players with AI characters for the perfect game balance.",
+    },
+    {
+      question: "Are the AI characters convincing?",
+      answer:
+        "Yes! Our AI responds in under 2 seconds with natural, contextual dialogue. Most players forget they're interacting with AI after a few minutes.",
+    },
+    {
+      question: "Is it really free?",
+      answer:
+        "Yes, you can start playing for free with all core features. Premium plans unlock additional AI characters, faster responses, and advanced customization options.",
+    },
+    {
+      question: "Can I create any type of game?",
+      answer:
+        "Absolutely! While we offer 20+ templates for classics like Werewolf and Murder Mystery, you have complete freedom to design custom games with unique rules and mechanics.",
+    },
+  ];
+  return (
+    <div className="mb-24">
+      <div className="text-center mb-12">
+        <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+          <span className="text-sm font-bold text-violet-400">FAQ</span>
+        </div>
+        <h3 className="text-3xl font-black text-white mb-3">Common Questions</h3>
+        <p className="text-lg text-zinc-400">Everything you need to know</p>
+      </div>
+      <div className="max-w-3xl mx-auto space-y-3">
+        {faqs.map((faq, index) => (
+          <div
+            key={index}
+            className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-violet-500/30"
+          >
+            <button
+              onClick={() => setOpenIndex(openIndex === index ? null : index)}
+              className="w-full px-6 py-5 flex items-center justify-between gap-4 text-left group"
+            >
+              <span className="font-bold text-white group-hover:text-violet-400 transition-colors">
+                {faq.question}
+              </span>
+              <ChevronDown
+                className={`h-5 w-5 text-zinc-400 flex-shrink-0 transition-transform duration-300 ${openIndex === index ? "rotate-180 text-violet-400" : ""}`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-48" : "max-h-0"}`}
+            >
+              <div className="px-6 pb-5 text-sm text-zinc-400 leading-relaxed">
+                {faq.answer}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

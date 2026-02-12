@@ -37,10 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 100);
   }, [router]);
 
+  const isInvalidRefreshToken = useCallback((err: unknown) => {
+    const msg = err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : '';
+    return /refresh token|Refresh Token|refresh_token/i.test(msg) && /not found|invalid|expired/i.test(msg);
+  }, []);
+
   useEffect(() => {
     // Check active session and sync user from server (avatar is persisted in callback via admin API)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log("Initial session check:", session);
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
@@ -55,10 +59,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               userToSet = freshUser;
             }
           }
-        } catch (_) {
-          const { data: { user: freshUser } } = await supabase.auth.getUser();
-          if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
-            userToSet = freshUser;
+        } catch (e) {
+          if (isInvalidRefreshToken(e)) {
+            try {
+              await supabase.auth.signOut();
+            } catch {
+              // ignore
+            }
+            sessionToSet = null;
+            userToSet = null;
+          } else {
+            const { data: { user: freshUser } } = await supabase.auth.getUser();
+            if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+              userToSet = freshUser;
+            }
           }
         }
       }
@@ -71,7 +85,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
@@ -86,10 +99,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               userToSet = freshUser;
             }
           }
-        } catch (_) {
-          const { data: { user: freshUser } } = await supabase.auth.getUser();
-          if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
-            userToSet = freshUser;
+        } catch (e) {
+          if (isInvalidRefreshToken(e)) {
+            try {
+              await supabase.auth.signOut();
+            } catch {
+              // ignore
+            }
+            sessionToSet = null;
+            userToSet = null;
+          } else {
+            const { data: { user: freshUser } } = await supabase.auth.getUser();
+            if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+              userToSet = freshUser;
+            }
           }
         }
       }
@@ -99,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [doSignOut]);
+  }, [doSignOut, isInvalidRefreshToken]);
 
   const signInWithGoogle = async (returnUrl?: string) => {
     try {
