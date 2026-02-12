@@ -15,10 +15,32 @@ import {
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
 
 interface LandingPageProps {
   onSignIn: () => void;
   onExploreGames?: () => void;
+}
+
+/** Map Tailwind color class (e.g. bg-blue-500) to hex for fallback avatar background */
+function colorToHex(twClass: string): string {
+  const m = twClass.match(/(?:bg-|from-)(\w+)-(\d+)/);
+  if (!m) return "#6366f1";
+  const [, color, shade] = m;
+  const map: Record<string, string> = {
+    blue: "#3b82f6",
+    green: "#22c55e",
+    purple: "#a855f7",
+    pink: "#ec4899",
+    red: "#ef4444",
+    yellow: "#eab308",
+    indigo: "#6366f1",
+    teal: "#14b8a6",
+    orange: "#f97316",
+    violet: "#8b5cf6",
+    fuchsia: "#d946ef",
+  };
+  return map[color] ?? "#6366f1";
 }
 
 const GAME_SCENARIOS = {
@@ -366,70 +388,66 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
           {/* Right - Chat preview */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-3xl" />
-            <div className="relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
-              <div className="bg-zinc-800/50 px-4 py-3 border-b border-zinc-700 flex items-center gap-3">
+            <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-zinc-700/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
+              <div className="bg-zinc-800/70 px-4 py-3 border-b border-zinc-700/80 flex items-center gap-3">
                 <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/90" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90" />
                 </div>
-                <span className="text-sm font-bold text-zinc-400"># game-room</span>
-                <div className="ml-auto text-xs text-zinc-600">
+                <span className="text-sm font-semibold text-zinc-300"># game-room</span>
+                <span className="ml-auto text-xs text-zinc-500 bg-zinc-700/60 rounded-md px-2.5 py-1">
                   {currentScenario.title}
-                </div>
+                </span>
               </div>
-              <div className="p-6 space-y-4 h-[400px] overflow-y-auto">
+              <div className="p-4 space-y-3 h-[400px] overflow-y-auto">
                 {currentScenario.messages.map((msg, index) => (
-                  <div key={index} className="flex gap-3">
-                    {msg.avatar === "GM" ? (
-                      <div
-                        className={`w-10 h-10 rounded-full bg-gradient-to-br ${msg.color} flex-shrink-0 flex items-center justify-center text-white font-bold text-xs`}
-                      >
-                        GM
-                      </div>
-                    ) : (
-                      <div
-                        className={`w-10 h-10 rounded-full ${msg.color} flex-shrink-0`}
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="font-bold text-white text-sm">
+                  <div key={index} className="flex gap-3 group">
+                    <GeneratedAvatar
+                      name={msg.name}
+                      type={msg.avatar === "GM" ? "host" : "player"}
+                      className="w-9 h-9 flex-shrink-0 ring-1 ring-zinc-600/50"
+                      fallback={msg.avatar === "GM" ? "GM" : undefined}
+                      fallbackColor={
+                        msg.avatar === "GM"
+                          ? "#8b5cf6"
+                          : colorToHex(msg.color)
+                      }
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 mb-0.5">
+                        <span className="font-semibold text-white text-sm">
                           {msg.name}
                         </span>
-                        <span className="text-xs text-zinc-600">{msg.time}</span>
+                        <span className="text-xs text-zinc-500">{msg.time}</span>
                       </div>
-                      <p className="text-sm text-zinc-300 leading-relaxed">
+                      <p className="text-sm text-zinc-300 leading-relaxed break-words">
                         {msg.text}
                       </p>
                     </div>
                   </div>
                 ))}
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-500 flex-shrink-0" />
-                  <div className="flex-1">
+                  <GeneratedAvatar
+                    name="Drew"
+                    type="player"
+                    className="w-9 h-9 flex-shrink-0 ring-1 ring-zinc-600/50"
+                    fallbackColor="#f97316"
+                  />
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-bold text-white text-sm">Drew</span>
+                      <span className="font-semibold text-white text-sm">Drew</span>
                     </div>
-                    <div className="flex gap-1">
-                      <div
-                        className="w-2 h-2 bg-zinc-600 rounded-full animate-bounce"
-                        style={{ animationDelay: "0ms" }}
-                      />
-                      <div
-                        className="w-2 h-2 bg-zinc-600 rounded-full animate-bounce"
-                        style={{ animationDelay: "150ms" }}
-                      />
-                      <div
-                        className="w-2 h-2 bg-zinc-600 rounded-full animate-bounce"
-                        style={{ animationDelay: "300ms" }}
-                      />
+                    <div className="flex gap-1 items-center">
+                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse" />
+                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-75" />
+                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-150" />
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="bg-zinc-800/50 px-4 py-3 border-t border-zinc-700">
-                <div className="bg-zinc-900/50 rounded-lg px-4 py-2 text-sm text-zinc-600">
+              <div className="bg-zinc-800/70 px-4 py-3 border-t border-zinc-700/80">
+                <div className="bg-zinc-800/80 rounded-xl px-4 py-2.5 text-sm text-zinc-500 border border-zinc-600/50">
                   Type your message...
                 </div>
               </div>
@@ -709,34 +727,34 @@ function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
     {
-      question: "Do I need coding skills?",
+      question: "How do I create a game?",
       answer:
-        "Not at all! Just describe your game idea in plain English to the Game Master. The platform handles all the technical stuff automatically.",
+        "Sign in with Google, then go to Create. You can either chat with the Game Master to describe your idea in plain English, or pick a template from Discover (e.g. Werewolf, Who's the Spy, Mafia, Tarot). Set player count and optional rules—no coding or complex setup. Your game is ready in about 2 minutes.",
     },
     {
-      question: "How long does it take to create a game?",
+      question: "What is the Game Master and how does it work?",
       answer:
-        "About 2 minutes from concept to playable game. Simply tell the Game Master your idea, customize a few settings, and you're ready to play.",
+        "The Game Master is an AI host that runs your game: it explains rules, runs day/night or discussion phases, and keeps the flow. You can also add AI players so the room is filled even when playing alone. The host and players use natural dialogue so it feels like a real tabletop session.",
     },
     {
-      question: "Can I play with real friends?",
+      question: "Can I play with friends or share a game?",
       answer:
-        "Absolutely! Share your game link with anyone. You can mix human players with AI characters for the perfect game balance.",
+        "Yes. From your game room you can copy a share link and send it to friends. They open the link in their browser to join. You can play with a mix of human and AI players. Your saved games appear under My Games when you're signed in.",
     },
     {
-      question: "Are the AI characters convincing?",
+      question: "What templates or game types are available?",
       answer:
-        "Yes! Our AI responds in under 2 seconds with natural, contextual dialogue. Most players forget they're interacting with AI after a few minutes.",
+        "We include templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, and Tarot Reading (single-player). Discover shows these with one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
     },
     {
-      question: "Is it really free?",
+      question: "Do I need to sign in? Is it free?",
       answer:
-        "Yes, you can start playing for free with all core features. Premium plans unlock additional AI characters, faster responses, and advanced customization options.",
+        "You can browse the site and try the intro chat without signing in. To create, save, and manage games (and use My Games), sign in with Google—it's free, and we don't ask for a credit card. Your games are stored in your account so you can return anytime.",
     },
     {
-      question: "Can I create any type of game?",
+      question: "Where are my games saved?",
       answer:
-        "Absolutely! While we offer 20+ templates for classics like Werewolf and Murder Mystery, you have complete freedom to design custom games with unique rules and mechanics.",
+        "When you're signed in, every game you create is saved to your account. Open My Games from the sidebar to see your library, reopen any game, or delete ones you no longer need. Games are tied to your Google account and available across devices.",
     },
   ];
   return (
@@ -766,7 +784,7 @@ function FAQSection() {
               />
             </button>
             <div
-              className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-48" : "max-h-0"}`}
+              className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-80" : "max-h-0"}`}
             >
               <div className="px-6 pb-5 text-sm text-zinc-400 leading-relaxed">
                 {faq.answer}

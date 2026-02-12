@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { MyGamesPage } from "@/app/components/my-games-page";
 import { Toaster } from "@/app/components/ui/sonner";
@@ -13,12 +14,20 @@ import { Lock, LogIn } from "lucide-react";
 export default function MyGamesPageRoute() {
   const router = useRouter();
   const { games, selectedGameId, selectGame, updateGame } = useGameContext();
-  const { user, loading } = useAuth();
+  const { user, loading, signInWithGoogle } = useAuth();
 
   // 进入 My Games 页时同步侧边栏高亮为 "my-games"
   useEffect(() => {
     selectGame("my-games");
   }, [selectGame]);
+
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle("/my-games");
+    } catch {
+      toast.error("登录失败，请重试");
+    }
+  };
 
   // Show sign-in prompt if not authenticated
   if (!user && !loading) {
@@ -28,8 +37,8 @@ export default function MyGamesPageRoute() {
           games={games}
           selectedGameId={selectedGameId}
           onSelectGame={(gameId) => selectGame(gameId)}
-          onCreateGame={() => router.push("/signin")}
-          onOpenProfile={() => router.push("/signin")}
+          onCreateGame={handleSignIn}
+          onOpenProfile={handleSignIn}
           onUpdateGame={updateGame}
         />
 
@@ -43,7 +52,7 @@ export default function MyGamesPageRoute() {
               Create an account or sign in to access your game library and continue your adventures.
             </p>
             <Button
-              onClick={() => router.push("/signin")}
+              onClick={handleSignIn}
               size="lg"
               className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white"
             >
