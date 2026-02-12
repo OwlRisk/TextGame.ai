@@ -749,7 +749,7 @@ function FAQSection() {
     {
       question: "Do I need to sign in? Is it free?",
       answer:
-        "You can browse the site and try the intro chat without signing in. To create, save, and manage games (and use My Games), sign in with Google—it's free, and we don't ask for a credit card. Your games are stored in your account so you can return anytime.",
+        "You can browse the site and try the intro chat without signing in. To create, save, and manage games (and use My Games), sign in with Google. New accounts get $5 in trial credit to play—no credit card required to start. Your games are stored in your account so you can return anytime.",
     },
     {
       question: "Where are my games saved?",

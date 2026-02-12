@@ -46,7 +46,7 @@ function avatarCacheKey(name: string, type: AvatarType): string {
 }
 
 /** Version prefix: bump to force regeneration when style/prompt changes (e.g. unified anime + both eyes) */
-const AVATAR_STORAGE_VERSION = 'v2';
+const AVATAR_STORAGE_VERSION = 'v3';
 
 /** Deterministic storage path for upsert */
 function avatarStoragePath(name: string, type: AvatarType): string {
@@ -92,11 +92,17 @@ const BOTH_EYES_REQUIRED =
   'Both eyes must be clearly visible. Face the viewer or slight 3/4 view. ' +
   'No hair covering either eye. No one-eye, no winking, no profile showing only one eye. Two eyes visible.';
 
+/** Friendly, non-scary constraint so avatars stay suitable for a casual game (no horror/creepy from role words like werewolf, mafia). */
+const FRIENDLY_SAFE =
+  'Friendly, approachable look. No horror, no frightening or creepy elements. No fangs, no blood, no dark sinister appearance. ' +
+  'Cute, charming anime style. Safe for all ages. Game avatar.';
+
 /** Single shared style for Host and Player — identical so all avatars look the same (anime, not realistic). */
 const SHARED_CORE_STYLE =
   'Anime/manga illustration style only. Not photorealistic. Not realistic photography. ' +
   'One person, one face. Single avatar portrait. Head and shoulders. Colorful hair, expressive large eyes, clean line art. ' +
   BOTH_EYES_REQUIRED + ' ' +
+  FRIENDLY_SAFE + ' ' +
   'No text.';
 
 /** Gender phrase for prompt: avatar appearance must match name gender */
@@ -120,6 +126,35 @@ function sanitizeSinglePersonDescription(text: string): string {
     [/,?\s*and\s+another\s+(person|character|face)/gi, ''],
   ];
   for (const [from, to] of replace) {
+    s = typeof from === 'string' ? s.replace(new RegExp(from, 'gi'), to) : s.replace(from, to);
+  }
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+
+/** Strip or soften words that cause scary/creepy avatar output (e.g. werewolf, mafia, kill, blood). Keep the rest for personality. */
+function sanitizeScaryDescription(text: string): string {
+  if (!text || !text.trim()) return text;
+  let s = text.trim();
+  const scaryPatterns: [RegExp | string, string][] = [
+    [/\bwerewolf\b/gi, 'mysterious'],
+    [/\bwolf\b/gi, ''],
+    [/\bmafia\b/gi, 'clever'],
+    [/\bkill(er|ing|ed)?\b/gi, ''],
+    [/\bblood\b/gi, ''],
+    [/\bhorror\b/gi, ''],
+    [/\bcurse(d)?\b/gi, ''],
+    [/\bnight\s*stalker\b/gi, ''],
+    [/\bvillain\b/gi, 'clever'],
+    [/\bdeath\b/gi, ''],
+    [/\bdead\b/gi, ''],
+    [/\bfangs?\b/gi, ''],
+    [/\bclaws?\b/gi, ''],
+    [/\bscary\b/gi, ''],
+    [/\bcreepy\b/gi, ''],
+    [/\bsinister\b/gi, ''],
+    [/\bdark\s*(and|&)\s*brooding\b/gi, 'thoughtful'],
+  ];
+  for (const [from, to] of scaryPatterns) {
     s = typeof from === 'string' ? s.replace(new RegExp(from, 'gi'), to) : s.replace(from, to);
   }
   return s.replace(/\s{2,}/g, ' ').trim();
@@ -152,7 +187,14 @@ function buildPrompt(
       : result;
   }
 
-  const trimmedBackground = sanitizeSinglePersonDescription(background.trim());
+  const trimmedBackground = sanitizeScaryDescription(
+    sanitizeSinglePersonDescription(background.trim())
+  );
+  if (!trimmedBackground || trimmedBackground.length < 2) {
+    const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
+    return result.length > MAX_PROMPT_LENGTH ? result.substring(0, MAX_PROMPT_LENGTH) : result;
+  }
+
   const prefix = type === 'host'
     ? singleStart + genderPrefix + hostRoleHint + 'Character: '
     : singleStart + genderPrefix + 'Description: ';
