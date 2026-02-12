@@ -407,7 +407,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
                       name={msg.name}
                       type={msg.avatar === "GM" ? "host" : "player"}
                       className="w-9 h-9 flex-shrink-0 ring-1 ring-zinc-600/50"
-                      fallback={msg.avatar === "GM" ? "GM" : undefined}
+                      fallback={<></>}
                       fallbackColor={
                         msg.avatar === "GM"
                           ? "#8b5cf6"
@@ -432,6 +432,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
                     name="Drew"
                     type="player"
                     className="w-9 h-9 flex-shrink-0 ring-1 ring-zinc-600/50"
+                    fallback={<></>}
                     fallbackColor="#f97316"
                   />
                   <div className="flex-1 min-w-0">
