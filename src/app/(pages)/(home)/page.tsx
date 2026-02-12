@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { WelcomePage } from "@/app/components/welcome-page";
 import { LandingPage } from "@/app/components/landing-page";
@@ -12,7 +13,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 export default function HomePage() {
   const router = useRouter();
   const { selectGame, games, updateGame } = useGameContext();
-  const { user, loading } = useAuth();
+  const { user, loading, signInWithGoogle } = useAuth();
 
   useEffect(() => {
     if (!loading && user) {
@@ -36,6 +37,14 @@ export default function HomePage() {
 
   const isGuest = !user && !loading;
 
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle("/create");
+    } catch {
+      toast.error("登录失败，请重试");
+    }
+  };
+
   return (
     <div className="h-screen flex bg-zinc-900 text-white overflow-hidden">
       <GameSidebar
@@ -54,7 +63,7 @@ export default function HomePage() {
           </div>
         ) : isGuest ? (
           <LandingPage
-            onSignIn={() => router.push("/signin")}
+            onSignIn={handleSignIn}
             onExploreGames={handleExploreGames}
           />
         ) : (
