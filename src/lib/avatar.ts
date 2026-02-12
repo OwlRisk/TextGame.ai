@@ -7,6 +7,8 @@ type AvatarType = 'host' | 'player';
 const cache = new Map<string, string>();
 /** Dedupe in-flight requests so sidebar and game room share the same avatar for the same key */
 const inFlight = new Map<string, Promise<string>>();
+/** Only log 503 once per session to avoid console spam */
+let hasWarned503 = false;
 
 const PERSIST_PREFIX = 'gm_avatar_';
 const PERSIST_KEYS_LIST = 'gm_avatar_keys';
@@ -110,7 +112,10 @@ export async function fetchGeneratedAvatar(
         const fullError = details ? `${errorMessage} (${details})` : errorMessage;
         const is5xx = res.status >= 500 && res.status < 600;
         if (is5xx) {
-          console.warn('[Avatar] Service temporarily unavailable (', res.status, '). Showing initials. You can retry later.');
+          if (!hasWarned503) {
+            hasWarned503 = true;
+            console.warn('[Avatar] Service temporarily unavailable (', res.status, '). Showing initials. You can retry later.');
+          }
           throw new Error('Avatar service temporarily unavailable. Showing initials—you can retry later.');
         }
         console.error('[Avatar] API error:', res.status, fullError);
