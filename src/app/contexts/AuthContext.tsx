@@ -5,35 +5,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-const SESSION_STARTED_AT_KEY = 'gm_session_started_at';
-/** 登录状态保持 30 天，超时后前端自动登出 */
-const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-
-function getSessionStartedAt(): number | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const v = localStorage.getItem(SESSION_STARTED_AT_KEY);
-    return v ? parseInt(v, 10) : null;
-  } catch {
-    return null;
-  }
-}
-
-function setSessionStartedAt(ms: number): void {
-  try {
-    localStorage.setItem(SESSION_STARTED_AT_KEY, String(ms));
-  } catch {
-    // ignore
-  }
-}
-
-function clearSessionStartedAt(): void {
-  try {
-    localStorage.removeItem(SESSION_STARTED_AT_KEY);
-  } catch {
-    // ignore
-  }
-}
+/** 登录状态不过期，由 Supabase 的 refresh token 持续刷新 */
 
 interface AuthContextType {
   user: User | null;
@@ -59,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setSession(null);
-    clearSessionStartedAt();
     router.push('/');
     setTimeout(() => {
       window.location.href = '/';
@@ -70,20 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check active session and sync user from server (avatar is persisted in callback via admin API)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log("Initial session check:", session);
-      if (session) {
-        let startedAt = getSessionStartedAt();
-        if (startedAt == null) {
-          startedAt = Date.now();
-          setSessionStartedAt(startedAt);
-        }
-        if (Date.now() - startedAt > SESSION_MAX_AGE_MS) {
-          await doSignOut();
-          setLoading(false);
-          return;
-        }
-      } else {
-        clearSessionStartedAt();
-      }
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
@@ -115,18 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
-      if (session) {
-        if (event === 'SIGNED_IN') {
-          setSessionStartedAt(Date.now());
-        }
-        const startedAt = getSessionStartedAt();
-        if (startedAt != null && Date.now() - startedAt > SESSION_MAX_AGE_MS) {
-          await doSignOut();
-          return;
-        }
-      } else {
-        clearSessionStartedAt();
-      }
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
@@ -179,7 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       console.log("Signing out user...");
-      clearSessionStartedAt();
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
