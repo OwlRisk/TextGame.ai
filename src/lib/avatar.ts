@@ -91,6 +91,7 @@ export async function fetchGeneratedAvatar(
 
   const promise = (async () => {
     try {
+      console.log('[Avatar] fetch start', key);
       const res = await fetch('/api/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,11 +106,14 @@ export async function fetchGeneratedAvatar(
         }),
       });
 
+      console.log('[Avatar] response', res.status, res.statusText);
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         const errorMessage = (err as { error?: string; details?: string }).error || 'Failed to generate avatar';
         const details = (err as { details?: string }).details;
         const fullError = details ? `${errorMessage} (${details})` : errorMessage;
+        console.warn('[Avatar] error body', err);
         const is5xx = res.status >= 500 && res.status < 600;
         if (is5xx) {
           if (!hasWarned503) {
@@ -123,6 +127,7 @@ export async function fetchGeneratedAvatar(
       }
 
       const data = (await res.json()) as { image: string };
+      console.log('[Avatar] success', key);
       cache.set(key, data.image);
       saveToStorage(key, data.image);
       return data.image;

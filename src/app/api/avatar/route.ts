@@ -307,6 +307,11 @@ async function generateWithReplicate(
 }
 
 export async function POST(request: NextRequest) {
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  const hasReplicate = Boolean(process.env.REPLICATE_API_TOKEN);
+  const model = getModel();
+  console.log('[Avatar API] POST received. OPENAI_API_KEY:', hasOpenAI ? 'set' : 'MISSING', '| REPLICATE_API_TOKEN:', hasReplicate ? 'set' : 'missing', '| model:', model);
+
   try {
     const body = await request.json();
     const {
@@ -328,6 +333,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!name || typeof name !== 'string') {
+      console.warn('[Avatar API] 400: name missing or not string');
       return NextResponse.json(
         { error: 'name (string) is required' },
         { status: 400 }
@@ -336,6 +342,7 @@ export async function POST(request: NextRequest) {
 
     const avatarType: AvatarType = type === 'host' ? 'host' : 'player';
     const path = avatarStoragePath(name, avatarType);
+    console.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', path);
 
     // 用服务端 Supabase API 检查是否已存在，避免公网 HEAD 失败导致重复生成
     if (supabaseAdmin) {
@@ -343,6 +350,7 @@ export async function POST(request: NextRequest) {
         .from(AVATAR_BUCKET)
         .download(path);
       if (!downloadError && blob && blob.size > 0) {
+        console.log('[Avatar API] cache hit Supabase:', path);
         const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
         return NextResponse.json({ image: urlData.publicUrl });
       }
@@ -359,7 +367,6 @@ export async function POST(request: NextRequest) {
       console.error(`[Avatar] Prompt preview: ${prompt.substring(0, 300)}...`);
     }
 
-    const model = getModel();
     let imageDataUrl: string;
 
     // Validate prompt length before generation
@@ -372,7 +379,15 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      console.log('[Avatar API] generating with', model);
       if (model === 'dalle-3') {
+        if (!hasOpenAI) {
+          console.error('[Avatar API] OPENAI_API_KEY not set but model is dalle-3');
+          return NextResponse.json(
+            { error: 'Avatar service unavailable', details: 'OPENAI_API_KEY is not configured' },
+            { status: 503 }
+          );
+        }
         imageDataUrl = await generateWithDalle3(prompt);
       } else if (model === 'flux' || model === 'stable-diffusion') {
         imageDataUrl = await generateWithReplicate(prompt, model);
@@ -416,9 +431,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('[Avatar API] success, returning base64 image');
     return NextResponse.json({ image: image64 });
   } catch (e: unknown) {
-    console.error('Avatar generation error:', e);
+    console.error('[Avatar API] error:', e);
     const err = e as { status?: number; message?: string; error?: { message?: string } };
     
     // Extract detailed error message
@@ -433,13 +449,12 @@ export async function POST(request: NextRequest) {
     }
     
     const statusCode = err.status ?? 500;
-    console.error(`Avatar API error (${statusCode}):`, errorMessage);
-    
+    const details = statusCode === 400
+      ? 'Bad request - check prompt length and format'
+      : (statusCode === 503 ? 'Service unavailable - check OPENAI_API_KEY or Replicate token' : undefined);
+    console.error('[Avatar API] responding', statusCode, errorMessage, details ?? '');
     return NextResponse.json(
-      { 
-        error: errorMessage,
-        details: statusCode === 400 ? 'Bad request - check prompt length and format' : undefined
-      },
+      { error: errorMessage, details },
       { status: statusCode }
     );
   }
