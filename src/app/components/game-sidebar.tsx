@@ -49,9 +49,11 @@ interface GameSidebarProps {
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
   onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
+  /** 移动端抽屉内使用时，导航后关闭抽屉 */
+  onNavigate?: () => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onUpdateGame }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onUpdateGame, onNavigate }: GameSidebarProps) {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -125,7 +127,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           {/* Home: 未登录去首页 /，已登录去 /create */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href={user ? "/create" : "/"} prefetch onClick={() => onSelectGame("home")} className="block">
+              <Link href={user ? "/create" : "/"} prefetch onClick={() => { onSelectGame("home"); onNavigate?.(); }} className="block">
                 <div className="relative group">
                   <Button
                     variant="ghost"
@@ -159,7 +161,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           {/* My Games - Link for prefetch */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href="/my-games" prefetch onClick={() => onSelectGame("my-games")} className="block">
+              <Link href="/my-games" prefetch onClick={() => { onSelectGame("my-games"); onNavigate?.(); }} className="block">
                 <div className="relative group">
                   <Button
                     variant="ghost"
@@ -193,7 +195,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           {/* Discover - Link for prefetch */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href="/discover" prefetch onClick={() => onSelectGame("discover")} className="block">
+              <Link href="/discover" prefetch onClick={() => { onSelectGame("discover"); onNavigate?.(); }} className="block">
                 <div className="relative group">
                   <Button
                     variant="ghost"
@@ -237,7 +239,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <ContextMenuTrigger>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link href={`/game/${game.id}`} prefetch onClick={() => onSelectGame(game.id)} className="block">
+                        <Link href={`/game/${game.id}`} prefetch onClick={() => { onSelectGame(game.id); onNavigate?.(); }} className="block">
                           <div className="relative group">
                             <Button
                               variant="ghost"

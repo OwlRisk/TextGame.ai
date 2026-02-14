@@ -85,7 +85,7 @@ function SignInPageInner() {
           <Button
             onClick={handleGoogleSignIn}
             disabled={isSigningIn}
-            className="w-full h-12 bg-white hover:bg-zinc-100 text-zinc-900 font-semibold text-base transition-all"
+            className="w-full min-h-[44px] h-12 bg-white hover:bg-zinc-100 text-zinc-900 font-semibold text-base transition-all"
             size="lg"
           >
             {isSigningIn ? (

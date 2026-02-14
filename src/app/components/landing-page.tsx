@@ -235,12 +235,12 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
         style={{ animationDuration: "6s", animationDelay: "1s" }}
       />
 
-      <div className="relative max-w-6xl mx-auto px-8 py-16">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 md:py-16">
         {/* Hero - Two Column */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center mb-16 md:mb-24">
           <div>
-            <div className="mb-8">
-              <h1 className="text-4xl font-black text-white tracking-tight">
+            <div className="mb-6 md:mb-8">
+              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                 TextGame.ai
               </h1>
               <p className="text-sm text-zinc-400 font-medium mt-1">
@@ -248,7 +248,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
               </p>
             </div>
 
-            <h2 className="text-5xl font-black text-white mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
               Create multiplayer{" "}
               <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                 AI games
@@ -256,7 +256,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
               in 2 minutes
             </h2>
 
-            <p className="text-xl text-zinc-400 mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-6 md:mb-8 leading-relaxed">
               No coding. No setup. Just describe your game and play with AI
               characters in seconds.
             </p>
@@ -306,7 +306,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
               <Button
                 onClick={onSignIn}
                 size="lg"
-                className="w-full max-w-xl bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-6 rounded-xl shadow-lg transition-all"
+                className="w-full max-w-xl min-h-[44px] bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-base sm:text-lg py-5 sm:py-6 rounded-xl shadow-lg transition-all"
               >
                 <svg className="h-6 w-6 mr-3 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -332,7 +332,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
                 <Button
                   onClick={onExploreGames}
                   size="lg"
-                  className="mt-3 w-full max-w-xl bg-violet-600/90 hover:bg-violet-500 border border-violet-400/60 text-white font-bold text-lg py-6 rounded-xl transition-all"
+                  className="mt-3 w-full max-w-xl min-h-[44px] bg-violet-600/90 hover:bg-violet-500 border border-violet-400/60 text-white font-bold text-base sm:text-lg py-5 sm:py-6 rounded-xl transition-all"
                 >
                   <Lightbulb className="h-5 w-5 mr-2 shrink-0" />
                   Browse templates

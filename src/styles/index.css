@@ -189,14 +189,39 @@
   caret-color: #8b5cf6;
 }
 
+/* 移动端基础：安全区、触控、最小高度 */
+.safe-area-padding {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@supports (min-height: 100dvh) {
+  .min-h-screen-mobile {
+    min-height: 100dvh;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  /* 触控友好：减少延迟与高亮 */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
   }
 
   /**

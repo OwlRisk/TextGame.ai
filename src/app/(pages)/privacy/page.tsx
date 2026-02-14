@@ -6,7 +6,7 @@ import { Button } from "@/app/components/ui/button";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200 p-6 md:p-10">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200 p-4 sm:p-6 md:p-10">
       <div className="max-w-2xl mx-auto">
         <Link href="/">
           <Button variant="ghost" className="text-zinc-400 hover:text-white mb-8 -ml-2">

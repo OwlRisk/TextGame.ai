@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
@@ -10,8 +10,11 @@ import { ChannelList } from "@/app/components/channel-list";
 import { ChatArea } from "@/app/components/chat-area";
 import { PlayerPanel } from "@/app/components/player-panel";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { Sheet, SheetContent } from "@/app/components/ui/sheet";
+import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
+import { Menu, Hash, Users } from "lucide-react";
 
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
@@ -97,6 +100,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const { gameId } = use(params);
+  const pathname = usePathname();
+
+  /** 移动端左侧抽屉：'app' 应用导航 | 'channels' 频道列表 */
+  const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
+  const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
+
+  useEffect(() => {
+    setMobileLeftDrawer(null);
+    setMobileRightDrawer(false);
+  }, [pathname]);
 
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
@@ -699,40 +712,84 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
     );
   }
 
-  return (
-    <div className="h-screen flex bg-zinc-900 text-white overflow-hidden">
-      {/* Left app sidebar: Home, My games, Discover, game list */}
-      <GameSidebar
-        games={games}
-        selectedGameId={selectedGameId}
-        onSelectGame={(gameId: string) => selectGame(gameId)}
-        onCreateGame={() => router.push("/create")}
-        onOpenProfile={() => router.push("/profile")}
-        onUpdateGame={updateGame}
-      />
+  const sidebarCommon = {
+    games,
+    selectedGameId,
+    onSelectGame: (id: string) => selectGame(id),
+    onCreateGame: () => router.push("/create"),
+    onOpenProfile: () => router.push("/profile"),
+    onUpdateGame: updateGame,
+  };
+  const channelListCommon = {
+    gameName: currentGame?.name ?? "Game",
+    channels: gameChannels,
+    selectedChannelId,
+    onShare: handleShare,
+    shareJustCopied: shareCopied,
+    onSettings: () => toast.info("Settings coming soon"),
+    textSectionLabel: "Sections",
+    gameSectionLabel: "Game Rooms",
+    userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
+    gameUserDisplayName: humanGameIdentity?.name || null,
+    gameId,
+    onDeleteChannel: (id: string | undefined) => {
+      if (id === "rules" || id === "progress") {
+        toast.info("Sections cannot be removed");
+        return;
+      }
+      if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
+    },
+  };
 
-      {/* Game sidebar: # Rules, # Progress, # game-room */}
-      <ChannelList
-        gameName={currentGame?.name ?? "Game"}
-        channels={gameChannels}
-        selectedChannelId={selectedChannelId}
-        onSelectChannel={(id) => setSelectedChannelId(id)}
-        onShare={handleShare}
-        shareJustCopied={shareCopied}
-        onSettings={() => toast.info("Settings coming soon")}
-        textSectionLabel="Sections"
-        gameSectionLabel="Game Rooms"
-        userDisplayName={session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null}
-        gameUserDisplayName={humanGameIdentity?.name || null}
-        gameId={gameId}
-        onDeleteChannel={(id) => {
-          if (id === "rules" || id === "progress") {
-            toast.info("Sections cannot be removed");
-            return;
-          }
-          if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
-        }}
-      />
+  return (
+    <div className="h-screen flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
+      {/* 移动端顶栏：仅小屏显示 */}
+      <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95">
+        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "app" ? null : "app"))} aria-label="打开菜单">
+          <Menu className="size-5 text-zinc-300" />
+        </Button>
+        <span className="text-sm font-medium text-zinc-300 truncate max-w-[40%]">{currentGame?.name ?? "Game"}</span>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "channels" ? null : "channels"))} aria-label="频道与规则">
+            <Hash className="size-5 text-zinc-300" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileRightDrawer((v) => !v)} aria-label="玩家列表">
+            <Users className="size-5 text-zinc-300" />
+          </Button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden min-h-0">
+      {/* Left app sidebar: 桌面显示，移动端在 Sheet 中 */}
+      <div className="hidden md:flex flex-shrink-0 z-10">
+        <GameSidebar {...sidebarCommon} />
+      </div>
+
+      {/* 移动端左侧抽屉：应用导航 */}
+      <Sheet open={mobileLeftDrawer === "app"} onOpenChange={(open) => !open && setMobileLeftDrawer(null)}>
+        <SheetContent side="left" title="Menu" className="w-[5rem] max-w-[5rem] p-0 border-r border-violet-900/20 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950">
+          <GameSidebar {...sidebarCommon} onNavigate={() => setMobileLeftDrawer(null)} />
+        </SheetContent>
+      </Sheet>
+
+      {/* 移动端左侧抽屉：频道与规则 */}
+      <Sheet open={mobileLeftDrawer === "channels"} onOpenChange={(open) => !open && setMobileLeftDrawer(null)}>
+        <SheetContent side="left" title="Channels and rules" className="w-64 max-w-[85vw] p-0 bg-zinc-800 border-r border-zinc-700">
+          <ChannelList
+            {...channelListCommon}
+            selectedChannelId={selectedChannelId}
+            onSelectChannel={(id) => { setSelectedChannelId(id); setMobileLeftDrawer(null); }}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Game sidebar: 桌面显示，移动端在 Sheet 中 */}
+      <div className="hidden md:block flex-shrink-0">
+        <ChannelList
+          {...channelListCommon}
+          onSelectChannel={(id) => setSelectedChannelId(id)}
+        />
+      </div>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {selectedChannelId === "rules" ? (
@@ -786,13 +843,29 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         ) : null}
       </div>
 
-      <PlayerPanel
-        players={players}
-        gameId={gameId}
-        humanGameIdentity={humanGameIdentity}
-        avatarImageUrls={avatarImageUrls}
-        onAvatarUrlLoaded={onAvatarUrlLoaded}
-      />
+      {/* 玩家面板：桌面显示，移动端在右侧 Sheet */}
+      <div className="hidden md:block flex-shrink-0">
+        <PlayerPanel
+          players={players}
+          gameId={gameId}
+          humanGameIdentity={humanGameIdentity}
+          avatarImageUrls={avatarImageUrls}
+          onAvatarUrlLoaded={onAvatarUrlLoaded}
+        />
+      </div>
+
+      <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
+        <SheetContent side="right" title="Players" className="w-64 max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700">
+          <PlayerPanel
+            players={players}
+            gameId={gameId}
+            humanGameIdentity={humanGameIdentity}
+            avatarImageUrls={avatarImageUrls}
+            onAvatarUrlLoaded={onAvatarUrlLoaded}
+          />
+        </SheetContent>
+      </Sheet>
+      </div>
 
       <Toaster
         position="top-right"

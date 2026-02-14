@@ -6,17 +6,25 @@
   <title>textgame.ai 站点图标</title>
   <style>
     * { box-sizing: border-box; }
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
     body {
       font-family: system-ui, -apple-system, sans-serif;
       background: linear-gradient(160deg, #0c0814 0%, #1a0f24 100%);
       color: #e4e4e7;
       min-height: 100vh;
+      min-height: -webkit-fill-available;
       margin: 0;
       padding: 2rem;
+      padding-left: max(2rem, env(safe-area-inset-left));
+      padding-right: max(2rem, env(safe-area-inset-right));
+      padding-bottom: max(2rem, env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 2rem;
+      -webkit-tap-highlight-color: transparent;
     }
     h1 {
       font-size: 1.35rem;
@@ -27,6 +35,8 @@
     .hero {
       width: 160px;
       height: 160px;
+      max-width: min(160px, 45vw);
+      max-height: min(160px, 45vw);
       border-radius: 24px;
       box-shadow: 0 24px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
     }
@@ -62,6 +72,8 @@
     }
     .btns button {
       padding: 0.65rem 1.25rem;
+      min-height: 44px;
+      min-width: 44px;
       border-radius: 10px;
       border: none;
       font-size: 0.875rem;
@@ -70,14 +82,64 @@
       background: linear-gradient(135deg, #6d28d9, #7c3aed);
       color: white;
       transition: transform 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .btns button:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 20px rgba(109, 40, 217, 0.35);
     }
+    .btns button:active {
+      transform: scale(0.98);
+    }
     .btns button.secondary {
       background: #27272a;
       color: #e4e4e7;
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 480px) {
+      body {
+        padding: 1.25rem;
+        padding-left: max(1.25rem, env(safe-area-inset-left));
+        padding-right: max(1.25rem, env(safe-area-inset-right));
+        padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+        gap: 1.5rem;
+      }
+      h1 {
+        font-size: 1.2rem;
+        text-align: center;
+      }
+      .hero {
+        width: 140px;
+        height: 140px;
+        max-width: min(140px, 50vw);
+        max-height: min(140px, 50vw);
+      }
+      .previews {
+        gap: 1rem;
+      }
+      .preview-item label {
+        font-size: 0.65rem;
+      }
+      .preview-box {
+        padding: 10px;
+      }
+      .btns {
+        gap: 0.5rem;
+      }
+      .btns button {
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 0;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .btns button {
+        flex: 1 1 100%;
+      }
     }
   </style>
 </head>
