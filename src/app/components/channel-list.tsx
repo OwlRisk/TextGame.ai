@@ -181,8 +181,8 @@ export function ChannelList({
         </div>
       </ScrollArea>
 
-      {/* User Section */}
-      <div className="h-16 bg-zinc-900/50 px-3 flex items-center justify-between border-t border-zinc-900/50">
+      {/* User Section：固定在底部 */}
+      <div className="mt-auto flex-shrink-0 h-16 bg-zinc-900/50 px-3 flex items-center justify-between border-t border-zinc-900/50">
         <div className="flex items-center gap-3 min-w-0">
           {useGameAvatar ? (
             <GeneratedAvatar
