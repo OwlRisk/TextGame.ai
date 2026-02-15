@@ -732,6 +732,8 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || null,
     gameId,
+    avatarImageUrls,
+    onAvatarUrlLoaded,
     onDeleteChannel: (id: string | undefined) => {
       if (id === "rules" || id === "progress") {
         toast.info("Sections cannot be removed");

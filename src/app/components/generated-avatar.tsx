@@ -19,9 +19,9 @@ interface GeneratedAvatarProps extends Omit<UseGeneratedAvatarOptions, 'type'> {
   type?: AvatarDisplayType;
   /** Game room ID for caching - same game room will reuse generated avatars */
   gameId?: string;
-  /** If set, use this URL and skip API (e.g. from persisted game room state for cross-device). */
+  /** If set, use this URL and skip API (e.g. from persisted game room state for cross-device). Supports http(s) or data: URLs. */
   initialUrl?: string | null;
-  /** When a new avatar URL is loaded (http), call this so the room can persist it. */
+  /** When a new avatar URL is loaded (http or data:), call this so the room can persist it. */
   onAvatarLoaded?: (key: string, url: string) => void;
   className?: string;
   fallbackColor?: string;
@@ -45,7 +45,7 @@ export function GeneratedAvatar({
 }: GeneratedAvatarProps) {
   const isGM = type === "gm";
   const apiType = type === "host" ? "host" : "player";
-  const hasInitialUrl = Boolean(initialUrl && initialUrl.startsWith("http"));
+  const hasInitialUrl = Boolean(initialUrl && (initialUrl.startsWith("http") || initialUrl.startsWith("data:")));
   const { src, loading } = useGeneratedAvatar(name, {
     type: apiType,
     gameId,
@@ -60,10 +60,10 @@ export function GeneratedAvatar({
   const displaySrc = hasInitialUrl ? initialUrl : src;
   const displayLoading = hasInitialUrl ? false : loading;
 
-  // Persist URL when we get an http(s) result from the API so it syncs across devices
+  // Persist URL when we get a result from the API (http or data:) so it syncs across components and re-login
   const key = name && apiType ? avatarCacheKey(name, apiType) : "";
   useEffect(() => {
-    if (key && onAvatarLoaded && src && src.startsWith("http")) {
+    if (key && onAvatarLoaded && src && (src.startsWith("http") || src.startsWith("data:"))) {
       onAvatarLoaded(key, src);
     }
   }, [key, onAvatarLoaded, src]);

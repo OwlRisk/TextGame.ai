@@ -1,5 +1,5 @@
 import { Hash, Settings, Share2, Users, Home, Trash2 } from "lucide-react";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -48,6 +48,10 @@ interface ChannelListProps {
   /** In-game name for the human player (AI-generated). When set with gameId, show this name and use generated avatar. */
   gameUserDisplayName?: string | null;
   gameId?: string;
+  /** Persisted avatar URLs so re-login restores the same avatar (e.g. in-game generated avatar). */
+  avatarImageUrls?: Record<string, string>;
+  /** Call when avatar URL is loaded so the room can persist it. */
+  onAvatarUrlLoaded?: (key: string, url: string) => void;
 }
 
 export function ChannelList({ 
@@ -64,6 +68,8 @@ export function ChannelList({
   userDisplayName,
   gameUserDisplayName,
   gameId,
+  avatarImageUrls = {},
+  onAvatarUrlLoaded,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -184,6 +190,8 @@ export function ChannelList({
               type="player"
               gameId={gameId}
               enabled={true}
+              initialUrl={avatarImageUrls[avatarCacheKey(avatarName, "player")]}
+              onAvatarLoaded={onAvatarUrlLoaded}
               className="h-10 w-10 flex-shrink-0"
               fallbackColor="#6366f1"
             />
