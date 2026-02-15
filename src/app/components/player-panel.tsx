@@ -237,7 +237,7 @@ function PlayerCard({
               </Badge>
             )}
           </div>
-          {(player.isGameMaster || player.role) && (
+          {(player.isGameMaster || (player.role && player.isAI)) && (
             <div className="text-xs text-zinc-300 font-medium">
               {player.isGameMaster ? "Host" : player.role}
             </div>
