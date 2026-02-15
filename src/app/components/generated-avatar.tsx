@@ -85,15 +85,11 @@ export function GeneratedAvatar({
   const initials = name ? name.substring(0, 2).toUpperCase() : "??";
   const showImage = displaySrc && !displayLoading;
   const showFallback = !showImage;
-  const isHost = type === "host";
 
+  // 用户、玩家、主持人头像统一：同一圆形容器，无区分装饰，仅通过名字/角色标签区分
   return (
     <Avatar
-      className={cn(
-        "flex-shrink-0 overflow-hidden rounded-full",
-        isHost && "ring-2 ring-amber-500/50 ring-offset-2 ring-offset-zinc-800",
-        className
-      )}
+      className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}
     >
       {showImage && <AvatarImage src={displaySrc!} alt={name ?? "Avatar"} className="object-cover" />}
       {showFallback && (

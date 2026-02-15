@@ -45,8 +45,8 @@ function avatarCacheKey(name: string, type: AvatarType): string {
   return `${name}|${type}`;
 }
 
-/** Version prefix: bump to force regeneration when style/prompt changes (e.g. unified anime + both eyes) */
-const AVATAR_STORAGE_VERSION = 'v3';
+/** Version prefix: bump to force regeneration when style/prompt changes (e.g. host and player same prompt) */
+const AVATAR_STORAGE_VERSION = 'v4';
 
 /** Deterministic storage path for upsert */
 function avatarStoragePath(name: string, type: AvatarType): string {
@@ -176,29 +176,23 @@ function buildPrompt(
   const singleStart = 'Close-up portrait of exactly ONE person. Only one face visible in frame. ';
   const singleEnd = ' Single person only. No second face. No other people. No mirror or reflection with face.';
 
-  // 统一画风：Host 与 Player 使用完全相同的 SHARED_CORE_STYLE，仅用一词区分角色，保证头像风格一致
-  const hostRoleHint = 'Host character. ';
-  const baseHostPrompt = singleStart + genderPrefix + hostRoleHint + SHARED_CORE_STYLE + singleEnd;
-  const basePlayerPrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;
+  // 统一画风：Host 与 Player 使用完全相同的 prompt 结构，仅 background 不同，保证头像风格一致（不额外加 Host 角色词）
+  const basePrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;
 
   if (!background || !background.trim()) {
-    const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
-    return result.length > MAX_PROMPT_LENGTH
-      ? result.substring(0, MAX_PROMPT_LENGTH)
-      : result;
+    return basePrompt.length > MAX_PROMPT_LENGTH
+      ? basePrompt.substring(0, MAX_PROMPT_LENGTH)
+      : basePrompt;
   }
 
   const trimmedBackground = sanitizeScaryDescription(
     sanitizeSinglePersonDescription(background.trim())
   );
   if (!trimmedBackground || trimmedBackground.length < 2) {
-    const result = type === 'host' ? baseHostPrompt : basePlayerPrompt;
-    return result.length > MAX_PROMPT_LENGTH ? result.substring(0, MAX_PROMPT_LENGTH) : result;
+    return basePrompt.length > MAX_PROMPT_LENGTH ? basePrompt.substring(0, MAX_PROMPT_LENGTH) : basePrompt;
   }
 
-  const prefix = type === 'host'
-    ? singleStart + genderPrefix + hostRoleHint + 'Character: '
-    : singleStart + genderPrefix + 'Description: ';
+  const prefix = singleStart + genderPrefix + 'Description: ';
   const suffix = '. ' + SHARED_CORE_STYLE + singleEnd;
 
   const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;

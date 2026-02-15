@@ -533,7 +533,7 @@ export function ChatArea({
                                 enabled={true}
                                 initialUrl={avatarImageUrls[avatarCacheKey(userAvatarName, "player")]}
                                 onAvatarLoaded={onAvatarUrlLoaded}
-                                className="h-11 w-11 border-2 border-violet-500/20"
+                                className="h-11 w-11"
                                 fallbackColor={humanPlayer.avatar}
                               />
                             );
@@ -639,7 +639,7 @@ export function ChatArea({
                     enabled={true}
                     initialUrl={avatarImageUrls[avatarCacheKey(userAvatarName, "player")]}
                     onAvatarLoaded={onAvatarUrlLoaded}
-                    className="h-10 w-10 flex-shrink-0 border-2 border-violet-500/20"
+                    className="h-10 w-10 flex-shrink-0"
                     fallbackColor={typingUsers[0].avatar || humanPlayer.avatar}
                   />
                 ) : (
