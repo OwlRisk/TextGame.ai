@@ -87,10 +87,11 @@ const ANIME_STYLE =
   'Single character only, no background details. ' +
   'ONE PERSON. ONE FACE. ' + NO_TEXT;
 
-/** 强制双眼可见：避免只画一只眼、头发挡眼、侧脸只露一眼等 */
+/** 强制双眼可见、整张脸在画面内：避免只画一只眼、半张脸、侧脸、被裁切等 */
 const BOTH_EYES_REQUIRED =
-  'Both eyes must be clearly visible. Face the viewer or slight 3/4 view. ' +
-  'No hair covering either eye. No one-eye, no winking, no profile showing only one eye. Two eyes visible.';
+  'Full face visible. Face the viewer directly or very slight angle only. ' +
+  'Both eyes, nose, and mouth clearly visible. No profile view, no half face, no face cut off by frame. ' +
+  'No hair covering either eye. No one-eye, no winking. Complete face in frame, centered.';
 
 /** Friendly, non-scary constraint so avatars stay suitable for a casual game (no horror/creepy from role words like werewolf, mafia). */
 const FRIENDLY_SAFE =
@@ -100,7 +101,7 @@ const FRIENDLY_SAFE =
 /** Single shared style for Host and Player — identical so all avatars look the same (anime, not realistic). */
 const SHARED_CORE_STYLE =
   'Anime/manga illustration style only. Not photorealistic. Not realistic photography. ' +
-  'One person, one face. Single avatar portrait. Head and shoulders. Colorful hair, expressive large eyes, clean line art. ' +
+  'One person, one face. Single avatar portrait. Head and shoulders, full face in frame. Colorful hair, expressive large eyes, clean line art. ' +
   BOTH_EYES_REQUIRED + ' ' +
   FRIENDLY_SAFE + ' ' +
   'No text.';
