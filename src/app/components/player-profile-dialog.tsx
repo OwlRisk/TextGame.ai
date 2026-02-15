@@ -2,22 +2,32 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Player } from "@/app/components/player-panel";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { User, Sparkles, BookOpen } from "lucide-react";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 interface PlayerProfileDialogProps {
   player: Player | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   gameId?: string;
+  /** Persisted avatar URLs so dialog shows the same avatar as the player list */
+  avatarImageUrls?: Record<string, string>;
+  onAvatarUrlLoaded?: (key: string, url: string) => void;
+  /** When set, human player uses this name for avatar key (match PlayerPanel) */
+  humanGameIdentity?: { name: string } | null;
 }
 
-export function PlayerProfileDialog({ player, open, onOpenChange, gameId }: PlayerProfileDialogProps) {
+export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatarImageUrls = {}, onAvatarUrlLoaded, humanGameIdentity }: PlayerProfileDialogProps) {
   if (!player) return null;
 
   const isUser = !player.isAI;
+  const useGameAvatarForHuman = isUser && !!gameId;
+  const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
+  const { user } = useAuth();
+  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,20 +52,39 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId }: Play
 
         <div className="space-y-4 pt-2">
           <div className="flex items-center gap-4">
-            {isUser ? (
+            {isUser && !useGameAvatarForHuman ? (
               <Avatar className="h-16 w-16 rounded-xl ring-2 ring-zinc-600">
+                {userAvatarUrl ? <AvatarImage src={userAvatarUrl} alt={player.name} className="object-cover" /> : null}
                 <AvatarFallback className="text-white text-lg" style={{ backgroundColor: player.avatar }}>
                   {player.name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-            ) : (
+            ) : isUser && useGameAvatarForHuman ? (
               <GeneratedAvatar
-                {...getAvatarPropsForPlayer(player)}
+                name={humanAvatarName}
+                type="player"
                 gameId={gameId}
                 enabled={true}
+                initialUrl={avatarImageUrls[avatarCacheKey(humanAvatarName, "player")]}
+                onAvatarLoaded={onAvatarUrlLoaded}
                 className="h-16 w-16 rounded-xl ring-2 ring-zinc-600"
                 fallbackColor={player.avatar}
               />
+            ) : (
+              (() => {
+                const avatarProps = getAvatarPropsForPlayer(player);
+                return (
+                  <GeneratedAvatar
+                    {...avatarProps}
+                    gameId={gameId}
+                    enabled={true}
+                    initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
+                    onAvatarLoaded={onAvatarUrlLoaded}
+                    className="h-16 w-16 rounded-xl ring-2 ring-zinc-600"
+                    fallbackColor={player.avatar}
+                  />
+                );
+              })()
             )}
             <div className="flex-1 min-w-0">
               {player.role && (

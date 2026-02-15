@@ -74,6 +74,9 @@ export function PlayerPanel({
         open={profileOpen}
         onOpenChange={setProfileOpen}
         gameId={gameId}
+        avatarImageUrls={avatarImageUrls}
+        onAvatarUrlLoaded={onAvatarUrlLoaded}
+        humanGameIdentity={humanGameIdentity}
       />
       <div className="h-12 px-4 flex items-center border-b border-zinc-900/50 bg-zinc-900/30">
         <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Players — {players.length}</h3>
