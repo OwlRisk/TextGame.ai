@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,12 +9,37 @@ const openai = new OpenAI({
 
 export async function POST(req: NextRequest) {
   try {
+    // Authenticate user
+    const user = await getAuthUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { gameRules, gameName } = await req.json();
 
     if (!gameRules) {
       return NextResponse.json(
         { error: "Game rules are required" },
         { status: 400 }
+      );
+    }
+
+    // Check and deduct tokens
+    const hasTokens = await deductTokens(
+      user.id,
+      TOKEN_COSTS.GENERATE_HOST,
+      'game_creation',
+      'Generate AI host character'
+    );
+
+    if (!hasTokens) {
+      return NextResponse.json(
+        { 
+          error: 'Insufficient tokens', 
+          message: 'You need more tokens to generate a host. Please purchase tokens or upgrade to Pro.',
+          code: 'INSUFFICIENT_TOKENS'
+        },
+        { status: 402 }
       );
     }
 

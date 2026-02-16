@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -35,6 +36,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Messages array is required' },
         { status: 400 }
+      );
+    }
+
+    // Check and deduct tokens
+    const hasTokens = await deductTokens(
+      user.id,
+      TOKEN_COSTS.GM_CHAT_MESSAGE,
+      'ai_chat',
+      'GM chat message'
+    );
+
+    if (!hasTokens) {
+      return NextResponse.json(
+        { 
+          error: 'Insufficient tokens', 
+          message: 'You need more tokens to continue chatting. Please purchase tokens or upgrade to Pro for unlimited usage.',
+          code: 'INSUFFICIENT_TOKENS'
+        },
+        { status: 402 }
       );
     }
 
