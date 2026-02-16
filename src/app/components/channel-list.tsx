@@ -1,4 +1,4 @@
-import { Hash, Settings, Share2, Users, Home, Trash2 } from "lucide-react";
+import { Hash, Share2, Users, Home, Trash2 } from "lucide-react";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
@@ -35,7 +35,6 @@ interface ChannelListProps {
   selectedChannelId: string | null;
   onSelectChannel: (channelId: string) => void;
   onShare: () => void;
-  onSettings: () => void;
   /** When true, show "Copied!" feedback on the share button for a short time */
   shareJustCopied?: boolean;
   onDeleteChannel?: (channelId: string) => void;
@@ -60,7 +59,6 @@ export function ChannelList({
   selectedChannelId, 
   onSelectChannel,
   onShare,
-  onSettings,
   shareJustCopied = false,
   onDeleteChannel,
   textSectionLabel = "Sections",
@@ -182,37 +180,32 @@ export function ChannelList({
       </ScrollArea>
 
       {/* User Section：固定在底部 */}
-      <div className="mt-auto flex-shrink-0 h-16 bg-zinc-900/50 px-3 flex items-center justify-between border-t border-zinc-900/50">
-        <div className="flex items-center gap-3 min-w-0">
-          {useGameAvatar ? (
-            <GeneratedAvatar
-              name={avatarName}
-              type="player"
-              gameId={gameId}
-              enabled={true}
-              initialUrl={avatarImageUrls[avatarCacheKey(avatarName, "player")]}
-              onAvatarLoaded={onAvatarUrlLoaded}
-              className="h-10 w-10 flex-shrink-0"
-              fallbackColor="#6366f1"
-            />
-          ) : (
-            <Avatar className="h-10 w-10 flex-shrink-0 border-2 border-white/10">
-              {userAvatarUrl ? (
-                <AvatarImage src={userAvatarUrl} alt={displayName} className="object-cover" />
-              ) : null}
-              <AvatarFallback className="bg-indigo-600 text-xs font-semibold text-white">
-                {displayName.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-white truncate" title={displayName}>{displayName}</div>
-            <div className="text-xs text-zinc-400">{shortLabel}</div>
-          </div>
+      <div className="mt-auto flex-shrink-0 h-16 bg-zinc-900/50 px-3 flex items-center gap-3 border-t border-zinc-900/50">
+        {useGameAvatar ? (
+          <GeneratedAvatar
+            name={avatarName}
+            type="player"
+            gameId={gameId}
+            enabled={true}
+            initialUrl={avatarImageUrls[avatarCacheKey(avatarName, "player")]}
+            onAvatarLoaded={onAvatarUrlLoaded}
+            className="h-10 w-10 flex-shrink-0"
+            fallbackColor="#6366f1"
+          />
+        ) : (
+          <Avatar className="h-10 w-10 flex-shrink-0 border-2 border-white/10">
+            {userAvatarUrl ? (
+              <AvatarImage src={userAvatarUrl} alt={displayName} className="object-cover" />
+            ) : null}
+            <AvatarFallback className="bg-indigo-600 text-xs font-semibold text-white">
+              {displayName.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-white truncate" title={displayName}>{displayName}</div>
+          <div className="text-xs text-zinc-400">{shortLabel}</div>
         </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" onClick={onSettings} title="Coming soon">
-          <Settings className="h-4 w-4 text-zinc-400" />
-        </Button>
       </div>
 
       {/* Delete Confirmation Dialog */}
