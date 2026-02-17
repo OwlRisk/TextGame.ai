@@ -358,9 +358,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
 
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100 opacity-70 cursor-not-allowed"
-                      disabled
-                      title="Coming soon"
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        router.push('/pricing');
+                      }}
                     >
                       <Crown className="mr-3 h-4 w-4 text-amber-500" />
                       <span className="text-sm">Upgrade to Pro</span>

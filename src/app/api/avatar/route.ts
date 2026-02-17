@@ -4,6 +4,8 @@ import OpenAI from 'openai';
 import Replicate from 'replicate';
 import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
 
 const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 64;
@@ -308,6 +310,12 @@ export async function POST(request: NextRequest) {
   console.log('[Avatar API] POST received. OPENAI_API_KEY:', hasOpenAI ? 'set' : 'MISSING', '| REPLICATE_API_TOKEN:', hasReplicate ? 'set' : 'missing', '| model:', model);
 
   try {
+    // Authenticate user
+    const user = await getAuthUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       name,
@@ -340,6 +348,7 @@ export async function POST(request: NextRequest) {
     console.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', path);
 
     // 用服务端 Supabase API 检查是否已存在，避免公网 HEAD 失败导致重复生成
+    // If cached, no tokens needed
     if (supabaseAdmin) {
       const { data: blob, error: downloadError } = await supabaseAdmin.storage
         .from(AVATAR_BUCKET)
@@ -350,7 +359,26 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ image: urlData.publicUrl });
       }
     }
+// Check and deduct tokens (avatar not cached, need to generate)
+    const hasTokens = await deductTokens(
+      user.id,
+      TOKEN_COSTS.GENERATE_AVATAR,
+      'image_generation',
+      `Generate avatar for ${name} (${avatarType})`
+    );
 
+    if (!hasTokens) {
+      return NextResponse.json(
+        { 
+          error: 'Insufficient tokens', 
+          message: 'You need more tokens to generate avatars. Please purchase tokens or upgrade to Pro.',
+          code: 'INSUFFICIENT_TOKENS'
+        },
+        { status: 402 }
+      );
+    }
+
+    
     const prompt = buildPrompt(name, avatarType, {
       background: typeof background === 'string' ? background : undefined,
       gender: typeof gender === 'string' ? gender : undefined,
