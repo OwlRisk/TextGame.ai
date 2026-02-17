@@ -1,9 +1,20 @@
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 
-const pool = new Pool({ 
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }, // Accept self-signed certificates for all environments
 });
+
+/** RLS 要求 current_setting('app.user_id', true) = user_id，在同一连接上先 SET 再查/写 */
+async function withUserContext<T>(userId: string, fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('SET LOCAL app.user_id = $1', [userId]);
+    return await fn(client);
+  } finally {
+    client.release();
+  }
+}
 
 // Token costs for various operations (based on actual API costs)
 export const TOKEN_COSTS = {
@@ -43,36 +54,38 @@ export interface TokenTransaction {
 }
 
 /**
- * Get user's current token balance and subscription status
+ * Get user's current token balance and subscription status.
+ * Uses app.user_id for RLS so server-side API can read user_profiles.
  */
 export async function getUserBalance(userId: string): Promise<UserBalance> {
-  const result = await pool.query(
-    `SELECT tokens, subscription_status, subscription_current_period_end 
-     FROM user_profiles 
-     WHERE user_id = $1`,
-    [userId]
-  );
-  
-  if (result.rows.length === 0) {
-    // Create profile if doesn't exist (new user gets free tokens)
-    await pool.query(
-      'INSERT INTO user_profiles (user_id, tokens) VALUES ($1, 100) ON CONFLICT (user_id) DO NOTHING',
+  return withUserContext(userId, async (client) => {
+    const result = await client.query(
+      `SELECT tokens, subscription_status, subscription_current_period_end 
+       FROM user_profiles 
+       WHERE user_id = $1`,
       [userId]
     );
+
+    if (result.rows.length === 0) {
+      await client.query(
+        'INSERT INTO user_profiles (user_id, tokens) VALUES ($1, 100) ON CONFLICT (user_id) DO NOTHING',
+        [userId]
+      );
+      return {
+        tokens: 100,
+        isPro: false,
+        subscriptionStatus: 'free',
+      };
+    }
+
+    const row = result.rows[0];
     return {
-      tokens: 100,
-      isPro: false,
-      subscriptionStatus: 'free'
+      tokens: row.tokens || 0,
+      isPro: row.subscription_status === 'pro',
+      subscriptionStatus: row.subscription_status || 'free',
+      subscriptionEndDate: row.subscription_current_period_end,
     };
-  }
-  
-  const row = result.rows[0];
-  return {
-    tokens: row.tokens || 0,
-    isPro: row.subscription_status === 'pro',
-    subscriptionStatus: row.subscription_status || 'free',
-    subscriptionEndDate: row.subscription_current_period_end,
-  };
+  });
 }
 
 /**
@@ -91,9 +104,8 @@ export async function hasTokens(userId: string, amount: number): Promise<boolean
 }
 
 /**
- * Deduct tokens from user account
- * Returns true if successful, false if insufficient tokens
- * Pro users don't consume tokens but transaction is still logged
+ * Deduct tokens from user account.
+ * Uses app.user_id for RLS.
  */
 export async function deductTokens(
   userId: string,
@@ -102,74 +114,64 @@ export async function deductTokens(
   description: string,
   gameSessionId?: string
 ): Promise<boolean> {
-  const client = await pool.connect();
-  
-  try {
+  return withUserContext(userId, async (client) => {
     await client.query('BEGIN');
-    
-    // Get current balance and subscription status
-    const balanceResult = await client.query(
-      'SELECT tokens, subscription_status FROM user_profiles WHERE user_id = $1',
-      [userId]
-    );
-    
-    if (balanceResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return false;
-    }
-    
-    const { tokens, subscription_status } = balanceResult.rows[0];
-    const isPro = subscription_status === 'pro';
-    
-    // Pro users don't consume tokens, but log the transaction
-    if (isPro) {
+    try {
+      const balanceResult = await client.query(
+        'SELECT tokens, subscription_status FROM user_profiles WHERE user_id = $1',
+        [userId]
+      );
+      if (balanceResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      const { tokens, subscription_status } = balanceResult.rows[0];
+      const isPro = subscription_status === 'pro';
+      if (isPro) {
+        await client.query(
+          `INSERT INTO token_transactions 
+           (user_id, amount, transaction_type, description, game_session_id)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [userId, 0, transactionType, `${description} (Pro - Unlimited)`, gameSessionId]
+        );
+        await client.query('COMMIT');
+        return true;
+      }
+      if (tokens < amount) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      await client.query(
+        'UPDATE user_profiles SET tokens = tokens - $1 WHERE user_id = $2',
+        [amount, userId]
+      );
       await client.query(
         `INSERT INTO token_transactions 
          (user_id, amount, transaction_type, description, game_session_id)
          VALUES ($1, $2, $3, $4, $5)`,
-        [userId, 0, transactionType, `${description} (Pro - Unlimited)`, gameSessionId]
+        [userId, -amount, transactionType, description, gameSessionId]
       );
       await client.query('COMMIT');
       return true;
-    }
-    
-    // Check if user has sufficient tokens
-    if (tokens < amount) {
+    } catch (error) {
       await client.query('ROLLBACK');
-      return false;
+      console.error('Error deducting tokens:', error);
+      throw error;
     }
-    
-    // Deduct tokens
-    await client.query(
-      'UPDATE user_profiles SET tokens = tokens - $1 WHERE user_id = $2',
-      [amount, userId]
-    );
-    
-    // Log transaction
-    await client.query(
-      `INSERT INTO token_transactions 
-       (user_id, amount, transaction_type, description, game_session_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [userId, -amount, transactionType, description, gameSessionId]
-    );
-    
-    await client.query('COMMIT');
-    return true;
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error deducting tokens:', error);
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }
 
 /**
  * Check if we already credited tokens for this payment (idempotency).
+ * Must run inside RLS context (same connection with app.user_id set) when userId is provided.
  */
-export async function hasTransactionForPaymentIntent(paymentIntentId: string): Promise<boolean> {
+export async function hasTransactionForPaymentIntent(
+  paymentIntentId: string,
+  client?: PoolClient
+): Promise<boolean> {
   if (!paymentIntentId) return false;
-  const result = await pool.query(
+  const runner = client ?? pool;
+  const result = await runner.query(
     'SELECT 1 FROM token_transactions WHERE stripe_payment_intent_id = $1 LIMIT 1',
     [paymentIntentId]
   );
@@ -179,6 +181,7 @@ export async function hasTransactionForPaymentIntent(paymentIntentId: string): P
 /**
  * Add tokens to user account (for purchases).
  * If paymentIntentId is provided and already credited, skips (idempotent).
+ * Uses app.user_id for RLS so server can write user_profiles and token_transactions.
  */
 export async function addTokens(
   userId: string,
@@ -187,39 +190,32 @@ export async function addTokens(
   description: string,
   paymentIntentId?: string
 ): Promise<void> {
-  if (paymentIntentId && (await hasTransactionForPaymentIntent(paymentIntentId))) {
-    return;
-  }
-  const client = await pool.connect();
-
-  try {
+  await withUserContext(userId, async (client) => {
+    if (paymentIntentId && (await hasTransactionForPaymentIntent(paymentIntentId, client))) {
+      return;
+    }
     await client.query('BEGIN');
-
-    // Add tokens
-    await client.query(
-      `INSERT INTO user_profiles (user_id, tokens) 
-       VALUES ($1, $2)
-       ON CONFLICT (user_id) 
-       DO UPDATE SET tokens = user_profiles.tokens + $2`,
-      [userId, amount]
-    );
-
-    // Log transaction
-    await client.query(
-      `INSERT INTO token_transactions 
-       (user_id, amount, transaction_type, description, stripe_payment_intent_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [userId, amount, transactionType, description, paymentIntentId]
-    );
-
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error adding tokens:', error);
-    throw error;
-  } finally {
-    client.release();
-  }
+    try {
+      await client.query(
+        `INSERT INTO user_profiles (user_id, tokens) 
+         VALUES ($1, $2)
+         ON CONFLICT (user_id) 
+         DO UPDATE SET tokens = user_profiles.tokens + $2`,
+        [userId, amount]
+      );
+      await client.query(
+        `INSERT INTO token_transactions 
+         (user_id, amount, transaction_type, description, stripe_payment_intent_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [userId, amount, transactionType, description, paymentIntentId]
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error adding tokens:', error);
+      throw error;
+    }
+  });
 }
 
 /**
@@ -229,24 +225,25 @@ export async function getRecentTransactions(
   userId: string,
   limit: number = 10
 ): Promise<TokenTransaction[]> {
-  const result = await pool.query(
-    `SELECT id, user_id, amount, transaction_type, description, game_session_id, created_at
-     FROM token_transactions
-     WHERE user_id = $1
-     ORDER BY created_at DESC
-     LIMIT $2`,
-    [userId, limit]
-  );
-  
-  return result.rows.map(row => ({
+  return withUserContext(userId, async (client) => {
+    const result = await client.query(
+      `SELECT id, user_id, amount, transaction_type, description, game_session_id, created_at
+       FROM token_transactions
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [userId, limit]
+    );
+    return result.rows.map((row: Record<string, unknown>) => ({
     id: row.id,
     userId: row.user_id,
     amount: row.amount,
     transactionType: row.transaction_type,
     description: row.description,
     gameSessionId: row.game_session_id,
-    createdAt: new Date(row.created_at),
+    createdAt: new Date(row.created_at as string),
   }));
+  });
 }
 
 /** Default 1:100 coin packages when DB has none (e.g. migration not run) */
@@ -286,39 +283,44 @@ export async function updateSubscriptionStatus(
   subscriptionId?: string,
   periodEnd?: Date
 ): Promise<void> {
-  await pool.query(
-    `INSERT INTO user_profiles (user_id, subscription_status, subscription_id, subscription_current_period_end)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (user_id)
-     DO UPDATE SET 
-       subscription_status = $2,
-       subscription_id = COALESCE($3, user_profiles.subscription_id),
-       subscription_current_period_end = $4`,
-    [userId, status, subscriptionId, periodEnd]
-  );
+  await withUserContext(userId, async (client) => {
+    await client.query(
+      `INSERT INTO user_profiles (user_id, subscription_status, subscription_id, subscription_current_period_end)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id)
+       DO UPDATE SET 
+         subscription_status = $2,
+         subscription_id = COALESCE($3, user_profiles.subscription_id),
+         subscription_current_period_end = $4`,
+      [userId, status, subscriptionId, periodEnd]
+    );
+  });
 }
 
 /**
  * Set or update user's Stripe customer ID
  */
 export async function setCustomerId(userId: string, customerId: string): Promise<void> {
-  await pool.query(
-    `INSERT INTO user_profiles (user_id, customer_id)
-     VALUES ($1, $2)
-     ON CONFLICT (user_id)
-     DO UPDATE SET customer_id = $2`,
-    [userId, customerId]
-  );
+  await withUserContext(userId, async (client) => {
+    await client.query(
+      `INSERT INTO user_profiles (user_id, customer_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id)
+       DO UPDATE SET customer_id = $2`,
+      [userId, customerId]
+    );
+  });
 }
 
 /**
  * Get user's Stripe customer ID
  */
 export async function getCustomerId(userId: string): Promise<string | null> {
-  const result = await pool.query(
-    'SELECT customer_id FROM user_profiles WHERE user_id = $1',
-    [userId]
-  );
-  
-  return result.rows[0]?.customer_id || null;
+  return withUserContext(userId, async (client) => {
+    const result = await client.query(
+      'SELECT customer_id FROM user_profiles WHERE user_id = $1',
+      [userId]
+    );
+    return result.rows[0]?.customer_id || null;
+  });
 }

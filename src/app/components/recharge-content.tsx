@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Coins, Clock, Check, TrendingUp, Zap } from 'lucide-react';
+import { Coins, Clock, Check, TrendingUp, Zap, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { setAuthCookie } from '@/lib/auth-cookie';
@@ -94,16 +94,31 @@ export function RechargeContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const fulfillDoneRef = useRef(false);
 
-  useEffect(() => {
+  const fetchBalance = useCallback(() => {
     if (!session?.access_token) return;
     fetch('/api/user/balance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken: session.access_token }),
       credentials: 'include',
-      headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((res) => (res.ok ? res.json() : { tokens: 0 }))
       .then((data) => setCurrentCoins(data.tokens ?? 0))
       .catch(() => setCurrentCoins(0));
   }, [session?.access_token]);
+
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
+
+  // 页面重新可见时刷新余额（从 Stripe 或其它标签页返回时）
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchBalance();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [fetchBalance]);
 
   // 从 Stripe 返回成功时兑现加币（本地开发 webhook 不触发时依赖此逻辑）
   useEffect(() => {
@@ -121,19 +136,24 @@ export function RechargeContent() {
       .then((data) => {
         if (data.credited || data.tokens) {
           return fetch('/api/user/balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken: session.access_token }),
             credentials: 'include',
-            headers: { Authorization: `Bearer ${session.access_token}` },
           }).then((r) => (r.ok ? r.json() : { tokens: 0 }));
         }
       })
       .then((balance) => {
         if (balance != null) setCurrentCoins(balance.tokens ?? 0);
         window.history.replaceState({}, '', '/recharge');
+        // 延迟再拉一次，防止 fulfill 与读库有时序差
+        setTimeout(() => fetchBalance(), 2000);
       })
       .catch(() => {
         window.history.replaceState({}, '', '/recharge');
+        fetchBalance();
       });
-  }, [searchParams, session?.access_token]);
+  }, [searchParams, session?.access_token, fetchBalance]);
 
   const redirectToSignIn = () => {
     window.location.href = '/signin?returnUrl=' + encodeURIComponent('/recharge');
@@ -207,6 +227,14 @@ export function RechargeContent() {
               <div className="text-xs text-zinc-500">Balance</div>
               <div className="text-xl font-bold text-white">{currentCoins.toLocaleString()}</div>
             </div>
+            <button
+              type="button"
+              onClick={() => fetchBalance()}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              title="刷新余额"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
