@@ -63,17 +63,17 @@ export function TokenBalance() {
           <span className="font-semibold text-gray-900 dark:text-white">
             {balance.tokens.toLocaleString()}
           </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">tokens</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">coins</span>
         </div>
       )}
       
       <Button 
         size="sm" 
-        onClick={() => router.push('/pricing')}
+        onClick={() => router.push('/recharge')}
         variant={balance.isPro ? "outline" : "default"}
         className={balance.isPro ? "" : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0"}
       >
-        {balance.isPro ? 'Manage' : 'Get Tokens'}
+        {balance.isPro ? 'Manage' : 'Get coins'}
       </Button>
     </div>
   );

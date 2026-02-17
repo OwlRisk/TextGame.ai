@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, STRIPE_PRO_PRICE_ID } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { getCustomerId, setCustomerId, getTokenPackages } from '@/lib/tokens';
+
+/** Match reference design package ids (starter, popular, pro, ...); price_cents and total tokens */
+const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number; tokens: number }> = {
+  starter: { name: 'Starter', price_cents: 500, tokens: 500 },
+  popular: { name: 'Popular', price_cents: 1000, tokens: 1200 },
+  pro: { name: 'Pro', price_cents: 2500, tokens: 3250 },
+  ultimate: { name: 'Ultimate', price_cents: 5000, tokens: 7000 },
+  mega: { name: 'Mega', price_cents: 10000, tokens: 15000 },
+  legendary: { name: 'Legendary', price_cents: 20000, tokens: 32000 },
+  immortal: { name: 'Immortal', price_cents: 50000, tokens: 85000 },
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,11 +22,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { type, packageId } = body; // type: 'subscription' | 'tokens'
+    const { packageId } = body;
 
-    if (!type || !['subscription', 'tokens'].includes(type)) {
+    if (!packageId) {
       return NextResponse.json(
-        { error: 'Invalid type. Must be "subscription" or "tokens"' },
+        { error: 'Package ID is required for coin purchase' },
         { status: 400 }
       );
     }
@@ -36,90 +47,54 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = request.nextUrl.origin;
-    const successUrl = `${origin}/profile?session_id={CHECKOUT_SESSION_ID}&success=true`;
-    const cancelUrl = `${origin}/pricing?cancelled=true`;
+    const successUrl = `${origin}/recharge?success=true&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${origin}/recharge?cancelled=true`;
 
-    if (type === 'subscription') {
-      // Create subscription checkout session
-      if (!STRIPE_PRO_PRICE_ID) {
-        return NextResponse.json(
-          { error: 'Stripe Pro Price ID not configured' },
-          { status: 500 }
-        );
-      }
-
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: 'subscription',
-        line_items: [
-          {
-            price: STRIPE_PRO_PRICE_ID,
-            quantity: 1,
-          },
-        ],
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        metadata: {
-          userId: user.id,
-          type: 'subscription',
-        },
-        subscription_data: {
-          metadata: {
-            userId: user.id,
-          },
-        },
-        allow_promotion_codes: true,
-      });
-
-      return NextResponse.json({ url: session.url });
-    } else {
-      // Token purchase
-      if (!packageId) {
-        return NextResponse.json(
-          { error: 'Package ID is required for token purchase' },
-          { status: 400 }
-        );
-      }
-
-      const packages = await getTokenPackages();
-      const selectedPackage = packages.find((pkg: any) => pkg.id === packageId);
-
-      if (!selectedPackage) {
-        return NextResponse.json(
-          { error: 'Invalid package ID' },
-          { status: 400 }
-        );
-      }
-
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: 'payment',
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              unit_amount: selectedPackage.price_cents,
-              product_data: {
-                name: selectedPackage.name,
-                description: `${selectedPackage.tokens.toLocaleString()} tokens${selectedPackage.bonus_percentage > 0 ? ` (+${selectedPackage.bonus_percentage}% bonus)` : ''}`,
-              },
-            },
-            quantity: 1,
-          },
-        ],
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        metadata: {
-          userId: user.id,
-          packageId: selectedPackage.id,
-          tokens: selectedPackage.tokens.toString(),
-          type: 'tokens',
-        },
-        allow_promotion_codes: true,
-      });
-
-      return NextResponse.json({ url: session.url });
+    const packages = await getTokenPackages();
+    let selected = packages.find((pkg: { id: string }) => pkg.id === packageId);
+    if (!selected && REFERENCE_PACKAGES[packageId]) {
+      const ref = REFERENCE_PACKAGES[packageId];
+      selected = { id: packageId, name: ref.name, price_cents: ref.price_cents, tokens: ref.tokens, bonus_percentage: 0 };
     }
+    if (!selected) {
+      return NextResponse.json(
+        { error: 'Invalid package ID' },
+        { status: 400 }
+      );
+    }
+
+    const price_cents = selected.price_cents ?? (selected as { price_cents?: number }).price_cents;
+    const tokens = selected.tokens ?? (selected as { tokens?: number }).tokens;
+    const name = selected.name ?? (selected as { name?: string }).name;
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            unit_amount: price_cents,
+            product_data: {
+              name: name ?? 'Coins',
+              description: `${Number(tokens).toLocaleString()} coins`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        userId: user.id,
+        packageId: String(selected.id),
+        tokens: String(tokens),
+        type: 'tokens',
+      },
+      allow_promotion_codes: true,
+    });
+
+    return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error('Checkout creation error:', error);
     return NextResponse.json(

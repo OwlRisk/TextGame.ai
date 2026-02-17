@@ -233,18 +233,32 @@ export async function getRecentTransactions(
   }));
 }
 
+/** Default 1:100 coin packages when DB has none (e.g. migration not run) */
+export const DEFAULT_COIN_PACKAGES = [
+  { id: 'default-100', name: '100 Coins', tokens: 100, price_cents: 100, bonus_percentage: 0 },
+  { id: 'default-500', name: '500 Coins', tokens: 500, price_cents: 500, bonus_percentage: 0 },
+  { id: 'default-1000', name: '1,000 Coins', tokens: 1000, price_cents: 1000, bonus_percentage: 0 },
+  { id: 'default-2000', name: '2,000 Coins', tokens: 2000, price_cents: 2000, bonus_percentage: 0 },
+  { id: 'default-5000', name: '5,000 Coins', tokens: 5000, price_cents: 5000, bonus_percentage: 0 },
+  { id: 'default-10000', name: '10,000 Coins', tokens: 10000, price_cents: 10000, bonus_percentage: 0 },
+] as const;
+
 /**
- * Get all available token packages
+ * Get all available token packages (from DB, or defaults if empty)
  */
 export async function getTokenPackages() {
-  const result = await pool.query(
-    `SELECT id, name, tokens, price_cents, bonus_percentage
-     FROM token_packages
-     WHERE is_active = true
-     ORDER BY tokens ASC`
-  );
-  
-  return result.rows;
+  try {
+    const result = await pool.query(
+      `SELECT id, name, tokens, price_cents, bonus_percentage
+       FROM token_packages
+       WHERE is_active = true
+       ORDER BY tokens ASC`
+    );
+    if (result.rows.length > 0) return result.rows;
+  } catch (e) {
+    console.warn('[tokens] getTokenPackages DB error, using defaults:', (e as Error)?.message);
+  }
+  return [...DEFAULT_COIN_PACKAGES];
 }
 
 /**

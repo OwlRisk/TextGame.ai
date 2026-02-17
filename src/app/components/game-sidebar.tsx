@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, Home, Compass, Settings, LogOut, Crown, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, Sparkles } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, Home, Compass, Settings, LogOut, Coins, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, Sparkles } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -361,11 +361,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        router.push('/pricing');
+                        router.push('/recharge');
                       }}
                     >
-                      <Crown className="mr-3 h-4 w-4 text-amber-500" />
-                      <span className="text-sm">Upgrade to Pro</span>
+                      <Coins className="mr-3 h-4 w-4 text-amber-500" />
+                      <span className="text-sm">Get coins</span>
                     </Button>
                     
                     <Button 
