@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { setAuthCookie } from '@/lib/auth-cookie';
 import { useRouter } from 'next/navigation';
 
 /** 登录状态不过期，由 Supabase 的 refresh token 持续刷新 */
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const doSignOut = useCallback(async () => {
+    setAuthCookie(null);
     try {
       await supabase.auth.signOut();
     } catch {
@@ -76,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
+      setAuthCookie(sessionToSet?.access_token ?? null);
       setSession(sessionToSet);
       setUser(userToSet);
       setLoading(false);
@@ -116,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
+      setAuthCookie(sessionToSet?.access_token ?? null);
       setSession(sessionToSet);
       setUser(userToSet);
       setLoading(false);
@@ -145,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    setAuthCookie(null);
     try {
       console.log("Signing out user...");
       const { error } = await supabase.auth.signOut();

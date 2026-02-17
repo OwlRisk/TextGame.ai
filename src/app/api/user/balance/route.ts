@@ -6,11 +6,11 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUserFromRequest(request);
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ tokens: 0, isPro: false, subscriptionStatus: 'free' });
     }
 
     const balance = await getUserBalance(user.id);
-    
+
     return NextResponse.json(balance);
   } catch (error) {
     console.error('Balance fetch error:', error);

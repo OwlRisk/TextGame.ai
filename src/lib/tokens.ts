@@ -165,7 +165,20 @@ export async function deductTokens(
 }
 
 /**
- * Add tokens to user account (for purchases)
+ * Check if we already credited tokens for this payment (idempotency).
+ */
+export async function hasTransactionForPaymentIntent(paymentIntentId: string): Promise<boolean> {
+  if (!paymentIntentId) return false;
+  const result = await pool.query(
+    'SELECT 1 FROM token_transactions WHERE stripe_payment_intent_id = $1 LIMIT 1',
+    [paymentIntentId]
+  );
+  return result.rows.length > 0;
+}
+
+/**
+ * Add tokens to user account (for purchases).
+ * If paymentIntentId is provided and already credited, skips (idempotent).
  */
 export async function addTokens(
   userId: string,
@@ -174,11 +187,14 @@ export async function addTokens(
   description: string,
   paymentIntentId?: string
 ): Promise<void> {
+  if (paymentIntentId && (await hasTransactionForPaymentIntent(paymentIntentId))) {
+    return;
+  }
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     // Add tokens
     await client.query(
       `INSERT INTO user_profiles (user_id, tokens) 
@@ -187,7 +203,7 @@ export async function addTokens(
        DO UPDATE SET tokens = user_profiles.tokens + $2`,
       [userId, amount]
     );
-    
+
     // Log transaction
     await client.query(
       `INSERT INTO token_transactions 
@@ -195,7 +211,7 @@ export async function addTokens(
        VALUES ($1, $2, $3, $4, $5)`,
       [userId, amount, transactionType, description, paymentIntentId]
     );
-    
+
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');

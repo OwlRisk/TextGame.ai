@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Coins, Clock, Check, TrendingUp, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { setAuthCookie } from '@/lib/auth-cookie';
+import { supabase } from '@/lib/supabase';
 
 interface CoinPackage {
   id: string;
@@ -83,32 +87,101 @@ const PACKAGES: CoinPackage[] = [
 ];
 
 export function RechargeContent() {
+  const { user, session } = useAuth();
+  const searchParams = useSearchParams();
   const [currentCoins, setCurrentCoins] = useState(0);
   const [selectedPackage, setSelectedPackage] = useState<CoinPackage>(PACKAGES[1]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const fulfillDoneRef = useRef(false);
 
   useEffect(() => {
-    fetch('/api/user/balance', { credentials: 'include' })
+    if (!session?.access_token) return;
+    fetch('/api/user/balance', {
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((res) => (res.ok ? res.json() : { tokens: 0 }))
       .then((data) => setCurrentCoins(data.tokens ?? 0))
       .catch(() => setCurrentCoins(0));
-  }, []);
+  }, [session?.access_token]);
+
+  // 从 Stripe 返回成功时兑现加币（本地开发 webhook 不触发时依赖此逻辑）
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const sessionId = searchParams.get('session_id');
+    if (success !== 'true' || !sessionId || !session?.access_token || fulfillDoneRef.current) return;
+    fulfillDoneRef.current = true;
+    fetch('/api/stripe/fulfill-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, accessToken: session.access_token }),
+      credentials: 'include',
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.credited || data.tokens) {
+          return fetch('/api/user/balance', {
+            credentials: 'include',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).then((r) => (r.ok ? r.json() : { tokens: 0 }));
+        }
+      })
+      .then((balance) => {
+        if (balance != null) setCurrentCoins(balance.tokens ?? 0);
+        window.history.replaceState({}, '', '/recharge');
+      })
+      .catch(() => {
+        window.history.replaceState({}, '', '/recharge');
+      });
+  }, [searchParams, session?.access_token]);
+
+  const redirectToSignIn = () => {
+    window.location.href = '/signin?returnUrl=' + encodeURIComponent('/recharge');
+  };
 
   const handlePurchase = async () => {
+    if (!user) {
+      redirectToSignIn();
+      return;
+    }
+    // 请求前拉取最新 session 并写入 cookie，避免扩展/环境导致 Header 丢失
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    const accessToken = freshSession?.access_token ?? session?.access_token;
+    if (!accessToken) {
+      alert('登录已过期，请重新登录');
+      redirectToSignIn();
+      return;
+    }
+    setAuthCookie(accessToken);
     setIsProcessing(true);
     try {
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: selectedPackage.id }),
+        body: JSON.stringify({
+          packageId: selectedPackage.id,
+          accessToken, // 请求体传 token，避免 Header/Cookie 被扩展剥离
+        }),
         credentials: 'include',
       });
-      const data = await response.json();
-      if (response.ok && data.url) {
+      const text = await response.text();
+      if (response.headers.get('X-Auth-Result') === 'no-user' || /Unauthorized/i.test(text)) {
+        redirectToSignIn();
+        return;
+      }
+      let data: { url?: string; error?: string; details?: string } = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        alert('Payment failed');
+        return;
+      }
+      if (response.ok && typeof data?.url === 'string' && data.url) {
         window.location.href = data.url;
         return;
       }
-      alert(data?.error || 'Payment failed');
+      const msg = [data?.error, data?.details].filter(Boolean).join(' — ') || 'Payment failed';
+      alert(msg);
     } catch {
       alert('Payment failed');
     } finally {

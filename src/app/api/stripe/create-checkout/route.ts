@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { getCustomerId, setCustomerId, getTokenPackages } from '@/lib/tokens';
 
 /** Match reference design package ids (starter, popular, pro, ...); price_cents and total tokens */
@@ -16,13 +16,20 @@ const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number; to
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getAuthUserFromRequest(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const body = await request.json().catch(() => ({}));
+    const { packageId, accessToken: tokenFromBody } = body;
 
-    const body = await request.json();
-    const { packageId } = body;
+    let user = (typeof tokenFromBody === 'string' && tokenFromBody.trim())
+      ? await getAuthUserFromToken(tokenFromBody.trim())
+      : null;
+    if (!user) user = await getAuthUserFromRequest(request);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401, headers: { 'X-Auth-Result': 'no-user' } }
+      );
+    }
 
     if (!packageId) {
       return NextResponse.json(
@@ -31,19 +38,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get or create Stripe customer
-    let customerId = await getCustomerId(user.id);
-
+    // Get or create Stripe customer (DB failure is non-fatal)
+    let customerId: string | null = null;
+    try {
+      customerId = await getCustomerId(user.id);
+    } catch (e) {
+      console.warn('getCustomerId failed, will create new Stripe customer:', (e as Error)?.message);
+    }
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email || undefined,
-        metadata: { 
+        metadata: {
           userId: user.id,
           supabaseId: user.id,
         },
       });
       customerId = customer.id;
-      await setCustomerId(user.id, customerId);
+      try {
+        await setCustomerId(user.id, customerId);
+      } catch (e) {
+        console.warn('setCustomerId failed (session will still work):', (e as Error)?.message);
+      }
     }
 
     const origin = request.nextUrl.origin;
@@ -94,11 +109,23 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: true,
     });
 
-    return NextResponse.json({ url: session.url });
+    const checkoutUrl = session.url ?? null;
+    if (!checkoutUrl) {
+      console.error('Stripe checkout session created but url is null', { sessionId: session.id });
+      return NextResponse.json(
+        { error: 'Stripe did not return checkout URL', details: 'session.url is empty' },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ url: checkoutUrl });
   } catch (error) {
     console.error('Checkout creation error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const stripeMessage = error && typeof error === 'object' && 'raw' in error
+      ? String((error as { raw?: { message?: string } }).raw?.message ?? message)
+      : message;
     return NextResponse.json(
-      { error: 'Failed to create checkout session', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to create checkout session', details: stripeMessage },
       { status: 500 }
     );
   }
