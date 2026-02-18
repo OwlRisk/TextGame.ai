@@ -4,12 +4,15 @@ import type { Database } from './supabase';
 /** Log Supabase/PostgREST error with message, code, details (avoids empty {} in console). */
 function logDbError(context: string, err: unknown) {
   const e = err as { message?: string; code?: string; details?: string };
-  console.error(
-    `[db] ${context}:`,
-    e?.message ?? (typeof err === 'object' && err !== null ? JSON.stringify(err) : err)
-  );
+  const msg = e?.message ?? (typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err));
+  console.error(`[db] ${context}:`, msg);
   if (e?.code) console.error('[db] code:', e.code);
   if (e?.details) console.error('[db] details:', e.details);
+  if (msg === 'Failed to fetch' || (typeof msg === 'string' && msg.includes('Failed to fetch'))) {
+    console.error(
+      '[db] Hint: Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env, and that Supabase is reachable.'
+    );
+  }
 }
 
 type GameSession = Database['public']['Tables']['game_sessions']['Row'];
