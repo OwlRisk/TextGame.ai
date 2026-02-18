@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { addTokens, updateSubscriptionStatus } from '@/lib/tokens';
+import { addTokens, updateSubscriptionStatus, rechargeCoinsFromPayment } from '@/lib/tokens';
 import Stripe from 'stripe';
 import { pool } from '@/lib/pg-pool';
 
@@ -70,20 +70,17 @@ export async function POST(request: NextRequest) {
 
           console.log(`[Subscription] User ${userId} upgraded to Pro`);
         } else if (session.mode === 'payment') {
-          // Handle token purchase
-          const tokens = parseInt(session.metadata?.tokens || '0');
-          const packageId = session.metadata?.packageId;
-
+          const amountCents = session.amount_total ?? 0;
+          const tokens = rechargeCoinsFromPayment(amountCents);
           if (tokens > 0) {
             await addTokens(
               userId,
               tokens,
               'purchase',
-              `Purchased ${tokens} tokens`,
+              `Purchased ${tokens} coins`,
               session.payment_intent as string
             );
-
-            console.log(`[Token Purchase] User ${userId} purchased ${tokens} tokens`);
+            console.log(`[Token Purchase] User ${userId} purchased ${tokens} coins (${amountCents}¢)`);
           }
         }
         break;

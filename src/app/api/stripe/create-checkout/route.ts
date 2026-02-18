@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
-import { getCustomerId, setCustomerId, getTokenPackages } from '@/lib/tokens';
+import { getCustomerId, setCustomerId, getTokenPackages, rechargeCoinsFromPayment } from '@/lib/tokens';
 
-/** Match reference design package ids (starter, popular, pro, ...); price_cents and total tokens */
-const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number; tokens: number }> = {
-  starter: { name: 'Starter', price_cents: 500, tokens: 500 },
-  popular: { name: 'Popular', price_cents: 1000, tokens: 1200 },
-  pro: { name: 'Pro', price_cents: 2500, tokens: 3250 },
-  ultimate: { name: 'Ultimate', price_cents: 5000, tokens: 7000 },
-  mega: { name: 'Mega', price_cents: 10000, tokens: 15000 },
-  legendary: { name: 'Legendary', price_cents: 20000, tokens: 32000 },
-  immortal: { name: 'Immortal', price_cents: 50000, tokens: 85000 },
+/** 套餐展示用；实际到账 coins 由 rechargeCoinsFromPayment(price_cents) 公式计算 */
+const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number }> = {
+  starter: { name: 'Starter', price_cents: 500 },
+  popular: { name: 'Popular', price_cents: 1000 },
+  pro: { name: 'Pro', price_cents: 2500 },
+  ultimate: { name: 'Ultimate', price_cents: 5000 },
+  mega: { name: 'Mega', price_cents: 10000 },
+  legendary: { name: 'Legendary', price_cents: 20000 },
+  immortal: { name: 'Immortal', price_cents: 50000 },
 };
 
 export async function POST(request: NextRequest) {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     let selected = packages.find((pkg: { id: string }) => pkg.id === packageId);
     if (!selected && REFERENCE_PACKAGES[packageId]) {
       const ref = REFERENCE_PACKAGES[packageId];
-      selected = { id: packageId, name: ref.name, price_cents: ref.price_cents, tokens: ref.tokens, bonus_percentage: 0 };
+      selected = { id: packageId, name: ref.name, price_cents: ref.price_cents, bonus_percentage: 0 };
     }
     if (!selected) {
       return NextResponse.json(
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     const price_cents = selected.price_cents ?? (selected as { price_cents?: number }).price_cents;
-    const tokens = selected.tokens ?? (selected as { tokens?: number }).tokens;
+    const tokens = rechargeCoinsFromPayment(price_cents);
     const name = selected.name ?? (selected as { name?: string }).name;
 
     const session = await stripe.checkout.sessions.create({

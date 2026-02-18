@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { invalidateBalanceCache } from '@/lib/balance-cache';
-import { addTokens } from '@/lib/tokens';
+import { addTokens, rechargeCoinsFromPayment } from '@/lib/tokens';
 
 /**
  * After Stripe Checkout success, the client calls this to credit tokens.
@@ -59,10 +59,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tokens = parseInt(session.metadata?.tokens || '0', 10);
+    // 按公式：充值金额 × GPT 比例 → coins（例如 $10 → 500 coins = $5 GPT 额度）
+    const amountCents = session.amount_total ?? 0;
+    const tokens = rechargeCoinsFromPayment(amountCents);
     if (tokens <= 0) {
       return NextResponse.json(
-        { error: 'Invalid tokens in session' },
+        { error: 'Invalid payment amount in session' },
         { status: 400 }
       );
     }

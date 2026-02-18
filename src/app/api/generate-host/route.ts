@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
+import {
+  deductTokens,
+  hasTokens,
+  gptUsageToCoins,
+  estimatedTokensToCoins,
+  estimateTokensFromText,
+} from '@/lib/tokens';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -23,27 +29,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Check and deduct tokens
-    const hasTokens = await deductTokens(
-      user.id,
-      TOKEN_COSTS.GENERATE_HOST,
-      'game_creation',
-      'Generate AI host character'
-    );
-
-    if (!hasTokens) {
-      return NextResponse.json(
-        { 
-          error: 'Insufficient tokens', 
-          message: 'You need more tokens to generate a host. Please purchase tokens or upgrade to Pro.',
-          code: 'INSUFFICIENT_TOKENS'
-        },
-        { status: 402 }
-      );
-    }
-
-    console.log(`[Generate Host] Generating host for game: ${gameName || "Unknown"}`);
 
     const systemPrompt = `You are a creative game design assistant. Generate a unique AI host for this game.
 
@@ -76,6 +61,21 @@ ${gameRules}
 
 Create a host that perfectly fits this game's theme and atmosphere.`;
 
+    const estimatedTokens = estimateTokensFromText(systemPrompt) + estimateTokensFromText(userPrompt) + 500;
+    const estimatedCoins = estimatedTokensToCoins(estimatedTokens, 'gpt-5.2');
+    if (!(await hasTokens(user.id, estimatedCoins))) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient tokens',
+          message: 'You need more tokens to generate a host. Please purchase tokens or upgrade to Pro.',
+          code: 'INSUFFICIENT_TOKENS',
+        },
+        { status: 402 }
+      );
+    }
+
+    console.log(`[Generate Host] Generating host for game: ${gameName || "Unknown"}`);
+
     const completion = await openai.chat.completions.create({
       model: "gpt-5.2",
       messages: [
@@ -90,6 +90,18 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
     if (!response) {
       throw new Error("No response from OpenAI");
     }
+
+    const usage = completion.usage;
+    const promptTokens = usage?.prompt_tokens ?? 0;
+    const completionTokens = usage?.completion_tokens ?? 0;
+    const model = (completion as { model?: string }).model ?? 'gpt-5.2';
+    const coinsToDeduct = gptUsageToCoins(model, promptTokens, completionTokens);
+    await deductTokens(
+      user.id,
+      coinsToDeduct,
+      'game_creation',
+      `Generate host ${promptTokens + completionTokens} tokens (${model})`
+    );
 
     console.log("[Generate Host] Raw response:", response);
 

@@ -1,6 +1,13 @@
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
+import {
+  deductTokens,
+  hasTokens,
+  estimatedTokensToCoins,
+  estimateTokensFromText,
+  estimateChatTokens,
+} from '@/lib/tokens';
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -207,6 +214,34 @@ export async function POST(request: NextRequest) {
       systemMessage += `This will be prepended to the Rules. The tag is invisible to the user. Only the GM can set this; the Host cannot change it during the game.\n`;
     }
 
+    const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
+      ? Math.min(4096, Math.max(256, maxCompletionTokens))
+      : 500;
+    const systemTokens = estimateTokensFromText(systemMessage);
+    const messagesTokens = (messages as { content?: string }[]).reduce(
+      (sum, m) => sum + estimateTokensFromText(m?.content ?? ''),
+      0
+    );
+    const totalEstimate = estimateChatTokens(systemTokens, messagesTokens, maxTokens);
+    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
+    const estimatedCoins = estimatedTokensToCoins(totalEstimate, chatModel);
+    if (!(await hasTokens(user.id, estimatedCoins))) {
+      return new Response(
+        JSON.stringify({
+          error: 'Insufficient tokens',
+          message: 'You need more tokens to continue. Please purchase tokens or upgrade to Pro.',
+          code: 'INSUFFICIENT_TOKENS',
+        }),
+        { status: 402, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    await deductTokens(
+      user.id,
+      estimatedCoins,
+      'ai_chat_stream',
+      `Chat stream ~${totalEstimate} tokens (estimate)`
+    );
+
     // Format messages for OpenAI
     const formattedMessages = [
       { role: 'system' as const, content: systemMessage },
@@ -215,12 +250,6 @@ export async function POST(request: NextRequest) {
         content: msg.content
       }))
     ];
-
-    const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
-      ? Math.min(4096, Math.max(256, maxCompletionTokens))
-      : 500;
-
-    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
 
     // Create streaming response
     const stream = await openai.chat.completions.create({

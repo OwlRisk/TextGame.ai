@@ -24,25 +24,103 @@ async function withUserContext<T>(userId: string, fn: (client: PoolClient) => Pr
   }
 }
 
-// Token costs for various operations (based on actual API costs)
+// ========== 充值 / 扣费公式 ==========
+// 约定：1 coin = 一定量的 GPT 消费（美元）
+// 例如：用户充值 $10 → 平台给其中 $5 等价于 GPT 额度 → 即 500 coins（1 coin = $0.01 GPT）
+
+/** 1 coin 代表的 GPT 消费（美元），用于充值与扣费统一换算 */
+export const COIN_VALUE_USD = 0.01;
+
+/** 充值金额中用于 GPT 的比例，例如 0.5 表示 $10 充值 → $5 的 GPT 额度 */
+export const GPT_BUDGET_RATIO = 0.5;
+
+/**
+ * 根据实际支付金额（美分）计算应到账的 coins
+ * 公式：coins = (amount_cents / 100) * GPT_BUDGET_RATIO / COIN_VALUE_USD
+ * 例：$10 = 1000 美分 → 1000/100 * 0.5 / 0.01 = 500 coins
+ */
+export function rechargeCoinsFromPayment(amountCents: number): number {
+  if (amountCents <= 0) return 0;
+  const usd = amountCents / 100;
+  const gptUsd = usd * GPT_BUDGET_RATIO;
+  return Math.floor(gptUsd / COIN_VALUE_USD);
+}
+
+/**
+ * GPT API 成本（美元）→ 扣减的 coins
+ */
+export function usdToCoins(usd: number): number {
+  if (usd <= 0) return 1;
+  return Math.max(1, Math.ceil(usd / COIN_VALUE_USD));
+}
+
+/** OpenAI 模型定价：每 100 万 token 的 input / output 价格（美元），可随官方调价更新 */
+const OPENAI_PRICE_PER_1M: Record<string, { input: number; output: number }> = {
+  'gpt-4o': { input: 2.5, output: 10 },
+  'gpt-4o-mini': { input: 0.15, output: 0.6 },
+  'gpt-4o-2024-11-20': { input: 2.5, output: 10 },
+  'gpt-5.2': { input: 2.5, output: 10 }, // 与 gpt-4o 同档，后续可单独配置
+};
+
+function getModelPrice(model: string): { input: number; output: number } {
+  const key = model?.toLowerCase?.() ?? '';
+  return OPENAI_PRICE_PER_1M[key] ?? OPENAI_PRICE_PER_1M['gpt-4o'];
+}
+
+/**
+ * 根据模型与 usage 计算本次调用的 API 成本（美元），再换算为 coins
+ */
+export function gptUsageToCoins(
+  model: string,
+  promptTokens: number,
+  completionTokens: number
+): number {
+  const { input, output } = getModelPrice(model);
+  const inputUsd = (promptTokens / 1_000_000) * input;
+  const outputUsd = (completionTokens / 1_000_000) * output;
+  return usdToCoins(inputUsd + outputUsd);
+}
+
+/**
+ * 仅知道总 token 数时的保守估算（用于 stream 等无 usage 场景），按偏贵模型估算
+ */
+export function estimatedTokensToCoins(totalTokens: number, model?: string): number {
+  if (totalTokens <= 0) return 1;
+  const { input, output } = getModelPrice(model ?? 'gpt-4o');
+  const half = totalTokens / 2;
+  const usd = (half / 1_000_000) * input + (half / 1_000_000) * output;
+  return usdToCoins(usd);
+}
+
+// Token costs for various operations (fixed costs for non-token operations)
 export const TOKEN_COSTS = {
-  // Game creation flow
-  GAME_CREATION_FULL: 250,        // Complete game setup with host + players
-  GENERATE_HOST: 50,              // Generate AI host character
-  GENERATE_PLAYERS: 100,          // Generate AI player characters
-  GENERATE_AVATAR: 16,            // Generate single avatar image (DALL-E 2)
-  GENERATE_ICON: 16,              // Generate game icon
-  
-  // Chat and interaction
-  GM_CHAT_MESSAGE: 10,            // Single GM chat message
-  HOST_RESPONSE: 10,              // In-game host response
-  QUICK_REPLY_SUGGESTION: 2,     // Suggest quick replies (mini model)
-  PROMPT_SUGGESTION: 2,           // Suggest prompts (mini model)
-  
-  // Voice features
-  VOICE_TRANSCRIPTION_PER_MIN: 6, // Whisper transcription per minute
-  TTS_PER_1K_CHARS: 15,           // Text-to-speech per 1000 characters
+  GENERATE_AVATAR: 16,
+  GENERATE_ICON: 16,
+  QUICK_REPLY_SUGGESTION: 2,
+  PROMPT_SUGGESTION: 2,
+  VOICE_TRANSCRIPTION_PER_MIN: 6,
+  TTS_PER_1K_CHARS: 15,
 } as const;
+
+/**
+ * 粗略估算文本对应的 token 数（用于扣费前预检查）
+ * 英文约 4 字符/token，中文约 1.5 字符/token，取 3 字符/token 作为保守估计
+ */
+export function estimateTokensFromText(text: string): number {
+  if (!text || typeof text !== 'string') return 0;
+  return Math.ceil(text.length / 3);
+}
+
+/**
+ * 估算一轮 chat 的 token 上限（system + messages 内容 + maxCompletionTokens）
+ */
+export function estimateChatTokens(
+  systemLength: number,
+  messagesTotalLength: number,
+  maxCompletionTokens: number
+): number {
+  return systemLength + messagesTotalLength + maxCompletionTokens;
+}
 
 export interface UserBalance {
   tokens: number;

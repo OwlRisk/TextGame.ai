@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
+import {
+  deductTokens,
+  hasTokens,
+  gptUsageToCoins,
+  estimatedTokensToCoins,
+  estimateTokensFromText,
+  estimateChatTokens,
+} from '@/lib/tokens';
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -39,24 +46,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check and deduct tokens
-    const hasTokens = await deductTokens(
-      user.id,
-      TOKEN_COSTS.GM_CHAT_MESSAGE,
-      'ai_chat',
-      'GM chat message'
-    );
-
-    if (!hasTokens) {
-      return NextResponse.json(
-        { 
-          error: 'Insufficient tokens', 
-          message: 'You need more tokens to continue chatting. Please purchase tokens or upgrade to Pro for unlimited usage.',
-          code: 'INSUFFICIENT_TOKENS'
-        },
-        { status: 402 }
-      );
-    }
+    const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
+      ? Math.min(4096, Math.max(256, maxCompletionTokens))
+      : 500;
 
     const openai = getOpenAI();
 
@@ -209,6 +201,29 @@ export async function POST(request: NextRequest) {
       systemMessage += `- The tag is invisible to the user; your message should still say something like "I'll set it to 8 players (you + 7 AI)."\n`;
       systemMessage += `- Example: "I think 8 works great for Werewolf! <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>" (7 AI + user = 8 total).\n\n`;
       systemMessage += `GAME BACKGROUND (merged into Rules):\n`;
+    }
+
+    // 按 token 用量预检查余额
+    const systemTokens = estimateTokensFromText(systemMessage);
+    const messagesTokens = (messages as { content?: string }[]).reduce(
+      (sum, m) => sum + estimateTokensFromText(m?.content ?? ''),
+      0
+    );
+    const totalEstimate = estimateChatTokens(systemTokens, messagesTokens, maxTokens);
+    const maxCoins = estimatedTokensToCoins(totalEstimate);
+    if (!(await hasTokens(user.id, maxCoins))) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient tokens',
+          message: 'You need more tokens to continue chatting. Please purchase tokens or upgrade to Pro for unlimited usage.',
+          code: 'INSUFFICIENT_TOKENS',
+        },
+        { status: 402 }
+      );
+    }
+
+    if (!isSetupPhase) {
+      systemMessage += `\n\nGAME BACKGROUND (merged into Rules):\n`;
       systemMessage += `Background story is written in the Rules section (at the beginning). You decide whether this game needs a background.\n`;
       systemMessage += `- Add background (use <UPDATE_GENERAL>) for narrative/thematic games: werewolf, mafia, detective, escape room, murder mystery, story-driven custom. A short world/premise/atmosphere helps immersion.\n`;
       systemMessage += `- Skip background for purely mechanical or light games: trivia, quick party games, word games, or when the user doesn't care about setting. Do not force it.\n`;
@@ -226,10 +241,6 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
-    const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
-      ? Math.min(4096, Math.max(256, maxCompletionTokens))
-      : 500;
-
     const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
 
     // Call OpenAI API
@@ -240,6 +251,19 @@ export async function POST(request: NextRequest) {
       max_completion_tokens: maxTokens,
       stream: false,
     });
+
+    // 按实际 API 成本（模型 + usage）扣费
+    const usage = completion.usage;
+    const promptTokens = usage?.prompt_tokens ?? 0;
+    const completionTokens = usage?.completion_tokens ?? 0;
+    const model = (completion as { model?: string }).model ?? 'gpt-4o';
+    const coinsToDeduct = gptUsageToCoins(model, promptTokens, completionTokens);
+    await deductTokens(
+      user.id,
+      coinsToDeduct,
+      'ai_chat',
+      `Chat ${promptTokens + completionTokens} tokens (${model})`
+    );
 
     let response = completion.choices[0]?.message?.content?.trim() ?? '';
 
