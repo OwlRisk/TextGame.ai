@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { addTokens, updateSubscriptionStatus } from '@/lib/tokens';
 import Stripe from 'stripe';
-import { Pool } from 'pg';
-
-const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+import { pool } from '@/lib/pg-pool';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();

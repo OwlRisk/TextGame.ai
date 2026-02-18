@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Coins, Clock, Check, TrendingUp, Zap, RefreshCw } from 'lucide-react';
+import { Coins, Clock, Check, TrendingUp, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { setAuthCookie } from '@/lib/auth-cookie';
@@ -90,21 +90,44 @@ export function RechargeContent() {
   const { user, session } = useAuth();
   const searchParams = useSearchParams();
   const [currentCoins, setCurrentCoins] = useState(0);
+  const [balanceStatus, setBalanceStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [selectedPackage, setSelectedPackage] = useState<CoinPackage>(PACKAGES[1]);
   const [isProcessing, setIsProcessing] = useState(false);
   const fulfillDoneRef = useRef(false);
+  const balanceFetchingRef = useRef(false);
 
   const fetchBalance = useCallback(() => {
     if (!session?.access_token) return;
+    if (balanceFetchingRef.current) return;
+    balanceFetchingRef.current = true;
+    setBalanceStatus('loading');
     fetch('/api/user/balance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken: session.access_token }),
       credentials: 'include',
     })
-      .then((res) => (res.ok ? res.json() : { tokens: 0 }))
-      .then((data) => setCurrentCoins(data.tokens ?? 0))
-      .catch(() => setCurrentCoins(0));
+      .then((res) => {
+        if (!res.ok) {
+          setBalanceStatus('error');
+          return;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data != null) {
+          setCurrentCoins(data.tokens ?? 0);
+          setBalanceStatus('ok');
+        } else {
+          setBalanceStatus('error');
+        }
+      })
+      .catch(() => {
+        setBalanceStatus('error');
+      })
+      .finally(() => {
+        balanceFetchingRef.current = false;
+      });
   }, [session?.access_token]);
 
   useEffect(() => {
@@ -222,19 +245,17 @@ export function RechargeContent() {
           </div>
 
           <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3">
-            <Coins className="h-5 w-5 text-amber-500" />
-            <div>
+            <Coins className="h-5 w-5 text-amber-500 shrink-0" />
+            <div className="min-w-0">
               <div className="text-xs text-zinc-500">Balance</div>
-              <div className="text-xl font-bold text-white">{currentCoins.toLocaleString()}</div>
+              <div className="text-xl font-bold text-white">
+                {balanceStatus === 'ok' && currentCoins.toLocaleString()}
+                {balanceStatus === 'error' && (
+                  <span className="text-amber-400 font-normal text-sm">加载失败</span>
+                )}
+                {balanceStatus !== 'ok' && balanceStatus !== 'error' && '\u00A0'}
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => fetchBalance()}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-              title="刷新余额"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
           </div>
         </div>
 

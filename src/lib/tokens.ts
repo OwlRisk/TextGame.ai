@@ -1,16 +1,24 @@
-import { Pool, PoolClient } from 'pg';
+import { PoolClient } from 'pg';
+import { pool } from '@/lib/pg-pool';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Accept self-signed certificates for all environments
-});
+// PostgreSQL SET LOCAL 不支持预编译参数 $1，只能用字面量；仅允许 UUID 格式防注入
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+function safeSetUserId(userId: string): string {
+  if (!UUID_RE.test(userId)) throw new Error('Invalid userId for app.user_id');
+  return userId.replace(/'/g, "''");
+}
 
 /** RLS 要求 current_setting('app.user_id', true) = user_id，在同一连接上先 SET 再查/写 */
 async function withUserContext<T>(userId: string, fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   try {
-    await client.query('SET LOCAL app.user_id = $1', [userId]);
+    const safe = safeSetUserId(userId);
+    await client.query(`SET LOCAL app.user_id = '${safe}'`);
     return await fn(client);
+  } catch (err) {
+    console.error('[tokens] withUserContext error userId=', userId, 'err=', err);
+    if (err instanceof Error) console.error('[tokens] withUserContext stack:', err.stack);
+    throw err;
   } finally {
     client.release();
   }
@@ -65,8 +73,10 @@ export async function getUserBalance(userId: string): Promise<UserBalance> {
        WHERE user_id = $1`,
       [userId]
     );
+    console.log('[tokens] getUserBalance userId=', userId, 'rows=', result.rows.length);
 
     if (result.rows.length === 0) {
+      console.log('[tokens] getUserBalance no row, inserting default 100');
       await client.query(
         'INSERT INTO user_profiles (user_id, tokens) VALUES ($1, 100) ON CONFLICT (user_id) DO NOTHING',
         [userId]
@@ -190,8 +200,10 @@ export async function addTokens(
   description: string,
   paymentIntentId?: string
 ): Promise<void> {
+  console.log('[tokens] addTokens userId=', userId, 'amount=', amount, 'paymentIntentId=', paymentIntentId);
   await withUserContext(userId, async (client) => {
     if (paymentIntentId && (await hasTransactionForPaymentIntent(paymentIntentId, client))) {
+      console.log('[tokens] addTokens idempotent skip, already credited for', paymentIntentId);
       return;
     }
     await client.query('BEGIN');
@@ -210,9 +222,11 @@ export async function addTokens(
         [userId, amount, transactionType, description, paymentIntentId]
       );
       await client.query('COMMIT');
+      console.log('[tokens] addTokens committed successfully');
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error adding tokens:', error);
+      console.error('[tokens] addTokens error:', error);
+      if (error instanceof Error) console.error('[tokens] addTokens stack:', error.stack);
       throw error;
     }
   });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
-import { getUserBalance, getRecentTransactions, getTokenPackages } from '@/lib/tokens';
+import { getCachedBalance, setCachedBalance } from '@/lib/balance-cache';
+import { getUserBalance } from '@/lib/tokens';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,10 +9,13 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ tokens: 0, isPro: false, subscriptionStatus: 'free' });
     }
+    const cached = getCachedBalance(user.id);
+    if (cached) return NextResponse.json(cached);
     const balance = await getUserBalance(user.id);
+    setCachedBalance(user.id, balance);
     return NextResponse.json(balance);
   } catch (error) {
-    console.error('Balance fetch error:', error);
+    console.error('[balance] GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch balance' },
       { status: 500 }
@@ -32,10 +36,13 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ tokens: 0, isPro: false, subscriptionStatus: 'free' });
     }
+    const cached = getCachedBalance(user.id);
+    if (cached) return NextResponse.json(cached);
     const balance = await getUserBalance(user.id);
+    setCachedBalance(user.id, balance);
     return NextResponse.json(balance);
   } catch (error) {
-    console.error('Balance fetch error:', error);
+    console.error('[balance] POST error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch balance' },
       { status: 500 }

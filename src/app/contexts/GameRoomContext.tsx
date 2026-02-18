@@ -248,7 +248,34 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           console.error("Error saving game room state to DB:", e)
         );
       }
-      localStorage.setItem(`gameRoom_${gameId}`, JSON.stringify(state));
+      const key = `gameRoom_${gameId}`;
+      const payload = JSON.stringify(state);
+      try {
+        localStorage.setItem(key, payload);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "QuotaExceededError") {
+          // 先删掉其它游戏的缓存，再重试一次
+          try {
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k?.startsWith("gameRoom_") && k !== key) keysToRemove.push(k);
+            }
+            keysToRemove.forEach((k) => localStorage.removeItem(k));
+            localStorage.setItem(key, payload);
+          } catch (e2) {
+            // 仍超限则尝试不存头像（体积大），再试一次
+            const stateSlim = { ...state, avatarImageUrls: undefined };
+            try {
+              localStorage.setItem(key, JSON.stringify(stateSlim));
+            } catch (e3) {
+              console.warn("Game room state skipped (localStorage quota exceeded):", (e3 as Error)?.message);
+            }
+          }
+        } else {
+          throw e;
+        }
+      }
     } catch (e) {
       console.error("Error saving game room state:", e);
     }

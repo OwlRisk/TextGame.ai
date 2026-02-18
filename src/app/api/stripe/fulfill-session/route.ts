@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
+import { invalidateBalanceCache } from '@/lib/balance-cache';
 import { addTokens } from '@/lib/tokens';
 
 /**
@@ -11,6 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const { session_id: sessionId, accessToken: tokenFromBody } = body;
+    console.log('[fulfill-session] sessionId=', sessionId, 'hasAccessToken=', !!tokenFromBody);
 
     let user = (typeof tokenFromBody === 'string' && tokenFromBody.trim())
       ? await getAuthUserFromToken(tokenFromBody.trim())
@@ -18,8 +20,10 @@ export async function POST(request: NextRequest) {
     if (!user) user = await getAuthUserFromRequest(request);
 
     if (!user) {
+      console.log('[fulfill-session] no user, 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    console.log('[fulfill-session] userId=', user.id);
 
     if (!sessionId || typeof sessionId !== 'string') {
       return NextResponse.json(
@@ -31,6 +35,7 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.retrieve(sessionId.trim(), {
       expand: ['payment_intent'],
     });
+    console.log('[fulfill-session] Stripe session payment_status=', session.payment_status, 'metadata=', session.metadata);
 
     if (session.payment_status !== 'paid') {
       return NextResponse.json(
@@ -40,6 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (session.metadata?.userId !== user.id) {
+      console.log('[fulfill-session] userId mismatch: session.metadata.userId=', session.metadata?.userId, 'user.id=', user.id);
       return NextResponse.json(
         { error: 'Session does not belong to this user' },
         { status: 403 }
@@ -65,6 +71,7 @@ export async function POST(request: NextRequest) {
       typeof session.payment_intent === 'string'
         ? session.payment_intent
         : (session.payment_intent as { id?: string })?.id;
+    console.log('[fulfill-session] calling addTokens userId=', user.id, 'tokens=', tokens, 'paymentIntentId=', paymentIntentId);
 
     await addTokens(
       user.id,
@@ -73,10 +80,13 @@ export async function POST(request: NextRequest) {
       `Purchased ${tokens} coins`,
       paymentIntentId
     );
+    invalidateBalanceCache(user.id);
 
+    console.log('[fulfill-session] addTokens done, returning credited=true');
     return NextResponse.json({ credited: true, tokens });
   } catch (error) {
-    console.error('[fulfill-session]', error);
+    console.error('[fulfill-session] error:', error);
+    console.error('[fulfill-session] error stack:', error instanceof Error ? error.stack : 'no stack');
     return NextResponse.json(
       {
         error: 'Failed to fulfill session',

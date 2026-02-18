@@ -44,14 +44,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return /refresh token|Refresh Token|refresh_token/i.test(msg) && /not found|invalid|expired/i.test(msg);
   }, []);
 
+  const clearSessionAndCookie = useCallback(() => {
+    setAuthCookie(null);
+    setUser(null);
+    setSession(null);
+  }, []);
+
   useEffect(() => {
     // Check active session and sync user from server (avatar is persisted in callback via admin API)
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      // Refresh Token Not Found 等：服务端已失效，本地视为未登录
+      if (error && isInvalidRefreshToken(error)) {
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          // ignore
+        }
+        clearSessionAndCookie();
+        setLoading(false);
+        return;
+      }
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
         try {
-          const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+          const { data: { session: refreshed }, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError && isInvalidRefreshToken(refreshError)) {
+            try {
+              await supabase.auth.signOut();
+            } catch {
+              // ignore
+            }
+            clearSessionAndCookie();
+            setLoading(false);
+            return;
+          }
           if (refreshed?.user && (refreshed.user.user_metadata?.avatar_url || refreshed.user.user_metadata?.picture)) {
             userToSet = refreshed.user;
             sessionToSet = refreshed;
@@ -92,7 +119,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
         try {
-          const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+          const { data: { session: refreshed }, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError && isInvalidRefreshToken(refreshError)) {
+            try {
+              await supabase.auth.signOut();
+            } catch {
+              // ignore
+            }
+            clearSessionAndCookie();
+            setLoading(false);
+            return;
+          }
           if (refreshed?.user && (refreshed.user.user_metadata?.avatar_url || refreshed.user.user_metadata?.picture)) {
             userToSet = refreshed.user;
             sessionToSet = refreshed;
@@ -126,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [doSignOut, isInvalidRefreshToken]);
+  }, [isInvalidRefreshToken, clearSessionAndCookie]);
 
   const signInWithGoogle = async (returnUrl?: string) => {
     try {

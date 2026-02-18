@@ -16,7 +16,7 @@ if (!connectionString) {
 async function executeSchema() {
   const client = new Client({
     connectionString: connectionString,
-    ssl: false  // Disable SSL for now, or use proper certificate
+    ssl: { rejectUnauthorized: false }
   });
 
   try {
@@ -24,14 +24,25 @@ async function executeSchema() {
     await client.connect();
     console.log('✅ Connected successfully!\n');
 
-    console.log('📖 Reading schema file...');
+    // 1) 主 schema
+    console.log('📖 Executing database/schema.sql...');
     const schemaPath = path.join(__dirname, '../database/schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf-8');
-
-    console.log('🚀 Executing schema...\n');
-
-    // Execute the entire schema
     await client.query(schema);
+    console.log('✅ schema.sql done.\n');
+
+    // 2) 按顺序执行 migrations（含 user_profiles、token_transactions、Stripe 相关）
+    const migrationsDir = path.join(__dirname, '../database/migrations');
+    const migrationFiles = fs.readdirSync(migrationsDir)
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
+    for (const file of migrationFiles) {
+      const filePath = path.join(migrationsDir, file);
+      console.log('📖 Executing migration:', file);
+      const sql = fs.readFileSync(filePath, 'utf-8');
+      await client.query(sql);
+      console.log('✅', file, 'done.\n');
+    }
 
     // Reload PostgREST schema cache so the API sees the new tables immediately
     try {
@@ -41,18 +52,13 @@ async function executeSchema() {
       console.warn('⚠️  Could not notify pgrst (non-fatal):', notifyErr.message);
     }
 
-    console.log('✅ Schema executed successfully!');
-    console.log('\n📊 Created:');
-    console.log('   - game_sessions table');
-    console.log('   - games table');
-    console.log('   - game_room_state table');
-    console.log('   - Indexes');
-    console.log('   - Triggers');
-    console.log('   - Row Level Security policies');
+    console.log('✅ All schema + migrations executed successfully!');
+    console.log('\n📊 Includes: game_sessions, games, game_room_state, game_drafts,');
+    console.log('   user_profiles, token_transactions, token_packages (Stripe/coins).');
     console.log('\n🎉 Database setup complete!');
 
   } catch (error) {
-    console.error('\n❌ Error executing schema:', error.message);
+    console.error('\n❌ Error:', error.message);
     if (error.code === '42P07') {
       console.log('⚠️  Some tables may already exist. This is okay.');
     } else {
