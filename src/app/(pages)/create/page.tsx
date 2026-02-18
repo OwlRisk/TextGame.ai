@@ -14,6 +14,7 @@ import { getDefaultAICountForTemplate } from "@/lib/game-utils";
 import { getPresetById, type DiscoverPreset } from "@/app/components/discover-page";
 import { ProtectedRoute } from "@/app/components/protected-route";
 import { Menu } from "lucide-react";
+import { TokenBalance } from "@/app/components/token-balance";
 
 export default function CreateGamePage() {
   return (
@@ -158,11 +159,12 @@ function CreateGamePageContent() {
 
   return (
     <div className="h-screen flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
-      <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center border-b border-zinc-800 bg-zinc-900/95">
+      <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95">
         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileMenuOpen(true)} aria-label="打开菜单">
           <Menu className="size-5 text-zinc-300" />
         </Button>
-        <span className="text-sm font-medium text-zinc-300 ml-2">Create Game</span>
+        <span className="text-sm font-medium text-zinc-300 ml-2 flex-1">Create Game</span>
+        <TokenBalance compact />
       </header>
       <div className="flex-1 flex overflow-hidden min-h-0">
         <div className="hidden md:flex flex-shrink-0 z-10">

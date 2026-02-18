@@ -32,6 +32,7 @@ import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
+import { TokenBalance } from "@/app/components/token-balance";
 
 interface Game {
   id: string;
@@ -340,6 +341,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                       <h3 className="text-lg font-bold truncate">{username}</h3>
                       <p className="text-zinc-400 text-xs truncate">{user.email}</p>
                     </div>
+                  </div>
+
+                  {/* Coins balance */}
+                  <div className="pb-3 border-b border-zinc-800">
+                    <TokenBalance compact />
                   </div>
 
                   {/* Menu Options */}

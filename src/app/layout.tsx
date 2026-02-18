@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "../styles/index.css";
 import { GameProvider } from "@/app/contexts/GameContext";
 import { AuthProvider } from "@/app/contexts/AuthContext";
+import { SuppressFastRefreshLogs } from "@/app/components/suppress-fast-refresh-logs";
 import { SITE_NAME, SITE_DOMAIN, SITE_DESCRIPTION } from "@/lib/site";
 
 export const viewport: Viewport = {
@@ -42,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full overflow-hidden [-webkit-tap-highlight-color:transparent]">
       <body className="antialiased h-full overflow-hidden safe-area-padding" suppressHydrationWarning>
+        <SuppressFastRefreshLogs />
         <AuthProvider>
           <GameProvider>{children}</GameProvider>
         </AuthProvider>

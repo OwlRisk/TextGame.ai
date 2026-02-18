@@ -1,77 +1,108 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from './ui/button';
 import { Coins, Crown, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/contexts/AuthContext';
 
-interface Balance {
+export interface Balance {
   tokens: number;
   isPro: boolean;
   subscriptionStatus: string;
   subscriptionEndDate?: string;
 }
 
-export function TokenBalance() {
+interface TokenBalanceProps {
+  /** compact：仅显示图标+数量，可点击跳转充值，用于顶栏/用户菜单内 */
+  compact?: boolean;
+  /** 用于从外部触发刷新（如充值页返回后） */
+  refreshKey?: number | string;
+}
+
+export function TokenBalance({ compact = false, refreshKey }: TokenBalanceProps) {
   const [balance, setBalance] = useState<Balance | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { session } = useAuth();
 
-  useEffect(() => {
-    fetchBalance();
-  }, []);
-
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
+    if (!session?.access_token) {
+      setBalance(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const res = await fetch('/api/user/balance', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`,
-        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      
       if (res.ok) {
         const data = await res.json();
         setBalance(data);
+      } else {
+        setBalance(null);
       }
     } catch (error) {
       console.error('Failed to fetch balance:', error);
+      setBalance(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.access_token]);
+
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance, refreshKey]);
+
+  if (!session) return null;
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
-        <Loader2 className="w-4 h-4 animate-spin" />
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 rounded-full">
+        <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
       </div>
     );
   }
 
   if (!balance) return null;
 
+  const balanceNode = balance.isPro ? (
+    <span className="flex items-center gap-1.5 text-amber-400">
+      <Crown className="w-4 h-4 shrink-0" />
+      <span className="text-sm font-medium">Pro</span>
+    </span>
+  ) : (
+    <span className="flex items-center gap-1.5 text-zinc-100">
+      <Coins className="w-4 h-4 text-amber-500 shrink-0" />
+      <span className="font-semibold tabular-nums">{balance.tokens.toLocaleString()}</span>
+      {!compact && <span className="text-sm text-zinc-500">coins</span>}
+    </span>
+  );
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={() => router.push('/recharge')}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors"
+        aria-label="View balance and get coins"
+      >
+        {balanceNode}
+      </button>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3">
-      {balance.isPro ? (
-        <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full text-white font-medium shadow-md">
-          <Crown className="w-4 h-4" />
-          <span className="text-sm font-semibold">Pro - Unlimited</span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm">
-          <Coins className="w-4 h-4 text-amber-500" />
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {balance.tokens.toLocaleString()}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">coins</span>
-        </div>
-      )}
-      
-      <Button 
-        size="sm" 
+      <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg">
+        {balanceNode}
+      </div>
+      <Button
+        size="sm"
         onClick={() => router.push('/recharge')}
-        variant={balance.isPro ? "outline" : "default"}
-        className={balance.isPro ? "" : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0"}
+        variant={balance.isPro ? 'outline' : 'default'}
+        className={balance.isPro ? '' : 'bg-amber-500 hover:bg-amber-600 text-zinc-900 border-0'}
       >
         {balance.isPro ? 'Manage' : 'Get coins'}
       </Button>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GameSidebar } from "@/app/components/game-sidebar";
+import { TokenBalance } from "@/app/components/token-balance";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
 import { Menu } from "lucide-react";
@@ -49,7 +50,7 @@ export function AppLayoutWithSidebar({
 
   return (
     <div className="h-screen flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
-      <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center border-b border-zinc-800 bg-zinc-900/95">
+      <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95">
         <Button
           variant="ghost"
           size="icon"
@@ -60,6 +61,7 @@ export function AppLayoutWithSidebar({
           <Menu className="size-5 text-zinc-300" />
         </Button>
         <span className="text-sm font-medium text-zinc-300 ml-2 truncate flex-1">{mobileTitle}</span>
+        <TokenBalance compact />
       </header>
       <div className="flex-1 flex overflow-hidden min-h-0">
         <div className="hidden md:flex flex-shrink-0 z-10">
