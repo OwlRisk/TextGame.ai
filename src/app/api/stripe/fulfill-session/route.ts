@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { invalidateBalanceCache } from '@/lib/balance-cache';
-import { addTokens, rechargeCoinsFromPayment } from '@/lib/tokens';
+import {
+  addTokens,
+  getUserBalance,
+  grantMonthlyAllowance,
+  rechargeCoinsFromPayment,
+  updateSubscriptionStatus,
+} from '@/lib/tokens';
+import { getTierFromStripePriceId } from '@/lib/subscription';
 
 /**
- * After Stripe Checkout success, the client calls this to credit tokens.
- * Used when webhook doesn't fire (e.g. local dev). Idempotent with webhook.
+ * After Stripe Checkout success, client calls this to fulfill payment/subscription.
+ * Used when webhook doesn't fire in local dev.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -52,9 +59,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (session.mode === 'subscription') {
+      const subscriptionId =
+        typeof session.subscription === 'string'
+          ? session.subscription
+          : (session.subscription as { id?: string })?.id;
+
+      if (!subscriptionId) {
+        return NextResponse.json(
+          { error: 'No subscription id in session' },
+          { status: 400 }
+        );
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const priceId = subscription.items?.data?.[0]?.price?.id;
+      const tier = (priceId ? getTierFromStripePriceId(priceId) : 'pro') ?? 'pro';
+
+      // Avoid duplicate grant when webhook has already fulfilled this subscription.
+      const before = await getUserBalance(user.id);
+      const shouldGrant = tier === 'pro' && before.subscriptionStatus !== 'pro';
+
+      await updateSubscriptionStatus(
+        user.id,
+        tier,
+        subscription.id,
+        new Date(subscription.current_period_end * 1000)
+      );
+      if (shouldGrant) {
+        await grantMonthlyAllowance(user.id, 'pro');
+      }
+      invalidateBalanceCache(user.id);
+
+      return NextResponse.json({
+        fulfilled: true,
+        mode: 'subscription',
+        subscriptionStatus: tier,
+        grantedMonthlyAllowance: shouldGrant,
+      });
+    }
+
     if (session.mode !== 'payment') {
       return NextResponse.json(
-        { error: 'Not a one-time payment session' },
+        { error: 'Unsupported session mode' },
         { status: 400 }
       );
     }
