@@ -32,10 +32,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isSubscription = subscriptionTier === 'pro';
+    const isSubscription = subscriptionTier === 'pro' || subscriptionTier === 'plus' || subscriptionTier === 'ultra';
     if (!isSubscription && !packageId) {
       return NextResponse.json(
-        { error: 'Package ID or subscriptionTier (pro) is required' },
+        { error: 'Package ID or subscriptionTier (pro/plus/ultra) is required' },
         { status: 400 }
       );
     }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              'Stripe price not configured for pro. Set STRIPE_PRO_PRICE_ID (or legacy STRIPE_PRICE_PRO) in .env, and use a Stripe Price ID (starts with price_).',
+              `Stripe price not configured for ${subscriptionTier}. Set the correct STRIPE_*_PRICE_ID in .env, and use a Stripe Price ID (starts with price_).`,
           },
           { status: 500 }
         );
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              'Invalid Stripe price id for pro. Expected a Stripe Price ID starting with price_ (not a product id like prod_).',
+              `Invalid Stripe price id for ${subscriptionTier}. Expected a Stripe Price ID starting with price_ (not a product id like prod_).`,
           },
           { status: 500 }
         );
