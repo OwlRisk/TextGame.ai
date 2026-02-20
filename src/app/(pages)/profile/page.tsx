@@ -29,7 +29,7 @@ function ProfilePageContent() {
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      <UserProfile onClose={() => router.push("/")} />
+      <UserProfile onClose={() => router.replace("/create")} />
       <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
     </AppLayoutWithSidebar>
   );
