@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, Home, Compass, Settings, LogOut, Coins, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, Sparkles } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, Home, Compass, Settings, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -32,7 +32,6 @@ import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
-import { TokenBalance } from "@/app/components/token-balance";
 
 interface Game {
   id: string;
@@ -326,74 +325,81 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               <PopoverContent 
                 side="right" 
                 align="end" 
-                className="w-80 bg-zinc-900 border-zinc-800 text-white p-0 ml-2"
+                className="w-80 bg-zinc-900 border-zinc-800 text-white p-0 ml-2 rounded-xl overflow-hidden"
               >
                 <div className="p-4 space-y-4">
-                  {/* User Avatar & Info */}
+                  {/* User Avatar & Info（与参考一致：头像 + 名称，下边框） */}
+                  {/* User Avatar & Info（与参考一致：仅头像 + 名称，无余额卡片） */}
                   <div className="flex items-center gap-3 pb-3 border-b border-zinc-800">
-                    <Avatar className="h-16 w-16 flex-shrink-0 shadow-lg ring-2 ring-zinc-700">
+                    <Avatar className="h-16 w-16 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-zinc-700/80">
                       <AvatarImage src={userAvatar} alt={username} />
-                      <AvatarFallback className="bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white text-2xl font-bold">
+                      <AvatarFallback className="bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white text-xl font-bold">
                         {username.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold truncate">{username}</h3>
-                      <p className="text-zinc-400 text-xs truncate">{user.email}</p>
+                      <h3 className="text-lg font-bold text-zinc-100 truncate">{username}</h3>
+                      <p className="text-sm text-zinc-500 truncate">{user.email}</p>
                     </div>
                   </div>
 
-                  {/* Coins balance */}
-                  <div className="pb-3 border-b border-zinc-800">
-                    <TokenBalance compact />
-                  </div>
-
-                  {/* Menu Options */}
+                  {/* 菜单项：顺序与图标与参考一致 */}
                   <div className="space-y-1">
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        onOpenProfile?.();
+                        router.push('/profile');
                       }}
                     >
-                      <UserCircle className="mr-3 h-4 w-4 text-blue-400" />
+                      <UserCircle className="mr-3 h-4 w-4 text-blue-400 shrink-0" />
                       <span className="text-sm">Edit Profile</span>
                     </Button>
-
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        router.push('/recharge');
+                        router.push('/usage');
                       }}
                     >
-                      <Coins className="mr-3 h-4 w-4 text-amber-500" />
-                      <span className="text-sm">Get coins</span>
+                      <BarChart3 className="mr-3 h-4 w-4 text-violet-400 shrink-0" />
+                      <span className="text-sm">Usage & Spending</span>
                     </Button>
-                    
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100 opacity-70 cursor-not-allowed"
-                      disabled
-                      title="Coming soon"
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        router.push('/subscription');
+                      }}
                     >
-                      <Settings className="mr-3 h-4 w-4" />
+                      <CreditCard className="mr-3 h-4 w-4 text-emerald-400 shrink-0" />
+                      <span className="text-sm">Subscription</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        router.push('/settings');
+                      }}
+                    >
+                      <Settings className="mr-3 h-4 w-4 text-zinc-400 shrink-0" />
                       <span className="text-sm">Settings</span>
                     </Button>
-
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100 opacity-70 cursor-not-allowed"
-                      disabled
-                      title="Coming soon"
+                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        router.push('/help');
+                      }}
                     >
-                      <HelpCircle className="mr-3 h-4 w-4 text-green-400" />
+                      <HelpCircle className="mr-3 h-4 w-4 text-amber-400 shrink-0" />
                       <span className="text-sm">Help & Support</span>
                     </Button>
-                    
                     <div className="pt-1 border-t border-zinc-800 mt-2">
                       <Button 
                         variant="ghost" 
@@ -402,16 +408,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                         disabled={isSigningOut}
                       >
                         {isSigningOut ? (
-                          <>
-                            <Loader2 className="mr-3 h-4 w-4 animate-spin" />
-                            <span className="text-sm">Signing out...</span>
-                          </>
+                          <Loader2 className="mr-3 h-4 w-4 animate-spin shrink-0" />
                         ) : (
-                          <>
-                            <LogOut className="mr-3 h-4 w-4" />
-                            <span className="text-sm">Log Out</span>
-                          </>
+                          <LogOut className="mr-3 h-4 w-4 shrink-0" />
                         )}
+                        <span className="text-sm">{isSigningOut ? 'Signing out...' : 'Log Out'}</span>
                       </Button>
                     </div>
                   </div>

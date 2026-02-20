@@ -14,7 +14,7 @@ import { getDefaultAICountForTemplate } from "@/lib/game-utils";
 import { getPresetById, type DiscoverPreset } from "@/app/components/discover-page";
 import { ProtectedRoute } from "@/app/components/protected-route";
 import { Menu } from "lucide-react";
-import { TokenBalance } from "@/app/components/token-balance";
+import { UsageDisplay } from "@/app/components/usage-display";
 
 export default function CreateGamePage() {
   return (
@@ -164,7 +164,7 @@ function CreateGamePageContent() {
           <Menu className="size-5 text-zinc-300" />
         </Button>
         <span className="text-sm font-medium text-zinc-300 ml-2 flex-1">Create Game</span>
-        <TokenBalance compact />
+        <UsageDisplay compact />
       </header>
       <div className="flex-1 flex overflow-hidden min-h-0">
         <div className="hidden md:flex flex-shrink-0 z-10">

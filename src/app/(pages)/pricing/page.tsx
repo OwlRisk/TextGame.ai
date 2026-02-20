@@ -11,7 +11,7 @@ export default function PricingPage() {
 
   return (
     <AppLayoutWithSidebar
-      mobileTitle="Get Coins"
+      mobileTitle="Top up"
       games={games}
       selectedGameId={selectedGameId}
       onSelectGame={(gameId) => selectGame(gameId)}

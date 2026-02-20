@@ -15,7 +15,7 @@ import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
-import { TokenBalance } from "@/app/components/token-balance";
+import { UsageDisplay } from "@/app/components/usage-display";
 
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
@@ -752,7 +752,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         </Button>
         <span className="text-sm font-medium text-zinc-300 truncate max-w-[40%]">{currentGame?.name ?? "Game"}</span>
         <div className="flex items-center gap-1.5">
-          <TokenBalance compact />
+          <UsageDisplay compact />
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "channels" ? null : "channels"))} aria-label="频道与规则">
             <Hash className="size-5 text-zinc-300" />
           </Button>

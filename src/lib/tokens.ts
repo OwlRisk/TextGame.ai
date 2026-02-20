@@ -167,27 +167,24 @@ export async function getUserBalance(userId: string): Promise<UserBalance> {
     }
 
     const row = result.rows[0];
+    const status = row.subscription_status || 'free';
+    const isPaidTier = status === 'pro' || status === 'plus' || status === 'ultra';
+    // 仅支持 Pro 会员，API 统一返回 free | pro（plus/ultra 视为 pro）
+    const subscriptionStatus = status === 'cancelled' ? 'free' : (isPaidTier ? 'pro' : 'free');
     return {
       tokens: row.tokens || 0,
-      isPro: row.subscription_status === 'pro',
-      subscriptionStatus: row.subscription_status || 'free',
+      isPro: isPaidTier,
+      subscriptionStatus,
       subscriptionEndDate: row.subscription_current_period_end,
     };
   });
 }
 
 /**
- * Check if user has sufficient tokens (Pro users always return true)
+ * Check if user has sufficient tokens (subscription users get monthly allowance, same check)
  */
 export async function hasTokens(userId: string, amount: number): Promise<boolean> {
   const balance = await getUserBalance(userId);
-  
-  // Pro users have unlimited tokens
-  if (balance.isPro) {
-    return true;
-  }
-  
-  // Check if user has enough tokens
   return balance.tokens >= amount;
 }
 
@@ -213,18 +210,7 @@ export async function deductTokens(
         await client.query('ROLLBACK');
         return false;
       }
-      const { tokens, subscription_status } = balanceResult.rows[0];
-      const isPro = subscription_status === 'pro';
-      if (isPro) {
-        await client.query(
-          `INSERT INTO token_transactions 
-           (user_id, amount, transaction_type, description, game_session_id)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [userId, 0, transactionType, `${description} (Pro - Unlimited)`, gameSessionId]
-        );
-        await client.query('COMMIT');
-        return true;
-      }
+      const { tokens } = balanceResult.rows[0];
       if (tokens < amount) {
         await client.query('ROLLBACK');
         return false;
@@ -366,12 +352,15 @@ export async function getTokenPackages() {
   return [...DEFAULT_COIN_PACKAGES];
 }
 
+/** 订阅状态（DB 可能仍有 plus/ultra 历史值，新写入仅 free | pro | cancelled） */
+export type SubscriptionStatus = 'free' | 'pro' | 'plus' | 'ultra' | 'cancelled';
+
 /**
- * Update user's subscription status
+ * Update user's subscription status（仅支持 Pro，写入 free | pro | cancelled）
  */
 export async function updateSubscriptionStatus(
   userId: string,
-  status: 'free' | 'pro' | 'cancelled',
+  status: SubscriptionStatus,
   subscriptionId?: string,
   periodEnd?: Date
 ): Promise<void> {
@@ -387,6 +376,16 @@ export async function updateSubscriptionStatus(
       [userId, status, subscriptionId, periodEnd]
     );
   });
+}
+
+/**
+ * Grant monthly usage allowance for Pro subscription (call on subscribe + renewal)
+ */
+export async function grantMonthlyAllowance(userId: string, tier: 'pro'): Promise<void> {
+  const { getMonthlyUsageAllowance } = await import('@/lib/subscription');
+  const amount = getMonthlyUsageAllowance(tier);
+  if (amount <= 0) return;
+  await addTokens(userId, amount, 'subscription_grant', `Monthly allowance: ${tier}`);
 }
 
 /**

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Coins, Clock, Check, TrendingUp, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -240,14 +241,14 @@ export function RechargeContent() {
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Get Coins</h1>
-            <p className="text-zinc-500">Play any game, unlimited types</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Top up</h1>
+            <p className="text-zinc-500">Add usage for AI gameplay</p>
           </div>
 
           <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3">
-            <Coins className="h-5 w-5 text-amber-500 shrink-0" />
+            <Coins className="h-5 w-5 text-emerald-500 shrink-0" />
             <div className="min-w-0">
-              <div className="text-xs text-zinc-500">Balance</div>
+              <div className="text-xs text-zinc-500">Usage</div>
               <div className="text-xl font-bold text-white">
                 {balanceStatus === 'ok' && currentCoins.toLocaleString()}
                 {balanceStatus === 'error' && (
@@ -294,12 +295,12 @@ export function RechargeContent() {
                   <div className="text-zinc-500 text-xs">{pkg.description}</div>
                 </div>
 
-                {/* Coins Display - The Most Important */}
+                {/* Usage amount */}
                 <div className="bg-zinc-800/50 rounded-lg p-4 mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Coins className="h-5 w-5 text-amber-500" />
+                    <Coins className="h-5 w-5 text-emerald-500" />
                     <span className="text-xs text-zinc-400 uppercase font-semibold tracking-wider">
-                      You Get
+                      You get
                     </span>
                   </div>
                   <div className="text-3xl font-black text-white">
@@ -307,10 +308,10 @@ export function RechargeContent() {
                   </div>
                   {pkg.bonus > 0 ? (
                     <div className="text-xs text-zinc-500">
-                      {pkg.coins.toLocaleString()} + {pkg.bonus.toLocaleString()} coins
+                      {pkg.coins.toLocaleString()} + {pkg.bonus.toLocaleString()} usage
                     </div>
                   ) : (
-                    <div className="text-xs text-zinc-500">coins</div>
+                    <div className="text-xs text-zinc-500">usage</div>
                   )}
                 </div>
 
@@ -351,7 +352,7 @@ export function RechargeContent() {
                 </div>
                 <div>
                   <div className="text-3xl font-black text-white">{totalCoins.toLocaleString()}</div>
-                  <div className="text-zinc-500 text-sm">coins • {selectedPackage.estimatedHours} of play</div>
+                  <div className="text-zinc-500 text-sm">usage • {selectedPackage.estimatedHours} of play</div>
                 </div>
               </div>
 
@@ -411,9 +412,9 @@ export function RechargeContent() {
             <div>
               <h3 className="text-white font-bold mb-1">How It Works</h3>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                Coins are consumed based on AI interactions during gameplay. Longer conversations and more complex
-                games use more coins. Estimated playtime is based on average usage - actual time may vary depending on
-                your playstyle.
+                Usage is consumed by AI interactions during gameplay. Longer conversations and more complex
+                games use more. Estimated playtime is based on average usage — actual time may vary depending on
+                your playstyle. View spending in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
               </p>
             </div>
           </div>

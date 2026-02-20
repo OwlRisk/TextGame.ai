@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       user.id,
       tokens,
       'purchase',
-      `Purchased ${tokens} coins`,
+      `Purchased ${tokens} usage`,
       paymentIntentId
     );
     invalidateBalanceCache(user.id);

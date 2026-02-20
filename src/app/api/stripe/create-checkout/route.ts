@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { getCustomerId, setCustomerId, getTokenPackages, rechargeCoinsFromPayment } from '@/lib/tokens';
+import { getStripePriceIdForTier } from '@/lib/subscription';
 
 /** 套餐展示用；实际到账 coins 由 rechargeCoinsFromPayment(price_cents) 公式计算 */
 const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number }> = {
@@ -17,7 +18,7 @@ const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number }> 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { packageId, accessToken: tokenFromBody } = body;
+    const { packageId, subscriptionTier, accessToken: tokenFromBody } = body;
 
     let user = (typeof tokenFromBody === 'string' && tokenFromBody.trim())
       ? await getAuthUserFromToken(tokenFromBody.trim())
@@ -31,9 +32,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!packageId) {
+    const isSubscription = subscriptionTier === 'pro';
+    if (!isSubscription && !packageId) {
       return NextResponse.json(
-        { error: 'Package ID is required for coin purchase' },
+        { error: 'Package ID or subscriptionTier (pro) is required' },
         { status: 400 }
       );
     }
@@ -62,6 +64,39 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = request.nextUrl.origin;
+
+    if (isSubscription) {
+      const priceId = getStripePriceIdForTier(subscriptionTier);
+      if (!priceId) {
+        return NextResponse.json(
+          { error: `Stripe price not configured for ${subscriptionTier}. Set STRIPE_PRICE_${subscriptionTier.toUpperCase()} in .env` },
+          { status: 500 }
+        );
+      }
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: 'subscription',
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${origin}/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/subscription?cancelled=true`,
+        metadata: {
+          userId: user.id,
+          type: 'subscription',
+          tier: subscriptionTier,
+        },
+        subscription_data: { metadata: { userId: user.id, tier: subscriptionTier } },
+        allow_promotion_codes: true,
+      });
+      const checkoutUrl = session.url ?? null;
+      if (!checkoutUrl) {
+        return NextResponse.json(
+          { error: 'Stripe did not return checkout URL', details: 'session.url is empty' },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json({ url: checkoutUrl });
+    }
+
     const successUrl = `${origin}/recharge?success=true&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${origin}/recharge?cancelled=true`;
 
@@ -91,8 +126,8 @@ export async function POST(request: NextRequest) {
             currency: 'usd',
             unit_amount: price_cents,
             product_data: {
-              name: name ?? 'Coins',
-              description: `${Number(tokens).toLocaleString()} coins`,
+              name: name ?? 'Usage',
+              description: `${Number(tokens).toLocaleString()} usage`,
             },
           },
           quantity: 1,

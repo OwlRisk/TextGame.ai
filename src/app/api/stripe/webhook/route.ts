@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { addTokens, updateSubscriptionStatus, rechargeCoinsFromPayment } from '@/lib/tokens';
+import { addTokens, updateSubscriptionStatus, rechargeCoinsFromPayment, grantMonthlyAllowance } from '@/lib/tokens';
+import { getTierFromStripePriceId } from '@/lib/subscription';
+import { invalidateBalanceCache } from '@/lib/balance-cache';
 import Stripe from 'stripe';
 import { pool } from '@/lib/pg-pool';
 
@@ -55,20 +57,21 @@ export async function POST(request: NextRequest) {
         console.log(`[Checkout Complete] User: ${userId}, Mode: ${session.mode}`);
 
         if (session.mode === 'subscription') {
-          // Handle subscription creation
           const subscriptionId = session.subscription as string;
-          
-          // Get subscription details to get period end
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          
+          const priceId = subscription.items?.data?.[0]?.price?.id;
+          const tier = priceId ? getTierFromStripePriceId(priceId) : null;
+          const status = (tier ?? 'pro') as 'pro';
+
           await updateSubscriptionStatus(
             userId,
-            'pro',
+            status,
             subscriptionId,
             new Date(subscription.current_period_end * 1000)
           );
-
-          console.log(`[Subscription] User ${userId} upgraded to Pro`);
+          await grantMonthlyAllowance(userId, status);
+          invalidateBalanceCache(userId);
+          console.log(`[Subscription] User ${userId} → ${status}`);
         } else if (session.mode === 'payment') {
           const amountCents = session.amount_total ?? 0;
           const tokens = rechargeCoinsFromPayment(amountCents);
@@ -77,10 +80,10 @@ export async function POST(request: NextRequest) {
               userId,
               tokens,
               'purchase',
-              `Purchased ${tokens} coins`,
+              `Purchased ${tokens} usage`,
               session.payment_intent as string
             );
-            console.log(`[Token Purchase] User ${userId} purchased ${tokens} coins (${amountCents}¢)`);
+            console.log(`[Token Purchase] User ${userId} purchased ${tokens} usage (${amountCents}¢)`);
           }
         }
         break;
@@ -90,20 +93,21 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         console.log(`[Subscription Updated] Status: ${subscription.status}`);
 
-        // Find user by subscription ID
         const result = await pool.query(
           'SELECT user_id FROM user_profiles WHERE subscription_id = $1',
           [subscription.id]
         );
-
-        if (result.rows.length === 0) {
-          console.error(`No user found for subscription ${subscription.id}`);
-          break;
-        }
+        if (result.rows.length === 0) break;
 
         const userId = result.rows[0].user_id;
-        const status = subscription.status === 'active' ? 'pro' : 
-                       subscription.status === 'canceled' ? 'cancelled' : 'free';
+        const priceId = subscription.items?.data?.[0]?.price?.id;
+        const tier = priceId ? getTierFromStripePriceId(priceId) : null;
+        const status =
+          subscription.status === 'active'
+            ? (tier ?? 'pro')
+            : subscription.status === 'canceled'
+              ? 'cancelled'
+              : 'free';
 
         await updateSubscriptionStatus(
           userId,
@@ -111,36 +115,27 @@ export async function POST(request: NextRequest) {
           subscription.id,
           new Date(subscription.current_period_end * 1000)
         );
-
-        console.log(`[Subscription] User ${userId} status updated to ${status}`);
+        invalidateBalanceCache(userId);
+        console.log(`[Subscription] User ${userId} → ${status}`);
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log(`[Subscription Deleted] ID: ${subscription.id}`);
-
-        // Find user by subscription ID
         const result = await pool.query(
           'SELECT user_id FROM user_profiles WHERE subscription_id = $1',
           [subscription.id]
         );
-
-        if (result.rows.length === 0) {
-          console.error(`No user found for subscription ${subscription.id}`);
-          break;
-        }
-
+        if (result.rows.length === 0) break;
         const userId = result.rows[0].user_id;
-
         await updateSubscriptionStatus(
           userId,
           'cancelled',
           subscription.id,
           new Date(subscription.current_period_end * 1000)
         );
-
-        console.log(`[Subscription] User ${userId} subscription cancelled`);
+        invalidateBalanceCache(userId);
+        console.log(`[Subscription] User ${userId} cancelled`);
         break;
       }
 
@@ -148,23 +143,24 @@ export async function POST(request: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice;
 
         if (invoice.subscription && invoice.billing_reason === 'subscription_cycle') {
-          // Subscription renewal successful
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
           const result = await pool.query(
             'SELECT user_id FROM user_profiles WHERE subscription_id = $1',
-            [invoice.subscription]
+            [sub.id]
           );
-
           if (result.rows.length > 0) {
             const userId = result.rows[0].user_id;
-
+            const priceId = sub.items?.data?.[0]?.price?.id;
+            const tier = priceId ? getTierFromStripePriceId(priceId) : 'pro';
             await updateSubscriptionStatus(
               userId,
-              'pro',
-              invoice.subscription as string,
-              new Date(invoice.period_end * 1000)
+              tier ?? 'pro',
+              sub.id,
+              new Date(sub.current_period_end * 1000)
             );
-
-            console.log(`[Subscription Renewed] User ${userId}`);
+            if (tier && tier !== 'free') await grantMonthlyAllowance(userId, tier);
+            invalidateBalanceCache(userId);
+            console.log(`[Subscription Renewed] User ${userId} → ${tier}`);
           }
         }
         break;
