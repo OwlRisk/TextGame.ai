@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { AppLayoutWithSidebar } from '@/app/components/app-layout-with-sidebar';
-import { SubscriptionPlans } from '@/app/components/subscription-plans';
 import { useGameContext } from '@/app/contexts/GameContext';
 import { Button } from '@/app/components/ui/button';
-import { SUBSCRIPTION_TIERS, type SubscriptionTier } from '@/lib/subscription';
+import type { SubscriptionTier } from '@/lib/subscription';
 
 export default function SubscriptionPage() {
   const router = useRouter();
   const { games, selectedGameId, selectGame, updateGame } = useGameContext();
   const { session } = useAuth();
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>('free');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -29,7 +29,23 @@ export default function SubscriptionPage() {
       .catch(() => setCurrentTier('free'));
   }, [session?.access_token]);
 
-  const tierInfo = currentTier !== 'free' ? SUBSCRIPTION_TIERS[currentTier] : null;
+  const handleUpgrade = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionTier: 'pro' }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else throw new Error(data.error || 'Failed to create checkout');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AppLayoutWithSidebar
@@ -42,70 +58,31 @@ export default function SubscriptionPage() {
       onUpdateGame={updateGame}
     >
       <div className="flex-1 min-h-0 overflow-auto bg-[#0a0a0a] flex flex-col">
-        {/* Header - 与参考一致 */}
-        <div className="bg-zinc-900/50 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.back()}
-              className="text-zinc-400 hover:text-white hover:bg-zinc-800 -ml-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold text-white">Subscription Plans</h1>
-              <p className="text-xs text-zinc-500">Choose the plan that fits your needs</p>
-            </div>
-          </div>
+        <div className="flex-shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-zinc-800/80 bg-zinc-950/60">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="text-zinc-400 hover:text-white hover:bg-zinc-800/80 -ml-1 rounded-lg"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <span className="text-sm text-zinc-500">Back</span>
         </div>
 
-        <div className="flex-1 px-6 py-8 min-h-0 overflow-auto">
-          <div className="max-w-7xl mx-auto">
-            {/* Current Plan Banner - 与参考一致 */}
-            {currentTier !== 'free' && tierInfo && (
-              <div className="mb-8 bg-gradient-to-r from-violet-600/10 to-fuchsia-600/10 border border-violet-500/30 rounded-xl p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-white font-semibold text-lg mb-1">
-                      Current Plan: {tierInfo.name}
-                    </h2>
-                    <p className="text-zinc-400 text-sm">Your subscription renews monthly</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-white">{tierInfo.creditsPerMonth} Credits</div>
-                    <div className="text-sm text-zinc-400">per month</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <SubscriptionPlans currentTier={currentTier} showTitle={false} />
-
-            {/* FAQ - 与参考一致 */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mt-8 max-w-3xl">
-              <h2 className="text-white font-semibold text-lg mb-4">Frequently Asked Questions</h2>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-white font-medium text-sm mb-2">How do Credits work?</h3>
-                  <p className="text-zinc-400 text-sm">
-                    Credits are consumed during gameplay based on AI interactions, TTS usage, and image generation. Your monthly credit allowance resets on your renewal date.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm mb-2">Can I cancel anytime?</h3>
-                  <p className="text-zinc-400 text-sm">
-                    Yes! You can cancel your subscription at any time. You&apos;ll continue to have access until the end of your billing period.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm mb-2">What happens if I run out of credits?</h3>
-                  <p className="text-zinc-400 text-sm">
-                    You can upgrade to a higher tier at any time. Unused credits from your current plan will be prorated and added to your new plan.
-                  </p>
-                </div>
-              </div>
-            </div>
+        <div className="flex-1 px-4 md:px-6 py-8 pb-10 min-h-0 overflow-auto">
+          <div className="max-w-xl mx-auto min-h-[60vh] flex flex-col items-center justify-center">
+            <h1 className="text-2xl font-bold text-white mb-3">Upgrade Membership</h1>
+            <p className="text-zinc-500 text-sm text-center mb-8">
+              Unlock Pro: unlimited GPT-4o-mini and Credits for GPT-5.2.
+            </p>
+            <Button
+              onClick={handleUpgrade}
+              disabled={loading || currentTier === 'pro'}
+              className="w-full max-w-sm h-11 rounded-xl font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white disabled:opacity-70"
+            >
+              {currentTier === 'pro' ? 'Current Plan: Pro' : loading ? 'Processing…' : 'Upgrade to Pro'}
+            </Button>
           </div>
         </div>
       </div>

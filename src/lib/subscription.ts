@@ -22,13 +22,17 @@ export function isPaidTier(tier: string): tier is 'pro' {
 }
 
 /**
- * Stripe 月付订阅 Price ID，配置 STRIPE_PRICE_PRO
+ * Stripe 月付订阅 Price ID。
+ * 优先使用 STRIPE_PRO_PRICE_ID（与 .env.example 一致），
+ * 同时兼容历史变量名 STRIPE_PRICE_PRO。
  */
 export function getStripePriceIdForTier(tier: 'pro'): string | null {
-  return process.env.STRIPE_PRICE_PRO ?? null;
+  if (tier !== 'pro') return null;
+  return process.env.STRIPE_PRO_PRICE_ID || process.env.STRIPE_PRICE_PRO || null;
 }
 
 export function getTierFromStripePriceId(priceId: string): SubscriptionTier | null {
-  if (process.env.STRIPE_PRICE_PRO && priceId === process.env.STRIPE_PRICE_PRO) return 'pro';
+  const proPriceId = process.env.STRIPE_PRO_PRICE_ID || process.env.STRIPE_PRICE_PRO;
+  if (proPriceId && priceId === proPriceId) return 'pro';
   return null;
 }

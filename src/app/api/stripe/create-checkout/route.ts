@@ -69,7 +69,19 @@ export async function POST(request: NextRequest) {
       const priceId = getStripePriceIdForTier(subscriptionTier);
       if (!priceId) {
         return NextResponse.json(
-          { error: `Stripe price not configured for ${subscriptionTier}. Set STRIPE_PRICE_${subscriptionTier.toUpperCase()} in .env` },
+          {
+            error:
+              'Stripe price not configured for pro. Set STRIPE_PRO_PRICE_ID (or legacy STRIPE_PRICE_PRO) in .env, and use a Stripe Price ID (starts with price_).',
+          },
+          { status: 500 }
+        );
+      }
+      if (!priceId.startsWith('price_')) {
+        return NextResponse.json(
+          {
+            error:
+              'Invalid Stripe price id for pro. Expected a Stripe Price ID starting with price_ (not a product id like prod_).',
+          },
           { status: 500 }
         );
       }
