@@ -51,6 +51,7 @@ export default function SubscriptionPage() {
   const { session } = useAuth();
 
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>('free');
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [details, setDetails] = useState<SubscriptionDetails | null>(null);
@@ -88,9 +89,11 @@ export default function SubscriptionPage() {
   }, [session?.access_token]);
 
   useEffect(() => {
-    void refreshTier();
-    void refreshDetails();
-  }, [refreshTier, refreshDetails]);
+    if (!session?.access_token) return;
+    Promise.all([refreshTier(), refreshDetails()]).finally(() => {
+      setInitialLoading(false);
+    });
+  }, [refreshTier, refreshDetails, session?.access_token]);
 
   useEffect(() => {
     const success = searchParams.get('success');
@@ -181,8 +184,45 @@ export default function SubscriptionPage() {
 
         <div className="flex-1 min-h-0 overflow-auto">
 
+          {/* ───── LOADING STATE ───── */}
+          {initialLoading && (
+            <div className="h-full flex flex-col animate-pulse">
+              <div className="flex-shrink-0 px-6 md:px-10 py-8 border-b border-zinc-800/80 flex items-center gap-4">
+                <div className="size-12 rounded-2xl bg-zinc-800" />
+                <div className="flex flex-col gap-2">
+                  <div className="h-5 w-24 rounded bg-zinc-800" />
+                  <div className="h-3.5 w-36 rounded bg-zinc-800" />
+                </div>
+              </div>
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 px-6 md:px-10 py-8">
+                <div className="flex flex-col gap-3">
+                  <div className="h-3 w-16 rounded bg-zinc-800" />
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center justify-between px-5 py-4">
+                        <div className="h-3.5 w-28 rounded bg-zinc-800" />
+                        <div className="h-3.5 w-20 rounded bg-zinc-800" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div className="h-3 w-28 rounded bg-zinc-800" />
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex items-center gap-3 px-5 py-4">
+                        <div className="size-4 rounded-full bg-zinc-800" />
+                        <div className="h-3.5 w-40 rounded bg-zinc-800" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ───── PRO STATE ───── */}
-          {currentTier === 'pro' && (
+          {!initialLoading && currentTier === 'pro' && (
             <div className="h-full flex flex-col">
               {/* top hero strip */}
               <div className="relative overflow-hidden flex-shrink-0 px-6 md:px-10 py-8 border-b border-zinc-800/80">
@@ -194,7 +234,7 @@ export default function SubscriptionPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h1 className="text-xl font-bold text-white">Pro</h1>
+                        <h1 className="text-xl font-bold text-white">Pro plan</h1>
                         {syncing ? (
                           <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
                             <RefreshCw className="size-3 animate-spin" /> Syncing…
@@ -274,7 +314,7 @@ export default function SubscriptionPage() {
           )}
 
           {/* ───── FREE STATE ───── */}
-          {currentTier !== 'pro' && (
+          {!initialLoading && currentTier !== 'pro' && (
             <div className="h-full grid grid-cols-1 md:grid-cols-2">
               {/* left — marketing copy */}
               <div className="relative overflow-hidden flex flex-col justify-center px-8 md:px-12 py-12 border-b md:border-b-0 md:border-r border-zinc-800/80">
