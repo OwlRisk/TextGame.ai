@@ -95,6 +95,7 @@ export async function fetchGeneratedAvatar(
       const res = await fetch('/api/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           name,
           type,
@@ -113,8 +114,8 @@ export async function fetchGeneratedAvatar(
         const errorMessage = (err as { error?: string; details?: string }).error || 'Failed to generate avatar';
         const details = (err as { details?: string }).details;
         const fullError = details ? `${errorMessage} (${details})` : errorMessage;
-        console.warn('[Avatar] error body', err);
         const is5xx = res.status >= 500 && res.status < 600;
+        const is401 = res.status === 401;
         if (is5xx) {
           if (!hasWarned503) {
             hasWarned503 = true;
@@ -122,7 +123,10 @@ export async function fetchGeneratedAvatar(
           }
           throw new Error('Avatar service temporarily unavailable. Showing initials—you can retry later.');
         }
-        console.error('[Avatar] API error:', res.status, fullError);
+        if (is401) {
+          throw new Error('Sign in to generate avatars. Showing initials.');
+        }
+        console.warn('[Avatar] API error:', res.status, fullError);
         throw new Error(fullError);
       }
 

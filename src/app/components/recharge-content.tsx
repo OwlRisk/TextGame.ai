@@ -189,7 +189,13 @@ export function RechargeContent() {
       return;
     }
     // 请求前拉取最新 session 并写入 cookie，避免扩展/环境导致 Header 丢失
-    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    let freshSession: { access_token?: string } | null = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      freshSession = data.session;
+    } catch {
+      // AuthSessionMissingError etc. — treat as no session
+    }
     const accessToken = freshSession?.access_token ?? session?.access_token;
     if (!accessToken) {
       alert('登录已过期，请重新登录');
