@@ -313,14 +313,14 @@ export async function getRecentTransactions(
       [userId, limit]
     );
     return result.rows.map((row: Record<string, unknown>) => ({
-    id: row.id,
-    userId: row.user_id,
-    amount: row.amount,
-    transactionType: row.transaction_type,
-    description: row.description,
-    gameSessionId: row.game_session_id,
-    createdAt: new Date(row.created_at as string),
-  }));
+      id: row.id as string,
+      userId: row.user_id as string,
+      amount: Number(row.amount),
+      transactionType: row.transaction_type as string,
+      description: row.description as string,
+      gameSessionId: row.game_session_id as string | undefined,
+      createdAt: new Date(row.created_at as string),
+    }));
   });
 }
 

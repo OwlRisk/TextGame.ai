@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
@@ -44,7 +44,7 @@ const PRO_FEATURES = [
   'Priority support',
 ];
 
-export default function SubscriptionPage() {
+function SubscriptionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { games, selectedGameId, selectGame, updateGame } = useGameContext();
@@ -374,5 +374,21 @@ export default function SubscriptionPage() {
         </div>
       </div>
     </AppLayoutWithSidebar>
+  );
+}
+
+function SubscriptionFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[200px] text-zinc-500 text-sm">
+      Loading…
+    </div>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={<SubscriptionFallback />}>
+      <SubscriptionPageContent />
+    </Suspense>
   );
 }

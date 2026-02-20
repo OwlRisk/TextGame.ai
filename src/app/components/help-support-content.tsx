@@ -33,7 +33,7 @@ export function HelpSupportContent() {
     }, 1000);
   };
 
-  const feedbackTypes = [
+  const feedbackTypes: { value: 'bug' | 'feature' | 'general'; label: string; color: string; bgColor: string }[] = [
     { value: 'bug', label: '🐛 Bug Report', color: 'text-red-400', bgColor: 'bg-red-500/10' },
     { value: 'feature', label: '✨ Feature Request', color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
     { value: 'general', label: '💬 General Feedback', color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
