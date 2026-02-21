@@ -30,6 +30,23 @@ const tierConfig: Record<
     borderColor: 'border-blue-500/30',
     iconColor: 'text-blue-400',
   },
+  // plus/ultra 暂未开放，先占位与 pro 同风格
+  plus: {
+    label: 'PLUS',
+    icon: Star,
+    bgColor: 'bg-violet-500/20',
+    textColor: 'text-violet-400',
+    borderColor: 'border-violet-500/30',
+    iconColor: 'text-violet-400',
+  },
+  ultra: {
+    label: 'ULTRA',
+    icon: Star,
+    bgColor: 'bg-fuchsia-500/20',
+    textColor: 'text-fuchsia-400',
+    borderColor: 'border-fuchsia-500/30',
+    iconColor: 'text-fuchsia-400',
+  },
 };
 
 const sizeConfig = {

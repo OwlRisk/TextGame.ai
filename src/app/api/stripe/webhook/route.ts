@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
             subscriptionId,
             new Date(subscription.current_period_end * 1000)
           );
-          await grantMonthlyAllowance(userId, status);
+          if (status === 'pro') await grantMonthlyAllowance(userId, 'pro');
           invalidateBalanceCache(userId);
           console.log(`[Subscription] User ${userId} → ${status}`);
         } else if (session.mode === 'payment') {
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
               sub.id,
               new Date(sub.current_period_end * 1000)
             );
-            if (tier && tier !== 'free') await grantMonthlyAllowance(userId, tier);
+            if (tier === 'pro') await grantMonthlyAllowance(userId, 'pro');
             invalidateBalanceCache(userId);
             console.log(`[Subscription Renewed] User ${userId} → ${tier}`);
           }

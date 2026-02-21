@@ -396,7 +396,6 @@ function SubscriptionPageContent() {
 
         </div>
       </div>
-    </div>
   );
 }
 
