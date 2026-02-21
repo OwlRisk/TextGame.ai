@@ -67,10 +67,11 @@ export function TokenBalance({ compact = false, refreshKey }: TokenBalanceProps)
 
   if (!balance) return null;
 
+  const tierLabel = balance.subscriptionStatus === 'ultra' ? 'Ultra' : balance.subscriptionStatus === 'plus' ? 'Plus' : 'Pro';
   const balanceNode = balance.isPro ? (
     <span className="flex items-center gap-1.5 text-amber-400">
       <Crown className="w-4 h-4 shrink-0" />
-      <span className="text-sm font-medium">Pro</span>
+      <span className="text-sm font-medium">{tierLabel}</span>
     </span>
   ) : (
     <span className="flex items-center gap-1.5 text-zinc-100">
@@ -84,9 +85,9 @@ export function TokenBalance({ compact = false, refreshKey }: TokenBalanceProps)
     return (
       <button
         type="button"
-        onClick={() => router.push('/recharge')}
+        onClick={() => router.push('/subscription')}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors"
-        aria-label="View balance and get coins"
+        aria-label="View balance and subscription"
       >
         {balanceNode}
       </button>
@@ -100,11 +101,11 @@ export function TokenBalance({ compact = false, refreshKey }: TokenBalanceProps)
       </div>
       <Button
         size="sm"
-        onClick={() => router.push('/recharge')}
+        onClick={() => router.push('/subscription')}
         variant={balance.isPro ? 'outline' : 'default'}
         className={balance.isPro ? '' : 'bg-amber-500 hover:bg-amber-600 text-zinc-900 border-0'}
       >
-        {balance.isPro ? 'Manage' : 'Get coins'}
+        {balance.isPro ? 'Manage' : 'Subscribe'}
       </Button>
     </div>
   );

@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const priceId = subscription.items?.data?.[0]?.price?.id;
           const tier = priceId ? getTierFromStripePriceId(priceId) : null;
-          const status = (tier ?? 'pro') as 'pro';
+          const status = tier ?? 'pro';
 
           await updateSubscriptionStatus(
             userId,
@@ -69,7 +69,9 @@ export async function POST(request: NextRequest) {
             subscriptionId,
             new Date(subscription.current_period_end * 1000)
           );
-          if (status === 'pro') await grantMonthlyAllowance(userId, 'pro');
+          if (status === 'pro' || status === 'plus' || status === 'ultra') {
+            await grantMonthlyAllowance(userId, status);
+          }
           invalidateBalanceCache(userId);
           console.log(`[Subscription] User ${userId} → ${status}`);
         } else if (session.mode === 'payment') {
@@ -158,7 +160,9 @@ export async function POST(request: NextRequest) {
               sub.id,
               new Date(sub.current_period_end * 1000)
             );
-            if (tier === 'pro') await grantMonthlyAllowance(userId, 'pro');
+            if (tier === 'pro' || tier === 'plus' || tier === 'ultra') {
+              await grantMonthlyAllowance(userId, tier);
+            }
             invalidateBalanceCache(userId);
             console.log(`[Subscription Renewed] User ${userId} → ${tier}`);
           }

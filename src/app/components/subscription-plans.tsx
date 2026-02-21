@@ -59,7 +59,7 @@ export function ProPlanBlock({ isCurrent, onSelectPlan }: ProPlanBlockProps) {
         </div>
         <div>
           <SubscriptionBadge tier="pro" size="lg" className="mb-0.5" />
-          <p className="text-zinc-500 text-sm">$20/month · 20 Credits</p>
+          <p className="text-zinc-500 text-sm">$20/month · 2,000 credits</p>
         </div>
       </div>
       <div className="flex items-baseline gap-1 mb-5">

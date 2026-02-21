@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
 
       // Avoid duplicate grant when webhook has already fulfilled this subscription.
       const before = await getUserBalance(user.id);
-      const shouldGrant = tier === 'pro' && before.subscriptionStatus !== 'pro';
+      const isPaidTier = tier === 'pro' || tier === 'plus' || tier === 'ultra';
+      const shouldGrant = isPaidTier && before.subscriptionStatus !== tier;
 
       await updateSubscriptionStatus(
         user.id,
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
         new Date(subscription.current_period_end * 1000)
       );
       if (shouldGrant) {
-        await grantMonthlyAllowance(user.id, 'pro');
+        await grantMonthlyAllowance(user.id, tier);
       }
       invalidateBalanceCache(user.id);
 

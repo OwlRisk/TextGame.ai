@@ -35,38 +35,23 @@ function formatDate(dateText: string | null): string {
 }
 
 
-const PLAN_FEATURES: Record<string, string[]> = {
-  pro: [
-    'Unlimited GPT-4o-mini',
-    'GPT-5.2 powered by Credits',
-    '20 Credits per month',
-    '128K context & memory cache',
-    'Priority support',
-  ],
-  plus: [
-    'Unlimited GPT-4o-mini',
-    'GPT-5.2 powered by Credits',
-    '40 Credits per month',
-    '256K context & memory cache',
-    'Priority support',
-    'Early access to new features',
-  ],
-  ultra: [
-    'Unlimited GPT-4o-mini',
-    'GPT-5.2 powered by Credits',
-    '80 Credits per month',
-    '512K context & memory cache',
-    'Priority support',
-    'Early access to new features',
-    'Dedicated support',
-  ],
+/** 三档共用权益（仅 credits 数量不同） */
+const SHARED_FEATURES = [
+  'Unlimited GPT-4o mini',
+  'Use credits for GPT-5.2',
+  'Voice character support',
+] as const;
+
+const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: string; creditsNum: number }> = {
+  pro: { price: '$20 / month', priceNum: '$20', credits: '2,000 credits / month', creditsNum: 2000 },
+  plus: { price: '$60 / month', priceNum: '$60', credits: '6,000 credits / month', creditsNum: 6000 },
+  ultra: { price: '$200 / month', priceNum: '$200', credits: '40,000 credits / month', creditsNum: 40000 },
 };
 
-const PLAN_PRICING: Record<string, { price: string; credits: string }> = {
-  pro: { price: '$20 / month', credits: '20 Credits' },
-  plus: { price: '$60 / month', credits: '40 Credits' },
-  ultra: { price: '$200 / month', credits: '80 Credits' },
-};
+function getPlanFeatures(tier: string): string[] {
+  const credits = PLAN_PRICING[tier]?.credits ?? '';
+  return [credits, ...SHARED_FEATURES];
+}
 
 function SubscriptionPageContent() {
   const router = useRouter();
@@ -315,7 +300,7 @@ function SubscriptionPageContent() {
                 <div className="flex flex-col gap-4">
                   <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Included in {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</h2>
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
-                    {(PLAN_FEATURES[currentTier] ?? []).map((f) => (
+                    {getPlanFeatures(currentTier).map((f) => (
                       <div key={f} className="flex items-center gap-3 px-5 py-4">
                         <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
                         <span className="text-sm text-zinc-300">{f}</span>
@@ -327,69 +312,66 @@ function SubscriptionPageContent() {
             </div>
           )}
 
-          {/* ───── FREE STATE ───── */}
+          {/* ───── FREE STATE：三档选一 ───── */}
           {!initialLoading && currentTier === 'free' && (
-            <div className="h-full grid grid-cols-1 md:grid-cols-2">
-              {/* left — marketing copy */}
-              <div className="relative overflow-hidden flex flex-col justify-center px-8 md:px-12 py-12 border-b md:border-b-0 md:border-r border-zinc-800/80">
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/6 to-transparent" />
-                <div className="relative">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium mb-5">
-                    <Star className="size-3" />
-                    Paid Plans
-                  </div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-3">
-                    Unlock the full<br />GameMaster experience
+            <div className="h-full flex flex-col">
+              {/* 顶部标题与说明 */}
+              <div className="flex-shrink-0 px-6 md:px-10 pt-8 pb-6 border-b border-zinc-800/80">
+                <div className="max-w-3xl">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                    Subscription
                   </h1>
-                  <p className="text-zinc-400 text-base mb-8 max-w-sm">
-                    Unlimited AI gameplay with the latest models. Cancel anytime.
+                  <p className="text-zinc-400 text-sm md:text-base">
+                    Unlimited GPT-4o mini · Use credits for GPT-5.2 · Voice characters. Cancel anytime.
                   </p>
-                  <ul className="space-y-3">
-                    {['pro', 'plus', 'ultra'].map((tier) => (
-                      <li key={tier} className="mb-6">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-white capitalize">{tier}</span>
-                          <span className="text-zinc-400 text-xs">{PLAN_PRICING[tier]?.price ?? ''}</span>
-                        </div>
-                        <ul className="ml-4 list-disc text-zinc-300 text-sm">
-                          {(PLAN_FEATURES[tier] ?? []).map((f) => (
-                            <li key={f}>{f}</li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               </div>
 
-              {/* right — pricing CTA */}
-              <div className="flex flex-col items-center justify-center px-8 md:px-12 py-12 gap-6">
-                {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => (
-                  <div key={tier} className="w-full max-w-sm mb-4">
-                    <div className="rounded-2xl border-2 border-violet-500/40 bg-gradient-to-b from-violet-500/10 to-fuchsia-500/5 p-7">
-                      <div className="flex items-baseline gap-1.5 mb-1">
-                        <span className="text-5xl font-bold text-white">{PLAN_PRICING[tier]?.price.split(' ')[0]}</span>
-                        <span className="text-zinc-400">/ month</span>
-                      </div>
-                      <p className="text-zinc-500 text-sm mb-6">No commitments. Cancel anytime.</p>
-                      <Button
-                        onClick={() => handleUpgrade(tier)}
-                        disabled={loading || syncing}
-                        className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white"
+              {/* 三档卡片 */}
+              <div className="flex-1 overflow-auto px-6 md:px-10 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                  {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
+                    const p = PLAN_PRICING[tier];
+                    if (!p) return null;
+                    return (
+                      <div
+                        key={tier}
+                        className="flex flex-col rounded-2xl border-2 border-zinc-800 bg-zinc-900/80 overflow-hidden hover:border-violet-500/50 transition-colors"
                       >
-                        {syncing ? 'Syncing…' : loading ? 'Processing…' : (
-                          <>
-                            Get {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                            <ArrowRight className="size-4" />
-                          </>
-                        )}
-                      </Button>
-                      <p className="text-center text-xs text-zinc-600 mt-4">
-                        Secured by Stripe. Cancel in one click.
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                        <div className="p-6 border-b border-zinc-800">
+                          <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                            {tier}
+                          </div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-4xl font-bold text-white">{p.priceNum}</span>
+                            <span className="text-zinc-500 text-sm">/ month</span>
+                          </div>
+                          <p className="text-violet-300/90 text-sm font-medium mt-2">{p.credits}</p>
+                        </div>
+                        <ul className="p-6 space-y-3 flex-1">
+                          {SHARED_FEATURES.map((f) => (
+                            <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
+                              <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="p-6 pt-0">
+                          <Button
+                            onClick={() => handleUpgrade(tier)}
+                            disabled={loading || syncing}
+                            className="w-full h-11 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white"
+                          >
+                            {syncing ? 'Syncing…' : loading ? 'Processing…' : (
+                              <>Get {tier.charAt(0).toUpperCase() + tier.slice(1)} <ArrowRight className="size-4 ml-1" /></>
+                            )}
+                          </Button>
+                          <p className="text-center text-xs text-zinc-600 mt-3">Secured by Stripe</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

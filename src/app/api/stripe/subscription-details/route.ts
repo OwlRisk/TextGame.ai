@@ -3,7 +3,9 @@ import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { pool } from '@/lib/pg-pool';
 
-type Tier = 'free' | 'pro';
+import { getTierFromStripePriceId } from '@/lib/subscription';
+
+type Tier = 'free' | 'pro' | 'plus' | 'ultra';
 
 interface SubscriptionDetails {
   tier: Tier;
@@ -24,7 +26,7 @@ function toIsoOrNull(ts: number | null | undefined): string | null {
 
 function normalizeTier(status: string | null | undefined): Tier {
   const s = (status || 'free').toLowerCase();
-  if (s === 'pro' || s === 'plus' || s === 'ultra') return 'pro';
+  if (s === 'pro' || s === 'plus' || s === 'ultra') return s as Tier;
   return 'free';
 }
 
@@ -86,14 +88,17 @@ export async function POST(request: NextRequest) {
       canManageBilling: !!row.customer_id,
     };
 
-    if (!row.subscription_id || tier !== 'pro') {
+    const isPaidTier = tier === 'pro' || tier === 'plus' || tier === 'ultra';
+    if (!row.subscription_id || !isPaidTier) {
       return NextResponse.json(base);
     }
 
     try {
       const sub = await stripe.subscriptions.retrieve(row.subscription_id);
+      const priceId = sub.items?.data?.[0]?.price?.id;
+      const resolvedTier = (priceId ? getTierFromStripePriceId(priceId) : null) ?? tier;
       const details: SubscriptionDetails = {
-        tier: 'pro',
+        tier: resolvedTier,
         status: sub.status,
         subscriptionId: sub.id,
         subscribedAt: toIsoOrNull(sub.start_date),

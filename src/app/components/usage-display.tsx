@@ -92,17 +92,8 @@ export function UsageDisplay({ compact = false, refreshKey }: UsageDisplayProps)
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg">
-        {node}
-      </div>
-      <button
-        type="button"
-        onClick={() => router.push('/recharge')}
-        className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
-      >
-        Top up
-      </button>
+    <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg">
+      {node}
     </div>
   );
 }

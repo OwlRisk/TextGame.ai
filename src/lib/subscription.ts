@@ -1,5 +1,6 @@
 /**
- * 订阅档位：仅 Free / Pro / Plus / Ultra（Pro $20/月，Plus $60/月，Ultra $200/月）
+ * 订阅档位：Free / Pro / Plus / Ultra
+ * Pro $20/月 2000 credits，Plus $60/月 6000 credits，Ultra $200/月 40000 credits
  */
 export type SubscriptionTier = 'free' | 'pro' | 'plus' | 'ultra';
 
@@ -8,9 +9,9 @@ export const SUBSCRIPTION_TIERS: Record<
   { name: string; priceMonthly: number; creditsPerMonth: number; usagePerMonth: number }
 > = {
   free: { name: 'Free', priceMonthly: 0, creditsPerMonth: 0, usagePerMonth: 0 },
-  pro: { name: 'Pro', priceMonthly: 20, creditsPerMonth: 20, usagePerMonth: 2000 },
-  plus: { name: 'Plus', priceMonthly: 60, creditsPerMonth: 40, usagePerMonth: 10000 },
-  ultra: { name: 'Ultra', priceMonthly: 200, creditsPerMonth: 80, usagePerMonth: 20000 },
+  pro: { name: 'Pro', priceMonthly: 20, creditsPerMonth: 2000, usagePerMonth: 2000 },
+  plus: { name: 'Plus', priceMonthly: 60, creditsPerMonth: 6000, usagePerMonth: 6000 },
+  ultra: { name: 'Ultra', priceMonthly: 200, creditsPerMonth: 40000, usagePerMonth: 40000 },
 };
 
 export const USAGE_PER_CREDIT = 100;

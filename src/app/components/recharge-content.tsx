@@ -41,8 +41,8 @@ const PACKAGES: CoinPackage[] = [
     popular: true,
   },
   {
-    id: 'pro',
-    name: 'Pro',
+    id: 'power',
+    name: 'Power',
     price: 25,
     coins: 2500,
     bonus: 750,
@@ -247,8 +247,8 @@ export function RechargeContent() {
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Top up</h1>
-            <p className="text-zinc-500">Add usage for AI gameplay</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Buy credits</h1>
+            <p className="text-zinc-500">One-time purchase. Need monthly credits? <Link href="/subscription" className="text-violet-400 hover:underline">Subscribe to Pro</Link></p>
           </div>
 
           <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3">
@@ -416,11 +416,9 @@ export function RechargeContent() {
               <Zap className="h-5 w-5 text-violet-400" />
             </div>
             <div>
-              <h3 className="text-white font-bold mb-1">How It Works</h3>
+              <h3 className="text-white font-bold mb-1">How it works</h3>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                Usage is consumed by AI interactions during gameplay. Longer conversations and more complex
-                games use more. Estimated playtime is based on average usage — actual time may vary depending on
-                your playstyle. View spending in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
+                Credits are consumed by AI during gameplay. This page is for one-time top-ups. For a monthly allowance, use <Link href="/subscription" className="text-violet-400 hover:underline">Pro subscription</Link>. View spending in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
               </p>
             </div>
           </div>

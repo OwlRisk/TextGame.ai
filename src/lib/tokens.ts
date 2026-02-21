@@ -169,8 +169,7 @@ export async function getUserBalance(userId: string): Promise<UserBalance> {
     const row = result.rows[0];
     const status = row.subscription_status || 'free';
     const isPaidTier = status === 'pro' || status === 'plus' || status === 'ultra';
-    // 仅支持 Pro 会员，API 统一返回 free | pro（plus/ultra 视为 pro）
-    const subscriptionStatus = status === 'cancelled' ? 'free' : (isPaidTier ? 'pro' : 'free');
+    const subscriptionStatus = status === 'cancelled' ? 'free' : (isPaidTier ? status : 'free');
     return {
       tokens: row.tokens || 0,
       isPro: isPaidTier,
@@ -379,9 +378,9 @@ export async function updateSubscriptionStatus(
 }
 
 /**
- * Grant monthly usage allowance for Pro subscription (call on subscribe + renewal)
+ * Grant monthly usage allowance for subscription (call on subscribe + renewal)
  */
-export async function grantMonthlyAllowance(userId: string, tier: 'pro'): Promise<void> {
+export async function grantMonthlyAllowance(userId: string, tier: 'pro' | 'plus' | 'ultra'): Promise<void> {
   const { getMonthlyUsageAllowance } = await import('@/lib/subscription');
   const amount = getMonthlyUsageAllowance(tier);
   if (amount <= 0) return;

@@ -46,6 +46,21 @@ const TYPE_CONFIG: Record<
   default: { label: 'Transaction', icon: Activity, color: 'text-zinc-400', bgColor: 'bg-zinc-500/10', prefix: '' },
 };
 
+/** 扣费类型对应的展示名称（用于「按类型汇总」） */
+const USAGE_CATEGORY_LABELS: Record<string, string> = {
+  ai_chat: 'Chat (GPT)',
+  ai_chat_stream: 'Chat (Stream)',
+  game_creation: 'Game / Host',
+  image_generation: 'Avatar / Image',
+  quick_reply: 'Quick reply',
+  prompt_suggestion: 'Prompt suggestion',
+  voice_transcription: 'Voice transcription',
+  tts: 'TTS',
+};
+function getUsageCategoryLabel(type: string): string {
+  return USAGE_CATEGORY_LABELS[type] || type.replace(/_/g, ' ') || 'Other';
+}
+
 function getTypeConfig(tx: Transaction) {
   if (tx.amount > 0) {
     if (tx.transactionType === 'subscription_grant') return TYPE_CONFIG.subscription_grant;
@@ -128,7 +143,25 @@ export function UsageContent() {
         spent: daySpent,
       });
     }
-    return { weekSpent, monthSpent, chartData, totalSpent: spendingRecords.reduce((s, r) => s + Math.abs(r.amount), 0) };
+    const usageByCategory: { type: string; label: string; amount: number }[] = [];
+    const categorySums: Record<string, number> = {};
+    spendingRecords.forEach((r) => {
+      const t = r.transactionType || 'other';
+      categorySums[t] = (categorySums[t] ?? 0) + Math.abs(r.amount);
+    });
+    Object.entries(categorySums)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([type, amount]) => {
+        usageByCategory.push({ type, label: getUsageCategoryLabel(type), amount });
+      });
+
+    return {
+      weekSpent,
+      monthSpent,
+      chartData,
+      totalSpent: spendingRecords.reduce((s, r) => s + Math.abs(r.amount), 0),
+      usageByCategory,
+    };
   }, [transactions]);
 
   if (!session) {
@@ -219,14 +252,6 @@ export function UsageContent() {
               ) : (
                 <div className="text-zinc-400 text-sm">—</div>
               )}
-              <div className="mt-3">
-                <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs">
-                  <Link href="/recharge">
-                    <Plus className="h-3 w-3 mr-1" />
-                    Top up
-                  </Link>
-                </Button>
-              </div>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
@@ -247,6 +272,41 @@ export function UsageContent() {
         </div>
       </div>
 
+      {/* Usage by category */}
+      {stats.usageByCategory.length > 0 && (
+        <div className="bg-zinc-900/30 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
+          <h3 className="text-sm font-semibold text-white mb-3">Usage by category</h3>
+          <div className="flex flex-wrap gap-3">
+            {stats.usageByCategory.map(({ type, label, amount }) => (
+              <div
+                key={type}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800"
+              >
+                <span className="text-zinc-400 text-sm">{label}</span>
+                <span className="text-white font-semibold tabular-nums">-{amount.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* How usage is calculated */}
+      <div className="bg-zinc-900/30 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
+        <details className="group">
+          <summary className="text-sm text-zinc-500 cursor-pointer list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
+            <span className="group-open:inline hidden">▼</span>
+            <span className="group-open:hidden inline">▶</span>
+            How usage is calculated
+          </summary>
+          <div className="mt-3 text-xs text-zinc-500 space-y-2 pl-4 border-l border-zinc-700">
+            <p>• 1 credit (coin) = $0.01 of GPT equivalent cost. Balance is stored in credits.</p>
+            <p>• Recharge: 50% of payment goes to credits (e.g. $10 → 500 credits).</p>
+            <p>• Deduction: GPT calls are charged by model and token count; avatars, suggestions, voice/TTS use fixed rates.</p>
+            <p>• Subscription: Pro 2,000 / Plus 6,000 / Ultra 40,000 credits per month.</p>
+          </div>
+        </details>
+      </div>
+
       {/* Transaction List - 与参考一致样式 */}
       <div className="flex-1 px-6 py-4 min-h-0">
         {loadingTx ? (
@@ -261,9 +321,6 @@ export function UsageContent() {
             </div>
             <p className="text-zinc-400 text-lg mb-1">No transactions found</p>
             <p className="text-zinc-600 text-sm mb-4">Your transaction history will appear here</p>
-            <Button asChild variant="ghost" size="sm" className="text-violet-400 hover:text-violet-300">
-              <Link href="/recharge">Top up</Link>
-            </Button>
           </div>
         ) : (
           <div className="space-y-2">
