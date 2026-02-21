@@ -38,7 +38,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    type Body = {
+      messages?: unknown;
+      hostPersonality?: { name?: string; description?: string; personality?: string };
+      gameContext?: { template?: string; playerCount?: number; gameName?: string; conversationState?: string; rules?: string };
+      maxCompletionTokens?: number;
+      systemPrompt?: string;
+    };
+    let body: Body;
+    try {
+      body = (await request.json()) as Body;
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt } = body;
 
     if (!messages || !Array.isArray(messages)) {

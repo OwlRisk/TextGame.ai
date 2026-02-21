@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUserFromRequest } from "@/lib/auth-server";
 
 /**
  * POST /api/transcribe
  * Body: multipart/form-data with "file" (audio blob) and optional "language" (e.g. en, zh).
- * Uses OpenAI Whisper for speech-to-text.
+ * Uses OpenAI Whisper for speech-to-text. Requires auth.
  */
 export async function POST(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

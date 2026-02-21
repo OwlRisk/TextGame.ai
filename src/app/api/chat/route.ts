@@ -36,7 +36,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    let body: {
+      messages?: unknown;
+      hostPersonality?: { name?: string; description?: string; personality?: string };
+      gameContext?: { template?: string; playerCount?: number; gameName?: string; conversationState?: string; rules?: string };
+      maxCompletionTokens?: number;
+    };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { messages, hostPersonality, gameContext, maxCompletionTokens } = body;
 
     if (!messages || !Array.isArray(messages)) {

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import OpenAI from "openai";
+import { getAuthUserFromRequest } from "@/lib/auth-server";
 
 const HERO_PROMPT =
   "A friendly fantasy game master character, warm and welcoming, standing beside a glowing tabletop game board with dice and cards, soft ambient lighting, cozy tavern atmosphere, digital illustration style, no text, suitable for a game creation app hero image.";
@@ -23,7 +24,11 @@ function getOpenAI() {
   return new OpenAI({ apiKey });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const heroPath = getHeroPath();
     const publicUrl = getPublicUrl();

@@ -18,7 +18,12 @@ export async function POST(request: NextRequest) {
     const user = await getAuthUserFromRequest(request);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { gameName, rules, player, recentMessages } = body as {
       gameName?: string;
       rules?: string;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getAuthUserFromRequest } from '@/lib/auth-server';
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -11,9 +12,12 @@ function getOpenAI() {
  * POST /api/suggest-quick-replies
  * Body: { gameName, rules, recentMessages: { senderName, content }[], gamePhase? }
  * Returns: { suggestions: string[] } — 1 to 3 short quick-reply options for the current situation.
- * Auth: not required — quick replies are available to all players in the game room.
  */
 export async function POST(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const body = await request.json().catch(() => ({}));
     const {

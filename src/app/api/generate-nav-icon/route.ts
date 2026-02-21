@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getAuthUserFromRequest } from '@/lib/auth-server';
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -14,6 +15,10 @@ const NAV_PROMPTS: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key is not configured.' }, { status: 500 });

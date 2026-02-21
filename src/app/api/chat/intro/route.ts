@@ -28,7 +28,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { messages } = body as { messages?: { role: string; content: string }[] };
 
     if (!messages || !Array.isArray(messages)) {

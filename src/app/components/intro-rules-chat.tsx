@@ -6,6 +6,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Send, Sparkles } from "lucide-react";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { parseInlineFormatting as parseInlineFormattingShared } from "@/lib/format-message";
 
 interface ChatMessage {
   id: string;
@@ -30,17 +31,9 @@ const WELCOME_MESSAGE: ChatMessage = {
 };
 
 function parseInlineFormatting(text: string): (string | JSX.Element)[] {
-  const parts: (string | JSX.Element)[] = [];
-  let lastIndex = 0;
-  const re = /\*\*(.*?)\*\*/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    if (m.index > lastIndex) parts.push(text.slice(lastIndex, m.index));
-    parts.push(<strong key={m.index} className="font-semibold text-zinc-100">{m[1]}</strong>);
-    lastIndex = m.index + m[0].length;
-  }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
-  return parts.length ? parts : [text];
+  return parseInlineFormattingShared(text, {
+    boldClassName: "font-semibold text-zinc-100",
+  }) as (string | JSX.Element)[];
 }
 
 function formatMessageContent(content: string): React.ReactNode {

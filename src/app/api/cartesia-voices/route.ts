@@ -1,13 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuthUserFromRequest } from '@/lib/auth-server';
 
 const CARTESIA_VERSION = '2025-04-16';
 
 /**
  * GET /api/cartesia-voices
  * Fetch available voices from Cartesia for TTS; use different voice ids per player in a game.
- * Requires CARTESIA_API_KEY.
+ * Requires CARTESIA_API_KEY. Requires auth.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   const apiKey = process.env.CARTESIA_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

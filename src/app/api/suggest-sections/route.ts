@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getAuthUserFromRequest } from '@/lib/auth-server';
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -25,6 +26,10 @@ function normalizeId(name: string): string {
  * Always includes "rules" and "progress"; may add more based on game type.
  */
 export async function POST(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(

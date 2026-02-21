@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import OpenAI from 'openai';
 import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthUserFromRequest } from '@/lib/auth-server';
 
 const GAME_ICON_BUCKET = 'avatars';
 const GAME_ICON_SIZE = 64;
@@ -39,6 +40,10 @@ function getOpenAI() {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
@@ -47,7 +52,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { gameName, gameTemplate, rules, gameId } = body as {
       gameName?: string;
       gameTemplate?: string;

@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
+import { parseInlineFormatting } from "@/lib/format-message";
 import { HostSelector } from "@/app/components/host-selector";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { getGameSessions, createGameSession, updateGameSession, deleteGameSession } from "@/lib/db";
@@ -227,84 +228,6 @@ function formatMessage(content: string) {
   });
 
   return <div className="space-y-0.5">{elements}</div>;
-}
-
-// Helper function to parse inline formatting (bold, italic, emoji)
-function parseInlineFormatting(text: string): JSX.Element[] {
-  const parts: (string | JSX.Element)[] = [];
-  let currentIndex = 0;
-  
-  // Match **bold**, *italic*, and emoji patterns
-  const patterns = [
-    { regex: /\*\*(.*?)\*\*/g, type: 'bold' },
-    { regex: /\*(.*?)\*/g, type: 'italic' },
-    { regex: /`(.*?)`/g, type: 'code' },
-  ];
-  
-  // Find all matches
-  const matches: Array<{ start: number; end: number; type: string; content: string }> = [];
-  
-  patterns.forEach(({ regex, type }) => {
-    let match;
-    regex.lastIndex = 0;
-    while ((match = regex.exec(text)) !== null) {
-      matches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        type,
-        content: match[1]
-      });
-    }
-  });
-  
-  // Sort matches by position
-  matches.sort((a, b) => a.start - b.start);
-  
-  // Remove overlapping matches (prefer bold over italic)
-  const filteredMatches: typeof matches = [];
-  matches.forEach(match => {
-    const overlaps = filteredMatches.some(m => 
-      (match.start >= m.start && match.start < m.end) ||
-      (match.end > m.start && match.end <= m.end) ||
-      (match.start <= m.start && match.end >= m.end)
-    );
-    if (!overlaps) {
-      filteredMatches.push(match);
-    }
-  });
-  
-  // Build elements
-  filteredMatches.forEach((match, i) => {
-    // Add text before match
-    if (match.start > currentIndex) {
-      parts.push(text.substring(currentIndex, match.start));
-    }
-    
-    // Add formatted content
-    if (match.type === 'bold') {
-      parts.push(<strong key={`bold-${i}`} className="font-bold text-white">{match.content}</strong>);
-    } else if (match.type === 'italic') {
-      parts.push(<em key={`italic-${i}`} className="italic text-zinc-300">{match.content}</em>);
-    } else if (match.type === 'code') {
-      parts.push(<code key={`code-${i}`} className="bg-white/10 px-1.5 py-0.5 rounded text-[13px] font-mono text-violet-300">{match.content}</code>);
-    }
-    
-    currentIndex = match.end;
-  });
-  
-  // Add remaining text
-  if (currentIndex < text.length) {
-    parts.push(text.substring(currentIndex));
-  }
-  
-  // If no matches, return original text
-  if (parts.length === 0) {
-    return [<span key="text">{text}</span>];
-  }
-  
-  return parts.map((part, i) => 
-    typeof part === 'string' ? <span key={`text-${i}`}>{part}</span> : part
-  );
 }
 
 interface GameTemplate {
