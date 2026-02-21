@@ -12,8 +12,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { AppLayoutWithSidebar } from '@/app/components/app-layout-with-sidebar';
-import { useGameContext } from '@/app/contexts/GameContext';
 import { Button } from '@/app/components/ui/button';
 import type { SubscriptionTier } from '@/lib/subscription';
 
@@ -73,7 +71,6 @@ const PLAN_PRICING: Record<string, { price: string; credits: string }> = {
 function SubscriptionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
   const { session } = useAuth();
 
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>('free');
@@ -185,16 +182,7 @@ function SubscriptionPageContent() {
   const renewalLabel = isCancelled ? 'Access until' : 'Next renewal';
 
   return (
-    <AppLayoutWithSidebar
-      mobileTitle="Subscription"
-      games={games}
-      selectedGameId={selectedGameId}
-      onSelectGame={(gameId) => selectGame(gameId)}
-      onCreateGame={() => router.push('/create')}
-      onOpenProfile={() => router.push('/profile')}
-      onUpdateGame={updateGame}
-    >
-      <div className="flex-1 min-h-0 overflow-auto bg-[#0a0a0a] flex flex-col">
+    <div className="flex-1 min-h-0 overflow-auto bg-[#0a0a0a] flex flex-col">
         {/* top bar */}
         <div className="flex-shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-zinc-800/80 bg-zinc-950/60">
           <Button
@@ -408,7 +396,7 @@ function SubscriptionPageContent() {
 
         </div>
       </div>
-    </AppLayoutWithSidebar>
+    </div>
   );
 }
 

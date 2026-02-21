@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
 import { MyGamesPage } from "@/app/components/my-games-page";
 import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
@@ -13,7 +12,7 @@ import { Lock, LogIn } from "lucide-react";
 
 export default function MyGamesPageRoute() {
   const router = useRouter();
-  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
+  const { games, selectGame } = useGameContext();
   const { user, loading, signInWithGoogle } = useAuth();
 
   // 进入 My Games 页时同步侧边栏高亮为 "my-games"
@@ -29,18 +28,9 @@ export default function MyGamesPageRoute() {
     }
   };
 
-  const sidebarProps = {
-    games,
-    selectedGameId,
-    onSelectGame: (gameId: string) => selectGame(gameId),
-    onCreateGame: !user && !loading ? handleSignIn : () => router.push("/create"),
-    onOpenProfile: !user && !loading ? handleSignIn : () => router.push("/profile"),
-    onUpdateGame: updateGame,
-  };
-
   if (!user && !loading) {
     return (
-      <AppLayoutWithSidebar mobileTitle="My Games" {...sidebarProps}>
+      <>
         <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
           <div className="text-center max-w-md">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
@@ -61,12 +51,12 @@ export default function MyGamesPageRoute() {
           </div>
         </div>
         <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
-      </AppLayoutWithSidebar>
+      </>
     );
   }
 
   return (
-    <AppLayoutWithSidebar mobileTitle="My Games" {...sidebarProps}>
+    <>
       <MyGamesPage
         games={games}
         onSelectGame={(gameId) => {
@@ -76,6 +66,6 @@ export default function MyGamesPageRoute() {
         onCreateGame={() => router.push("/create")}
       />
       <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
-    </AppLayoutWithSidebar>
+    </>
   );
 }
