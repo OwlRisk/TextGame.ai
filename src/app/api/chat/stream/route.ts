@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { messages, hostPersonality, gameContext, maxCompletionTokens } = body;
+    const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
@@ -50,10 +50,15 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI();
 
-    // Build system message
-    // When hostPersonality is present: this is the in-game Host (Echo, Nova, etc.) running the game.
-    // When hostPersonality is absent: this is the Game Master chat (design phase only)—neutral identity, no named host.
-    let systemMessage = hostPersonality
+    // When customSystemPrompt is provided (e.g. in-game host with NEXT_SPEAKER/ASSIGN_ROLE), use it as the full system message.
+    let systemMessage: string;
+    if (typeof customSystemPrompt === 'string' && customSystemPrompt.trim()) {
+      systemMessage = customSystemPrompt.trim();
+    } else {
+      // Build system message
+      // When hostPersonality is present: this is the in-game Host (Echo, Nova, etc.) running the game.
+      // When hostPersonality is absent: this is the Game Master chat (design phase only)—neutral identity, no named host.
+      systemMessage = hostPersonality
       ? `You are the game Host: ${hostPersonality.name}. ${hostPersonality.description || ''}${hostPersonality.personality ? ` Personality: ${hostPersonality.personality}` : ''} Run the game, narrate phases, and manage turns. Never break character.`
       : `You are the Game Master for a social deduction game platform. Your role is to help the user design the game (rules, template, player count) in this chat. Introduce yourself only as "Game Master"—do not use a character name or Host persona. The Host who will run the game (e.g. Echo, Nova) is chosen separately when they start the game. Be friendly, concise, and helpful.`;
 
@@ -212,6 +217,7 @@ export async function POST(request: NextRequest) {
       systemMessage += `- If the user explicitly asks for a background or setting, add one. Otherwise use your judgment.\n`;
       systemMessage += `Use: <UPDATE_GENERAL>\n[Game background—world setting, story premise, atmosphere. One or a few short paragraphs.]\n</UPDATE_GENERAL>\n`;
       systemMessage += `This will be prepended to the Rules. The tag is invisible to the user. Only the GM can set this; the Host cannot change it during the game.\n`;
+    }
     }
 
     const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0

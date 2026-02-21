@@ -78,6 +78,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     messages,
     players,
     addMessage,
+    addStreamingMessage,
+    updateStreamingMessage,
     setPlayers,
     gamePhase,
     setGamePhase,
@@ -409,6 +411,81 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return keptLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
       };
 
+      const parseHostResult = (raw: string): { hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null } => {
+        let hostContent = raw.trim();
+        const nextSpeakerMatch = hostContent.match(/\nNEXT_SPEAKER:\s*(.+?)\s*$/im);
+        let who: string | null = null;
+        let nextSpeakerPlayer: typeof players[0] | null = null;
+        if (nextSpeakerMatch) {
+          who = nextSpeakerMatch[1].trim();
+          hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
+          if (who && who.toLowerCase() === "you") {
+            nextSpeakerPlayer = null;
+          } else if (who && who.toLowerCase() === "everyone") {
+            if (aiOnly.length > 0) nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
+          } else {
+            const player = players.find((p) => !p.isGameMaster && p.name === who);
+            nextSpeakerPlayer = player ?? null;
+          }
+        }
+        return { hostContent, who, nextSpeakerPlayer };
+      };
+
+      /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
+      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null; imageUrl?: string }> => {
+        const messageId = addStreamingMessage(
+          { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
+          chId
+        );
+        try {
+          const res = await fetch("/api/chat/stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({
+              systemPrompt: hostSystemPrompt,
+              messages: [{ role: "user", content: userContent }],
+              maxCompletionTokens: 500,
+            }),
+          });
+          if (!res.ok || !res.body) {
+            updateStreamingMessage(messageId, "…", true);
+            return { hostContent: "", who: null, nextSpeakerPlayer: null };
+          }
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let acc = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split(/\n/);
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const payload = line.slice(6);
+                if (payload === "[DONE]") continue;
+                try {
+                  const data = JSON.parse(payload) as { content?: string };
+                  if (typeof data.content === "string") {
+                    acc += data.content;
+                    updateStreamingMessage(messageId, acc, false);
+                  }
+                } catch {
+                  // ignore parse
+                }
+              }
+            }
+          }
+          const { hostContent, who, nextSpeakerPlayer } = parseHostResult(acc);
+          const displayContent = applyHostRoleAssignments(hostContent);
+          updateStreamingMessage(messageId, displayContent || " ", true);
+          return { hostContent: displayContent, who, nextSpeakerPlayer };
+        } catch (e) {
+          console.error("Host stream error:", e);
+          updateStreamingMessage(messageId, "…", true);
+          return { hostContent: "", who: null, nextSpeakerPlayer: null };
+        }
+      };
+
       const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null; imageUrl?: string }> => {
         const res = await fetch("/api/chat", {
           method: "POST",
@@ -423,22 +500,9 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         if (!res.ok) return { hostContent: "", who: null, nextSpeakerPlayer: null };
         const data = await res.json();
         let hostContent = (data.message || "").trim();
-        const nextSpeakerMatch = hostContent.match(/\nNEXT_SPEAKER:\s*(.+?)\s*$/im);
-        let who: string | null = null;
-        let nextSpeakerPlayer: typeof players[0] | null = null;
-        if (nextSpeakerMatch) {
-          who = nextSpeakerMatch[1].trim();
-          hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
-          if (who && who.toLowerCase() === "you") {
-            nextSpeakerPlayer = null; // human's turn
-          } else if (who && who.toLowerCase() === "everyone") {
-            if (aiOnly.length > 0) nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
-          } else {
-            const player = players.find((p) => !p.isGameMaster && p.name === who);
-            nextSpeakerPlayer = player ?? null;
-          }
-        }
-        return { hostContent, who, nextSpeakerPlayer, imageUrl: data.imageUrl };
+        const parsed = parseHostResult(hostContent);
+        hostContent = applyHostRoleAssignments(parsed.hostContent);
+        return { ...parsed, hostContent, imageUrl: data.imageUrl };
       };
 
       const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>): Promise<string | null> => {
@@ -464,18 +528,16 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
       const firstUserContent = `Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, nextSpeakerPlayer, imageUrl: firstImageUrl } = await callHost(firstUserContent);
+      let { hostContent, who, nextSpeakerPlayer, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       if (!hostContent && !firstImageUrl) {
         setIsRoundInProgress(false);
         return;
       }
-      hostContent = applyHostRoleAssignments(hostContent);
 
       if (who?.toLowerCase() === "you") setCurrentSpeakerId(userId);
       else if (who?.toLowerCase() === "everyone") setCurrentSpeakerId(null);
       else if (nextSpeakerPlayer) setCurrentSpeakerId(nextSpeakerPlayer.id);
 
-      addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: hostContent || " ", isAI: true, ...(firstImageUrl && { imageUrl: firstImageUrl }) }, channelId);
       await hostPace();
       let recentForNext = [
         ...channelMessagesForRecent.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
