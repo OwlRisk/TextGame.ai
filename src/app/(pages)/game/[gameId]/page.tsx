@@ -763,12 +763,9 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       </header>
 
       <div className="flex-1 flex overflow-hidden min-h-0">
-      {/* Left app sidebar: 桌面显示，移动端在 Sheet 中 */}
-      <div className="hidden md:flex flex-shrink-0 z-10">
-        <GameSidebar {...sidebarCommon} />
-      </div>
+      {/* 应用侧栏由 (pages) layout 统一提供，此处不再重复渲染，避免点击游戏后侧栏/头像闪烁 */}
 
-      {/* 移动端左侧抽屉：应用导航 */}
+      {/* 移动端左侧抽屉：应用导航（仅移动端，桌面端使用 layout 侧栏） */}
       <Sheet open={mobileLeftDrawer === "app"} onOpenChange={(open) => !open && setMobileLeftDrawer(null)}>
         <SheetContent side="left" title="Menu" className="w-[5rem] max-w-[5rem] p-0 border-r border-violet-900/20 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950">
           <GameSidebar {...sidebarCommon} onNavigate={() => setMobileLeftDrawer(null)} />
