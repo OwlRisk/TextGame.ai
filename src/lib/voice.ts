@@ -310,3 +310,86 @@ export function useVoiceOutput() {
 
   return { speak, speakQueued, stop, supported };
 }
+
+/** Inworld TTS voice IDs (host = 0, then players in order). From Inworld docs. */
+export const INWORLD_VOICE_IDS = [
+  'Dennis',  // 0 host – calm, friendly
+  'Ashley',  // 1 warm female
+  'Alex',    // 2 energetic male
+] as const;
+
+export function useInworldTTS() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const queueRef = useRef<Array<{ text: string; voiceId: string }>>([]);
+  const processingRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const processQueue = useCallback(async () => {
+    if (processingRef.current || queueRef.current.length === 0) {
+      if (queueRef.current.length === 0) setIsPlaying(false);
+      return;
+    }
+    processingRef.current = true;
+    setIsPlaying(true);
+    const next = queueRef.current.shift()!;
+    const plain = stripMarkdownForTTS(next.text);
+    if (!plain) {
+      processingRef.current = false;
+      processQueue();
+      return;
+    }
+    try {
+      const res = await fetch('/api/inworld-tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: plain.slice(0, 2000), voiceId: next.voiceId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.warn('[Inworld TTS]', err);
+        processingRef.current = false;
+        processQueue();
+        return;
+      }
+      const data = (await res.json()) as { audioBase64?: string };
+      if (!data?.audioBase64) {
+        processingRef.current = false;
+        processQueue();
+        return;
+      }
+      const audio = new Audio('data:audio/mpeg;base64,' + data.audioBase64);
+      audioRef.current = audio;
+      await new Promise<void>((resolve, reject) => {
+        audio.onended = () => resolve();
+        audio.onerror = () => reject(new Error('Playback failed'));
+        audio.play().catch(reject);
+      });
+    } catch (e) {
+      console.warn('[Inworld TTS]', e);
+    } finally {
+      audioRef.current = null;
+      processingRef.current = false;
+      processQueue();
+    }
+  }, []);
+
+  const play = useCallback((text: string, voiceId: string) => {
+    if (!text?.trim() || !voiceId) return;
+    queueRef.current.push({ text: text.trim(), voiceId });
+    processQueue();
+  }, [processQueue]);
+
+  const stop = useCallback(() => {
+    queueRef.current = [];
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+    processingRef.current = false;
+  }, []);
+
+  const supported = typeof window !== 'undefined';
+
+  return { play, stop, isPlaying, supported };
+}

@@ -35,6 +35,18 @@ export const env = {
   get CARTESIA_API_KEY(): string | undefined {
     return process.env.CARTESIA_API_KEY;
   },
+  /** Inworld.ai: Base64 for "Authorization: Basic <value>" (server-side only) */
+  get INWORLD_BASIC_BASE64(): string | undefined {
+    return process.env.INWORLD_BASIC_BASE64;
+  },
+  /** Inworld.ai: JWT Key (for signing tokens with INWORLD_JWT_SECRET) */
+  get INWORLD_JWT_KEY(): string | undefined {
+    return process.env.INWORLD_JWT_KEY;
+  },
+  /** Inworld.ai: JWT Secret (keep secret, server-side only) */
+  get INWORLD_JWT_SECRET(): string | undefined {
+    return process.env.INWORLD_JWT_SECRET;
+  },
   get REPLICATE_API_TOKEN(): string | undefined {
     return process.env.REPLICATE_API_TOKEN;
   },

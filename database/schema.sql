@@ -50,6 +50,14 @@ CREATE TABLE IF NOT EXISTS game_drafts (
 -- Share: optional token on games for public/share links
 ALTER TABLE games ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
 
+-- App cache (e.g. Inworld voices list), refreshed periodically
+CREATE TABLE IF NOT EXISTS app_cache (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT 'null'::jsonb,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_app_cache_updated_at ON app_cache(updated_at);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_game_sessions_user_id ON game_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_game_sessions_updated_at ON game_sessions(updated_at DESC);

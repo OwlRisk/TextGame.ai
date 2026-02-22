@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
-import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus, Lock } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { useVoiceInput } from "@/lib/voice";
+import { useVoiceInput, useInworldTTS } from "@/lib/voice";
+import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
 import { Player } from "@/app/components/player-panel";
@@ -232,6 +233,53 @@ export function ChatArea({
   const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
   const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
+  // Inworld TTS: one voice per speaker (host + players), queue and play in order
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const { play: playInworldTTS, stop: stopInworldTTS, isPlaying: isTTSPlaying, supported: inworldTTSSupported } = useInworldTTS();
+  const lastPlayedCountRef = useRef(0);
+
+  // Assign voice by gender + personality similarity (host and each player get a matching voice)
+  const voiceIdForMessage = useCallback(
+    (m: Message) => {
+      const player = players.find(
+        (p) => p.id === m.senderId || (p.name || '').trim() === (m.senderName || '').trim()
+      );
+      return pickVoiceForSpeaker(player?.gender, player?.personality);
+    },
+    [players]
+  );
+
+  // When voice is first turned on, skip existing messages (only play new ones)
+  const prevVoiceEnabledRef = useRef(voiceEnabled);
+  useEffect(() => {
+    if (voiceEnabled && !prevVoiceEnabledRef.current) {
+      lastPlayedCountRef.current = messages.length;
+    }
+    prevVoiceEnabledRef.current = voiceEnabled;
+  }, [voiceEnabled, messages.length]);
+
+  // When voice is on and new complete messages arrive, queue TTS
+  useEffect(() => {
+    if (!voiceEnabled || !inworldTTSSupported) return;
+    const from = lastPlayedCountRef.current;
+    for (let i = from; i < messages.length; i++) {
+      const m = messages[i];
+      if (m.isSystemMessage || m.isPrivate || m.isStreaming) continue;
+      const content = (m.content || '').trim();
+      if (!content) continue;
+      const voiceId = voiceIdForMessage(m);
+      playInworldTTS(content, voiceId);
+      lastPlayedCountRef.current = i + 1;
+    }
+  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS]);
+
+  useEffect(() => {
+    if (!voiceEnabled) {
+      stopInworldTTS();
+      lastPlayedCountRef.current = messages.length;
+    }
+  }, [voiceEnabled, stopInworldTTS, messages.length]);
+
   const MIN_INPUT_HEIGHT = 40;
   const MAX_INPUT_HEIGHT = 120;
 
@@ -369,6 +417,22 @@ export function ChatArea({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {inworldTTSSupported && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setVoiceEnabled((v) => !v);
+                if (voiceEnabled) stopInworldTTS();
+              }}
+              className={voiceEnabled ? "hover:bg-zinc-700 text-violet-400 hover:text-violet-300" : "hover:bg-zinc-700 text-zinc-400 hover:text-white"}
+              title={voiceEnabled ? "Turn off dialogue voice" : "Turn on dialogue voice (Inworld TTS)"}
+            >
+              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              <span className="ml-1.5 hidden sm:inline">{voiceEnabled ? "Sound on" : "Sound off"}</span>
+              {isTTSPlaying && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />}
+            </Button>
+          )}
           {onOpenPlayerBoard && (
             <Button
               variant="ghost"
