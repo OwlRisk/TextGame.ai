@@ -135,7 +135,9 @@ function SubscriptionPageContent() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          toast.error(data.error || `Sync failed (${res.status}). Try "Sync my plan" below.`);
+          const errMsg = data.error || `Sync failed (${res.status}). Try "Sync my plan" below.`;
+          const hint = data.hint ? ` ${data.hint}` : '';
+          toast.error(errMsg + hint);
           return false;
         }
         await Promise.all([refreshTier(), refreshDetails()]);

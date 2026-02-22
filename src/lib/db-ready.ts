@@ -21,9 +21,12 @@ export function isDatabaseError(e: unknown): boolean {
     code === '42P01' || // undefined_table
     msg.includes('connect') ||
     msg.includes('connection') ||
+    msg.includes('connection string') ||
     msg.includes('database') ||
     msg.includes('pool') ||
     msg.includes('relation') ||
-    msg.includes('does not exist')
+    msg.includes('does not exist') ||
+    msg.includes('user_profiles') ||
+    msg.includes('token_transactions')
   );
 }
