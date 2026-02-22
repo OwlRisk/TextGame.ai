@@ -73,6 +73,7 @@ function SubscriptionPageContent() {
   const [openingPortal, setOpeningPortal] = useState(false);
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
   const [changingTier, setChangingTier] = useState<SubscriptionTier | null>(null);
+  const [syncingPlan, setSyncingPlan] = useState(false);
   const fulfillDoneRef = useRef(false);
 
   const refreshTier = useCallback(async () => {
@@ -162,6 +163,33 @@ function SubscriptionPageContent() {
       setLoadingTier(null);
     }
   };
+
+  const handleSyncPlan = useCallback(async () => {
+    if (!session?.access_token) return;
+    setSyncingPlan(true);
+    try {
+      const res = await fetch('/api/stripe/sync-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: session.access_token }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sync failed');
+      if (data.tier && data.tier !== 'free') {
+        toast.success(`Synced. You're on ${data.tier.charAt(0).toUpperCase() + data.tier.slice(1)}.`);
+        await Promise.all([refreshTier(), refreshDetails()]);
+      } else {
+        toast.info('No active subscription found in Stripe.');
+        await refreshTier();
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Could not sync plan.');
+    } finally {
+      setSyncingPlan(false);
+    }
+  }, [session?.access_token, refreshTier, refreshDetails]);
 
   const handleChangePlan = async (targetTier: SubscriptionTier) => {
     if (!session?.access_token || targetTier === currentTier) return;
@@ -451,6 +479,21 @@ function SubscriptionPageContent() {
                   <p className="text-zinc-400 text-sm md:text-base">
                     Start free with 6 voice roles and image generation. Upgrade for more voices, GPT-5.2, and monthly credits. Cancel anytime. If you upgrade later, your billing cycle resets from the upgrade day and unused time is credited toward the new plan.
                   </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleSyncPlan}
+                    disabled={syncingPlan || !session?.access_token}
+                    className="mt-4 h-9 rounded-lg text-xs font-medium border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                  >
+                    {syncingPlan ? (
+                      <>
+                        <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
+                        Syncing…
+                      </>
+                    ) : (
+                      'Already upgraded? Sync my plan'
+                    )}
+                  </Button>
                 </div>
               </div>
 
