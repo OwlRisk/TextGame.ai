@@ -116,25 +116,65 @@ function SubscriptionPageContent() {
     });
   }, [refreshTier, refreshDetails, session?.access_token]);
 
+  // After Stripe redirect: fulfill subscription (retry when session loads late)
   useEffect(() => {
     const success = searchParams.get('success');
     const sessionId = searchParams.get('session_id');
-    if (success !== 'true' || !sessionId || !session?.access_token || fulfillDoneRef.current) return;
+    if (success !== 'true' || !sessionId || fulfillDoneRef.current) return;
 
-    fulfillDoneRef.current = true;
-    setSyncing(true);
-    fetch('/api/stripe/fulfill-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, accessToken: session.access_token }),
-      credentials: 'include',
-    })
-      .then(async () => { await Promise.all([refreshTier(), refreshDetails()]); })
-      .catch(() => { void Promise.all([refreshTier(), refreshDetails()]); })
-      .finally(() => {
+    setSyncing(true); // show "Confirming…" while waiting or fulfilling
+
+    const doFulfill = async () => {
+      if (!session?.access_token) return false;
+      try {
+        const res = await fetch('/api/stripe/fulfill-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, accessToken: session.access_token }),
+          credentials: 'include',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast.error(data.error || `Sync failed (${res.status}). Try "Sync my plan" below.`);
+          return false;
+        }
+        await Promise.all([refreshTier(), refreshDetails()]);
+        return true;
+      } catch (e) {
+        toast.error('Could not confirm payment. Try "Sync my plan" below.');
+        return false;
+      } finally {
         setSyncing(false);
-        window.history.replaceState({}, '', '/subscription');
+      }
+    };
+
+    if (session?.access_token) {
+      fulfillDoneRef.current = true;
+      doFulfill().then((ok) => {
+        if (ok) window.history.replaceState({}, '', '/subscription');
       });
+      return;
+    }
+
+    // Session not ready yet (common after redirect): retry every 2s up to 5 times
+    let attempts = 0;
+    const id = setInterval(() => {
+      attempts++;
+      if (session?.access_token) {
+        clearInterval(id);
+        fulfillDoneRef.current = true;
+        doFulfill().then((ok) => {
+          if (ok) window.history.replaceState({}, '', '/subscription');
+        });
+        return;
+      }
+      if (attempts >= 5) {
+        clearInterval(id);
+        setSyncing(false);
+        toast.info('Still seeing Free? Click "Sync my plan" below to refresh from Stripe.');
+      }
+    }, 2000);
+    return () => clearInterval(id);
   }, [searchParams, session?.access_token, refreshTier, refreshDetails]);
 
   const handleUpgrade = async (tier: SubscriptionTier) => {
