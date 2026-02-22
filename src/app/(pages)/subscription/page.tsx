@@ -72,6 +72,7 @@ function SubscriptionPageContent() {
   const [details, setDetails] = useState<SubscriptionDetails | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
+  const [changingTier, setChangingTier] = useState<SubscriptionTier | null>(null);
   const fulfillDoneRef = useRef(false);
 
   const refreshTier = useCallback(async () => {
@@ -159,6 +160,28 @@ function SubscriptionPageContent() {
     } finally {
       setLoading(false);
       setLoadingTier(null);
+    }
+  };
+
+  const handleChangePlan = async (targetTier: SubscriptionTier) => {
+    if (!session?.access_token || targetTier === currentTier) return;
+    setChangingTier(targetTier);
+    try {
+      const res = await fetch('/api/stripe/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetTier, accessToken: session.access_token }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to change plan');
+      toast.success(`Plan updated to ${targetTier.charAt(0).toUpperCase() + targetTier.slice(1)}. Proration applied.`);
+      await Promise.all([refreshTier(), refreshDetails()]);
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Could not change plan. Try Manage subscription.');
+    } finally {
+      setChangingTier(null);
     }
   };
 
@@ -340,6 +363,79 @@ function SubscriptionPageContent() {
                   </div>
                 </div>
               </div>
+
+              {/* Change plan: Pro / Plus / Ultra */}
+              <div className="flex-shrink-0 px-6 md:px-10 pb-8">
+                <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-4">Change plan</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
+                  {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
+                    const p = PLAN_PRICING[tier];
+                    if (!p) return null;
+                    const isCurrent = tier === currentTier;
+                    const isUpgrade = (tier === 'plus' && currentTier === 'pro') || (tier === 'ultra' && (currentTier === 'pro' || currentTier === 'plus'));
+                    const isDowngrade = (tier === 'pro' && currentTier !== 'pro') || (tier === 'plus' && currentTier === 'ultra');
+                    const loading = changingTier === tier;
+                    return (
+                      <div
+                        key={tier}
+                        className={`rounded-xl border-2 p-4 flex flex-col gap-3 ${
+                          isCurrent ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-lg font-bold text-white">{tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
+                          <span className="text-sm text-zinc-400">{p.priceNum}/mo</span>
+                        </div>
+                        <p className="text-xs text-zinc-500">{p.credits}</p>
+                        {isCurrent ? (
+                          <div className="w-full h-9 rounded-lg flex items-center justify-center text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            Current plan
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => handleChangePlan(tier)}
+                            disabled={!!changingTier || syncing}
+                            variant="outline"
+                            className="w-full h-9 rounded-lg text-xs font-medium border-zinc-600 text-zinc-200 hover:bg-zinc-800 hover:text-white"
+                          >
+                            {loading ? (
+                              <>
+                                <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
+                                Updating…
+                              </>
+                            ) : isUpgrade ? (
+                              <>Upgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
+                            ) : isDowngrade ? (
+                              <>Switch to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
+                            ) : (
+                              <>Switch to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* How upgrades work */}
+                <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-4 max-w-4xl">
+                  <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">How plan changes work</h3>
+                  <ul className="space-y-2 text-sm text-zinc-300">
+                    <li className="flex gap-2">
+                      <span className="text-emerald-400 shrink-0">Credits:</span>
+                      <span>Your current balance is kept. You also get the full monthly credits for the new plan (e.g. upgrade to Plus adds 6,000 credits).</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-emerald-400 shrink-0">Billing:</span>
+                      <span>Your next billing date resets to one month from the day you upgrade. So if you upgrade today, your next charge is on the same date next month.</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-emerald-400 shrink-0">Payment:</span>
+                      <span>Unused time on your current plan is credited toward the new plan. You pay the difference (new plan price minus the credit). The credit is applied to the invoice—no separate refund to your card.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
 
@@ -353,7 +449,7 @@ function SubscriptionPageContent() {
                     Subscription
                   </h1>
                   <p className="text-zinc-400 text-sm md:text-base">
-                    Start free with 6 voice roles and image generation. Upgrade for more voices, GPT-5.2, and monthly credits. Cancel anytime.
+                    Start free with 6 voice roles and image generation. Upgrade for more voices, GPT-5.2, and monthly credits. Cancel anytime. If you upgrade later, your billing cycle resets from the upgrade day and unused time is credited toward the new plan.
                   </p>
                 </div>
               </div>

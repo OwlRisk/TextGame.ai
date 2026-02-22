@@ -41,8 +41,9 @@ export function getStripePriceIdForTier(tier: 'pro' | 'plus' | 'ultra'): string 
 }
 
 export function getTierFromStripePriceId(priceId: string): SubscriptionTier | null {
-    if (priceId === process.env.STRIPE_PRO_PRICE_ID) return 'pro';
-    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) return 'plus';
-    if (priceId === process.env.STRIPE_ULTRA_PRICE_ID) return 'ultra';
-    return null;
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_PRO_PRICE_ID || priceId === process.env.STRIPE_PRICE_PRO) return 'pro';
+  if (priceId === process.env.STRIPE_PLUS_PRICE_ID) return 'plus';
+  if (priceId === process.env.STRIPE_ULTRA_PRICE_ID) return 'ultra';
+  return null;
 }
