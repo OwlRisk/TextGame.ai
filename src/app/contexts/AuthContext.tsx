@@ -40,7 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const isInvalidRefreshToken = useCallback((err: unknown) => {
-    const msg = err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : '';
+    if (!err || typeof err !== 'object') return false;
+    const name = 'name' in err ? String((err as { name?: string }).name) : '';
+    const msg = 'message' in err ? String((err as { message?: string }).message) : '';
+    if (name === 'AuthApiError' && /refresh token|Refresh Token|refresh_token/i.test(msg)) return true;
     return /refresh token|Refresh Token|refresh_token/i.test(msg) && /not found|invalid|expired/i.test(msg);
   }, []);
 
@@ -130,8 +133,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         applySession(sessionToSet, userToSet);
       })
       .catch((e) => {
-        if (isSessionMissingError(e)) {
+        if (isSessionMissingError(e) || isInvalidRefreshToken(e)) {
           clearSessionAndCookie();
+          try {
+            supabase.auth.signOut();
+          } catch {
+            // ignore
+          }
         }
         setLoading(false);
       });

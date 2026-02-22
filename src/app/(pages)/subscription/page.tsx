@@ -35,11 +35,15 @@ function formatDate(dateText: string | null): string {
 }
 
 
-/** 三档共用权益（仅 credits 数量不同） */
-const SHARED_FEATURES = [
+/** Free：6 种角色语音 */
+const FREE_FEATURES = ['6 voice roles'] as const;
+
+/** Pro / Plus / Ultra 共用权益（仅 credits 数量不同） */
+const PAID_FEATURES = [
+  'More voice roles',
+  'Image generation',
+  'GPT-5.2 and other models',
   'Unlimited GPT-4o mini',
-  'Use credits for GPT-5.2',
-  'Voice character support',
 ] as const;
 
 const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: string; creditsNum: number }> = {
@@ -50,7 +54,7 @@ const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: s
 
 function getPlanFeatures(tier: string): string[] {
   const credits = PLAN_PRICING[tier]?.credits ?? '';
-  return [credits, ...SHARED_FEATURES];
+  return [credits, ...PAID_FEATURES];
 }
 
 function SubscriptionPageContent() {
@@ -322,7 +326,7 @@ function SubscriptionPageContent() {
                     Subscription
                   </h1>
                   <p className="text-zinc-400 text-sm md:text-base">
-                    Unlimited GPT-4o mini · Use credits for GPT-5.2 · Voice characters. Cancel anytime.
+                    Free: 6 voice roles. Pro and above: more voices, image generation, GPT-5.2 and other models. Cancel anytime.
                   </p>
                 </div>
               </div>
@@ -349,7 +353,7 @@ function SubscriptionPageContent() {
                           <p className="text-violet-300/90 text-sm font-medium mt-2">{p.credits}</p>
                         </div>
                         <ul className="p-6 space-y-3 flex-1">
-                          {SHARED_FEATURES.map((f) => (
+                          {PAID_FEATURES.map((f) => (
                             <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
                               <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
                               {f}
