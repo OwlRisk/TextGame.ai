@@ -35,8 +35,8 @@ function formatDate(dateText: string | null): string {
 }
 
 
-/** Free：6 种角色语音 */
-const FREE_FEATURES = ['6 voice roles'] as const;
+/** Free：6 种角色语音 + 图片生成 */
+const FREE_FEATURES = ['6 voice roles', 'Image generation'] as const;
 
 /** Pro / Plus / Ultra 共用权益（仅 credits 数量不同） */
 const PAID_FEATURES = [
@@ -326,14 +326,41 @@ function SubscriptionPageContent() {
                     Subscription
                   </h1>
                   <p className="text-zinc-400 text-sm md:text-base">
-                    Free: 6 voice roles. Pro and above: more voices, image generation, GPT-5.2 and other models. Cancel anytime.
+                    Free: 6 voice roles and image generation. Pro and above: more voices, GPT-5.2 and other models. Cancel anytime.
                   </p>
                 </div>
               </div>
 
-              {/* 三档卡片 */}
+              {/* 四档：Free + Pro / Plus / Ultra */}
               <div className="flex-1 overflow-auto px-6 md:px-10 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                  {/* Free 档 */}
+                  <div className="flex flex-col rounded-2xl border-2 border-zinc-700 bg-zinc-900/80 overflow-hidden">
+                    <div className="p-6 border-b border-zinc-800">
+                      <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                        Free
+                      </div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-4xl font-bold text-white">$0</span>
+                        <span className="text-zinc-500 text-sm">/ month</span>
+                      </div>
+                      <p className="text-zinc-400 text-sm font-medium mt-2">No credits · use as you go</p>
+                    </div>
+                    <ul className="p-6 space-y-3 flex-1">
+                      {FREE_FEATURES.map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
+                          <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="p-6 pt-0">
+                      <div className="w-full h-11 rounded-xl flex items-center justify-center text-sm font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+                        Current plan
+                      </div>
+                    </div>
+                  </div>
+                  {/* Pro / Plus / Ultra */}
                   {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
                     const p = PLAN_PRICING[tier];
                     if (!p) return null;
