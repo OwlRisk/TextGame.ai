@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { getCachedBalance, setCachedBalance } from '@/lib/balance-cache';
 import { getUserBalance } from '@/lib/tokens';
+import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' },
+        { status: 503 }
+      );
+    }
     const user = await getAuthUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ tokens: 0, isPro: false, subscriptionStatus: 'free' });
@@ -16,6 +23,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(balance);
   } catch (error) {
     console.error('[balance] GET error:', error);
+    if (isDatabaseError(error)) {
+      return NextResponse.json(
+        { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to fetch balance' },
       { status: 500 }
@@ -26,6 +39,12 @@ export async function GET(request: NextRequest) {
 /** POST 支持 body.accessToken，与 create-checkout 一致，确保能拿到用户余额 */
 export async function POST(request: NextRequest) {
   try {
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' },
+        { status: 503 }
+      );
+    }
     let user = null;
     const body = await request.json().catch(() => ({}));
     const token = body?.accessToken;
@@ -43,6 +62,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(balance);
   } catch (error) {
     console.error('[balance] POST error:', error);
+    if (isDatabaseError(error)) {
+      return NextResponse.json(
+        { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to fetch balance' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { pool } from '@/lib/pg-pool';
+import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
 import { getTierFromStripePriceId } from '@/lib/subscription';
 
@@ -32,6 +33,12 @@ function normalizeTier(status: string | null | undefined): Tier {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' },
+        { status: 503 }
+      );
+    }
     const body = await request.json().catch(() => ({}));
     const tokenFromBody = body?.accessToken;
 
@@ -115,6 +122,12 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('[subscription-details] error:', error);
+    if (isDatabaseError(error)) {
+      return NextResponse.json(
+        { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to fetch subscription details' },
       { status: 500 }

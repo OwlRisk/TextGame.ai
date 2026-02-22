@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
+import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
 const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 64;
@@ -364,7 +365,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ image: urlData.publicUrl });
       }
     }
-// Check and deduct tokens (avatar not cached, need to generate)
+// Check DB before deducting tokens
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' },
+        { status: 503 }
+      );
+    }
+    // Check and deduct tokens (avatar not cached, need to generate)
     const hasTokens = await deductTokens(
       user.id,
       TOKEN_COSTS.GENERATE_AVATAR,
@@ -463,6 +471,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ image: image64 });
   } catch (e: unknown) {
     console.error('[Avatar API] error:', e);
+    if (isDatabaseError(e)) {
+      return NextResponse.json(
+        { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' },
+        { status: 503 }
+      );
+    }
     const err = e as { status?: number; message?: string; error?: { message?: string } };
     
     // Extract detailed error message

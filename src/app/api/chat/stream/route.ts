@@ -8,6 +8,7 @@ import {
   estimateTokensFromText,
   estimateChatTokens,
 } from '@/lib/tokens';
+import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -25,6 +26,12 @@ export async function POST(request: NextRequest) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
+    if (!isDatabaseConfigured()) {
+      return new Response(
+        JSON.stringify({ error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     // Check API key first
     if (!process.env.OPENAI_API_KEY) {
       return new Response(
@@ -310,6 +317,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('OpenAI streaming error:', error);
+    if (isDatabaseError(error)) {
+      return new Response(
+        JSON.stringify({ error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     let message = error.message || 'Failed to stream AI response';
     if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
       message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.2 in .env if the default model fails.';

@@ -7,12 +7,15 @@ import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
+  CreditCard,
   RefreshCw,
   Star,
   Zap,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Button } from '@/app/components/ui/button';
+import { Toaster } from '@/app/components/ui/sonner';
 import type { SubscriptionTier } from '@/lib/subscription';
 
 interface SubscriptionDetails {
@@ -68,6 +71,7 @@ function SubscriptionPageContent() {
   const [syncing, setSyncing] = useState(false);
   const [details, setDetails] = useState<SubscriptionDetails | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
   const fulfillDoneRef = useRef(false);
 
   const refreshTier = useCallback(async () => {
@@ -101,7 +105,10 @@ function SubscriptionPageContent() {
   }, [session?.access_token]);
 
   useEffect(() => {
-    if (!session?.access_token) return;
+    if (!session?.access_token) {
+      setInitialLoading(false);
+      return;
+    }
     Promise.all([refreshTier(), refreshDetails()]).finally(() => {
       setInitialLoading(false);
     });
@@ -129,12 +136,18 @@ function SubscriptionPageContent() {
   }, [searchParams, session?.access_token, refreshTier, refreshDetails]);
 
   const handleUpgrade = async (tier: SubscriptionTier) => {
+    if (!session?.access_token) {
+      toast.error('Please sign in to subscribe');
+      router.push('/signin');
+      return;
+    }
+    setLoadingTier(tier);
     setLoading(true);
     try {
       const res = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscriptionTier: tier, accessToken: session?.access_token }),
+        body: JSON.stringify({ subscriptionTier: tier, accessToken: session.access_token }),
         credentials: 'include',
       });
       const data = await res.json();
@@ -142,8 +155,10 @@ function SubscriptionPageContent() {
       else throw new Error(data.error || 'Failed to create checkout');
     } catch (e) {
       console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Checkout failed. Please try again.');
     } finally {
       setLoading(false);
+      setLoadingTier(null);
     }
   };
 
@@ -162,6 +177,7 @@ function SubscriptionPageContent() {
       else throw new Error(data.error || 'Failed to open billing portal');
     } catch (e) {
       console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Could not open billing. Please try again.');
     } finally {
       setOpeningPortal(false);
     }
@@ -172,6 +188,7 @@ function SubscriptionPageContent() {
 
   return (
     <div className="flex-1 min-h-0 overflow-auto bg-[#0a0a0a] flex flex-col">
+        <Toaster position="top-center" richColors closeButton toastOptions={{ duration: 4000 }} />
         {/* top bar */}
         <div className="flex-shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-zinc-800/80 bg-zinc-950/60">
           <Button
@@ -294,10 +311,20 @@ function SubscriptionPageContent() {
                   <Button
                     onClick={handleManageBilling}
                     disabled={openingPortal || syncing || !details?.canManageBilling}
-                    className="w-full h-10 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-sm"
+                    className="w-full h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white text-sm font-medium"
                   >
-                    {openingPortal ? 'Opening…' : 'Cancel plan'}
+                    {openingPortal ? (
+                      <>Opening…</>
+                    ) : (
+                      <>
+                        <CreditCard className="size-4 mr-2" />
+                        Manage subscription
+                      </>
+                    )}
                   </Button>
+                  <p className="text-xs text-zinc-500 text-center">
+                    Update payment, change plan, or cancel in Stripe.
+                  </p>
                 </div>
 
                 {/* features */}
@@ -326,7 +353,7 @@ function SubscriptionPageContent() {
                     Subscription
                   </h1>
                   <p className="text-zinc-400 text-sm md:text-base">
-                    Free: 6 voice roles and image generation. Pro and above: more voices, GPT-5.2 and other models. Cancel anytime.
+                    Start free with 6 voice roles and image generation. Upgrade for more voices, GPT-5.2, and monthly credits. Cancel anytime.
                   </p>
                 </div>
               </div>
@@ -344,7 +371,7 @@ function SubscriptionPageContent() {
                         <span className="text-4xl font-bold text-white">$0</span>
                         <span className="text-zinc-500 text-sm">/ month</span>
                       </div>
-                      <p className="text-zinc-400 text-sm font-medium mt-2">No credits · use as you go</p>
+                      <p className="text-zinc-400 text-sm font-medium mt-2">No monthly credits · basic features</p>
                     </div>
                     <ul className="p-6 space-y-3 flex-1">
                       {FREE_FEATURES.map((f) => (
@@ -364,11 +391,21 @@ function SubscriptionPageContent() {
                   {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
                     const p = PLAN_PRICING[tier];
                     if (!p) return null;
+                    const isPopular = tier === 'plus';
                     return (
                       <div
                         key={tier}
-                        className="flex flex-col rounded-2xl border-2 border-zinc-800 bg-zinc-900/80 overflow-hidden hover:border-violet-500/50 transition-colors"
+                        className={`relative flex flex-col rounded-2xl border-2 overflow-hidden transition-colors ${
+                          isPopular
+                            ? 'border-violet-500/60 bg-zinc-900/90 shadow-lg shadow-violet-500/10'
+                            : 'border-zinc-800 bg-zinc-900/80 hover:border-violet-500/50'
+                        }`}
                       >
+                        {isPopular && (
+                          <div className="absolute top-0 right-0 rounded-bl-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3 py-1 text-xs font-semibold text-white">
+                            Popular
+                          </div>
+                        )}
                         <div className="p-6 border-b border-zinc-800">
                           <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
                             {tier}
@@ -393,8 +430,17 @@ function SubscriptionPageContent() {
                             disabled={loading || syncing}
                             className="w-full h-11 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white"
                           >
-                            {syncing ? 'Syncing…' : loading ? 'Processing…' : (
-                              <>Get {tier.charAt(0).toUpperCase() + tier.slice(1)} <ArrowRight className="size-4 ml-1" /></>
+                            {syncing ? (
+                              'Syncing…'
+                            ) : loadingTier === tier ? (
+                              <>
+                                <RefreshCw className="size-4 mr-1.5 animate-spin" />
+                                Processing…
+                              </>
+                            ) : (
+                              <>
+                                Get {tier.charAt(0).toUpperCase() + tier.slice(1)} <ArrowRight className="size-4 ml-1" />
+                              </>
                             )}
                           </Button>
                           <p className="text-center text-xs text-zinc-600 mt-3">Secured by Stripe</p>

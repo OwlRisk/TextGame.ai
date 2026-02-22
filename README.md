@@ -100,6 +100,17 @@ npm run build
 npm start
 ```
 
+### Deployment (Production)
+
+若部署后出现 `/api/user/balance`、`/api/stripe/subscription-details`、`/api/avatar`、`/api/chat/stream` 等返回 **503**，多为环境或数据库未配置：
+
+1. **数据库**：在部署环境设置 `DATABASE_URL`（或 `DIRECT_URL`），并在该数据库上执行一次：
+   ```bash
+   npm run db:setup
+   ```
+2. **必选环境变量**：`OPENAI_API_KEY`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`；订阅/支付需 `STRIPE_SECRET_KEY` 等；头像生成需 `OPENAI_API_KEY` 或 `REPLICATE_API_TOKEN`；语音 TTS 需 `INWORLD_BASIC_BASE64`。
+3. **503 响应体**会提示具体缺失项（如 "Database not configured"），便于排查。
+
 ### Code Linting
 
 ```bash

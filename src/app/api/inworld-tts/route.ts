@@ -9,6 +9,7 @@ import { env } from '@/lib/env';
 
 const INWORLD_TTS_URL = 'https://api.inworld.ai/tts/v1/voice';
 const MAX_TEXT_LENGTH = 2000;
+const TTS_REQUEST_TIMEOUT_MS = 15000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,8 +50,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TTS_REQUEST_TIMEOUT_MS);
     const res = await fetch(INWORLD_TTS_URL, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Basic ${basic}`,
@@ -66,6 +70,7 @@ export async function POST(request: NextRequest) {
         applyTextNormalization: 'ON',
       }),
     });
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const errText = await res.text();
@@ -91,9 +96,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (e) {
     console.error('[inworld-tts]', e);
+    const msg = e instanceof Error ? e.message : 'TTS failed';
+    const status = e instanceof Error && e.name === 'AbortError' ? 504 : 500;
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'TTS failed' },
-      { status: 500 }
+      { error: status === 504 ? 'TTS request timed out' : msg },
+      { status }
     );
   }
 }
