@@ -6,7 +6,8 @@ import { getStripePriceIdForTier, getTierFromStripePriceId, type SubscriptionTie
 import { grantMonthlyAllowance } from '@/lib/tokens';
 import { invalidateBalanceCache } from '@/lib/balance-cache';
 
-const PAID_TIERS: SubscriptionTier[] = ['pro', 'plus', 'ultra'];
+type PaidTier = 'pro' | 'plus' | 'ultra';
+const PAID_TIERS: PaidTier[] = ['pro', 'plus', 'ultra'];
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +21,8 @@ export async function POST(request: NextRequest) {
     if (!user) user = await getAuthUserFromRequest(request);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const tier = (targetTier === 'pro' || targetTier === 'plus' || targetTier === 'ultra' ? targetTier : null) as SubscriptionTier | null;
+    const tier: PaidTier | null =
+      targetTier === 'pro' || targetTier === 'plus' || targetTier === 'ultra' ? targetTier : null;
     if (!tier) {
       return NextResponse.json(
         { error: 'targetTier must be pro, plus, or ultra' },

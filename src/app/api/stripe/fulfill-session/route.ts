@@ -7,9 +7,11 @@ import {
   getUserBalance,
   grantMonthlyAllowance,
   rechargeCoinsFromPayment,
+  setCustomerId,
   updateSubscriptionStatus,
 } from '@/lib/tokens';
 import { getTierFromStripePriceId } from '@/lib/subscription';
+import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
 /**
  * After Stripe Checkout success, client calls this to fulfill payment/subscription.
@@ -17,6 +19,12 @@ import { getTierFromStripePriceId } from '@/lib/subscription';
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' },
+        { status: 503 }
+      );
+    }
     const body = await request.json().catch(() => ({}));
     const { session_id: sessionId, accessToken: tokenFromBody } = body;
     console.log('[fulfill-session] sessionId=', sessionId, 'hasAccessToken=', !!tokenFromBody);
@@ -75,6 +83,16 @@ export async function POST(request: NextRequest) {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const priceId = subscription.items?.data?.[0]?.price?.id;
       const tier = (priceId ? getTierFromStripePriceId(priceId) : 'pro') ?? 'pro';
+
+      // Save customer_id so Sync my plan / Manage subscription work even if setCustomerId failed at checkout
+      const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+      if (customerId) {
+        try {
+          await setCustomerId(user.id, customerId);
+        } catch (e) {
+          console.warn('[fulfill-session] setCustomerId failed (non-fatal):', (e as Error)?.message);
+        }
+      }
 
       // Avoid duplicate grant when webhook has already fulfilled this subscription.
       const before = await getUserBalance(user.id);
@@ -137,6 +155,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[fulfill-session] error:', error);
     console.error('[fulfill-session] error stack:', error instanceof Error ? error.stack : 'no stack');
+    if (isDatabaseError(error)) {
+      return NextResponse.json(
+        { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       {
         error: 'Failed to fulfill session',

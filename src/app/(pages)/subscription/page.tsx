@@ -192,9 +192,14 @@ function SubscriptionPageContent() {
         body: JSON.stringify({ subscriptionTier: tier, accessToken: session.access_token }),
         credentials: 'include',
       });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else throw new Error(data.error || 'Failed to create checkout');
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      const msg = data.error || 'Failed to create checkout';
+      const detail = data.details ? ` ${data.details}` : '';
+      toast.error(msg + detail);
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : 'Checkout failed. Please try again.');
@@ -534,6 +539,9 @@ function SubscriptionPageContent() {
                       'Already upgraded? Sync my plan'
                     )}
                   </Button>
+                  <p className="mt-3 text-xs text-zinc-500">
+                    Can&apos;t subscribe? Check: (1) STRIPE_SECRET_KEY and STRIPE_PRO_PRICE_ID in your deployment env. (2) If you paid with a real card, add the webhook in Stripe <strong>Live</strong> mode. (3) Stay on the return page until it finishes syncing, or click Sync my plan.
+                  </p>
                 </div>
               </div>
 

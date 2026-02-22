@@ -7,7 +7,7 @@ export function isDatabaseConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL || process.env.DIRECT_URL);
 }
 
-/** 判断错误是否来自数据库连接/查询失败 */
+/** 判断错误是否来自数据库连接/查询失败（含表不存在、迁移未跑） */
 export function isDatabaseError(e: unknown): boolean {
   if (!e || typeof e !== 'object') return false;
   const msg = (e as Error).message?.toLowerCase() ?? '';
@@ -18,9 +18,12 @@ export function isDatabaseError(e: unknown): boolean {
     code === 'ETIMEDOUT' ||
     code === '28P01' || // invalid password
     code === '3D000' || // database does not exist
+    code === '42P01' || // undefined_table
     msg.includes('connect') ||
     msg.includes('connection') ||
     msg.includes('database') ||
-    msg.includes('pool')
+    msg.includes('pool') ||
+    msg.includes('relation') ||
+    msg.includes('does not exist')
   );
 }
