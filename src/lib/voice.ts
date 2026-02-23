@@ -322,33 +322,14 @@ interface TTSQueueItem {
   audioPromise: Promise<string | null>; // pre-fetched base64 audio
 }
 
-/** Read Inworld TTS user preferences from localStorage. */
-function getInworldTTSPrefs(): { modelId: string; temperature?: number; speed?: number } {
-  if (typeof window === 'undefined') return { modelId: 'inworld-tts-1.5-mini' };
-  const modelId = localStorage.getItem('tts_model') ?? 'inworld-tts-1.5-mini';
-  const tempRaw = parseFloat(localStorage.getItem('tts_temperature') ?? '');
-  const speedRaw = parseFloat(localStorage.getItem('tts_speed') ?? '');
-  return {
-    modelId,
-    temperature: isNaN(tempRaw) ? undefined : tempRaw,
-    speed: isNaN(speedRaw) ? undefined : speedRaw,
-  };
-}
-
 /** Fetch TTS audio immediately so it is ready when the previous sentence finishes. */
 async function prefetchTTSAudio(text: string, voiceId: string): Promise<string | null> {
-  const { modelId, temperature, speed } = getInworldTTSPrefs();
+  const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-mini';
   try {
     const res = await fetch('/api/inworld-tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: text.slice(0, 2000),
-        voiceId,
-        modelId,
-        ...(temperature !== undefined && { temperature }),
-        ...(speed !== undefined && { speed }),
-      }),
+      body: JSON.stringify({ text: text.slice(0, 2000), voiceId, modelId }),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { audioBase64?: string };
@@ -383,6 +364,10 @@ export function useInworldTTS() {
         return;
       }
       const audio = new Audio('data:audio/mpeg;base64,' + audioBase64);
+      const storedSpeed = typeof window !== 'undefined'
+        ? parseFloat(localStorage.getItem('tts_speed') ?? '1') || 1
+        : 1;
+      audio.playbackRate = Math.min(1.5, Math.max(0.5, storedSpeed));
       audioRef.current = audio;
       await new Promise<void>((resolve, reject) => {
         audio.onended = () => resolve();

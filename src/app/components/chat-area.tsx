@@ -17,9 +17,11 @@ import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
 
 // Format message content with markdown-like syntax
-/** Strip Inworld emotion/sound tags from display text (they are kept for TTS). */
+/** Strip Inworld-style emotion/sound tags (e.g. [angry], [calm], [sigh]) from display text.
+ *  Tags are preserved in the raw content sent to TTS. */
 function stripEmotionTags(text: string): string {
-  return text.replace(/\[(angry|happy|sad|surprised|fearful|disgusted|laughing|whispering|breathe|clear_throat|cough|laugh|sigh|yawn)\]/gi, '').replace(/\s{2,}/g, ' ').trim();
+  // Match [word] and [word_word] patterns that are standalone tags (not markdown links which have trailing parens)
+  return text.replace(/\[([a-z_]+)\](?!\()/gi, '').replace(/\s{2,}/g, ' ').trim();
 }
 
 function formatMessage(content: string): JSX.Element {

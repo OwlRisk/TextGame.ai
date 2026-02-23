@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let body: { text?: string; voiceId?: string; modelId?: string; temperature?: number; speed?: number };
+    let body: { text?: string; voiceId?: string; modelId?: string };
     try {
       body = await request.json();
     } catch {
@@ -52,12 +52,6 @@ export async function POST(request: NextRequest) {
 
     const VALID_MODELS = ['inworld-tts-1.5-max', 'inworld-tts-1.5-mini', 'inworld-tts-1-max', 'inworld-tts-1'];
     const modelId = VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-mini';
-    const temperature = typeof body.temperature === 'number'
-      ? Math.min(1.5, Math.max(0.7, body.temperature))
-      : undefined;
-    const speed = typeof body.speed === 'number'
-      ? Math.min(1.5, Math.max(0.5, body.speed))
-      : undefined;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TTS_REQUEST_TIMEOUT_MS);
@@ -75,9 +69,7 @@ export async function POST(request: NextRequest) {
         audioConfig: {
           audioEncoding: 'MP3',
           sampleRateHertz: 22050,
-          ...(speed !== undefined && { speakingRate: speed }),
         },
-        ...(temperature !== undefined && { temperature }),
         applyTextNormalization: 'ON',
       }),
     });
