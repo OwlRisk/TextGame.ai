@@ -17,7 +17,6 @@ const PATHNAME_TO_TITLE: Record<string, string> = {
   "/subscription": "Subscription",
   "/help": "Help & Support",
   "/settings": "Settings",
-  "/pricing": "Subscription",
   "/recharge": "Subscription",
 };
 
