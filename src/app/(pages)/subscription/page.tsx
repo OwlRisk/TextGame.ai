@@ -112,6 +112,9 @@ function SubscriptionPageContent() {
       setInitialLoading(false);
       return;
     }
+    // Reset to true so the skeleton shows while data loads (prevents free-plan flash
+    // when session resolves after the first render cycle).
+    setInitialLoading(true);
     Promise.all([refreshTier(), refreshDetails()]).finally(() => {
       setInitialLoading(false);
     });
