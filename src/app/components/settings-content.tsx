@@ -88,35 +88,21 @@ export function SettingsContent() {
 
       <div className="flex-1 px-6 py-8">
         <div className="max-w-3xl mx-auto space-y-6">
-          <div
-            className={`rounded-xl p-6 border ${
-              isPaid
-                ? 'bg-gradient-to-r from-violet-600/10 to-fuchsia-600/10 border-violet-500/30'
-                : 'from-zinc-700/20 to-zinc-800/20 border-zinc-700 bg-zinc-900/50'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-white font-semibold text-lg mb-1">
-                  {currentPlan === 'free'
-                    ? 'Free Plan'
-                    : `${currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan`}
-                </h2>
-                <p className="text-zinc-400 text-sm">
-                  {isPaid
-                    ? 'You have access to premium features'
-                    : 'Upgrade to unlock premium models and features'}
-                </p>
-              </div>
-              {!isPaid && (
-                <Button
-                  onClick={() => router.push('/subscription')}
-                  className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500"
-                >
-                  Upgrade
-                </Button>
-              )}
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-900/50">
+            <div className="flex items-center gap-2 text-sm text-zinc-400">
+              <span>Current plan:</span>
+              <span className={`font-semibold ${isPaid ? 'text-violet-300' : 'text-zinc-300'}`}>
+                {currentPlan === 'free' ? 'Free' : currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}
+              </span>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/subscription')}
+              className="text-xs text-zinc-400 hover:text-white h-7 px-3"
+            >
+              Manage →
+            </Button>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
