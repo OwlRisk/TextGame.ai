@@ -257,7 +257,12 @@ export function ChatArea({
   const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
   // Inworld TTS: one voice per speaker, streaming-aware (sentences queued as they complete)
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  // Default ON; persisted in localStorage so the setting survives page reloads.
+  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('voice_enabled');
+    return stored === null ? true : stored !== 'false';
+  });
   const { play: playInworldTTS, stop: stopInworldTTS, isPlaying: isTTSPlaying, supported: inworldTTSSupported } = useInworldTTS();
 
   // Per-message char offset tracking: how many chars have already been queued for TTS
@@ -481,8 +486,10 @@ export function ChatArea({
               variant="ghost"
               size="sm"
               onClick={() => {
-                setVoiceEnabled((v) => !v);
-                if (voiceEnabled) stopInworldTTS();
+                const next = !voiceEnabled;
+                setVoiceEnabled(next);
+                localStorage.setItem('voice_enabled', String(next));
+                if (!next) stopInworldTTS();
               }}
               className={voiceEnabled ? "hover:bg-zinc-700 text-violet-400 hover:text-violet-300" : "hover:bg-zinc-700 text-zinc-400 hover:text-white"}
               title={voiceEnabled ? "Turn off dialogue voice" : "Turn on dialogue voice (Inworld TTS)"}

@@ -2,8 +2,8 @@
 
 import { ArrowLeft, Bot, Volume2, Image as ImageIcon, Sparkles, Info } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
-import { Label } from '@/app/components/ui/label';
 import { Switch } from '@/app/components/ui/switch';
+import { Label } from '@/app/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -22,9 +22,12 @@ export function SettingsContent() {
   const { session } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>('free');
   const [aiModel, setAiModel] = useState('gpt-4o-mini');
-  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('voice_enabled');
+    return stored === null ? true : stored !== 'false';
+  });
   const [imageGenEnabled, setImageGenEnabled] = useState(true);
-  const [ttsVoice, setTtsVoice] = useState('alloy');
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -50,15 +53,6 @@ export function SettingsContent() {
     { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Advanced reasoning' },
     { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', description: "Anthropic's best" },
     { value: 'claude-3-opus', label: 'Claude 3 Opus', description: 'Maximum intelligence' },
-  ];
-
-  const ttsVoices = [
-    { value: 'alloy', label: 'Alloy', description: 'Neutral & clear' },
-    { value: 'echo', label: 'Echo', description: 'Warm & friendly' },
-    { value: 'fable', label: 'Fable', description: 'Expressive' },
-    { value: 'onyx', label: 'Onyx', description: 'Deep & authoritative' },
-    { value: 'nova', label: 'Nova', description: 'Energetic' },
-    { value: 'shimmer', label: 'Shimmer', description: 'Soft & gentle' },
   ];
 
   const availableModels = isPaid ? paidModels : freeModels;
@@ -155,67 +149,30 @@ export function SettingsContent() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <div className="flex items-start gap-4 mb-6">
+            <div className="flex items-start gap-4">
               <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                 <Volume2 className="h-5 w-5 text-emerald-400" />
               </div>
               <div className="flex-1">
-                <h2 className="text-white font-semibold text-lg mb-1">Text-to-Speech (TTS)</h2>
-                <p className="text-zinc-400 text-sm">Enable voice narration for AI characters</p>
+                <h2 className="text-white font-semibold text-lg mb-1">AI Voice (TTS)</h2>
+                <p className="text-zinc-400 text-sm">
+                  AI characters speak aloud as they type. Voices are automatically matched to each character&apos;s personality.
+                  {isPaid
+                    ? <span className="block mt-1 text-emerald-400/80 text-xs">113 voices · 16 languages available on your plan.</span>
+                    : <span className="block mt-1 text-zinc-500 text-xs">3 voices on Free plan · upgrade for 113 voices across 16 languages.</span>
+                  }
+                </p>
               </div>
               <Switch
-                checked={ttsEnabled && isPaid}
+                checked={ttsEnabled}
                 onCheckedChange={(checked) => {
-                  if (!isPaid) {
-                    toast.error('TTS is only available for paid subscribers');
-                    return;
-                  }
                   setTtsEnabled(checked);
-                  toast.success(checked ? 'TTS enabled' : 'TTS disabled');
+                  localStorage.setItem('voice_enabled', String(checked));
+                  toast.success(checked ? 'Voice enabled' : 'Voice disabled');
                 }}
-                disabled={!isPaid}
                 className="data-[state=checked]:bg-emerald-600"
               />
             </div>
-            {ttsEnabled && isPaid && (
-              <div className="space-y-4 pt-4 border-t border-zinc-800">
-                <div>
-                  <Label htmlFor="tts-voice" className="text-zinc-300 mb-2 block">
-                    Voice Selection
-                  </Label>
-                  <Select value={ttsVoice} onValueChange={setTtsVoice}>
-                    <SelectTrigger id="tts-voice" className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700">
-                      {ttsVoices.map((voice) => (
-                        <SelectItem
-                          key={voice.value}
-                          value={voice.value}
-                          className="text-white hover:bg-zinc-700"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{voice.label}</span>
-                            <span className="text-xs text-zinc-400">{voice.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-            {!isPaid && (
-              <div className="flex items-start gap-2 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
-                <Info className="h-4 w-4 text-zinc-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-zinc-300 text-sm font-medium">Premium Feature</p>
-                  <p className="text-zinc-400 text-xs mt-1">
-                    TTS is only available for paid subscribers. Upgrade to hear AI characters speak!
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
