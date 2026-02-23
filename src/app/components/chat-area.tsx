@@ -331,6 +331,14 @@ export function ChatArea({
     }
   }, [voiceEnabled, stopInworldTTS]);
 
+  // Stop TTS when switching to a different game
+  useEffect(() => {
+    stopInworldTTS();
+    ttsProgressRef.current.clear();
+    ttsCompletedRef.current.clear();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]);
+
   const MIN_INPUT_HEIGHT = 40;
   const MAX_INPUT_HEIGHT = 120;
 

@@ -389,6 +389,18 @@ export function useInworldTTS() {
     processingRef.current = false;
   }, []);
 
+  // Stop audio when the component using this hook unmounts (e.g. navigating away)
+  useEffect(() => {
+    return () => {
+      queueRef.current = [];
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      processingRef.current = false;
+    };
+  }, []);
+
   const supported = typeof window !== 'undefined';
 
   return { play, stop, isPlaying, supported };
