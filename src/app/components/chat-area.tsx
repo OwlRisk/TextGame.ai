@@ -264,7 +264,7 @@ export function ChatArea({
     const from = lastPlayedCountRef.current;
     for (let i = from; i < messages.length; i++) {
       const m = messages[i];
-      if (m.isSystemMessage || m.isPrivate || m.isStreaming) continue;
+      if (m.isSystemMessage || m.isPrivate || m.isStreaming || !m.isAI) continue;
       const content = (m.content || '').trim();
       if (!content) continue;
       const voiceId = voiceIdForMessage(m);

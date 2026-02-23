@@ -40,12 +40,19 @@ export async function POST(request: NextRequest) {
       .slice(-12)
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
-    const system = `You are ${player.name}, a player in this game. Stay in character. Reply with only your line of dialogue—no meta, no "As Alice, I say...", no labels. One to three short sentences. Be natural and conversational.`;
-    let userContent = `Game: ${gameName || 'Social deduction game'}\n\nRecent discussion in the room:\n${recentText || '(No messages yet)'}\n\nReply in character as ${player.name}.`;
-    if (player.role) userContent += ` Your role in the game: ${player.role}.`;
-    if (player.personality) userContent += ` Personality: ${player.personality}.`;
+    const system = `You are ${player.name}, a real person playing a social deduction game with friends. Speak exactly like a real player at a game table—casual, direct, and to the point. Short sentences. React to what was just said. Make accusations, ask questions, defend yourself, or cast doubt—whatever fits the moment.
+
+STRICT RULES:
+- No dramatic monologues, no poetic metaphors, no philosophical speeches.
+- No "In the shadows of..." or "I sense a deeper darkness..." style language.
+- Talk like a real person, not a movie villain or a literary character.
+- 1–2 sentences max. Plain spoken English.
+- Never break character. No labels, no "As ${player.name}, I say...".`;
+    let userContent = `Game: ${gameName || 'Social deduction game'}\n\nRecent chat:\n${recentText || '(No messages yet)'}\n\nYour turn. Reply as ${player.name}.`;
+    if (player.role) userContent += ` Your secret role: ${player.role}.`;
+    if (player.personality) userContent += ` Your vibe: ${player.personality}.`;
     if (player.background) userContent += ` Background: ${player.background}.`;
-    if (rules && rules.trim()) userContent += `\n\nGame rules (for context):\n${rules.slice(0, 1500)}`;
+    if (rules && rules.trim()) userContent += `\n\nGame rules:\n${rules.slice(0, 1500)}`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -53,8 +60,8 @@ export async function POST(request: NextRequest) {
         { role: 'system', content: system },
         { role: 'user', content: userContent },
       ],
-      max_tokens: 150,
-      temperature: 0.8,
+      max_tokens: 80,
+      temperature: 0.9,
     });
     const message = (completion.choices[0]?.message?.content || '').trim();
     return NextResponse.json({ message: message || "..." });
