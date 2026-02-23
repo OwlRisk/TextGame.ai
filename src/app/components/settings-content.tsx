@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bot, Volume2, Image as ImageIcon, Sparkles, Info, Globe } from 'lucide-react';
+import { ArrowLeft, Bot, Volume2, Image as ImageIcon, Sparkles, Info } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Switch } from '@/app/components/ui/switch';
 import { Label } from '@/app/components/ui/label';
@@ -17,22 +17,11 @@ import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
 import type { SubscriptionTier } from '@/lib/subscription';
 
-const VOICE_LANGUAGES = [
-  { value: 'EN_US', label: 'English', flag: '🇺🇸', count: 69 },
-  { value: 'ZH_CN', label: '中文 (普通话)', flag: '🇨🇳', count: 4 },
-  { value: 'JA_JP', label: '日本語', flag: '🇯🇵', count: 2 },
-  { value: 'KO_KR', label: '한국어', flag: '🇰🇷', count: 4 },
-  { value: 'FR_FR', label: 'Français', flag: '🇫🇷', count: 4 },
-  { value: 'DE_DE', label: 'Deutsch', flag: '🇩🇪', count: 2 },
-  { value: 'ES_ES', label: 'Español', flag: '🇪🇸', count: 4 },
-  { value: 'IT_IT', label: 'Italiano', flag: '🇮🇹', count: 2 },
-  { value: 'PT_BR', label: 'Português (BR)', flag: '🇧🇷', count: 2 },
-  { value: 'RU_RU', label: 'Русский', flag: '🇷🇺', count: 4 },
-  { value: 'NL_NL', label: 'Nederlands', flag: '🇳🇱', count: 4 },
-  { value: 'PL_PL', label: 'Polski', flag: '🇵🇱', count: 2 },
-  { value: 'HI_IN', label: 'हिन्दी', flag: '🇮🇳', count: 2 },
-  { value: 'AR_SA', label: 'العربية', flag: '🇸🇦', count: 2 },
-  { value: 'HE_IL', label: 'עברית', flag: '🇮🇱', count: 2 },
+const TTS_MODELS = [
+  { value: 'inworld-tts-1.5-max', label: 'Inworld TTS 1.5 Max', description: 'Highest quality' },
+  { value: 'inworld-tts-1.5-mini', label: 'Inworld TTS 1.5 Mini', description: 'Fast & balanced' },
+  { value: 'inworld-tts-1-max', label: 'Inworld TTS 1 Max', description: 'Stable quality' },
+  { value: 'inworld-tts-1', label: 'Inworld TTS 1', description: 'Lightweight' },
 ];
 
 function ls(key: string, fallback: string) {
@@ -46,8 +35,9 @@ export function SettingsContent() {
   const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>('free');
   const [aiModel, setAiModel] = useState('gpt-4o-mini');
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'true') !== 'false');
-  const [voiceSpeed, setVoiceSpeed] = useState<string>(() => ls('voice_speed', '1'));
-  const [voiceLang, setVoiceLang] = useState<string>(() => ls('voice_lang', 'EN_US'));
+  const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-mini'));
+  const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
+  const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));
   const [imageGenEnabled, setImageGenEnabled] = useState(true);
 
   useEffect(() => {
@@ -75,8 +65,6 @@ export function SettingsContent() {
     { value: 'claude-3-opus', label: 'Claude 3 Opus', description: 'Maximum intelligence' },
   ];
   const availableModels = isPaid ? paidModels : freeModels;
-
-  const selectedLang = VOICE_LANGUAGES.find((l) => l.value === voiceLang) ?? VOICE_LANGUAGES[0];
 
   return (
     <div className="flex-1 flex flex-col bg-[#0a0a0a] h-full overflow-y-auto">
@@ -183,101 +171,123 @@ export function SettingsContent() {
             {ttsEnabled && (
               <div className="space-y-5 pt-4 border-t border-zinc-800">
 
-                {/* Voice language */}
+                {/* TTS Model */}
                 <div>
-                  <Label className="text-zinc-400 text-xs mb-2 block uppercase tracking-wide flex items-center gap-1.5">
-                    <Globe className="h-3.5 w-3.5" /> Voice Language
-                  </Label>
+                  <Label className="text-zinc-400 text-xs mb-2 block uppercase tracking-wide">Model</Label>
                   <Select
-                    value={voiceLang}
+                    value={ttsModel}
                     onValueChange={(v) => {
-                      setVoiceLang(v);
-                      localStorage.setItem('voice_lang', v);
-                      toast.success('Voice language updated');
+                      setTtsModel(v);
+                      localStorage.setItem('tts_model', v);
                     }}
                   >
                     <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue>
-                        <span>{selectedLang.flag} {selectedLang.label}</span>
-                      </SelectValue>
+                      <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700 max-h-64">
-                      {(isPaid ? VOICE_LANGUAGES : VOICE_LANGUAGES.slice(0, 1)).map((lang) => (
-                        <SelectItem key={lang.value} value={lang.value} className="text-white hover:bg-zinc-700">
-                          <span className="mr-2">{lang.flag}</span>
-                          <span className="font-medium">{lang.label}</span>
-                          <span className="text-xs text-zinc-500 ml-2">{lang.count} voices</span>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      {TTS_MODELS.map((m) => (
+                        <SelectItem key={m.value} value={m.value} className="text-white hover:bg-zinc-700">
+                          <span className="font-medium">{m.label}</span>
+                          <span className="text-xs text-zinc-400 ml-2">{m.description}</span>
                         </SelectItem>
                       ))}
-                      {!isPaid && (
-                        <div className="px-3 py-2 border-t border-zinc-700">
-                          <p className="text-xs text-zinc-500">
-                            <button onClick={() => router.push('/subscription')} className="text-violet-400 underline">Upgrade</button> for 15 more languages
-                          </p>
-                        </div>
-                      )}
                     </SelectContent>
                   </Select>
-                  <p className="text-zinc-600 text-xs mt-1.5">
-                    Characters will speak in this language. {isPaid ? `${selectedLang.count} voices available.` : 'Paid plans unlock 15 more languages.'}
-                  </p>
                 </div>
 
-                {/* Speech speed */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-zinc-400 text-xs uppercase tracking-wide">Speech Speed</Label>
-                    <span className="text-emerald-400 font-semibold text-sm tabular-nums">
-                      {parseFloat(voiceSpeed).toFixed(2)}×
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const v = Math.max(0.5, parseFloat(voiceSpeed) - 0.05).toFixed(2);
-                        setVoiceSpeed(v);
-                        localStorage.setItem('voice_speed', v);
-                      }}
-                      className="w-7 h-7 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-base font-bold shrink-0 transition-colors"
-                    >−</button>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.05"
-                      value={voiceSpeed}
-                      onChange={(e) => {
-                        setVoiceSpeed(e.target.value);
-                        localStorage.setItem('voice_speed', e.target.value);
-                      }}
-                      className="flex-1 h-1.5 appearance-none rounded-full cursor-pointer
-                        [&::-webkit-slider-thumb]:appearance-none
-                        [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
-                        [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer
-                        [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform
-                        [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
-                        [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
-                        [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, #10b981 0%, #10b981 ${((parseFloat(voiceSpeed) - 0.5) / 1.5) * 100}%, #3f3f46 ${((parseFloat(voiceSpeed) - 0.5) / 1.5) * 100}%, #3f3f46 100%)`,
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const v = Math.min(2, parseFloat(voiceSpeed) + 0.05).toFixed(2);
-                        setVoiceSpeed(v);
-                        localStorage.setItem('voice_speed', v);
-                      }}
-                      className="w-7 h-7 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-base font-bold shrink-0 transition-colors"
-                    >+</button>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-zinc-600 mt-1.5 px-10">
-                    <span>0.5×</span><span>1.0×</span><span>1.5×</span><span>2.0×</span>
-                  </div>
-                </div>
+                {/* Temperature */}
+                {(() => {
+                  const numVal = parseFloat(ttsTemperature);
+                  const pct = ((numVal - 0.7) / (1.5 - 0.7)) * 100;
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-zinc-400 text-xs uppercase tracking-wide">Temperature</Label>
+                        <div className="flex items-center gap-3 text-xs text-zinc-500">
+                          <span>0.7</span>
+                          <span className="text-emerald-400 font-semibold text-sm tabular-nums">{numVal.toFixed(1)}</span>
+                          <span>1.5</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const v = Math.max(0.7, parseFloat((numVal - 0.1).toFixed(1))).toFixed(1);
+                            setTtsTemperature(v);
+                            localStorage.setItem('tts_temperature', v);
+                          }}
+                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                        >−</button>
+                        <input
+                          type="range" min="0.7" max="1.5" step="0.1"
+                          value={ttsTemperature}
+                          onChange={(e) => { setTtsTemperature(e.target.value); localStorage.setItem('tts_temperature', e.target.value); }}
+                          className="flex-1 h-1.5 appearance-none rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
+                          style={{ background: `linear-gradient(to right, #10b981 0%, #10b981 ${pct}%, #3f3f46 ${pct}%, #3f3f46 100%)` }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const v = Math.min(1.5, parseFloat((numVal + 0.1).toFixed(1))).toFixed(1);
+                            setTtsTemperature(v);
+                            localStorage.setItem('tts_temperature', v);
+                          }}
+                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                        >+</button>
+                        <button type="button" onClick={() => { setTtsTemperature('1.1'); localStorage.setItem('tts_temperature', '1.1'); }} className="text-xs text-zinc-600 hover:text-zinc-400 w-8 text-right transition-colors">reset</button>
+                      </div>
+                      <p className="text-zinc-600 text-xs mt-1.5">Controls expressiveness and variation in speech.</p>
+                    </div>
+                  );
+                })()}
+
+                {/* Talking Speed */}
+                {(() => {
+                  const numVal = parseFloat(ttsSpeed);
+                  const pct = ((numVal - 0.5) / (1.5 - 0.5)) * 100;
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-zinc-400 text-xs uppercase tracking-wide">Talking Speed</Label>
+                        <div className="flex items-center gap-3 text-xs text-zinc-500">
+                          <span>0.5×</span>
+                          <span className="text-emerald-400 font-semibold text-sm tabular-nums">{numVal.toFixed(1)}×</span>
+                          <span>1.5×</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const v = Math.max(0.5, parseFloat((numVal - 0.05).toFixed(2))).toFixed(2);
+                            setTtsSpeed(v);
+                            localStorage.setItem('tts_speed', v);
+                          }}
+                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                        >−</button>
+                        <input
+                          type="range" min="0.5" max="1.5" step="0.05"
+                          value={ttsSpeed}
+                          onChange={(e) => { setTtsSpeed(e.target.value); localStorage.setItem('tts_speed', e.target.value); }}
+                          className="flex-1 h-1.5 appearance-none rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
+                          style={{ background: `linear-gradient(to right, #10b981 0%, #10b981 ${pct}%, #3f3f46 ${pct}%, #3f3f46 100%)` }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const v = Math.min(1.5, parseFloat((numVal + 0.05).toFixed(2))).toFixed(2);
+                            setTtsSpeed(v);
+                            localStorage.setItem('tts_speed', v);
+                          }}
+                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                        >+</button>
+                        <button type="button" onClick={() => { setTtsSpeed('1.0'); localStorage.setItem('tts_speed', '1.0'); }} className="text-xs text-zinc-600 hover:text-zinc-400 w-8 text-right transition-colors">reset</button>
+                      </div>
+                      <p className="text-zinc-600 text-xs mt-1.5">Native speech rate, processed by Inworld&apos;s TTS engine.</p>
+                    </div>
+                  );
+                })()}
 
               </div>
             )}
