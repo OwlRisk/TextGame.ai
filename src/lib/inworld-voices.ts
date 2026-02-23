@@ -197,8 +197,12 @@ function tokenize(text: string): Set<string> {
 export function pickVoiceForSpeaker(
   gender?: string | null,
   personalityOrVoiceStyle?: string | null,
-  langCode: string = 'EN_US'
+  langCode?: string
 ): string {
+  // If not explicitly passed, read from user's language preference (client-side only)
+  if (!langCode) {
+    langCode = (typeof window !== 'undefined' ? localStorage.getItem('voice_lang') : null) ?? 'EN_US';
+  }
   const g = normalizeGender(gender);
   const text = (personalityOrVoiceStyle || '').trim();
   const tokens = text ? tokenize(text) : new Set<string>();
