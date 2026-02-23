@@ -124,6 +124,29 @@ function PrivateMessagesSection({ messages, label = "Private from Host" }: { mes
   );
 }
 
+/**
+ * Split `text` into TTS-ready sentences starting at `fromChar`.
+ * Returns completed sentences (ending in . ! ?) and the new char offset.
+ * Sentences shorter than 8 chars are skipped to avoid tiny audio fragments.
+ */
+function extractTTSSentences(
+  text: string,
+  fromChar: number
+): { sentences: string[]; newOffset: number } {
+  const slice = text.slice(fromChar);
+  const sentences: string[] = [];
+  // Match anything up to and including . ! ? (greedy per sentence)
+  const re = /[^.!?]*[.!?]+(?:\s+|$)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(slice)) !== null) {
+    const s = match[0].trim();
+    if (s.length >= 8) sentences.push(s);
+    lastIndex = match.index + match[0].length;
+  }
+  return { sentences, newOffset: fromChar + lastIndex };
+}
+
 export interface Message {
   id: string;
   senderId: string;
@@ -233,10 +256,14 @@ export function ChatArea({
   const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
   const { isRecording, isTranscribing, transcript: voiceTranscript, error: voiceError, start: voiceStart, cancel: voiceCancel, confirm: voiceConfirm, supported: voiceSupported } = voice;
 
-  // Inworld TTS: one voice per speaker (host + players), queue and play in order
+  // Inworld TTS: one voice per speaker, streaming-aware (sentences queued as they complete)
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const { play: playInworldTTS, stop: stopInworldTTS, isPlaying: isTTSPlaying, supported: inworldTTSSupported } = useInworldTTS();
-  const lastPlayedCountRef = useRef(0);
+
+  // Per-message char offset tracking: how many chars have already been queued for TTS
+  const ttsProgressRef = useRef<Map<string, number>>(new Map());
+  // IDs of messages fully handed off to TTS (prevents double-play after streaming ends)
+  const ttsCompletedRef = useRef<Set<string>>(new Set());
 
   // Assign voice by gender + personality similarity (host and each player get a matching voice)
   const voiceIdForMessage = useCallback(
@@ -249,36 +276,60 @@ export function ChatArea({
     [players]
   );
 
-  // When voice is first turned on, skip existing messages (only play new ones)
+  // When voice is first turned on, mark all existing messages as already handled
   const prevVoiceEnabledRef = useRef(voiceEnabled);
   useEffect(() => {
     if (voiceEnabled && !prevVoiceEnabledRef.current) {
-      lastPlayedCountRef.current = messages.length;
+      ttsProgressRef.current.clear();
+      ttsCompletedRef.current.clear();
+      for (const m of messages) {
+        ttsCompletedRef.current.add(m.id);
+        ttsProgressRef.current.set(m.id, (m.content || '').length);
+      }
     }
     prevVoiceEnabledRef.current = voiceEnabled;
-  }, [voiceEnabled, messages.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceEnabled]);
 
-  // When voice is on and new complete messages arrive, queue TTS
+  // Streaming-aware TTS: queue sentences as they form during streaming,
+  // then flush any remainder when the message completes.
   useEffect(() => {
     if (!voiceEnabled || !inworldTTSSupported) return;
-    const from = lastPlayedCountRef.current;
-    for (let i = from; i < messages.length; i++) {
-      const m = messages[i];
-      if (m.isSystemMessage || m.isPrivate || m.isStreaming || !m.isAI) continue;
+    for (const m of messages) {
+      if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+      if (ttsCompletedRef.current.has(m.id)) continue;
       const content = (m.content || '').trim();
       if (!content) continue;
+      const fromChar = ttsProgressRef.current.get(m.id) ?? 0;
       const voiceId = voiceIdForMessage(m);
-      playInworldTTS(content, voiceId);
-      lastPlayedCountRef.current = i + 1;
+      if (m.isStreaming) {
+        const { sentences, newOffset } = extractTTSSentences(content, fromChar);
+        if (sentences.length > 0) {
+          sentences.forEach((s) => playInworldTTS(s, voiceId));
+          ttsProgressRef.current.set(m.id, newOffset);
+        }
+      } else {
+        // Message complete — flush remaining text that wasn't a full sentence yet
+        const remaining = content.slice(fromChar).trim();
+        if (remaining.length >= 2) playInworldTTS(remaining, voiceId);
+        ttsCompletedRef.current.add(m.id);
+        ttsProgressRef.current.delete(m.id);
+      }
+    }
+    // Prune refs for messages no longer in the list
+    const liveIds = new Set(messages.map((m) => m.id));
+    for (const id of ttsProgressRef.current.keys()) {
+      if (!liveIds.has(id)) ttsProgressRef.current.delete(id);
     }
   }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS]);
 
   useEffect(() => {
     if (!voiceEnabled) {
       stopInworldTTS();
-      lastPlayedCountRef.current = messages.length;
+      ttsProgressRef.current.clear();
+      ttsCompletedRef.current.clear();
     }
-  }, [voiceEnabled, stopInworldTTS, messages.length]);
+  }, [voiceEnabled, stopInworldTTS]);
 
   const MIN_INPUT_HEIGHT = 40;
   const MAX_INPUT_HEIGHT = 120;
