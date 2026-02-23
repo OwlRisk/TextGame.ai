@@ -38,13 +38,12 @@ function formatDate(dateText: string | null): string {
 }
 
 
-/** Free：6 种角色语音 + 图片生成 */
-const FREE_FEATURES = ['6 voice roles', '3 TTS voices', 'Image generation'] as const;
+/** Free：3 种 AI 语音 + 图片生成 */
+const FREE_FEATURES = ['3 AI voices', 'Image generation'] as const;
 
 /** Pro / Plus / Ultra 共用权益（仅 credits 数量不同） */
 const PAID_FEATURES = [
-  'More voice roles',
-  '113 TTS voices · 16 languages',
+  '113 AI voices · 16 languages',
   'Image generation',
   'GPT-5.2 and other models',
   'Unlimited GPT-4o mini',
