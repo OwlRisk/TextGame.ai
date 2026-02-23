@@ -221,7 +221,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setAuthCookie(null);
     try {
-      console.log("Signing out user...");
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);

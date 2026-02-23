@@ -151,10 +151,7 @@ export async function getUserBalance(userId: string): Promise<UserBalance> {
        WHERE user_id = $1`,
       [userId]
     );
-    console.log('[tokens] getUserBalance userId=', userId, 'rows=', result.rows.length);
-
     if (result.rows.length === 0) {
-      console.log('[tokens] getUserBalance no row, inserting default 100');
       await client.query(
         'INSERT INTO user_profiles (user_id, tokens) VALUES ($1, 100) ON CONFLICT (user_id) DO NOTHING',
         [userId]
@@ -263,10 +260,8 @@ export async function addTokens(
   description: string,
   paymentIntentId?: string
 ): Promise<void> {
-  console.log('[tokens] addTokens userId=', userId, 'amount=', amount, 'paymentIntentId=', paymentIntentId);
   await withUserContext(userId, async (client) => {
     if (paymentIntentId && (await hasTransactionForPaymentIntent(paymentIntentId, client))) {
-      console.log('[tokens] addTokens idempotent skip, already credited for', paymentIntentId);
       return;
     }
     await client.query('BEGIN');
@@ -285,7 +280,6 @@ export async function addTokens(
         [userId, amount, transactionType, description, paymentIntentId]
       );
       await client.query('COMMIT');
-      console.log('[tokens] addTokens committed successfully');
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('[tokens] addTokens error:', error);

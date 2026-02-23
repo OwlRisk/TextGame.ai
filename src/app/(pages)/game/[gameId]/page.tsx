@@ -142,7 +142,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           });
         }
       })
-      .catch(() => {})
+      .catch((e) => console.error('[game] Failed to load shared game:', e))
       .finally(() => setSharedLoadPending(false));
   }, [gamesLoading, currentGame, gameId, addGame]);
 

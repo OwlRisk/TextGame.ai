@@ -2,8 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { GameMasterChat } from "@/app/components/game-master-chat";
+import dynamic from "next/dynamic";
 import { GameConfig } from "@/app/components/game-setup-dialog";
+
+const GameMasterChat = dynamic(
+  () => import("@/app/components/game-master-chat").then((m) => ({ default: m.GameMasterChat })),
+  { ssr: false }
+);
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { useGameContext } from "@/app/contexts/GameContext";

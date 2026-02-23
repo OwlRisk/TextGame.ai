@@ -32,8 +32,6 @@ export function UserProfile({ onClose }: UserProfileProps) {
   // Update state when user data changes
   useEffect(() => {
     if (user) {
-      console.log("User data in profile:", user);
-      console.log("User metadata:", user.user_metadata);
       setUsername(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "Player");
       setEmail(user.email || "");
       setBio(user.user_metadata?.bio || "Passionate gamer who loves strategy and social games!");

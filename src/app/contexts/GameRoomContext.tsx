@@ -186,7 +186,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   // Bump saveTrigger when state changes (debounced) so save effect runs with fixed deps
   useEffect(() => {
     if (!isHydrated) return;
-    const timeoutId = setTimeout(() => setSaveTrigger((s) => s + 1), 1000);
+    const timeoutId = setTimeout(() => setSaveTrigger((s) => s + 1), 2000);
     return () => clearTimeout(timeoutId);
   }, [
     isHydrated,

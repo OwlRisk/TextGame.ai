@@ -2324,8 +2324,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       if (response.ok) {
                         const host = await response.json() as GeneratedHost;
                         generatedHostData = host;
-                        console.log('[Game Master] ✅ Generated host:', host.name);
-
                         setSessions(prev => prev.map(s =>
                           s.id === currentSessionId
                             ? { ...s, generatedHost: host }
