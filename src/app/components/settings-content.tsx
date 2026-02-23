@@ -180,32 +180,70 @@ export function SettingsContent() {
 
             {ttsEnabled && (
               <div className="pt-4 border-t border-zinc-800">
-                <Label className="text-zinc-300 mb-2 block text-sm">Speech Speed</Label>
-                <Select
-                  value={voiceSpeed}
-                  onValueChange={(v) => {
-                    setVoiceSpeed(v);
-                    localStorage.setItem('voice_speed', v);
-                  }}
-                >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    {[
-                      { value: '0.75', label: '0.75×  Slow' },
-                      { value: '1',    label: '1.0×   Normal' },
-                      { value: '1.25', label: '1.25×  Slightly fast' },
-                      { value: '1.5',  label: '1.5×   Fast' },
-                      { value: '1.75', label: '1.75×  Very fast' },
-                      { value: '2',    label: '2.0×   Maximum' },
-                    ].map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-white hover:bg-zinc-700">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-zinc-300 text-sm">Speech Speed</Label>
+                  <span className="text-emerald-400 font-semibold text-sm tabular-nums min-w-[3.5rem] text-right">
+                    {parseFloat(voiceSpeed).toFixed(2)}×
+                  </span>
+                </div>
+                <div className="relative flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.max(0.5, parseFloat(voiceSpeed) - 0.05);
+                      const v = next.toFixed(2);
+                      setVoiceSpeed(v);
+                      localStorage.setItem('voice_speed', v);
+                    }}
+                    className="w-7 h-7 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-base font-bold shrink-0 transition-colors"
+                  >−</button>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    value={voiceSpeed}
+                    onChange={(e) => {
+                      setVoiceSpeed(e.target.value);
+                      localStorage.setItem('voice_speed', e.target.value);
+                    }}
+                    className="flex-1 h-1.5 appearance-none rounded-full bg-zinc-700 cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none
+                      [&::-webkit-slider-thumb]:w-4
+                      [&::-webkit-slider-thumb]:h-4
+                      [&::-webkit-slider-thumb]:rounded-full
+                      [&::-webkit-slider-thumb]:bg-white
+                      [&::-webkit-slider-thumb]:shadow-md
+                      [&::-webkit-slider-thumb]:cursor-pointer
+                      [&::-webkit-slider-thumb]:transition-transform
+                      [&::-webkit-slider-thumb]:hover:scale-110
+                      [&::-moz-range-thumb]:w-4
+                      [&::-moz-range-thumb]:h-4
+                      [&::-moz-range-thumb]:rounded-full
+                      [&::-moz-range-thumb]:bg-white
+                      [&::-moz-range-thumb]:border-0
+                      [&::-moz-range-thumb]:cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${((parseFloat(voiceSpeed) - 0.5) / 1.5) * 100}%, #3f3f46 ${((parseFloat(voiceSpeed) - 0.5) / 1.5) * 100}%, #3f3f46 100%)`,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.min(2, parseFloat(voiceSpeed) + 0.05);
+                      const v = next.toFixed(2);
+                      setVoiceSpeed(v);
+                      localStorage.setItem('voice_speed', v);
+                    }}
+                    className="w-7 h-7 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-base font-bold shrink-0 transition-colors"
+                  >+</button>
+                </div>
+                <div className="flex justify-between text-[10px] text-zinc-600 mt-1.5 px-10">
+                  <span>0.5×</span>
+                  <span>1.0×</span>
+                  <span>1.5×</span>
+                  <span>2.0×</span>
+                </div>
               </div>
             )}
           </div>
