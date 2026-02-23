@@ -341,174 +341,170 @@ function SubscriptionPageContent() {
 
           {/* ───── PAID STATE ───── */}
           {!initialLoading && ['pro', 'plus', 'ultra'].includes(currentTier) && (
-            <div className="h-full flex flex-col">
+            <div className="flex flex-col">
               {/* top hero strip */}
-              <div className="relative overflow-hidden flex-shrink-0 px-6 md:px-10 py-8 border-b border-zinc-800/80">
+              <div className="relative overflow-hidden px-6 md:px-10 py-8 border-b border-zinc-800/80">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500/8 via-fuchsia-500/5 to-transparent" />
-                <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-2xl bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center shrink-0">
-                      <Star className="size-6 text-violet-300" />
+                <div className="relative flex items-center gap-4">
+                  <div className="size-12 rounded-2xl bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center shrink-0">
+                    <Star className="size-6 text-violet-300" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-xl font-bold text-white">{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} plan</h1>
+                      {syncing ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
+                          <RefreshCw className="size-3 animate-spin" /> Syncing…
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${isCancelled ? 'bg-amber-500/15 text-amber-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
+                          <span className={`size-1.5 rounded-full ${isCancelled ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                          {isCancelled ? 'Cancels at period end' : 'Active'}
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h1 className="text-xl font-bold text-white">{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} plan</h1>
-                        {syncing ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
-                            <RefreshCw className="size-3 animate-spin" /> Syncing…
-                          </span>
-                        ) : (
-                          <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${isCancelled ? 'bg-amber-500/15 text-amber-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
-                            <span className={`size-1.5 rounded-full ${isCancelled ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-                            {isCancelled ? 'Cancels at period end' : 'Active'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-zinc-500 text-sm mt-0.5">{PLAN_PRICING[currentTier]?.price ?? ''} · {PLAN_PRICING[currentTier]?.credits ?? ''}</p>
-                    </div>
+                    <p className="text-zinc-500 text-sm mt-0.5">{PLAN_PRICING[currentTier]?.price ?? ''} · {PLAN_PRICING[currentTier]?.credits ?? ''}</p>
                   </div>
                 </div>
               </div>
 
-              {/* cancel warning */}
-              {isCancelled && details?.cancelAt && (
-                <div className="flex-shrink-0 mx-6 md:mx-10 mt-5 rounded-xl bg-amber-500/10 border border-amber-500/25 px-4 py-3 text-sm text-amber-300">
-                  Your subscription ends on <strong>{formatDate(details.cancelAt)}</strong>. You keep full access until then.
-                </div>
-              )}
-
-              {/* main grid */}
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 px-6 md:px-10 py-6 md:py-8 min-h-0">
-                {/* billing details */}
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Billing</h2>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
-                    <div className="flex items-center justify-between px-5 py-4">
-                      <div className="flex items-center gap-3 text-zinc-400 text-sm">
-                        <CalendarDays className="size-4 shrink-0" />
-                        Subscribed on
-                      </div>
-                      <span className="text-sm font-medium text-zinc-200">{formatDate(details?.subscribedAt ?? null)}</span>
-                    </div>
-                    <div className="flex items-center justify-between px-5 py-4">
-                      <div className="flex items-center gap-3 text-zinc-400 text-sm">
-                        <RefreshCw className="size-4 shrink-0" />
-                        {renewalLabel}
-                      </div>
-                      <span className="text-sm font-medium text-zinc-200">{formatDate(details?.renewalAt ?? null)}</span>
-                    </div>
-                    <div className="flex items-center justify-between px-5 py-4">
-                      <div className="flex items-center gap-3 text-zinc-400 text-sm">
-                        <Zap className="size-4 shrink-0" />
-                        Amount
-                      </div>
-                      <span className="text-sm font-medium text-zinc-200">{PLAN_PRICING[currentTier]?.price ?? ''}</span>
-                    </div>
+              <div className="px-6 md:px-10 py-8 flex flex-col gap-8">
+                {/* cancel warning */}
+                {isCancelled && details?.cancelAt && (
+                  <div className="rounded-xl bg-amber-500/10 border border-amber-500/25 px-4 py-3 text-sm text-amber-300">
+                    Your subscription ends on <strong>{formatDate(details.cancelAt)}</strong>. You keep full access until then.
                   </div>
+                )}
 
-                  <Button
-                    onClick={handleManageBilling}
-                    disabled={openingPortal || syncing || !details?.canManageBilling}
-                    className="w-full h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white text-sm font-medium"
-                  >
-                    {openingPortal ? (
-                      <>Opening…</>
-                    ) : (
-                      <>
-                        <CreditCard className="size-4 mr-2" />
-                        Manage subscription
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-zinc-500 text-center">
-                    Update payment, change plan, or cancel in Stripe.
-                  </p>
-                </div>
-
-                {/* features */}
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Included in {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</h2>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
-                    {getPlanFeatures(currentTier).map((f) => (
-                      <div key={f} className="flex items-center gap-3 px-5 py-4">
-                        <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
-                        <span className="text-sm text-zinc-300">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Change plan: Pro / Plus / Ultra */}
-              <div className="flex-shrink-0 px-6 md:px-10 pb-8">
-                <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-4">Change plan</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
-                  {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
-                    const p = PLAN_PRICING[tier];
-                    if (!p) return null;
-                    const isCurrent = tier === currentTier;
-                    const isUpgrade = (tier === 'plus' && currentTier === 'pro') || (tier === 'ultra' && (currentTier === 'pro' || currentTier === 'plus'));
-                    const isDowngrade = (tier === 'pro' && currentTier !== 'pro') || (tier === 'plus' && currentTier === 'ultra');
-                    const loading = changingTier === tier;
-                    return (
-                      <div
-                        key={tier}
-                        className={`rounded-xl border-2 p-4 flex flex-col gap-3 ${
-                          isCurrent ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
-                        }`}
-                      >
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-lg font-bold text-white">{tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
-                          <span className="text-sm text-zinc-400">{p.priceNum}/mo</span>
+                {/* billing + features grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* billing details */}
+                  <div className="flex flex-col gap-4">
+                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Billing</h2>
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
+                      <div className="flex items-center justify-between px-5 py-4">
+                        <div className="flex items-center gap-3 text-zinc-400 text-sm">
+                          <CalendarDays className="size-4 shrink-0" />
+                          Subscribed on
                         </div>
-                        <p className="text-xs text-zinc-500">{p.credits}</p>
-                        {isCurrent ? (
-                          <div className="w-full h-9 rounded-lg flex items-center justify-center text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            Current plan
-                          </div>
-                        ) : (
-                          <Button
-                            onClick={() => handleChangePlan(tier)}
-                            disabled={!!changingTier || syncing}
-                            variant="outline"
-                            className="w-full h-9 rounded-lg text-xs font-medium border-zinc-600 text-zinc-200 hover:bg-zinc-800 hover:text-white"
-                          >
-                            {loading ? (
-                              <>
-                                <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
-                                Updating…
-                              </>
-                            ) : isUpgrade ? (
-                              <>Upgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
-                            ) : isDowngrade ? (
-                              <>Switch to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
-                            ) : (
-                              <>Switch to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
-                            )}
-                          </Button>
-                        )}
+                        <span className="text-sm font-medium text-zinc-200">{formatDate(details?.subscribedAt ?? null)}</span>
                       </div>
-                    );
-                  })}
+                      <div className="flex items-center justify-between px-5 py-4">
+                        <div className="flex items-center gap-3 text-zinc-400 text-sm">
+                          <RefreshCw className="size-4 shrink-0" />
+                          {renewalLabel}
+                        </div>
+                        <span className="text-sm font-medium text-zinc-200">{formatDate(details?.renewalAt ?? null)}</span>
+                      </div>
+                      <div className="flex items-center justify-between px-5 py-4">
+                        <div className="flex items-center gap-3 text-zinc-400 text-sm">
+                          <Zap className="size-4 shrink-0" />
+                          Amount
+                        </div>
+                        <span className="text-sm font-medium text-zinc-200">{PLAN_PRICING[currentTier]?.price ?? ''}</span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleManageBilling}
+                      disabled={openingPortal || syncing || !details?.canManageBilling}
+                      className="w-full h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white text-sm font-medium"
+                    >
+                      {openingPortal ? (
+                        <>Opening…</>
+                      ) : (
+                        <>
+                          <CreditCard className="size-4 mr-2" />
+                          Manage subscription
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-zinc-500 text-center -mt-2">
+                      Update payment, change plan, or cancel in Stripe.
+                    </p>
+                  </div>
+
+                  {/* features */}
+                  <div className="flex flex-col gap-4">
+                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Included in {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</h2>
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
+                      {getPlanFeatures(currentTier).map((f) => (
+                        <div key={f} className="flex items-center gap-3 px-5 py-4">
+                          <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                          <span className="text-sm text-zinc-300">{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                {/* How upgrades work */}
-                <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-4 max-w-4xl">
-                  <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">How plan changes work</h3>
-                  <ul className="space-y-2 text-sm text-zinc-300">
-                    <li className="flex gap-2">
-                      <span className="text-emerald-400 shrink-0">Credits:</span>
-                      <span>Your current balance is kept. You also get the full monthly credits for the new plan (e.g. upgrade to Plus adds 6,000 credits).</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-emerald-400 shrink-0">Billing:</span>
-                      <span>Your next billing date resets to one month from the day you upgrade. So if you upgrade today, your next charge is on the same date next month.</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-emerald-400 shrink-0">Payment:</span>
-                      <span>Unused time on your current plan is credited toward the new plan. You pay the difference (new plan price minus the credit). The credit is applied to the invoice—no separate refund to your card.</span>
-                    </li>
-                  </ul>
+                {/* Change plan: Pro / Plus / Ultra */}
+                <div>
+                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-4">Change plan</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
+                    {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
+                      const p = PLAN_PRICING[tier];
+                      if (!p) return null;
+                      const isCurrent = tier === currentTier;
+                      const isUpgrade = (tier === 'plus' && currentTier === 'pro') || (tier === 'ultra' && (currentTier === 'pro' || currentTier === 'plus'));
+                      const isChanging = changingTier === tier;
+                      return (
+                        <div
+                          key={tier}
+                          className={`rounded-xl border-2 p-4 flex flex-col gap-3 ${
+                            isCurrent ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
+                          }`}
+                        >
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-lg font-bold text-white">{tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
+                            <span className="text-sm text-zinc-400">{p.priceNum}/mo</span>
+                          </div>
+                          <p className="text-xs text-zinc-500">{p.credits}</p>
+                          {isCurrent ? (
+                            <div className="w-full h-9 rounded-lg flex items-center justify-center text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              Current plan
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={() => handleChangePlan(tier)}
+                              disabled={!!changingTier || syncing}
+                              variant="outline"
+                              className="w-full h-9 rounded-lg text-xs font-medium border-zinc-600 text-zinc-200 hover:bg-zinc-800 hover:text-white"
+                            >
+                              {isChanging ? (
+                                <>
+                                  <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
+                                  Updating…
+                                </>
+                              ) : isUpgrade ? (
+                                <>Upgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
+                              ) : (
+                                <>Switch to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* How plan changes work */}
+                  <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-4 max-w-4xl">
+                    <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">How plan changes work</h3>
+                    <ul className="space-y-2 text-sm text-zinc-300">
+                      <li className="flex gap-2">
+                        <span className="text-emerald-400 shrink-0 font-medium">Credits:</span>
+                        <span>Your current balance is kept. You also get the full monthly credits for the new plan (e.g. upgrade to Plus adds 6,000 credits).</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-emerald-400 shrink-0 font-medium">Billing:</span>
+                        <span>Your next billing date resets to one month from the day you upgrade. So if you upgrade today, your next charge is on the same date next month.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-emerald-400 shrink-0 font-medium">Payment:</span>
+                        <span>Unused time on your current plan is credited toward the new plan. You pay the difference (new plan price minus the credit). The credit is applied to the invoice—no separate refund to your card.</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -516,9 +512,9 @@ function SubscriptionPageContent() {
 
           {/* ───── FREE STATE：三档选一 ───── */}
           {!initialLoading && currentTier === 'free' && (
-            <div className="h-full flex flex-col">
+            <div className="flex flex-col">
               {/* 顶部标题与说明 */}
-              <div className="flex-shrink-0 px-6 md:px-10 pt-8 pb-6 border-b border-zinc-800/80">
+              <div className="px-6 md:px-10 pt-8 pb-6 border-b border-zinc-800/80">
                 <div className="max-w-3xl">
                   <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
                     Subscription
@@ -548,7 +544,7 @@ function SubscriptionPageContent() {
               </div>
 
               {/* 四档：Free + Pro / Plus / Ultra */}
-              <div className="flex-1 overflow-auto px-6 md:px-10 py-8">
+              <div className="px-6 md:px-10 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
                   {/* Free 档 */}
                   <div className="flex flex-col rounded-2xl border-2 border-zinc-700 bg-zinc-900/80 overflow-hidden">
