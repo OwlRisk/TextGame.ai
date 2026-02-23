@@ -318,9 +318,30 @@ export const INWORLD_VOICE_IDS = [
   'Alex',    // 2 energetic male
 ] as const;
 
+interface TTSQueueItem {
+  audioPromise: Promise<string | null>; // pre-fetched base64 audio
+}
+
+/** Fetch TTS audio immediately so it is ready when the previous sentence finishes. */
+async function prefetchTTSAudio(text: string, voiceId: string): Promise<string | null> {
+  try {
+    const res = await fetch('/api/inworld-tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text.slice(0, 2000), voiceId }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { audioBase64?: string };
+    return data.audioBase64 ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function useInworldTTS() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const queueRef = useRef<Array<{ text: string; voiceId: string }>>([]);
+  // Queue items hold a pre-fetched audio promise rather than raw text
+  const queueRef = useRef<Array<TTSQueueItem>>([]);
   const processingRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -332,32 +353,16 @@ export function useInworldTTS() {
     processingRef.current = true;
     setIsPlaying(true);
     const next = queueRef.current.shift()!;
-    const plain = stripMarkdownForTTS(next.text);
-    if (!plain) {
-      processingRef.current = false;
-      processQueue();
-      return;
-    }
     try {
-      const res = await fetch('/api/inworld-tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: plain.slice(0, 2000), voiceId: next.voiceId }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.warn('[Inworld TTS]', err);
+      // Audio may already be fully fetched if processing the previous sentence took
+      // longer than the fetch — await resolves instantly in that case.
+      const audioBase64 = await next.audioPromise;
+      if (!audioBase64) {
         processingRef.current = false;
         processQueue();
         return;
       }
-      const data = (await res.json()) as { audioBase64?: string };
-      if (!data?.audioBase64) {
-        processingRef.current = false;
-        processQueue();
-        return;
-      }
-      const audio = new Audio('data:audio/mpeg;base64,' + data.audioBase64);
+      const audio = new Audio('data:audio/mpeg;base64,' + audioBase64);
       audioRef.current = audio;
       await new Promise<void>((resolve, reject) => {
         audio.onended = () => resolve();
@@ -374,8 +379,12 @@ export function useInworldTTS() {
   }, []);
 
   const play = useCallback((text: string, voiceId: string) => {
-    if (!text?.trim() || !voiceId) return;
-    queueRef.current.push({ text: text.trim(), voiceId });
+    const plain = stripMarkdownForTTS(text?.trim() ?? '');
+    if (!plain || !voiceId) return;
+    // Kick off fetch immediately — audio is being downloaded while the previous
+    // sentence is still playing, eliminating the gap between sentences.
+    const audioPromise = prefetchTTSAudio(plain, voiceId);
+    queueRef.current.push({ audioPromise });
     processQueue();
   }, [processQueue]);
 
