@@ -538,7 +538,7 @@ export function ChatArea({
                         </span>
                       </div>
                       <div className="text-violet-100 text-sm leading-[1.65] break-words">
-                        {message.content?.trim() ? formatMessage(message.content) : <span className="italic text-violet-400/60">(No content)</span>}
+                        {message.content?.trim() ? formatMessage(message.content) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
                       </div>
                     </div>
                   </div>
@@ -633,7 +633,7 @@ export function ChatArea({
                             <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                           </div>
                         )}
-                        {message.content?.trim() ? formatMessage(message.content) : !message.imageUrl ? <span className="italic text-zinc-500">(No content)</span> : null}
+                        {message.content?.trim() ? formatMessage(message.content) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
                         {message.isStreaming && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
@@ -650,9 +650,9 @@ export function ChatArea({
                           <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                         </div>
                       )}
-                      {message.content?.trim() ? formatMessage(message.content) : !message.imageUrl ? <span className="italic text-zinc-500">(No content)</span> : null}
+                      {message.content?.trim() ? formatMessage(message.content) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
                       {message.isStreaming && (
-                        <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
+                          <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}
                     </div>
                   </div>
