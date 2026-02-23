@@ -363,6 +363,11 @@ export function useInworldTTS() {
         return;
       }
       const audio = new Audio('data:audio/mpeg;base64,' + audioBase64);
+      // Apply playback speed from user preference (default 1.0)
+      const storedSpeed = typeof window !== 'undefined'
+        ? parseFloat(localStorage.getItem('voice_speed') ?? '1') || 1
+        : 1;
+      audio.playbackRate = Math.min(2, Math.max(0.5, storedSpeed));
       audioRef.current = audio;
       await new Promise<void>((resolve, reject) => {
         audio.onended = () => resolve();

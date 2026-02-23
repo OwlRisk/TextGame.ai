@@ -27,6 +27,10 @@ export function SettingsContent() {
     const stored = localStorage.getItem('voice_enabled');
     return stored === null ? true : stored !== 'false';
   });
+  const [voiceSpeed, setVoiceSpeed] = useState<string>(() => {
+    if (typeof window === 'undefined') return '1';
+    return localStorage.getItem('voice_speed') ?? '1';
+  });
   const [imageGenEnabled, setImageGenEnabled] = useState(true);
 
   useEffect(() => {
@@ -148,7 +152,7 @@ export function SettingsContent() {
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
             <div className="flex items-start gap-4">
               <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                 <Volume2 className="h-5 w-5 text-emerald-400" />
@@ -173,6 +177,37 @@ export function SettingsContent() {
                 className="data-[state=checked]:bg-emerald-600"
               />
             </div>
+
+            {ttsEnabled && (
+              <div className="pt-4 border-t border-zinc-800">
+                <Label className="text-zinc-300 mb-2 block text-sm">Speech Speed</Label>
+                <Select
+                  value={voiceSpeed}
+                  onValueChange={(v) => {
+                    setVoiceSpeed(v);
+                    localStorage.setItem('voice_speed', v);
+                  }}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    {[
+                      { value: '0.75', label: '0.75×  Slow' },
+                      { value: '1',    label: '1.0×   Normal' },
+                      { value: '1.25', label: '1.25×  Slightly fast' },
+                      { value: '1.5',  label: '1.5×   Fast' },
+                      { value: '1.75', label: '1.75×  Very fast' },
+                      { value: '2',    label: '2.0×   Maximum' },
+                    ].map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value} className="text-white hover:bg-zinc-700">
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
