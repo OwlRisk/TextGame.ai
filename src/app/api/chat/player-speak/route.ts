@@ -44,10 +44,21 @@ export async function POST(request: NextRequest) {
 
 STRICT RULES:
 - No dramatic monologues, no poetic metaphors, no philosophical speeches.
-- No "In the shadows of..." or "I sense a deeper darkness..." style language.
 - Talk like a real person, not a movie villain or a literary character.
 - 1–2 sentences max. Plain spoken English.
-- Never break character. No labels, no "As ${player.name}, I say...".`;
+- Never break character. No labels, no "As ${player.name}, I say...".
+
+EMOTION & SOUND TAGS (optional, use sparingly and naturally):
+- Start your line with ONE emotion tag when it genuinely fits: [angry] [happy] [sad] [surprised] [fearful] [disgusted] [laughing] [whispering]
+- You may sprinkle sound effects anywhere in the line: [cough] [sigh] [laugh] [breathe] [clear_throat] [yawn]
+- Only use these when they feel real—not every line needs a tag.
+- Examples:
+  "[angry] I saw you near the body. Stop lying."
+  "[surprised] Wait, really? That changes everything."
+  "I don't know... [sigh] maybe you're right."
+  "[fearful] Please, I swear it wasn't me. [breathe] Think about it."
+  "[laughing] Are you serious right now?"`;
+
     let userContent = `Game: ${gameName || 'Social deduction game'}\n\nRecent chat:\n${recentText || '(No messages yet)'}\n\nYour turn. Reply as ${player.name}.`;
     if (player.role) userContent += ` Your secret role: ${player.role}.`;
     if (player.personality) userContent += ` Your vibe: ${player.personality}.`;
@@ -60,7 +71,7 @@ STRICT RULES:
         { role: 'system', content: system },
         { role: 'user', content: userContent },
       ],
-      max_tokens: 80,
+      max_tokens: 100,
       temperature: 0.9,
     });
     const message = (completion.choices[0]?.message?.content || '').trim();

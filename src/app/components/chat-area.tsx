@@ -17,6 +17,11 @@ import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
 
 // Format message content with markdown-like syntax
+/** Strip Inworld emotion/sound tags from display text (they are kept for TTS). */
+function stripEmotionTags(text: string): string {
+  return text.replace(/\[(angry|happy|sad|surprised|fearful|disgusted|laughing|whispering|breathe|clear_throat|cough|laugh|sigh|yawn)\]/gi, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 function formatMessage(content: string): JSX.Element {
   const lines = content.split('\n');
   const elements: JSX.Element[] = [];
@@ -553,7 +558,7 @@ export function ChatArea({
                         </span>
                       </div>
                       <div className="text-violet-100 text-sm leading-[1.65] break-words">
-                        {message.content?.trim() ? formatMessage(message.content) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
+                        {message.content?.trim() ? formatMessage(stripEmotionTags(message.content)) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
                       </div>
                     </div>
                   </div>
@@ -648,7 +653,7 @@ export function ChatArea({
                             <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                           </div>
                         )}
-                        {message.content?.trim() ? formatMessage(message.content) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
+                        {message.content?.trim() ? formatMessage(stripEmotionTags(message.content)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
                         {message.isStreaming && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
@@ -665,7 +670,7 @@ export function ChatArea({
                           <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                         </div>
                       )}
-                      {message.content?.trim() ? formatMessage(message.content) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
+                      {message.content?.trim() ? formatMessage(stripEmotionTags(message.content)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
                       {message.isStreaming && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}
