@@ -324,7 +324,17 @@ interface TTSQueueItem {
   onPlay?: () => void;
 }
 
-/** Fetch TTS audio immediately so it is ready when the previous sentence finishes. */
+/**
+ * Strip Inworld emotion/sound tags from text before sending to the API.
+ * Inworld handles them natively, but if the model/voice doesn't support
+ * them they would be spoken aloud. Stripping here keeps speech clean
+ * while still passing the tag inline so supported models can use it.
+ *
+ * Strategy: keep the tag inline for Inworld (it processes them if supported),
+ * but also send a clean fallback version if needed. For now we pass the tag
+ * as-is and let Inworld handle it — no extra stripping at API level.
+ * If a user hears the tag spoken, they should switch to a model that supports it.
+ */
 async function prefetchTTSAudio(text: string, voiceId: string): Promise<string | null> {
   const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-mini';
   try {

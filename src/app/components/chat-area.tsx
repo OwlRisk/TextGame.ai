@@ -308,15 +308,10 @@ export function ChatArea({
   }, [voiceEnabled]);
 
   // Helper: append a spoken sentence to the displayed text for a message.
-  const revealSentence = useCallback((messageId: string, sentence: string, fullContent?: string) => {
-    if (fullContent !== undefined) {
-      // Final flush — show the complete content to avoid any trailing diff.
-      displayedContentRef.current.set(messageId, fullContent);
-    } else {
-      const cur = displayedContentRef.current.get(messageId) ?? '';
-      const sep = cur && !/\s$/.test(cur) ? ' ' : '';
-      displayedContentRef.current.set(messageId, cur + sep + sentence);
-    }
+  const revealSentence = useCallback((messageId: string, sentence: string) => {
+    const cur = displayedContentRef.current.get(messageId) ?? '';
+    const sep = cur && !/\s$/.test(cur) ? ' ' : '';
+    displayedContentRef.current.set(messageId, cur + sep + sentence);
     setRevealTick((t) => t + 1);
   }, []);
 
@@ -344,12 +339,16 @@ export function ChatArea({
         // Message complete — flush remaining text that wasn't a full sentence yet.
         const remaining = content.slice(fromChar).trim();
         if (remaining.length >= 2) {
-          playInworldTTS(remaining, voiceId, () => revealSentence(m.id, remaining, content));
-        } else {
-          // Nothing left to speak — reveal full content immediately.
-          displayedContentRef.current.set(m.id, content);
-          setRevealTick((t) => t + 1);
+          // Reveal partial text when this last sentence STARTS playing.
+          playInworldTTS(remaining, voiceId, () => revealSentence(m.id, remaining));
         }
+        // After ALL sentences finish, ensure displayed = full content (fixes any
+        // separator drift and handles the case where remaining was empty).
+        const fullText = content;
+        queueDeferredTTS(() => {
+          displayedContentRef.current.set(m.id, fullText);
+          setRevealTick((t) => t + 1);
+        });
         ttsCompletedRef.current.add(m.id);
         ttsProgressRef.current.delete(m.id);
       }
@@ -359,7 +358,7 @@ export function ChatArea({
     for (const id of ttsProgressRef.current.keys()) {
       if (!liveIds.has(id)) ttsProgressRef.current.delete(id);
     }
-  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS, revealSentence]);
+  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS, queueDeferredTTS, revealSentence]);
 
   useEffect(() => {
     if (!voiceEnabled) {
