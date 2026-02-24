@@ -320,6 +320,8 @@ export const INWORLD_VOICE_IDS = [
 
 interface TTSQueueItem {
   audioPromise: Promise<string | null>; // pre-fetched base64 audio
+  /** Called the moment this sentence begins playing (or is skipped on error). */
+  onPlay?: () => void;
 }
 
 /** Fetch TTS audio immediately so it is ready when the previous sentence finishes. */
@@ -359,6 +361,8 @@ export function useInworldTTS() {
       // longer than the fetch — await resolves instantly in that case.
       const audioBase64 = await next.audioPromise;
       if (!audioBase64) {
+        // Still reveal text even when audio fails.
+        next.onPlay?.();
         processingRef.current = false;
         processQueue();
         return;
@@ -369,6 +373,8 @@ export function useInworldTTS() {
         : 1;
       audio.playbackRate = Math.min(1.5, Math.max(0.5, storedSpeed));
       audioRef.current = audio;
+      // Reveal the corresponding text the instant audio starts playing.
+      next.onPlay?.();
       await new Promise<void>((resolve, reject) => {
         audio.onended = () => resolve();
         audio.onerror = () => reject(new Error('Playback failed'));
@@ -383,13 +389,17 @@ export function useInworldTTS() {
     }
   }, []);
 
-  const play = useCallback((text: string, voiceId: string) => {
+  const play = useCallback((text: string, voiceId: string, onPlay?: () => void) => {
     const plain = stripMarkdownForTTS(text?.trim() ?? '');
-    if (!plain || !voiceId) return;
+    if (!plain || !voiceId) {
+      // No audio — reveal text immediately so it's never hidden.
+      onPlay?.();
+      return;
+    }
     // Kick off fetch immediately — audio is being downloaded while the previous
     // sentence is still playing, eliminating the gap between sentences.
     const audioPromise = prefetchTTSAudio(plain, voiceId);
-    queueRef.current.push({ audioPromise });
+    queueRef.current.push({ audioPromise, onPlay });
     processQueue();
   }, [processQueue]);
 

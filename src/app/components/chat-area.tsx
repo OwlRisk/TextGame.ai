@@ -276,6 +276,10 @@ export function ChatArea({
   const ttsProgressRef = useRef<Map<string, number>>(new Map());
   // IDs of messages fully handed off to TTS (prevents double-play after streaming ends)
   const ttsCompletedRef = useRef<Set<string>>(new Set());
+  // Text revealed so far per AI message — grows sentence-by-sentence as TTS plays.
+  const displayedContentRef = useRef<Map<string, string>>(new Map());
+  // Bumped each time a sentence is revealed, to trigger a re-render.
+  const [revealTick, setRevealTick] = useState(0);
 
   // Assign voice by gender + personality similarity (host and each player get a matching voice)
   const voiceIdForMessage = useCallback(
@@ -303,6 +307,19 @@ export function ChatArea({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceEnabled]);
 
+  // Helper: append a spoken sentence to the displayed text for a message.
+  const revealSentence = useCallback((messageId: string, sentence: string, fullContent?: string) => {
+    if (fullContent !== undefined) {
+      // Final flush — show the complete content to avoid any trailing diff.
+      displayedContentRef.current.set(messageId, fullContent);
+    } else {
+      const cur = displayedContentRef.current.get(messageId) ?? '';
+      const sep = cur && !/\s$/.test(cur) ? ' ' : '';
+      displayedContentRef.current.set(messageId, cur + sep + sentence);
+    }
+    setRevealTick((t) => t + 1);
+  }, []);
+
   // Streaming-aware TTS: queue sentences as they form during streaming,
   // then flush any remainder when the message completes.
   useEffect(() => {
@@ -317,13 +334,22 @@ export function ChatArea({
       if (m.isStreaming) {
         const { sentences, newOffset } = extractTTSSentences(content, fromChar);
         if (sentences.length > 0) {
-          sentences.forEach((s) => playInworldTTS(s, voiceId));
+          sentences.forEach((s) => {
+            const sentence = s;
+            playInworldTTS(sentence, voiceId, () => revealSentence(m.id, sentence));
+          });
           ttsProgressRef.current.set(m.id, newOffset);
         }
       } else {
-        // Message complete — flush remaining text that wasn't a full sentence yet
+        // Message complete — flush remaining text that wasn't a full sentence yet.
         const remaining = content.slice(fromChar).trim();
-        if (remaining.length >= 2) playInworldTTS(remaining, voiceId);
+        if (remaining.length >= 2) {
+          playInworldTTS(remaining, voiceId, () => revealSentence(m.id, remaining, content));
+        } else {
+          // Nothing left to speak — reveal full content immediately.
+          displayedContentRef.current.set(m.id, content);
+          setRevealTick((t) => t + 1);
+        }
         ttsCompletedRef.current.add(m.id);
         ttsProgressRef.current.delete(m.id);
       }
@@ -333,13 +359,14 @@ export function ChatArea({
     for (const id of ttsProgressRef.current.keys()) {
       if (!liveIds.has(id)) ttsProgressRef.current.delete(id);
     }
-  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS]);
+  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS, revealSentence]);
 
   useEffect(() => {
     if (!voiceEnabled) {
       stopInworldTTS();
       ttsProgressRef.current.clear();
       ttsCompletedRef.current.clear();
+      displayedContentRef.current.clear();
     }
   }, [voiceEnabled, stopInworldTTS]);
 
@@ -347,6 +374,7 @@ export function ChatArea({
   useEffect(() => {
     stopInworldTTS();
     ttsProgressRef.current.clear();
+    displayedContentRef.current.clear();
     ttsCompletedRef.current.clear();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
@@ -525,7 +553,17 @@ export function ChatArea({
         <div className="py-6 space-y-5">
           {messages.map((message, index) => {
             const showAvatar = index === 0 || messages[index - 1].senderId !== message.senderId;
-            
+
+            // When voice is on, AI messages are revealed sentence-by-sentence as TTS plays.
+            // Human messages and non-TTS modes always show full content immediately.
+            const rawContent = message.content ?? '';
+            const syncedContent =
+              voiceEnabled && inworldTTSSupported && message.isAI && !message.isSystemMessage && !message.isPrivate
+                ? (displayedContentRef.current.get(message.id) ?? '')
+                : rawContent;
+            // revealTick is read here only to ensure re-renders propagate (value unused directly).
+            void revealTick;
+
             if (message.isSystemMessage) {
               return (
                 <div key={message.id} className="my-5">
@@ -560,7 +598,7 @@ export function ChatArea({
                         </span>
                       </div>
                       <div className="text-violet-100 text-sm leading-[1.65] break-words">
-                        {message.content?.trim() ? formatMessage(stripEmotionTags(message.content)) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
+                        {syncedContent.trim() ? formatMessage(prepareDisplay(syncedContent)) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
                       </div>
                     </div>
                   </div>
@@ -655,8 +693,8 @@ export function ChatArea({
                             <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                           </div>
                         )}
-                        {message.content?.trim() ? formatMessage(stripEmotionTags(message.content)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
-                        {message.isStreaming && (
+                        {syncedContent.trim() ? formatMessage(prepareDisplay(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
+                        {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length < rawContent.length)) && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
                       </div>
@@ -672,8 +710,8 @@ export function ChatArea({
                           <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                         </div>
                       )}
-                      {message.content?.trim() ? formatMessage(stripEmotionTags(message.content)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
-                      {message.isStreaming && (
+                      {syncedContent.trim() ? formatMessage(prepareDisplay(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
+                      {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length < rawContent.length)) && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}
                     </div>
