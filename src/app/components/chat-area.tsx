@@ -270,7 +270,7 @@ export function ChatArea({
     const stored = localStorage.getItem('voice_enabled');
     return stored === null ? true : stored !== 'false';
   });
-  const { play: playInworldTTS, stop: stopInworldTTS, isPlaying: isTTSPlaying, supported: inworldTTSSupported } = useInworldTTS();
+  const { play: playInworldTTS, stop: stopInworldTTS, queueDeferred: queueDeferredTTS, isPlaying: isTTSPlaying, supported: inworldTTSSupported } = useInworldTTS();
 
   // Per-message char offset tracking: how many chars have already been queued for TTS
   const ttsProgressRef = useRef<Map<string, number>>(new Map());
