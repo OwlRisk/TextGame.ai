@@ -39,14 +39,32 @@ function formatDate(dateText: string | null): string {
 
 
 /** Free：3 种 AI 语音 + 图片生成 */
-const FREE_FEATURES = ['3 AI voices', 'Image generation'] as const;
+const FREE_FEATURES = ['3 AI voices · 14 emotion expressions', 'Image generation'] as const;
 
 /** Pro / Plus / Ultra 共用权益（仅 credits 数量不同） */
 const PAID_FEATURES = [
-  '113 AI voices · 16 languages',
+  '113 AI voices · 16 languages · 14 emotions',
   'Image generation',
   'GPT-5.2 and other models',
   'Unlimited GPT-4o mini',
+] as const;
+
+/** 14 emotion/sound tags supported by Inworld TTS */
+const EMOTION_TAGS = [
+  { tag: 'angry',       emoji: '😠', type: 'emotion' },
+  { tag: 'happy',       emoji: '😊', type: 'emotion' },
+  { tag: 'sad',         emoji: '😢', type: 'emotion' },
+  { tag: 'surprised',   emoji: '😲', type: 'emotion' },
+  { tag: 'fearful',     emoji: '😨', type: 'emotion' },
+  { tag: 'disgusted',   emoji: '🤢', type: 'emotion' },
+  { tag: 'laughing',    emoji: '😂', type: 'style'   },
+  { tag: 'whispering',  emoji: '🤫', type: 'style'   },
+  { tag: 'cough',       emoji: '😮‍💨', type: 'sound'   },
+  { tag: 'sigh',        emoji: '😮',  type: 'sound'   },
+  { tag: 'laugh',       emoji: '😄', type: 'sound'   },
+  { tag: 'breathe',     emoji: '💨', type: 'sound'   },
+  { tag: 'clear_throat',emoji: '😤', type: 'sound'   },
+  { tag: 'yawn',        emoji: '🥱', type: 'sound'   },
 ] as const;
 
 const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: string; creditsNum: number }> = {
@@ -58,6 +76,34 @@ const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: s
 function getPlanFeatures(tier: string): string[] {
   const credits = PLAN_PRICING[tier]?.credits ?? '';
   return [credits, ...PAID_FEATURES];
+}
+
+function EmotionTagsPreview() {
+  return (
+    <div className="rounded-lg border border-zinc-700/60 bg-zinc-800/40 px-3 py-2.5">
+      <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide mb-2">
+        Voice emotion expressions
+      </p>
+      <div className="flex flex-wrap gap-1">
+        {EMOTION_TAGS.map(({ tag, emoji, type }) => (
+          <span
+            key={tag}
+            title={type === 'emotion' ? 'Emotion' : type === 'style' ? 'Delivery style' : 'Sound effect'}
+            className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded font-mono border ${
+              type === 'emotion' ? 'bg-violet-500/10 border-violet-500/20 text-violet-300' :
+              type === 'style'   ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' :
+                                   'bg-zinc-700/50 border-zinc-600/40 text-zinc-400'
+            }`}
+          >
+            {emoji}&nbsp;[{tag}]
+          </span>
+        ))}
+      </div>
+      <p className="text-[10px] text-zinc-600 mt-2">
+        AI characters express these naturally during gameplay.
+      </p>
+    </div>
+  );
 }
 
 function SubscriptionPageContent() {
@@ -436,6 +482,29 @@ function SubscriptionPageContent() {
                           <span className="text-sm text-zinc-300">{f}</span>
                         </div>
                       ))}
+                      {/* Emotion tags preview */}
+                      <div className="px-5 py-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-zinc-300 mb-2">AI voice emotions &amp; sounds</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {EMOTION_TAGS.map(({ tag, emoji, type }) => (
+                                <span
+                                  key={tag}
+                                  className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-mono border ${
+                                    type === 'emotion' ? 'bg-violet-500/10 border-violet-500/25 text-violet-300' :
+                                    type === 'style'   ? 'bg-blue-500/10 border-blue-500/25 text-blue-300' :
+                                                         'bg-zinc-700/60 border-zinc-600/50 text-zinc-400'
+                                  }`}
+                                >
+                                  <span>{emoji}</span>[{tag}]
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -563,11 +632,14 @@ function SubscriptionPageContent() {
                     </div>
                     <ul className="p-6 space-y-3 flex-1">
                       {FREE_FEATURES.map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
-                          <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
-                          {f}
+                        <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
+                          <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>{f}</span>
                         </li>
                       ))}
+                      <li className="pt-1">
+                        <EmotionTagsPreview />
+                      </li>
                     </ul>
                     <div className="p-6 pt-0">
                       <div className="w-full h-11 rounded-xl flex items-center justify-center text-sm font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
@@ -606,11 +678,14 @@ function SubscriptionPageContent() {
                         </div>
                         <ul className="p-6 space-y-3 flex-1">
                           {PAID_FEATURES.map((f) => (
-                            <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
-                              <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
-                              {f}
+                            <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
+                              <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                              <span>{f}</span>
                             </li>
                           ))}
+                          <li className="pt-1">
+                            <EmotionTagsPreview />
+                          </li>
                         </ul>
                         <div className="p-6 pt-0">
                           <Button
