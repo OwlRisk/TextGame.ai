@@ -403,6 +403,16 @@ export function useInworldTTS() {
     processQueue();
   }, [processQueue]);
 
+  /**
+   * Enqueue a zero-audio sentinel. The callback fires after all items
+   * already in the queue have finished playing — useful for ensuring text
+   * is fully revealed only after the last sentence's audio completes.
+   */
+  const queueDeferred = useCallback((callback: () => void) => {
+    queueRef.current.push({ audioPromise: Promise.resolve(null), onPlay: callback });
+    processQueue();
+  }, [processQueue]);
+
   const stop = useCallback(() => {
     queueRef.current = [];
     if (audioRef.current) {
@@ -427,5 +437,5 @@ export function useInworldTTS() {
 
   const supported = typeof window !== 'undefined';
 
-  return { play, stop, isPlaying, supported };
+  return { play, stop, queueDeferred, isPlaying, supported };
 }
