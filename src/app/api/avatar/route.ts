@@ -75,7 +75,7 @@ function avatarCacheKey(name: string, type: AvatarType): string {
 }
 
 /** Version prefix: bump to force regeneration when style/prompt changes (e.g. host and player same prompt) */
-const AVATAR_STORAGE_VERSION = 'v4';
+const AVATAR_STORAGE_VERSION = 'v5';
 
 /** Deterministic storage path for upsert */
 function avatarStoragePath(name: string, type: AvatarType): string {
@@ -93,47 +93,29 @@ function getModel(): AvatarModel {
   return 'dalle-3';
 }
 
-/** Strict rule: single person only, no multiple faces */
-const SINGLE_PERSON =
-  'CRITICAL REQUIREMENT: ONE PERSON ONLY. ONE SINGLE FACE. ONE HEAD. ' +
-  'NO MULTIPLE PEOPLE. NO MULTIPLE FACES. NO GROUP PHOTO. NO OVERLAPPING FACES. ' +
-  'NO DUPLICATE FACES. NO REFLECTIONS WITH FACES. NO MIRRORS WITH FACES. ' +
-  'ONLY ONE CHARACTER. ONE HEAD AND SHOULDERS PORTRAIT. SINGLE INDIVIDUAL.';
+/** Solo character: exactly one person in frame, head-and-shoulders portrait */
+const SOLO_PORTRAIT =
+  'Solo character portrait. One person only. Head and shoulders framing. Single individual, centered in frame.';
 
-/** No text rule: absolutely no text, letters, words, or characters in the image */
-const NO_TEXT =
-  'ABSOLUTELY NO TEXT: No text, no letters, no words, no characters, no writing, no symbols, no labels, no name tags, no captions, no subtitles, no speech bubbles, no signs, no banners. ' +
-  'Pure visual portrait only. The image must contain ONLY the character portrait with absolutely no written content whatsoever. ' +
-  'If any text appears in the image, the generation is invalid.';
+/** Clean visual output: image contains only the illustrated portrait */
+const CLEAN_PORTRAIT = 'Clean illustrated portrait. Pure visual artwork.';
 
-/** Universal anime/manga style for ALL avatars (Host + AI players + human in-game). Same style = unified look. */
-const ANIME_STYLE =
-  SINGLE_PERSON + ' ' +
-  'Anime/manga art style. Japanese animation aesthetic. ' +
-  'Colorful hair, expressive large eyes, clean line art. ' +
-  'Vibrant colors, soft shading, anime illustration quality. ' +
-  'Head and shoulders portrait, circular crop suitable. ' +
-  'Single character only, no background details. ' +
-  'ONE PERSON. ONE FACE. ' + NO_TEXT;
-
-/** 强制双眼可见、整张脸在画面内：避免只画一只眼、半张脸、侧脸、被裁切等 */
+/** Front-facing face: both eyes fully visible and centered */
 const BOTH_EYES_REQUIRED =
-  'Full face visible. Face the viewer directly or very slight angle only. ' +
-  'Both eyes, nose, and mouth clearly visible. No profile view, no half face, no face cut off by frame. ' +
-  'No hair covering either eye. No one-eye, no winking. Complete face in frame, centered.';
+  'Full face visible, front-facing or very slight three-quarter angle. ' +
+  'Both eyes, nose, and mouth clearly shown. Centered in frame, complete face within image boundaries.';
 
-/** Friendly, non-scary constraint so avatars stay suitable for a casual game (no horror/creepy from role words like werewolf, mafia). */
+/** Friendly, wholesome look — keeps avatars suitable for a casual game regardless of role name */
 const FRIENDLY_SAFE =
-  'Friendly, approachable look. No horror, no frightening or creepy elements. No fangs, no blood, no dark sinister appearance. ' +
-  'Cute, charming anime style. Safe for all ages. Game avatar.';
+  'Cheerful, friendly, wholesome appearance. Cute, charming anime style. Suitable for all ages. Game avatar.';
 
 /** Single shared style for Host and Player — identical so all avatars look the same (anime, not realistic). */
 const SHARED_CORE_STYLE =
-  'Anime/manga illustration style only. Not photorealistic. Not realistic photography. ' +
-  'One person, one face. Single avatar portrait. Head and shoulders, full face in frame. Colorful hair, expressive large eyes, clean line art. ' +
+  'Anime illustration style. Vibrant colors, expressive large eyes, clean line art, soft shading. ' +
+  SOLO_PORTRAIT + ' ' +
   BOTH_EYES_REQUIRED + ' ' +
   FRIENDLY_SAFE + ' ' +
-  'No text.';
+  CLEAN_PORTRAIT;
 
 /** Gender phrase for prompt: avatar appearance must match name gender */
 function genderPhrase(gender?: string): string {
@@ -201,9 +183,9 @@ function buildPrompt(
   // DALL-E 2 has a 1000 character limit for prompts
   const MAX_PROMPT_LENGTH = 1000;
 
-  // 开头和结尾都强调“单人单脸”，且用 close-up 减少画面空间
-  const singleStart = 'Close-up portrait of exactly ONE person. Only one face visible in frame. ';
-  const singleEnd = ' Single person only. No second face. No other people. No mirror or reflection with face.';
+  // Close-up single-person framing using only positive descriptors (negative words trigger safety filters)
+  const singleStart = 'Close-up anime portrait. ';
+  const singleEnd = ' Solo individual, centered composition.';
 
   // 统一画风：Host 与 Player 使用完全相同的 prompt 结构，仅 background 不同，保证头像风格一致（不额外加 Host 角色词）
   const basePrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;
@@ -226,7 +208,7 @@ function buildPrompt(
 
   const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;
   if (availableLength <= 0) {
-    return `${genderPrefix}ONE PERSON ONLY. ONE FACE. ${SHARED_CORE_STYLE}`;
+    return `${genderPrefix}${SHARED_CORE_STYLE}`;
   }
 
   const truncatedBackground = trimmedBackground.length > availableLength
