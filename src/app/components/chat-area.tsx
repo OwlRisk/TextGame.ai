@@ -390,47 +390,53 @@ export function ChatArea({
       return;
     }
 
+    // Strict queue: only process the first message that needs TTS, then stop.
+    // This avoids interleaving multiple speakers and ensures one-message-at-a-time playback.
     for (const m of messages) {
       if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
       if (initialMessageIdsRef.current.has(m.id)) continue; // cached message, never play TTS
       if (ttsCompletedRef.current.has(m.id)) continue;
       const content = (m.content || '').trim();
       if (!content) continue;
-      const fromChar = ttsProgressRef.current.get(m.id) ?? 0;
+
       const voiceId = voiceIdForMessage(m);
+
       if (m.isStreaming) {
+        // Don't play TTS while content is still loading — show text only, sound after complete.
+        displayedContentRef.current.set(m.id, content);
+        setRevealTick((t) => t + 1);
+        break; // only handle one message per run
+      }
+
+      // Message complete: show full text first (content "loaded"), then queue whole message for TTS.
+      displayedContentRef.current.set(m.id, content);
+      setRevealTick((t) => t + 1);
+
+      let fromChar = 0;
+      for (;;) {
         const { sentences, newOffset } = extractTTSSentences(content, fromChar);
-        if (sentences.length > 0) {
-          sentences.forEach((s) => {
-            const sentence = s;
-            playInworldTTS(sentence, voiceId, () => revealSentence(m.id, sentence));
-          });
-          ttsProgressRef.current.set(m.id, newOffset);
-        }
-      } else {
-        // Message complete — flush remaining text that wasn't a full sentence yet.
-        const remaining = content.slice(fromChar).trim();
-        if (remaining.length >= 2) {
-          // Reveal partial text when this last sentence STARTS playing.
-          playInworldTTS(remaining, voiceId, () => revealSentence(m.id, remaining));
-        }
-        // After ALL sentences finish, ensure displayed = full content (fixes any
-        // separator drift and handles the case where remaining was empty).
-        const fullText = content;
-        queueDeferredTTS(() => {
-          displayedContentRef.current.set(m.id, fullText);
-          setRevealTick((t) => t + 1);
+        if (sentences.length === 0) break;
+        sentences.forEach((s) => {
+          playInworldTTS(s, voiceId, () => {}); // text already shown above
         });
+        fromChar = newOffset;
+      }
+      const remaining = content.slice(fromChar).trim();
+      if (remaining.length >= 2) {
+        playInworldTTS(remaining, voiceId, () => {});
+      }
+      queueDeferredTTS(() => {
         ttsCompletedRef.current.add(m.id);
         ttsProgressRef.current.delete(m.id);
-      }
+      });
+      break; // only one message per run — next run will pick up the next message
     }
     // Prune refs for messages no longer in the list
     const liveIds = new Set(messages.map((m) => m.id));
     for (const id of ttsProgressRef.current.keys()) {
       if (!liveIds.has(id)) ttsProgressRef.current.delete(id);
     }
-  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS, queueDeferredTTS, revealSentence]);
+  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS, queueDeferredTTS]);
 
   useEffect(() => {
     if (!voiceEnabled) {
