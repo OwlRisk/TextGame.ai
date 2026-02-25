@@ -452,7 +452,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   /** Static welcome message for new sessions (no LLM call) */
   const STATIC_WELCOME_CONTENT =
-    "Hi! I'm your Game Master. I'll help you design and create any game—choose a quick option below or describe your idea; the rules panel on the right updates as we talk.";
+    "Welcome—I'm your Game Master. I'll help you design and fine-tune your game (rules, player count, and any options) right here. " +
+    "As we talk, the rules panel on the right updates in real time so you can see exactly what will be used when you create the game. " +
+    "I can also suggest game rooms and other setup from the rules. Choose an option below or describe what you have in mind.";
 
   /** Quick reply chips shown when GM has sent the first message but no A)/B) options were parsed */
   const DEFAULT_FIRST_CHAT_CHIPS: { label: string; value: string; fullLabel?: string }[] = [
@@ -990,7 +992,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
     const templateName = resolvedTemplate?.name ?? preset.name ?? "this game";
     const presetWelcomeContent =
-      `You've chosen **${templateName}**. The rules are set in the panel on the right—you can edit them there if you like. ` +
+      `You've chosen **${templateName}**. The rules are in the panel on the right and update as we talk; you can edit them there too. ` +
+      "I can suggest game rooms and other setup from the rules. " +
       (nextPlayerCount > 0
         ? `We're set for ${nextPlayerCount + 1} players (including you). Say how you'd like to adjust, or "create game" when ready.`
         : "Tell me how many players you want, or say \"create game\" when you're ready.");
@@ -1945,7 +1948,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </div>
 
         {/* Chat Messages */}
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="flex-1 min-h-0 select-text">
           <div className="max-w-none mx-auto py-8 sm:py-12 px-4 sm:px-6 md:px-8 space-y-6 sm:space-y-8">
             {messages.map((message, index) => {
               // Filter out empty messages (including empty temp messages)
@@ -1997,7 +2000,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         } ${isStreamingMsg ? "ring-1 ring-amber-500/20" : ""}`}
                       >
                         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
-                        <div className="text-[15px] sm:text-base leading-relaxed relative z-10 font-normal">
+                        <div className="text-[15px] sm:text-base leading-relaxed relative z-10 font-normal select-text">
                           {formatMessage(message.role === "gm" ? cleanGMMessageContentForDisplay(message.content) : message.content)}
                         </div>
                       </div>
