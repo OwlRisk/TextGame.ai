@@ -19,12 +19,15 @@ import { parseInlineFormatting, EMOTION_EMOJI } from "@/lib/format-message";
 // Format message content with markdown-like syntax
 
 /** Replace Inworld emotion/sound tags with their corresponding emoji in display text.
- *  Tags are preserved in the raw content sent to TTS. Unknown tags are stripped. */
+ *  Handles both underscore-form [clear_throat] and space-form [clears throat].
+ *  Unknown tags (no matching emoji) are stripped entirely. */
 function stripEmotionTags(text: string): string {
   return text
-    .replace(/\[([a-z_]+)\](?!\()/gi, (_, tag: string) => {
-      const emoji = EMOTION_EMOJI[tag.toLowerCase()];
-      return emoji ? emoji : '';
+    // Match [word], [word_word], and [word word] — but not markdown links [text](url)
+    .replace(/\[([a-z][a-z _]*)\](?!\()/gi, (_, tag: string) => {
+      const key = tag.toLowerCase();
+      const emoji = EMOTION_EMOJI[key] ?? EMOTION_EMOJI[key.replace(/ /g, '_')];
+      return emoji ?? '';
     })
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -452,28 +455,47 @@ export function ChatArea({
         return; // wait for this message to complete before doing anything more
       }
 
-      // Message complete: show full text immediately, then enqueue audio.
-      displayedContentRef.current.set(m.id, content);
-      setRevealTick((t) => t + 1);
-
       // Mark as queued RIGHT NOW so subsequent effect runs don't re-queue while audio plays.
       ttsQueuedRef.current.add(m.id);
       hasQueuedTTSInSessionRef.current = true;
+
+      // If this message was shown during streaming, its text is already visible — don't re-reveal.
+      // Otherwise (fresh complete message), start empty and reveal each sentence as its audio plays.
+      const alreadyShown = (displayedContentRef.current.get(m.id) ?? '').length > 0;
+      if (!alreadyShown) {
+        // Clear/ensure entry exists so the "waiting dots" animation shows immediately.
+        displayedContentRef.current.set(m.id, '');
+        setRevealTick((t) => t + 1);
+      }
 
       const voiceId = voiceIdForMessage(m);
       let fromChar = 0;
       for (;;) {
         const { sentences, newOffset } = extractTTSSentences(content, fromChar);
         if (sentences.length === 0) break;
-        sentences.forEach((s) => playInworldTTS(s, voiceId, () => {}));
+        sentences.forEach((s) => {
+          if (alreadyShown) {
+            playInworldTTS(s, voiceId, () => {});
+          } else {
+            playInworldTTS(s, voiceId, () => revealSentence(m.id, s));
+          }
+        });
         fromChar = newOffset;
       }
       const remaining = content.slice(fromChar).trim();
-      if (remaining.length >= 2) playInworldTTS(remaining, voiceId, () => {});
+      if (remaining.length >= 2) {
+        if (alreadyShown) {
+          playInworldTTS(remaining, voiceId, () => {});
+        } else {
+          playInworldTTS(remaining, voiceId, () => revealSentence(m.id, remaining));
+        }
+      }
 
-      // After all audio finishes: mark completed and bump tick so next message gets processed.
+      // After all audio finishes: ensure full text is shown (safety net), mark completed, unlock next.
       const msgId = m.id;
+      const fullContent = content;
       queueDeferredTTS(() => {
+        displayedContentRef.current.set(msgId, fullContent);
         ttsCompletedRef.current.add(msgId);
         ttsProgressRef.current.delete(msgId);
         setTtsProcessingTick((t) => t + 1);

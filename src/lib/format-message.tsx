@@ -56,7 +56,7 @@ export function parseInlineFormatting(
     { regex: /`(.*?)`/g, type: "code" as const },
     { regex: /~~(.*?)~~/g, type: "strikethrough" as const },
     { regex: /@([\w\u4e00-\u9fff\- ]+?)(?=[\s,.!?;:"')\]]|$)/g, type: "mention" as const },
-    { regex: /\[([a-z_]+)\]/gi, type: "emotion" as const },
+    { regex: /\[([a-z][a-z _]*)\](?!\()/gi, type: "emotion" as const },
   ];
 
   const matches: Array<{ start: number; end: number; type: string; content: string }> = [];
