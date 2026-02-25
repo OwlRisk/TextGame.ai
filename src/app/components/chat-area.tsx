@@ -597,7 +597,7 @@ export function ChatArea({
                         </span>
                       </div>
                       <div className="text-violet-100 text-sm leading-[1.65] break-words">
-                        {syncedContent.trim() ? formatMessage(prepareDisplay(syncedContent)) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
+                        {syncedContent.trim() ? formatMessage(stripEmotionTags(syncedContent)) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
                       </div>
                     </div>
                   </div>
@@ -692,7 +692,7 @@ export function ChatArea({
                             <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                           </div>
                         )}
-                        {syncedContent.trim() ? formatMessage(prepareDisplay(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
+                        {syncedContent.trim() ? formatMessage(stripEmotionTags(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
                         {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length < rawContent.length)) && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
@@ -709,7 +709,7 @@ export function ChatArea({
                           <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                         </div>
                       )}
-                      {syncedContent.trim() ? formatMessage(prepareDisplay(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
+                      {syncedContent.trim() ? formatMessage(stripEmotionTags(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
                       {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length < rawContent.length)) && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}
