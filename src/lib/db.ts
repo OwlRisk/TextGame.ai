@@ -154,10 +154,7 @@ export async function createGame(game: GameInsert) {
 export async function updateGame(gameId: string, updates: GameUpdate) {
   const { data, error } = await supabase
     .from('games')
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString()
-    })
+    .update(updates)
     .eq('id', gameId)
     .select()
     .single();
@@ -168,6 +165,17 @@ export async function updateGame(gameId: string, updates: GameUpdate) {
   }
 
   return { data, error: null };
+}
+
+/** Only bumps updated_at — used when the player sends a message so the game rises in sidebar order. */
+export async function touchGame(gameId: string) {
+  const { error } = await supabase
+    .from('games')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', gameId);
+
+  if (error) logDbError('touchGame', error);
+  return { error: error ?? null };
 }
 
 export async function deleteGame(gameId: string, userId: string) {

@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { GameConfig } from "@/app/components/game-setup-dialog";
-import { getGames, createGame, updateGame as updateGameDb, deleteGame } from "@/lib/db";
+import { getGames, createGame, updateGame as updateGameDb, touchGame as touchGameDb, deleteGame } from "@/lib/db";
 import { toast } from "sonner";
 
 export interface Game {
@@ -22,6 +22,8 @@ interface GameContextType {
   selectedGameId: string | null;
   addGame: (game: Game) => void;
   updateGame: (id: string, updates: Partial<Game>) => void;
+  /** Move game to the top of the sidebar (call when player sends a message). */
+  touchGame: (id: string) => void;
   removeGame: (id: string) => void;
   selectGame: (id: string | null) => void;
   getGame: (id: string) => Game | undefined;
@@ -145,13 +147,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const updateGame = useCallback((id: string, updates: Partial<Game>) => {
-    const now = new Date().toISOString();
+    // Update fields in-place; does NOT change sort order.
     setGames((prev) =>
-      sortGamesByUpdatedAt(
-        prev.map((game) =>
-          game.id === id ? { ...game, ...updates, updatedAt: now } : game
-        )
-      )
+      prev.map((game) => (game.id === id ? { ...game, ...updates } : game))
     );
     if (user) {
       const dbUpdates: Record<string, unknown> = {};
@@ -160,10 +158,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (updates.color !== undefined) dbUpdates.color = updates.color;
       if (updates.config !== undefined) dbUpdates.config = updates.config;
       if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
-      // Always call DB so updated_at is bumped (e.g. when user sends a message and we only call updateGame(id, {}))
-      updateGameDb(id, dbUpdates).then(({ error }) => {
-        if (error) toast.error("Failed to update game");
-      });
+      if (Object.keys(dbUpdates).length > 0) {
+        updateGameDb(id, dbUpdates).then(({ error }) => {
+          if (error) toast.error("Failed to update game");
+        });
+      }
+    }
+  }, [user]);
+
+  /** Bump game to top of sidebar — call only when player actually sends a message. */
+  const touchGame = useCallback((id: string) => {
+    const now = new Date().toISOString();
+    setGames((prev) =>
+      sortGamesByUpdatedAt(
+        prev.map((game) => (game.id === id ? { ...game, updatedAt: now } : game))
+      )
+    );
+    if (user) {
+      touchGameDb(id).catch(() => {/* non-critical */});
     }
   }, [user]);
 
@@ -195,6 +207,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         selectedGameId,
         addGame,
         updateGame,
+        touchGame,
         removeGame,
         selectGame,
         getGame,

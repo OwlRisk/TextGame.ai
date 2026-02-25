@@ -73,7 +73,7 @@ async function seedInitialPlayerReplies(
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   const { session } = useAuth();
-  const { games, selectedGameId, selectGame, updateGame, addGame, gamesLoading } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame, touchGame, addGame, gamesLoading } = useGameContext();
   const {
     messages,
     players,
@@ -319,8 +319,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
-    // Bump game's updatedAt so the sidebar list re-sorts and this game moves to the top
-    if (gameId) updateGame(gameId, {});
+    // Move this game to the top of the sidebar (only triggered when player speaks)
+    if (gameId) touchGame(gameId);
 
     const cfgChannels = currentGame?.config?.channels;
     const roomIds = cfgChannels?.length ? new Set(cfgChannels.map((c) => c.id)) : new Set(["game-room"]);
