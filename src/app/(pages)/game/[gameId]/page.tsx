@@ -319,6 +319,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
+    // Bump game's updatedAt so the sidebar list re-sorts and this game moves to the top
+    if (gameId) updateGame(gameId, {});
+
     const cfgChannels = currentGame?.config?.channels;
     const roomIds = cfgChannels?.length ? new Set(cfgChannels.map((c) => c.id)) : new Set(["game-room"]);
     const channelId = selectedChannelId && roomIds.has(selectedChannelId) ? selectedChannelId : (cfgChannels?.[0]?.id ?? "game-room");

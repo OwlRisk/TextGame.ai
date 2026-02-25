@@ -160,11 +160,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (updates.color !== undefined) dbUpdates.color = updates.color;
       if (updates.config !== undefined) dbUpdates.config = updates.config;
       if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
-      if (Object.keys(dbUpdates).length > 0) {
-        updateGameDb(id, dbUpdates).then(({ error }) => {
-          if (error) toast.error("Failed to update game");
-        });
-      }
+      // Always call DB so updated_at is bumped (e.g. when user sends a message and we only call updateGame(id, {}))
+      updateGameDb(id, dbUpdates).then(({ error }) => {
+        if (error) toast.error("Failed to update game");
+      });
     }
   }, [user]);
 
