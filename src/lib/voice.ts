@@ -383,14 +383,16 @@ export function useInworldTTS() {
         : 1;
       audio.playbackRate = Math.min(1.5, Math.max(0.5, storedSpeed));
       audioRef.current = audio;
-      // Reveal the corresponding text the instant audio starts playing.
-      next.onPlay?.();
       await new Promise<void>((resolve, reject) => {
-        audio.onended = () => resolve();
+        audio.onended = () => {
+          // Reveal text only after this sentence has finished playing (say多少显示多少)
+          next.onPlay?.();
+          resolve();
+        };
         audio.onerror = () => reject(new Error('Playback failed'));
         audio.play().catch((err: unknown) => {
-          // Browser autoplay policy: silently skip audio when user hasn't interacted yet.
           if (err instanceof Error && err.name === 'NotAllowedError') {
+            next.onPlay?.();
             resolve();
           } else {
             reject(err);

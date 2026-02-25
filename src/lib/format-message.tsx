@@ -8,7 +8,26 @@ export interface InlineFormattingOptions {
   codeClassName?: string;
   strikethroughClassName?: string;
   mentionClassName?: string;
+  emotionClassName?: string;
 }
+
+/** Inworld / 语气 tag → emoji，用于聊天中把 [angry] 等显示为 emoji */
+export const EMOTION_EMOJI: Record<string, string> = {
+  angry: "😠",
+  happy: "😊",
+  sad: "😢",
+  surprised: "😲",
+  fearful: "😨",
+  disgusted: "🤢",
+  laughing: "😂",
+  whispering: "🤫",
+  cough: "🤧",
+  sigh: "😮‍💨",
+  laugh: "😄",
+  breathe: "💨",
+  clear_throat: "😤",
+  yawn: "🥱",
+};
 
 const DEFAULT_OPTIONS: InlineFormattingOptions = {
   boldClassName: "font-bold text-white",
@@ -16,6 +35,7 @@ const DEFAULT_OPTIONS: InlineFormattingOptions = {
   codeClassName: "bg-zinc-800/50 px-1.5 py-0.5 rounded text-[13px] font-mono text-violet-300 border border-zinc-700/50",
   strikethroughClassName: "line-through text-zinc-400",
   mentionClassName: "inline-flex items-center bg-violet-500/20 text-violet-300 px-1 rounded font-medium",
+  emotionClassName: "inline-block align-middle",
 };
 
 /**
@@ -36,6 +56,7 @@ export function parseInlineFormatting(
     { regex: /`(.*?)`/g, type: "code" as const },
     { regex: /~~(.*?)~~/g, type: "strikethrough" as const },
     { regex: /@([\w\u4e00-\u9fff\- ]+?)(?=[\s,.!?;:"')\]]|$)/g, type: "mention" as const },
+    { regex: /\[([a-z_]+)\]/gi, type: "emotion" as const },
   ];
 
   const matches: Array<{ start: number; end: number; type: string; content: string }> = [];
@@ -98,6 +119,17 @@ export function parseInlineFormatting(
         <span key={`m-${i}`} className={opts.mentionClassName}>
           @{match.content}
         </span>
+      );
+    } else if (match.type === "emotion") {
+      const emoji = EMOTION_EMOJI[match.content.toLowerCase()];
+      parts.push(
+        emoji != null ? (
+          <span key={`e-${i}`} className={opts.emotionClassName} aria-label={match.content}>
+            {emoji}
+          </span>
+        ) : (
+          <span key={`e-${i}`}>[{match.content}]</span>
+        )
       );
     }
     currentIndex = match.end;

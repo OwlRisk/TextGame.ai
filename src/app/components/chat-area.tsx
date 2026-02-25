@@ -14,27 +14,9 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
-import { parseInlineFormatting } from "@/lib/format-message";
+import { parseInlineFormatting, EMOTION_EMOJI } from "@/lib/format-message";
 
 // Format message content with markdown-like syntax
-
-/** Map from Inworld emotion/sound tag name → display emoji */
-const EMOTION_EMOJI: Record<string, string> = {
-  angry:       '😠',
-  happy:       '😊',
-  sad:         '😢',
-  surprised:   '😲',
-  fearful:     '😨',
-  disgusted:   '🤢',
-  laughing:    '😂',
-  whispering:  '🤫',
-  cough:       '🤧',
-  sigh:        '😮‍💨',
-  laugh:       '😄',
-  breathe:     '💨',
-  clear_throat:'😤',
-  yawn:        '🥱',
-};
 
 /** Replace Inworld emotion/sound tags with their corresponding emoji in display text.
  *  Tags are preserved in the raw content sent to TTS. Unknown tags are stripped. */
@@ -350,6 +332,8 @@ export function ChatArea({
   const displayedContentRef = useRef<Map<string, string>>(new Map());
   // Bumped each time a sentence is revealed, to trigger a re-render.
   const [revealTick, setRevealTick] = useState(0);
+  // Timeout fallback: if TTS doesn't reveal content in time, show full text so the page doesn't appear stuck.
+  const ttsFallbackTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Assign voice by gender + personality similarity (host and each player get a matching voice)
   const voiceIdForMessage = useCallback(
@@ -436,8 +420,53 @@ export function ChatArea({
       ttsProgressRef.current.clear();
       ttsCompletedRef.current.clear();
       displayedContentRef.current.clear();
+      ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
+      ttsFallbackTimeoutsRef.current.clear();
     }
   }, [voiceEnabled, stopInworldTTS]);
+
+  // If TTS doesn't reveal content within 8s, show full text so the page doesn't appear stuck.
+  const TTS_FALLBACK_MS = 8000;
+  useEffect(() => {
+    if (!voiceEnabled || !inworldTTSSupported) return;
+    const timeouts = ttsFallbackTimeoutsRef.current;
+    const liveIds = new Set(messages.map((m) => m.id));
+    for (const m of messages) {
+      if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+      const raw = (m.content ?? '').trim();
+      if (!raw) continue;
+      const displayed = displayedContentRef.current.get(m.id) ?? '';
+      if (displayed.length >= raw.length) {
+        const t = timeouts.get(m.id);
+        if (t) {
+          clearTimeout(t);
+          timeouts.delete(m.id);
+        }
+        continue;
+      }
+      if (timeouts.has(m.id)) continue;
+      const messageId = m.id;
+      const fullText = raw;
+      timeouts.set(
+        messageId,
+        setTimeout(() => {
+          timeouts.delete(messageId);
+          const cur = displayedContentRef.current.get(messageId) ?? '';
+          if (cur.length < fullText.length) {
+            displayedContentRef.current.set(messageId, fullText);
+            setRevealTick((t) => t + 1);
+          }
+        }, TTS_FALLBACK_MS)
+      );
+    }
+    for (const [id, t] of timeouts) {
+      if (!liveIds.has(id)) {
+        clearTimeout(t);
+        timeouts.delete(id);
+      }
+    }
+    return () => {};
+  }, [voiceEnabled, inworldTTSSupported, messages, revealTick]);
 
   // Stop TTS when switching to a different game
   useEffect(() => {
@@ -445,6 +474,8 @@ export function ChatArea({
     ttsProgressRef.current.clear();
     displayedContentRef.current.clear();
     ttsCompletedRef.current.clear();
+    ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
+    ttsFallbackTimeoutsRef.current.clear();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
