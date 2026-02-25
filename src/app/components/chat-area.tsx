@@ -296,8 +296,7 @@ export function ChatArea({
   const mentionMatches = useMemo(() => {
     if (mentionQuery === null) return [];
     return players
-      .filter(p => !p.isGameMaster && p.id !== userId && p.name.toLowerCase().includes(mentionQuery.toLowerCase()))
-      .slice(0, 6);
+      .filter(p => !p.isGameMaster && p.id !== userId && p.name.toLowerCase().includes(mentionQuery.toLowerCase()));
   }, [mentionQuery, players, userId]);
 
   const commandMatches = useMemo(() => {
@@ -1055,7 +1054,7 @@ export function ChatArea({
             <div className="relative flex-1 min-w-0">
               {/* @ mention / / command popup */}
               {showPopup && (
-                <div className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl z-50">
+                <div className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-y-auto shadow-2xl z-50 max-h-52">
                   {mentionQuery !== null ? (
                     mentionMatches.map((player, i) => (
                       <button
