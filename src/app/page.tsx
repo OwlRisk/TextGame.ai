@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
-import { WelcomePage } from "@/app/components/welcome-page";
 import { LandingPage } from "@/app/components/landing-page";
 import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
@@ -15,12 +14,19 @@ export default function HomePage() {
   const { selectGame, games, updateGame } = useGameContext();
   const { user, loading, signInWithGoogle } = useAuth();
 
+  // Only show the landing page after the client has confirmed the visitor is
+  // a guest. Initialising to false (not shown during SSR / hydration) prevents
+  // any 1-frame flash of the landing page that logged-in users could see.
+  const [showLanding, setShowLanding] = useState(false);
+
   useEffect(() => {
     if (!loading && user) {
       router.replace("/create");
       return;
     }
     selectGame(null);
+    // Show the landing page only once we know for sure the user is not logged in.
+    setShowLanding(!loading && !user);
   }, [loading, user, router, selectGame]);
 
   const handleCreateGame = (presetId?: string) => {
@@ -34,8 +40,6 @@ export default function HomePage() {
   const handleExploreGames = () => {
     router.push("/discover");
   };
-
-  const isGuest = !user && !loading;
 
   const handleSignIn = async () => {
     try {
@@ -55,12 +59,12 @@ export default function HomePage() {
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      {loading || user ? null : (
+      {showLanding ? (
         <LandingPage
           onSignIn={handleSignIn}
           onExploreGames={handleExploreGames}
         />
-      )}
+      ) : null}
 
       <Toaster
         position="top-right"
