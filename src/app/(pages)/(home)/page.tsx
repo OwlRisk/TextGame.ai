@@ -55,14 +55,10 @@ export default function HomePage() {
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center gap-2 text-zinc-500">
-          <span className="text-sm">Loading…</span>
-        </div>
-      ) : isGuest ? (
+      {/* While auth is loading OR user is logged in (about to redirect), render nothing
+          to avoid flashing the landing page or welcome page as a transition. */}
+      {loading || user ? null : (
         <LandingPage onSignIn={handleSignIn} onExploreGames={handleExploreGames} />
-      ) : (
-        <WelcomePage onCreateGame={handleCreateGame} onExploreGames={handleExploreGames} user={user} loading={loading} games={games} />
       )}
       <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
     </AppLayoutWithSidebar>

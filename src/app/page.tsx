@@ -55,22 +55,10 @@ export default function HomePage() {
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center gap-2 text-zinc-500">
-          <span className="text-sm">Loading…</span>
-        </div>
-      ) : isGuest ? (
+      {loading || user ? null : (
         <LandingPage
           onSignIn={handleSignIn}
           onExploreGames={handleExploreGames}
-        />
-      ) : (
-        <WelcomePage
-          onCreateGame={handleCreateGame}
-          onExploreGames={handleExploreGames}
-          user={user}
-          loading={loading}
-          games={games}
         />
       )}
 
