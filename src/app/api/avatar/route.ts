@@ -10,6 +10,30 @@ import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
 export const maxDuration = 60;
 
+/** GET /api/avatar - quick config health-check (no auth required) */
+export async function GET() {
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  const hasReplicate = Boolean(process.env.REPLICATE_API_TOKEN);
+  const hasSupabaseUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+  const model = (process.env.AVATAR_GENERATION_MODEL?.toLowerCase() === 'flux' ||
+    process.env.AVATAR_GENERATION_MODEL?.toLowerCase() === 'stable-diffusion')
+    ? process.env.AVATAR_GENERATION_MODEL
+    : 'dalle-3';
+
+  const ok = model === 'dalle-3' ? hasOpenAI : hasReplicate;
+  return NextResponse.json({
+    ok,
+    model,
+    OPENAI_API_KEY: hasOpenAI ? 'set' : 'MISSING ❌',
+    REPLICATE_API_TOKEN: hasReplicate ? 'set' : 'not set',
+    NEXT_PUBLIC_SUPABASE_URL: hasSupabaseUrl ? 'set' : 'MISSING ❌',
+    SUPABASE_SERVICE_ROLE_KEY: hasServiceRole ? 'set' : 'MISSING ❌',
+    DATABASE_URL: hasDatabaseUrl ? 'set' : 'not set',
+  }, { status: ok ? 200 : 503 });
+}
+
 const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 64;
 

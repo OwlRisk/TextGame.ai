@@ -29,3 +29,10 @@ export const pool = new Pool({
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 5000,
 });
+
+// Prevent unhandled 'error' events from crashing the serverless function.
+// Without this listener, idle-client errors cause Node.js to throw an uncaught
+// exception which Vercel/AWS Lambda handles as a 503.
+pool.on('error', (err) => {
+  console.error('[pg-pool] Idle client error (non-fatal):', err.message);
+});
