@@ -25,6 +25,7 @@ const connectionString = rawUrl ? buildConnectionString(rawUrl) : undefined;
 export const pool = new Pool({
   connectionString,
   ssl: connectionString ? { rejectUnauthorized: false } : undefined,
-  max: 10,
-  idleTimeoutMillis: 30000,
+  max: 3,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 5000,
 });

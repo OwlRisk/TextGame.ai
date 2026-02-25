@@ -8,6 +8,8 @@ import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
+export const maxDuration = 60;
+
 const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 64;
 

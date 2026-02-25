@@ -45,11 +45,13 @@ function getLocalCachedSession(): { user: User | null; session: Session | null }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const localCache = getLocalCachedSession();
-  const [user, setUser] = useState<User | null>(localCache.user);
-  const [session, setSession] = useState<Session | null>(localCache.session);
-  // If we have a valid cached session, skip the loading spinner entirely.
-  const [loading, setLoading] = useState(localCache.user === null);
+  // Always start with server-compatible initial values to avoid React hydration
+  // mismatch (#418). localStorage is only accessible on the client, so reading it
+  // during the initial render would produce different values on server vs client.
+  // We apply the cached session in a useEffect (runs only on client, after hydration).
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const doSignOut = useCallback(async () => {
@@ -86,6 +88,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthCookie(null);
     setUser(null);
     setSession(null);
+  }, []);
+
+  useEffect(() => {
+    // Apply the localStorage cache immediately on mount (client-only) so the UI
+    // doesn't show a loading spinner for users who already have a valid session.
+    // This runs after hydration so it never causes a server/client HTML mismatch.
+    const cached = getLocalCachedSession();
+    if (cached.user) {
+      setUser(cached.user);
+      setSession(cached.session);
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
