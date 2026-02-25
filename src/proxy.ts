@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Middleware runs on the Edge before any page is rendered.
+ * Proxy runs before any page is rendered.
  * If the user has a valid auth cookie and visits the root path,
  * redirect them server-side to /create so no login-page flash occurs.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only intercept the root path
