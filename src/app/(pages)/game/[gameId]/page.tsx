@@ -864,15 +864,30 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {selectedChannelId === "rules" ? (
           <ScrollArea className="flex-1 p-6">
-            <div className="prose prose-invert max-w-none">
+            <div className="prose prose-invert max-w-none space-y-6">
               {(currentGame?.config?.rules ?? "").trim() ? (
                 <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
                   {currentGame?.config?.rules}
                 </pre>
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
+                <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
                   <p className="text-sm font-medium">No rules defined for this game.</p>
                   <p className="text-xs mt-1">The Game Master can add rules when creating the game.</p>
+                </div>
+              )}
+
+              {/* Slash commands section */}
+              {(currentGame?.config?.slashCommands ?? []).length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">Available Commands</h3>
+                  <div className="grid gap-1.5">
+                    {(currentGame!.config.slashCommands!).map(({ cmd, hint }) => (
+                      <div key={cmd} className="flex items-center gap-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-3 py-2">
+                        <span className="font-mono font-semibold text-amber-400 text-sm shrink-0">{cmd}</span>
+                        <span className="text-zinc-400 text-sm">{hint}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
