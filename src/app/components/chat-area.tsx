@@ -328,6 +328,8 @@ export function ChatArea({
   const ttsProgressRef = useRef<Map<string, number>>(new Map());
   // IDs of messages fully handed off to TTS (prevents double-play after streaming ends)
   const ttsCompletedRef = useRef<Set<string>>(new Set());
+  // Message IDs present on first run — cached/history; do not play TTS for these, only for new ones.
+  const initialMessageIdsRef = useRef<Set<string> | null>(null);
   // Text revealed so far per AI message — grows sentence-by-sentence as TTS plays.
   const displayedContentRef = useRef<Map<string, string>>(new Map());
   // Bumped each time a sentence is revealed, to trigger a re-render.
@@ -371,10 +373,26 @@ export function ChatArea({
 
   // Streaming-aware TTS: queue sentences as they form during streaming,
   // then flush any remainder when the message completes.
+  // Only play TTS for messages that appear after mount (new); cached/history messages are skipped.
   useEffect(() => {
     if (!voiceEnabled || !inworldTTSSupported) return;
+
+    // First time this effect runs: record current message IDs as "initial" (cached/history).
+    // Those will not be read aloud; only messages added later get TTS.
+    if (initialMessageIdsRef.current === null) {
+      initialMessageIdsRef.current = new Set(messages.map((m) => m.id));
+      for (const m of messages) {
+        if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+        ttsCompletedRef.current.add(m.id);
+        displayedContentRef.current.set(m.id, (m.content || '').trim());
+      }
+      setRevealTick((t) => t + 1);
+      return;
+    }
+
     for (const m of messages) {
       if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+      if (initialMessageIdsRef.current.has(m.id)) continue; // cached message, never play TTS
       if (ttsCompletedRef.current.has(m.id)) continue;
       const content = (m.content || '').trim();
       if (!content) continue;
@@ -468,9 +486,10 @@ export function ChatArea({
     return () => {};
   }, [voiceEnabled, inworldTTSSupported, messages, revealTick]);
 
-  // Stop TTS when switching to a different game
+  // Stop TTS when switching to a different game; reset "initial messages" so the new room gets correct cache vs new behavior
   useEffect(() => {
     stopInworldTTS();
+    initialMessageIdsRef.current = null;
     ttsProgressRef.current.clear();
     displayedContentRef.current.clear();
     ttsCompletedRef.current.clear();
