@@ -366,25 +366,30 @@ export async function POST(request: NextRequest) {
       }
     }
     // Check and deduct tokens only when the database is configured.
-    // If DATABASE_URL is not set we skip token tracking and allow generation so the
-    // app still works in deployments that haven't set up the token DB.
+    // If DATABASE_URL is not set, or if the token tables haven't been migrated yet,
+    // skip token tracking and allow generation so the app works regardless.
     if (isDatabaseConfigured()) {
-      const hasTokens = await deductTokens(
-        user.id,
-        TOKEN_COSTS.GENERATE_AVATAR,
-        'image_generation',
-        `Generate avatar for ${name} (${avatarType})`
-      );
-
-      if (!hasTokens) {
-        return NextResponse.json(
-          {
-            error: 'Insufficient tokens',
-            message: 'You need more tokens to generate avatars. Please purchase tokens or upgrade to Pro.',
-            code: 'INSUFFICIENT_TOKENS',
-          },
-          { status: 402 }
+      try {
+        const hasTokens = await deductTokens(
+          user.id,
+          TOKEN_COSTS.GENERATE_AVATAR,
+          'image_generation',
+          `Generate avatar for ${name} (${avatarType})`
         );
+
+        if (!hasTokens) {
+          return NextResponse.json(
+            {
+              error: 'Insufficient tokens',
+              message: 'You need more tokens to generate avatars. Please purchase tokens or upgrade to Pro.',
+              code: 'INSUFFICIENT_TOKENS',
+            },
+            { status: 402 }
+          );
+        }
+      } catch (tokenErr) {
+        // Token table may not exist yet (migrations not run) — log and proceed.
+        console.warn('[Avatar API] Token deduction failed (DB schema not ready?), generating anyway:', tokenErr);
       }
     } else {
       console.warn('[Avatar API] DATABASE_URL not configured — skipping token check, generating anyway.');
