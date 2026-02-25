@@ -94,6 +94,14 @@ export const DEFAULT_SLASH_COMMANDS: Record<string, Array<{ cmd: string; hint: s
   custom: [],
 };
 
+/** Format slash commands for display in GM confirmation messages */
+function formatCommandsBlock(templateId: string): string {
+  const cmds = DEFAULT_SLASH_COMMANDS[templateId];
+  if (!cmds || cmds.length === 0) return "";
+  const lines = cmds.map(c => `  ${c.cmd} — ${c.hint}`).join("\n");
+  return `**Chat Commands:**\n${lines}\n\n`;
+}
+
 const GAME_TEMPLATES: GameTemplate[] = [
   {
     id: "werewolf",
@@ -384,6 +392,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             `**Game Type:** ${selectedTemplate!.name}\n` +
             `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
+            formatCommandsBlock(selectedTemplate!.id) +
             `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
           );
@@ -425,6 +434,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             `**Game Type:** ${selectedTemplate!.name}\n` +
             `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:**\n${finalRules}\n\n` +
+            formatCommandsBlock(selectedTemplate!.id) +
             `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
           );
