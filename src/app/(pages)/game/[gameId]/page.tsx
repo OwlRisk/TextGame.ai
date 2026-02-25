@@ -119,11 +119,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     selectGame(gameId);
   }, [gameId, selectGame]);
 
-  // If game is not in my list but has a share link, load it so "Open in GameMaster" from /play/[token] works
+  // If game is not in my list but has a share link, load it so "Open in GameMaster" from /play/[token] works.
+  // Wait until gamesLoading is done before deciding the game is truly absent (avoids spurious 404 for owners).
   const [sharedLoadPending, setSharedLoadPending] = useState(false);
   const sharedLoadTriedRef = useRef(false);
   useEffect(() => {
     if (gamesLoading || currentGame || !gameId || sharedLoadTriedRef.current) return;
+    // Only attempt after games have loaded and game is still missing
     sharedLoadTriedRef.current = true;
     setSharedLoadPending(true);
     fetch(`/api/games/${gameId}/public`)
@@ -356,7 +358,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           ? "#0ea5e9"
           : "#ec4899";
       const aiOnly = players.filter((p) => p.isAI && !p.isGameMaster);
-      const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results. Keep replies short and in character.
+      const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
+
+REPLY LENGTH — STRICT LIMIT: Keep every reply under 80 words. Be concise and punchy. Do NOT write long paragraphs or exhaustive explanations. One clear action or question per reply. If you have more to say, spread it across future turns.
 
 When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
 
@@ -446,7 +450,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             body: JSON.stringify({
               systemPrompt: hostSystemPrompt,
               messages: [{ role: "user", content: userContent }],
-              maxCompletionTokens: 500,
+              maxCompletionTokens: 220,
             }),
           });
           if (!res.ok || !res.body) {
