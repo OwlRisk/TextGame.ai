@@ -965,6 +965,19 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     const nextGameName = preset.name?.trim() || "";
     const recommendedHost = getDefaultHostForTemplate(resolvedTemplate?.id ?? null);
 
+    const templateName = resolvedTemplate?.name ?? preset.name ?? "this game";
+    const presetWelcomeContent =
+      `You've chosen **${templateName}**. The rules are set in the panel on the right—you can edit them there if you like. ` +
+      (nextPlayerCount > 0
+        ? `We're set for ${nextPlayerCount + 1} players (including you). Say how you'd like to adjust, or "create game" when ready.`
+        : "Tell me how many players you want, or say \"create game\" when you're ready.");
+    const presetWelcomeMessage: ChatMessage = {
+      id: `msg-preset-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      role: "gm",
+      content: presetWelcomeContent,
+      timestamp: new Date()
+    };
+
     const newSessionId =
       user?.id && typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
@@ -972,7 +985,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     const newSession: GameSession = {
       id: newSessionId,
       title: generateSessionTitle(resolvedTemplate, nextPlayerCount, nextGameName),
-      messages: [],
+      messages: [presetWelcomeMessage],
       conversationState: "greeting",
       selectedTemplate: resolvedTemplate,
       playerCount: nextPlayerCount,
@@ -983,10 +996,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       updatedAt: new Date()
     };
 
+    welcomeRequestedForSessionRef.current = newSessionId;
+    welcomeScheduledForSessionRef.current = newSessionId;
+
     setCurrentSessionId(newSessionId);
-    setMessages([]);
+    setMessages([presetWelcomeMessage]);
     setConversationState("greeting");
-    setIsGMTyping(true);
+    setIsGMTyping(false);
     setSelectedTemplate(resolvedTemplate);
     setPlayerCount(nextPlayerCount);
     setCustomRules(nextRules);
@@ -994,6 +1010,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setSelectedHostId(recommendedHost.id);
 
     if (user?.id) {
+      const messagesForDb = [presetWelcomeMessage].map((m) => ({
+        ...m,
+        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : (m.timestamp as unknown as string)
+      }));
       createGameSession({
         id: newSessionId,
         user_id: user.id,
@@ -1004,7 +1024,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         player_count: nextPlayerCount,
         custom_rules: nextRules,
         conversation_state: "greeting",
-        messages: []
+        messages: messagesForDb
       }).then(({ error }) => {
         if (error) console.error("[Game Master] Failed to create session in DB:", error);
       });
