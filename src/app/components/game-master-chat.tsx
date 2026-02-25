@@ -546,8 +546,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     const content = lastMsg.content.trim().slice(0, 500);
     if (content === lastGMContentForSuggestionsRef.current) return;
     lastGMContentForSuggestionsRef.current = content;
+    setLlmQuickReplies([]); // New GM message: clear old suggestions; displayChips will show suggestionChips until API returns
 
-    setLlmQuickReplies([]);
     const lang = /[\u4e00-\u9fff]/.test(content) ? "zh" : "en";
     fetch("/api/suggest-gm-replies", {
       method: "POST",
@@ -569,17 +569,24 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   /** Max number of quick-reply chips to show */
   const MAX_DISPLAY_CHIPS = 3;
 
-  /** Chips to show: entirely decided by AI (count and content); use only LLM suggestions, no fallback; truncate to max. */
+  /** Chips to show: LLM suggestions when available, else parsed/default chips so they don't flash away. */
   const displayChips = useMemo(() => {
-    return llmQuickReplies.slice(0, MAX_DISPLAY_CHIPS).map((text) => {
-      const clean = stripChipLabel(text);
-      return {
-        label: clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean,
-        value: clean,
-        fullLabel: clean.length > 52 ? clean : undefined,
-      };
-    });
-  }, [llmQuickReplies]);
+    if (llmQuickReplies.length > 0) {
+      return llmQuickReplies.slice(0, MAX_DISPLAY_CHIPS).map((text) => {
+        const clean = stripChipLabel(text);
+        return {
+          label: clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean,
+          value: clean,
+          fullLabel: clean.length > 52 ? clean : undefined,
+        };
+      });
+    }
+    return suggestionChips.slice(0, MAX_DISPLAY_CHIPS).map((c) => ({
+      label: c.label,
+      value: c.value,
+      fullLabel: c.fullLabel,
+    }));
+  }, [llmQuickReplies, suggestionChips]);
 
   // Only render client-only UI after mount to avoid hydration mismatch.
   const [mounted, setMounted] = useState(false);
