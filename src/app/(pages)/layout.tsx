@@ -42,10 +42,12 @@ export default function PagesLayout({
   }
 
   const mobileTitle = getMobileTitle(pathname ?? "");
+  const isGamePage = (pathname ?? "").startsWith("/game/");
 
   return (
     <AppLayoutWithSidebar
       mobileTitle={mobileTitle}
+      hideMobileHeader={isGamePage}
       games={games}
       selectedGameId={selectedGameId}
       onSelectGame={(gameId) => selectGame(gameId)}

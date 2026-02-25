@@ -18,6 +18,8 @@ interface Game {
 interface AppLayoutWithSidebarProps {
   /** 移动端顶栏标题 */
   mobileTitle?: string;
+  /** 当子页面有自己的移动端顶栏时（如游戏房间），隐藏此处的顶栏避免重复 */
+  hideMobileHeader?: boolean;
   games: Game[];
   selectedGameId: string | null;
   onSelectGame: (gameId: string) => void;
@@ -29,6 +31,7 @@ interface AppLayoutWithSidebarProps {
 
 export function AppLayoutWithSidebar({
   mobileTitle = "Menu",
+  hideMobileHeader = false,
   games,
   selectedGameId,
   onSelectGame,
@@ -50,7 +53,7 @@ export function AppLayoutWithSidebar({
 
   return (
     <div className="h-screen flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
-      <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95">
+      <header className={`${hideMobileHeader ? "hidden" : "md:hidden"} flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95`}>
         <Button
           variant="ghost"
           size="icon"
