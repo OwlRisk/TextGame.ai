@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, Settings } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, Settings, RefreshCw } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -13,6 +13,7 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/app/components/ui/context-menu";
 import {
@@ -281,6 +282,21 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     </Tooltip>
                   </ContextMenuTrigger>
                   <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                    {onUpdateGame && (
+                      <ContextMenuItem
+                        className="cursor-pointer focus:bg-zinc-700"
+                        disabled={iconGeneratingId === game.id}
+                        onClick={() => handleGenerateIcon(game)}
+                      >
+                        {iconGeneratingId === game.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                        )}
+                        Regenerate Icon
+                      </ContextMenuItem>
+                    )}
+                    {onUpdateGame && <ContextMenuSeparator className="bg-zinc-700" />}
                     <ContextMenuItem 
                       className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                       onClick={() => {
