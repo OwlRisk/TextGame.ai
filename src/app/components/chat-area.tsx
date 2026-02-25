@@ -285,6 +285,15 @@ export function ChatArea({
   const [commandQuery, setCommandQuery] = useState<string | null>(null);
   const [popupIndex, setPopupIndex] = useState(0);
 
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  // Keep the highlighted item visible when navigating with arrow keys
+  useEffect(() => {
+    if (!popupRef.current) return;
+    const active = popupRef.current.querySelector<HTMLElement>('[data-selected="true"]');
+    active?.scrollIntoView({ block: 'nearest' });
+  }, [popupIndex]);
+
   const SLASH_COMMANDS = useMemo(() => [
     { cmd: '/vote',   hint: 'Vote to eliminate a player', template: '/vote '   },
     { cmd: '/role',   hint: 'Check your current role',    template: '/role'    },
@@ -1054,12 +1063,13 @@ export function ChatArea({
             <div className="relative flex-1 min-w-0">
               {/* @ mention / / command popup */}
               {showPopup && (
-                <div className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-y-auto shadow-2xl z-50 max-h-52">
+                <div ref={popupRef} className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-y-auto shadow-2xl z-50 max-h-52">
                   {mentionQuery !== null ? (
                     mentionMatches.map((player, i) => (
                       <button
                         key={player.id}
                         type="button"
+                        data-selected={i === popupIndex ? "true" : undefined}
                         onMouseDown={(e) => { e.preventDefault(); applyMention(player); }}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? 'bg-violet-600 text-white' : 'text-zinc-200 hover:bg-zinc-800'}`}
                       >
@@ -1073,6 +1083,7 @@ export function ChatArea({
                       <button
                         key={cmd.cmd}
                         type="button"
+                        data-selected={i === popupIndex ? "true" : undefined}
                         onMouseDown={(e) => { e.preventDefault(); applyCommand(cmd); }}
                         className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? 'bg-violet-600 text-white' : 'text-zinc-200 hover:bg-zinc-800'}`}
                       >
