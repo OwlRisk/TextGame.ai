@@ -34,13 +34,16 @@ async function seedInitialPlayerReplies(
     rules?: string;
     addMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; content: string; isAI: boolean }, channelId: string) => void;
     sessionToken: string | undefined;
+    /** Return true to abort (e.g. gameId changed, component unmounted). */
+    isCancelled?: () => boolean;
   }
 ) {
-  const { channelId, hostName, hostContent, aiPlayers, gameName, rules, addMessage, sessionToken } = opts;
+  const { channelId, hostName, hostContent, aiPlayers, gameName, rules, addMessage, sessionToken, isCancelled } = opts;
   if (!sessionToken || aiPlayers.length === 0) return;
   const toReply = aiPlayers.slice(0, INITIAL_PLAYER_REPLIES);
   const recent = [{ senderName: hostName, content: hostContent }];
   for (const player of toReply) {
+    if (isCancelled?.()) return;
     try {
       const res = await fetch("/api/chat/player-speak", {
         method: "POST",
@@ -52,10 +55,10 @@ async function seedInitialPlayerReplies(
           recentMessages: recent,
         }),
       });
-      if (!res.ok) continue;
+      if (!res.ok || isCancelled?.()) continue;
       const data = (await res.json()) as { message?: string };
       const text = (data.message ?? "").trim();
-      if (text) {
+      if (text && !isCancelled?.()) {
         addMessage(
           { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", content: text, isAI: true },
           channelId
@@ -104,6 +107,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const { gameId } = use(params);
   const pathname = usePathname();
+
+  // Cancels seedInitialPlayerReplies when gameId changes or component unmounts
+  const seedCancelledRef = useRef(false);
+  useEffect(() => {
+    seedCancelledRef.current = false;
+    return () => { seedCancelledRef.current = true; };
+  }, [gameId]);
 
   /** 移动端左侧抽屉：'app' 应用导航 | 'channels' 频道列表 */
   const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
@@ -157,8 +167,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
   }, [currentGame?.config?.channels, selectedChannelId, setSelectedChannelId]);
 
-  // Initialize game room only if there's no saved state
+  // Initialize game room only if there's no saved state.
+  // CRITICAL: wait until room state has loaded (isRoomLoading=false) OR we already have
+  // players from the local-first cache (players.length > 0).
+  // Without this guard, a race condition causes initializeGame() to fire for existing rooms
+  // when currentGame loads before the DB/localStorage state arrives — flooding the room with
+  // duplicate "initial greeting" messages on every visit from a new device / cleared cache.
   useEffect(() => {
+    // If still loading and nothing cached yet, wait — we can't tell if it's a new or existing room.
+    if (isRoomLoading && players.length === 0) return;
+
     // Check if we have a saved game room in localStorage
     const hasSavedState = (() => {
       try {
@@ -178,13 +196,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       initializeGame();
       setIsInitialized(true);
     } else if (!isInitialized && players.length > 0) {
-      // If players loaded from saved state, mark as initialized
+      // Players came from saved state (DB or localStorage) — mark initialized, don't re-init
       setIsInitialized(true);
     }
-  }, [currentGame, isInitialized, players.length, gameId]);
+  }, [currentGame, isInitialized, players.length, gameId, isRoomLoading]);
 
-  // Fetch human in-game identity when missing (persisted with room state)
+  // Fetch human in-game identity when missing (persisted with room state).
+  // Wait for room to load first — if the room has a saved identity we must not overwrite it.
   useEffect(() => {
+    if (isRoomLoading) return; // wait for saved identity to arrive from DB/cache
     if (!currentGame?.config || !session?.access_token || humanGameIdentity !== null) return;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     headers["Authorization"] = `Bearer ${session.access_token}`;
@@ -202,7 +222,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         setHumanGameIdentity({ name });
       })
       .catch(() => setHumanGameIdentity({ name: "Player" }));
-  }, [currentGame?.id, currentGame?.name, currentGame?.config?.rules, session?.access_token, humanGameIdentity, setHumanGameIdentity]);
+  }, [isRoomLoading, currentGame?.id, currentGame?.name, currentGame?.config?.rules, session?.access_token, humanGameIdentity, setHumanGameIdentity]);
 
   // When humanGameIdentity or session changes, sync human player display name
   useEffect(() => {
@@ -316,6 +336,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       rules: config.rules,
       addMessage,
       sessionToken: session?.access_token,
+      isCancelled: () => seedCancelledRef.current,
     }).catch((e) => console.warn("Initial player replies failed", e));
   };
 
