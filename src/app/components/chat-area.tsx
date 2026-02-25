@@ -621,7 +621,12 @@ export function ChatArea({
                         </span>
                       </div>
                       <div className="text-violet-100 text-sm leading-[1.65] break-words">
-                        {syncedContent.trim() ? formatMessage(stripEmotionTags(syncedContent)) : !message.isStreaming ? <span className="italic text-violet-400/60">(No content)</span> : null}
+                        {(() => {
+                          const waitingForTTS = voiceEnabled && inworldTTSSupported && message.isAI && !message.isStreaming && syncedContent === '' && rawContent !== '';
+                          if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
+                          if (waitingForTTS) return <span className="inline-flex gap-1 items-center opacity-40 mt-0.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{animationDelay:'0ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{animationDelay:'150ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{animationDelay:'300ms'}} /></span>;
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -716,8 +721,15 @@ export function ChatArea({
                             <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                           </div>
                         )}
-                        {syncedContent.trim() ? formatMessage(stripEmotionTags(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
-                        {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length < rawContent.length)) && (
+                        {(() => {
+                          const waitingForTTS = voiceEnabled && inworldTTSSupported && message.isAI && !message.isStreaming && syncedContent === '' && rawContent !== '';
+                          const activeTTS = voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length > 0 && syncedContent.length < rawContent.length;
+                          if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
+                          if (waitingForTTS) return <span className="inline-flex gap-1 items-center opacity-40 mt-0.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'0ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'150ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'300ms'}} /></span>;
+                          if (!message.isAI && !message.imageUrl && !message.isStreaming) return <span className="italic text-zinc-500">(No content)</span>;
+                          return null;
+                        })()}
+                        {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length > 0 && syncedContent.length < rawContent.length)) && (
                           <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                         )}
                       </div>
@@ -733,9 +745,15 @@ export function ChatArea({
                           <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
                         </div>
                       )}
-                      {syncedContent.trim() ? formatMessage(stripEmotionTags(syncedContent)) : (!message.imageUrl && !message.isStreaming) ? <span className="italic text-zinc-500">(No content)</span> : null}
-                      {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length < rawContent.length)) && (
-                          <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
+                      {(() => {
+                        const waitingForTTS = voiceEnabled && inworldTTSSupported && message.isAI && !message.isStreaming && syncedContent === '' && rawContent !== '';
+                        if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
+                        if (waitingForTTS) return <span className="inline-flex gap-1 items-center opacity-40 mt-0.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'0ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'150ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'300ms'}} /></span>;
+                        if (!message.isAI && !message.imageUrl && !message.isStreaming) return <span className="italic text-zinc-500">(No content)</span>;
+                        return null;
+                      })()}
+                      {(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length > 0 && syncedContent.length < rawContent.length)) && (
+                        <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
                       )}
                     </div>
                   </div>
