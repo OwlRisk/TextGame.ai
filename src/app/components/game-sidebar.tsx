@@ -99,7 +99,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
   useEffect(() => {
     if (!onUpdateGame || iconGeneratingId !== null) return;
     const needIcon = games.find(
-      (g) => !g.icon.startsWith("data:image") && !autoIconRequestedRef.current.has(g.id)
+      (g) => !g.icon.startsWith("data:image") && !g.icon.startsWith("http") && !autoIconRequestedRef.current.has(g.id)
     );
     if (!needIcon) return;
     autoIconRequestedRef.current.add(needIcon.id);
@@ -249,14 +249,14 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                                 selectedGameId === game.id
                                   ? "rounded-xl"
                                   : "hover:rounded-xl"
-                              } ${game.icon.startsWith('data:image') ? 'p-0' : ''}`}
+                              } ${(game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? 'p-0' : ''}`}
                               style={{ 
-                                backgroundColor: game.icon.startsWith('data:image') ? 'transparent' : game.color,
+                                backgroundColor: (game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? 'transparent' : game.color,
                               }}
                             >
                             {iconGeneratingId === game.id ? (
                               <Loader2 className="size-7 text-white animate-spin" />
-                            ) : game.icon.startsWith('data:image') ? (
+                            ) : (game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
                               <img 
                                 src={game.icon} 
                                 alt={game.name}
