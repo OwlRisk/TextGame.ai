@@ -388,7 +388,14 @@ export function useInworldTTS() {
       await new Promise<void>((resolve, reject) => {
         audio.onended = () => resolve();
         audio.onerror = () => reject(new Error('Playback failed'));
-        audio.play().catch(reject);
+        audio.play().catch((err: unknown) => {
+          // Browser autoplay policy: silently skip audio when user hasn't interacted yet.
+          if (err instanceof Error && err.name === 'NotAllowedError') {
+            resolve();
+          } else {
+            reject(err);
+          }
+        });
       });
     } catch (e) {
       console.warn('[Inworld TTS]', e);
