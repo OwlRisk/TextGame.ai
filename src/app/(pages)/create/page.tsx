@@ -132,6 +132,7 @@ function CreateGamePageContent() {
             : "#ec4899",
         config: finalConfig,
         isActive: false,
+        updatedAt: new Date().toISOString(),
       };
 
       addGame(newGame);

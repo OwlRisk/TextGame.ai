@@ -13,6 +13,8 @@ export interface Game {
   color: string;
   config: GameConfig;
   isActive: boolean;
+  /** ISO date string; used for sorting the list by last update */
+  updatedAt: string;
 }
 
 interface GameContextType {
@@ -27,7 +29,7 @@ interface GameContextType {
   gamesLoading: boolean;
 }
 
-function rowToGame(row: { id: string; name: string; icon: string; color: string; config: unknown; is_active: boolean }): Game {
+function rowToGame(row: { id: string; name: string; icon: string; color: string; config: unknown; is_active: boolean; updated_at?: string }): Game {
   return {
     id: row.id,
     name: row.name,
@@ -35,7 +37,12 @@ function rowToGame(row: { id: string; name: string; icon: string; color: string;
     color: row.color,
     config: (row.config ?? {}) as GameConfig,
     isActive: row.is_active,
+    updatedAt: row.updated_at ?? new Date().toISOString(),
   };
+}
+
+function sortGamesByUpdatedAt(games: Game[]): Game[] {
+  return [...games].sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1));
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -62,7 +69,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             }
             return;
           }
-          if (data) setGames(data.map(rowToGame));
+          if (data) setGames(sortGamesByUpdatedAt(data.map(rowToGame)));
         })
         .finally(() => {
           setGamesLoading(false);
@@ -74,8 +81,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       try {
         const saved = localStorage.getItem("gamesList");
         if (saved) {
-          const parsedGames = JSON.parse(saved);
-          setGames(parsedGames);
+          const parsedGames = JSON.parse(saved) as Game[];
+          const withUpdatedAt = parsedGames.map((g) => ({
+            ...g,
+            updatedAt: g.updatedAt ?? new Date(0).toISOString(),
+          }));
+          setGames(sortGamesByUpdatedAt(withUpdatedAt));
         }
         const savedSelectedId = localStorage.getItem("selectedGameId");
         if (savedSelectedId) setSelectedGameId(savedSelectedId);
@@ -113,7 +124,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [selectedGameId, isHydrated]);
 
   const addGame = useCallback((game: Game) => {
-    setGames((prev) => [game, ...prev]);
+    const withTime = { ...game, updatedAt: game.updatedAt ?? new Date().toISOString() };
+    setGames((prev) => sortGamesByUpdatedAt([withTime, ...prev]));
     if (user) {
       createGame({
         id: game.id,
@@ -133,8 +145,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const updateGame = useCallback((id: string, updates: Partial<Game>) => {
+    const now = new Date().toISOString();
     setGames((prev) =>
-      prev.map((game) => (game.id === id ? { ...game, ...updates } : game))
+      sortGamesByUpdatedAt(
+        prev.map((game) =>
+          game.id === id ? { ...game, ...updates, updatedAt: now } : game
+        )
+      )
     );
     if (user) {
       const dbUpdates: Record<string, unknown> = {};

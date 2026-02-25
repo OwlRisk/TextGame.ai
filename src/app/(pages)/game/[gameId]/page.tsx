@@ -139,6 +139,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             color: row.color,
             config: row.config ?? {},
             isActive: true,
+            updatedAt: row.updated_at ?? new Date().toISOString(),
           });
         }
       })
