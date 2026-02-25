@@ -450,6 +450,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setGmChannels(null);
   }, [selectedTemplate?.id]);
 
+  /** Static welcome message for new sessions (no LLM call) */
+  const STATIC_WELCOME_CONTENT =
+    "Hi! I'm your Game Master. I'll help you design and create any game—choose a quick option below or describe your idea; the rules panel on the right updates as we talk.";
+
   /** Quick reply chips shown when GM has sent the first message but no A)/B) options were parsed */
   const DEFAULT_FIRST_CHAT_CHIPS: { label: string; value: string; fullLabel?: string }[] = [
     { label: "Werewolf", value: "I want to play Werewolf." },
@@ -908,10 +912,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         ? crypto.randomUUID()
         : `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const defaultHostId = getDefaultHostForTemplate(null).id;
+    const staticWelcomeMessage: ChatMessage = {
+      id: `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      role: "gm",
+      content: STATIC_WELCOME_CONTENT,
+      timestamp: new Date()
+    };
     const newSession: GameSession = {
       id: newSessionId,
       title: "New Game Setup",
-      messages: [],
+      messages: [staticWelcomeMessage],
       conversationState: "greeting",
       selectedTemplate: null,
       playerCount: 6,
@@ -922,10 +932,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       updatedAt: new Date()
     };
 
+    welcomeRequestedForSessionRef.current = newSessionId;
+    welcomeScheduledForSessionRef.current = newSessionId;
     setCurrentSessionId(newSessionId);
-    setMessages([]);
+    setMessages([staticWelcomeMessage]);
     setConversationState("greeting");
-    setIsGMTyping(true);
+    setIsGMTyping(false);
     setSelectedTemplate(null);
     setPlayerCount(6);
     setCustomRules("");
@@ -933,6 +945,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setSelectedHostId(defaultHostId);
 
     if (user?.id) {
+      const messagesForDb = [staticWelcomeMessage].map((m) => ({
+        ...m,
+        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : (m.timestamp as unknown as string)
+      }));
       createGameSession({
         id: newSessionId,
         user_id: user.id,
@@ -943,7 +959,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         player_count: 6,
         custom_rules: "",
         conversation_state: "greeting",
-        messages: []
+        messages: messagesForDb
       }).then(({ error }) => {
         if (error) console.error("[Game Master] Failed to create session in DB:", error);
       });
@@ -1114,157 +1130,27 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   // Ref to avoid requesting welcome twice for the same session
   const welcomeRequestedForSessionRef = useRef<string | null>(null);
-  // Ref to avoid scheduling welcome effect twice when streamWelcomeMessage identity changes
   const welcomeScheduledForSessionRef = useRef<string | null>(null);
   // 从历史列表点进某会话时不要自动发欢迎消息，只对「新建会话」发欢迎
   const didLoadSessionRef = useRef(false);
 
-  // Stream initial greeting from LLM when messages are empty
-  const streamWelcomeMessage = useCallback(() => {
-    if (!currentSessionId || welcomeRequestedForSessionRef.current === currentSessionId) return;
-    welcomeRequestedForSessionRef.current = currentSessionId;
-    welcomeScheduledForSessionRef.current = null;
-
-    const WELCOME_TRIGGER =
-      "The user just opened this chat. Reply with a brief, friendly welcome as the Game Master. " +
-      "Mention that you help design games and that the rules panel on the right updates in real time as you discuss. " +
-      "Keep it to one short paragraph. Do not output any editing tags (no EDIT_RULES, etc.).";
-
-    setIsGMTyping(true);
-    setIsStreaming(true);
-    const tempMessageId = `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-    const tempMessage: ChatMessage = {
-      id: tempMessageId,
-      role: "gm",
-      content: "",
-      timestamp: new Date()
-    };
-    let fullResponse = "";
-    let tempMessageAdded = false;
-
-    const cleanForDisplay = (text: string): string => {
-      return text
-        .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
-        .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
-        .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
-        .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
-        .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
-        .replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '')
-        .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
-        .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
-        .replace(/<EDIT_RULES>[\s\S]*$/i, '')
-        .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
-        .replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '')
-        .trim();
-    };
-
-    streamAIChatResponse(
-      {
-        messages: [{ role: "user", content: WELCOME_TRIGGER, timestamp: new Date() }],
-        gameContext: {
-          template: selectedTemplate?.id,
-          playerCount: playerCount,
-          gameName: gameName || undefined,
-          rules: customRules || selectedTemplate?.defaultRules || undefined,
-          conversationState: "greeting"
-        },
-        maxCompletionTokens: 500,
-        authToken
-      },
-      (chunk: string) => {
-        fullResponse += chunk;
-        const displayContent = cleanForDisplay(fullResponse);
-        setMessages(prev => {
-          const hasTemp = prev.some(m => m.id === tempMessageId);
-          if (!hasTemp && displayContent.trim()) {
-            tempMessageAdded = true;
-            return [...prev, { ...tempMessage, content: displayContent }];
-          }
-          if (hasTemp) {
-            return prev.map(msg =>
-              msg.id === tempMessageId ? { ...msg, content: displayContent } : msg
-            );
-          }
-          return prev;
-        });
-        setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-      },
-      () => {
-        setIsGMTyping(false);
-        setIsStreaming(false);
-        const cleaned = cleanForDisplay(fullResponse);
-        setMessages(prev => {
-          if (!cleaned.trim()) return prev.filter(m => m.id !== tempMessageId);
-          const alreadyHasWelcome = prev.some(
-            m => m.role === "gm" && m.id !== tempMessageId && /welcome|here—welcome|here - welcome/i.test(m.content ?? "")
-          );
-          if (alreadyHasWelcome) return prev.filter(m => m.id !== tempMessageId);
-          return prev.map(msg =>
-            msg.id === tempMessageId
-              ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, content: cleaned }
-              : msg
-          );
-        });
-      },
-      (error: Error) => {
-        welcomeRequestedForSessionRef.current = null;
-        welcomeScheduledForSessionRef.current = null;
-        setIsGMTyping(false);
-        setIsStreaming(false);
-        setMessages(prev => {
-          const withoutTemp = prev.filter(m => m.id !== tempMessageId);
-          const alreadyHasWelcome = withoutTemp.some(
-            m => m.role === "gm" && /welcome|here—welcome|here - welcome|Configuration Error/i.test(m.content ?? "")
-          );
-          if (alreadyHasWelcome) return withoutTemp;
-          const isConfigError = error.message?.includes("OPENAI_API_KEY") || error.message?.includes("API key");
-          const fallbackContent = isConfigError
-            ? "⚠️ **Configuration Error**\n\nThe OpenAI API key is not configured. Please add OPENAI_API_KEY to your .env file and restart."
-            : "👋 Welcome! I'm your Game Master. I'll help you design and create any game you can imagine. " +
-              "Choose a quick option below or describe your game idea—the rules panel on the right updates in real time as we discuss.";
-          const fallbackMessage: ChatMessage = {
-            id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-            role: "gm",
-            content: fallbackContent,
-            timestamp: new Date()
-          };
-          return [...withoutTemp, fallbackMessage];
-        });
-        if (error.message?.includes("OPENAI_API_KEY") || error.message?.includes("API key")) {
-          toast.error("OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.");
-        } else {
-          toast.error(error.message || "Failed to load welcome.");
-        }
-      }
-    );
-  }, [
-    currentSessionId,
-    selectedTemplate,
-    playerCount,
-    gameName,
-    customRules
-  ]);
-
-  const streamWelcomeMessageRef = useRef(streamWelcomeMessage);
-  streamWelcomeMessageRef.current = streamWelcomeMessage;
-
+  // When an empty session is shown (e.g. loaded from old data), add static welcome once
   useEffect(() => {
     if (messages.length !== 0 || !currentSessionId) return;
     if (didLoadSessionRef.current) {
       didLoadSessionRef.current = false;
       return;
     }
-    if (welcomeScheduledForSessionRef.current === currentSessionId) return;
+    if (welcomeRequestedForSessionRef.current === currentSessionId) return;
+    welcomeRequestedForSessionRef.current = currentSessionId;
     welcomeScheduledForSessionRef.current = currentSessionId;
-    const t = setTimeout(() => {
-      streamWelcomeMessageRef.current();
-    }, 400);
-    return () => {
-      clearTimeout(t);
-      if (welcomeScheduledForSessionRef.current === currentSessionId) {
-        welcomeScheduledForSessionRef.current = null;
-      }
+    const staticMsg: ChatMessage = {
+      id: `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      role: "gm",
+      content: STATIC_WELCOME_CONTENT,
+      timestamp: new Date()
     };
+    setMessages([staticMsg]);
   }, [currentSessionId, messages.length]);
 
   useEffect(() => {
