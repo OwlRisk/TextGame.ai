@@ -7,6 +7,7 @@ export interface InlineFormattingOptions {
   italicClassName?: string;
   codeClassName?: string;
   strikethroughClassName?: string;
+  mentionClassName?: string;
 }
 
 const DEFAULT_OPTIONS: InlineFormattingOptions = {
@@ -14,6 +15,7 @@ const DEFAULT_OPTIONS: InlineFormattingOptions = {
   italicClassName: "italic text-zinc-200",
   codeClassName: "bg-zinc-800/50 px-1.5 py-0.5 rounded text-[13px] font-mono text-violet-300 border border-zinc-700/50",
   strikethroughClassName: "line-through text-zinc-400",
+  mentionClassName: "inline-flex items-center bg-violet-500/20 text-violet-300 px-1 rounded font-medium",
 };
 
 /**
@@ -33,6 +35,7 @@ export function parseInlineFormatting(
     { regex: /\*(.*?)\*/g, type: "italic" as const },
     { regex: /`(.*?)`/g, type: "code" as const },
     { regex: /~~(.*?)~~/g, type: "strikethrough" as const },
+    { regex: /@([\w\u4e00-\u9fff\- ]+?)(?=[\s,.!?;:"')\]]|$)/g, type: "mention" as const },
   ];
 
   const matches: Array<{ start: number; end: number; type: string; content: string }> = [];
@@ -88,6 +91,12 @@ export function parseInlineFormatting(
       parts.push(
         <span key={`s-${i}`} className={opts.strikethroughClassName}>
           {match.content}
+        </span>
+      );
+    } else if (match.type === "mention") {
+      parts.push(
+        <span key={`m-${i}`} className={opts.mentionClassName}>
+          @{match.content}
         </span>
       );
     }

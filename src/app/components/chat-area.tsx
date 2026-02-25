@@ -278,6 +278,36 @@ export function ChatArea({
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // @ mention / / command autocomplete
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionAnchor, setMentionAnchor] = useState(0);
+  const [commandQuery, setCommandQuery] = useState<string | null>(null);
+  const [popupIndex, setPopupIndex] = useState(0);
+
+  const SLASH_COMMANDS = useMemo(() => [
+    { cmd: '/vote',   hint: 'Vote to eliminate a player', template: '/vote '   },
+    { cmd: '/role',   hint: 'Check your current role',    template: '/role'    },
+    { cmd: '/rules',  hint: 'Display game rules',         template: '/rules'   },
+    { cmd: '/skip',   hint: 'Ask host to move to next phase', template: '/skip' },
+    { cmd: '/status', hint: 'Show current game status',   template: '/status'  },
+  ], []);
+
+  const mentionMatches = useMemo(() => {
+    if (mentionQuery === null) return [];
+    return players
+      .filter(p => !p.isGameMaster && p.id !== userId && p.name.toLowerCase().includes(mentionQuery.toLowerCase()))
+      .slice(0, 6);
+  }, [mentionQuery, players, userId]);
+
+  const commandMatches = useMemo(() => {
+    if (commandQuery === null) return [];
+    return SLASH_COMMANDS.filter(c => c.cmd.slice(1).startsWith(commandQuery.toLowerCase()));
+  }, [commandQuery, SLASH_COMMANDS]);
+
+  const showPopup = (mentionQuery !== null && mentionMatches.length > 0) ||
+                    (commandQuery !== null && commandMatches.length > 0);
+
   const voice = useVoiceInput();
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -435,6 +465,33 @@ export function ChatArea({
       el.scrollTop = scrollTop;
     }
   }, []);
+
+  const applyMention = useCallback((player: Player) => {
+    const cursorPos = inputRef.current?.selectionStart ?? input.length;
+    const before = input.slice(0, mentionAnchor);
+    const after = input.slice(cursorPos);
+    const newText = `${before}@${player.name} ${after}`;
+    setInput(newText);
+    setMentionQuery(null);
+    setCommandQuery(null);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      const pos = before.length + player.name.length + 2;
+      inputRef.current?.setSelectionRange(pos, pos);
+      resizeInput();
+    });
+  }, [input, mentionAnchor, resizeInput]);
+
+  const applyCommand = useCallback((cmd: { template: string }) => {
+    setInput(cmd.template);
+    setCommandQuery(null);
+    setMentionQuery(null);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(cmd.template.length, cmd.template.length);
+      resizeInput();
+    });
+  }, [resizeInput]);
 
   // Resize on input change (fallback for voice input)
   useEffect(() => {
@@ -995,21 +1052,101 @@ export function ChatArea({
           </div>
         ) : (
           <div className="flex gap-2 items-end">
+            <div className="relative flex-1 min-w-0">
+              {/* @ mention / / command popup */}
+              {showPopup && (
+                <div className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl z-50">
+                  {mentionQuery !== null ? (
+                    mentionMatches.map((player, i) => (
+                      <button
+                        key={player.id}
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); applyMention(player); }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? 'bg-violet-600 text-white' : 'text-zinc-200 hover:bg-zinc-800'}`}
+                      >
+                        <span className="text-violet-300 font-bold text-xs w-4 shrink-0">@</span>
+                        <span className="font-medium truncate">{player.name}</span>
+                        {player.role && <span className={`ml-auto text-xs shrink-0 ${i === popupIndex ? 'text-violet-200' : 'text-zinc-500'}`}>{player.role}</span>}
+                      </button>
+                    ))
+                  ) : (
+                    commandMatches.map((cmd, i) => (
+                      <button
+                        key={cmd.cmd}
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); applyCommand(cmd); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? 'bg-violet-600 text-white' : 'text-zinc-200 hover:bg-zinc-800'}`}
+                      >
+                        <span className={`font-mono font-semibold shrink-0 ${i === popupIndex ? 'text-white' : 'text-amber-400'}`}>{cmd.cmd}</span>
+                        <span className={`text-xs truncate ${i === popupIndex ? 'text-violet-200' : 'text-zinc-400'}`}>{cmd.hint}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             <Textarea
               ref={inputRef}
               value={input}
               onChange={(e) => {
-                setInput(e.target.value);
+                const val = e.target.value;
+                const cursor = e.target.selectionStart ?? val.length;
+                setInput(val);
                 requestAnimationFrame(() => resizeInput());
+                // Detect @ mention
+                const beforeCursor = val.slice(0, cursor);
+                const mentionMatch = beforeCursor.match(/@([^@\s]*)$/);
+                if (mentionMatch) {
+                  setMentionQuery(mentionMatch[1]);
+                  setMentionAnchor(mentionMatch.index!);
+                  setCommandQuery(null);
+                  setPopupIndex(0);
+                } else {
+                  setMentionQuery(null);
+                }
+                // Detect / command (only when input starts with /)
+                const cmdMatch = !mentionMatch && val.match(/^\/([^\s]*)$/);
+                if (cmdMatch) {
+                  setCommandQuery(cmdMatch[1]);
+                  setPopupIndex(0);
+                } else if (!mentionMatch) {
+                  setCommandQuery(null);
+                }
               }}
               onKeyDown={(e) => {
+                if (showPopup) {
+                  const items = mentionQuery !== null ? mentionMatches : commandMatches;
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setPopupIndex(i => (i - 1 + items.length) % items.length);
+                    return;
+                  }
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setPopupIndex(i => (i + 1) % items.length);
+                    return;
+                  }
+                  if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    if (mentionQuery !== null && mentionMatches[popupIndex]) {
+                      applyMention(mentionMatches[popupIndex]);
+                    } else if (commandQuery !== null && commandMatches[popupIndex]) {
+                      applyCommand(commandMatches[popupIndex]);
+                    }
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    setMentionQuery(null);
+                    setCommandQuery(null);
+                    return;
+                  }
+                }
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   if (canSend) handleSend();
                 }
               }}
               placeholder={isRoundInProgress ? "Host & AI replying…" : `Message #${channelName}`}
-              className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-sm flex-1 resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
+              className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
               style={{ 
                 minHeight: `${MIN_INPUT_HEIGHT}px`, 
                 maxHeight: `${MAX_INPUT_HEIGHT}px`
@@ -1017,6 +1154,7 @@ export function ChatArea({
               disabled={sendDisabled}
               rows={1}
             />
+            </div>
             {voiceSupported && (
               <Button
                 size="icon"
