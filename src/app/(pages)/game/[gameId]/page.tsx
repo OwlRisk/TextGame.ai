@@ -15,6 +15,7 @@ import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
+import { SlashCommandsDialog } from "@/app/components/slash-commands-dialog";
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
 const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
@@ -106,6 +107,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   /** 移动端左侧抽屉：'app' 应用导航 | 'channels' 频道列表 */
   const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
   const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
+  const [editCommandsGameId, setEditCommandsGameId] = useState<string | null>(null);
 
   useEffect(() => {
     setMobileLeftDrawer(null);
@@ -788,6 +790,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
     onCreateGame: () => router.push("/create"),
     onOpenProfile: () => router.push("/profile"),
     onUpdateGame: updateGame,
+    onEditCommands: (id: string) => setEditCommandsGameId(id),
   };
   const channelListCommon = {
     gameName: currentGame?.name ?? "Game",
@@ -906,6 +909,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             isRoundInProgress={isRoundInProgress}
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
+            slashCommands={currentGame?.config?.slashCommands}
           />
         ) : null}
       </div>
@@ -946,6 +950,25 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
           duration: 4000,
         }}
       />
+
+      {/* Slash commands editor — opened via sidebar right-click → Edit Commands */}
+      {editCommandsGameId && (() => {
+        const targetGame = games.find(g => g.id === editCommandsGameId);
+        return (
+          <SlashCommandsDialog
+            open={!!editCommandsGameId}
+            onClose={() => setEditCommandsGameId(null)}
+            gameName={targetGame?.name}
+            commands={targetGame?.config?.slashCommands ?? []}
+            onSave={(cmds) => {
+              if (!targetGame) return;
+              updateGame(targetGame.id, {
+                config: { ...targetGame.config, slashCommands: cmds },
+              });
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

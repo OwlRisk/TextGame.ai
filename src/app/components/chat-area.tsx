@@ -214,6 +214,8 @@ interface ChatAreaProps {
   gamePhaseLabel?: string;
   alivePlayers?: Player[];
   lastVotedOutId?: string | null;
+  /** Game-specific slash commands shown in / autocomplete. Falls back to built-in defaults if not provided. */
+  slashCommands?: Array<{ cmd: string; hint: string }>;
   /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
   quickReplies?: string[];
   /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
@@ -271,6 +273,7 @@ export function ChatArea({
   isRoundInProgress = false,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  slashCommands,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [quickReplyOpen, setQuickReplyOpen] = useState(true);
@@ -294,13 +297,18 @@ export function ChatArea({
     active?.scrollIntoView({ block: 'nearest' });
   }, [popupIndex]);
 
-  const SLASH_COMMANDS = useMemo(() => [
-    { cmd: '/vote',   hint: 'Vote to eliminate a player', template: '/vote '   },
-    { cmd: '/role',   hint: 'Check your current role',    template: '/role'    },
-    { cmd: '/rules',  hint: 'Display game rules',         template: '/rules'   },
-    { cmd: '/skip',   hint: 'Ask host to move to next phase', template: '/skip' },
-    { cmd: '/status', hint: 'Show current game status',   template: '/status'  },
-  ], []);
+  const SLASH_COMMANDS = useMemo(() => {
+    const source = slashCommands && slashCommands.length > 0
+      ? slashCommands
+      : [
+          { cmd: '/vote',   hint: 'Vote to eliminate a player' },
+          { cmd: '/role',   hint: 'Check your current role'    },
+          { cmd: '/rules',  hint: 'Display game rules'         },
+          { cmd: '/skip',   hint: 'Ask host to move to next phase' },
+          { cmd: '/status', hint: 'Show current game status'   },
+        ];
+    return source.map(c => ({ ...c, template: c.cmd.includes(' ') ? c.cmd : `${c.cmd} ` }));
+  }, [slashCommands]);
 
   const mentionMatches = useMemo(() => {
     if (mentionQuery === null) return [];

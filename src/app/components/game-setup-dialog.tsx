@@ -60,6 +60,8 @@ export interface GameConfig {
   };
   /** GM-defined game rooms (e.g. General, Mafia only, Werewolves only). Each room has its own chat. */
   channels?: { id: string; name: string }[];
+  /** Player-facing slash commands for this game (e.g. /vote, /role). Shown in the / autocomplete. */
+  slashCommands?: Array<{ cmd: string; hint: string }>;
 }
 
 interface ChatMessage {
@@ -68,6 +70,29 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
 }
+
+/** Default slash commands per game template. Injected at game creation; editable afterwards. */
+export const DEFAULT_SLASH_COMMANDS: Record<string, Array<{ cmd: string; hint: string }>> = {
+  werewolf: [
+    { cmd: '/vote',  hint: 'Vote to eliminate a player' },
+    { cmd: '/role',  hint: 'Check your current role'    },
+    { cmd: '/rules', hint: 'Display game rules'         },
+  ],
+  mafia: [
+    { cmd: '/vote',  hint: 'Vote to eliminate a player' },
+    { cmd: '/role',  hint: 'Check your current role'    },
+    { cmd: '/rules', hint: 'Display game rules'         },
+  ],
+  undercover: [
+    { cmd: '/vote',  hint: 'Vote to eliminate a player' },
+    { cmd: '/rules', hint: 'Display game rules'         },
+  ],
+  tarot: [
+    { cmd: '/draw',  hint: 'Draw a tarot card'          },
+    { cmd: '/rules', hint: 'Display game rules'         },
+  ],
+  custom: [],
+};
 
 const GAME_TEMPLATES: GameTemplate[] = [
   {
@@ -418,7 +443,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             rules: finalRules,
             customRoles: selectedTemplate!.roles,
             hostId: selectedHostId!,
-            hideRolesInPlayerList
+            hideRolesInPlayerList,
+            slashCommands: DEFAULT_SLASH_COMMANDS[selectedTemplate!.id] ?? [],
           });
           setConversationState("completed");
           addGMMessage(
@@ -552,7 +578,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                           rules: customRules || selectedTemplate!.defaultRules,
                           customRoles: selectedTemplate!.roles,
                           hostId: selectedHostId!,
-                          hideRolesInPlayerList
+                          hideRolesInPlayerList,
+                          slashCommands: DEFAULT_SLASH_COMMANDS[selectedTemplate!.id] ?? [],
                         });
                         
                         // Reset state
