@@ -339,8 +339,14 @@ export function ChatArea({
 
   // Per-message char offset tracking: how many chars have already been queued for TTS
   const ttsProgressRef = useRef<Map<string, number>>(new Map());
-  // IDs of messages fully handed off to TTS (prevents double-play after streaming ends)
+  // IDs of messages whose TTS sentences have been SUBMITTED to the queue (prevents re-queuing the same message).
+  // Set IMMEDIATELY when we start queuing, so subsequent effect runs don't re-queue while audio is playing.
+  const ttsQueuedRef = useRef<Set<string>>(new Set());
+  // IDs of messages whose TTS has FULLY FINISHED playing (unlocks the next message in line).
+  // Set via queueDeferred, after the last audio sentence completes.
   const ttsCompletedRef = useRef<Set<string>>(new Set());
+  // Bumped when any message's TTS finishes, so the effect re-runs and can process the next message.
+  const [ttsProcessingTick, setTtsProcessingTick] = useState(0);
   // Message IDs present on first run — cached/history; do not play TTS for these, only for new ones.
   const initialMessageIdsRef = useRef<Set<string> | null>(null);
   // True once we've queued any TTS this session; used to tell "new game (we already played m1)" from "existing room (first paint with 2+ messages)".
@@ -368,8 +374,10 @@ export function ChatArea({
   useEffect(() => {
     if (voiceEnabled && !prevVoiceEnabledRef.current) {
       ttsProgressRef.current.clear();
+      ttsQueuedRef.current.clear();
       ttsCompletedRef.current.clear();
       for (const m of messages) {
+        ttsQueuedRef.current.add(m.id);
         ttsCompletedRef.current.add(m.id);
         ttsProgressRef.current.set(m.id, (m.content || '').length);
       }
@@ -386,85 +394,106 @@ export function ChatArea({
     setRevealTick((t) => t + 1);
   }, []);
 
-  // Streaming-aware TTS: queue sentences as they form during streaming,
-  // then flush any remainder when the message completes.
-  // Only play TTS for messages that appear after mount (new); cached/history messages are skipped.
+  // Strict one-message-at-a-time TTS queue.
+  //
+  // Key invariants:
+  //   ttsQueuedRef   – set IMMEDIATELY when we push a message's sentences to the audio queue.
+  //                    Prevents re-queuing the same message on every messages change.
+  //   ttsCompletedRef – set AFTER the last audio sentence finishes playing (via queueDeferred).
+  //                    Signals that the next message may now be shown/queued.
+  //   ttsProcessingTick – bumped in every queueDeferred callback so this effect re-runs and
+  //                    picks up the next pending message after audio finishes.
+  //
+  // Flow for two consecutive messages M1 → M2:
+  //   1. M1 arrives  →  queued immediately (ttsQueuedRef.add(M1)), text shown, audio playing.
+  //   2. M2 arrives  →  effect runs; M1 in ttsQueued but NOT completed → we stop and wait.
+  //                     M2 text is NOT shown yet.
+  //   3. M1 finishes →  queueDeferred: ttsCompletedRef.add(M1), setTtsProcessingTick++.
+  //   4. Effect re-runs → M1 skipped (completed). M2 not queued → show text, queue audio.
   useEffect(() => {
     if (!voiceEnabled || !inworldTTSSupported) return;
 
-    // First time we see messages: record their IDs as "initial" (cached/history). Never play TTS for these.
-    // - If messages is empty (slow load), do NOT snapshot — wait until messages arrive.
-    // - If we have 2+ messages and we haven't queued any TTS yet, snapshot as "existing room" (skip all).
-    // - If we have 2+ but we already queued TTS (e.g. new game: played m1, now m2 arrived), don't snapshot — keep processing.
-    // - If we have exactly 1 message, don't snapshot — fall through so it can be played (new game first message).
+    // First time we see messages: snapshot "initial/cached" IDs — never play TTS for these.
+    // Don't snapshot on empty (slow load) or single message (could be first message of new game).
     if (initialMessageIdsRef.current === null) {
-      if (messages.length === 0) return; // slow load: wait for messages
+      if (messages.length === 0) return;
       if (messages.length >= 2 && !hasQueuedTTSInSessionRef.current) {
         initialMessageIdsRef.current = new Set(messages.map((m) => m.id));
         for (const m of messages) {
           if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+          ttsQueuedRef.current.add(m.id);
           ttsCompletedRef.current.add(m.id);
           displayedContentRef.current.set(m.id, (m.content || '').trim());
         }
         setRevealTick((t) => t + 1);
         return;
       }
-      // length === 1, or length >= 2 but we already played something (new game): fall through
     }
 
-    // Strict queue: only process the first message that needs TTS, then stop.
-    // This avoids interleaving multiple speakers and ensures one-message-at-a-time playback.
     for (const m of messages) {
       if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
-      if (initialMessageIdsRef.current?.has(m.id)) continue; // cached message, never play TTS
+      if (initialMessageIdsRef.current?.has(m.id)) continue;
+
+      // Already playing or played — skip and continue to next.
       if (ttsCompletedRef.current.has(m.id)) continue;
+
+      // Queued but NOT yet finished → a previous message is still playing.
+      // Stop here: do NOT show or queue anything further until it completes.
+      if (ttsQueuedRef.current.has(m.id)) return;
+
+      // --- This message has not been queued yet ---
       const content = (m.content || '').trim();
       if (!content) continue;
 
-      const voiceId = voiceIdForMessage(m);
-
       if (m.isStreaming) {
-        // Don't play TTS while content is still loading — show text only, sound after complete.
+        // Message still loading: show current streaming text but don't queue TTS yet.
         displayedContentRef.current.set(m.id, content);
         setRevealTick((t) => t + 1);
-        break; // only handle one message per run
+        return; // wait for this message to complete before doing anything more
       }
 
-      // Message complete: show full text first (content "loaded"), then queue whole message for TTS.
+      // Message complete: show full text immediately, then enqueue audio.
       displayedContentRef.current.set(m.id, content);
       setRevealTick((t) => t + 1);
 
+      // Mark as queued RIGHT NOW so subsequent effect runs don't re-queue while audio plays.
+      ttsQueuedRef.current.add(m.id);
       hasQueuedTTSInSessionRef.current = true;
+
+      const voiceId = voiceIdForMessage(m);
       let fromChar = 0;
       for (;;) {
         const { sentences, newOffset } = extractTTSSentences(content, fromChar);
         if (sentences.length === 0) break;
-        sentences.forEach((s) => {
-          playInworldTTS(s, voiceId, () => {}); // text already shown above
-        });
+        sentences.forEach((s) => playInworldTTS(s, voiceId, () => {}));
         fromChar = newOffset;
       }
       const remaining = content.slice(fromChar).trim();
-      if (remaining.length >= 2) {
-        playInworldTTS(remaining, voiceId, () => {});
-      }
+      if (remaining.length >= 2) playInworldTTS(remaining, voiceId, () => {});
+
+      // After all audio finishes: mark completed and bump tick so next message gets processed.
+      const msgId = m.id;
       queueDeferredTTS(() => {
-        ttsCompletedRef.current.add(m.id);
-        ttsProgressRef.current.delete(m.id);
+        ttsCompletedRef.current.add(msgId);
+        ttsProgressRef.current.delete(msgId);
+        setTtsProcessingTick((t) => t + 1);
       });
-      break; // only one message per run — next run will pick up the next message
+
+      return; // process one message per run; next message waits for ttsProcessingTick to bump
     }
-    // Prune refs for messages no longer in the list
+
+    // Prune stale progress entries for messages no longer in the list
     const liveIds = new Set(messages.map((m) => m.id));
     for (const id of ttsProgressRef.current.keys()) {
       if (!liveIds.has(id)) ttsProgressRef.current.delete(id);
     }
-  }, [voiceEnabled, inworldTTSSupported, messages, voiceIdForMessage, playInworldTTS, queueDeferredTTS]);
+  }, [voiceEnabled, inworldTTSSupported, messages, ttsProcessingTick, voiceIdForMessage, playInworldTTS, queueDeferredTTS]);
 
   useEffect(() => {
     if (!voiceEnabled) {
       stopInworldTTS();
       ttsProgressRef.current.clear();
+      ttsQueuedRef.current.clear();
       ttsCompletedRef.current.clear();
       displayedContentRef.current.clear();
       ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
@@ -491,6 +520,9 @@ export function ChatArea({
         }
         continue;
       }
+      // Only start a fallback timer once we've actually started queuing this message.
+      // Messages waiting in line (not yet queued) don't need a fallback — they'll be processed later.
+      if (!ttsQueuedRef.current.has(m.id)) continue;
       if (timeouts.has(m.id)) continue;
       const messageId = m.id;
       const fullText = raw;
@@ -521,8 +553,9 @@ export function ChatArea({
     initialMessageIdsRef.current = null;
     hasQueuedTTSInSessionRef.current = false;
     ttsProgressRef.current.clear();
-    displayedContentRef.current.clear();
+    ttsQueuedRef.current.clear();
     ttsCompletedRef.current.clear();
+    displayedContentRef.current.clear();
     ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
     ttsFallbackTimeoutsRef.current.clear();
   // eslint-disable-next-line react-hooks/exhaustive-deps
