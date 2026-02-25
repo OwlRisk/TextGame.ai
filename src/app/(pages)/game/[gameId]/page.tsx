@@ -92,6 +92,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setHumanGameIdentity,
     avatarImageUrls,
     onAvatarUrlLoaded,
+    isRoomLoading,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -862,6 +863,11 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {isRoomLoading && (
+          <div className="flex-shrink-0 px-4 py-1.5 bg-violet-950/40 border-b border-violet-800/30 text-center text-xs text-violet-300">
+            Loading room from cloud…
+          </div>
+        )}
         {selectedChannelId === "rules" ? (
           <ScrollArea className="flex-1 p-6">
             <div className="prose prose-invert max-w-none space-y-6">

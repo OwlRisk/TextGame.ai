@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
@@ -264,6 +264,19 @@ export function ChatArea({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Lazy-load messages: show last N first, load more when user scrolls up
+  const INITIAL_PAGE_SIZE = 40;
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(INITIAL_PAGE_SIZE);
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  const scrollPreserveRef = useRef<{ scrollTop: number; scrollHeight: number } | null>(null);
+  const viewportRef = useRef<HTMLElement | null>(null);
+  const visibleMessages = useMemo(
+    () => messages.slice(-Math.min(visibleCount, messages.length)),
+    [messages, visibleCount]
+  );
+  const hasMoreOlder = messages.length > visibleCount;
+
   // @ mention / / command autocomplete
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionAnchor, setMentionAnchor] = useState(0);
@@ -330,6 +343,8 @@ export function ChatArea({
   const ttsCompletedRef = useRef<Set<string>>(new Set());
   // Message IDs present on first run — cached/history; do not play TTS for these, only for new ones.
   const initialMessageIdsRef = useRef<Set<string> | null>(null);
+  // True once we've queued any TTS this session; used to tell "new game (we already played m1)" from "existing room (first paint with 2+ messages)".
+  const hasQueuedTTSInSessionRef = useRef(false);
   // Text revealed so far per AI message — grows sentence-by-sentence as TTS plays.
   const displayedContentRef = useRef<Map<string, string>>(new Map());
   // Bumped each time a sentence is revealed, to trigger a re-render.
@@ -377,24 +392,31 @@ export function ChatArea({
   useEffect(() => {
     if (!voiceEnabled || !inworldTTSSupported) return;
 
-    // First time this effect runs: record current message IDs as "initial" (cached/history).
-    // Those will not be read aloud; only messages added later get TTS.
+    // First time we see messages: record their IDs as "initial" (cached/history). Never play TTS for these.
+    // - If messages is empty (slow load), do NOT snapshot — wait until messages arrive.
+    // - If we have 2+ messages and we haven't queued any TTS yet, snapshot as "existing room" (skip all).
+    // - If we have 2+ but we already queued TTS (e.g. new game: played m1, now m2 arrived), don't snapshot — keep processing.
+    // - If we have exactly 1 message, don't snapshot — fall through so it can be played (new game first message).
     if (initialMessageIdsRef.current === null) {
-      initialMessageIdsRef.current = new Set(messages.map((m) => m.id));
-      for (const m of messages) {
-        if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
-        ttsCompletedRef.current.add(m.id);
-        displayedContentRef.current.set(m.id, (m.content || '').trim());
+      if (messages.length === 0) return; // slow load: wait for messages
+      if (messages.length >= 2 && !hasQueuedTTSInSessionRef.current) {
+        initialMessageIdsRef.current = new Set(messages.map((m) => m.id));
+        for (const m of messages) {
+          if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+          ttsCompletedRef.current.add(m.id);
+          displayedContentRef.current.set(m.id, (m.content || '').trim());
+        }
+        setRevealTick((t) => t + 1);
+        return;
       }
-      setRevealTick((t) => t + 1);
-      return;
+      // length === 1, or length >= 2 but we already played something (new game): fall through
     }
 
     // Strict queue: only process the first message that needs TTS, then stop.
     // This avoids interleaving multiple speakers and ensures one-message-at-a-time playback.
     for (const m of messages) {
       if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
-      if (initialMessageIdsRef.current.has(m.id)) continue; // cached message, never play TTS
+      if (initialMessageIdsRef.current?.has(m.id)) continue; // cached message, never play TTS
       if (ttsCompletedRef.current.has(m.id)) continue;
       const content = (m.content || '').trim();
       if (!content) continue;
@@ -412,6 +434,7 @@ export function ChatArea({
       displayedContentRef.current.set(m.id, content);
       setRevealTick((t) => t + 1);
 
+      hasQueuedTTSInSessionRef.current = true;
       let fromChar = 0;
       for (;;) {
         const { sentences, newOffset } = extractTTSSentences(content, fromChar);
@@ -492,10 +515,11 @@ export function ChatArea({
     return () => {};
   }, [voiceEnabled, inworldTTSSupported, messages, revealTick]);
 
-  // Stop TTS when switching to a different game; reset "initial messages" so the new room gets correct cache vs new behavior
+  // Stop TTS when switching to a different game; reset "initial messages" and session flag
   useEffect(() => {
     stopInworldTTS();
     initialMessageIdsRef.current = null;
+    hasQueuedTTSInSessionRef.current = false;
     ttsProgressRef.current.clear();
     displayedContentRef.current.clear();
     ttsCompletedRef.current.clear();
@@ -592,12 +616,41 @@ export function ChatArea({
       scrollDebounceRef.current = null;
       if (scrollRef.current && messages.length !== lastScrollMessagesRef.current) {
         lastScrollMessagesRef.current = messages.length;
-        // Use instant scroll when user just sent (avoid smooth animation jitter)
         scrollRef.current.scrollIntoView({ behavior: lastFromUser ? "auto" : "smooth", block: "end" });
       }
     }, lastFromUser ? 50 : 150);
     return () => { if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current); };
   }, [messages, typingUsers, userId]);
+
+  // Load more when user scrolls up: IntersectionObserver on top sentinel
+  useEffect(() => {
+    if (!hasMoreOlder || !loadMoreSentinelRef.current) return;
+    const sentinel = loadMoreSentinelRef.current;
+    const viewport = sentinel.closest('[data-slot="scroll-area-viewport"]') as HTMLElement | null;
+    if (!viewport) return;
+    viewportRef.current = viewport;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [e] = entries;
+        if (!e?.isIntersecting) return;
+        if (visibleCount >= messages.length) return;
+        scrollPreserveRef.current = { scrollTop: viewport.scrollTop, scrollHeight: viewport.scrollHeight };
+        setVisibleCount((c) => Math.min(c + PAGE_SIZE, messages.length));
+      },
+      { root: viewport, rootMargin: "100px 0px 0px 0px", threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreOlder, visibleCount, messages.length]);
+
+  // Keep scroll position when prepending older messages
+  useLayoutEffect(() => {
+    const preserve = scrollPreserveRef.current;
+    const viewport = viewportRef.current;
+    if (!preserve || !viewport) return;
+    viewport.scrollTop = preserve.scrollTop + (viewport.scrollHeight - preserve.scrollHeight);
+    scrollPreserveRef.current = null;
+  }, [visibleCount]);
 
   // Listen for focus input event (when user is prompted to speak)
   useEffect(() => {
@@ -700,11 +753,16 @@ export function ChatArea({
         </div>
       </div>
 
-      {/* Messages - min-h-0 allows flex child to shrink so scroll works */}
+      {/* Messages - min-h-0 allows flex child to shrink so scroll works; only render last visibleCount, load more on scroll up */}
       <ScrollArea className="flex-1 min-h-0 px-6">
         <div className="py-6 space-y-5">
-          {messages.map((message, index) => {
-            const showAvatar = index === 0 || messages[index - 1].senderId !== message.senderId;
+          {hasMoreOlder && (
+            <div ref={loadMoreSentinelRef} className="flex justify-center py-3" aria-hidden>
+              <span className="text-xs text-zinc-500">Pull up for older messages</span>
+            </div>
+          )}
+          {visibleMessages.map((message, index) => {
+            const showAvatar = index === 0 || visibleMessages[index - 1].senderId !== message.senderId;
 
             // When voice is on, AI messages are revealed sentence-by-sentence as TTS plays.
             // Human messages and non-TTS modes always show full content immediately.

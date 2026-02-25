@@ -38,6 +38,8 @@ interface GameRoomContextType {
   humanGameIdentity: { name: string } | null;
   /** Persisted avatar image URLs (key = "name|type") so they sync across devices. */
   avatarImageUrls: Record<string, string>;
+  /** True until room state has been loaded (from DB or localStorage). Use to show loading UI. */
+  isRoomLoading: boolean;
 
   // Actions - Messages
   addMessage: (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => string | undefined;
@@ -118,7 +120,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     };
   }, []);
 
-  // Load game room state: from DB when logged in, else localStorage
+  // Load game room state: local-first when logged in (show cache immediately, then sync from DB), else localStorage only
   useEffect(() => {
     function applyState(state: Record<string, unknown>) {
       if (state.messages && Array.isArray(state.messages)) {
@@ -158,16 +160,15 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     }
 
     if (user?.id) {
+      // Local-first: apply cached state immediately so UI isn't blank while DB responds
+      try {
+        const saved = localStorage.getItem(`gameRoom_${gameId}`);
+        if (saved) applyState(JSON.parse(saved));
+      } catch (_) {}
+
       getGameRoomState(gameId)
         .then(({ data, error }) => {
-          if (error || data == null) {
-            try {
-              const saved = localStorage.getItem(`gameRoom_${gameId}`);
-              if (saved) {
-                applyState(JSON.parse(saved));
-              }
-            } catch (_) {}
-          } else {
+          if (!error && data != null) {
             applyState(data as Record<string, unknown>);
           }
           setIsHydrated(true);
@@ -438,6 +439,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         aiSuggestedPrompts,
         humanGameIdentity,
         avatarImageUrls,
+        isRoomLoading: !isHydrated,
         onAvatarUrlLoaded,
         addMessage,
         addStreamingMessage,
