@@ -18,10 +18,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Read the Supabase session from localStorage synchronously so the first
+ * render already knows whether the user is signed in. This eliminates the
+ * "login page flash" that occurs while the async getSession() call is in-flight.
+ */
+function getLocalCachedSession(): { user: User | null; session: Session | null } {
+  if (typeof window === 'undefined') return { user: null, session: null };
+  try {
+    const key = Object.keys(localStorage).find(
+      (k) => k.startsWith('sb-') && k.endsWith('-auth-token')
+    );
+    if (!key) return { user: null, session: null };
+    const raw = localStorage.getItem(key);
+    if (!raw) return { user: null, session: null };
+    const parsed = JSON.parse(raw);
+    if (!parsed?.access_token || !parsed?.user) return { user: null, session: null };
+    // expires_at is Unix seconds; treat as expired if within 60s to avoid edge cases
+    if (parsed.expires_at && parsed.expires_at < Date.now() / 1000 + 60) {
+      return { user: null, session: null };
+    }
+    return { user: parsed.user as User, session: parsed as Session };
+  } catch {
+    return { user: null, session: null };
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const localCache = getLocalCachedSession();
+  const [user, setUser] = useState<User | null>(localCache.user);
+  const [session, setSession] = useState<Session | null>(localCache.session);
+  // If we have a valid cached session, skip the loading spinner entirely.
+  const [loading, setLoading] = useState(localCache.user === null);
   const router = useRouter();
 
   const doSignOut = useCallback(async () => {
