@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Volume2, VolumeX, User, Package, Info, Heart } from "lucide-react";
+import { Volume2, VolumeX, User, Package, Info, Skull } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
@@ -121,24 +121,49 @@ export function PlayerPanelWithBoard({
               <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 tracking-wide">
                 Players — {players.length}
               </div>
-              <div className="space-y-1.5">
-                {players.map((player) => (
-                  <PlayerCard
-                    key={player.id}
-                    player={player}
-                    isSpeaking={currentSpeakerId === player.id}
-                    isUserGameMaster={isUserGameMaster}
-                    gameId={gameId}
-                    onToggleMute={onToggleMute}
-                    onSelectSpeaker={onSelectSpeaker}
-                    onViewProfile={openProfile}
-                    isHiddenRoleGame={isHiddenRoleGame}
-                    currentUserId={currentUserId}
-                    avatarImageUrls={avatarImageUrls}
-                    onAvatarUrlLoaded={onAvatarUrlLoaded}
-                  />
-                ))}
-              </div>
+              {(() => {
+                const isOut = (p: Player) => {
+                  const s = ((p.stats?.Status as string | undefined) ?? p.status ?? "").toLowerCase();
+                  return s === "eliminated" || s === "dead";
+                };
+                const alive = players.filter((p) => !isOut(p));
+                const eliminated = players.filter((p) => isOut(p));
+                const cardProps = (player: Player) => ({
+                  key: player.id,
+                  player,
+                  isSpeaking: currentSpeakerId === player.id,
+                  isUserGameMaster,
+                  gameId,
+                  onToggleMute,
+                  onSelectSpeaker,
+                  onViewProfile: openProfile,
+                  isHiddenRoleGame,
+                  currentUserId,
+                  avatarImageUrls,
+                  onAvatarUrlLoaded,
+                });
+                return (
+                  <>
+                    <div className="space-y-1.5">
+                      {alive.map((p) => <PlayerCard {...cardProps(p)} />)}
+                    </div>
+                    {eliminated.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2 pt-2 pb-1">
+                          <div className="h-px flex-1 bg-zinc-700/50" />
+                          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                            <Skull className="h-3 w-3" /> Eliminated
+                          </span>
+                          <div className="h-px flex-1 bg-zinc-700/50" />
+                        </div>
+                        <div className="space-y-1.5">
+                          {eliminated.map((p) => <PlayerCard {...cardProps(p)} />)}
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </ScrollArea>
         </TabsContent>
@@ -197,7 +222,8 @@ function PlayerCard({
   const handleRowClick = () => {
     if (canViewProfile) onViewProfile?.(player);
   };
-  const isEliminated = player.status === "Eliminated" || player.stats?.Status === "Eliminated";
+  const eliminatedStatus = ((player.stats?.Status as string | undefined) ?? player.status ?? "").toLowerCase();
+  const isEliminated = eliminatedStatus === "eliminated" || eliminatedStatus === "dead";
 
   return (
     <div
@@ -206,25 +232,20 @@ function PlayerCard({
       onClick={canViewProfile ? handleRowClick : undefined}
       onKeyDown={canViewProfile ? (e) => e.key === "Enter" && handleRowClick() : undefined}
       className={`group p-2 rounded-lg transition-all duration-200 ${
-        isEliminated ? "opacity-50 bg-zinc-800/50" :
-        isSpeaking 
-          ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm" 
+        isEliminated
+          ? "opacity-40 bg-zinc-900/60 cursor-default"
+          : isSpeaking
+          ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm"
           : "hover:bg-zinc-800/40 hover:shadow-sm"
-      } ${canViewProfile ? "cursor-pointer" : ""}`}
-      title={canViewProfile ? "View profile" : undefined}
+      } ${!isEliminated && canViewProfile ? "cursor-pointer" : ""}`}
+      title={!isEliminated && canViewProfile ? "View profile" : undefined}
     >
       <div className="flex items-start gap-2.5">
+        {/* Avatar with skull overlay for eliminated */}
         <div className="relative flex-shrink-0">
           {!player.isAI ? (
-            <Avatar
-              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
-                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
-              }`}
-            >
-              <AvatarFallback
-                className="text-sm font-semibold text-white"
-                style={{ backgroundColor: player.avatar }}
-              >
+            <Avatar className={`h-9 w-9 shadow-md ${isEliminated ? "grayscale" : "transition-transform duration-200"} ${!isEliminated && isSpeaking ? "ring-2 ring-green-500/50 scale-105" : !isEliminated ? "group-hover:scale-105" : ""}`}>
+              <AvatarFallback className="text-sm font-semibold text-white" style={{ backgroundColor: player.avatar }}>
                 {player.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -233,20 +254,29 @@ function PlayerCard({
               {...getAvatarPropsForPlayer(player)}
               gameId={gameId}
               enabled={true}
-              className={`h-9 w-9 shadow-md transition-transform duration-200 ${
-                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
-              }`}
+              className={`h-9 w-9 shadow-md ${isEliminated ? "grayscale" : "transition-transform duration-200"} ${!isEliminated && isSpeaking ? "ring-2 ring-green-500/50 scale-105" : !isEliminated ? "group-hover:scale-105" : ""}`}
               fallbackColor={player.avatar}
               initialUrl={avatarImageUrls[avatarCacheKey(getAvatarPropsForPlayer(player).name ?? player.name, getAvatarPropsForPlayer(player).type)]}
               onAvatarLoaded={onAvatarUrlLoaded}
             />
+          )}
+          {isEliminated && (
+            <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-zinc-900 flex items-center justify-center">
+              <Skull className="h-2.5 w-2.5 text-zinc-400" />
+            </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
             <span
               className={`text-sm font-semibold truncate ${
-                player.isGameMaster ? "text-amber-300" : !player.isAI ? "text-blue-200" : "text-white"
+                isEliminated
+                  ? "line-through text-zinc-500"
+                  : player.isGameMaster
+                  ? "text-amber-300"
+                  : !player.isAI
+                  ? "text-blue-200"
+                  : "text-white"
               }`}
             >
               {player.name}
@@ -256,19 +286,19 @@ function PlayerCard({
                 HOST
               </Badge>
             )}
-            {!player.isAI && (
+            {!player.isAI && !isEliminated && (
               <Badge className="inline-flex items-center justify-center leading-none bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
                 YOU
               </Badge>
             )}
-            {canViewProfile && player.isAI && (
+            {!isEliminated && canViewProfile && player.isAI && (
               <Info className="h-3.5 w-3.5 text-zinc-500 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
             )}
           </div>
           {/* Role visibility: always show own role; others only after Host uses REVEAL_ROLE */}
           {player.role && player.role.trim() !== player.name?.trim() && (
             (player.id === currentUserId || player.roleRevealed)
-              ? <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
+              ? <div className={`text-xs font-medium ${isEliminated ? "text-zinc-500 line-through" : "text-zinc-300"}`}>{player.role}</div>
               : null
           )}
         </div>
