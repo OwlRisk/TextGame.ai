@@ -62,6 +62,8 @@ export interface GameConfig {
   channels?: { id: string; name: string }[];
   /** Player-facing slash commands for this game (e.g. /vote, /role). Shown in the / autocomplete. */
   slashCommands?: Array<{ cmd: string; hint: string }>;
+  /** Custom label for the player's private panel Tab (defaults to "My Board"). E.g. "Briefing", "Role Card", "Intel". */
+  playerBoardLabel?: string;
 }
 
 interface ChatMessage {
@@ -208,6 +210,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
   const [showHostSelector, setShowHostSelector] = useState(false);
   /** Hide roles in player list (only each player sees own role); default by template, Host can override. */
   const [hideRolesInPlayerList, setHideRolesInPlayerList] = useState(true);
+  /** Label for the player's private panel Tab. Defaults to "My Board". */
+  const [playerBoardLabel, setPlayerBoardLabel] = useState("");
   
   // Update host when template changes (use recommended host for the template)
   useEffect(() => {
@@ -455,6 +459,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             hostId: selectedHostId!,
             hideRolesInPlayerList,
             slashCommands: DEFAULT_SLASH_COMMANDS[selectedTemplate!.id] ?? [],
+            ...(playerBoardLabel.trim() && { playerBoardLabel: playerBoardLabel.trim() }),
           });
           setConversationState("completed");
           addGMMessage(
@@ -552,6 +557,19 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                   />
                   <span>Hide roles in player list (only each player sees their own role)</span>
                 </label>
+                <div className="mt-4">
+                  <label className="block text-xs text-zinc-400 mb-1.5 uppercase tracking-wide font-medium">
+                    Private panel name <span className="normal-case text-zinc-500 font-normal">(each player's secret info from Host)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={playerBoardLabel}
+                    onChange={(e) => setPlayerBoardLabel(e.target.value)}
+                    placeholder="My Board (default)"
+                    maxLength={24}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                  />
+                </div>
                 {/* Confirmation Buttons - Prominent Position */}
                 <div className="mt-10 flex justify-center gap-4">
                   <Button
@@ -590,6 +608,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                           hostId: selectedHostId!,
                           hideRolesInPlayerList,
                           slashCommands: DEFAULT_SLASH_COMMANDS[selectedTemplate!.id] ?? [],
+                          ...(playerBoardLabel.trim() && { playerBoardLabel: playerBoardLabel.trim() }),
                         });
                         
                         // Reset state

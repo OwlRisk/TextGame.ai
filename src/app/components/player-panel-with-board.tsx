@@ -29,6 +29,8 @@ interface PlayerPanelWithBoardProps {
   /** When set, tab is controlled by parent (e.g. open to My Board from chat). */
   activeTab?: "players" | "board";
   onTabChange?: (tab: "players" | "board") => void;
+  /** Custom label for the private panel Tab and heading. Defaults to "My Board". Set by GM at game creation. */
+  playerBoardLabel?: string;
   /** When set, human player uses this in-game name for avatar key. */
   humanGameIdentity?: { name: string } | null;
   /** Persisted avatar URLs (key = "name|type") for cross-device. */
@@ -53,6 +55,7 @@ export function PlayerPanelWithBoard({
   humanGameIdentity,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  playerBoardLabel = "My Board",
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -103,7 +106,7 @@ export function PlayerPanelWithBoard({
             </TabsTrigger>
             <TabsTrigger value="board" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-white text-zinc-400 text-xs relative">
               <Package className="h-3 w-3 mr-1.5" />
-              My Board
+              {playerBoardLabel}
               {hasBoardUpdate && (
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-zinc-900" aria-hidden />
               )}
@@ -147,7 +150,7 @@ export function PlayerPanelWithBoard({
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
                     <Info className="h-3.5 w-3.5" />
                   </span>
-                  <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wide">My Board</h4>
+                  <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wide">{playerBoardLabel}</h4>
                 </div>
                 {myBoardContentFromHost.trim() ? (
                   <p className="mt-3 text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed">

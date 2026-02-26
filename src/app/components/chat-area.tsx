@@ -191,6 +191,7 @@ interface ChatAreaProps {
   typingUsers?: { name: string; avatar: string }[];
   gameId?: string;
   onOpenPlayerBoard?: () => void;
+  playerBoardLabel?: string;
   onHostPostEvent?: (eventDescription: string, opts?: { nextSpeakerId?: string | null; setPhase?: string; autoAdvance?: { afterMs: number; nextEvent: string; nextPhase: string } }) => void;
   onHostAssignSpeaker?: (playerId: string | null) => void;
   onHostEliminate?: (playerId: string) => void;
@@ -238,6 +239,7 @@ export function ChatArea({
   typingUsers,
   gameId,
   onOpenPlayerBoard,
+  playerBoardLabel = "My Board",
   onHostPostEvent,
   onHostAssignSpeaker,
   onHostEliminate,
@@ -805,7 +807,7 @@ export function ChatArea({
               className="md:hidden hover:bg-zinc-700 text-zinc-300 hover:text-white"
             >
               <User className="h-4 w-4 mr-2" />
-              My Board
+              {playerBoardLabel}
             </Button>
           )}
         </div>

@@ -982,6 +982,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               setMobileRightDrawer(true);
               setRightPanelTab("board");
             }}
+            playerBoardLabel={currentGame?.config?.playerBoardLabel}
           />
         ) : null}
       </div>
@@ -1010,6 +1011,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                 currentUserId={userId}
                 activeTab={rightPanelTab}
                 onTabChange={setRightPanelTab}
+                playerBoardLabel={currentGame?.config?.playerBoardLabel}
               />
             </div>
 
@@ -1026,6 +1028,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                   currentUserId={userId}
                   activeTab={rightPanelTab}
                   onTabChange={setRightPanelTab}
+                  playerBoardLabel={currentGame?.config?.playerBoardLabel}
                 />
               </SheetContent>
             </Sheet>
