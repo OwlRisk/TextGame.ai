@@ -657,22 +657,28 @@ export function ChatArea({
     }
   }, [resizeInput]);
 
-  // Debounce scroll to prevent flickering when many messages arrive rapidly
+  // Follow scroll when new content appears: new messages, last message content/streaming, or TTS reveal
   const scrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const lastScrollMessagesRef = useRef(0);
+  const lastScrollStateRef = useRef<{ count: number; lastContentLength: number; revealTick: number }>({ count: 0, lastContentLength: 0, revealTick: 0 });
   useEffect(() => {
     if (!scrollRef.current) return;
-    const lastFromUser = messages.length > 0 && messages[messages.length - 1]?.senderId === userId;
+    const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+    const lastContentLength = lastMsg ? (lastMsg.content?.length ?? 0) : 0;
+    const lastFromUser = lastMsg?.senderId === userId;
     if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
     scrollDebounceRef.current = setTimeout(() => {
       scrollDebounceRef.current = null;
-      if (scrollRef.current && messages.length !== lastScrollMessagesRef.current) {
-        lastScrollMessagesRef.current = messages.length;
+      const prev = lastScrollStateRef.current;
+      const countChanged = messages.length !== prev.count;
+      const contentGrew = messages.length > 0 && lastContentLength !== prev.lastContentLength;
+      const ttsRevealChanged = revealTick !== prev.revealTick;
+      if (scrollRef.current && (countChanged || contentGrew || ttsRevealChanged)) {
+        lastScrollStateRef.current = { count: messages.length, lastContentLength, revealTick };
         scrollRef.current.scrollIntoView({ behavior: lastFromUser ? "auto" : "smooth", block: "end" });
       }
     }, lastFromUser ? 50 : 150);
     return () => { if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current); };
-  }, [messages, typingUsers, userId]);
+  }, [messages, typingUsers, userId, revealTick]);
 
   // Load more when user scrolls up: IntersectionObserver on top sentinel
   useEffect(() => {
