@@ -336,7 +336,7 @@ interface TTSQueueItem {
  * If a user hears the tag spoken, they should switch to a model that supports it.
  */
 async function prefetchTTSAudio(text: string, voiceId: string): Promise<string | null> {
-  const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-mini';
+  const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-max';
   try {
     const res = await fetch('/api/inworld-tts', {
       method: 'POST',

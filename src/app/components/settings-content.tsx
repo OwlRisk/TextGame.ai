@@ -35,7 +35,7 @@ export function SettingsContent() {
   const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>('free');
   const [aiModel, setAiModel] = useState('gpt-4o-mini');
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'true') !== 'false');
-  const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-mini'));
+  const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-max'));
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
   const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));
   const [imageGenEnabled, setImageGenEnabled] = useState(true);

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const VALID_MODELS = ['inworld-tts-1.5-max', 'inworld-tts-1.5-mini', 'inworld-tts-1-max', 'inworld-tts-1'];
-    const modelId = VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-mini';
+    const modelId = VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-max';
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TTS_REQUEST_TIMEOUT_MS);
