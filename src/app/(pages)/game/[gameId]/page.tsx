@@ -427,12 +427,19 @@ REPLY LENGTH — STRICT LIMIT: Keep every reply under 80 words. Be concise and p
 
 When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
 
-You decide who may speak next based on the current discussion (who just spoke, who was suggested, what was said). At the end of EVERY reply, add exactly one line (no other text after it):
-NEXT_SPEAKER: <name>
+You decide who speaks next based on the current discussion. At the end of EVERY reply, add exactly one line:
+NEXT_SPEAKER: <name>[, <name2>, <name3>]
 
-All non-host player names (use exactly as written): ${nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)).join(", ")}. For the human player use: NEXT_SPEAKER: ${humanName}. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
+You may list up to 3 speakers in order, comma-separated. The game will have them speak one after another before waiting for the human. Examples:
+  NEXT_SPEAKER: Juno                        ← one AI speaks
+  NEXT_SPEAKER: Juno, Edda                  ← two AIs speak in order
+  NEXT_SPEAKER: Juno, Edda, ${humanName}    ← two AIs then human's turn
+  NEXT_SPEAKER: Everyone                    ← open discussion (one random AI responds)
+  NEXT_SPEAKER: ${humanName}               ← human's turn immediately
 
-CRITICAL — Keep the discussion going among players: Most of the time assign an AI to speak (NEXT_SPEAKER: <AI name>) so the conversation flows without always waiting for the human. Only occasionally use NEXT_SPEAKER: ${humanName} to give the human player a turn. Rotate among AI players so different names speak; do NOT keep choosing the same 1–2. Prefer NEXT_SPEAKER: <an AI who has spoken less recently>. When someone suggests a specific person, prefer that choice when appropriate.
+All non-host player names (use exactly as written): ${nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)).join(", ")}.
+
+CRITICAL — Keep the discussion going: list 2–3 AI speakers most of the time so the conversation flows. End with ${humanName} when it's a natural moment for the human to speak. Rotate among different AI players; do NOT repeat the same 1–2 names every turn. When someone suggests a specific person, prefer that choice.
 
 --- CURRENT GAME STATE ---
 Phase: ${gamePhase || "intro"}
@@ -495,27 +502,37 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return keptLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
       };
 
-      const parseHostResult = (raw: string): { hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null } => {
+      // A resolved entry in the speaking queue after Host's NEXT_SPEAKER directive
+      type SpeakerQueueItem =
+        | { type: "human" }
+        | { type: "everyone" }
+        | { type: "ai"; player: typeof players[0] };
+
+      const parseHostResult = (raw: string): { hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[] } => {
         let hostContent = raw.trim();
         const nextSpeakerMatch = hostContent.match(/\nNEXT_SPEAKER:\s*(.+?)\s*$/im);
         let who: string | null = null;
-        let nextSpeakerPlayer: typeof players[0] | null = null;
+        const speakerQueue: SpeakerQueueItem[] = [];
         if (nextSpeakerMatch) {
           who = nextSpeakerMatch[1].trim();
           hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
-          const whoLower = who?.toLowerCase() ?? "";
-          // Treat "You" and the human's in-game name as pointing to the human player
-          const isHumanTarget = whoLower === "you" || (humanName && whoLower === humanName.toLowerCase());
-          if (isHumanTarget) {
-            nextSpeakerPlayer = null; // human: handled by setCurrentSpeakerId(userId) below
-          } else if (whoLower === "everyone") {
-            if (aiOnly.length > 0) nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
-          } else {
-            const player = players.find((p) => !p.isGameMaster && p.name === who);
-            nextSpeakerPlayer = player ?? null;
+          // Parse comma-separated ordered list of speakers (e.g. "Juno, Edda, You")
+          const names = who.split(",").map((n) => n.trim()).filter(Boolean);
+          for (const name of names) {
+            const nameLower = name.toLowerCase();
+            if (nameLower === "you" || (humanName && nameLower === humanName.toLowerCase())) {
+              speakerQueue.push({ type: "human" });
+              break; // human ends the queue
+            } else if (nameLower === "everyone") {
+              speakerQueue.push({ type: "everyone" });
+              break;
+            } else {
+              const player = players.find((p) => !p.isGameMaster && p.name === name);
+              if (player?.isAI) speakerQueue.push({ type: "ai", player });
+            }
           }
         }
-        return { hostContent, who, nextSpeakerPlayer };
+        return { hostContent, who, speakerQueue };
       };
 
       /** Parse [BOARD:Name]...[/BOARD] etc., apply actions (e.g. My Board), return content for public display. */
@@ -531,7 +548,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       };
 
       /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
-      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null; imageUrl?: string }> => {
+      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; imageUrl?: string }> => {
         const messageId = addStreamingMessage(
           { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
           chId
@@ -548,7 +565,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
           });
           if (!res.ok || !res.body) {
             updateStreamingMessage(messageId, "…", true);
-            return { hostContent: "", who: null, nextSpeakerPlayer: null };
+            return { hostContent: "", who: null, speakerQueue: [] };
           }
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
@@ -574,19 +591,19 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               }
             }
           }
-          const { hostContent, who, nextSpeakerPlayer } = parseHostResult(acc);
+          const { hostContent, who, speakerQueue } = parseHostResult(acc);
           const afterActions = applyHostActionsAndClean(hostContent);
           const displayContent = applyHostRoleAssignments(afterActions);
           updateStreamingMessage(messageId, displayContent || " ", true);
-          return { hostContent: displayContent, who, nextSpeakerPlayer };
+          return { hostContent: displayContent, who, speakerQueue };
         } catch (e) {
           console.error("Host stream error:", e);
           updateStreamingMessage(messageId, "…", true);
-          return { hostContent: "", who: null, nextSpeakerPlayer: null };
+          return { hostContent: "", who: null, speakerQueue: [] };
         }
       };
 
-      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null; imageUrl?: string }> => {
+      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; imageUrl?: string }> => {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
@@ -597,7 +614,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             ],
           }),
         });
-        if (!res.ok) return { hostContent: "", who: null, nextSpeakerPlayer: null };
+        if (!res.ok) return { hostContent: "", who: null, speakerQueue: [] };
         const data = await res.json();
         let hostContent = (data.message || "").trim();
         const parsed = parseHostResult(hostContent);
@@ -629,88 +646,69 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
       const firstUserContent = `Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, nextSpeakerPlayer, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
+      let { hostContent, who, speakerQueue, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       if (!hostContent && !firstImageUrl) {
         setIsRoundInProgress(false);
         return;
       }
 
-      const whoLower = who?.toLowerCase() ?? "";
-      const isHumanTurn = whoLower === "you" || (humanName && whoLower === humanName.toLowerCase());
-      if (isHumanTurn) setCurrentSpeakerId(userId);
-      else if (whoLower === "everyone") setCurrentSpeakerId(null);
-      else if (nextSpeakerPlayer) setCurrentSpeakerId(nextSpeakerPlayer.id);
+      // Set the first speaker's turn indicator immediately so the UI reflects who's "up"
+      const firstInQueue = speakerQueue[0];
+      if (firstInQueue?.type === "human") setCurrentSpeakerId(userId);
+      else if (firstInQueue?.type === "everyone") setCurrentSpeakerId(null);
+      else if (firstInQueue?.type === "ai") setCurrentSpeakerId(firstInQueue.player.id);
+      else if (!firstInQueue) {
+        // Host said no next speaker: default to human
+        const whoLower = who?.toLowerCase() ?? "";
+        if (whoLower === "you" || (humanName && whoLower === humanName.toLowerCase())) setCurrentSpeakerId(userId);
+      }
 
       await hostPace();
       let recentForNext = [
         ...channelMessagesForRecent.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
-        { senderName: "You", content },
+        { senderName: humanName, content },
         { senderName: gmName, content: hostContent },
       ] as Array<{ senderName: string; content: string }>;
 
-      const runAiThenMaybeSecond = async (firstSpeaker: typeof players[0]): Promise<void> => {
-        const firstContent = await runPlayerSpeak(firstSpeaker, recentForNext);
-        if (firstContent) {
-          addMessage({ senderId: firstSpeaker.id, senderName: firstSpeaker.name, senderAvatar: firstSpeaker.avatar ?? "#8b5cf6", content: firstContent, isAI: true }, channelId);
-          await hostPace();
-          recentForNext = [...recentForNext, { senderName: firstSpeaker.name, content: firstContent }];
-          const others = aiOnly.filter((p) => p.id !== firstSpeaker.id);
-          if (others.length > 0) {
-            const secondSpeaker = others[Math.floor(Math.random() * others.length)];
-            const secondContent = await runPlayerSpeak(secondSpeaker, recentForNext);
-            if (secondContent) {
-              addMessage({ senderId: secondSpeaker.id, senderName: secondSpeaker.name, senderAvatar: secondSpeaker.avatar ?? "#8b5cf6", content: secondContent, isAI: true }, channelId);
-              await hostPace();
-              recentForNext = [...recentForNext, { senderName: secondSpeaker.name, content: secondContent }];
+      // Execute the ordered speaker queue produced by Host's NEXT_SPEAKER directive.
+      // Each entry is either an AI player (speaks in order), "human" (stop and wait), or "everyone" (one AI at random).
+      const runSpeakerQueue = async (queue: SpeakerQueueItem[]): Promise<void> => {
+        for (const item of queue) {
+          if (item.type === "human") {
+            setCurrentSpeakerId(userId);
+            return;
+          }
+          if (item.type === "everyone") {
+            setCurrentSpeakerId(null);
+            // Have one random AI chime in for "open discussion"
+            if (aiOnly.length > 0) {
+              const pick = aiOnly[Math.floor(Math.random() * aiOnly.length)];
+              const txt = await runPlayerSpeak(pick, recentForNext);
+              if (txt) {
+                addMessage({ senderId: pick.id, senderName: pick.name, senderAvatar: pick.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+                await hostPace();
+                recentForNext = [...recentForNext, { senderName: pick.name, content: txt }];
+              }
             }
+            return;
+          }
+          // type === "ai"
+          const txt = await runPlayerSpeak(item.player, recentForNext);
+          if (txt) {
+            addMessage({ senderId: item.player.id, senderName: item.player.name, senderAvatar: item.player.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+            await hostPace();
+            recentForNext = [...recentForNext, { senderName: item.player.name, content: txt }];
+            // Update current speaker to whoever is next in the queue (or null when done)
+            const nextIdx = queue.indexOf(item) + 1;
+            const nextItem = queue[nextIdx];
+            if (nextItem?.type === "human") setCurrentSpeakerId(userId);
+            else if (nextItem?.type === "ai") setCurrentSpeakerId(nextItem.player.id);
+            else if (!nextItem) setCurrentSpeakerId(null);
           }
         }
       };
 
-      if (nextSpeakerPlayer?.isAI && !nextSpeakerPlayer.isGameMaster) {
-        await runAiThenMaybeSecond(nextSpeakerPlayer);
-      } else if (who?.toLowerCase() === "everyone" && nextSpeakerPlayer?.isAI) {
-        const txt = await runPlayerSpeak(nextSpeakerPlayer, recentForNext);
-        if (txt) {
-          addMessage({ senderId: nextSpeakerPlayer.id, senderName: nextSpeakerPlayer.name, senderAvatar: nextSpeakerPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
-          await hostPace();
-          recentForNext = [...recentForNext, { senderName: nextSpeakerPlayer.name, content: txt }];
-        }
-      }
-
-      const MAX_CONTINUATION_ROUNDS = 0;
-      for (let r = 0; r < MAX_CONTINUATION_ROUNDS; r++) {
-        const continuationUserContent = `The discussion continues. Latest messages:\n${recentForNext.slice(-14).map((m) => `${m.senderName}: ${m.content}`).join("\n")}\n\nAs host, briefly respond to what was just said (or move the phase). Then assign NEXT_SPEAKER. Prefer an AI name so the discussion keeps going; use NEXT_SPEAKER: ${humanName} only when it's a natural moment for the human to speak.`;
-        const next = await callHost(continuationUserContent);
-        if (!next.hostContent && !next.imageUrl) break;
-        const nextWho = next.who?.toLowerCase();
-        const nextHostContent = applyHostRoleAssignments(next.hostContent || "");
-        addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: nextHostContent || " ", isAI: true, ...(next.imageUrl && { imageUrl: next.imageUrl }) }, channelId);
-        await hostPace();
-        recentForNext = [...recentForNext, { senderName: gmName, content: nextHostContent }];
-        const isHumanNext = nextWho === "you" || (humanName && nextWho === humanName.toLowerCase());
-        if (isHumanNext) {
-          setCurrentSpeakerId(userId);
-          break;
-        }
-        if (nextWho === "everyone") {
-          setCurrentSpeakerId(null);
-          if (next.nextSpeakerPlayer?.isAI) {
-            const txt = await runPlayerSpeak(next.nextSpeakerPlayer, recentForNext);
-            if (txt) {
-              addMessage({ senderId: next.nextSpeakerPlayer.id, senderName: next.nextSpeakerPlayer.name, senderAvatar: next.nextSpeakerPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
-              await hostPace();
-              recentForNext = [...recentForNext, { senderName: next.nextSpeakerPlayer.name, content: txt }];
-            }
-          }
-          break;
-        }
-        if (next.nextSpeakerPlayer?.isAI && !next.nextSpeakerPlayer.isGameMaster) {
-          await runAiThenMaybeSecond(next.nextSpeakerPlayer);
-        } else {
-          break;
-        }
-      }
+      await runSpeakerQueue(speakerQueue);
 
       setCurrentSpeakerId((id) => (id === userId ? id : null));
     } catch (error) {
