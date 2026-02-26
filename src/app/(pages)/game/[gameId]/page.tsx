@@ -624,14 +624,27 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       };
 
       const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>): Promise<string | null> => {
+        // Skip eliminated players — they should not speak
+        const speakerStatus = (speaker.stats?.Status as string | undefined)?.toLowerCase();
+        if (speakerStatus === "eliminated" || speakerStatus === "dead") return null;
+
         try {
           const res = await fetch("/api/chat/player-speak", {
             method: "POST",
             headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
             body: JSON.stringify({
               gameName: currentGame?.name,
+              gameTemplate: currentGame?.config?.template,
               rules: currentGame?.config?.rules,
-              player: { name: speaker.name, role: speaker.role, personality: speaker.personality, background: speaker.background },
+              gamePhase,
+              player: {
+                name: speaker.name,
+                role: speaker.role,
+                personality: speaker.personality,
+                background: speaker.background,
+                // Pass private My Board content so the player knows their secret info
+                boardContent: myBoardContent[speaker.id] ?? undefined,
+              },
               recentMessages: recent,
             }),
           });
@@ -692,7 +705,9 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             }
             return;
           }
-          // type === "ai"
+          // type === "ai" — skip if eliminated
+          const itemStatus = (item.player.stats?.Status as string | undefined)?.toLowerCase();
+          if (itemStatus === "eliminated" || itemStatus === "dead") continue;
           const txt = await runPlayerSpeak(item.player, recentForNext);
           if (txt) {
             addMessage({ senderId: item.player.id, senderName: item.player.name, senderAvatar: item.player.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
