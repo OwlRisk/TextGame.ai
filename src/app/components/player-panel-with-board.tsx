@@ -134,6 +134,8 @@ export function PlayerPanelWithBoard({
                     onViewProfile={openProfile}
                     isHiddenRoleGame={isHiddenRoleGame}
                     currentUserId={currentUserId}
+                    avatarImageUrls={avatarImageUrls}
+                    onAvatarUrlLoaded={onAvatarUrlLoaded}
                   />
                 ))}
               </div>
@@ -176,6 +178,8 @@ function PlayerCard({
   onViewProfile,
   isHiddenRoleGame,
   currentUserId,
+  avatarImageUrls = {},
+  onAvatarUrlLoaded,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -186,6 +190,8 @@ function PlayerCard({
   onViewProfile?: (player: Player) => void;
   isHiddenRoleGame?: boolean;
   currentUserId?: string;
+  avatarImageUrls?: Record<string, string>;
+  onAvatarUrlLoaded?: (key: string, url: string) => void;
 }) {
   const canViewProfile = !!onViewProfile;
   const handleRowClick = () => {
