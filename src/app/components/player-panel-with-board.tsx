@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Volume2, VolumeX, User, Package, Info, Skull } from "lucide-react";
+import { Volume2, VolumeX, User, Package, Info } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
@@ -122,10 +122,11 @@ export function PlayerPanelWithBoard({
                 Players — {players.length}
               </div>
               {(() => {
-                const isOut = (p: Player) => {
-                  const s = ((p.stats?.Status as string | undefined) ?? p.status ?? "").toLowerCase();
-                  return s === "eliminated" || s === "dead";
-                };
+                // A player is "out of game" if Host explicitly set their Status to a non-active state.
+                // Covers: eliminated, dead, out, exiled, banished, retired, spectating, removed, etc.
+                const OUT_STATUSES = ["eliminated", "dead", "out", "exiled", "banished", "retired", "spectating", "removed", "disqualified", "voted out"];
+                const getStatus = (p: Player) => ((p.stats?.Status as string | undefined) ?? p.status ?? "").toLowerCase();
+                const isOut = (p: Player) => OUT_STATUSES.some(s => getStatus(p).includes(s));
                 const alive = players.filter((p) => !isOut(p));
                 const eliminated = players.filter((p) => isOut(p));
                 const cardProps = (player: Player) => ({
@@ -151,8 +152,8 @@ export function PlayerPanelWithBoard({
                       <>
                         <div className="flex items-center gap-2 pt-2 pb-1">
                           <div className="h-px flex-1 bg-zinc-700/50" />
-                          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                            <Skull className="h-3 w-3" /> Eliminated
+                          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+                            Out of Game
                           </span>
                           <div className="h-px flex-1 bg-zinc-700/50" />
                         </div>
@@ -222,8 +223,9 @@ function PlayerCard({
   const handleRowClick = () => {
     if (canViewProfile) onViewProfile?.(player);
   };
-  const eliminatedStatus = ((player.stats?.Status as string | undefined) ?? player.status ?? "").toLowerCase();
-  const isEliminated = eliminatedStatus === "eliminated" || eliminatedStatus === "dead";
+  const OUT_STATUSES = ["eliminated", "dead", "out", "exiled", "banished", "retired", "spectating", "removed", "disqualified", "voted out"];
+  const rawStatus = (player.stats?.Status as string | undefined) ?? player.status ?? "";
+  const isEliminated = OUT_STATUSES.some(s => rawStatus.toLowerCase().includes(s));
 
   return (
     <div
@@ -260,11 +262,6 @@ function PlayerCard({
               onAvatarLoaded={onAvatarUrlLoaded}
             />
           )}
-          {isEliminated && (
-            <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-zinc-900 flex items-center justify-center">
-              <Skull className="h-2.5 w-2.5 text-zinc-400" />
-            </div>
-          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
@@ -300,6 +297,10 @@ function PlayerCard({
             (player.id === currentUserId || player.roleRevealed)
               ? <div className={`text-xs font-medium ${isEliminated ? "text-zinc-500 line-through" : "text-zinc-300"}`}>{player.role}</div>
               : null
+          )}
+          {/* Show actual status label when player is out of game */}
+          {isEliminated && rawStatus && (
+            <div className="text-[10px] text-zinc-600 mt-0.5">{rawStatus}</div>
           )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
