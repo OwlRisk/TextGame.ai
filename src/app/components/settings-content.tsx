@@ -33,7 +33,7 @@ export function SettingsContent() {
   const router = useRouter();
   const { session } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>('free');
-  const [aiModel, setAiModel] = useState('gpt-4o-mini');
+  const [aiModel, setAiModel] = useState('gpt-5.2');
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'true') !== 'false');
   const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-max'));
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
@@ -54,10 +54,12 @@ export function SettingsContent() {
   const isPaid = currentPlan !== 'free';
 
   const freeModels = [
+    { value: 'gpt-5.2', label: 'GPT-5.2', description: 'Default model' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast & efficient' },
     { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Reliable & quick' },
   ];
   const paidModels = [
+    { value: 'gpt-5.2', label: 'GPT-5.2', description: 'Default model' },
     { value: 'gpt-4o', label: 'GPT-4o', description: 'Most capable' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast & efficient' },
     { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Advanced reasoning' },

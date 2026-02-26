@@ -64,7 +64,7 @@ const OPENAI_PRICE_PER_1M: Record<string, { input: number; output: number }> = {
 
 function getModelPrice(model: string): { input: number; output: number } {
   const key = model?.toLowerCase?.() ?? '';
-  return OPENAI_PRICE_PER_1M[key] ?? OPENAI_PRICE_PER_1M['gpt-4o'];
+  return OPENAI_PRICE_PER_1M[key] ?? OPENAI_PRICE_PER_1M['gpt-5.2'];
 }
 
 /**
@@ -86,7 +86,7 @@ export function gptUsageToCoins(
  */
 export function estimatedTokensToCoins(totalTokens: number, model?: string): number {
   if (totalTokens <= 0) return 1;
-  const { input, output } = getModelPrice(model ?? 'gpt-4o');
+  const { input, output } = getModelPrice(model ?? 'gpt-5.2');
   const half = totalTokens / 2;
   const usd = (half / 1_000_000) * input + (half / 1_000_000) * output;
   return usdToCoins(usd);

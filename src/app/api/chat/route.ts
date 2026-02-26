@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
     const usage = completion.usage;
     const promptTokens = usage?.prompt_tokens ?? 0;
     const completionTokens = usage?.completion_tokens ?? 0;
-    const model = (completion as { model?: string }).model ?? 'gpt-4o';
+    const model = (completion as { model?: string }).model ?? 'gpt-5.2';
     const coinsToDeduct = gptUsageToCoins(model, promptTokens, completionTokens);
     await deductTokens(
       user.id,

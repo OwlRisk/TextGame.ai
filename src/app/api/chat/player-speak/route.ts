@@ -66,7 +66,7 @@ EMOTION & SOUND TAGS (optional, use sparingly and naturally):
     if (rules && rules.trim()) userContent += `\n\nGame rules:\n${rules.slice(0, 1500)}`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.2',
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: userContent },

@@ -53,7 +53,7 @@ Rules:
     const userPrompt = `Recent conversation:\n${convSnippet}\n\nDecide whether to show quick replies; if yes, output that many lines, one per line (0 lines is valid):`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

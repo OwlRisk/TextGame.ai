@@ -8,7 +8,7 @@ export const env = {
     return process.env.OPENAI_API_KEY;
   },
   get OPENAI_CHAT_MODEL(): string {
-    return process.env.OPENAI_CHAT_MODEL || 'gpt-4o';
+    return process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
   },
   get NEXT_PUBLIC_SUPABASE_URL(): string | undefined {
     return process.env.NEXT_PUBLIC_SUPABASE_URL;
