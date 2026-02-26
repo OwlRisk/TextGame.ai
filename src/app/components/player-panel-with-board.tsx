@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { Badge } from "@/app/components/ui/badge";
 import { Player } from "@/app/components/player-panel";
 import { PlayerBoardData } from "@/app/components/player-board";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
@@ -228,6 +228,8 @@ function PlayerCard({
                 isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
               }`}
               fallbackColor={player.avatar}
+              initialUrl={avatarImageUrls[avatarCacheKey(getAvatarPropsForPlayer(player).name ?? player.name, getAvatarPropsForPlayer(player).type)]}
+              onAvatarLoaded={onAvatarUrlLoaded}
             />
           )}
         </div>
