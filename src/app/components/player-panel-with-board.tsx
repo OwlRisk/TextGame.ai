@@ -29,6 +29,12 @@ interface PlayerPanelWithBoardProps {
   /** When set, tab is controlled by parent (e.g. open to My Board from chat). */
   activeTab?: "players" | "board";
   onTabChange?: (tab: "players" | "board") => void;
+  /** When set, human player uses this in-game name for avatar key. */
+  humanGameIdentity?: { name: string } | null;
+  /** Persisted avatar URLs (key = "name|type") for cross-device. */
+  avatarImageUrls?: Record<string, string>;
+  /** Call when an avatar URL is loaded so the room can persist it. */
+  onAvatarUrlLoaded?: (key: string, url: string) => void;
 }
 
 export function PlayerPanelWithBoard({ 
@@ -44,6 +50,9 @@ export function PlayerPanelWithBoard({
   currentUserId,
   activeTab,
   onTabChange,
+  humanGameIdentity,
+  avatarImageUrls = {},
+  onAvatarUrlLoaded,
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -81,6 +90,9 @@ export function PlayerPanelWithBoard({
         open={profileOpen}
         onOpenChange={setProfileOpen}
         gameId={gameId}
+        avatarImageUrls={avatarImageUrls}
+        onAvatarUrlLoaded={onAvatarUrlLoaded}
+        humanGameIdentity={humanGameIdentity}
       />
       <Tabs value={tabValue} onValueChange={handleTabChange} className="flex flex-col h-full overflow-hidden flex-1">
         <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
