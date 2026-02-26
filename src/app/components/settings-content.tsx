@@ -63,8 +63,6 @@ export function SettingsContent() {
     { value: 'gpt-4o', label: 'GPT-4o', description: 'Most capable' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast & efficient' },
     { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Advanced reasoning' },
-    { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', description: "Anthropic's best" },
-    { value: 'claude-3-opus', label: 'Claude 3 Opus', description: 'Maximum intelligence' },
   ];
   const availableModels = isPaid ? paidModels : freeModels;
 
