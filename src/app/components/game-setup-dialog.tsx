@@ -11,6 +11,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
 export type { GameTemplate } from "@/lib/game-templates";
+import { DEFAULT_SLASH_COMMANDS, GAME_TEMPLATES } from "@/lib/game-templates";
 
 interface GameSetupDialogProps {
   open: boolean;
@@ -66,7 +67,6 @@ interface ChatMessage {
 }
 
 export { DEFAULT_SLASH_COMMANDS } from "@/lib/game-templates";
-
 /** Format slash commands for display in GM confirmation messages */
 function formatCommandsBlock(templateId: string): string {
   const cmds = DEFAULT_SLASH_COMMANDS[templateId];
@@ -74,8 +74,6 @@ function formatCommandsBlock(templateId: string): string {
   const lines = cmds.map(c => `  ${c.cmd} — ${c.hint}`).join("\n");
   return `**Chat Commands:**\n${lines}\n\n`;
 }
-
-import { GAME_TEMPLATES } from "@/lib/game-templates";
 
 type ConversationState = "greeting" | "game-type" | "player-count" | "rules-discussion" | "confirmation" | "completed";
 
