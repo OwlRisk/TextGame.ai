@@ -10,15 +10,7 @@ import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
-export interface GameTemplate {
-  id: string;
-  name: string;
-  description: string;
-  minPlayers: number;
-  maxPlayers: number;
-  defaultRules: string;
-  roles?: string[];
-}
+export type { GameTemplate } from "@/lib/game-templates";
 
 interface GameSetupDialogProps {
   open: boolean;
@@ -73,28 +65,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-/** Default slash commands per game template. Injected at game creation; editable afterwards. */
-export const DEFAULT_SLASH_COMMANDS: Record<string, Array<{ cmd: string; hint: string }>> = {
-  werewolf: [
-    { cmd: '/vote',  hint: 'Vote to eliminate a player' },
-    { cmd: '/role',  hint: 'Check your current role'    },
-    { cmd: '/rules', hint: 'Display game rules'         },
-  ],
-  mafia: [
-    { cmd: '/vote',  hint: 'Vote to eliminate a player' },
-    { cmd: '/role',  hint: 'Check your current role'    },
-    { cmd: '/rules', hint: 'Display game rules'         },
-  ],
-  undercover: [
-    { cmd: '/vote',  hint: 'Vote to eliminate a player' },
-    { cmd: '/rules', hint: 'Display game rules'         },
-  ],
-  tarot: [
-    { cmd: '/draw',  hint: 'Draw a tarot card'          },
-    { cmd: '/rules', hint: 'Display game rules'         },
-  ],
-  custom: [],
-};
+export { DEFAULT_SLASH_COMMANDS } from "@/lib/game-templates";
 
 /** Format slash commands for display in GM confirmation messages */
 function formatCommandsBlock(templateId: string): string {
@@ -104,88 +75,7 @@ function formatCommandsBlock(templateId: string): string {
   return `**Chat Commands:**\n${lines}\n\n`;
 }
 
-const GAME_TEMPLATES: GameTemplate[] = [
-  {
-    id: "werewolf",
-    name: "Werewolf",
-    description: "A classic social deduction game where villagers try to find the werewolves among them.",
-    minPlayers: 5,
-    maxPlayers: 12,
-    defaultRules: `SETTING: A village is plagued by werewolves. By day you are neighbors; by night the wolves hunt. Find them before they devour the town.
-
-OBJECTIVE: Villagers must eliminate all Werewolves by day vote. Werewolves must eliminate Villagers at night until they outnumber the town.
-
-PHASES:
-1. Night — Werewolves choose one victim; Seer may check one player; Doctor may protect one.
-2. Day — Everyone discusses and votes to eliminate one player. Tied vote = no elimination.
-
-ROLES:
-- Villager: Innocent; no special power.
-- Werewolf: Each night, with other wolves, choose one player to eliminate.
-- Seer: Each night, learn one player's true role (Villager or Werewolf).
-- Doctor: Each night, protect one player (including self once per game). They cannot be eliminated that night.
-
-RULES:
-- Host runs phases in order. Dead players cannot speak or vote.
-- Once rules are set, they cannot be changed.
-
-WINNING:
-- Villagers win when all Werewolves are eliminated.
-- Werewolves win when they equal or outnumber the living Villagers.`,
-    roles: ["Villager", "Werewolf", "Seer", "Doctor"]
-  },
-  {
-    id: "undercover",
-    name: "Undercover (Who's the Spy)",
-    description: "Find the undercover agent who has a different word while blending in with the group.",
-    minPlayers: 4,
-    maxPlayers: 10,
-    defaultRules: `SETTING: Everyone shares a secret word—except one Undercover with a different word, and optionally Mr. White with no word. Describe your word without saying it; find the spy or blend in to survive.
-
-OBJECTIVE: Civilians must find and vote out the Undercover. Undercover must blend in and survive to the final round.
-
-SETUP:
-- Most players receive the same word (Civilians).
-- One player receives a similar but different word (Undercover).
-- Optionally, one player receives no word (Mr. White).
-
-GAMEPLAY:
-1. In turn, each player describes their word in one sentence (no saying the word).
-2. After all speak, everyone votes to eliminate one player. Highest votes eliminated; reveal role.
-3. Repeat until Undercover is eliminated (Civilians win) or only a few remain (Undercover wins).
-
-RULES:
-- Host assigns words and runs rounds. Descriptions must be one sentence only.
-
-WINNING:
-- Civilians win if the Undercover is eliminated.
-- Undercover wins if still alive when 3 or fewer players remain.
-- Mr. White (if in game) wins by correctly guessing the civilian word when eliminated.`,
-    roles: ["Civilian", "Undercover", "Mr. White"]
-  },
-  {
-    id: "tarot",
-    name: "Tarot Reading",
-    description: "A reflective Tarot reading with the Host as reader. Ask a question and receive card-based guidance.",
-    minPlayers: 1,
-    maxPlayers: 1,
-    defaultRules: `SETTING: You are in a calm, reflective space. The Host acts as the Tarot reader (no other AI players). The human is the Querent—the one asking the question and receiving the reading.
-
-OBJECTIVE: The Querent may ask a specific question or request a general reading. The Host uses a 78-card deck (22 Major Arcana, 56 Minor Arcana), draws cards according to the chosen spread, and interprets each card in context.
-
-SPREADS: Single card, Three cards (Past/Present/Future), Celtic Cross, or other as the Host offers. Host names each card and interprets in relation to the question. Tone: thoughtful, encouraging, slightly mystical. No win/lose—session ends when the reading is complete.`,
-    roles: ["Querent"]
-  },
-  {
-    id: "custom",
-    name: "Custom Game",
-    description: "Create your own game with custom rules and roles.",
-    minPlayers: 2,
-    maxPlayers: 20,
-    defaultRules: "Custom game rules will be defined through conversation",
-    roles: []
-  }
-];
+import { GAME_TEMPLATES } from "@/lib/game-templates";
 
 type ConversationState = "greeting" | "game-type" | "player-count" | "rules-discussion" | "confirmation" | "completed";
 
