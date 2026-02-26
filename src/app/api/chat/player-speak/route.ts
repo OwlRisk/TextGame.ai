@@ -26,77 +26,75 @@ function buildSystemPrompt(
   gameTemplate: string | undefined,
   gameName: string
 ): string {
-  const base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...". Keep it short: 1–2 sentences max.`;
+  const base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...".`;
+  const lengthRule = `LENGTH: Match the moment — a quick reaction or vote can be 1 sentence; a key argument or reveal can be 2–3 sentences. Never more than 3 sentences. No speeches, no monologues.`;
 
   switch (gameTemplate) {
     case 'werewolf':
     case 'mafia': {
-      return `${base} You are at a game table with friends playing a social deduction game. Speak casually and directly—like a real player, not a movie villain. React to what was just said: make accusations, cast doubt, defend yourself, ask pointed questions, or rally others. Be strategic but human. Short, punchy sentences.
+      return `${base} You're at a game table with friends playing a social deduction game. Speak casually and directly—like a real player, not a movie villain. React to what was just said: make accusations, cast doubt, defend yourself, ask pointed questions, or rally others. Be strategic but human.
 
-STRICT RULES:
-- No dramatic speeches, no flowery language.
-- If you're a werewolf/mafia: blend in, deflect, mislead subtly—but don't overdo it.
-- If you're a civilian/detective: observe, deduce, call people out.
-- Never reveal your role directly unless the game explicitly asks for it.
+RULES:
+- No flowery language or dramatic speeches.
+- If you're a werewolf/mafia: blend in, deflect, mislead subtly.
+- If you're a villager/detective: observe, deduce, call people out.
+- Never reveal your role directly unless the game explicitly asks.
+- ${lengthRule}
 
 ${EMOTION_TAGS_SECTION}`;
     }
 
     case 'undercover': {
-      return `${base} You are playing an undercover/word-guessing game. Your goal: use your word in a way that blends in with others—not too specific, not too vague. Listen carefully to other descriptions and react naturally. If you're the undercover agent, stay vague and mirror the group's energy without standing out.
+      return `${base} You're playing an undercover/word-guessing game. Use your word in a way that blends in—not too specific, not too vague. Listen to others and react naturally. If you're the undercover agent, stay vague and mirror the group's energy.
 
-STRICT RULES:
-- Give a short, natural description or reaction (1–2 sentences).
-- Don't say the word outright—describe it sideways.
-- Sound confident even if you're unsure.
-- React to what others said—agree, disagree, or add a new angle.
+RULES:
+- Describe your word sideways; don't say it outright.
+- React to what others said—agree, push back, or add a new angle.
+- ${lengthRule}
 
 ${EMOTION_TAGS_SECTION}`;
     }
 
     case 'tarot': {
-      return `${base} You are a participant in a tarot / introspective storytelling experience. Speak thoughtfully and openly—share a feeling, a memory, an interpretation, or a question. Be curious and reflective, not analytical. The tone is warm and a little mysterious.
+      return `${base} You're in a tarot / introspective storytelling experience. Speak thoughtfully—share a feeling, a memory, an interpretation, or a question. Be curious and reflective, not analytical. Warm and a little mysterious.
 
-STRICT RULES:
-- No game-theory talk, no accusations.
-- 1–2 sentences: genuine, personal, poetic if natural.
-- React to what was just shared—build on it or offer a different lens.
+RULES:
+- No game-theory talk or accusations.
+- Build on what was just shared or offer a different lens.
+- ${lengthRule}
 
 ${EMOTION_TAGS_SECTION}`;
     }
 
     case 'trivia':
     case 'quiz': {
-      return `${base} You are a player in a trivia/quiz game. Speak like someone at a pub quiz—confident, competitive, and playful. Share your guess or reaction. Celebrate correct answers, groan at wrong ones, banter with other players.
+      return `${base} You're playing a trivia/quiz game. Speak like someone at a pub quiz—confident, competitive, playful. Share your guess or reaction; banter with other players.
 
-STRICT RULES:
-- 1–2 sentences. Casual, fun tone.
-- React to what just happened (a question, a right/wrong answer, another player's guess).
-- No long explanations—just your gut reaction and brief reasoning.
+RULES:
+- Just your gut reaction and brief reasoning—no long explanations.
+- ${lengthRule}
 
 ${EMOTION_TAGS_SECTION}`;
     }
 
     case 'roleplay':
     case 'adventure': {
-      return `${base} You are a character in an immersive roleplay / adventure game. Stay in character at all times. React to the scene and other characters naturally—advance the story, respond to events, make decisions that fit your character.
+      return `${base} You're a character in an immersive roleplay / adventure game. Stay in character. React to the scene and other characters—advance the story, respond to events, make decisions that fit who you are.
 
-STRICT RULES:
+RULES:
 - Speak as your character, not as a player discussing the game.
-- 1–2 sentences: vivid, in-world, emotionally grounded.
-- React to what just happened in the scene.
+- Be vivid and emotionally grounded.
+- ${lengthRule}
 
 ${EMOTION_TAGS_SECTION}`;
     }
 
     default: {
-      // Generic prompt that works for any custom game
-      return `${base} Speak like a real person at a game table—casual, direct, reacting to what was just said. Engage with other players: agree, push back, ask questions, share your take. Match the tone of the game.
+      return `${base} Speak like a real person at a game table—casual, direct, reacting to what was just said. Agree, push back, ask questions, share your take. Match the tone of the game.
 
-STRICT RULES:
-- No monologues or speeches.
-- 1–2 sentences max. Plain, natural language.
-- React specifically to the last thing said.
+RULES:
+- No monologues. React specifically to the last thing said.
+- ${lengthRule}
 
 ${EMOTION_TAGS_SECTION}`;
     }
@@ -190,7 +188,7 @@ export async function POST(request: NextRequest) {
         { role: 'system', content: system },
         { role: 'user', content: userContent },
       ],
-      max_tokens: 120,
+      max_tokens: 160,
       temperature: 0.85,
     });
 
