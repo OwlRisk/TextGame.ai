@@ -802,7 +802,7 @@ export function ChatArea({
               variant="ghost"
               size="sm"
               onClick={onOpenPlayerBoard}
-              className="hover:bg-zinc-700 text-zinc-300 hover:text-white"
+              className="md:hidden hover:bg-zinc-700 text-zinc-300 hover:text-white"
             >
               <User className="h-4 w-4 mr-2" />
               My Board
