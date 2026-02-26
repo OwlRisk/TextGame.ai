@@ -460,13 +460,8 @@ export function ChatArea({
       hasQueuedTTSInSessionRef.current = true;
 
       // If this message was shown during streaming, its text is already visible — don't re-reveal.
-      // Otherwise (fresh complete message), start empty and reveal each sentence as its audio plays.
+      // Otherwise: reveal each sentence first (text), then play TTS (voice), so text is slightly ahead of voice.
       const alreadyShown = (displayedContentRef.current.get(m.id) ?? '').length > 0;
-      if (!alreadyShown) {
-        // Clear/ensure entry exists so the "waiting dots" animation shows immediately.
-        displayedContentRef.current.set(m.id, '');
-        setRevealTick((t) => t + 1);
-      }
 
       const voiceId = voiceIdForMessage(m);
       let fromChar = 0;
@@ -477,7 +472,8 @@ export function ChatArea({
           if (alreadyShown) {
             playInworldTTS(s, voiceId, () => {});
           } else {
-            playInworldTTS(s, voiceId, () => revealSentence(m.id, s));
+            revealSentence(m.id, s);
+            playInworldTTS(s, voiceId, () => {});
           }
         });
         fromChar = newOffset;
@@ -487,7 +483,8 @@ export function ChatArea({
         if (alreadyShown) {
           playInworldTTS(remaining, voiceId, () => {});
         } else {
-          playInworldTTS(remaining, voiceId, () => revealSentence(m.id, remaining));
+          revealSentence(m.id, remaining);
+          playInworldTTS(remaining, voiceId, () => {});
         }
       }
 
@@ -864,9 +861,9 @@ export function ChatArea({
                       </div>
                       <div className="text-violet-100 text-sm leading-[1.65] break-words">
                         {(() => {
-                          const waitingForTTS = voiceEnabled && inworldTTSSupported && message.isAI && !message.isStreaming && syncedContent === '' && rawContent !== '';
                           if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
-                          if (waitingForTTS) return <span className="inline-flex gap-1 items-center opacity-40 mt-0.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{animationDelay:'0ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{animationDelay:'150ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{animationDelay:'300ms'}} /></span>;
+                          if (voiceEnabled && inworldTTSSupported && message.isAI && rawContent !== '' && syncedContent === '') return null;
+                          if (rawContent.trim()) return formatMessage(stripEmotionTags(rawContent));
                           return null;
                         })()}
                       </div>
@@ -964,10 +961,10 @@ export function ChatArea({
                           </div>
                         )}
                         {(() => {
-                          const waitingForTTS = voiceEnabled && inworldTTSSupported && message.isAI && !message.isStreaming && syncedContent === '' && rawContent !== '';
                           const activeTTS = voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length > 0 && syncedContent.length < rawContent.length;
                           if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
-                          if (waitingForTTS) return <span className="inline-flex gap-1 items-center opacity-40 mt-0.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'0ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'150ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'300ms'}} /></span>;
+                          if (voiceEnabled && inworldTTSSupported && message.isAI && rawContent !== '' && syncedContent === '') return null;
+                          if (rawContent.trim()) return formatMessage(stripEmotionTags(rawContent));
                           if (!message.isAI && !message.imageUrl && !message.isStreaming) return <span className="italic text-zinc-500">(No content)</span>;
                           return null;
                         })()}
@@ -988,9 +985,9 @@ export function ChatArea({
                         </div>
                       )}
                       {(() => {
-                        const waitingForTTS = voiceEnabled && inworldTTSSupported && message.isAI && !message.isStreaming && syncedContent === '' && rawContent !== '';
                         if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
-                        if (waitingForTTS) return <span className="inline-flex gap-1 items-center opacity-40 mt-0.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'0ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'150ms'}} /><span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{animationDelay:'300ms'}} /></span>;
+                        if (voiceEnabled && inworldTTSSupported && message.isAI && rawContent !== '' && syncedContent === '') return null;
+                        if (rawContent.trim()) return formatMessage(stripEmotionTags(rawContent));
                         if (!message.isAI && !message.imageUrl && !message.isStreaming) return <span className="italic text-zinc-500">(No content)</span>;
                         return null;
                       })()}
@@ -1003,8 +1000,8 @@ export function ChatArea({
               </div>
             );
           })}
-          {/* Typing Indicator - hide when that user already has a streaming message (avoid duplicate display) */}
-          {typingUsers && typingUsers.length > 0 && !messages.some(m => 
+          {/* Typing Indicator - only show for current user ("You"); hide for other players to avoid dots when they speak */}
+          {typingUsers && typingUsers.length > 0 && typingUsers[0].name === "You" && !messages.some(m => 
             m.senderName === typingUsers[0].name && m.isStreaming
           ) && (
             <div className="flex gap-3 mt-4">
