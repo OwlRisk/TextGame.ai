@@ -10,8 +10,9 @@ import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
-export type { GameTemplate } from "@/lib/game-templates";
-import { DEFAULT_SLASH_COMMANDS, GAME_TEMPLATES } from "@/lib/game-templates";
+import { GameTemplate, DEFAULT_SLASH_COMMANDS, GAME_TEMPLATES } from "@/lib/game-templates";
+export type { GameTemplate };
+export { DEFAULT_SLASH_COMMANDS };
 
 interface GameSetupDialogProps {
   open: boolean;
@@ -66,7 +67,6 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-export { DEFAULT_SLASH_COMMANDS } from "@/lib/game-templates";
 /** Format slash commands for display in GM confirmation messages */
 function formatCommandsBlock(templateId: string): string {
   const cmds = DEFAULT_SLASH_COMMANDS[templateId];
