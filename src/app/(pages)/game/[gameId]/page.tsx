@@ -373,7 +373,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     try {
       // Build recent context so Host can choose next speaker based on current discussion
       const channelMessages = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
-      const recentSlice = channelMessages.slice(-12);
+      const recentSlice = channelMessages.slice(-25);
       const recentContext =
         recentSlice.length === 0
           ? "(No prior messages in this channel.)"
@@ -388,6 +388,26 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           ? "#0ea5e9"
           : "#ec4899";
       const aiOnly = players.filter((p) => p.isAI && !p.isGameMaster);
+
+      // Build player roster for host context
+      const humanPlayer = players.find((p) => p.id === userId);
+      const humanName = humanGameIdentity?.name || humanPlayer?.name || "You";
+      const nonHostPlayers = players.filter((p) => !p.isGameMaster);
+      const playerRoster = nonHostPlayers.map((p) => {
+        const isHuman = p.id === userId;
+        const name = isHuman ? humanName : p.name;
+        const role = p.role ? `Role: ${p.role}` : "Role: not assigned";
+        const status = (p.stats?.Status as string | undefined) ?? "alive";
+        const statusStr = `Status: ${status}`;
+        if (isHuman) {
+          return `  • ${name} [YOU/HUMAN] | ${role} | ${statusStr}`;
+        }
+        const personality = p.personality ? `Personality: ${p.personality}` : "";
+        const background = p.background ? `Background: ${p.background}` : "";
+        const extras = [personality, background].filter(Boolean).join(" | ");
+        return `  • ${name} [AI] | ${role} | ${statusStr}${extras ? ` | ${extras}` : ""}`;
+      }).join("\n");
+
       const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
 
 REPLY LENGTH — STRICT LIMIT: Keep every reply under 80 words. Be concise and punchy. Do NOT write long paragraphs or exhaustive explanations. One clear action or question per reply. If you have more to say, spread it across future turns.
@@ -397,19 +417,25 @@ When the user says things like "Continue", "What's next?", or "Ready", advance t
 You decide who may speak next based on the current discussion (who just spoke, who was suggested, what was said). At the end of EVERY reply, add exactly one line (no other text after it):
 NEXT_SPEAKER: <name>
 
-All non-host player names (use exactly as written): ${players.filter((p) => !p.isGameMaster).map((p) => p.name).join(", ")}. For the human player use: NEXT_SPEAKER: You. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
+All non-host player names (use exactly as written): ${nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)).join(", ")}. For the human player use: NEXT_SPEAKER: ${humanName}. To allow anyone to speak (free discussion), use: NEXT_SPEAKER: Everyone.
 
-CRITICAL — Keep the discussion going among players: Most of the time assign an AI to speak (NEXT_SPEAKER: <AI name>) so the conversation flows without always waiting for the human. Only occasionally use NEXT_SPEAKER: You to give the human player a turn. Rotate among AI players so different names speak; do NOT keep choosing the same 1–2. Prefer NEXT_SPEAKER: <an AI who has spoken less recently>. When someone suggests a specific person, prefer that choice when appropriate.
+CRITICAL — Keep the discussion going among players: Most of the time assign an AI to speak (NEXT_SPEAKER: <AI name>) so the conversation flows without always waiting for the human. Only occasionally use NEXT_SPEAKER: ${humanName} to give the human player a turn. Rotate among AI players so different names speak; do NOT keep choosing the same 1–2. Prefer NEXT_SPEAKER: <an AI who has spoken less recently>. When someone suggests a specific person, prefer that choice when appropriate.
 
-Game Rules (do not modify, only enforce):
+--- CURRENT GAME STATE ---
+Phase: ${gamePhase || "intro"}
+
+Players:
+${playerRoster}
+
+--- GAME RULES (do not modify, only enforce) ---
 ${currentGame?.config?.rules || "No specific rules defined."}
 
 Role assignment: You assign each player's role (including the human). When you assign or reveal a role, add one line per assignment (no other text on that line):
 ASSIGN_ROLE: <player name> -> <role>
-Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: You -> <role>. Example: ASSIGN_ROLE: You -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).
+Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: ${humanName} -> <role>. Example: ASSIGN_ROLE: ${humanName} -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).
 
 Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the exact player name or "You" for the human. Example:
-[BOARD:You]
+[BOARD:${humanName}]
 You are the Werewolf. Tonight you may eliminate one player.
 [/BOARD]
 You can output multiple [BOARD:Name]...[/BOARD] blocks in one reply. The content inside is private to that player. Do not duplicate the same info in the public message.
@@ -461,9 +487,12 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         if (nextSpeakerMatch) {
           who = nextSpeakerMatch[1].trim();
           hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
-          if (who && who.toLowerCase() === "you") {
-            nextSpeakerPlayer = null;
-          } else if (who && who.toLowerCase() === "everyone") {
+          const whoLower = who?.toLowerCase() ?? "";
+          // Treat "You" and the human's in-game name as pointing to the human player
+          const isHumanTarget = whoLower === "you" || (humanName && whoLower === humanName.toLowerCase());
+          if (isHumanTarget) {
+            nextSpeakerPlayer = null; // human: handled by setCurrentSpeakerId(userId) below
+          } else if (whoLower === "everyone") {
             if (aiOnly.length > 0) nextSpeakerPlayer = aiOnly[Math.floor(Math.random() * aiOnly.length)];
           } else {
             const player = players.find((p) => !p.isGameMaster && p.name === who);
@@ -590,8 +619,10 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return;
       }
 
-      if (who?.toLowerCase() === "you") setCurrentSpeakerId(userId);
-      else if (who?.toLowerCase() === "everyone") setCurrentSpeakerId(null);
+      const whoLower = who?.toLowerCase() ?? "";
+      const isHumanTurn = whoLower === "you" || (humanName && whoLower === humanName.toLowerCase());
+      if (isHumanTurn) setCurrentSpeakerId(userId);
+      else if (whoLower === "everyone") setCurrentSpeakerId(null);
       else if (nextSpeakerPlayer) setCurrentSpeakerId(nextSpeakerPlayer.id);
 
       await hostPace();
@@ -633,7 +664,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
 
       const MAX_CONTINUATION_ROUNDS = 0;
       for (let r = 0; r < MAX_CONTINUATION_ROUNDS; r++) {
-        const continuationUserContent = `The discussion continues. Latest messages:\n${recentForNext.slice(-14).map((m) => `${m.senderName}: ${m.content}`).join("\n")}\n\nAs host, briefly respond to what was just said (or move the phase). Then assign NEXT_SPEAKER. Prefer an AI name so the discussion keeps going; use NEXT_SPEAKER: You only when it's a natural moment for the human to speak.`;
+        const continuationUserContent = `The discussion continues. Latest messages:\n${recentForNext.slice(-14).map((m) => `${m.senderName}: ${m.content}`).join("\n")}\n\nAs host, briefly respond to what was just said (or move the phase). Then assign NEXT_SPEAKER. Prefer an AI name so the discussion keeps going; use NEXT_SPEAKER: ${humanName} only when it's a natural moment for the human to speak.`;
         const next = await callHost(continuationUserContent);
         if (!next.hostContent && !next.imageUrl) break;
         const nextWho = next.who?.toLowerCase();
@@ -641,7 +672,8 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         addMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, content: nextHostContent || " ", isAI: true, ...(next.imageUrl && { imageUrl: next.imageUrl }) }, channelId);
         await hostPace();
         recentForNext = [...recentForNext, { senderName: gmName, content: nextHostContent }];
-        if (nextWho === "you") {
+        const isHumanNext = nextWho === "you" || (humanName && nextWho === humanName.toLowerCase());
+        if (isHumanNext) {
           setCurrentSpeakerId(userId);
           break;
         }
