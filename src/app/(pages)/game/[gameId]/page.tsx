@@ -8,7 +8,9 @@ import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { ChannelList } from "@/app/components/channel-list";
 import { ChatArea } from "@/app/components/chat-area";
-import { PlayerPanel } from "@/app/components/player-panel";
+import { PlayerPanelWithBoard } from "@/app/components/player-panel-with-board";
+import type { PlayerBoardData } from "@/app/components/player-board";
+import { parseHostActions, resolvePlayerRefToId } from "@/lib/host-actions";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
@@ -96,6 +98,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     avatarImageUrls,
     onAvatarUrlLoaded,
     isRoomLoading,
+    myBoardContent,
+    setMyBoardContent,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -118,6 +122,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   /** 移动端左侧抽屉：'app' 应用导航 | 'channels' 频道列表 */
   const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
   const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
+  /** 右侧玩家面板当前 Tab：Players | My Board（仅自己可见、仅 Host 可编辑） */
+  const [rightPanelTab, setRightPanelTab] = useState<"players" | "board">("players");
   const [editCommandsGameId, setEditCommandsGameId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -402,6 +408,12 @@ Role assignment: You assign each player's role (including the human). When you a
 ASSIGN_ROLE: <player name> -> <role>
 Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: You -> <role>. Example: ASSIGN_ROLE: You -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).
 
+Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the exact player name or "You" for the human. Example:
+[BOARD:You]
+You are the Werewolf. Tonight you may eliminate one player.
+[/BOARD]
+You can output multiple [BOARD:Name]...[/BOARD] blocks in one reply. The content inside is private to that player. Do not duplicate the same info in the public message.
+
 Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image. Output exactly these tags on their own lines:
 <REPLY_TYPE>image</REPLY_TYPE>
 <IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
@@ -461,6 +473,18 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return { hostContent, who, nextSpeakerPlayer };
       };
 
+      /** Parse [BOARD:Name]...[/BOARD] etc., apply actions (e.g. My Board), return content for public display. */
+      const applyHostActionsAndClean = (content: string): string => {
+        const { cleanContent, actions } = parseHostActions(content);
+        for (const a of actions) {
+          if (a.type === "my_board") {
+            const playerId = resolvePlayerRefToId(a.playerRef, players, userId, humanGameIdentity?.name);
+            if (playerId) setMyBoardContent((prev) => ({ ...prev, [playerId]: a.content }));
+          }
+        }
+        return cleanContent;
+      };
+
       /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; nextSpeakerPlayer: typeof players[0] | null; imageUrl?: string }> => {
         const messageId = addStreamingMessage(
@@ -506,7 +530,8 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             }
           }
           const { hostContent, who, nextSpeakerPlayer } = parseHostResult(acc);
-          const displayContent = applyHostRoleAssignments(hostContent);
+          const afterActions = applyHostActionsAndClean(hostContent);
+          const displayContent = applyHostRoleAssignments(afterActions);
           updateStreamingMessage(messageId, displayContent || " ", true);
           return { hostContent: displayContent, who, nextSpeakerPlayer };
         } catch (e) {
@@ -531,7 +556,8 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         const data = await res.json();
         let hostContent = (data.message || "").trim();
         const parsed = parseHostResult(hostContent);
-        hostContent = applyHostRoleAssignments(parsed.hostContent);
+        const afterActions = applyHostActionsAndClean(parsed.hostContent);
+        hostContent = applyHostRoleAssignments(afterActions);
         return { ...parsed, hostContent, imageUrl: data.imageUrl };
       };
 
@@ -952,32 +978,60 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
             slashCommands={currentGame?.config?.slashCommands}
+            onOpenPlayerBoard={() => {
+              setMobileRightDrawer(true);
+              setRightPanelTab("board");
+            }}
           />
         ) : null}
       </div>
 
-      {/* 玩家面板：桌面显示，移动端在右侧 Sheet */}
-      <div className="hidden md:block flex-shrink-0">
-        <PlayerPanel
-          players={players}
-          gameId={gameId}
-          humanGameIdentity={humanGameIdentity}
-          avatarImageUrls={avatarImageUrls}
-          onAvatarUrlLoaded={onAvatarUrlLoaded}
-        />
-      </div>
+      {/* 玩家面板 + My Board（仅自己可见，仅 AI Host 可编辑）：桌面显示，移动端在右侧 Sheet */}
+      {(() => {
+        const humanPlayer = players.find((p) => p.id === userId);
+        const playerBoardData: PlayerBoardData = {
+          characterName: humanGameIdentity?.name ?? humanPlayer?.name ?? "You",
+          avatar: humanPlayer?.avatar ?? "#6366f1",
+          attributes: [],
+          items: [],
+          statusEffects: [],
+        };
+        return (
+          <>
+            <div className="hidden md:block flex-shrink-0 w-80">
+              <PlayerPanelWithBoard
+                players={players}
+                gameId={gameId}
+                humanGameIdentity={humanGameIdentity}
+                avatarImageUrls={avatarImageUrls}
+                onAvatarUrlLoaded={onAvatarUrlLoaded}
+                playerBoardData={playerBoardData}
+                myBoardContentFromHost={myBoardContent[userId] ?? ""}
+                currentUserId={userId}
+                activeTab={rightPanelTab}
+                onTabChange={setRightPanelTab}
+              />
+            </div>
 
-      <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
-        <SheetContent side="right" title="Players" className="w-64 max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700">
-          <PlayerPanel
-            players={players}
-            gameId={gameId}
-            humanGameIdentity={humanGameIdentity}
-            avatarImageUrls={avatarImageUrls}
-            onAvatarUrlLoaded={onAvatarUrlLoaded}
-          />
-        </SheetContent>
-      </Sheet>
+            <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
+              <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700">
+                <PlayerPanelWithBoard
+                  players={players}
+                  gameId={gameId}
+                  humanGameIdentity={humanGameIdentity}
+                  avatarImageUrls={avatarImageUrls}
+                  onAvatarUrlLoaded={onAvatarUrlLoaded}
+                  playerBoardData={playerBoardData}
+                  myBoardContentFromHost={myBoardContent[userId] ?? ""}
+                  currentUserId={userId}
+                  activeTab={rightPanelTab}
+                  onTabChange={setRightPanelTab}
+                />
+              </SheetContent>
+            </Sheet>
+          </>
+        );
+      })()}
       </div>
 
       <Toaster

@@ -26,6 +26,9 @@ interface PlayerPanelWithBoardProps {
   isHiddenRoleGame?: boolean;
   /** Current user's player id—used to show own role and hide others' in hidden-role games. */
   currentUserId?: string;
+  /** When set, tab is controlled by parent (e.g. open to My Board from chat). */
+  activeTab?: "players" | "board";
+  onTabChange?: (tab: "players" | "board") => void;
 }
 
 export function PlayerPanelWithBoard({ 
@@ -38,13 +41,18 @@ export function PlayerPanelWithBoard({
   playerBoardData,
   myBoardContentFromHost = "",
   isHiddenRoleGame = false,
-  currentUserId
+  currentUserId,
+  activeTab,
+  onTabChange,
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [tabValue, setTabValue] = useState("players");
+  const [internalTab, setInternalTab] = useState<"players" | "board">("players");
   const [hasBoardUpdate, setHasBoardUpdate] = useState(false);
   const prevBoardContentRef = useRef<string>("");
+
+  const isControlled = activeTab !== undefined;
+  const tabValue = isControlled ? activeTab : internalTab;
 
   useEffect(() => {
     const trimmed = myBoardContentFromHost.trim();
@@ -55,8 +63,10 @@ export function PlayerPanelWithBoard({
   }, [myBoardContentFromHost]);
 
   const handleTabChange = (value: string) => {
-    setTabValue(value);
-    if (value === "board") setHasBoardUpdate(false);
+    const tab = value as "players" | "board";
+    if (!isControlled) setInternalTab(tab);
+    onTabChange?.(tab);
+    if (tab === "board") setHasBoardUpdate(false);
   };
 
   const openProfile = (p: Player) => {
@@ -72,7 +82,7 @@ export function PlayerPanelWithBoard({
         onOpenChange={setProfileOpen}
         gameId={gameId}
       />
-      <Tabs value={tabValue} onValueChange={handleTabChange} className="flex flex-col h-full overflow-hidden">
+      <Tabs value={tabValue} onValueChange={handleTabChange} className="flex flex-col h-full overflow-hidden flex-1">
         <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
           <TabsList className="grid w-full grid-cols-2 bg-zinc-900/80 backdrop-blur-sm h-10">
             <TabsTrigger value="players" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-white text-zinc-400 text-xs">
