@@ -408,6 +408,19 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         return `  • ${name} [AI] | ${role} | ${statusStr}${extras ? ` | ${extras}` : ""}`;
       }).join("\n");
 
+      // Build "My Board" summary: what has already been privately written to each player
+      const boardEntries = Object.entries(myBoardContent)
+        .map(([playerId, content]) => {
+          if (!content?.trim()) return null;
+          const p = players.find((pl) => pl.id === playerId);
+          const name = p ? (p.id === userId ? humanName : p.name) : playerId;
+          return `  [${name}]\n${content.trim()}`;
+        })
+        .filter(Boolean);
+      const boardSummary = boardEntries.length > 0
+        ? boardEntries.join("\n\n")
+        : "(No private board content yet)";
+
       const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
 
 REPLY LENGTH — STRICT LIMIT: Keep every reply under 80 words. Be concise and punchy. Do NOT write long paragraphs or exhaustive explanations. One clear action or question per reply. If you have more to say, spread it across future turns.
@@ -426,6 +439,9 @@ Phase: ${gamePhase || "intro"}
 
 Players:
 ${playerRoster}
+
+Private Board (what you have already sent to each player — do NOT repeat this publicly):
+${boardSummary}
 
 --- GAME RULES (do not modify, only enforce) ---
 ${currentGame?.config?.rules || "No specific rules defined."}
