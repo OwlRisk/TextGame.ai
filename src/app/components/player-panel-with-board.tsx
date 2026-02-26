@@ -235,18 +235,18 @@ function PlayerCard({
       onKeyDown={canViewProfile ? (e) => e.key === "Enter" && handleRowClick() : undefined}
       className={`group p-2 rounded-lg transition-all duration-200 ${
         isEliminated
-          ? "opacity-40 bg-zinc-900/60 cursor-default"
+          ? "opacity-35"
           : isSpeaking
           ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm"
           : "hover:bg-zinc-800/40 hover:shadow-sm"
-      } ${!isEliminated && canViewProfile ? "cursor-pointer" : ""}`}
-      title={!isEliminated && canViewProfile ? "View profile" : undefined}
+      } ${canViewProfile ? "cursor-pointer" : ""}`}
+      title={canViewProfile ? "View profile" : undefined}
     >
       <div className="flex items-start gap-2.5">
         {/* Avatar with skull overlay for eliminated */}
         <div className="relative flex-shrink-0">
           {!player.isAI ? (
-            <Avatar className={`h-9 w-9 shadow-md ${isEliminated ? "grayscale" : "transition-transform duration-200"} ${!isEliminated && isSpeaking ? "ring-2 ring-green-500/50 scale-105" : !isEliminated ? "group-hover:scale-105" : ""}`}>
+            <Avatar className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"}`}>
               <AvatarFallback className="text-sm font-semibold text-white" style={{ backgroundColor: player.avatar }}>
                 {player.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
@@ -256,7 +256,7 @@ function PlayerCard({
               {...getAvatarPropsForPlayer(player)}
               gameId={gameId}
               enabled={true}
-              className={`h-9 w-9 shadow-md ${isEliminated ? "grayscale" : "transition-transform duration-200"} ${!isEliminated && isSpeaking ? "ring-2 ring-green-500/50 scale-105" : !isEliminated ? "group-hover:scale-105" : ""}`}
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"}`}
               fallbackColor={player.avatar}
               initialUrl={avatarImageUrls[avatarCacheKey(getAvatarPropsForPlayer(player).name ?? player.name, getAvatarPropsForPlayer(player).type)]}
               onAvatarLoaded={onAvatarUrlLoaded}
@@ -267,13 +267,7 @@ function PlayerCard({
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
             <span
               className={`text-sm font-semibold truncate ${
-                isEliminated
-                  ? "line-through text-zinc-500"
-                  : player.isGameMaster
-                  ? "text-amber-300"
-                  : !player.isAI
-                  ? "text-blue-200"
-                  : "text-white"
+                player.isGameMaster ? "text-amber-300" : !player.isAI ? "text-blue-200" : "text-white"
               }`}
             >
               {player.name}
@@ -295,7 +289,7 @@ function PlayerCard({
           {/* Role visibility: always show own role; others only after Host uses REVEAL_ROLE */}
           {player.role && player.role.trim() !== player.name?.trim() && (
             (player.id === currentUserId || player.roleRevealed)
-              ? <div className={`text-xs font-medium ${isEliminated ? "text-zinc-500 line-through" : "text-zinc-300"}`}>{player.role}</div>
+              ? <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
               : null
           )}
           {/* Show actual status label when player is out of game */}
