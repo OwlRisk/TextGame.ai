@@ -31,6 +31,8 @@ export interface Player {
   gender?: string;
   /** OpenAI TTS voice id for this player (e.g. alloy, nova) */
   ttsVoice?: string;
+  /** Whether this player's role has been publicly revealed by the Host (via REVEAL_ROLE directive). */
+  roleRevealed?: boolean;
 }
 
 interface PlayerPanelProps {

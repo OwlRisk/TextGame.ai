@@ -455,9 +455,13 @@ ${boardSummary}
 --- GAME RULES (do not modify, only enforce) ---
 ${currentGame?.config?.rules || "No specific rules defined."}
 
-Role assignment: You assign each player's role (including the human). When you assign or reveal a role, add one line per assignment (no other text on that line):
+Role assignment: You assign each player's role (including the human). When you assign a role, add one line per assignment (hidden from chat):
 ASSIGN_ROLE: <player name> -> <role>
-Use the exact player name from the list above; for the human player use: ASSIGN_ROLE: ${humanName} -> <role>. Example: ASSIGN_ROLE: ${humanName} -> Civilian. These lines are hidden from the chat and applied by the game. Assign the human's role when appropriate (e.g. at game start or when they need to know).
+Use the exact player name from the list above; for the human use: ASSIGN_ROLE: ${humanName} -> <role>. These lines are hidden from chat and applied silently by the game.
+
+Role reveal: By default, players' roles are hidden in the Players panel — only each player can see their own role. When the game logic calls for it (e.g. a player is eliminated and their role should be shown, or the game ends), publicly reveal a role with:
+REVEAL_ROLE: <player name>
+This makes that player's role visible to everyone in the Players panel. To reveal all at once (e.g. game over): REVEAL_ROLE: All. These lines are hidden from chat. Use your judgement based on the game type — in social deduction games, reveal the role of eliminated players; in other games, reveal at the appropriate dramatic moment.
 
 Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the exact player name or "You" for the human. Example:
 [BOARD:${humanName}]
@@ -474,30 +478,50 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
 
       const applyHostRoleAssignments = (content: string): string => {
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
-        const updates: { playerId: string; role: string }[] = [];
+        const revealLineRegex = /^\s*REVEAL_ROLE:\s*(.+?)\s*$/im;
+        const roleUpdates: { playerId: string; role: string }[] = [];
+        const revealIds: string[] = [];
         const lines = content.split(/\r?\n/);
         const keptLines: string[] = [];
         for (const line of lines) {
-          const match = line.match(assignLineRegex);
-          if (match) {
-            const namePart = match[1].trim();
-            const rolePart = match[2].trim();
+          const assignMatch = line.match(assignLineRegex);
+          const revealMatch = line.match(revealLineRegex);
+          if (assignMatch) {
+            const namePart = assignMatch[1].trim();
+            const rolePart = assignMatch[2].trim();
             if (!rolePart) continue;
             const isYou = namePart.toLowerCase() === "you";
             const player = isYou
               ? players.find((p) => p.id === userId)
               : players.find((p) => p.name === namePart || (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart));
             const targetId = isYou ? userId : player?.id;
-            if (targetId) updates.push({ playerId: targetId, role: rolePart });
+            if (targetId) roleUpdates.push({ playerId: targetId, role: rolePart });
+          } else if (revealMatch) {
+            // REVEAL_ROLE: Name  — makes that player's role visible in the Players panel
+            const namePart = revealMatch[1].trim();
+            const isAll = namePart.toLowerCase() === "all" || namePart.toLowerCase() === "everyone";
+            if (isAll) {
+              players.forEach((p) => { if (!p.isGameMaster) revealIds.push(p.id); });
+            } else {
+              const isYou = namePart.toLowerCase() === "you" || namePart.toLowerCase() === (humanName ?? "").toLowerCase();
+              const target = isYou
+                ? players.find((p) => p.id === userId)
+                : players.find((p) => p.name === namePart);
+              if (target) revealIds.push(target.id);
+            }
           } else {
             keptLines.push(line);
           }
         }
-        if (updates.length > 0) {
+        if (roleUpdates.length > 0 || revealIds.length > 0) {
           setPlayers((prev) =>
             prev.map((p) => {
-              const u = updates.find((r) => r.playerId === p.id);
-              return u ? { ...p, role: u.role } : p;
+              const roleUp = roleUpdates.find((r) => r.playerId === p.id);
+              const reveal = revealIds.includes(p.id);
+              if (roleUp && reveal) return { ...p, role: roleUp.role, roleRevealed: true };
+              if (roleUp) return { ...p, role: roleUp.role };
+              if (reveal) return { ...p, roleRevealed: true };
+              return p;
             })
           );
         }

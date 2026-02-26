@@ -265,11 +265,11 @@ function PlayerCard({
               <Info className="h-3.5 w-3.5 text-zinc-500 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
             )}
           </div>
-          {(player.role && player.role.trim() !== player.name?.trim() && (!isHiddenRoleGame || player.id === currentUserId)) && (
-            <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
-          )}
-          {isHiddenRoleGame && player.id !== currentUserId && (
-            <div className="text-xs text-zinc-500 font-medium">—</div>
+          {/* Role visibility: always show own role; others only after Host uses REVEAL_ROLE */}
+          {player.role && player.role.trim() !== player.name?.trim() && (
+            (player.id === currentUserId || player.roleRevealed)
+              ? <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
+              : null
           )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
