@@ -659,7 +659,8 @@ export function ChatArea({
     }
   }, [resizeInput]);
 
-  // Follow scroll when new content appears: new messages, last message content/streaming, or TTS reveal
+  // Follow scroll when new content appears: new messages, last message content/streaming, TTS reveal,
+  // or quick replies expanding (which grow the input area and hide the last message).
   const scrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const lastScrollStateRef = useRef<{ count: number; lastContentLength: number; revealTick: number }>({ count: 0, lastContentLength: 0, revealTick: 0 });
   useEffect(() => {
@@ -681,6 +682,15 @@ export function ChatArea({
     }, lastFromUser ? 50 : 150);
     return () => { if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current); };
   }, [messages, typingUsers, userId, revealTick]);
+
+  // When quick replies expand/collapse, the input area height changes — scroll to keep last message visible.
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const t = setTimeout(() => {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [quickReplyOpen, quickReplies.length]);
 
   // Load more when user scrolls up: IntersectionObserver on top sentinel
   useEffect(() => {
