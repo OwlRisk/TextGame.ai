@@ -463,6 +463,11 @@ Role reveal: By default, players' roles are hidden in the Players panel — only
 REVEAL_ROLE: <player name>
 This makes that player's role visible to everyone in the Players panel. To reveal all at once (e.g. game over): REVEAL_ROLE: All. These lines are hidden from chat. Use your judgement based on the game type — in social deduction games, reveal the role of eliminated players; in other games, reveal at the appropriate dramatic moment.
 
+Game over: Monitor win/loss conditions based on the game rules and current player roster after each elimination or key event. When a win condition is met, announce the result dramatically in your message, then add on its own line (hidden from chat):
+GAME_OVER: <winner description>
+Example: GAME_OVER: Villagers win — all werewolves have been eliminated!
+When you output GAME_OVER, also output REVEAL_ROLE: All so all roles are shown. Do NOT output NEXT_SPEAKER after GAME_OVER.
+
 Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the exact player name or "You" for the human. Example:
 [BOARD:${humanName}]
 You are the Werewolf. Tonight you may eliminate one player.
@@ -479,6 +484,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       const applyHostRoleAssignments = (content: string): string => {
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
         const revealLineRegex = /^\s*REVEAL_ROLE:\s*(.+?)\s*$/im;
+        const gameOverLineRegex = /^\s*GAME_OVER:\s*(.+?)\s*$/im;
         const roleUpdates: { playerId: string; role: string }[] = [];
         const revealIds: string[] = [];
         const lines = content.split(/\r?\n/);
@@ -486,7 +492,11 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         for (const line of lines) {
           const assignMatch = line.match(assignLineRegex);
           const revealMatch = line.match(revealLineRegex);
-          if (assignMatch) {
+          const gameOverMatch = line.match(gameOverLineRegex);
+          if (gameOverMatch) {
+            // GAME_OVER: <winner description> — ends the game
+            setGamePhase("ended");
+          } else if (assignMatch) {
             const namePart = assignMatch[1].trim();
             const rolePart = assignMatch[2].trim();
             if (!rolePart) continue;
