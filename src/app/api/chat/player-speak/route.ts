@@ -183,8 +183,9 @@ export async function POST(request: NextRequest) {
 
     const userContent = lines.join('\n');
 
+    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-4o';
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: chatModel,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: userContent },
