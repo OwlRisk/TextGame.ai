@@ -616,12 +616,28 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return cleanContent;
       };
 
+      /**
+       * Strip [BOARD:...] blocks from streaming content so private role info is never
+       * shown in the public chat bubble while the stream is still in progress.
+       * Complete blocks are removed entirely; an incomplete (not-yet-closed) block
+       * is removed from its opening tag to the end of the accumulated string.
+       */
+      const redactBoardBlocksForDisplay = (raw: string): string => {
+        // Remove fully closed blocks first
+        let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
+        // Remove any still-open block (streaming hasn't reached [/BOARD] yet)
+        cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
+        return cleaned.replace(/\n{2,}/g, "\n\n").trim();
+      };
+
       /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; imageUrl?: string }> => {
         const messageId = addStreamingMessage(
           { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
           chId
         );
+        // Scale token budget with player count: base 300 + 50 per player (BOARD + ASSIGN_ROLE blocks)
+        const streamTokenBudget = Math.min(1200, 300 + players.length * 50);
         try {
           const res = await fetch("/api/chat/stream", {
             method: "POST",
@@ -629,7 +645,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             body: JSON.stringify({
               systemPrompt: hostSystemPrompt,
               messages: [{ role: "user", content: userContent }],
-              maxCompletionTokens: 220,
+              maxCompletionTokens: streamTokenBudget,
               preferredModel: getPreferredModel(),
             }),
           });
@@ -653,7 +669,9 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                   const data = JSON.parse(payload) as { content?: string };
                   if (typeof data.content === "string") {
                     acc += data.content;
-                    updateStreamingMessage(messageId, acc, false);
+                    // Redact private [BOARD:...] blocks from the live display so players
+                    // never see partial private role info while the stream is in progress.
+                    updateStreamingMessage(messageId, redactBoardBlocksForDisplay(acc), false);
                   }
                 } catch {
                   // ignore parse
