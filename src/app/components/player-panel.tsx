@@ -79,6 +79,7 @@ export function PlayerPanel({
         avatarImageUrls={avatarImageUrls}
         onAvatarUrlLoaded={onAvatarUrlLoaded}
         humanGameIdentity={humanGameIdentity}
+        isUserGameMaster={isUserGameMaster}
       />
       <div className="h-12 px-4 flex items-center border-b border-zinc-900/50 bg-zinc-900/30">
         <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Players — {players.length}</h3>
@@ -239,7 +240,7 @@ function PlayerCard({
               </Badge>
             )}
           </div>
-          {(player.isGameMaster || (player.role && player.isAI)) && (
+          {(player.isGameMaster || (player.role && player.isAI && (isUserGameMaster || player.roleRevealed))) && (
             <div className="text-xs text-zinc-300 font-medium">
               {player.isGameMaster ? "Host" : player.role}
             </div>
