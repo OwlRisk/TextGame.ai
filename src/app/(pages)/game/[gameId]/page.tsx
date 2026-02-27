@@ -636,8 +636,11 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
           { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
           chId
         );
-        // Scale token budget with player count: base 300 + 50 per player (BOARD + ASSIGN_ROLE blocks)
-        const streamTokenBudget = Math.min(1200, 300 + players.length * 50);
+        // Give the host enough room for all structural output (BOARD blocks, ASSIGN_ROLE lines,
+        // SECTION blocks, etc.). The AI is already instructed to be concise in its narrative,
+        // so a generous budget doesn't make replies verbose — it just prevents truncation.
+        // Server-side cap is 4096; we leave headroom for complex games and large player counts.
+        const streamTokenBudget = Math.min(4096, 500 + players.length * 80);
         try {
           const res = await fetch("/api/chat/stream", {
             method: "POST",
