@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Send, MessageCircle, Mail, ExternalLink, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Send, Mail, ExternalLink, CheckCircle } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Input } from '@/app/components/ui/input';
@@ -16,21 +16,29 @@ export function HelpSupportContent() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
     setIsSubmitting(true);
+    const typeLabel = feedbackTypes.find((t) => t.value === feedbackType)?.label ?? feedbackType;
+    const body = [
+      email ? `From: ${email}` : '',
+      `Type: ${typeLabel}`,
+      '',
+      message.trim(),
+    ].filter(Boolean).join('\n');
+    const mailtoUrl = `mailto:feedback@cvnio.com?subject=${encodeURIComponent(`[${typeLabel}] ${subject.trim()}`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
     setTimeout(() => {
       setIsSubmitting(false);
-      toast.success('Feedback submitted successfully!');
       setSubject('');
       setMessage('');
       setEmail('');
       setFeedbackType('general');
-    }, 1000);
+    }, 500);
   };
 
   const feedbackTypes: { value: 'bug' | 'feature' | 'general'; label: string; color: string; bgColor: string }[] = [
@@ -60,37 +68,21 @@ export function HelpSupportContent() {
 
       <div className="flex-1 px-6 py-8">
         <div className="max-w-3xl mx-auto space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors">
-              <div className="h-12 w-12 rounded-full bg-violet-500/10 flex items-center justify-center mb-4">
-                <Mail className="h-6 w-6 text-violet-400" />
-              </div>
-              <h3 className="text-white font-semibold mb-2">Email Support</h3>
-              <p className="text-zinc-400 text-sm mb-4">Get in touch with our support team via email</p>
-              <a
-                href="mailto:support@example.com"
-                className="text-violet-400 hover:text-violet-300 text-sm font-medium inline-flex items-center gap-1"
-              >
-                support@example.com
-                <ExternalLink className="h-3 w-3" />
-              </a>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors flex items-center gap-5">
+            <div className="h-12 w-12 rounded-full bg-violet-500/10 flex items-center justify-center shrink-0">
+              <Mail className="h-6 w-6 text-violet-400" />
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors">
-              <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
-                <MessageCircle className="h-6 w-6 text-blue-400" />
-              </div>
-              <h3 className="text-white font-semibold mb-2">Join Community</h3>
-              <p className="text-zinc-400 text-sm mb-4">Connect with other players and share ideas</p>
-              <a
-                href="https://discord.gg/example"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 text-sm font-medium inline-flex items-center gap-1"
-              >
-                Discord Community
-                <ExternalLink className="h-3 w-3" />
-              </a>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white font-semibold mb-0.5">Email Support</h3>
+              <p className="text-zinc-400 text-sm">Questions, bugs, or anything else — we read every email.</p>
             </div>
+            <a
+              href="mailto:feedback@cvnio.com"
+              className="text-violet-400 hover:text-violet-300 text-sm font-medium inline-flex items-center gap-1 shrink-0"
+            >
+              feedback@cvnio.com
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
@@ -206,7 +198,7 @@ export function HelpSupportContent() {
                   Can I get a refund?
                 </h3>
                 <p className="text-zinc-400 text-sm ml-6">
-                  Unused credits can be refunded within 30 days of purchase. Contact support for refund requests.
+                  Please contact us at feedback@cvnio.com and we&apos;ll review your request.
                 </p>
               </div>
               <div>
