@@ -1,4 +1,4 @@
-import { Hash, Share2, Users, Home, Trash2 } from "lucide-react";
+import { Hash, Share2, Users, Lock } from "lucide-react";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
@@ -29,6 +29,13 @@ interface Channel {
   type: "text" | "game";
 }
 
+interface PlayerInfo {
+  id: string;
+  name: string;
+  avatar: string;
+  isAI: boolean;
+}
+
 interface ChannelListProps {
   gameName: string;
   channels: Channel[];
@@ -51,6 +58,10 @@ interface ChannelListProps {
   avatarImageUrls?: Record<string, string>;
   /** Call when avatar URL is loaded so the room can persist it. */
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  /** AI-managed channel permissions: channelId → allowed playerIds. undefined = public. */
+  channelPermissions?: Record<string, string[]>;
+  /** Full player list for showing member avatars in channel rows. */
+  allPlayers?: PlayerInfo[];
 }
 
 export function ChannelList({ 
@@ -68,6 +79,8 @@ export function ChannelList({
   gameId,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  channelPermissions = {},
+  allPlayers = [],
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -145,36 +158,66 @@ export function ChannelList({
             <div className="flex items-center justify-between px-3 mb-2">
               <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{gameSectionLabel}</span>
             </div>
-            {channels.filter(c => c.type === "game").map((channel) => (
-              <ContextMenu key={channel.id}>
-                <ContextMenuTrigger>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
-                      selectedChannelId === channel.id
-                        ? "bg-zinc-700/50 text-white"
-                        : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
-                    }`}
-                    onClick={() => onSelectChannel(channel.id)}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{channel.name}</span>
-                  </Button>
-                </ContextMenuTrigger>
-                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
-                  <ContextMenuItem 
-                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
-                    onClick={() => {
-                      setChannelToDelete(channel);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Room
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
+            {channels.filter(c => c.type === "game").map((channel) => {
+              const perms = channelPermissions[channel.id];
+              const isRestricted = Array.isArray(perms) && !perms.includes("*");
+              const memberPlayers = isRestricted
+                ? allPlayers.filter((p) => perms.includes(p.id))
+                : [];
+              return (
+                <ContextMenu key={channel.id}>
+                  <ContextMenuTrigger>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start px-3 h-auto min-h-[2.25rem] py-1.5 mb-1 rounded-lg focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
+                        selectedChannelId === channel.id
+                          ? "bg-zinc-700/50 text-white"
+                          : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
+                      }`}
+                      onClick={() => onSelectChannel(channel.id)}
+                    >
+                      <div className="flex items-center w-full gap-2 min-w-0">
+                        {isRestricted ? (
+                          <Lock className="h-3.5 w-3.5 flex-shrink-0 opacity-60" />
+                        ) : (
+                          <Users className="h-4 w-4 flex-shrink-0" />
+                        )}
+                        <span className="text-sm truncate flex-1 text-left">{channel.name}</span>
+                        {/* Member avatar stack */}
+                        {memberPlayers.length > 0 && (
+                          <div className="flex -space-x-1.5 flex-shrink-0">
+                            {memberPlayers.slice(0, 4).map((p) => (
+                              <div
+                                key={p.id}
+                                className="h-4 w-4 rounded-full border border-zinc-800 flex items-center justify-center text-[8px] font-bold text-white"
+                                style={{ backgroundColor: p.avatar.startsWith("#") ? p.avatar : "#6366f1" }}
+                                title={p.name}
+                              >
+                                {p.name.charAt(0).toUpperCase()}
+                              </div>
+                            ))}
+                            {memberPlayers.length > 4 && (
+                              <div className="h-4 w-4 rounded-full border border-zinc-800 bg-zinc-600 flex items-center justify-center text-[8px] text-zinc-300">
+                                +{memberPlayers.length - 4}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                    <ContextMenuItem
+                      className="text-zinc-400 focus:text-zinc-300 focus:bg-zinc-800 cursor-default pointer-events-none text-xs"
+                    >
+                      {isRestricted
+                        ? `${memberPlayers.length} member${memberPlayers.length !== 1 ? "s" : ""}`
+                        : "Public room"}
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+              );
+            })}
           </div>
         </div>
       </ScrollArea>

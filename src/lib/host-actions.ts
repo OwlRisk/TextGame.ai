@@ -11,7 +11,11 @@ export type PlayerRef = string;
 /** Supported host action types. Extend this union when adding new block types. */
 export type HostAction =
   | { type: "my_board"; playerRef: PlayerRef; content: string }
-  // Future: | { type: "private_msg"; playerRef: PlayerRef; content: string }
+  /**
+   * ACCESS: grant/revoke room visibility for a list of players.
+   * playerRefs = ["*"] means public (everyone), [] means locked (no one).
+   */
+  | { type: "access"; channelRef: string; playerRefs: PlayerRef[] }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -22,11 +26,11 @@ export interface ParseHostActionsResult {
   actions: HostAction[];
 }
 
-/** One block parser: tag name and regex to extract (playerRef, content). */
+/** One block parser: tag name and regex to extract (ref, content). */
 interface BlockParser {
   tag: string;
   actionType: HostAction["type"];
-  /** Regex with two capture groups: (1) player ref, (2) content. Case-insensitive. */
+  /** Regex with two capture groups: (1) ref (player or channel), (2) content. Case-insensitive. */
   regex: RegExp;
 }
 
@@ -37,7 +41,12 @@ const BLOCK_PARSERS: BlockParser[] = [
     // [BOARD:PlayerName or You] ... content ... [/BOARD]
     regex: /\[BOARD:\s*([^\]\r\n]+?)\s*\]\s*([\s\S]*?)\s*\[\/BOARD\]/gi,
   },
-  // Future: { tag: "PRIVATE", actionType: "private_msg", regex: /.../gi },
+  {
+    tag: "ACCESS",
+    actionType: "access",
+    // [ACCESS:ChannelName] Player1, Player2 [/ACCESS]  — content may be empty (lock) or "*" (public)
+    regex: /\[ACCESS:\s*([^\]\r\n]+?)\s*\]\s*([\s\S]*?)\s*\[\/ACCESS\]/gi,
+  },
 ];
 
 /**
@@ -54,10 +63,16 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
     const replacements: { full: string; replacement: string }[] = [];
 
     while ((match = re.exec(cleanContent)) !== null) {
-      const playerRef = (match[1] ?? "").trim();
+      const ref = (match[1] ?? "").trim();
       const content = (match[2] ?? "").trim();
       if (parser.actionType === "my_board") {
-        actions.push({ type: "my_board", playerRef, content });
+        actions.push({ type: "my_board", playerRef: ref, content });
+      } else if (parser.actionType === "access") {
+        // Parse comma-separated player list; empty content = lock, "*" = public
+        const playerRefs = content
+          ? content.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+        actions.push({ type: "access", channelRef: ref, playerRefs });
       }
       replacements.push({ full: match[0], replacement: "" });
     }

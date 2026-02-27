@@ -111,6 +111,14 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [shareCopied, setShareCopied] = useState(false);
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
+  /**
+   * Channel access control set by the AI Host via [ACCESS:ChannelName]...[/ACCESS].
+   * channelId → playerIds allowed to see/enter the channel.
+   * undefined entry = public (no restrictions).
+   * empty array = locked (nobody).
+   * ["*"] = explicitly public.
+   */
+  const [channelPermissions, setChannelPermissions] = useState<Record<string, string[]>>({});
   const { gameId } = use(params);
   const pathname = usePathname();
 
@@ -476,6 +484,16 @@ You are the Werewolf. Tonight you may eliminate one player.
 [/BOARD]
 You can output multiple [BOARD:Name]...[/BOARD] blocks in one reply. The content inside is private to that player. Do not duplicate the same info in the public message.
 
+Room access control (optional): You can control which players can enter each Game Room. Use this to create private faction channels, move the human through locations in an exploration game, or lock a room until a condition is met. The block is stripped from the public message and applied silently.
+Format: [ACCESS:RoomName]Player1, Player2[/ACCESS]
+  • Use exact player names (or "${humanName}" for the human).
+  • Use * to make a room public (all players can see it): [ACCESS:Town Square]*[/ACCESS]
+  • Leave content empty to lock a room temporarily: [ACCESS:Secret Room][/ACCESS]
+  • You can combine multiple ACCESS blocks in one reply.
+${gameRoomEntries.length > 1 ? `Available Game Rooms (use exact name): ${gameRoomEntries.map((c) => c.name).join(", ")}` : ""}
+Examples for a social deduction game: at game start, give werewolves their private room: [ACCESS:Werewolves only]Gideon, Juno[/ACCESS]
+Examples for an exploration game: when the human enters a location, grant access: [ACCESS:Library]${humanName}[/ACCESS]
+
 Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image. Output exactly these tags on their own lines:
 <REPLY_TYPE>image</REPLY_TYPE>
 <IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
@@ -573,13 +591,40 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return { hostContent, who, speakerQueue };
       };
 
-      /** Parse [BOARD:Name]...[/BOARD] etc., apply actions (e.g. My Board), return content for public display. */
+      /** Parse [BOARD:Name]...[/BOARD] / [ACCESS:Room]...[/ACCESS] etc., apply actions, return public text. */
       const applyHostActionsAndClean = (content: string): string => {
         const { cleanContent, actions } = parseHostActions(content);
         for (const a of actions) {
           if (a.type === "my_board") {
             const playerId = resolvePlayerRefToId(a.playerRef, players, userId, humanGameIdentity?.name);
             if (playerId) setMyBoardContent((prev) => ({ ...prev, [playerId]: a.content }));
+          } else if (a.type === "access") {
+            // Resolve channel ref (case-insensitive name match → id)
+            const channelEntry = gameRoomEntries.find(
+              (c) => c.name.toLowerCase() === a.channelRef.toLowerCase()
+            );
+            if (!channelEntry) continue;
+            const chId = channelEntry.id;
+
+            if (a.playerRefs.includes("*") ) {
+              // Explicitly public: remove any restriction
+              setChannelPermissions((prev) => {
+                const next = { ...prev };
+                delete next[chId];
+                return next;
+              });
+            } else {
+              // Resolve each player ref to an id
+              const resolvedIds = a.playerRefs
+                .map((ref) => resolvePlayerRefToId(ref, players, userId, humanGameIdentity?.name))
+                .filter((id): id is string => id !== null);
+              setChannelPermissions((prev) => ({ ...prev, [chId]: resolvedIds }));
+
+              // If human no longer has access and is currently viewing this channel → switch away
+              if (!resolvedIds.includes(userId)) {
+                setSelectedChannelId((cur) => (cur === chId ? defaultGameChannelId : cur));
+              }
+            }
           }
         }
         return cleanContent;
@@ -789,10 +834,20 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
     ? configChannels.map((c) => ({ id: c.id, name: c.name, type: "game" as const }))
     : [{ id: "game-room", name: "game-room", type: "game" as const }];
   const defaultGameChannelId = gameRoomEntries[0].id;
+
+  // Filter game rooms based on AI-managed access control.
+  // Rules / Progress (text sections) are always visible.
+  const visibleGameRoomEntries = gameRoomEntries.filter((ch) => {
+    const perms = channelPermissions[ch.id];
+    if (!perms) return true;           // no restriction → public
+    if (perms.includes("*")) return true; // explicitly public
+    return perms.includes(userId);     // human is in the allowed list
+  });
+
   const gameChannels = [
     { id: "rules", name: "Rules", type: "text" as const },
     { id: "progress", name: "Progress", type: "text" as const },
-    ...gameRoomEntries,
+    ...visibleGameRoomEntries,
   ];
   const gameRoomIds = new Set(gameRoomEntries.map((c) => c.id));
   const isGameChannel = selectedChannelId != null && gameRoomIds.has(selectedChannelId);
@@ -956,6 +1011,8 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
     gameId,
     avatarImageUrls,
     onAvatarUrlLoaded,
+    channelPermissions,
+    allPlayers: players,
     onDeleteChannel: (id: string | undefined) => {
       if (id === "rules" || id === "progress") {
         toast.info("Sections cannot be removed");
