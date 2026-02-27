@@ -166,6 +166,9 @@ CREATE POLICY "Users can delete own drafts"
   ON game_drafts FOR DELETE
   USING (auth.uid()::text = user_id OR user_id = current_setting('app.user_id', true));
 
+-- User preferences: stored as JSONB in user_profiles (add column if not exists)
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}'::jsonb;
+
 -- Game room state: only for games owned by the user (user_id on row must match auth)
 DROP POLICY IF EXISTS "Users can view own game room state" ON game_room_state;
 CREATE POLICY "Users can view own game room state"

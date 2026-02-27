@@ -33,12 +33,13 @@ export function SettingsContent() {
   const router = useRouter();
   const { session } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>('free');
-  const [aiModel, setAiModel] = useState('gpt-5.2');
+  const [aiModel, setAiModel] = useState<string>(() => ls('ai_model', 'gpt-5.2'));
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'true') !== 'false');
   const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-max'));
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
   const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));
-  const [imageGenEnabled, setImageGenEnabled] = useState(true);
+  const [imageGenEnabled, setImageGenEnabled] = useState<boolean>(() => ls('image_gen_enabled', 'true') !== 'false');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -330,11 +331,34 @@ export function SettingsContent() {
           {/* Save */}
           <div className="flex justify-end pt-2">
             <Button
-              onClick={() => toast.success('Settings saved!')}
-              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 px-8"
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  localStorage.setItem('ai_model', aiModel);
+                  localStorage.setItem('image_gen_enabled', String(imageGenEnabled));
+                  // Persist to server when logged in
+                  if (session?.access_token) {
+                    await fetch('/api/user/settings', {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session.access_token}`,
+                      },
+                      body: JSON.stringify({ ai_model: aiModel, image_gen_enabled: imageGenEnabled }),
+                    });
+                  }
+                  toast.success('Settings saved!');
+                } catch {
+                  toast.error('Failed to save settings');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 px-8 disabled:opacity-60"
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              Save Changes
+              {saving ? 'Saving…' : 'Save Changes'}
             </Button>
           </div>
 

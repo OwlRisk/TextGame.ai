@@ -121,20 +121,42 @@ export function pickTraitsForPlayers(count: number): AIPlayerTraits[] {
 /**
  * Generate a new AI player personality using LLM.
  * Call this when you want a truly unique character.
- * 
+ *
  * Note: This requires an API call. Use sparingly (e.g., 10-20% of players).
  */
 export async function generateDynamicTraits(name: string, role?: string): Promise<AIPlayerTraits> {
-  // TODO: Call LLM to generate personality + background
-  // For now, return a placeholder that indicates it's dynamic
-  // Example prompt: "Create a unique personality and background for a social deduction game player named {name}, role: {role}"
-  
-  // Placeholder - replace with actual LLM call
-  return {
-    personality: `Unique personality for ${name}.`,
-    background: `Dynamic background generated for ${name}.`,
-    isDynamic: true,
-  };
+  const prompt = [
+    `Create a unique personality and background for a social deduction game player.`,
+    `Player name: ${name}`,
+    role ? `Role: ${role}` : '',
+    ``,
+    `Return ONLY valid JSON with exactly two keys:`,
+    `- "personality": 2-3 sentences describing how they think, speak, and behave in a game. Include speech patterns and tells.`,
+    `- "background": 2-3 sentences describing their real-life background that shapes their game style.`,
+    ``,
+    `Be creative and varied. Make the character feel like a real person with a distinct voice.`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  try {
+    const response = await fetch('/api/generate-player-traits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = (await response.json()) as { personality?: string; background?: string };
+    if (data.personality && data.background) {
+      return { personality: data.personality, background: data.background, isDynamic: true };
+    }
+  } catch {
+    // Fall back to fixed pool on failure
+  }
+
+  // Fallback: pick a random fixed trait and mark as dynamic
+  const fallback = AI_PLAYER_TRAITS[Math.floor(Math.random() * AI_PLAYER_TRAITS.length)];
+  return { ...fallback, isDynamic: true };
 }
 
 /**

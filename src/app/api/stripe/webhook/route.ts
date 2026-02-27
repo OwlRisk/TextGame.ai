@@ -5,6 +5,7 @@ import { getTierFromStripePriceId } from '@/lib/subscription';
 import { invalidateBalanceCache } from '@/lib/balance-cache';
 import Stripe from 'stripe';
 import { pool } from '@/lib/pg-pool';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    console.log(`[Stripe Webhook] Received event: ${event.type}`);
+    logger.log(`[Stripe Webhook] Received event: ${event.type}`);
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        console.log(`[Checkout Complete] User: ${userId}, Mode: ${session.mode}`);
+        logger.log(`[Checkout Complete] User: ${userId}, Mode: ${session.mode}`);
 
         if (session.mode === 'subscription') {
           const subscriptionId = session.subscription as string;
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
             await grantMonthlyAllowance(userId, status);
           }
           invalidateBalanceCache(userId);
-          console.log(`[Subscription] User ${userId} → ${status}`);
+          logger.log(`[Subscription] User ${userId} → ${status}`);
         } else if (session.mode === 'payment') {
           const amountCents = session.amount_total ?? 0;
           const tokens = rechargeCoinsFromPayment(amountCents);
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
               `Purchased ${tokens} usage`,
               session.payment_intent as string
             );
-            console.log(`[Token Purchase] User ${userId} purchased ${tokens} usage (${amountCents}¢)`);
+            logger.log(`[Token Purchase] User ${userId} purchased ${tokens} usage (${amountCents}¢)`);
           }
         }
         break;
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log(`[Subscription Updated] Status: ${subscription.status}`);
+        logger.log(`[Subscription Updated] Status: ${subscription.status}`);
 
         const result = await pool.query(
           'SELECT user_id FROM user_profiles WHERE subscription_id = $1',
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
           new Date(subscription.current_period_end * 1000)
         );
         invalidateBalanceCache(userId);
-        console.log(`[Subscription] User ${userId} → ${status}`);
+        logger.log(`[Subscription] User ${userId} → ${status}`);
         break;
       }
 
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
           new Date(subscription.current_period_end * 1000)
         );
         invalidateBalanceCache(userId);
-        console.log(`[Subscription] User ${userId} cancelled`);
+        logger.log(`[Subscription] User ${userId} cancelled`);
         break;
       }
 
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
               await grantMonthlyAllowance(userId, tier);
             }
             invalidateBalanceCache(userId);
-            console.log(`[Subscription Renewed] User ${userId} → ${tier}`);
+            logger.log(`[Subscription Renewed] User ${userId} → ${tier}`);
           }
         }
         break;
@@ -172,25 +173,44 @@ export async function POST(request: NextRequest) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        console.log(`[Payment Failed] Subscription: ${invoice.subscription}`);
+        logger.log(`[Payment Failed] Subscription: ${invoice.subscription}`);
 
         if (invoice.subscription) {
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
           const result = await pool.query(
             'SELECT user_id FROM user_profiles WHERE subscription_id = $1',
-            [invoice.subscription]
+            [sub.id]
           );
 
           if (result.rows.length > 0) {
             const userId = result.rows[0].user_id;
-            console.log(`[Payment Failed] User ${userId} payment failed`);
-            // Optionally handle failed payment (e.g., send notification)
+            // Mark as past_due or cancelled depending on Stripe subscription status
+            const newStatus =
+              sub.status === 'canceled' || sub.status === 'unpaid'
+                ? 'cancelled'
+                : sub.status === 'past_due'
+                  ? 'free'
+                  : null;
+
+            if (newStatus) {
+              await updateSubscriptionStatus(
+                userId,
+                newStatus,
+                sub.id,
+                new Date(sub.current_period_end * 1000)
+              );
+              invalidateBalanceCache(userId);
+              logger.log(`[Payment Failed] User ${userId} → ${newStatus} (stripe: ${sub.status})`);
+            } else {
+              logger.log(`[Payment Failed] User ${userId}: stripe status=${sub.status}, no status change (will retry)`);
+            }
           }
         }
         break;
       }
 
       default:
-        console.log(`[Webhook] Unhandled event type: ${event.type}`);
+        logger.log(`[Webhook] Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
