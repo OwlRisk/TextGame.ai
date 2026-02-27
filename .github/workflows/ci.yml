@@ -30,6 +30,27 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          # Supabase
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          # Database
+          DATABASE_URL: postgresql://postgres:placeholder@placeholder:6543/postgres
+          DIRECT_URL: postgresql://postgres:placeholder@placeholder:5432/postgres
+          # OpenAI
           OPENAI_API_KEY: sk-placeholder
+          # Stripe
+          STRIPE_SECRET_KEY: sk_test_placeholder
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_placeholder
+          STRIPE_PRO_PRICE_ID: price_placeholder
+          STRIPE_PLUS_PRICE_ID: price_placeholder
+          STRIPE_ULTRA_PRICE_ID: price_placeholder
+          # TTS / Voice
+          INWORLD_BASIC_BASE64: placeholder
+          INWORLD_JWT_KEY: placeholder
+          INWORLD_JWT_SECRET: placeholder
+          CARTESIA_API_KEY: placeholder
+          # Avatar
+          REPLICATE_API_TOKEN: placeholder
+          AVATAR_GENERATION_MODEL: dalle-3
