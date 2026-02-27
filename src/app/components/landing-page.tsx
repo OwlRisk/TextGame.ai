@@ -8,7 +8,6 @@ import {
   Crown,
   Zap,
   Star,
-  Play,
   ChevronDown,
   Lightbulb,
 } from "lucide-react";
@@ -166,49 +165,47 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
   const features = [
     {
       icon: MessageCircle,
-      title: "Conversation-first",
+      title: "Plain English creation",
       description:
-        "Pure dialogue gameplay. No cards, no complex mechanics - just talk.",
+        "Describe your game idea in plain English — the AI builds the rules, roles, and world for you.",
       gradient: "from-violet-500 to-purple-500",
     },
     {
       icon: Sparkles,
-      title: "20+ Game Templates",
+      title: "20+ ready templates",
       description:
-        "Start with classics like Werewolf or design something completely new.",
+        "Jump in with classics like Werewolf, Mafia, or Who's the Spy — or go fully custom.",
       gradient: "from-blue-500 to-cyan-500",
     },
     {
       icon: Crown,
-      title: "Response in <2s",
+      title: "AI runs the whole game",
       description:
-        "Lightning-fast AI responses keep the game flowing naturally.",
+        "A dedicated Game Master hosts every session. AI characters fill every seat.",
       gradient: "from-orange-500 to-pink-500",
     },
     {
       icon: Users,
-      title: "45min avg session",
-      description: "Players stay engaged with rich character interactions.",
+      title: "Any game, any rules",
+      description:
+        "Mystery, deduction, roleplay, trivia — if you can describe it, you can play it.",
       gradient: "from-green-500 to-emerald-500",
     },
   ];
 
-  const testimonials = [
-    { name: "Sarah K.", games: 12, rating: 5, text: "Best AI game platform I've tried" },
-    { name: "Mike T.", games: 8, rating: 5, text: "My friends are addicted to this!" },
-    { name: "Emma L.", games: 23, rating: 5, text: "Created a murder mystery for my party" },
-  ];
-
   const featuredGames = [
-    { emoji: "🧛", title: "Vampire Court", author: "Jordan", plays: 1234, rating: 4.9 },
-    { emoji: "🚀", title: "Space Mutiny", author: "Alex", plays: 892, rating: 4.8 },
-    { emoji: "🏰", title: "Kingdom Intrigue", author: "Sam", plays: 2103, rating: 4.9 },
+    { emoji: "🐺", title: "Werewolf", description: "Classic social deduction — find the werewolves before it's too late" },
+    { emoji: "🕵️", title: "Who's the Spy", description: "Describe your secret word without giving it away" },
+    { emoji: "🔍", title: "Murder Mystery", description: "A crime has been committed — everyone is a suspect" },
+    { emoji: "🃏", title: "Mafia", description: "Townspeople vs. hidden mafia — vote wisely" },
+    { emoji: "🧙", title: "Fantasy Roleplay", description: "Build a world, pick your roles, and adventure together" },
+    { emoji: "✨", title: "Your Custom Game", description: "Describe any idea — the AI builds and runs it for you" },
   ];
 
   const howItWorks = [
-    { number: "1", title: "Sign in", subtitle: "with Google", icon: "👤" },
-    { number: "2", title: "Describe game", subtitle: "to Game Master", icon: "💬" },
-    { number: "3", title: "Play instantly", subtitle: "with AI characters", icon: "🎮" },
+    { number: "1", title: "Sign up free", subtitle: "Google, one click", icon: "👤" },
+    { number: "2", title: "Describe your idea", subtitle: "in plain English", icon: "💬" },
+    { number: "3", title: "Play instantly", subtitle: "AI builds & runs your game", icon: "🎮" },
   ];
 
   useEffect(() => {
@@ -249,16 +246,16 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
             </div>
 
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-              Create multiplayer{" "}
+              Describe any game idea.{" "}
               <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                AI games
+                Play it
               </span>{" "}
-              in 2 minutes
+              in minutes.
             </h2>
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-6 md:mb-8 leading-relaxed">
-              No coding. No setup. Just describe your game and play with AI
-              characters in seconds.
+              Chat with an AI Game Master to build your rules, roles, and world.
+              AI characters fill every seat — start playing the moment you&apos;re done.
             </p>
 
             <div className="mb-6 p-5 bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-700/50 rounded-xl">
@@ -296,7 +293,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-white">Free to start</div>
-                    <div className="text-xs text-zinc-500">No card needed</div>
+                    <div className="text-xs text-zinc-500">No setup needed</div>
                   </div>
                 </div>
               </div>
@@ -339,8 +336,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
                 </Button>
               )}
               <p className="mt-4 text-center text-sm text-zinc-400">
-                Join {testimonials[0].name}, {testimonials[1].name}, and thousands
-                of others
+                Free to start · From idea to game in under 2 minutes
               </p>
             </div>
 
@@ -584,10 +580,10 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
             <h3 className="text-4xl font-black text-white mb-4">
-              Why You&apos;ll Love It
+              Everything you need to bring any game to life
             </h3>
             <p className="text-lg text-zinc-400">
-              Everything you need to create amazing game experiences
+              From first idea to full session — no design experience required
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -616,36 +612,26 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
           </div>
         </div>
 
-        {/* Trending Games */}
+        {/* Game Templates */}
         <div className="mb-32">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
+              <span className="text-sm font-bold text-violet-400">TEMPLATES</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">Trending Games</h3>
-            <p className="text-lg text-zinc-400">See what others are creating</p>
+            <h3 className="text-3xl font-black text-white mb-3">Start with a template or go custom</h3>
+            <p className="text-lg text-zinc-400">Pick a classic or describe something entirely new</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {featuredGames.map((game, index) => (
               <div
                 key={index}
-                className="group bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                className="group bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-5 transition-all duration-300 hover:scale-[1.02]"
               >
                 <div className="flex items-start gap-3">
-                  <div className="text-3xl">{game.emoji}</div>
+                  <div className="text-3xl mt-0.5">{game.emoji}</div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-white truncate">{game.title}</h4>
-                    <p className="text-xs text-zinc-500">by {game.author}</p>
-                    <div className="flex items-center gap-3 mt-2 text-xs">
-                      <span className="flex items-center gap-1 text-zinc-400">
-                        <Play className="h-3 w-3" />
-                        {game.plays.toLocaleString()}
-                      </span>
-                      <span className="flex items-center gap-1 text-yellow-500">
-                        <Star className="h-3 w-3 fill-yellow-500" />
-                        {game.rating}
-                      </span>
-                    </div>
+                    <h4 className="font-bold text-white mb-1">{game.title}</h4>
+                    <p className="text-xs text-zinc-500 leading-relaxed">{game.description}</p>
                   </div>
                 </div>
               </div>
@@ -662,11 +648,10 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
-                Ready to Create Your Game?
+                Ready to Build Your Game?
               </h3>
               <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Join thousands of creators building multiplayer AI games in
-                minutes
+                Any game you can describe, you can play — in minutes
               </p>
               <div className="relative inline-block">
                 <div
@@ -700,7 +685,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
                 </Button>
               </div>
               <p className="text-sm text-violet-100 mt-4">
-                No credit card required • 2 minutes to your first game
+                Free to start · From idea to game in under 2 minutes
               </p>
             </div>
           </div>
@@ -752,7 +737,7 @@ function FAQSection() {
     {
       question: "Do I need to sign in? Is it free?",
       answer:
-        "You can browse the site and try the intro chat without signing in. To create, save, and manage games (and use My Games), sign in with Google. New accounts get $5 in trial credit to play—no credit card required to start. Your games are stored in your account so you can return anytime.",
+        "You can browse the site without signing in. To create, save, and manage games (and use My Games), sign in with Google. New accounts get free starting credits to try the platform. Your games are stored in your account so you can return anytime.",
     },
     {
       question: "Where are my games saved?",

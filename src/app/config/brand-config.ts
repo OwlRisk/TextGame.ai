@@ -2,9 +2,9 @@
 export const BRAND_CONFIG = {
   name: "textgame.ai",
   shortName: "TextGame",
-  tagline: "Play Any Game You Can Imagine",
+  tagline: "Any game you can describe, you can play",
   description:
-    "Create and play immersive text-based games powered by AI characters",
+    "Describe any game idea in plain English. AI builds the rules, runs the session, and fills every seat.",
 
   logo: {
     emoji: "🎮",
