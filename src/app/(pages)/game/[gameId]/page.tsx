@@ -105,6 +105,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setMyBoardContent,
     sections,
     setSections,
+    gameEvents,
+    setGameEvents,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -437,6 +439,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         ? boardEntries.join("\n\n")
         : "(No private board content yet)";
 
+      const eventLogSummary = gameEvents.length > 0
+        ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
+        : "(No events recorded yet)";
+
       const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
 
 OUTPUT FORMAT — MANDATORY: Every reply MUST be split into exactly two sections separated by a line containing only "---":
@@ -485,6 +491,9 @@ Phase: ${gamePhase || "intro"}
 Players:
 ${playerRoster}
 
+Game Event Log (chronological record of key events — use this as your memory):
+${eventLogSummary}
+
 Private Board (what you have already sent to each player — do NOT repeat this publicly):
 ${boardSummary}
 
@@ -503,6 +512,17 @@ Game over: Monitor win/loss conditions based on the game rules and current playe
 GAME_OVER: <winner description>
 Example: GAME_OVER: Villagers win — all werewolves have been eliminated!
 When you output GAME_OVER, also output REVEAL_ROLE: All so all roles are shown. Do NOT output NEXT_SPEAKER after GAME_OVER.
+
+Player elimination: When a player is eliminated (voted out, killed at night, etc.), mark them with (in the DIRECTIVES section):
+ELIMINATE: <player name>
+This sets their status to "eliminated" and they will no longer speak. Use the exact name. Also output REVEAL_ROLE: <player name> so their role is shown.
+
+Game Event Log: To record a key event for your own memory (night results, eliminations, vote outcomes, discoveries, etc.), add in the DIRECTIVES section:
+RECORD_EVENT: <one-line summary of what happened>
+Examples: "Night 1 — Werewolves killed Oren Pike. Seer found Garrick Wold is Werewolf."
+         "Day 1 — Garrick Wold eliminated by vote 6-2. Role: Werewolf."
+         "Doctor saved Mira Thorne from werewolf attack."
+Record events after each night resolution and each elimination. These are injected back into your context as your memory, so you never forget what happened.
 
 Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the EXACT player name (text before [AI] in the list, no epithets) or "You" for the human. Example:
 [BOARD:${humanName}]
@@ -527,17 +547,36 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
         const revealLineRegex = /^\s*REVEAL_ROLE:\s*(.+?)\s*$/im;
         const gameOverLineRegex = /^\s*GAME_OVER:\s*(.+?)\s*$/im;
+        const recordEventRegex = /^\s*RECORD_EVENT:\s*(.+?)\s*$/im;
+        const eliminateRegex = /^\s*ELIMINATE:\s*(.+?)\s*$/im;
         const roleUpdates: { playerId: string; role: string }[] = [];
         const revealIds: string[] = [];
+        const newEvents: string[] = [];
+        const eliminateIds: string[] = [];
         const lines = content.split(/\r?\n/);
         const keptLines: string[] = [];
         for (const line of lines) {
           const assignMatch = line.match(assignLineRegex);
           const revealMatch = line.match(revealLineRegex);
           const gameOverMatch = line.match(gameOverLineRegex);
+          const recordEventMatch = line.match(recordEventRegex);
+          const eliminateMatch = line.match(eliminateRegex);
           if (gameOverMatch) {
             // GAME_OVER: <winner description> — ends the game
             setGamePhase("ended");
+            newEvents.push(`GAME OVER — ${gameOverMatch[1].trim()}`);
+          } else if (recordEventMatch) {
+            newEvents.push(recordEventMatch[1].trim());
+          } else if (eliminateMatch) {
+            const namePart = eliminateMatch[1].trim();
+            const nameBase = namePart.split(",")[0].trim();
+            const target = players.find((p) =>
+              !p.isGameMaster && (p.name === namePart || p.name === nameBase)
+            );
+            if (target) {
+              eliminateIds.push(target.id);
+              newEvents.push(`${target.name} was eliminated (role: ${target.role ?? "unknown"})`);
+            }
           } else if (assignMatch) {
             const namePart = assignMatch[1].trim();
             const rolePart = assignMatch[2].trim();
@@ -574,17 +613,22 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             keptLines.push(line);
           }
         }
-        if (roleUpdates.length > 0 || revealIds.length > 0) {
+        if (roleUpdates.length > 0 || revealIds.length > 0 || eliminateIds.length > 0) {
           setPlayers((prev) =>
             prev.map((p) => {
               const roleUp = roleUpdates.find((r) => r.playerId === p.id);
               const reveal = revealIds.includes(p.id);
-              if (roleUp && reveal) return { ...p, role: roleUp.role, roleRevealed: true };
-              if (roleUp) return { ...p, role: roleUp.role };
-              if (reveal) return { ...p, roleRevealed: true };
-              return p;
+              const eliminate = eliminateIds.includes(p.id);
+              const updates: Partial<typeof p> = {};
+              if (roleUp) updates.role = roleUp.role;
+              if (reveal) updates.roleRevealed = true;
+              if (eliminate) updates.stats = { ...(p.stats ?? {}), Status: "eliminated" };
+              return Object.keys(updates).length ? { ...p, ...updates } : p;
             })
           );
+        }
+        if (newEvents.length > 0) {
+          setGameEvents((prev) => [...prev, ...newEvents]);
         }
         return keptLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
       };
