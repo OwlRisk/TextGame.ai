@@ -473,6 +473,12 @@ CRITICAL — Keep the discussion going: list 2–3 AI speakers most of the time 
 
 VOTING PHASE RULE (VERY IMPORTANT): When it is time to vote (e.g., "Time to vote", "Cast your vote"), you MUST list ALL remaining AI players who have not yet voted in a single NEXT_SPEAKER line. Do NOT stop at 2–3 names — include every eligible AI player so voting completes automatically without human intervention between votes. Only add ${humanName} at the end after all AI votes are collected (or if the human hasn't voted yet). Example with 5 AI players: NEXT_SPEAKER: Juno, Edda, Maribel, Tomas, Gideon, ${humanName}
 
+NIGHT PHASE RULE (VERY IMPORTANT): During the night, role-action players (Werewolves, Seer, Doctor, etc.) act privately. Use BOARD blocks to give each one their private instructions and results. Then:
+- List ALL role-action AI players in a single NEXT_SPEAKER so they respond one after another automatically.
+- Do NOT include ${humanName} in NEXT_SPEAKER during the night if their role has no night action (e.g. Villager). Villagers have nothing to do at night — skip them.
+- When the system sends "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]", it means AI players have finished — announce morning and transition to the Day phase. End your reply with NEXT_SPEAKER: ${humanName} (or open discussion) so the human can participate.
+- Never loop endlessly asking players to "make their choices" — if all actions are submitted, advance immediately.
+
 --- CURRENT GAME STATE ---
 Phase: ${gamePhase || "intro"}
 
