@@ -57,7 +57,7 @@ interface GameSidebarProps {
 
 export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onUpdateGame, onEditCommands, onNavigate }: GameSidebarProps) {
   const router = useRouter();
-  const { user, loading, signOut } = useAuth();
+  const { user, session, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
@@ -69,9 +69,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
     if (!onUpdateGame) return;
     setIconGeneratingId(game.id);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
       const res = await fetch("/api/generate-game-icon", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           gameName: game.name,
           gameTemplate: game.config?.template,
@@ -90,22 +92,24 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
       }
     } catch (e) {
       console.error("Generate game icon error:", e);
+      // On silent auto-generation failure, remove from requested set so it can retry next mount
+      if (silent) autoIconRequestedRef.current.delete(game.id);
       if (!silent) toast.error(e instanceof Error ? e.message : "Failed to generate icon. Try again later.");
     } finally {
       setIconGeneratingId(null);
     }
   };
 
-  // Auto-generate AI icon in background for games that still use emoji (once per game)
+  // Auto-generate AI icon in background for games that still use emoji (once per session)
   useEffect(() => {
-    if (!onUpdateGame || iconGeneratingId !== null) return;
+    if (!onUpdateGame || iconGeneratingId !== null || !session?.access_token) return;
     const needIcon = games.find(
       (g) => !g.icon.startsWith("data:image") && !g.icon.startsWith("http") && !autoIconRequestedRef.current.has(g.id)
     );
     if (!needIcon) return;
     autoIconRequestedRef.current.add(needIcon.id);
     handleGenerateIcon(needIcon, true);
-  }, [games, onUpdateGame, iconGeneratingId]);
+  }, [games, onUpdateGame, iconGeneratingId, session?.access_token]);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -251,9 +255,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                                   ? "rounded-xl"
                                   : "hover:rounded-xl"
                               } ${(game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? 'p-0' : ''}`}
-                              style={{ 
-                                backgroundColor: (game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? 'transparent' : game.color,
-                              }}
+                              style={{ backgroundColor: game.color }}
                             >
                             {iconGeneratingId === game.id ? (
                               <Loader2 className="size-7 text-white animate-spin" />
@@ -262,9 +264,13 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                                 src={game.icon} 
                                 alt={game.name}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Image failed to load — hide it so the colored background shows
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                }}
                               />
                             ) : (
-                              <span className="text-4xl">{game.icon}</span>
+                              <span className="text-2xl leading-none">{game.icon}</span>
                             )}
                             </Button>
                             {selectedGameId === game.id && (
