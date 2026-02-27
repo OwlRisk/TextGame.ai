@@ -60,7 +60,7 @@ Generate 1 to 3 quick-reply options (one per line), or fewer if only one makes s
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 150,
+      max_completion_tokens: 150,
       temperature: 0.6,
     });
 

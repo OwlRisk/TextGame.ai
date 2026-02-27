@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           content: `Game: ${gameName}\n${rulesSnippet ? `Rules (excerpt):\n${rulesSnippet}\n\n` : ""}Generate one short in-game character name for the human player:`,
         },
       ],
-      max_tokens: 30,
+      max_completion_tokens: 30,
       temperature: 0.8,
     });
 

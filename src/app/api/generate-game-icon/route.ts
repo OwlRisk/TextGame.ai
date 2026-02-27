@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        max_tokens: 150,
+        max_completion_tokens: 150,
         temperature: 0.8,
       });
       aiConcept = completion.choices?.[0]?.message?.content?.trim() || '';
