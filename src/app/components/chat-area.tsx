@@ -402,6 +402,25 @@ export function ChatArea({
     setRevealTick((t) => t + 1);
   }, []);
 
+  // Stop TTS and reset state when switching game OR channel — historical messages of the new channel
+  // must not be played, only newly arriving ones should trigger TTS.
+  // Use channelId (stable identifier) rather than channelName (display name that can change case).
+  // IMPORTANT: This effect must be declared BEFORE the main TTS processing effect so that React
+  // runs it first on the same render. This ensures the refs are cleared before TTS snapshots them.
+  const ttsChannelKey = channelId ?? channelName;
+  useEffect(() => {
+    stopInworldTTS();
+    initialMessageIdsRef.current = null;
+    hasQueuedTTSInSessionRef.current = false;
+    ttsProgressRef.current.clear();
+    ttsQueuedRef.current.clear();
+    ttsCompletedRef.current.clear();
+    displayedContentRef.current.clear();
+    ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
+    ttsFallbackTimeoutsRef.current.clear();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, ttsChannelKey]);
+
   // Strict one-message-at-a-time TTS queue.
   //
   // Key invariants:
@@ -570,23 +589,6 @@ export function ChatArea({
     }
     return () => {};
   }, [voiceEnabled, inworldTTSSupported, messages, revealTick]);
-
-  // Stop TTS and reset state when switching game OR channel — historical messages of the new channel
-  // must not be played, only newly arriving ones should trigger TTS.
-  // Use channelId (stable identifier) rather than channelName (display name that can change case).
-  const ttsChannelKey = channelId ?? channelName;
-  useEffect(() => {
-    stopInworldTTS();
-    initialMessageIdsRef.current = null;
-    hasQueuedTTSInSessionRef.current = false;
-    ttsProgressRef.current.clear();
-    ttsQueuedRef.current.clear();
-    ttsCompletedRef.current.clear();
-    displayedContentRef.current.clear();
-    ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
-    ttsFallbackTimeoutsRef.current.clear();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, ttsChannelKey]);
 
   const MIN_INPUT_HEIGHT = 40;
   const MAX_INPUT_HEIGHT = 120;
