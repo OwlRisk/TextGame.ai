@@ -778,10 +778,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
     // If messages changed, move session to top; otherwise update in-place to preserve order
     setSessions((prev) => {
-      if (messagesChanged) {
-        return [updatedSession, ...prev.filter((s) => s.id !== currentSessionId)];
-      }
-      return prev.map((s) => (s.id === currentSessionId ? updatedSession : s));
+      const updated = messagesChanged
+        ? [updatedSession, ...prev.filter((s) => s.id !== currentSessionId)]
+        : prev.map((s) => (s.id === currentSessionId ? updatedSession : s));
+      try {
+        localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
     });
 
     if (user?.id) {
@@ -802,9 +805,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         if (error) console.error("[Game Master] Failed to save session to DB:", error);
       });
     }
-    try {
-      localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
-    } catch (_) {}
   }, [
     currentSessionId,
     messages,
