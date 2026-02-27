@@ -359,6 +359,9 @@ export function ChatArea({
   const initialMessageIdsRef = useRef<Set<string> | null>(null);
   // True once we've queued any TTS this session; used to tell "new game (we already played m1)" from "existing room (first paint with 2+ messages)".
   const hasQueuedTTSInSessionRef = useRef(false);
+  // Set by the channel-reset effect so the TTS effect knows to snapshot ALL existing messages
+  // as historical (including single-message channels) — prevents replaying on channel switch.
+  const justSwitchedChannelRef = useRef(false);
   // Text revealed so far per AI message — grows sentence-by-sentence as TTS plays.
   const displayedContentRef = useRef<Map<string, string>>(new Map());
   // Bumped each time a sentence is revealed, to trigger a re-render.
@@ -412,6 +415,7 @@ export function ChatArea({
     stopInworldTTS();
     initialMessageIdsRef.current = null;
     hasQueuedTTSInSessionRef.current = false;
+    justSwitchedChannelRef.current = true;
     ttsProgressRef.current.clear();
     ttsQueuedRef.current.clear();
     ttsCompletedRef.current.clear();
@@ -439,6 +443,22 @@ export function ChatArea({
   //   4. Effect re-runs → M1 skipped (completed). M2 not queued → show text, queue audio.
   useEffect(() => {
     if (!voiceEnabled || !inworldTTSSupported) return;
+
+    // Channel/game just switched: snapshot ALL existing messages as historical so they are
+    // never replayed — even if there is only 1 message (e.g. host greeting in General).
+    if (justSwitchedChannelRef.current) {
+      justSwitchedChannelRef.current = false;
+      if (messages.length === 0) return;
+      initialMessageIdsRef.current = new Set(messages.map((m) => m.id));
+      for (const m of messages) {
+        if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+        ttsQueuedRef.current.add(m.id);
+        ttsCompletedRef.current.add(m.id);
+        displayedContentRef.current.set(m.id, (m.content || '').trim());
+      }
+      setRevealTick((t) => t + 1);
+      return;
+    }
 
     // First time we see messages: snapshot "initial/cached" IDs — never play TTS for these.
     // Don't snapshot on empty (slow load) or single message (could be first message of new game).
