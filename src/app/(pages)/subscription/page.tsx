@@ -528,9 +528,9 @@ function SubscriptionPageContent() {
                       const p = PLAN_PRICING[tier];
                       if (!p) return null;
                       const isCurrent = tier === currentTier;
-                      const tierOrder = { pro: 1, plus: 2, ultra: 3 };
-                      const isUpgrade = tierOrder[tier] > tierOrder[currentTier as keyof typeof tierOrder];
-                      const isDowngrade = tierOrder[tier] < tierOrder[currentTier as keyof typeof tierOrder];
+                      const tierOrder: Record<string, number> = { free: 0, pro: 1, plus: 2, ultra: 3 };
+                      const isUpgrade = (tierOrder[tier] ?? 0) > (tierOrder[currentTier] ?? 0);
+                      const isDowngrade = (tierOrder[tier] ?? 0) < (tierOrder[currentTier] ?? 0);
                       const isChanging = changingTier === tier;
                       return (
                         <div
