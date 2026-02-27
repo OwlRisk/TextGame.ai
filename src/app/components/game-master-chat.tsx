@@ -1753,12 +1753,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </div>
 
         <ScrollArea className="flex-1 min-h-0 overflow-hidden">
-          <div className="p-2 space-y-1 relative">
+          <div className="p-2 space-y-1 relative w-full">
             {sessions.map((session) => (
               <ContextMenu key={session.id}>
                 <ContextMenuTrigger>
                   <div
-                    className={`group relative rounded-lg transition-all duration-200 ${
+                    className={`group relative rounded-lg transition-all duration-200 overflow-hidden ${
                       currentSessionId === session.id
                         ? "bg-white/10 border border-white/20"
                         : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
@@ -1766,7 +1766,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   >
                     <button
                       onClick={() => loadSession(session.id, undefined, true)}
-                      className="w-full p-2 text-left"
+                      className="w-full min-w-0 p-2 text-left"
                     >
                       <div className="text-xs font-medium text-white mb-0.5 line-clamp-1 pr-6">
                         {session.title}
