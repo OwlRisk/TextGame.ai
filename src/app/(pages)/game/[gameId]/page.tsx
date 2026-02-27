@@ -110,6 +110,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [isInitialized, setIsInitialized] = useState(false);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const [quickRepliesLoading, setQuickRepliesLoading] = useState(false);
+  // Tracks the last message key for which suggest-quick-replies failed.
+  // Prevents hammering the API with retries for the same message when other deps change.
+  const quickRepliesFailKeyRef = useRef<string | null>(null);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
@@ -851,6 +854,13 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       setQuickRepliesLoading(false);
       return;
     }
+    // Skip if we already tried (and failed) for this exact message — avoids hammering
+    // the API when other deps (gamePhase, isRoundInProgress) change for the same message.
+    const attemptKey = `${selectedChannelId ?? ''}:${lastMessage?.id ?? messagesForChannel.length}`;
+    if (quickRepliesFailKeyRef.current === attemptKey) {
+      setQuickRepliesLoading(false);
+      return;
+    }
     const abort = new AbortController();
     setQuickRepliesLoading(true);
     const recent = messagesForChannel.slice(-8).map((m) => ({ senderName: m.senderName, content: m.content }));
@@ -870,10 +880,11 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
     })
       .then((r) => r.ok ? r.json() : Promise.reject(new Error("Failed")))
       .then((data: { suggestions?: string[] }) => {
+        quickRepliesFailKeyRef.current = null;
         const list = Array.isArray(data.suggestions) ? data.suggestions.filter((s) => s && s.length <= 120).slice(0, 3) : [];
         setQuickReplies(list.length > 0 ? list : []);
       })
-      .catch(() => setQuickReplies([]))
+      .catch(() => { quickRepliesFailKeyRef.current = attemptKey; setQuickReplies([]); })
       .finally(() => setQuickRepliesLoading(false));
     return () => {
       abort.abort();
