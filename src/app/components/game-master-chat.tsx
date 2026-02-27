@@ -754,6 +754,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
     const sessionTitle = generateSessionTitle(selectedTemplate, playerCount, gameName);
 
+    const existing = sessions.find((s) => s.id === currentSessionId);
+    // Only bump updatedAt (and move to top) when messages actually changed
+    const messagesChanged = existing
+      ? existing.messages.length !== messages.length ||
+        (messages.length > 0 &&
+          existing.messages[existing.messages.length - 1]?.id !== messages[messages.length - 1]?.id)
+      : true;
+
     const updatedSession: GameSession = {
       id: currentSessionId,
       title: sessionTitle,
@@ -764,13 +772,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       customRules: customRules,
       gameName: gameName,
       selectedHostId: selectedHostId,
-      createdAt: sessions.find((s) => s.id === currentSessionId)?.createdAt ?? new Date(),
-      updatedAt: new Date()
+      createdAt: existing?.createdAt ?? new Date(),
+      updatedAt: messagesChanged ? new Date() : (existing?.updatedAt ?? new Date()),
     };
 
-    const filtered = sessions.filter((s) => s.id !== currentSessionId);
-    const updated = [updatedSession, ...filtered];
-    setSessions(updated);
+    // If messages changed, move session to top; otherwise update in-place to preserve order
+    setSessions((prev) => {
+      if (messagesChanged) {
+        return [updatedSession, ...prev.filter((s) => s.id !== currentSessionId)];
+      }
+      return prev.map((s) => (s.id === currentSessionId ? updatedSession : s));
+    });
 
     if (user?.id) {
       const messagesForDb = messages.map((m) => ({
