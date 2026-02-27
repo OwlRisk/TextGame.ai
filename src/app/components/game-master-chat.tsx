@@ -1694,12 +1694,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const host = getHostById(selectedHostId);
 
   return (
-    <div className="flex-1 flex bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 h-full overflow-hidden relative">
+    <div className="flex-1 flex bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-hidden relative min-h-0 min-w-0">
       {/* Ambient Background Effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
       
-      <div className="flex flex-1 min-w-0 relative z-10 h-full">
+      <div className="flex flex-1 min-w-0 min-h-0 relative z-10 overflow-hidden">
       
       {/* Voice Error Toast — show for mic errors and transcription failures */}
       {voiceError && (
@@ -1739,7 +1739,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       )}
       
       {/* Session History Sidebar */}
-      <div className="w-52 sm:w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col relative z-10 h-full overflow-hidden">
+      <div className="flex-shrink-0 w-52 sm:w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col relative z-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-transparent pointer-events-none" />
         
         <div className="p-3 sm:p-4 border-b border-white/10 relative flex-shrink-0">
@@ -1823,8 +1823,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       </div>
 
       {/* Main Chat Area + resizable split */}
-      <div className="flex flex-1 min-w-0 h-full">
-      <div className="flex flex-col min-w-0 h-full flex-1 min-w-0">
+      <div className="flex flex-1 min-w-0 min-h-0 overflow-hidden">
+      <div className="flex flex-col min-w-0 min-h-0 flex-1 overflow-hidden">
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
