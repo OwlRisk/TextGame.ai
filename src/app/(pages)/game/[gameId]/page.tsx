@@ -439,7 +439,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
       const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
 
-REPLY LENGTH: Match the moment. A phase transition or vote result: 1–3 sentences. A dramatic reveal or climax: up to 5 sentences. Never write walls of text — one clear action or question per reply. If you have more to say, spread it across future turns.
+REPLY LENGTH — CRITICAL (voice is enabled): Your public chat message is read aloud by text-to-speech. Keep the spoken text to 1–2 sentences absolute maximum — this is what players hear. BOARD blocks, ASSIGN_ROLE lines, SECTION blocks, and NEXT_SPEAKER are invisible directives; they are never spoken and do not count toward your reply length. Put ALL role info, private results, and per-player details in BOARD blocks — never in the public message. One clear spoken sentence is almost always enough.
 
 When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
 

@@ -144,12 +144,23 @@ function PrivateMessagesSection({ messages, label = "Private from Host" }: { mes
  * Split `text` into TTS-ready sentences starting at `fromChar`.
  * Returns completed sentences (ending in . ! ?) and the new char offset.
  * Sentences shorter than 8 chars are skipped to avoid tiny audio fragments.
+ * Only the first MAX_TTS_CHARS characters of the message are considered —
+ * this keeps voice output short even if the AI generates a long reply.
  */
+
+/** Max characters TTS will read for the Host narrator (~2-3 sentences, ~20-30s). */
+const MAX_TTS_CHARS_HOST = 300;
+/** Max characters TTS will read for AI players (~1 sentence, ~10s). */
+const MAX_TTS_CHARS_PLAYER = 150;
+
 function extractTTSSentences(
   text: string,
-  fromChar: number
+  fromChar: number,
+  maxChars: number = MAX_TTS_CHARS_HOST
 ): { sentences: string[]; newOffset: number } {
-  const slice = text.slice(fromChar);
+  // Hard cap: never read beyond maxChars into the message
+  const cappedText = text.slice(0, maxChars);
+  const slice = cappedText.slice(fromChar);
   const sentences: string[] = [];
   // Match anything up to and including . ! ? (greedy per sentence)
   const re = /[^.!?]*[.!?]+(?:\s+|$)/g;
@@ -508,9 +519,11 @@ export function ChatArea({
       const alreadyShown = (displayedContentRef.current.get(m.id) ?? '').length > 0;
 
       const voiceId = voiceIdForMessage(m);
+      const isHostMessage = players.find((p) => p.id === m.senderId)?.isGameMaster === true;
+      const ttsCap = isHostMessage ? MAX_TTS_CHARS_HOST : MAX_TTS_CHARS_PLAYER;
       let fromChar = 0;
       for (;;) {
-        const { sentences, newOffset } = extractTTSSentences(content, fromChar);
+        const { sentences, newOffset } = extractTTSSentences(content, fromChar, ttsCap);
         if (sentences.length === 0) break;
         sentences.forEach((s) => {
           if (alreadyShown) {
