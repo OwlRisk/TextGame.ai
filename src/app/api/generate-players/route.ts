@@ -112,9 +112,11 @@ ${rules || 'Standard social deduction game'}
 
 Based on this game's theme and setting, decide what naming style fits best:
 - Modern/abstract games → modern names (Emma, Lucas, Sofia)
-- Fantasy/historical → themed names with roles/titles (Sir Aldric, Witch Elara)
-- Story-based → names that match the narrative setting
+- Fantasy/historical → first name + surname only, NO occupation titles in the name (e.g. "Aldric Stone", "Elara Frost" — NOT "Sir Aldric" or "Elara, Witch")
+- Story-based → names that match the narrative setting (first + last name only)
 - Any other theme → adapt accordingly
+
+IMPORTANT: The "name" field must be a SHORT character name (1-3 words, max 20 characters). Do NOT include commas, occupations, titles, or role descriptions in the name. Occupations/backgrounds go in the "background" field.
 
 Requirements:
 1. ${playerCount} completely unique, diverse players

@@ -182,6 +182,8 @@ export interface Message {
 
 interface ChatAreaProps {
   channelName: string;
+  /** Stable channel identifier used for TTS reset — prevents spurious resets when display name changes casing. */
+  channelId?: string;
   messages: Message[];
   onSendMessage: (content: string) => void;
   isGameActive: boolean;
@@ -230,6 +232,7 @@ interface ChatAreaProps {
 
 export function ChatArea({ 
   channelName, 
+  channelId,
   messages, 
   onSendMessage,
   isGameActive,
@@ -570,6 +573,8 @@ export function ChatArea({
 
   // Stop TTS and reset state when switching game OR channel — historical messages of the new channel
   // must not be played, only newly arriving ones should trigger TTS.
+  // Use channelId (stable identifier) rather than channelName (display name that can change case).
+  const ttsChannelKey = channelId ?? channelName;
   useEffect(() => {
     stopInworldTTS();
     initialMessageIdsRef.current = null;
@@ -581,7 +586,7 @@ export function ChatArea({
     ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
     ttsFallbackTimeoutsRef.current.clear();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, channelName]);
+  }, [gameId, ttsChannelKey]);
 
   const MIN_INPUT_HEIGHT = 40;
   const MAX_INPUT_HEIGHT = 120;

@@ -214,9 +214,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Fetch human in-game identity when missing (persisted with room state).
   // Wait for room to load first — if the room has a saved identity we must not overwrite it.
+  // Retry if name is "Player" (API previously failed and returned the default fallback).
   useEffect(() => {
     if (isRoomLoading) return; // wait for saved identity to arrive from DB/cache
-    if (!currentGame?.config || !session?.access_token || humanGameIdentity !== null) return;
+    if (!currentGame?.config || !session?.access_token) return;
+    if (humanGameIdentity !== null && humanGameIdentity.name !== "Player") return;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     headers["Authorization"] = `Bearer ${session.access_token}`;
     fetch("/api/generate-human-game-identity", {
@@ -1111,6 +1113,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         })() ?? (isGameChannel ? (
           <ChatArea
             channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room"}
+            channelId={selectedChannelId ?? undefined}
             messages={messagesForChannel}
             players={players}
             onSendMessage={handleSendMessage}

@@ -2,13 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Volume2, VolumeX, User, Package, Info } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
-import { Separator } from "@/app/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Badge } from "@/app/components/ui/badge";
 import { Player } from "@/app/components/player-panel";
 import { PlayerBoardData } from "@/app/components/player-board";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 
@@ -245,13 +243,7 @@ function PlayerCard({
       <div className="flex items-start gap-2.5">
         {/* Avatar with skull overlay for eliminated */}
         <div className="relative flex-shrink-0">
-          {!player.isAI ? (
-            <Avatar className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"}`}>
-              <AvatarFallback className="text-sm font-semibold text-white" style={{ backgroundColor: player.avatar }}>
-                {player.name.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          ) : (
+          {player.isGameMaster ? (
             <GeneratedAvatar
               {...getAvatarPropsForPlayer(player)}
               gameId={gameId}
@@ -261,35 +253,70 @@ function PlayerCard({
               initialUrl={avatarImageUrls[avatarCacheKey(getAvatarPropsForPlayer(player).name ?? player.name, getAvatarPropsForPlayer(player).type)]}
               onAvatarLoaded={onAvatarUrlLoaded}
             />
+          ) : player.isAI ? (
+            <GeneratedAvatar
+              {...getAvatarPropsForPlayer(player)}
+              gameId={gameId}
+              enabled={true}
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"}`}
+              fallbackColor={player.avatar}
+              initialUrl={avatarImageUrls[avatarCacheKey(getAvatarPropsForPlayer(player).name ?? player.name, getAvatarPropsForPlayer(player).type)]}
+              onAvatarLoaded={onAvatarUrlLoaded}
+            />
+          ) : (
+            <GeneratedAvatar
+              name={player.name && player.name !== "Player" ? player.name : "adventurer"}
+              type="player"
+              gameId={gameId}
+              enabled={!!(gameId && player.name && player.name !== "Player")}
+              className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-blue-500/50 scale-105" : "group-hover:scale-105"}`}
+              fallbackColor={player.avatar || "#6366f1"}
+              initialUrl={avatarImageUrls[avatarCacheKey(player.name ?? "adventurer", "player")]}
+              onAvatarLoaded={onAvatarUrlLoaded}
+            />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-            <span
-              className={`text-sm font-semibold truncate ${
-                player.isGameMaster ? "text-amber-300" : !player.isAI ? "text-blue-200" : "text-white"
-              }`}
-            >
-              {player.name}
-            </span>
-            {player.isGameMaster && (
-              <Badge className="inline-flex items-center justify-center leading-none bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wider shadow-sm rounded-md">
-                HOST
-              </Badge>
-            )}
-            {!player.isAI && !isEliminated && (
-              <Badge className="inline-flex items-center justify-center leading-none bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
-                YOU
-              </Badge>
-            )}
-            {!isEliminated && canViewProfile && player.isAI && (
-              <Info className="h-3.5 w-3.5 text-zinc-500 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
-            )}
-          </div>
+          {(() => {
+            // Split "Firstname Lastname, Occupation Title" into display name + occupation subtitle
+            const commaIdx = player.name.indexOf(",");
+            const displayName = commaIdx > 0 ? player.name.slice(0, commaIdx).trim() : player.name;
+            const occupation = commaIdx > 0 ? player.name.slice(commaIdx + 1).trim() : null;
+            return (
+              <>
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <span
+                    className={`text-sm font-semibold truncate ${
+                      player.isGameMaster ? "text-amber-300" : !player.isAI ? "text-blue-200" : "text-white"
+                    }`}
+                  >
+                    {displayName}
+                  </span>
+                  {player.isGameMaster && (
+                    <Badge className="inline-flex items-center justify-center leading-none bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wider shadow-sm rounded-md">
+                      HOST
+                    </Badge>
+                  )}
+                  {!player.isAI && !isEliminated && (
+                    <Badge className="inline-flex items-center justify-center leading-none bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
+                      YOU
+                    </Badge>
+                  )}
+                  {!isEliminated && canViewProfile && player.isAI && (
+                    <Info className="h-3.5 w-3.5 text-zinc-500 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
+                  )}
+                </div>
+                {/* Occupation subtitle (e.g. "Lantern-Keeper" from "Edda Fenwick, Lantern-Keeper") */}
+                {occupation && !player.isGameMaster && (
+                  <div className="text-[10px] text-zinc-500 leading-tight mb-0.5">{occupation}</div>
+                )}
+              </>
+            );
+          })()}
           {/* Role visibility: always show own role; others only after Host uses REVEAL_ROLE */}
           {player.role && player.role.trim() !== player.name?.trim() && (
             (player.id === currentUserId || player.roleRevealed)
-              ? <div className="text-xs text-zinc-300 font-medium">{player.role}</div>
+              ? <div className="text-xs text-violet-300 font-medium">{player.role}</div>
               : null
           )}
           {/* Show actual status label when player is out of game */}
