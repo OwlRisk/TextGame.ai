@@ -1759,7 +1759,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       <div className="text-xs font-medium text-white mb-0.5 line-clamp-1 pr-6">
                         {session.title}
                       </div>
-                      <div className="text-[10px] text-zinc-500 line-clamp-2 min-h-[2.5em]">
+                      <div className="text-[10px] text-zinc-500 truncate">
                         {(() => {
                           const dateStr = new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                           if (session.messages.length === 0) return `${dateStr} · No messages yet`;
