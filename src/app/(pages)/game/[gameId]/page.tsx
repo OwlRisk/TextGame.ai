@@ -439,7 +439,21 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
       const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
 
-REPLY LENGTH — CRITICAL (voice is enabled): Your public chat message is read aloud by text-to-speech. Keep the spoken text to 1–2 sentences absolute maximum — this is what players hear. BOARD blocks, ASSIGN_ROLE lines, SECTION blocks, and NEXT_SPEAKER are invisible directives; they are never spoken and do not count toward your reply length. Put ALL role info, private results, and per-player details in BOARD blocks — never in the public message. One clear spoken sentence is almost always enough.
+OUTPUT FORMAT — MANDATORY: Every reply MUST be split into exactly two sections separated by a line containing only "---":
+
+1. PUBLIC MESSAGE (before ---): What players see in chat and hear via text-to-speech. Keep this to 1–2 sentences maximum — it is read aloud. Never put directives, role info, or private content here.
+2. DIRECTIVES (after ---): All invisible commands — ASSIGN_ROLE, BOARD blocks, SECTION blocks, NEXT_SPEAKER, REVEAL_ROLE, GAME_OVER. Nothing after --- is ever shown or spoken to players.
+
+Example:
+Night falls—make your choices in silence.
+---
+ASSIGN_ROLE: Oren Pike -> Villager
+[BOARD:Oren Pike]
+You are the Villager. Stay alert.
+[/BOARD]
+NEXT_SPEAKER: Garrick Wold
+
+Always output --- even if there are no directives. The public message must always come first.
 
 When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
 
@@ -473,7 +487,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}
 
 Role assignment: You assign each player's role (including the human). When you assign a role, add one line per assignment (hidden from chat):
 ASSIGN_ROLE: <player name> -> <role>
-Use the exact player name from the list above; for the human use: ASSIGN_ROLE: ${humanName} -> <role>. These lines are hidden from chat and applied silently by the game.
+Use the EXACT player name — only the text before [AI] or [YOU/HUMAN] in the list above. Do NOT append personality, background, occupation, or any other text to the name (e.g. write "Oren Pike", never "Oren Pike, Millwright"). For the human use: ASSIGN_ROLE: ${humanName} -> <role>. These lines are hidden from chat and applied silently by the game.
 
 Role reveal: By default, players' roles are hidden in the Players panel — only each player can see their own role. When the game logic calls for it (e.g. a player is eliminated and their role should be shown, or the game ends), publicly reveal a role with:
 REVEAL_ROLE: <player name>
@@ -484,7 +498,7 @@ GAME_OVER: <winner description>
 Example: GAME_OVER: Villagers win — all werewolves have been eliminated!
 When you output GAME_OVER, also output REVEAL_ROLE: All so all roles are shown. Do NOT output NEXT_SPEAKER after GAME_OVER.
 
-Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the exact player name or "You" for the human. Example:
+Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the EXACT player name (text before [AI] in the list, no epithets) or "You" for the human. Example:
 [BOARD:${humanName}]
 You are the Werewolf. Tonight you may eliminate one player.
 [/BOARD]
@@ -523,9 +537,17 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             const rolePart = assignMatch[2].trim();
             if (!rolePart) continue;
             const isYou = namePart.toLowerCase() === "you";
+            // Fuzzy match: AI sometimes appends epithets (e.g. "Oren Pike, Millwright").
+            // Try exact first, then fall back to matching the portion before the first comma.
+            const nameBase = namePart.split(",")[0].trim();
             const player = isYou
               ? players.find((p) => p.id === userId)
-              : players.find((p) => p.name === namePart || (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart));
+              : players.find((p) =>
+                  p.name === namePart ||
+                  p.name === nameBase ||
+                  (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart) ||
+                  (p.id === userId && (humanGameIdentity?.name ?? "").trim() === nameBase)
+                );
             const targetId = isYou ? userId : player?.id;
             if (targetId) roleUpdates.push({ playerId: targetId, role: rolePart });
           } else if (revealMatch) {
@@ -536,9 +558,10 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               players.forEach((p) => { if (!p.isGameMaster) revealIds.push(p.id); });
             } else {
               const isYou = namePart.toLowerCase() === "you" || namePart.toLowerCase() === (humanName ?? "").toLowerCase();
+              const nameBase = namePart.split(",")[0].trim();
               const target = isYou
                 ? players.find((p) => p.id === userId)
-                : players.find((p) => p.name === namePart);
+                : players.find((p) => p.name === namePart || p.name === nameBase);
               if (target) revealIds.push(target.id);
             }
           } else {
@@ -585,7 +608,10 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               speakerQueue.push({ type: "everyone" });
               break;
             } else {
-              const player = players.find((p) => !p.isGameMaster && p.name === name);
+              // Fuzzy: AI sometimes appends epithets (e.g. "Garrick Wold, Wolf-Trapper").
+              // Try exact first, then fall back to the portion before the first comma.
+              const nameBase = name.split(",")[0].trim();
+              const player = players.find((p) => !p.isGameMaster && (p.name === name || p.name === nameBase));
               if (player?.isAI) speakerQueue.push({ type: "ai", player });
             }
           }
@@ -617,17 +643,33 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       };
 
       /**
-       * Strip [BOARD:...] blocks from streaming content so private role info is never
-       * shown in the public chat bubble while the stream is still in progress.
-       * Complete blocks are removed entirely; an incomplete (not-yet-closed) block
-       * is removed from its opening tag to the end of the accumulated string.
+       * Extract the public message portion from the accumulated stream.
+       * With the new --- separator format: everything before --- is the public message.
+       * Fallback (no --- yet): strip any partial/complete [BOARD:...] blocks to avoid
+       * leaking private role info while the stream is still in progress.
        */
-      const redactBoardBlocksForDisplay = (raw: string): string => {
-        // Remove fully closed blocks first
+      const getStreamingDisplay = (raw: string): string => {
+        const sepIdx = raw.search(/\n---\s*(\n|$)/);
+        if (sepIdx >= 0) return raw.slice(0, sepIdx).trim();
+        // No separator yet — redact BOARD blocks as a safety fallback
         let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
-        // Remove any still-open block (streaming hasn't reached [/BOARD] yet)
         cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
         return cleaned.replace(/\n{2,}/g, "\n\n").trim();
+      };
+
+      /**
+       * Split host output at --- into (message, directives).
+       * If no separator is found, treat the entire content as directives (fallback).
+       */
+      const splitHostOutput = (raw: string): { message: string; directives: string } => {
+        const sepIdx = raw.search(/\n---\s*(\n|$)/);
+        if (sepIdx >= 0) {
+          const message = raw.slice(0, sepIdx).trim();
+          const directives = raw.slice(raw.indexOf("\n", sepIdx + 1) + 1).trim();
+          return { message, directives };
+        }
+        // Fallback: old format — entire content goes through directive parsers and clean
+        return { message: "", directives: raw };
       };
 
       /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
@@ -672,9 +714,9 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                   const data = JSON.parse(payload) as { content?: string };
                   if (typeof data.content === "string") {
                     acc += data.content;
-                    // Redact private [BOARD:...] blocks from the live display so players
-                    // never see partial private role info while the stream is in progress.
-                    updateStreamingMessage(messageId, redactBoardBlocksForDisplay(acc), false);
+                    // Only show the public message portion (before ---).
+                    // If --- hasn't arrived yet, fall back to redacting BOARD blocks.
+                    updateStreamingMessage(messageId, getStreamingDisplay(acc), false);
                   }
                 } catch {
                   // ignore parse
@@ -682,9 +724,18 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               }
             }
           }
-          const { hostContent, who, speakerQueue } = parseHostResult(acc);
-          const afterActions = applyHostActionsAndClean(hostContent);
-          const displayContent = applyHostRoleAssignments(afterActions);
+          // Split into public message and directive section
+          const { message: splitMessage, directives } = splitHostOutput(acc);
+          // Process all directives (NEXT_SPEAKER, ASSIGN_ROLE, BOARD, SECTION, etc.)
+          const { hostContent: directivesClean, who, speakerQueue } = parseHostResult(directives);
+          applyHostActionsAndClean(directivesClean);
+          applyHostRoleAssignments(directivesClean);
+          // Determine the final public display
+          const displayContent = splitMessage || (() => {
+            // Fallback: derive display from directives clean content (old behavior)
+            const afterActions = applyHostActionsAndClean(directivesClean);
+            return applyHostRoleAssignments(afterActions);
+          })();
           updateStreamingMessage(messageId, displayContent || " ", true);
           return { hostContent: displayContent, who, speakerQueue };
         } catch (e) {
