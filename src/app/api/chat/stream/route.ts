@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       gameContext?: { template?: string; playerCount?: number; gameName?: string; conversationState?: string; rules?: string };
       maxCompletionTokens?: number;
       systemPrompt?: string;
+      preferredModel?: string;
     };
     let body: Body;
     try {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt } = body;
+    const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt, preferredModel } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
@@ -251,7 +252,7 @@ export async function POST(request: NextRequest) {
       0
     );
     const totalEstimate = estimateChatTokens(systemTokens, messagesTokens, maxTokens);
-    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
+    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
     const estimatedCoins = estimatedTokensToCoins(totalEstimate, chatModel);
     if (!(await hasTokens(user.id, estimatedCoins))) {
       return new Response(

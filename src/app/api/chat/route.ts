@@ -41,13 +41,14 @@ export async function POST(request: NextRequest) {
       hostPersonality?: { name?: string; description?: string; personality?: string };
       gameContext?: { template?: string; playerCount?: number; gameName?: string; conversationState?: string; rules?: string };
       maxCompletionTokens?: number;
+      preferredModel?: string;
     };
     try {
       body = (await request.json()) as typeof body;
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    const { messages, hostPersonality, gameContext, maxCompletionTokens } = body;
+    const { messages, hostPersonality, gameContext, maxCompletionTokens, preferredModel } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -251,7 +252,7 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
-    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
+    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({

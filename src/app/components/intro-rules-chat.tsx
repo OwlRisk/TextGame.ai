@@ -7,6 +7,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Send, Sparkles } from "lucide-react";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { parseInlineFormatting as parseInlineFormattingShared } from "@/lib/format-message";
+import { getPreferredModel } from "@/lib/model-prefs";
 
 interface ChatMessage {
   id: string;
@@ -107,7 +108,7 @@ export function IntroRulesChat() {
       const res = await fetch("/api/chat/intro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: apiMessages, preferredModel: getPreferredModel() }),
       });
 
       const data = await res.json();

@@ -18,6 +18,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
 import { SlashCommandsDialog } from "@/app/components/slash-commands-dialog";
+import { getPreferredModel } from "@/lib/model-prefs";
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
 const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
@@ -55,6 +56,7 @@ async function seedInitialPlayerReplies(
           rules: rules ?? "",
           player: { name: player.name, role: player.role, personality: player.personality, background: player.background },
           recentMessages: recent,
+          preferredModel: getPreferredModel(),
         }),
       });
       if (!res.ok || isCancelled?.()) continue;
@@ -597,6 +599,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               systemPrompt: hostSystemPrompt,
               messages: [{ role: "user", content: userContent }],
               maxCompletionTokens: 220,
+              preferredModel: getPreferredModel(),
             }),
           });
           if (!res.ok || !res.body) {
@@ -648,6 +651,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               { role: "system", content: hostSystemPrompt },
               { role: "user", content: userContent },
             ],
+            preferredModel: getPreferredModel(),
           }),
         });
         if (!res.ok) return { hostContent: "", who: null, speakerQueue: [] };
@@ -682,6 +686,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                 boardContent: myBoardContent[speaker.id] ?? undefined,
               },
               recentMessages: recent,
+              preferredModel: getPreferredModel(),
             }),
           });
           if (!res.ok) return null;
@@ -831,6 +836,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         rules: currentGame.config.rules,
         recentMessages: recent,
         gamePhase,
+        preferredModel: getPreferredModel(),
       }),
     })
       .then((r) => r.ok ? r.json() : Promise.reject(new Error("Failed")))

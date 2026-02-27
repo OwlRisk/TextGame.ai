@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    const { messages } = body as { messages?: { role: string; content: string }[] };
+    const { messages, preferredModel } = body as { messages?: { role: string; content: string }[]; preferredModel?: string };
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const openai = getOpenAI();
-    const model = process.env.OPENAI_CHAT_MODEL || "gpt-5.2";
+    const model = preferredModel || process.env.OPENAI_CHAT_MODEL || "gpt-5.2";
 
     const completion = await openai.chat.completions.create({
       model,

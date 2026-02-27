@@ -25,11 +25,13 @@ export async function POST(request: NextRequest) {
       rules = '',
       recentMessages = [],
       gamePhase = '',
+      preferredModel,
     } = body as {
       gameName?: string;
       rules?: string;
       recentMessages?: Array<{ senderName: string; content: string }>;
       gamePhase?: string;
+      preferredModel?: string;
     };
 
     const openai = getOpenAI();
@@ -53,7 +55,7 @@ ${rulesSnippet ? `Rules (excerpt):\n${rulesSnippet}\n` : ''}
 Generate 1 to 3 quick-reply options (one per line), or fewer if only one makes sense:`;
 
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
+      model: preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

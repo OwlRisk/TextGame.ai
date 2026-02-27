@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { messages = [] } = body as {
+    const { messages = [], preferredModel } = body as {
       messages?: { role: string; content: string }[];
+      preferredModel?: string;
     };
 
     const recent = (Array.isArray(messages) ? messages : []).slice(-8);
@@ -53,7 +54,7 @@ Rules:
     const userPrompt = `Recent conversation:\n${convSnippet}\n\nDecide whether to show quick replies; if yes, output that many lines, one per line (0 lines is valid):`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.2",
+      model: preferredModel || process.env.OPENAI_CHAT_MODEL || "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

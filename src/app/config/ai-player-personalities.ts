@@ -123,6 +123,8 @@ export function pickTraitsForPlayers(count: number): AIPlayerTraits[] {
  * Call this when you want a truly unique character.
  *
  * Note: This requires an API call. Use sparingly (e.g., 10-20% of players).
+ * Safe to call from both client and server — uses OpenAI directly on the server,
+ * or calls the API route on the client.
  */
 export async function generateDynamicTraits(name: string, role?: string): Promise<AIPlayerTraits> {
   const prompt = [
@@ -140,14 +142,38 @@ export async function generateDynamicTraits(name: string, role?: string): Promis
     .join('\n');
 
   try {
-    const response = await fetch('/api/generate-player-traits', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = (await response.json()) as { personality?: string; background?: string };
-    if (data.personality && data.background) {
+    let data: { personality?: string; background?: string } | null = null;
+
+    if (typeof window === 'undefined') {
+      // Server-side: call OpenAI directly to avoid relative-URL fetch issues
+      const { default: OpenAI } = await import('openai');
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) throw new Error('OPENAI_API_KEY not set');
+      const openai = new OpenAI({ apiKey });
+      const completion = await openai.chat.completions.create({
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
+        max_tokens: 300,
+        temperature: 1.1,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You are a creative game writer. Always respond with valid JSON.' },
+          { role: 'user', content: prompt },
+        ],
+      });
+      const text = completion.choices[0]?.message?.content ?? '{}';
+      data = JSON.parse(text) as { personality?: string; background?: string };
+    } else {
+      // Client-side: use the API route
+      const response = await fetch('/api/generate-player-traits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      data = (await response.json()) as { personality?: string; background?: string };
+    }
+
+    if (data?.personality && data?.background) {
       return { personality: data.personality, background: data.background, isDynamic: true };
     }
   } catch {

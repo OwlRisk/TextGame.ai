@@ -231,6 +231,7 @@ function formatMessage(content: string) {
 }
 
 import { GameTemplate, GAME_TEMPLATES } from "@/lib/game-templates";
+import { getPreferredModel } from "@/lib/model-prefs";
 
 type ConversationState = "greeting" | "game-type" | "player-count" | "rules-discussion" | "confirmation" | "completed";
 
@@ -449,6 +450,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       body: JSON.stringify({
         messages: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
         language: lang,
+        preferredModel: getPreferredModel(),
       }),
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed"))))
