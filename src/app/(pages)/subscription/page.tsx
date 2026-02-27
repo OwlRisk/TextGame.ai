@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Star,
   Zap,
+  TrendingDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -45,8 +46,7 @@ const FREE_FEATURES = ['3 AI voices · 14 emotion expressions', 'Image generatio
 const PAID_FEATURES = [
   '113 AI voices · 16 languages · 14 emotions',
   'Image generation',
-  'GPT-5.2 and other models',
-  'Unlimited GPT-4o mini',
+  'GPT-5.2 · GPT-4o · GPT-4 Turbo (selectable in Settings)',
 ] as const;
 
 /** 14 emotion/sound tags supported by Inworld TTS */
@@ -116,6 +116,7 @@ function SubscriptionPageContent() {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [details, setDetails] = useState<SubscriptionDetails | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
   const [changingTier, setChangingTier] = useState<SubscriptionTier | null>(null);
@@ -131,6 +132,7 @@ function SubscriptionPageContent() {
       const data = res.ok ? await res.json() : null;
       const status = data?.subscriptionStatus ?? 'free';
       setCurrentTier(status === 'cancelled' ? 'free' : (status as SubscriptionTier));
+      if (typeof data?.tokens === 'number') setCredits(data.tokens);
     } catch {
       setCurrentTier('free');
     }
@@ -447,10 +449,19 @@ function SubscriptionPageContent() {
                       </div>
                       <div className="flex items-center justify-between px-5 py-4">
                         <div className="flex items-center gap-3 text-zinc-400 text-sm">
-                          <Zap className="size-4 shrink-0" />
+                          <CreditCard className="size-4 shrink-0" />
                           Amount
                         </div>
                         <span className="text-sm font-medium text-zinc-200">{PLAN_PRICING[currentTier]?.price ?? ''}</span>
+                      </div>
+                      <div className="flex items-center justify-between px-5 py-4">
+                        <div className="flex items-center gap-3 text-zinc-400 text-sm">
+                          <Zap className="size-4 shrink-0" />
+                          Credits remaining
+                        </div>
+                        <span className={`text-sm font-semibold tabular-nums ${credits !== null && credits < 100 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {credits !== null ? credits.toLocaleString() : '—'}
+                        </span>
                       </div>
                     </div>
                     <Button
@@ -517,7 +528,9 @@ function SubscriptionPageContent() {
                       const p = PLAN_PRICING[tier];
                       if (!p) return null;
                       const isCurrent = tier === currentTier;
-                      const isUpgrade = (tier === 'plus' && currentTier === 'pro') || (tier === 'ultra' && (currentTier === 'pro' || currentTier === 'plus'));
+                      const tierOrder = { pro: 1, plus: 2, ultra: 3 };
+                      const isUpgrade = tierOrder[tier] > tierOrder[currentTier as keyof typeof tierOrder];
+                      const isDowngrade = tierOrder[tier] < tierOrder[currentTier as keyof typeof tierOrder];
                       const isChanging = changingTier === tier;
                       return (
                         <div
@@ -540,7 +553,11 @@ function SubscriptionPageContent() {
                               onClick={() => handleChangePlan(tier)}
                               disabled={!!changingTier || syncing}
                               variant="outline"
-                              className="w-full h-9 rounded-lg text-xs font-medium border-zinc-600 text-zinc-200 hover:bg-zinc-800 hover:text-white"
+                              className={`w-full h-9 rounded-lg text-xs font-medium ${
+                                isDowngrade
+                                  ? 'border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300'
+                                  : 'border-zinc-600 text-zinc-200 hover:bg-zinc-800 hover:text-white'
+                              }`}
                             >
                               {isChanging ? (
                                 <>
@@ -548,10 +565,16 @@ function SubscriptionPageContent() {
                                   Updating…
                                 </>
                               ) : isUpgrade ? (
-                                <>Upgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
-                              ) : (
-                                <>Switch to {tier.charAt(0).toUpperCase() + tier.slice(1)}</>
-                              )}
+                                <>
+                                  <ArrowRight className="size-3.5 mr-1" />
+                                  Upgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                                </>
+                              ) : isDowngrade ? (
+                                <>
+                                  <TrendingDown className="size-3.5 mr-1" />
+                                  Downgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                                </>
+                              ) : null}
                             </Button>
                           )}
                         </div>
@@ -565,15 +588,19 @@ function SubscriptionPageContent() {
                     <ul className="space-y-2 text-sm text-zinc-300">
                       <li className="flex gap-2">
                         <span className="text-emerald-400 shrink-0 font-medium">Credits:</span>
-                        <span>Your current balance is kept. You also get the full monthly credits for the new plan (e.g. upgrade to Plus adds 6,000 credits).</span>
+                        <span>Your existing balance is kept. When upgrading, you immediately receive the new plan&apos;s full monthly credit allocation on top of your current balance.</span>
                       </li>
                       <li className="flex gap-2">
-                        <span className="text-emerald-400 shrink-0 font-medium">Billing:</span>
-                        <span>Your next billing date resets to one month from the day you upgrade. So if you upgrade today, your next charge is on the same date next month.</span>
+                        <span className="text-emerald-400 shrink-0 font-medium">Billing date:</span>
+                        <span>Your existing billing cycle and renewal date stay the same — plan changes take effect immediately but do not reset your billing date.</span>
                       </li>
                       <li className="flex gap-2">
-                        <span className="text-emerald-400 shrink-0 font-medium">Payment:</span>
-                        <span>Unused time on your current plan is credited toward the new plan. You pay the difference (new plan price minus the credit). The credit is applied to the invoice—no separate refund to your card.</span>
+                        <span className="text-emerald-400 shrink-0 font-medium">Proration:</span>
+                        <span>Unused days on your current plan are credited against the new plan&apos;s charge. You pay only the prorated difference — no separate refund is issued to your card.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-amber-400 shrink-0 font-medium">Downgrade:</span>
+                        <span>Downgrades take effect at the end of the current billing period. You keep your current plan&apos;s access until then.</span>
                       </li>
                     </ul>
                   </div>
@@ -598,7 +625,7 @@ function SubscriptionPageContent() {
                     variant="outline"
                     onClick={handleSyncPlan}
                     disabled={syncingPlan || !session?.access_token}
-                    className="mt-4 h-9 rounded-lg text-xs font-medium border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                    className="mt-4 h-9 rounded-lg text-xs font-medium border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
                   >
                     {syncingPlan ? (
                       <>
@@ -606,12 +633,12 @@ function SubscriptionPageContent() {
                         Syncing…
                       </>
                     ) : (
-                      'Already upgraded? Sync my plan'
+                      <>
+                        <RefreshCw className="size-3.5 mr-1.5" />
+                        Already subscribed? Sync plan
+                      </>
                     )}
                   </Button>
-                  <p className="mt-3 text-xs text-zinc-500">
-                    Can&apos;t subscribe? Check: (1) STRIPE_SECRET_KEY and STRIPE_PRO_PRICE_ID in your deployment env. (2) If you paid with a real card, add the webhook in Stripe <strong>Live</strong> mode. (3) Stay on the return page until it finishes syncing, or click Sync my plan.
-                  </p>
                 </div>
               </div>
 
