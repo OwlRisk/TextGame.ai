@@ -828,12 +828,13 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       ] as Array<{ senderName: string; content: string }>;
 
       // Execute the ordered speaker queue produced by Host's NEXT_SPEAKER directive.
-      // Each entry is either an AI player (speaks in order), "human" (stop and wait), or "everyone" (one AI at random).
-      const runSpeakerQueue = async (queue: SpeakerQueueItem[]): Promise<void> => {
+      // Returns true if the queue ended at a human turn (game waits for user input),
+      // false if the queue exhausted without a human (auto-advance may be triggered).
+      const runSpeakerQueue = async (queue: SpeakerQueueItem[]): Promise<boolean> => {
         for (const item of queue) {
           if (item.type === "human") {
             setCurrentSpeakerId(userId);
-            return;
+            return true;
           }
           if (item.type === "everyone") {
             setCurrentSpeakerId(null);
@@ -847,7 +848,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                 recentForNext = [...recentForNext, { senderName: pick.name, content: txt }];
               }
             }
-            return;
+            return true; // treat "everyone" as human-stopping point
           }
           // type === "ai" — skip if eliminated
           const itemStatus = (item.player.stats?.Status as string | undefined)?.toLowerCase();
@@ -865,11 +866,33 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             else if (!nextItem) setCurrentSpeakerId(null);
           }
         }
+        return false; // queue exhausted without a human turn
       };
 
-      await runSpeakerQueue(speakerQueue);
+      // Run the first queue from the host's response.
+      // If it ends WITHOUT the human (e.g. pure AI night-phase sequence), auto-advance
+      // the game by calling the host again — up to MAX_AUTO_ADVANCES times — so the
+      // game never gets stuck waiting for a villager who has no night action.
+      const MAX_AUTO_ADVANCES = 6;
+      let currentQueue = speakerQueue;
+      let humanReached = await runSpeakerQueue(currentQueue);
 
-      setCurrentSpeakerId((id) => (id === userId ? id : null));
+      for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
+        await hostPace();
+        const advanced = await callHostStream(
+          "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]",
+          channelId
+        );
+        if (!advanced.hostContent) break;
+        recentForNext = [
+          ...recentForNext,
+          { senderName: gmName, content: advanced.hostContent },
+        ];
+        currentQueue = advanced.speakerQueue;
+        humanReached = await runSpeakerQueue(currentQueue);
+      }
+
+      if (!humanReached) setCurrentSpeakerId((id) => (id === userId ? id : null));
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast.error("Failed to get response from Game Master");
