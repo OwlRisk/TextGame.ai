@@ -2057,7 +2057,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         )}
       </div>
 
-      {/* Draggable divider: drag to resize chat vs preview */}
+      {/* Draggable divider: only shown on lg+ where the preview panel is visible */}
       <div
         role="separator"
         aria-label="Resize rules preview"
@@ -2066,13 +2066,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           setIsDraggingSplit(true);
           splitDragRef.current = { startX: e.clientX, startW: previewWidth };
         }}
-        className={`flex-shrink-0 w-1.5 h-full bg-white/5 hover:bg-violet-500/30 cursor-col-resize select-none transition-colors ${isDraggingSplit ? "bg-violet-500/40" : ""}`}
+        className={`hidden lg:flex flex-shrink-0 w-1.5 h-full bg-white/5 hover:bg-violet-500/30 cursor-col-resize select-none transition-colors ${isDraggingSplit ? "bg-violet-500/40" : ""}`}
       />
 
-      {/* Preview Panel - Editable before starting game; scrolls into view when GM edits */}
+      {/* Preview Panel - hidden on narrow screens to prevent layout overflow */}
         <div
           ref={rulesPanelRef}
-          className="flex-shrink-0 border-l border-white/5 bg-black/40 backdrop-blur-xl flex flex-col relative z-10 h-full min-w-0"
+          className="hidden lg:flex lg:flex-col flex-shrink-0 border-l border-white/5 bg-black/40 backdrop-blur-xl relative z-10 min-w-0 overflow-hidden"
           style={{ width: previewWidth, minWidth: PREVIEW_MIN }}
         >
           <div className="absolute inset-0 bg-gradient-to-l from-violet-500/5 via-transparent to-transparent pointer-events-none" />
