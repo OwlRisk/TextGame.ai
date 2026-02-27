@@ -64,7 +64,7 @@ ${rulesSnippet || 'No rules provided.'}
 Return JSON with a "sections" array. Always include id "rules" and "progress"; add more sections only if they clearly fit this game.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

@@ -46,7 +46,7 @@ Output only the suggestions, one per line. No numbering, no quotes, no extra tex
     const userPrompt = `Game: ${gameName}\nHost's last message:\n${lastHostMessage}\n${rulesSnippet ? `Rules snippet:\n${rulesSnippet.slice(0, 400)}\n` : ''}\nGenerate 3–5 short suggestion replies (one per line):`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

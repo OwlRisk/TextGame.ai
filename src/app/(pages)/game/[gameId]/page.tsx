@@ -214,11 +214,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Fetch human in-game identity when missing (persisted with room state).
   // Wait for room to load first — if the room has a saved identity we must not overwrite it.
-  // Retry if name is "Player" (API previously failed and returned the default fallback).
+  // Use a ref to prevent retrying on API failure (avoids infinite-retry loop).
+  const humanIdentityFetchedRef = useRef<string | null>(null);
   useEffect(() => {
     if (isRoomLoading) return; // wait for saved identity to arrive from DB/cache
     if (!currentGame?.config || !session?.access_token) return;
     if (humanGameIdentity !== null && humanGameIdentity.name !== "Player") return;
+    // Only attempt once per game to avoid hammering the API on repeated failures
+    if (humanIdentityFetchedRef.current === currentGame.id) return;
+    humanIdentityFetchedRef.current = currentGame.id;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     headers["Authorization"] = `Bearer ${session.access_token}`;
     fetch("/api/generate-human-game-identity", {

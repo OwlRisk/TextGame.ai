@@ -56,7 +56,7 @@ ${rules || 'Standard social deduction game'}
 Consider: game balance, role distribution, pacing. Output ONLY a single number between ${minAI} and ${maxAI}, nothing else.`;
 
       const decideCompletion = await openai.chat.completions.create({
-        model: 'gpt-5.2',
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
         messages: [
           { role: 'system', content: 'You decide optimal player count for games. Output only a number.' },
           { role: 'user', content: decideCountPrompt }
@@ -131,7 +131,7 @@ Top-level structure: { "players": [ ... ], "civilianWord": "...", "undercoverWor
 Top-level structure: { "players": [ ... ] }`}`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
       messages: [
         {
           role: 'system',

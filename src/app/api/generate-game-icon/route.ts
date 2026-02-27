@@ -90,11 +90,11 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI();
 
-    function isSafetyRejection(err: any): boolean {
-      const msg = (err?.message || err?.error?.message || '').toString();
+    function isDallESafetyRejection(err: any): boolean {
+      const msg = (err?.message || err?.error?.message || '').toString().toLowerCase();
       return (
-        err?.status === 400 &&
-        (msg.includes('safety') || msg.includes('rejected') || msg.includes('not allowed'))
+        (err?.status === 400 || err?.status === 415) &&
+        (msg.includes('safety') || msg.includes('rejected') || msg.includes('not allowed') || msg.includes('content policy'))
       );
     }
 
@@ -114,16 +114,22 @@ export async function POST(request: NextRequest) {
     const safeSuffix =
       'Flat design, minimal, no text no letters. Single clear motif. Square icon, suitable for app icon.';
 
+    const abstractFallbackPrompt =
+      'Abstract geometric app icon, flat design, single vibrant color on dark background, no text, no people, game theme. ' + safeSuffix;
+
     let iconPrompt: string;
     let imageUrl: string;
 
+    // Step 1: Try to generate a creative concept with GPT (best-effort; if GPT fails for any
+    // reason we fall through to a simple name-based prompt so DALL-E can still run).
+    let aiConcept = '';
     try {
       const rulesSnippet = (rules || '').trim().slice(0, 400);
       const systemPrompt = `You are an expert at designing app icon concepts for games. Given a game name and optional rules summary, output exactly one short image prompt (1-2 sentences, in English) for DALL-E to draw. Decide yourself: subject (character, object, scene, symbol), style, mood, and colors. Be creative and specific. Do not mention game controller, joystick, or gamepad. Output only the image description, no other text. Keep content safe and family-friendly.`;
       const userPrompt = `Game name: "${String(gameName).slice(0, 100)}".${gameTemplate ? ` Template: ${gameTemplate}.` : ''}${rulesSnippet ? ` Rules summary: ${rulesSnippet}` : ''}\n\nWrite one short DALL-E image prompt that captures this game.`;
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-5.2',
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -131,19 +137,23 @@ export async function POST(request: NextRequest) {
         max_tokens: 150,
         temperature: 0.8,
       });
+      aiConcept = completion.choices?.[0]?.message?.content?.trim() || '';
+    } catch (_conceptErr) {
+      // GPT concept generation failed — continue without it
+    }
 
-      const aiConcept = completion.choices?.[0]?.message?.content?.trim() || '';
-      const basePrompt = aiConcept
-        ? `${aiConcept} `
-        : `A distinctive app icon that represents the game "${String(gameName).slice(0, 80)}". `;
-      iconPrompt = basePrompt + safeSuffix;
+    const basePrompt = aiConcept
+      ? `${aiConcept} `
+      : `A minimalist app icon representing the game "${String(gameName).slice(0, 60)}". `;
+    iconPrompt = basePrompt + safeSuffix;
+
+    // Step 2: Try DALL-E with the generated prompt; fall back to abstract design on safety rejection.
+    try {
       imageUrl = await generateWithPrompt(iconPrompt);
     } catch (firstErr: any) {
-      if (!isSafetyRejection(firstErr)) throw firstErr;
-      const safePrompt =
-        'Abstract geometric app icon, flat design, single vibrant color on dark background, no text, no people, game theme. ' + safeSuffix;
-      iconPrompt = safePrompt;
-      imageUrl = await generateWithPrompt(safePrompt);
+      if (!isDallESafetyRejection(firstErr)) throw firstErr;
+      iconPrompt = abstractFallbackPrompt;
+      imageUrl = await generateWithPrompt(abstractFallbackPrompt);
     }
 
     // 存 Supabase Storage，返回公网 URL
