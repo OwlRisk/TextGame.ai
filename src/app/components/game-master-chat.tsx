@@ -1752,8 +1752,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           </Button>
         </div>
 
-        <ScrollArea className="flex-1 min-h-0 overflow-hidden">
-          <div className="p-2 space-y-1 relative w-full">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="p-2 space-y-1 w-full">
             {sessions.map((session) => (
               <ContextMenu key={session.id}>
                 <ContextMenuTrigger>
@@ -1819,7 +1819,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Main Chat Area + resizable split */}
