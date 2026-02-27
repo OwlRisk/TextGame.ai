@@ -568,7 +568,8 @@ export function ChatArea({
     return () => {};
   }, [voiceEnabled, inworldTTSSupported, messages, revealTick]);
 
-  // Stop TTS when switching to a different game; reset "initial messages" and session flag
+  // Stop TTS and reset state when switching game OR channel — historical messages of the new channel
+  // must not be played, only newly arriving ones should trigger TTS.
   useEffect(() => {
     stopInworldTTS();
     initialMessageIdsRef.current = null;
@@ -580,7 +581,7 @@ export function ChatArea({
     ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
     ttsFallbackTimeoutsRef.current.clear();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId]);
+  }, [gameId, channelName]);
 
   const MIN_INPUT_HEIGHT = 40;
   const MAX_INPUT_HEIGHT = 120;
