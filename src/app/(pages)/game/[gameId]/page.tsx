@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
 import { SlashCommandsDialog } from "@/app/components/slash-commands-dialog";
 import { getPreferredModel } from "@/lib/model-prefs";
+import { marked } from "marked";
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
 const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
@@ -102,6 +103,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     isRoomLoading,
     myBoardContent,
     setMyBoardContent,
+    sections,
+    setSections,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -350,6 +353,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
+    // Prevent concurrent rounds: second message while AI is still replying would cause parallel Host calls
+    if (isRoundInProgress) return;
 
     // Move this game to the top of the sidebar (only triggered when player speaks)
     if (gameId) touchGame(gameId);
@@ -476,6 +481,12 @@ You are the Werewolf. Tonight you may eliminate one player.
 [/BOARD]
 You can output multiple [BOARD:Name]...[/BOARD] blocks in one reply. The content inside is private to that player. Do not duplicate the same info in the public message.
 
+Sidebar Sections (optional): To record important game information in a persistent sidebar panel visible to all players (e.g. vote log, night results, player status, clues), use a section block. Markdown is supported. The content is shown in the sidebar under SECTIONS — NOT in the chat.
+[SECTION:Section Title]
+Content here. Markdown supported: **bold**, *italic*, bullet lists, etc.
+[/SECTION]
+Re-using the same title updates that section in place. Use this for recurring updates (e.g. "Night Log", "Vote History") so players can reference the full history. Good times to use: after each night, after each vote, when revealing key information. You may include multiple [SECTION:...]...[/SECTION] blocks per reply.
+
 Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image. Output exactly these tags on their own lines:
 <REPLY_TYPE>image</REPLY_TYPE>
 <IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
@@ -573,13 +584,24 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return { hostContent, who, speakerQueue };
       };
 
-      /** Parse [BOARD:Name]...[/BOARD] etc., apply actions (e.g. My Board), return content for public display. */
+      /** Parse [BOARD:Name]...[/BOARD], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
         const { cleanContent, actions } = parseHostActions(content);
         for (const a of actions) {
           if (a.type === "my_board") {
             const playerId = resolvePlayerRefToId(a.playerRef, players, userId, humanGameIdentity?.name);
             if (playerId) setMyBoardContent((prev) => ({ ...prev, [playerId]: a.content }));
+          } else if (a.type === "section") {
+            const id = "section-" + a.title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+            setSections((prev) => {
+              const idx = prev.findIndex((s) => s.id === id);
+              if (idx >= 0) {
+                const next = [...prev];
+                next[idx] = { ...next[idx], content: a.content };
+                return next;
+              }
+              return [...prev, { id, name: a.title, content: a.content }];
+            });
           }
         }
         return cleanContent;
@@ -792,6 +814,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
   const gameChannels = [
     { id: "rules", name: "Rules", type: "text" as const },
     { id: "progress", name: "Progress", type: "text" as const },
+    ...sections.map((s) => ({ id: s.id, name: s.name, type: "text" as const })),
     ...gameRoomEntries,
   ];
   const gameRoomIds = new Set(gameRoomEntries.map((c) => c.id));
@@ -1020,11 +1043,12 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         )}
         {selectedChannelId === "rules" ? (
           <ScrollArea className="flex-1 p-6">
-            <div className="prose prose-invert max-w-none space-y-6">
+            <div className="space-y-6 max-w-2xl">
               {(currentGame?.config?.rules ?? "").trim() ? (
-                <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                  {currentGame?.config?.rules}
-                </pre>
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                  dangerouslySetInnerHTML={{ __html: marked(currentGame!.config!.rules!) as string }}
+                />
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
                   <p className="text-sm font-medium">No rules defined for this game.</p>
@@ -1050,11 +1074,12 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
           </ScrollArea>
         ) : selectedChannelId === "progress" ? (
           <ScrollArea className="flex-1 p-6">
-            <div className="prose prose-invert max-w-none">
+            <div className="max-w-2xl">
               {(gameProgress ?? "").trim() ? (
-                <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                  {gameProgress}
-                </pre>
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                  dangerouslySetInnerHTML={{ __html: marked(gameProgress) as string }}
+                />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
                   <p className="text-sm font-medium">No progress yet.</p>
@@ -1063,7 +1088,27 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               )}
             </div>
           </ScrollArea>
-        ) : isGameChannel ? (
+        ) : (() => {
+          const activeSection = sections.find((s) => s.id === selectedChannelId);
+          if (activeSection) return (
+            <ScrollArea className="flex-1 p-6">
+              <div className="max-w-2xl">
+                <h2 className="text-base font-semibold text-zinc-200 mb-4">{activeSection.name}</h2>
+                {activeSection.content.trim() ? (
+                  <div
+                    className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                    dangerouslySetInnerHTML={{ __html: marked(activeSection.content) as string }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
+                    <p className="text-sm font-medium">No content yet.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          );
+          return null;
+        })() ?? (isGameChannel ? (
           <ChatArea
             channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room"}
             messages={messagesForChannel}
@@ -1087,7 +1132,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
           />
-        ) : null}
+        ) : null)}
       </div>
 
       {/* 玩家面板 + My Board（仅自己可见，仅 AI Host 可编辑）：桌面显示，移动端在右侧 Sheet */}

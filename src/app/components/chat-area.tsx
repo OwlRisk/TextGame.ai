@@ -1123,6 +1123,7 @@ export function ChatArea({
               <Button
                 size="sm"
                 className="h-8 px-4 text-sm bg-amber-500 hover:bg-amber-500/90 text-zinc-900 font-medium shrink-0"
+                disabled={sendDisabled}
                 onClick={() => handleSend(introYourTurnReply)}
               >
                 {introYourTurnReply}
@@ -1157,6 +1158,7 @@ export function ChatArea({
                       variant="outline"
                       size="sm"
                       className="h-8 px-3 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200"
+                      disabled={sendDisabled}
                       onClick={() => handleSend(text)}
                     >
                       {text}
@@ -1191,6 +1193,7 @@ export function ChatArea({
                       variant="outline"
                       size="sm"
                       className="h-9 px-4 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/50"
+                      disabled={sendDisabled}
                       onClick={() => handleSend(text)}
                     >
                       {text}
@@ -1344,7 +1347,7 @@ export function ChatArea({
                 }
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (canSend) handleSend();
+                  if (!sendDisabled) handleSend();
                 }
               }}
               placeholder={isRoundInProgress ? "Host & AI replying…" : `Message #${channelName}`}

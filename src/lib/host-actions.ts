@@ -1,8 +1,8 @@
 /**
  * Host action format and parser: extensible blocks the AI Host can output.
  * Blocks are stripped from the public message and turned into structured actions
- * (e.g. update a player's private "My Board"). New action types can be added
- * by extending HostAction and the BLOCK_PARSERS list.
+ * (e.g. update a player's private "My Board", write a sidebar Section). New action
+ * types can be added by extending HostAction and the BLOCK_PARSERS list.
  */
 
 /** Player reference: "You" for the human, or exact display name for AI players. */
@@ -11,22 +11,22 @@ export type PlayerRef = string;
 /** Supported host action types. Extend this union when adding new block types. */
 export type HostAction =
   | { type: "my_board"; playerRef: PlayerRef; content: string }
-  // Future: | { type: "private_msg"; playerRef: PlayerRef; content: string }
+  | { type: "section"; title: string; content: string }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
 export interface ParseHostActionsResult {
   /** Content to show in chat (blocks removed). */
   cleanContent: string;
-  /** Actions to dispatch (e.g. update My Board, send private message). */
+  /** Actions to dispatch (e.g. update My Board, write sidebar Section). */
   actions: HostAction[];
 }
 
-/** One block parser: tag name and regex to extract (playerRef, content). */
+/** One block parser: tag name, first-capture meaning, and regex. */
 interface BlockParser {
   tag: string;
   actionType: HostAction["type"];
-  /** Regex with two capture groups: (1) player ref, (2) content. Case-insensitive. */
+  /** Regex with two capture groups: (1) label/playerRef/title, (2) content. Case-insensitive. */
   regex: RegExp;
 }
 
@@ -37,7 +37,12 @@ const BLOCK_PARSERS: BlockParser[] = [
     // [BOARD:PlayerName or You] ... content ... [/BOARD]
     regex: /\[BOARD:\s*([^\]\r\n]+?)\s*\]\s*([\s\S]*?)\s*\[\/BOARD\]/gi,
   },
-  // Future: { tag: "PRIVATE", actionType: "private_msg", regex: /.../gi },
+  {
+    tag: "SECTION",
+    actionType: "section",
+    // [SECTION:Title] ... content (markdown) ... [/SECTION]
+    regex: /\[SECTION:\s*([^\]\r\n]+?)\s*\]\s*([\s\S]*?)\s*\[\/SECTION\]/gi,
+  },
 ];
 
 /**
@@ -54,10 +59,12 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
     const replacements: { full: string; replacement: string }[] = [];
 
     while ((match = re.exec(cleanContent)) !== null) {
-      const playerRef = (match[1] ?? "").trim();
+      const label = (match[1] ?? "").trim();
       const content = (match[2] ?? "").trim();
       if (parser.actionType === "my_board") {
-        actions.push({ type: "my_board", playerRef, content });
+        actions.push({ type: "my_board", playerRef: label, content });
+      } else if (parser.actionType === "section") {
+        actions.push({ type: "section", title: label, content });
       }
       replacements.push({ full: match[0], replacement: "" });
     }

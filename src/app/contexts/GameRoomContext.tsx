@@ -29,7 +29,7 @@ interface GameRoomContextType {
   privateMessages: Record<string, PrivateMessage[]>;
   gameProgress: string;
   myBoardContent: Record<string, string>; // playerId -> board content
-  sections: Array<{ id: string; name: string }>;
+  sections: Array<{ id: string; name: string; content: string }>;
   sectionsLoading: boolean;
   gameEnded: boolean;
   gameResult: { winner: string; message: string } | null;
@@ -61,7 +61,7 @@ interface GameRoomContextType {
   setTypingUsers: React.Dispatch<React.SetStateAction<{ name: string; avatar: string }[]>>;
   setGameProgress: React.Dispatch<React.SetStateAction<string>>;
   setMyBoardContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  setSections: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string }>>>;
+  setSections: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string; content: string }>>>;
   setSectionsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setGameEnded: React.Dispatch<React.SetStateAction<boolean>>;
   setGameResult: React.Dispatch<React.SetStateAction<{ winner: string; message: string } | null>>;
@@ -96,7 +96,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [privateMessages, setPrivateMessages] = useState<Record<string, PrivateMessage[]>>({});
   const [gameProgress, setGameProgress] = useState<string>("");
   const [myBoardContent, setMyBoardContent] = useState<Record<string, string>>({});
-  const [sections, setSections] = useState<Array<{ id: string; name: string }>>([]);
+  const [sections, setSections] = useState<Array<{ id: string; name: string; content: string }>>([]);
   const [sectionsLoading, setSectionsLoading] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
   const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
@@ -137,7 +137,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId as string | null);
       if (state.gameProgress) setGameProgress((state.gameProgress as string) ?? "");
       if (state.myBoardContent) setMyBoardContent((state.myBoardContent as Record<string, string>) ?? {});
-      if (state.sections) setSections(state.sections as Array<{ id: string; name: string }>);
+      if (state.sections) setSections(state.sections as Array<{ id: string; name: string; content: string }>);
       if (state.privateMessages && typeof state.privateMessages === "object") {
         const pm: Record<string, PrivateMessage[]> = {};
         for (const [pid, list] of Object.entries(state.privateMessages) as [
