@@ -8,6 +8,7 @@ import {
   estimatedTokensToCoins,
   estimateTokensFromText,
 } from '@/lib/tokens';
+import { logger } from '@/lib/logger';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -74,7 +75,7 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
       );
     }
 
-    console.log(`[Generate Host] Generating host for game: ${gameName || "Unknown"}`);
+    logger.log(`[Generate Host] Generating host for game: ${gameName || "Unknown"}`);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-5.2",
@@ -103,15 +104,13 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
       `Generate host ${promptTokens + completionTokens} tokens (${model})`
     );
 
-    console.log("[Generate Host] Raw response:", response);
-
     // Parse the JSON response
     let hostConfig;
     try {
       hostConfig = JSON.parse(response);
     } catch (parseError) {
-      console.error("[Generate Host] Failed to parse JSON:", parseError);
-      console.error("[Generate Host] Response was:", response);
+      logger.error("[Generate Host] Failed to parse JSON:", parseError);
+      logger.error("[Generate Host] Response was:", response);
       return NextResponse.json(
         { error: "Failed to parse host configuration" },
         { status: 500 }
@@ -122,7 +121,7 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
     const required = ["name", "personality", "voiceStyle", "systemPrompt", "icon", "color"];
     for (const field of required) {
       if (!hostConfig[field]) {
-        console.error(`[Generate Host] Missing field: ${field}`);
+        logger.error(`[Generate Host] Missing field: ${field}`);
         return NextResponse.json(
           { error: `Missing required field: ${field}` },
           { status: 500 }
@@ -137,16 +136,16 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
       delete hostConfig.gender;
     }
 
-    console.log("[Generate Host] Generated host:", hostConfig.name);
+    logger.log("[Generate Host] Generated host:", hostConfig.name);
 
     return NextResponse.json(hostConfig);
   } catch (error) {
-    console.error("[Generate Host] Error:", error);
+    logger.error("[Generate Host] Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Failed to generate host";
     const errorDetails = error instanceof Error && 'response' in error 
-      ? JSON.stringify((error as any).response?.data) 
+      ? JSON.stringify((error as { response?: { data?: unknown } }).response?.data) 
       : String(error);
-    console.error("[Generate Host] Full error details:", errorDetails);
+    logger.error("[Generate Host] Full error details:", errorDetails);
     return NextResponse.json(
       { error: errorMessage, details: errorDetails },
       { status: 500 }

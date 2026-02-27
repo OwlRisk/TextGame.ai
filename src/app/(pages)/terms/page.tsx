@@ -56,7 +56,8 @@ export default function TermsPage() {
           </section>
           <section>
             <p className="text-zinc-500">
-              If you have questions, contact us via the app or the project repository.
+              If you have questions, contact us at{' '}
+              <a href="mailto:contact@cvnio.com" className="underline hover:text-zinc-300">contact@cvnio.com</a>.
             </p>
           </section>
         </div>

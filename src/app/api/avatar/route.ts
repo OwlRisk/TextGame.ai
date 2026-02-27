@@ -7,6 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
+import { logger } from '@/lib/logger';
 
 export const maxDuration = 60;
 
@@ -247,11 +248,11 @@ async function generateWithDalle3(prompt: string, retried = false): Promise<stri
     const status = error?.status ?? error?.code;
     const is5xx = typeof status === 'number' && status >= 500 && status < 600;
     if (is5xx && !retried) {
-      console.warn('[DALL-E] Server error (5xx), retrying once after 2s...', status, error?.message);
+      logger.warn('[DALL-E] Server error (5xx), retrying once after 2s...', status, error?.message);
       await new Promise((r) => setTimeout(r, 2000));
       return generateWithDalle3(prompt, true);
     }
-    console.error('[DALL-E] API Error:', error?.message || error);
+    logger.error('[DALL-E] API Error:', error?.message || error);
     const err = new Error(error?.message ? `DALL-E API error: ${error.message}` : 'DALL-E API error') as Error & { status?: number };
     err.status = 503;
     throw err;
@@ -316,7 +317,7 @@ export async function POST(request: NextRequest) {
   const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
   const hasReplicate = Boolean(process.env.REPLICATE_API_TOKEN);
   const model = getModel();
-  console.log('[Avatar API] POST received. OPENAI_API_KEY:', hasOpenAI ? 'set' : 'MISSING', '| REPLICATE_API_TOKEN:', hasReplicate ? 'set' : 'missing', '| model:', model);
+  logger.log('[Avatar API] POST received. OPENAI_API_KEY:', hasOpenAI ? 'set' : 'MISSING', '| REPLICATE_API_TOKEN:', hasReplicate ? 'set' : 'missing', '| model:', model);
 
   try {
     // Authenticate user
@@ -350,7 +351,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!name || typeof name !== 'string') {
-      console.warn('[Avatar API] 400: name missing or not string');
+      logger.warn('[Avatar API] 400: name missing or not string');
       return NextResponse.json(
         { error: 'name (string) is required' },
         { status: 400 }
@@ -359,7 +360,7 @@ export async function POST(request: NextRequest) {
 
     const avatarType: AvatarType = type === 'host' ? 'host' : 'player';
     const path = avatarStoragePath(name, avatarType);
-    console.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', path);
+    logger.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', path);
 
     // 用服务端 Supabase API 检查是否已存在，避免公网 HEAD 失败导致重复生成
     // If cached, no tokens needed
@@ -368,7 +369,7 @@ export async function POST(request: NextRequest) {
         .from(AVATAR_BUCKET)
         .download(path);
       if (!downloadError && blob && blob.size > 0) {
-        console.log('[Avatar API] cache hit Supabase:', path);
+        logger.log('[Avatar API] cache hit Supabase:', path);
         const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
         return NextResponse.json({ image: urlData.publicUrl });
       }
@@ -397,10 +398,10 @@ export async function POST(request: NextRequest) {
         }
       } catch (tokenErr) {
         // Token table may not exist yet (migrations not run) — log and proceed.
-        console.warn('[Avatar API] Token deduction failed (DB schema not ready?), generating anyway:', tokenErr);
+        logger.warn('[Avatar API] Token deduction failed (DB schema not ready?), generating anyway:', tokenErr);
       }
     } else {
-      console.warn('[Avatar API] DATABASE_URL not configured — skipping token check, generating anyway.');
+      logger.warn('[Avatar API] DATABASE_URL not configured — skipping token check, generating anyway.');
     }
 
     
@@ -409,17 +410,13 @@ export async function POST(request: NextRequest) {
       gender: typeof gender === 'string' ? gender : undefined,
     });
 
-    console.log(`[Avatar] Generating for: ${name}, type: ${type}, gameId: ${gameId || 'none'}, prompt length: ${prompt.length}`);
-    if (prompt.length > 1000) {
-      console.error(`[Avatar] Prompt too long: ${prompt.length} characters`);
-      console.error(`[Avatar] Prompt preview: ${prompt.substring(0, 300)}...`);
-    }
+    logger.log(`[Avatar] Generating for: ${name}, type: ${type}, gameId: ${gameId || 'none'}, prompt length: ${prompt.length}`);
 
     let imageDataUrl: string;
 
     // Validate prompt length before generation
     if (prompt.length > 1000) {
-      console.error(`Prompt too long: ${prompt.length} characters`);
+      logger.error(`Prompt too long: ${prompt.length} characters`);
       return NextResponse.json(
         { error: `Prompt exceeds 1000 character limit: ${prompt.length} characters` },
         { status: 400 }
@@ -427,10 +424,10 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      console.log('[Avatar API] generating with', model);
+      logger.log('[Avatar API] generating with', model);
       if (model === 'dalle-3') {
         if (!hasOpenAI) {
-          console.error('[Avatar API] OPENAI_API_KEY not set but model is dalle-3');
+          logger.error('[Avatar API] OPENAI_API_KEY not set but model is dalle-3');
           return NextResponse.json(
             { error: 'Avatar service unavailable', details: 'OPENAI_API_KEY is not configured' },
             { status: 503 }
@@ -442,18 +439,16 @@ export async function POST(request: NextRequest) {
       } else {
         throw new Error(`Unsupported model: ${model}`);
       }
-    } catch (error: any) {
-      console.error(`Error generating with ${model}:`, error);
-      console.error(`Prompt length: ${prompt.length}, Prompt preview: ${prompt.substring(0, 200)}...`);
+    } catch (error: unknown) {
+      logger.error(`Error generating with ${model}:`, error);
       // Fallback to DALL-E 3 if other models fail
       if (model !== 'dalle-3') {
-        console.log('Falling back to DALL-E 3...');
+        logger.log('Falling back to DALL-E 3...');
         try {
           imageDataUrl = await generateWithDalle3(prompt);
-        } catch (fallbackError: any) {
-          throw new Error(
-            `Primary model (${model}) and fallback (dalle-3) both failed: ${fallbackError.message}`
-          );
+        } catch (fallbackError: unknown) {
+          const msg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+          throw new Error(`Primary model (${model}) and fallback (dalle-3) both failed: ${msg}`);
         }
       } else {
         throw error;
@@ -473,16 +468,16 @@ export async function POST(request: NextRequest) {
           const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
           return NextResponse.json({ image: urlData.publicUrl });
         }
-        console.warn('[Avatar] Supabase Storage upload failed:', uploadError.message);
+        logger.warn('[Avatar] Supabase Storage upload failed:', uploadError.message);
       } catch (supabaseErr) {
-        console.warn('[Avatar] Supabase Storage save failed:', supabaseErr);
+        logger.warn('[Avatar] Supabase Storage save failed:', supabaseErr);
       }
     }
 
-    console.log('[Avatar API] success, returning base64 image');
+    logger.log('[Avatar API] success, returning base64 image');
     return NextResponse.json({ image: image64 });
   } catch (e: unknown) {
-    console.error('[Avatar API] error:', e);
+    logger.error('[Avatar API] error:', e);
     if (isDatabaseError(e)) {
       return NextResponse.json(
         { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' },
@@ -506,7 +501,7 @@ export async function POST(request: NextRequest) {
     const details = statusCode === 400
       ? 'Bad request - check prompt length and format'
       : (statusCode === 503 ? 'Service unavailable - check OPENAI_API_KEY or Replicate token' : undefined);
-    console.error('[Avatar API] responding', statusCode, errorMessage, details ?? '');
+    logger.error('[Avatar API] responding', statusCode, errorMessage, details ?? '');
     return NextResponse.json(
       { error: errorMessage, details },
       { status: statusCode }

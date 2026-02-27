@@ -16,7 +16,7 @@ export function HelpSupportContent() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) {
       toast.error('Please fill in all required fields');
@@ -24,21 +24,36 @@ export function HelpSupportContent() {
     }
     setIsSubmitting(true);
     const typeLabel = feedbackTypes.find((t) => t.value === feedbackType)?.label ?? feedbackType;
-    const body = [
-      email ? `From: ${email}` : '',
+    const fullMessage = [
       `Type: ${typeLabel}`,
       '',
       message.trim(),
-    ].filter(Boolean).join('\n');
-    const mailtoUrl = `mailto:feedback@cvnio.com?subject=${encodeURIComponent(`[${typeLabel}] ${subject.trim()}`)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoUrl;
-    setTimeout(() => {
-      setIsSubmitting(false);
+    ].join('\n');
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: `[${typeLabel}] ${subject.trim()}`,
+          message: fullMessage,
+          replyTo: email.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to send');
+      }
+      toast.success('Message sent! We\'ll get back to you soon.');
       setSubject('');
       setMessage('');
       setEmail('');
       setFeedbackType('general');
-    }, 500);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const feedbackTypes: { value: 'bug' | 'feature' | 'general'; label: string; color: string; bgColor: string }[] = [

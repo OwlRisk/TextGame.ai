@@ -12,6 +12,7 @@ import {
 } from '@/lib/tokens';
 import { getTierFromStripePriceId } from '@/lib/subscription';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
+import { logger } from '@/lib/logger';
 
 /**
  * After Stripe Checkout success, client calls this to fulfill payment/subscription.
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json().catch(() => ({}));
     const { session_id: sessionId, accessToken: tokenFromBody } = body;
-    console.log('[fulfill-session] sessionId=', sessionId, 'hasAccessToken=', !!tokenFromBody);
+    logger.log('[fulfill-session] sessionId=', sessionId, 'hasAccessToken=', !!tokenFromBody);
 
     let user = (typeof tokenFromBody === 'string' && tokenFromBody.trim())
       ? await getAuthUserFromToken(tokenFromBody.trim())
@@ -35,10 +36,10 @@ export async function POST(request: NextRequest) {
     if (!user) user = await getAuthUserFromRequest(request);
 
     if (!user) {
-      console.log('[fulfill-session] no user, 401');
+      logger.log('[fulfill-session] no user, 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.log('[fulfill-session] userId=', user.id);
+    logger.log('[fulfill-session] userId=', user.id);
 
     if (!sessionId || typeof sessionId !== 'string') {
       return NextResponse.json(
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.retrieve(sessionId.trim(), {
       expand: ['payment_intent'],
     });
-    console.log('[fulfill-session] Stripe session payment_status=', session.payment_status, 'metadata=', session.metadata);
+    logger.log('[fulfill-session] Stripe session payment_status=', session.payment_status, 'metadata=', session.metadata);
 
     if (session.payment_status !== 'paid') {
       return NextResponse.json(
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (session.metadata?.userId !== user.id) {
-      console.log('[fulfill-session] userId mismatch: session.metadata.userId=', session.metadata?.userId, 'user.id=', user.id);
+      logger.warn('[fulfill-session] userId mismatch: session.metadata.userId=', session.metadata?.userId, 'user.id=', user.id);
       return NextResponse.json(
         { error: 'Session does not belong to this user' },
         { status: 403 }
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
         try {
           await setCustomerId(user.id, customerId);
         } catch (e) {
-          console.warn('[fulfill-session] setCustomerId failed (non-fatal):', (e as Error)?.message);
+          logger.warn('[fulfill-session] setCustomerId failed (non-fatal):', (e as Error)?.message);
         }
       }
 
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
       typeof session.payment_intent === 'string'
         ? session.payment_intent
         : (session.payment_intent as { id?: string })?.id;
-    console.log('[fulfill-session] calling addTokens userId=', user.id, 'tokens=', tokens, 'paymentIntentId=', paymentIntentId);
+    logger.log('[fulfill-session] calling addTokens userId=', user.id, 'tokens=', tokens, 'paymentIntentId=', paymentIntentId);
 
     await addTokens(
       user.id,
@@ -150,11 +151,11 @@ export async function POST(request: NextRequest) {
     );
     invalidateBalanceCache(user.id);
 
-    console.log('[fulfill-session] addTokens done, returning credited=true');
+    logger.log('[fulfill-session] addTokens done, returning credited=true');
     return NextResponse.json({ credited: true, tokens });
   } catch (error) {
-    console.error('[fulfill-session] error:', error);
-    console.error('[fulfill-session] error stack:', error instanceof Error ? error.stack : 'no stack');
+    logger.error('[fulfill-session] error:', error);
+    logger.error('[fulfill-session] error stack:', error instanceof Error ? error.stack : 'no stack');
     if (isDatabaseError(error)) {
       return NextResponse.json(
         { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' },

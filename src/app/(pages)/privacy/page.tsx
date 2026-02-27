@@ -56,7 +56,8 @@ export default function PrivacyPage() {
           </section>
           <section>
             <p className="text-zinc-500">
-              For questions or requests, contact us via the app or the project repository.
+              For questions or requests, contact us at{' '}
+              <a href="mailto:contact@cvnio.com" className="underline hover:text-zinc-300">contact@cvnio.com</a>.
             </p>
           </section>
         </div>
