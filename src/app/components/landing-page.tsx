@@ -9,39 +9,271 @@ import {
   Zap,
   Star,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Gamepad2,
+  Play,
+  TrendingUp,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
 
 interface LandingPageProps {
   onSignIn: () => void;
   onCreateGame?: (presetId?: string) => void;
 }
 
-/** Map Tailwind color class (e.g. bg-blue-500) to hex for fallback avatar background */
-function colorToHex(twClass: string): string {
-  const m = twClass.match(/(?:bg-|from-)(\w+)-(\d+)/);
-  if (!m) return "#6366f1";
-  const [, color, shade] = m;
-  const map: Record<string, string> = {
-    blue: "#3b82f6",
-    green: "#22c55e",
-    purple: "#a855f7",
-    pink: "#ec4899",
-    red: "#ef4444",
-    yellow: "#eab308",
-    indigo: "#6366f1",
-    teal: "#14b8a6",
-    orange: "#f97316",
-    violet: "#8b5cf6",
-    fuchsia: "#d946ef",
-  };
-  return map[color] ?? "#6366f1";
+/** Map Tailwind color class to anime avatar path */
+function twColorToAvatar(color: string, isGM = false): string {
+  if (isGM || color.includes("violet") || color.includes("fuchsia")) return "/avatars/avatar-gm.png";
+  if (color.includes("blue") || color.includes("indigo"))            return "/avatars/avatar-blue.png";
+  if (color.includes("green") || color.includes("teal"))             return "/avatars/avatar-green.png";
+  if (color.includes("red"))                                         return "/avatars/avatar-red.png";
+  if (color.includes("yellow") || color.includes("amber") || color.includes("orange")) return "/avatars/avatar-amber.png";
+  if (color.includes("purple") || color.includes("pink"))            return "/avatars/avatar-pink.png";
+  return "/avatars/avatar-blue.png";
 }
 
+/** Map hex color / badge to anime avatar path (used in MiniChat) */
+function hexToAvatar(hexColor: string, badge?: string): string {
+  if (badge === "GM" || badge === "HOST") return "/avatars/avatar-gm.png";
+  const map: Record<string, string> = {
+    "#6366f1": "/avatars/avatar-blue.png",
+    "#8b5cf6": "/avatars/avatar-gm.png",
+    "#7c3aed": "/avatars/avatar-gm.png",
+    "#3b82f6": "/avatars/avatar-blue.png",
+    "#ef4444": "/avatars/avatar-red.png",
+    "#10b981": "/avatars/avatar-green.png",
+    "#ec4899": "/avatars/avatar-pink.png",
+    "#f59e0b": "/avatars/avatar-amber.png",
+  };
+  return map[hexColor] ?? "/avatars/avatar-blue.png";
+}
+
+// ─── Streaming text component ─────────────────────────────────────────────────
+function StreamingText({
+  text,
+  speed = 30,
+  onComplete,
+}: {
+  text: string;
+  speed?: number;
+  onComplete?: () => void;
+}) {
+  const [displayedText, setDisplayedText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    setDisplayedText("");
+    setCurrentIndex(0);
+  }, [text]);
+
+  useEffect(() => {
+    if (currentIndex >= text.length) {
+      if (onComplete) {
+        setTimeout(() => onComplete(), 800);
+      }
+      return;
+    }
+    const timeout = setTimeout(() => {
+      setDisplayedText(text.slice(0, currentIndex + 1));
+      setCurrentIndex(currentIndex + 1);
+    }, speed);
+    return () => clearTimeout(timeout);
+  }, [currentIndex, text, speed, onComplete]);
+
+  return (
+    <span className="text-sm text-zinc-300 leading-relaxed">
+      {displayedText}
+      {currentIndex < text.length && (
+        <span className="inline-block w-[2px] h-4 bg-violet-400 animate-pulse ml-0.5">​</span>
+      )}
+    </span>
+  );
+}
+
+// ─── Sequential message list with streaming ───────────────────────────────────
+function MessageList({
+  messages,
+  gameKey,
+}: {
+  messages: Array<{
+    avatar: string | null;
+    color: string;
+    name: string;
+    time: string;
+    text: string;
+  }>;
+  gameKey: string;
+}) {
+  const [visibleCount, setVisibleCount] = useState(1);
+
+  useEffect(() => {
+    setVisibleCount(1);
+  }, [gameKey]);
+
+  const handleMessageComplete = () => {
+    setVisibleCount((prev) => Math.min(prev + 1, messages.length));
+  };
+
+  return (
+    <>
+      {messages.slice(0, visibleCount).map((msg, index) => (
+        <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn">
+          <img
+            src={twColorToAvatar(msg.color, msg.avatar === "GM")}
+            alt={msg.name}
+            className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
+          />
+          <div className="flex-1">
+            <div className="flex items-baseline gap-2 mb-0.5">
+              <span className="font-semibold text-white text-sm">{msg.name}</span>
+              <span className="text-xs text-zinc-500">{msg.time}</span>
+            </div>
+            <StreamingText
+              text={msg.text}
+              speed={40}
+              onComplete={index === visibleCount - 1 ? handleMessageComplete : undefined}
+            />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+// ─── Message list with badges (Inside a Game section) ─────────────────────────
+function InsideGameMessageList({
+  messages,
+  gameKey,
+}: {
+  messages: Array<{
+    avatar: string | null;
+    color: string;
+    name: string;
+    badge: string | null;
+    time: string;
+    text: string;
+  }>;
+  gameKey: string;
+}) {
+  const [visibleCount, setVisibleCount] = useState(1);
+
+  useEffect(() => {
+    setVisibleCount(1);
+  }, [gameKey]);
+
+  const handleMessageComplete = () => {
+    setVisibleCount((prev) => Math.min(prev + 1, messages.length));
+  };
+
+  return (
+    <>
+      {messages.slice(0, visibleCount).map((msg, index) => (
+        <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn">
+          <img
+            src={twColorToAvatar(msg.color, msg.avatar === "GM")}
+            alt={msg.name}
+            className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
+          />
+          <div className="flex-1">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="font-bold text-white text-sm">{msg.name}</span>
+              {msg.badge && (
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    msg.badge === "YOU"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : msg.badge === "HOST"
+                      ? "bg-fuchsia-500/20 text-fuchsia-400"
+                      : "bg-violet-500/20 text-violet-400"
+                  }`}
+                >
+                  {msg.badge}
+                </span>
+              )}
+              <span className="text-xs text-zinc-600">{msg.time}</span>
+            </div>
+            <StreamingText
+              text={msg.text}
+              speed={40}
+              onComplete={index === visibleCount - 1 ? handleMessageComplete : undefined}
+            />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+// ─── Inside a Game step data ──────────────────────────────────────────────────
+const INSIDE_GAME_STEPS = [
+  {
+    id: "design",
+    step: "01",
+    total: "04",
+    icon: "💬",
+    title: "Design with GM",
+    heading: "Tell the GM your game idea",
+    description:
+      "Just chat with the Game Master in plain English. Describe what you want — whether it's classic Werewolf or your wildest custom idea. The GM helps you design rules, roles, and victory conditions.",
+    messages: [
+      { avatar: null, color: "bg-blue-500", name: "You", badge: "YOU", time: "2:30 PM", text: "I want to create a sci-fi mystery game set on a space station. Someone sabotaged the oxygen system!" },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", badge: null, time: "2:30 PM", text: "Great idea! Let's set up a 'Traitor on Mars Station' game. How many crew members? Should there be 1 or 2 traitors? And what special roles do you want — Engineer, Security Chief, Scientist?" },
+      { avatar: null, color: "bg-blue-500", name: "You", badge: "YOU", time: "2:31 PM", text: "6 crew members total, 1 traitor. Add an Engineer who can inspect systems, and a Security Chief who can lock rooms." },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", badge: null, time: "2:31 PM", text: "Perfect! I've set up your game. Ready to start? I'll assign roles secretly and begin the first round." },
+    ],
+  },
+  {
+    id: "host",
+    step: "02",
+    total: "04",
+    icon: "🔥",
+    title: "The Host",
+    heading: "AI Host runs the show",
+    description:
+      "The Host AI manages everything — assigns secret roles, announces game phases, tracks votes, reveals information at the right time, and keeps the story flowing. You just focus on playing.",
+    messages: [
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "3:15 PM", text: "🌙 Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "3:16 PM", text: "☀️ Morning arrives. The crew discovers the communication array is damaged! Engineer Nova, you may inspect one system." },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "3:17 PM", text: "⚠️ It's time to vote! Discuss who you think is the traitor. You have 3 minutes. Type /vote @playername when ready." },
+    ],
+  },
+  {
+    id: "ai-players",
+    step: "03",
+    total: "04",
+    icon: "🤖",
+    title: "AI players",
+    heading: "AI players think and react",
+    description:
+      "Each AI player has their own personality, role, and objectives. They observe what happens, form opinions, make strategic decisions, and respond naturally to your actions. They'll lie, defend themselves, or team up — just like real players.",
+    messages: [
+      { avatar: null, color: "bg-purple-500", name: "Dr. Chen", badge: "AI", time: "4:20 PM", text: "I was in the medical bay all night. Anyone can confirm? I'm getting suspicious of whoever was near the comm array..." },
+      { avatar: null, color: "bg-green-500", name: "Captain Rex", badge: "AI", time: "4:20 PM", text: "Dr. Chen is acting defensive. That's a red flag! I saw them leaving the engineering deck around the time of the sabotage." },
+      { avatar: null, color: "bg-orange-500", name: "Engineer Nova", badge: "AI", time: "4:21 PM", text: "Wait! I used my ability to inspect the comm array. The damage pattern suggests someone with medical knowledge... 👀" },
+    ],
+  },
+  {
+    id: "you-play",
+    step: "04",
+    total: "04",
+    icon: "🎮",
+    title: "You play",
+    heading: "You play your role — the AI reacts",
+    description:
+      "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
+    messages: [
+      { avatar: null, color: "bg-blue-500", name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain." },
+      { avatar: null, color: "bg-red-500", name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking." },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "5:11 PM", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
+    ],
+  },
+];
+
+// ─── Game preview scenarios ───────────────────────────────────────────────────
 const GAME_SCENARIOS = {
   werewolf: {
     title: "🐺 Werewolf",
@@ -79,82 +311,59 @@ const GAME_SCENARIOS = {
       { avatar: null, color: "bg-yellow-600", name: "Taylor", time: "Scene 1", text: "That's impossible — the museum closes at 8!" },
     ],
   },
-  tarot: {
-    title: "🃏 Tarot Reading",
-    rule: "Ask a question and receive a personal card reading. The AI host draws, interprets, and reflects with you.",
-    messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "The Oracle", time: "Reading", text: "Take a breath. What question or intention do you bring to this reading today?" },
-      { avatar: null, color: "bg-amber-500", name: "You", time: "Reading", text: "I'm at a crossroads with my career and don't know which path to take." },
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "The Oracle", time: "Reading", text: "I draw The Fool — a leap of faith, a fresh start. This card asks: what would you do if you weren't afraid?" },
-    ],
-  },
-  roleplay: {
-    title: "🧙 Fantasy Roleplay",
-    rule: "Step into a character in a living world. The AI Game Master narrates and reacts to every choice you make.",
-    messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "The Chronicler", time: "Chapter 1", text: "You stand at the gates of Ironhold. The city is under siege and the king is missing. What do you do?" },
-      { avatar: null, color: "bg-indigo-500", name: "Nova", time: "Chapter 1", text: "I slip through the side gate and head for the castle's east tower." },
-      { avatar: null, color: "bg-teal-500", name: "Echo", time: "Chapter 1", text: "I'll create a distraction at the main gate — buy you some time." },
-    ],
-  },
-  custom: {
-    title: "✨ Your Own Game",
-    rule: "Describe any idea in plain English — the AI designs the rules, roles, and world, then runs the entire session.",
-    messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", time: "Setup", text: "Welcome to 'Time Travelers Council'! Each of you is from a different era — work together to fix the paradox before it unravels history." },
-      { avatar: null, color: "bg-indigo-500", name: "Nova", time: "Turn 1", text: "As someone from 2124, I can confirm this paradox is already catastrophic." },
-      { avatar: null, color: "bg-teal-500", name: "Echo", time: "Turn 1", text: "In my timeline we solved this with quantum anchoring — but we need the 1987 code first." },
-    ],
-  },
 };
 
-export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
-  const [selectedGame, setSelectedGame] = useState<
-    keyof typeof GAME_SCENARIOS
-  >("werewolf");
+export function LandingPage({ onSignIn }: LandingPageProps) {
+  const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   const quickStarts = [
-    { id: "werewolf" as const,  emoji: "🐺", label: "Werewolf"     },
-    { id: "mafia" as const,     emoji: "🎭", label: "Mafia"        },
-    { id: "spy" as const,       emoji: "🕵️", label: "Who's the Spy" },
-    { id: "mystery" as const,   emoji: "🔍", label: "Mystery"      },
-    { id: "tarot" as const,     emoji: "🃏", label: "Tarot"        },
-    { id: "roleplay" as const,  emoji: "🧙", label: "Roleplay"     },
-    { id: "custom" as const,    emoji: "✨", label: "Custom"       },
+    { id: "werewolf" as const, emoji: "🐺", label: "Werewolf" },
+    { id: "mafia" as const,    emoji: "🎭", label: "Mafia" },
+    { id: "spy" as const,      emoji: "🕵️", label: "Who's the Spy" },
+    { id: "mystery" as const,  emoji: "🔍", label: "Mystery" },
   ];
 
   const features = [
     {
       icon: MessageCircle,
       title: "Plain English creation",
-      description:
-        "Describe your game idea in plain English — the AI builds the rules, roles, and world for you.",
+      description: "Describe your game idea in plain English — the AI builds the rules, roles, and world for you.",
       gradient: "from-violet-500 to-purple-500",
     },
     {
       icon: Sparkles,
       title: "Templates + custom",
-      description:
-        "Jump in with classics like Werewolf, Mafia, or Who's the Spy — or describe any game of your own.",
+      description: "Jump in with classics like Werewolf, Mafia, or Who's the Spy — or describe any game of your own.",
       gradient: "from-blue-500 to-cyan-500",
     },
     {
       icon: Crown,
       title: "AI runs the whole game",
-      description:
-        "A dedicated Game Master hosts every session. AI characters fill every seat.",
+      description: "A dedicated Game Master hosts every session. AI characters fill every seat.",
       gradient: "from-orange-500 to-pink-500",
     },
     {
       icon: Users,
       title: "Any game, any rules",
-      description:
-        "Mystery, deduction, roleplay, trivia — if you can describe it, you can play it.",
+      description: "Mystery, deduction, roleplay, trivia — if you can describe it, you can play it.",
       gradient: "from-green-500 to-emerald-500",
     },
   ];
 
+  const featuredGames = [
+    { emoji: "🧛", title: "Vampire Court", author: "Jordan", plays: 1234, rating: 4.9 },
+    { emoji: "🚀", title: "Space Mutiny", author: "Alex", plays: 892, rating: 4.8 },
+    { emoji: "🏰", title: "Kingdom Intrigue", author: "Sam", plays: 2103, rating: 4.9 },
+  ];
+
+  const howItWorks = [
+    { number: "1", title: "Sign in", subtitle: "with Google", icon: "👤" },
+    { number: "2", title: "Describe game", subtitle: "to Game Master", icon: "💬" },
+    { number: "3", title: "Play instantly", subtitle: "with AI characters", icon: "🎮" },
+  ];
+
+  // Auto-rotate preview every 20 s (gives time for messages to stream)
   useEffect(() => {
     if (!isAutoPlaying) return;
     const games = Object.keys(GAME_SCENARIOS) as Array<keyof typeof GAME_SCENARIOS>;
@@ -162,7 +371,7 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % games.length;
       setSelectedGame(games[currentIndex]);
-    }, 5000);
+    }, 20000);
     return () => clearInterval(interval);
   }, [isAutoPlaying, selectedGame]);
 
@@ -170,6 +379,7 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
+      {/* Animated background blobs */}
       <div
         className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.1),transparent_50%)] pointer-events-none animate-pulse"
         style={{ animationDuration: "4s" }}
@@ -180,33 +390,37 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
       />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 md:py-16">
-        {/* Hero - Two Column */}
+
+        {/* ── Hero – Two Column ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center mb-16 md:mb-24">
+
+          {/* Left column */}
           <div>
-            <div className="mb-6 md:mb-8">
-              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                TextGame.ai
-              </h1>
-              <p className="text-sm text-zinc-400 font-medium mt-1">
-                {BRAND_CONFIG.tagline}
-              </p>
+            {/* Logo */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="text-5xl">{BRAND_CONFIG.logo.emoji}</div>
+              <div>
+                <h1 className="text-4xl font-black text-white tracking-tight">
+                  {BRAND_CONFIG.name}
+                </h1>
+                <p className="text-sm text-zinc-500 font-medium">{BRAND_CONFIG.tagline}</p>
+              </div>
             </div>
 
+            {/* Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-              Describe any game idea.{" "}
+              Create multiplayer{" "}
               <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                Play it
-              </span>{" "}
-              in minutes.
+                AI games
+              </span>
+              {" "}in 2 minutes
             </h2>
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-5 leading-relaxed">
-              You chat with an AI Game Master who designs and runs your game.
-              Describe your idea — the GM writes rules, assigns secret roles, and starts the session.
-              AI characters fill every seat, no friends required.
+              No coding. No setup. Describe your game and play with AI characters in seconds.
             </p>
 
-            {/* 3-step mechanic flow */}
+            {/* 3-step flow */}
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               {[
                 { num: "1", text: "Describe your idea" },
@@ -225,6 +439,7 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
               ))}
             </div>
 
+            {/* Social proof grid */}
             <div className="mb-6 p-5 bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-700/50 rounded-xl">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-3">
@@ -238,11 +453,11 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-10 h-10 bg-fuchsia-500/10 rounded-lg">
-                    <Crown className="h-5 w-5 text-fuchsia-400" />
+                    <Sparkles className="h-5 w-5 text-fuchsia-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">Solo-friendly</div>
-                    <div className="text-xs text-zinc-500">No friends needed</div>
+                    <div className="text-sm font-bold text-white">20+ templates</div>
+                    <div className="text-xs text-zinc-500">Ready to use</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -260,49 +475,43 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-white">Free to start</div>
-                    <div className="text-xs text-zinc-500">No setup needed</div>
+                    <div className="text-xs text-zinc-500">No card needed</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mb-6 flex flex-col items-center">
+            {/* Google Sign-in – glowing button */}
+            <div className="mb-6 relative">
+              <div
+                className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl blur-xl opacity-30 animate-pulse"
+                style={{ animationDuration: "3s" }}
+              />
               <Button
                 onClick={onSignIn}
                 size="lg"
-                className="w-full max-w-xl min-h-[44px] bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-base sm:text-lg py-5 sm:py-6 rounded-xl shadow-lg transition-all"
+                className="relative w-full bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-6 shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl"
               >
                 <svg className="h-6 w-6 mr-3 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
                 Sign in with Google
               </Button>
-              <p className="mt-4 text-center text-sm text-zinc-400">
+              <p className="text-center text-sm text-zinc-600 mt-4">
                 Free to start · From idea to game in under 2 minutes
               </p>
             </div>
 
-            <div className="space-y-3">
+            {/* Quick-start 2×2 grid */}
+            <div className="space-y-4">
               <div className="flex items-center gap-2 px-1">
                 <Zap className="h-4 w-4 text-violet-400" />
-                <p className="text-sm font-bold text-zinc-400">See how it plays — pick a game type:</p>
+                <p className="text-sm font-bold text-zinc-400">Try these examples:</p>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch]">
+              <div className="grid grid-cols-2 gap-3">
                 {quickStarts.map((item) => (
                   <button
                     key={item.id}
@@ -310,33 +519,37 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
                       setSelectedGame(item.id);
                       setIsAutoPlaying(false);
                     }}
-                    className={`group relative flex-shrink-0 bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-200 rounded-xl px-3 py-2 overflow-hidden ${
+                    className={`group relative bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-300 hover:scale-[1.02] rounded-xl px-4 py-3 overflow-hidden ${
                       selectedGame === item.id
-                        ? "border-violet-500 shadow-lg shadow-violet-500/20 bg-zinc-800/80"
+                        ? "border-violet-500 shadow-lg shadow-violet-500/20"
                         : "border-zinc-800 hover:border-violet-500/50"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className={`text-lg transition-transform ${selectedGame === item.id ? "scale-110" : "group-hover:scale-110"}`}>
+                    {/* Hover gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {/* Active dot */}
+                    {selectedGame === item.id && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
+                    )}
+                    <div className="relative flex items-center gap-3">
+                      <span className={`text-2xl transition-transform ${selectedGame === item.id ? "scale-110" : "group-hover:scale-110"}`}>
                         {item.emoji}
                       </span>
-                      <span className={`text-xs font-bold whitespace-nowrap transition-colors ${selectedGame === item.id ? "text-white" : "text-zinc-400 group-hover:text-white"}`}>
+                      <span className={`text-sm font-bold transition-colors ${selectedGame === item.id ? "text-white" : "text-zinc-300 group-hover:text-white"}`}>
                         {item.label}
                       </span>
                     </div>
-                    {selectedGame === item.id && (
-                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-violet-500 rounded-full" />
-                    )}
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Right - Chat preview */}
+          {/* Right column – animated chat preview */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-3xl" />
             <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-zinc-700/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
+              {/* Window chrome */}
               <div className="bg-zinc-800/70 px-4 py-3 border-b border-zinc-700/80 flex items-center gap-3">
                 <div className="flex gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500/90" />
@@ -348,47 +561,20 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
                   {currentScenario.title}
                 </span>
               </div>
-              {/* Rule explanation bar */}
+              {/* Rule bar */}
               <div className="px-4 py-2.5 bg-violet-500/10 border-b border-violet-500/20 flex items-start gap-2">
                 <Sparkles className="h-3.5 w-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-violet-300/90 leading-relaxed">{currentScenario.rule}</p>
               </div>
-              <div className="p-4 space-y-3 h-[340px] overflow-y-auto">
-                {currentScenario.messages.map((msg, index) => (
-                  <div key={index} className="flex gap-3 group">
-                    <GeneratedAvatar
-                      name={msg.name}
-                      type={msg.avatar === "GM" ? "host" : "player"}
-                      enabled={false}
-                      className="w-9 h-9 flex-shrink-0 ring-1 ring-zinc-600/50"
-                      fallback={<></>}
-                      fallbackColor={
-                        msg.avatar === "GM"
-                          ? "#8b5cf6"
-                          : colorToHex(msg.color)
-                      }
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2 mb-0.5">
-                        <span className="font-semibold text-white text-sm">
-                          {msg.name}
-                        </span>
-                        <span className="text-xs text-zinc-500">{msg.time}</span>
-                      </div>
-                      <p className="text-sm text-zinc-300 leading-relaxed break-words">
-                        {msg.text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              {/* Streaming messages */}
+              <div className="p-4 space-y-4 h-[340px] overflow-y-auto">
+                <MessageList messages={currentScenario.messages} gameKey={selectedGame} />
+                {/* Typing indicator */}
                 <div className="flex gap-3">
-                  <GeneratedAvatar
-                    name="Drew"
-                    type="player"
-                    enabled={false}
-                    className="w-9 h-9 flex-shrink-0 ring-1 ring-zinc-600/50"
-                    fallback={<></>}
-                    fallbackColor="#f97316"
+                  <img
+                    src="/avatars/avatar-amber.png"
+                    alt="Drew"
+                    className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
@@ -402,6 +588,7 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
                   </div>
                 </div>
               </div>
+              {/* Mock input */}
               <div className="bg-zinc-800/70 px-4 py-3 border-t border-zinc-700/80">
                 <div className="bg-zinc-800/80 rounded-xl px-4 py-2.5 text-sm text-zinc-500 border border-zinc-600/50">
                   Type your message...
@@ -411,20 +598,91 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
           </div>
         </div>
 
-        <HowGameWorksSection />
+        {/* ── How It Works (3 steps) ────────────────────────────────── */}
+        <div className="mb-32">
+          <div className="text-center mb-16">
+            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+              <span className="text-sm font-bold text-violet-400">HOW IT WORKS</span>
+            </div>
+            <h3 className="text-4xl font-black text-white mb-4">Get Started in 3 Simple Steps</h3>
+            <p className="text-lg text-zinc-400">From idea to gameplay in under 2 minutes</p>
+          </div>
 
-        {/* Features */}
+          <div className="relative max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+              {howItWorks.map((step, index) => (
+                <div key={index} className="relative">
+                  {/* Step number */}
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full text-white font-black text-xl shadow-xl">
+                        {step.number}
+                      </div>
+                      {index < howItWorks.length - 1 && (
+                        <div className="hidden md:block absolute left-full top-1/2 -translate-y-1/2 w-[calc(100vw/3-8rem)] max-w-[200px]">
+                          <div className="flex items-center gap-2 px-4">
+                            <div className="flex-1 h-[2px] bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-30" />
+                            <svg className="w-4 h-4 text-violet-500 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card */}
+                  <div className="group relative bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
+                    <div className="flex justify-center mb-6">
+                      <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg">
+                        {step.number === "1" && (
+                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        )}
+                        {step.number === "2" && (
+                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        )}
+                        {step.number === "3" && (
+                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <h4 className="text-xl font-bold text-white mb-2">{step.title}</h4>
+                      <p className="text-sm text-zinc-500">{step.subtitle}</p>
+                    </div>
+                  </div>
+
+                  {index < howItWorks.length - 1 && (
+                    <div className="md:hidden flex justify-center my-6">
+                      <svg className="w-6 h-6 text-violet-500 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Inside a Game ─────────────────────────────────────────── */}
+        <InsideGameSection />
+
+        {/* ── Features ─────────────────────────────────────────────── */}
         <div className="mb-32">
           <div className="text-center mb-16">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
-            <h3 className="text-4xl font-black text-white mb-4">
-              Everything you need to bring any game to life
-            </h3>
-            <p className="text-lg text-zinc-400">
-              From first idea to full session — no design experience required
-            </p>
+            <h3 className="text-4xl font-black text-white mb-4">Why You'll Love It</h3>
+            <p className="text-lg text-zinc-400">Everything you need to bring any game to life</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => {
@@ -435,36 +693,68 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
                   className="group relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 hover:border-violet-500/30 rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
-                  <div
-                    className={`relative w-12 h-12 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-4 shadow-lg`}
-                  >
+                  <div className={`relative w-12 h-12 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
                     <Icon className="h-6 w-6 text-white" />
                   </div>
-                  <h4 className="relative text-lg font-bold text-white mb-2">
-                    {feature.title}
-                  </h4>
-                  <p className="relative text-sm text-zinc-400 leading-relaxed">
-                    {feature.description}
-                  </p>
+                  <h4 className="relative text-lg font-bold text-white mb-2">{feature.title}</h4>
+                  <p className="relative text-sm text-zinc-400 leading-relaxed">{feature.description}</p>
                 </div>
               );
             })}
           </div>
         </div>
 
+        {/* ── Trending Games ────────────────────────────────────────── */}
+        <div className="mb-32">
+          <div className="text-center mb-12">
+            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+              <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
+            </div>
+            <h3 className="text-3xl font-black text-white mb-3">Trending Games</h3>
+            <p className="text-lg text-zinc-400">See what others are creating</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {featuredGames.map((game, index) => (
+              <div
+                key={index}
+                className="group bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl">{game.emoji}</div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-white truncate">{game.title}</h4>
+                    <p className="text-xs text-zinc-500">by {game.author}</p>
+                    <div className="flex items-center gap-3 mt-2 text-xs">
+                      <span className="flex items-center gap-1 text-zinc-400">
+                        <Play className="h-3 w-3" />
+                        {game.plays.toLocaleString()}
+                      </span>
+                      <span className="flex items-center gap-1 text-yellow-500">
+                        <Star className="h-3 w-3 fill-yellow-500" />
+                        {game.rating}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── FAQ ───────────────────────────────────────────────────── */}
         <FAQSection />
 
-        {/* Final CTA */}
+        {/* ── Final CTA ─────────────────────────────────────────────── */}
         <div className="mb-24">
           <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-3xl p-12 md:p-16">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
-                Ready to Build Your Game?
+                Ready to Create Your Game?
               </h3>
               <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Any game you can describe, you can play — in minutes
+                Join thousands of creators building multiplayer AI games in minutes
               </p>
               <div className="relative inline-block">
                 <div
@@ -474,48 +764,31 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
                 <Button
                   onClick={onSignIn}
                   size="lg"
-                  className="relative bg-white hover:bg-zinc-100 text-violet-600 font-bold text-xl px-12 py-8 rounded-xl shadow-2xl transition-all hover:scale-105"
+                  className="relative bg-white hover:bg-zinc-100 text-violet-600 font-bold text-xl px-12 py-8 shadow-2xl transition-all hover:scale-105"
                 >
-                  <svg className="h-8 w-8 mr-4" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
+                  <svg className="h-7 w-7 mr-3" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  Get started with Google
+                  Sign in with Google
                 </Button>
               </div>
               <p className="text-sm text-violet-100 mt-4">
-                Free to start · From idea to game in under 2 minutes
+                No credit card required · 2 minutes to your first game
               </p>
             </div>
           </div>
         </div>
 
+        {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
-            <p>
-              © 2026 {BRAND_CONFIG.name} • Made for gamers, by gamers
-            </p>
+            <p>© 2026 {BRAND_CONFIG.name} • Made for gamers, by gamers</p>
             <div className="flex gap-6">
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Terms of Service
-              </Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
           </div>
         </footer>
@@ -524,317 +797,161 @@ export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
   );
 }
 
-// ─── Mini chat bubble used inside the explainer panels ───────────────────────
-function MiniChat({ messages }: {
-  messages: Array<{
-    name: string;
-    color: string;   // hex
-    text: string;
-    badge?: string;  // optional label like "HOST" "AI" "YOU"
-    badgeColor?: string;
-  }>;
-}) {
-  return (
-    <div className="space-y-2.5 mt-3">
-      {messages.map((m, i) => (
-        <div key={i} className="flex gap-2 items-start">
-          <div
-            className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-black text-white mt-0.5"
-            style={{ background: m.color }}
-          >
-            {m.name.charAt(0)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="text-[11px] font-bold text-zinc-300">{m.name}</span>
-              {m.badge && (
-                <span
-                  className="text-[9px] font-bold px-1.5 py-0 rounded-full"
-                  style={{ background: `${m.badgeColor ?? m.color}30`, color: m.badgeColor ?? m.color }}
-                >
-                  {m.badge}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">{m.text}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+// ─── Inside a Game section ────────────────────────────────────────────────────
+function InsideGameSection() {
+  const [selectedStep, setSelectedStep] = useState(0);
+  const currentStep = INSIDE_GAME_STEPS[selectedStep];
 
-const HOW_PANELS = [
-  {
-    step: "01",
-    emoji: "💬",
-    tabLabel: "Design with GM",
-    title: "Design with the Game Master",
-    desc: "Describe your game idea in plain English. The GM asks a few questions, writes the rules, picks player roles, and sets up the room — all in a conversation. No forms, no configuration.",
-    accent: "#8b5cf6",
-    chat: [
-      { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I want a werewolf game with 6 players, with a Seer and a Doctor." },
-      { name: "Game Master", color: "#8b5cf6", badge: "GM", badgeColor: "#8b5cf6", text: "Got it! I've written the rules and set up two rooms: General (everyone) and Werewolves only (private). Ready to start?" },
-      { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "Looks great — let's go!" },
-    ],
-  },
-  {
-    step: "02",
-    emoji: "👑",
-    tabLabel: "The Host",
-    title: "The Host runs every phase",
-    desc: "Once the game starts, an AI Host takes over as the permanent moderator. It announces phases, assigns secret roles, narrates events, and decides who speaks next — you never need to manage logistics.",
-    accent: "#f59e0b",
-    chat: [
-      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Night falls. Villagers close their eyes. 🌙" },
-      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Werewolves, open your eyes — your private room is now active. Choose your target." },
-      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Dawn breaks. Tomas Vance was found eliminated. Day phase begins." },
-    ],
-  },
-  {
-    step: "03",
-    emoji: "🤖",
-    tabLabel: "AI players",
-    title: "AI players think, argue, and bluff",
-    desc: "Every seat is filled by an AI character with a unique name, personality, and secret role. They discuss, accuse, defend themselves, and vote — autonomously. The game flows even when you're silent.",
-    accent: "#10b981",
-    chat: [
-      { name: "Maribel", color: "#3b82f6", badge: "AI", badgeColor: "#10b981", text: "I've been watching Gideon. He was way too quiet last night." },
-      { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "That's rich coming from you. Where were you during the vote?" },
-      { name: "Juno", color: "#8b5cf6", badge: "AI", badgeColor: "#10b981", text: "Both of you are deflecting. I'm voting Maribel." },
-    ],
-  },
-  {
-    step: "04",
-    emoji: "🎮",
-    tabLabel: "You play",
-    title: "You play your role — the AI reacts",
-    desc: "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
-    accent: "#ec4899",
-    chat: [
-      { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain." },
-      { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking." },
-      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
-    ],
-  },
-];
-
-const AUTO_INTERVAL = 5000;
-
-function HowGameWorksSection() {
-  const [current, setCurrent] = useState(0);
-  const [dir, setDir] = useState<1 | -1>(1);
-  const [animKey, setAnimKey] = useState(0);
-  const [timerKey, setTimerKey] = useState(0); // resets the auto-play interval
-
-  // Auto-play: restart interval whenever timerKey changes
-  useEffect(() => {
-    const id = setInterval(() => {
-      setDir(1);
-      setAnimKey((k) => k + 1);
-      setCurrent((c) => (c + 1) % HOW_PANELS.length);
-    }, AUTO_INTERVAL);
-    return () => clearInterval(id);
-  }, [timerKey]);
-
-  const go = (next: number, d: 1 | -1) => {
-    setDir(d);
-    setAnimKey((k) => k + 1);
-    setCurrent(next);
-    setTimerKey((k) => k + 1); // reset timer so it doesn't jump right after a click
+  const handlePrevious = () => {
+    setSelectedStep((prev) => (prev === 0 ? INSIDE_GAME_STEPS.length - 1 : prev - 1));
   };
-
-  const p = HOW_PANELS[current];
+  const handleNext = () => {
+    setSelectedStep((prev) => (prev === INSIDE_GAME_STEPS.length - 1 ? 0 : prev + 1));
+  };
 
   return (
     <div className="mb-32">
-      <div className="text-center mb-10">
+      <div className="text-center mb-12">
         <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-          <span className="text-sm font-bold text-violet-400">HOW IT WORKS</span>
+          <span className="text-sm font-bold text-violet-400">INSIDE A GAME</span>
         </div>
-        <h3 className="text-4xl md:text-5xl font-black text-white">What actually happens inside a game</h3>
+        <h3 className="text-4xl font-black text-white mb-4">What actually happens inside a game</h3>
+        <p className="text-lg text-zinc-400">Experience every stage of gameplay</p>
       </div>
 
-      {/* Tab row */}
-      <div className="flex justify-center gap-2 mb-6 flex-wrap">
-        {HOW_PANELS.map((panel, i) => (
+      {/* Tab navigation */}
+      <div className="flex flex-wrap justify-center gap-3 mb-12">
+        {INSIDE_GAME_STEPS.map((step, index) => (
           <button
-            key={i}
-            onClick={() => go(i, i > current ? 1 : -1)}
-            className="relative overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all duration-200"
-            style={
-              i === current
-                ? { background: `${panel.accent}18`, borderColor: `${panel.accent}60`, color: panel.accent }
-                : { background: "transparent", borderColor: "#3f3f46", color: "#71717a" }
-            }
+            key={step.id}
+            onClick={() => setSelectedStep(index)}
+            className={`group relative px-6 py-3 rounded-full border transition-all duration-300 ${
+              selectedStep === index
+                ? "border-fuchsia-500 bg-fuchsia-500/10 shadow-lg shadow-fuchsia-500/20"
+                : "border-zinc-800 bg-zinc-900/50 hover:border-fuchsia-500/50"
+            }`}
           >
-            {/* progress bar on active tab */}
-            {i === current && (
-              <span
-                key={`${timerKey}-${current}`}
-                className="absolute bottom-0 left-0 h-0.5 rounded-full"
-                style={{ background: panel.accent, animation: `tabProgress ${AUTO_INTERVAL}ms linear forwards` }}
-              />
-            )}
-            <span className="text-lg">{panel.emoji}</span>
-            <span className="text-sm font-bold">{panel.tabLabel}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{step.icon}</span>
+              <span className={`text-sm font-bold transition-colors ${selectedStep === index ? "text-white" : "text-zinc-400 group-hover:text-white"}`}>
+                {step.title}
+              </span>
+            </div>
           </button>
         ))}
       </div>
 
-      {/* Panel — full-width two-column */}
-      <div
-        key={animKey}
-        className="rounded-2xl overflow-hidden"
-        style={{
-          border: `1px solid ${p.accent}30`,
-          background: `linear-gradient(135deg, ${p.accent}0a 0%, #18181b 55%)`,
-          boxShadow: `0 0 80px ${p.accent}18`,
-          animation: `slideIn${dir > 0 ? "Right" : "Left"} 0.3s ease both`,
-        }}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-2">
-          {/* Left: text */}
-          <div className="p-10 lg:p-14 flex flex-col justify-between">
+      {/* Content */}
+      <div className="relative bg-zinc-950/50 border border-zinc-800 rounded-3xl overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
+          {/* Left – description */}
+          <div className="relative p-12 flex flex-col justify-between bg-gradient-to-br from-zinc-900/80 to-zinc-950/80">
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-5xl">{p.emoji}</span>
-                <span
-                  className="text-xs font-black px-3 py-1 rounded-full"
-                  style={{ background: `${p.accent}20`, color: p.accent }}
-                >
-                  STEP {p.step} / 04
+              <div className="inline-flex items-center gap-2 mb-6">
+                <Gamepad2 className="h-5 w-5 text-fuchsia-400" />
+                <span className="text-sm font-bold text-fuchsia-400">
+                  STEP {currentStep.step} / {currentStep.total}
                 </span>
               </div>
-              <h4 className="text-3xl lg:text-4xl font-black text-white mb-5 leading-tight">{p.title}</h4>
-              <p className="text-lg text-zinc-400 leading-relaxed">{p.desc}</p>
+              <h4 className="text-4xl font-black text-white mb-6 leading-tight">{currentStep.heading}</h4>
+              <p className="text-lg text-zinc-400 leading-relaxed">{currentStep.description}</p>
             </div>
 
-            {/* Dot nav + arrows */}
-            <div className="flex items-center justify-between mt-10">
-              <div className="flex gap-2">
-                {HOW_PANELS.map((_, i) => (
+            {/* Navigation */}
+            <div className="flex items-center justify-between mt-12">
+              <div className="flex items-center gap-2">
+                {INSIDE_GAME_STEPS.map((_, index) => (
                   <button
-                    key={i}
-                    onClick={() => go(i, i > current ? 1 : -1)}
-                    className="rounded-full transition-all duration-300"
-                    style={
-                      i === current
-                        ? { width: "24px", height: "8px", background: p.accent }
-                        : { width: "8px", height: "8px", background: "#3f3f46" }
-                    }
+                    key={index}
+                    onClick={() => setSelectedStep(index)}
+                    className={`transition-all duration-300 rounded-full ${
+                      selectedStep === index
+                        ? "w-8 h-2 bg-fuchsia-500"
+                        : "w-2 h-2 bg-zinc-700 hover:bg-zinc-600"
+                    }`}
                   />
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => go(current - 1, -1)}
-                  disabled={current === 0}
-                  className="w-10 h-10 rounded-full border flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-all disabled:opacity-25 disabled:cursor-not-allowed text-base"
-                  style={{ borderColor: "#3f3f46" }}
+                  onClick={handlePrevious}
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-fuchsia-500/50 transition-all"
                 >
-                  ←
+                  <ChevronLeft className="h-5 w-5 text-zinc-400" />
                 </button>
                 <button
-                  onClick={() => go(current + 1, 1)}
-                  disabled={current === HOW_PANELS.length - 1}
-                  className="w-10 h-10 rounded-full border flex items-center justify-center transition-all disabled:opacity-25 disabled:cursor-not-allowed text-base"
-                  style={
-                    current < HOW_PANELS.length - 1
-                      ? { borderColor: `${p.accent}70`, color: p.accent, background: `${p.accent}15` }
-                      : { borderColor: "#3f3f46", color: "#52525b" }
-                  }
+                  onClick={handleNext}
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-fuchsia-500/50 transition-all"
                 >
-                  →
+                  <ChevronRight className="h-5 w-5 text-zinc-400" />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right: large chat mockup */}
-          <div
-            className="p-10 lg:p-14 flex flex-col justify-center lg:border-l"
-            style={{ borderColor: `${p.accent}20` }}
-          >
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: p.accent }} />
-              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: p.accent }}>
-                Live example
-              </span>
+          {/* Right – streaming chat example */}
+          <div className="relative bg-zinc-900/50 border-l border-zinc-800">
+            <div className="absolute top-6 right-6 z-10">
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-full px-3 py-1.5">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-xs font-bold text-red-400">LIVE EXAMPLE</span>
+              </div>
             </div>
-            <div className="space-y-6">
-              {p.chat.map((m, i) => (
-                <div key={i} className="flex gap-4 items-start">
-                  <div
-                    className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-black text-white"
-                    style={{ background: m.color }}
-                  >
-                    {m.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-sm font-bold text-zinc-200">{m.name}</span>
-                      {m.badge && (
-                        <span
-                          className="text-[10px] font-black px-2 py-0.5 rounded-full"
-                          style={{ background: `${m.badgeColor ?? m.color}25`, color: m.badgeColor ?? m.color }}
-                        >
-                          {m.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-base text-zinc-300 leading-relaxed">{m.text}</p>
-                  </div>
+            <div className="h-full flex flex-col">
+              <div className="flex-1 p-8 pt-20 space-y-4 overflow-y-auto">
+                <InsideGameMessageList
+                  messages={currentStep.messages}
+                  gameKey={currentStep.id}
+                />
+              </div>
+              <div className="p-4 border-t border-zinc-800">
+                <div className="bg-zinc-950/50 rounded-lg px-4 py-3 text-sm text-zinc-600 flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Type your message...</span>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideInLeft  { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes tabProgress  { from { width: 0%; } to { width: 100%; } }
-      `}</style>
     </div>
   );
 }
 
+// ─── FAQ section ──────────────────────────────────────────────────────────────
 function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
     {
       question: "How do I create a game?",
-      answer:
-        "Sign in with Google, then go to Create. You can either chat with the Game Master to describe your idea in plain English, or pick a template from Discover (e.g. Werewolf, Who's the Spy, Mafia, Tarot). Set player count and optional rules—no coding or complex setup. Your game is ready in about 2 minutes.",
+      answer: "Sign in with Google, then go to Create. You can either chat with the Game Master to describe your idea in plain English, or pick a template from Discover (e.g. Werewolf, Who's the Spy, Mafia, Tarot). Set player count and optional rules — no coding or complex setup. Your game is ready in about 2 minutes.",
     },
     {
       question: "What is the Game Master and how does it work?",
-      answer:
-        "The Game Master is an AI host that runs your game: it explains rules, runs day/night or discussion phases, and keeps the flow. You can also add AI players so the room is filled even when playing alone. The host and players use natural dialogue so it feels like a real tabletop session.",
+      answer: "The Game Master is an AI host that runs your game: it explains rules, runs day/night or discussion phases, and keeps the flow. You can also add AI players so the room is filled even when playing alone. The host and players use natural dialogue so it feels like a real tabletop session.",
     },
     {
       question: "Can I play with friends or share a game?",
-      answer:
-        "Yes. From your game room you can copy a share link and send it to friends. They open the link in their browser to join. You can play with a mix of human and AI players. Your saved games appear under My Games when you're signed in.",
+      answer: "Yes. From your game room you can copy a share link and send it to friends. They open the link in their browser to join. You can play with a mix of human and AI players. Your saved games appear under My Games when you're signed in.",
     },
     {
       question: "What templates or game types are available?",
-      answer:
-        "We include templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, and Tarot Reading (single-player). Discover shows these with one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
+      answer: "We include templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, and Tarot Reading (single-player). Discover shows these with one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
     },
     {
       question: "Do I need to sign in? Is it free?",
-      answer:
-        "Sign in with Google to get started — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Your games are saved to your account and available across devices.",
+      answer: "Sign in with Google to get started — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Your games are saved to your account and available across devices.",
     },
     {
-      question: "Where are my games saved?",
-      answer:
-        "When you're signed in, every game you create is saved to your account. Open My Games from the sidebar to see your library, reopen any game, or delete ones you no longer need. Games are tied to your Google account and available across devices.",
+      question: "Can I create any type of game?",
+      answer: "Absolutely! While we offer 20+ templates for classics like Werewolf and Murder Mystery, you have complete freedom to design custom games with unique rules and mechanics. Just describe your idea to the Game Master.",
+    },
+    {
+      question: "How much does it cost?",
+      answer: "After your free starting credits, you pay only for what you use. Credits start at $10, and pricing is transparent based on actual API costs. No subscriptions or hidden fees.",
     },
   ];
+
   return (
     <div className="mb-24">
       <div className="text-center mb-12">
@@ -861,9 +978,7 @@ function FAQSection() {
                 className={`h-5 w-5 text-zinc-400 flex-shrink-0 transition-transform duration-300 ${openIndex === index ? "rotate-180 text-violet-400" : ""}`}
               />
             </button>
-            <div
-              className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-80" : "max-h-0"}`}
-            >
+            <div className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-80" : "max-h-0"}`}>
               <div className="px-6 pb-5 text-sm text-zinc-400 leading-relaxed">
                 {faq.answer}
               </div>
