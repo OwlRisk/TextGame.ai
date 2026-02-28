@@ -1,4 +1,4 @@
-import { Hash, Share2, Users, Lock } from "lucide-react";
+import { Hash, Share2, Users, Lock, Trash2 } from "lucide-react";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
