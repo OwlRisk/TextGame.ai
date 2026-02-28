@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
@@ -18,8 +18,9 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
 import { SlashCommandsDialog } from "@/app/components/slash-commands-dialog";
+import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
-import { marked } from "marked";
+import { safeMarked } from "@/lib/safe-marked";
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
 const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
@@ -1007,40 +1008,66 @@ ${rulesText || "No specific rules defined."}`.trim();
     }
   };
 
-  const handleRetryLastMessage = () => {
+  const handleRetryLastMessage = useCallback(() => {
     if (lastFailedSendContent) {
       handleSendMessage(lastFailedSendContent);
       setLastFailedSendContent(null);
     }
-  };
+  }, [lastFailedSendContent, handleSendMessage]);
 
   // GM-defined game rooms (always compute so hook order is stable; safe when currentGame is null)
-  const configChannels = currentGame?.config?.channels;
-  const gameRoomEntries = configChannels?.length
-    ? configChannels.map((c) => ({ id: c.id, name: c.name, type: "game" as const }))
-    : [{ id: "game-room", name: "game-room", type: "game" as const }];
+  // Derive a stable cache key from channel IDs so useMemo doesn't recompute on every context update.
+  const channelsCacheKey = currentGame?.config?.channels?.map((c) => c.id).join(",") ?? "";
+  const gameRoomEntries = useMemo(() => {
+    const cfg = currentGame?.config?.channels;
+    return cfg?.length
+      ? cfg.map((c) => ({ id: c.id, name: c.name, type: "game" as const }))
+      : [{ id: "game-room", name: "game-room", type: "game" as const }];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channelsCacheKey]);
+
   const defaultGameChannelId = gameRoomEntries[0].id;
 
   // Filter game rooms based on AI-managed access control.
   // Rules / Progress (text sections) are always visible.
-  const visibleGameRoomEntries = gameRoomEntries.filter((ch) => {
-    const perms = channelPermissions[ch.id];
-    if (!perms) return true;           // no restriction → public
-    if (perms.includes("*")) return true; // explicitly public
-    return perms.includes(userId);     // human is in the allowed list
-  });
+  const visibleGameRoomEntries = useMemo(
+    () =>
+      gameRoomEntries.filter((ch) => {
+        const perms = channelPermissions[ch.id];
+        if (!perms) return true;
+        if (perms.includes("*")) return true;
+        return perms.includes(userId);
+      }),
+    [gameRoomEntries, channelPermissions, userId]
+  );
 
-  const gameChannels = [
-    { id: "rules", name: "Rules", type: "text" as const },
-    { id: "progress", name: "Progress", type: "text" as const },
-    ...sections.map((s) => ({ id: s.id, name: s.name, type: "text" as const })),
-    ...visibleGameRoomEntries,
-  ];
-  const gameRoomIds = new Set(gameRoomEntries.map((c) => c.id));
-  const isGameChannel = selectedChannelId != null && gameRoomIds.has(selectedChannelId);
-  const messagesForChannel = isGameChannel
-    ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
-    : messages;
+  const gameChannels = useMemo(
+    () => [
+      { id: "rules", name: "Rules", type: "text" as const },
+      { id: "progress", name: "Progress", type: "text" as const },
+      ...sections.map((s) => ({ id: s.id, name: s.name, type: "text" as const })),
+      ...visibleGameRoomEntries,
+    ],
+    [sections, visibleGameRoomEntries]
+  );
+
+  const gameRoomIds = useMemo(
+    () => new Set(gameRoomEntries.map((c) => c.id)),
+    [gameRoomEntries]
+  );
+
+  const isGameChannel = useMemo(
+    () => selectedChannelId != null && gameRoomIds.has(selectedChannelId),
+    [selectedChannelId, gameRoomIds]
+  );
+
+  const messagesForChannel = useMemo(
+    () =>
+      isGameChannel
+        ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
+        : messages,
+    [isGameChannel, messages, selectedChannelId, defaultGameChannelId]
+  );
 
   // Quick reply: only update when it's "user's turn" (round just ended, last message from Host/AI).
   // Do not refetch when the user just sent a message — keep current suggestions until Host/AI reply again.
@@ -1121,7 +1148,7 @@ ${rulesText || "No specific rules defined."}`.trim();
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const directUrl = `${origin}/game/${gameId}`;
     const showCopied = () => {
@@ -1156,7 +1183,7 @@ ${rulesText || "No specific rules defined."}`.trim();
       toast.error(ok ? "Link copied to clipboard" : "Share failed. Link: " + directUrl);
       showCopied();
     }
-  };
+  }, [gameId, session?.access_token]);
 
   if (!currentGame) {
     return (
@@ -1264,6 +1291,7 @@ ${rulesText || "No specific rules defined."}`.trim();
         />
       </div>
 
+      <ErrorBoundary>
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {isRoomLoading && (
           <div className="flex-shrink-0 px-4 py-1.5 bg-violet-950/40 border-b border-violet-800/30 text-center text-xs text-violet-300">
@@ -1276,7 +1304,7 @@ ${rulesText || "No specific rules defined."}`.trim();
               {(currentGame?.config?.rules ?? "").trim() ? (
                 <div
                   className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
-                  dangerouslySetInnerHTML={{ __html: marked(currentGame!.config!.rules!) as string }}
+                  dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
@@ -1307,7 +1335,7 @@ ${rulesText || "No specific rules defined."}`.trim();
               {(gameProgress ?? "").trim() ? (
                 <div
                   className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
-                  dangerouslySetInnerHTML={{ __html: marked(gameProgress) as string }}
+                  dangerouslySetInnerHTML={{ __html: safeMarked(gameProgress) }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
@@ -1326,7 +1354,7 @@ ${rulesText || "No specific rules defined."}`.trim();
                 {activeSection.content.trim() ? (
                   <div
                     className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
-                    dangerouslySetInnerHTML={{ __html: marked(activeSection.content) as string }}
+                    dangerouslySetInnerHTML={{ __html: safeMarked(activeSection.content) }}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
@@ -1364,6 +1392,7 @@ ${rulesText || "No specific rules defined."}`.trim();
           />
         ) : null)}
       </div>
+      </ErrorBoundary>
 
       {/* 玩家面板 + My Board（仅自己可见，仅 AI Host 可编辑）：桌面显示，移动端在右侧 Sheet */}
       {(() => {
