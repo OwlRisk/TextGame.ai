@@ -24,7 +24,7 @@ export default function HomePage() {
       router.replace("/create");
       return;
     }
-    selectGame(null);
+    selectGame("home");
     // Show the landing page only once we know for sure the user is not logged in.
     setShowLanding(!loading && !user);
   }, [loading, user, router, selectGame]);
@@ -53,7 +53,7 @@ export default function HomePage() {
     <AppLayoutWithSidebar
       mobileTitle="Home"
       games={games}
-      selectedGameId={null}
+      selectedGameId="home"
       onSelectGame={(gameId) => selectGame(gameId)}
       onCreateGame={handleCreateGame}
       onOpenProfile={() => router.push("/profile")}
