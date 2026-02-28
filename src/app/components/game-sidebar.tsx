@@ -126,10 +126,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
   const userAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
   return (
-    <div className="w-20 min-w-[5rem] flex-shrink-0 z-10 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950 border-r border-violet-900/20 flex flex-col items-center py-4 gap-3 overflow-hidden backdrop-blur-sm">
+    <div className="w-[72px] min-w-[72px] flex-shrink-0 z-10 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950 border-r border-violet-900/20 flex flex-col items-center py-3 gap-2 overflow-hidden backdrop-blur-sm">
       <TooltipProvider delayDuration={100}>
         {/* Top Section: Home + Create */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-2">
           {/* Home: 未登录去首页 /，已登录去 /create */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -138,14 +138,14 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
+                    className={`h-12 w-12 rounded-2xl transition-all duration-300 relative ${
                       selectedGameId === "home"
                         ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!bg-gradient-to-br hover:!from-violet-600 hover:!to-fuchsia-600 hover:brightness-110"
                         : "bg-zinc-800 hover:bg-gradient-to-br hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30 hover:scale-105"
                     }`}
                     asChild
                   >
-                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl">
                       <Home className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
                       {selectedGameId === "home" && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
@@ -172,14 +172,14 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
+                    className={`h-12 w-12 rounded-2xl transition-all duration-300 relative ${
                       selectedGameId === "my-games"
                         ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50 hover:!bg-blue-600 hover:brightness-110"
                         : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105"
                     }`}
                     asChild
                   >
-                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl">
                       <Gamepad2 className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
                       {selectedGameId === "my-games" && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
@@ -206,14 +206,14 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-14 w-14 rounded-2xl transition-all duration-300 relative ${
+                    className={`h-12 w-12 rounded-2xl transition-all duration-300 relative ${
                       selectedGameId === "discover"
                         ? "bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/50 hover:!bg-gradient-to-br hover:!from-amber-500 hover:!to-orange-500 hover:brightness-110"
                         : "bg-zinc-800 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:rounded-xl hover:shadow-lg hover:shadow-amber-500/40 hover:scale-105"
                     }`}
                     asChild
                   >
-                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl">
                       <Compass className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
                       {selectedGameId === "discover" && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
@@ -240,7 +240,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-14 w-14 bg-green-600 hover:bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/40"
+                    className="h-12 w-12 bg-green-600 hover:bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/40"
                     onClick={onCreateGame}
                   >
                     <Plus className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
@@ -259,12 +259,12 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
 
         </div>
 
-        <div className="w-10 h-0.5 bg-zinc-700 rounded-full my-2" />
+        <div className="w-8 h-0.5 bg-zinc-700 rounded-full my-1" />
 
         {/* Game List - Only show when user is logged in; min-h-0 让 flex 子项可收缩，避免把底部用户区挤掉 */}
         {user && (
           <ScrollArea className="flex-1 min-h-0 w-full">
-            <div className="flex flex-col items-center gap-3 px-3">
+            <div className="flex flex-col items-center gap-2 px-3">
               {games.map((game) => (
                 <ContextMenu key={game.id}>
                   <ContextMenuTrigger>
@@ -275,7 +275,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={`h-14 w-14 rounded-2xl transition-all duration-200 relative overflow-hidden ${
+                              className={`h-12 w-12 rounded-2xl transition-all duration-200 relative overflow-hidden ${
                                 selectedGameId === game.id
                                   ? "rounded-xl"
                                   : "hover:rounded-xl"
@@ -295,7 +295,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                                 }}
                               />
                             ) : (
-                              <span className="text-2xl leading-none">{game.icon}</span>
+                              <span className="text-xl leading-none">{game.icon}</span>
                             )}
                             </Button>
                             {selectedGameId === game.id && (
@@ -358,7 +358,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
         {/* User Profile - Bottom，固定不参与收缩，避免被游戏列表挤掉 */}
         <div className="mt-auto flex-shrink-0">
           {loading ? (
-            <div className="h-14 w-14 rounded-full bg-zinc-800 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center">
               <Loader2 className="h-6 w-6 text-zinc-400 animate-spin" />
             </div>
           ) : user ? (
@@ -368,7 +368,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-14 w-14 rounded-full overflow-hidden p-0 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-200 ring-2 ring-white/10 hover:ring-violet-500/40"
+                    className="h-12 w-12 rounded-full overflow-hidden p-0 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-200 ring-2 ring-white/10 hover:ring-violet-500/40"
                   >
                     <Avatar className="h-full w-full">
                       <AvatarImage src={userAvatar} alt={username} />
@@ -483,7 +483,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-14 w-14 rounded-full bg-zinc-800 hover:bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30"
+                    className="h-12 w-12 rounded-full bg-zinc-800 hover:bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30"
                     onClick={() => router.push('/signin')}
                   >
                     <LogIn className="h-7 w-7 text-white" />
