@@ -138,7 +138,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 size="icon"
                 className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
                   selectedGameId === "home"
-                    ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50"
+                    ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!from-violet-600 hover:!to-fuchsia-600 hover:!bg-gradient-to-br"
                     : "bg-gradient-to-br from-violet-600/80 to-fuchsia-600/80 hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30"
                 }`}
                 asChild
@@ -151,8 +151,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Link>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
-              Home
+            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+              🏠 Home
             </TooltipContent>
           </Tooltip>
 
@@ -164,7 +164,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 size="icon"
                 className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
                   selectedGameId === "my-games"
-                    ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50"
+                    ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50 hover:!bg-blue-600"
                     : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl"
                 }`}
                 asChild
@@ -177,8 +177,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Link>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
-              My Games
+            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+              🎮 My Games
             </TooltipContent>
           </Tooltip>
 
@@ -190,7 +190,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 size="icon"
                 className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
                   selectedGameId === "discover"
-                    ? "bg-orange-600 rounded-xl shadow-lg shadow-orange-500/50"
+                    ? "bg-orange-600 rounded-xl shadow-lg shadow-orange-500/50 hover:!bg-orange-600"
                     : "bg-zinc-800 hover:bg-orange-600 hover:rounded-xl"
                 }`}
                 asChild
@@ -203,8 +203,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Link>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
-              Discover
+            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+              🧭 Discover
             </TooltipContent>
           </Tooltip>
 
@@ -215,14 +215,14 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="!h-12 !w-12 bg-green-600 hover:bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-200"
+                  className="!h-12 !w-12 bg-green-600 hover:!bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-200"
                   onClick={onCreateGame}
                 >
                   <Plus className="h-7 w-7 text-white" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
-                Create Game
+              <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+                ✨ Create Game
               </TooltipContent>
             </Tooltip>
           )}
@@ -271,7 +271,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                       <TooltipContent 
                         side="right"
                         sideOffset={8}
-                        className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
+                        className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
                       >
                         {game.name}
                       </TooltipContent>
