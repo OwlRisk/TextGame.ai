@@ -564,194 +564,238 @@ function MiniChat({ messages }: {
   );
 }
 
+const HOW_PANELS = [
+  {
+    step: "01",
+    emoji: "💬",
+    tabLabel: "Design with GM",
+    title: "Design with the Game Master",
+    desc: "Describe your game idea in plain English. The GM asks a few questions, writes the rules, picks player roles, and sets up the room — all in a conversation. No forms, no configuration.",
+    accent: "#8b5cf6",
+    chat: [
+      { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I want a werewolf game with 6 players, with a Seer and a Doctor." },
+      { name: "Game Master", color: "#8b5cf6", badge: "GM", badgeColor: "#8b5cf6", text: "Got it! I've written the rules and set up two rooms: General (everyone) and Werewolves only (private). Ready to start?" },
+      { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "Looks great — let's go!" },
+    ],
+  },
+  {
+    step: "02",
+    emoji: "👑",
+    tabLabel: "The Host",
+    title: "The Host runs every phase",
+    desc: "Once the game starts, an AI Host takes over as the permanent moderator. It announces phases, assigns secret roles, narrates events, and decides who speaks next — you never need to manage logistics.",
+    accent: "#f59e0b",
+    chat: [
+      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Night falls. Villagers close their eyes. 🌙" },
+      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Werewolves, open your eyes — your private room is now active. Choose your target." },
+      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Dawn breaks. Tomas Vance was found eliminated. Day phase begins." },
+    ],
+  },
+  {
+    step: "03",
+    emoji: "🤖",
+    tabLabel: "AI players",
+    title: "AI players think, argue, and bluff",
+    desc: "Every seat is filled by an AI character with a unique name, personality, and secret role. They discuss, accuse, defend themselves, and vote — autonomously. The game flows even when you're silent.",
+    accent: "#10b981",
+    chat: [
+      { name: "Maribel", color: "#3b82f6", badge: "AI", badgeColor: "#10b981", text: "I've been watching Gideon. He was way too quiet last night." },
+      { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "That's rich coming from you. Where were you during the vote?" },
+      { name: "Juno", color: "#8b5cf6", badge: "AI", badgeColor: "#10b981", text: "Both of you are deflecting. I'm voting Maribel." },
+    ],
+  },
+  {
+    step: "04",
+    emoji: "🎮",
+    tabLabel: "You play",
+    title: "You play your role — the AI reacts",
+    desc: "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
+    accent: "#ec4899",
+    chat: [
+      { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain." },
+      { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking." },
+      { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
+    ],
+  },
+];
+
+const AUTO_INTERVAL = 5000;
+
 function HowGameWorksSection() {
   const [current, setCurrent] = useState(0);
-  const [dir, setDir] = useState<1 | -1>(1); // animation direction
+  const [dir, setDir] = useState<1 | -1>(1);
   const [animKey, setAnimKey] = useState(0);
+  const [timerKey, setTimerKey] = useState(0); // resets the auto-play interval
 
-  const panels = [
-    {
-      step: "01",
-      emoji: "💬",
-      title: "Design with the Game Master",
-      desc: "Describe your game idea in plain English. The GM asks a few questions, writes the rules, picks player roles, and sets up the room — all in a conversation. No forms, no configuration.",
-      accent: "#8b5cf6",
-      chat: [
-        { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I want a werewolf game with 6 players, with a Seer and a Doctor." },
-        { name: "Game Master", color: "#8b5cf6", badge: "GM", badgeColor: "#8b5cf6", text: "Got it! I've written the rules and set up two rooms: General (everyone) and Werewolves only (private). Ready to start?" },
-        { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "Looks great — let's go!" },
-      ],
-    },
-    {
-      step: "02",
-      emoji: "👑",
-      title: "The Host runs every phase",
-      desc: "Once the game starts, an AI Host takes over as the permanent moderator. It announces phases, assigns secret roles, narrates events, and decides who speaks next — you never need to manage logistics.",
-      accent: "#f59e0b",
-      chat: [
-        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Night falls. Villagers close their eyes. 🌙" },
-        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Werewolves, open your eyes — your private room is now active. Choose your target." },
-        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Dawn breaks. Tomas Vance was found eliminated. Day phase begins." },
-      ],
-    },
-    {
-      step: "03",
-      emoji: "🤖",
-      title: "AI players think, argue, and bluff",
-      desc: "Every seat is filled by an AI character with a unique name, personality, and secret role. They discuss, accuse, defend themselves, and vote — autonomously. The game flows even when you're silent.",
-      accent: "#10b981",
-      chat: [
-        { name: "Maribel", color: "#3b82f6", badge: "AI", badgeColor: "#10b981", text: "I've been watching Gideon. He was way too quiet last night." },
-        { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "That's rich coming from you. Where were you during the vote?" },
-        { name: "Juno", color: "#8b5cf6", badge: "AI", badgeColor: "#10b981", text: "Both of you are deflecting. I'm voting Maribel." },
-      ],
-    },
-    {
-      step: "04",
-      emoji: "🎮",
-      title: "You play your role — the AI reacts",
-      desc: "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
-      accent: "#ec4899",
-      chat: [
-        { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain." },
-        { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking." },
-        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
-      ],
-    },
-  ];
+  // Auto-play: restart interval whenever timerKey changes
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDir(1);
+      setAnimKey((k) => k + 1);
+      setCurrent((c) => (c + 1) % HOW_PANELS.length);
+    }, AUTO_INTERVAL);
+    return () => clearInterval(id);
+  }, [timerKey]);
 
   const go = (next: number, d: 1 | -1) => {
     setDir(d);
     setAnimKey((k) => k + 1);
     setCurrent(next);
+    setTimerKey((k) => k + 1); // reset timer so it doesn't jump right after a click
   };
 
-  const p = panels[current];
+  const p = HOW_PANELS[current];
 
   return (
     <div className="mb-32">
-      <div className="text-center mb-12">
+      <div className="text-center mb-10">
         <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
           <span className="text-sm font-bold text-violet-400">HOW IT WORKS</span>
         </div>
-        <h3 className="text-4xl font-black text-white mb-4">What actually happens inside a game</h3>
-        <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-          Four things run simultaneously — shown with real in-game messages.
-        </p>
+        <h3 className="text-4xl md:text-5xl font-black text-white">What actually happens inside a game</h3>
       </div>
 
-      {/* Step indicator tabs */}
-      <div className="flex justify-center gap-2 mb-8">
-        {panels.map((panel, i) => (
+      {/* Tab row */}
+      <div className="flex justify-center gap-2 mb-6 flex-wrap">
+        {HOW_PANELS.map((panel, i) => (
           <button
             key={i}
             onClick={() => go(i, i > current ? 1 : -1)}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200"
+            className="relative overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all duration-200"
             style={
               i === current
                 ? { background: `${panel.accent}18`, borderColor: `${panel.accent}60`, color: panel.accent }
                 : { background: "transparent", borderColor: "#3f3f46", color: "#71717a" }
             }
           >
-            <span className="text-base">{panel.emoji}</span>
-            <span className="text-xs font-bold hidden sm:inline">{panel.title.split(" ").slice(0, 2).join(" ")}</span>
-            <span
-              className="text-[10px] font-black"
-              style={i === current ? { color: p.accent } : { color: "#52525b" }}
-            >
-              {panel.step}
-            </span>
+            {/* progress bar on active tab */}
+            {i === current && (
+              <span
+                key={`${timerKey}-${current}`}
+                className="absolute bottom-0 left-0 h-0.5 rounded-full"
+                style={{ background: panel.accent, animation: `tabProgress ${AUTO_INTERVAL}ms linear forwards` }}
+              />
+            )}
+            <span className="text-lg">{panel.emoji}</span>
+            <span className="text-sm font-bold">{panel.tabLabel}</span>
           </button>
         ))}
       </div>
 
-      {/* Panel */}
-      <div className="max-w-3xl mx-auto">
-        <div
-          key={animKey}
-          className="relative bg-zinc-900/60 border rounded-2xl p-8 transition-all"
-          style={{
-            borderColor: `${p.accent}40`,
-            boxShadow: `0 0 40px ${p.accent}10`,
-            animation: `slideIn${dir > 0 ? "Right" : "Left"} 0.25s ease both`,
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between mb-5">
+      {/* Panel — full-width two-column */}
+      <div
+        key={animKey}
+        className="rounded-2xl overflow-hidden"
+        style={{
+          border: `1px solid ${p.accent}30`,
+          background: `linear-gradient(135deg, ${p.accent}0a 0%, #18181b 55%)`,
+          boxShadow: `0 0 80px ${p.accent}18`,
+          animation: `slideIn${dir > 0 ? "Right" : "Left"} 0.3s ease both`,
+        }}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          {/* Left: text */}
+          <div className="p-10 lg:p-14 flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-5xl">{p.emoji}</span>
                 <span
-                  className="text-[11px] font-black px-2.5 py-0.5 rounded-full"
+                  className="text-xs font-black px-3 py-1 rounded-full"
                   style={{ background: `${p.accent}20`, color: p.accent }}
                 >
                   STEP {p.step} / 04
                 </span>
-                <span className="text-2xl">{p.emoji}</span>
               </div>
-              <h4 className="text-2xl font-black text-white">{p.title}</h4>
+              <h4 className="text-3xl lg:text-4xl font-black text-white mb-5 leading-tight">{p.title}</h4>
+              <p className="text-lg text-zinc-400 leading-relaxed">{p.desc}</p>
+            </div>
+
+            {/* Dot nav + arrows */}
+            <div className="flex items-center justify-between mt-10">
+              <div className="flex gap-2">
+                {HOW_PANELS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => go(i, i > current ? 1 : -1)}
+                    className="rounded-full transition-all duration-300"
+                    style={
+                      i === current
+                        ? { width: "24px", height: "8px", background: p.accent }
+                        : { width: "8px", height: "8px", background: "#3f3f46" }
+                    }
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => go(current - 1, -1)}
+                  disabled={current === 0}
+                  className="w-10 h-10 rounded-full border flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-all disabled:opacity-25 disabled:cursor-not-allowed text-base"
+                  style={{ borderColor: "#3f3f46" }}
+                >
+                  ←
+                </button>
+                <button
+                  onClick={() => go(current + 1, 1)}
+                  disabled={current === HOW_PANELS.length - 1}
+                  className="w-10 h-10 rounded-full border flex items-center justify-center transition-all disabled:opacity-25 disabled:cursor-not-allowed text-base"
+                  style={
+                    current < HOW_PANELS.length - 1
+                      ? { borderColor: `${p.accent}70`, color: p.accent, background: `${p.accent}15` }
+                      : { borderColor: "#3f3f46", color: "#52525b" }
+                  }
+                >
+                  →
+                </button>
+              </div>
             </div>
           </div>
-          <p className="text-base text-zinc-400 leading-relaxed mb-6">{p.desc}</p>
 
-          {/* Chat mockup */}
+          {/* Right: large chat mockup */}
           <div
-            className="rounded-xl p-4"
-            style={{ background: `${p.accent}08`, border: `1px solid ${p.accent}20` }}
+            className="p-10 lg:p-14 flex flex-col justify-center lg:border-l"
+            style={{ borderColor: `${p.accent}20` }}
           >
-            <div className="flex items-center gap-1.5 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.accent }} />
-              <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: p.accent }}>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: p.accent }} />
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: p.accent }}>
                 Live example
               </span>
             </div>
-            <MiniChat messages={p.chat} />
-          </div>
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-6">
-            <button
-              onClick={() => go(current - 1, -1)}
-              disabled={current === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm font-medium"
-            >
-              ← Previous
-            </button>
-
-            {/* Dot indicators */}
-            <div className="flex gap-1.5">
-              {panels.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => go(i, i > current ? 1 : -1)}
-                  className="rounded-full transition-all duration-200"
-                  style={
-                    i === current
-                      ? { width: "20px", height: "8px", background: p.accent }
-                      : { width: "8px", height: "8px", background: "#3f3f46" }
-                  }
-                />
+            <div className="space-y-6">
+              {p.chat.map((m, i) => (
+                <div key={i} className="flex gap-4 items-start">
+                  <div
+                    className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-black text-white"
+                    style={{ background: m.color }}
+                  >
+                    {m.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-sm font-bold text-zinc-200">{m.name}</span>
+                      {m.badge && (
+                        <span
+                          className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                          style={{ background: `${m.badgeColor ?? m.color}25`, color: m.badgeColor ?? m.color }}
+                        >
+                          {m.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-base text-zinc-300 leading-relaxed">{m.text}</p>
+                  </div>
+                </div>
               ))}
             </div>
-
-            <button
-              onClick={() => go(current + 1, 1)}
-              disabled={current === panels.length - 1}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              style={
-                current < panels.length - 1
-                  ? { borderColor: `${p.accent}60`, color: p.accent, background: `${p.accent}10` }
-                  : { borderColor: "#3f3f46", color: "#52525b" }
-              }
-            >
-              Next →
-            </button>
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideInLeft  { from { opacity: 0; transform: translateX(-32px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInLeft  { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes tabProgress  { from { width: 0%; } to { width: 100%; } }
       `}</style>
     </div>
   );
