@@ -138,6 +138,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return () => { seedCancelledRef.current = true; };
   }, [gameId]);
 
+  // Always reflects the latest players so async closures (handleSendMessage, runSpeakerQueue)
+  // don't operate on stale role/stat data after setPlayers() takes effect between awaits.
+  const playersRef = useRef(players);
+  useEffect(() => { playersRef.current = players; }, [players]);
+
   /** 移动端左侧抽屉：'app' 应用导航 | 'channels' 频道列表 */
   const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
   const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
@@ -947,23 +952,26 @@ ${rulesText || "No specific rules defined."}`.trim();
             // Have one random AI chime in for "open discussion"
             if (aiOnly.length > 0) {
               const pick = aiOnly[Math.floor(Math.random() * aiOnly.length)];
-              const txt = await runPlayerSpeak(pick, recentForNext);
+              // Refresh player data so any role/stat changes from setPlayers are visible.
+              const freshPick = playersRef.current.find((p) => p.id === pick.id) ?? pick;
+              const txt = await runPlayerSpeak(freshPick, recentForNext);
               if (txt) {
-                addMessage({ senderId: pick.id, senderName: pick.name, senderAvatar: pick.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+                addMessage({ senderId: freshPick.id, senderName: freshPick.name, senderAvatar: freshPick.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
                 await hostPace();
-                recentForNext = [...recentForNext, { senderName: pick.name, content: txt }];
+                recentForNext = [...recentForNext, { senderName: freshPick.name, content: txt }];
               }
             }
             return true; // treat "everyone" as human-stopping point
           }
-          // type === "ai" — skip if eliminated
-          const itemStatus = (item.player.stats?.Status as string | undefined)?.toLowerCase();
+          // type === "ai" — refresh player data to pick up any role/stat updates, then skip if eliminated
+          const freshPlayer = playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
+          const itemStatus = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
           if (itemStatus === "eliminated" || itemStatus === "dead") continue;
-          const txt = await runPlayerSpeak(item.player, recentForNext);
+          const txt = await runPlayerSpeak(freshPlayer, recentForNext);
           if (txt) {
-            addMessage({ senderId: item.player.id, senderName: item.player.name, senderAvatar: item.player.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
+            addMessage({ senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
             await hostPace();
-            recentForNext = [...recentForNext, { senderName: item.player.name, content: txt }];
+            recentForNext = [...recentForNext, { senderName: freshPlayer.name, content: txt }];
             // Update current speaker to whoever is next in the queue (or null when done)
             const nextIdx = queue.indexOf(item) + 1;
             const nextItem = queue[nextIdx];

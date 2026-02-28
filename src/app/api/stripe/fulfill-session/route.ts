@@ -162,13 +162,8 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    const details = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      {
-        error: 'Failed to fulfill session',
-        details,
-        hint: 'If you just deployed: set DATABASE_URL in Vercel, run npm run db:setup, then redeploy.',
-      },
+      { error: 'Failed to fulfill session' },
       { status: 500 }
     );
   }

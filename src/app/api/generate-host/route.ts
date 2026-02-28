@@ -141,13 +141,8 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
     return NextResponse.json(hostConfig);
   } catch (error) {
     logger.error("[Generate Host] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to generate host";
-    const errorDetails = error instanceof Error && 'response' in error 
-      ? JSON.stringify((error as { response?: { data?: unknown } }).response?.data) 
-      : String(error);
-    logger.error("[Generate Host] Full error details:", errorDetails);
     return NextResponse.json(
-      { error: errorMessage, details: errorDetails },
+      { error: "Failed to generate host" },
       { status: 500 }
     );
   }

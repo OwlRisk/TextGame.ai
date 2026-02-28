@@ -234,6 +234,13 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (arr.length) trimmedPrivateMessages[pid] = arr;
     }
 
+    // Only persist avatar URLs for participants currently in this game (key format: "name|type").
+    // This prevents unbounded growth as players are added/removed across sessions.
+    const activePlayerNames = new Set(players.map((p) => p.name));
+    const trimmedAvatarImageUrls = Object.fromEntries(
+      Object.entries(avatarImageUrls).filter(([key]) => activePlayerNames.has(key.split("|")[0]))
+    );
+
     const state = {
       messages: trimmedMessages,
       players,
@@ -246,7 +253,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       gameEvents,
       privateMessages: trimmedPrivateMessages,
       humanGameIdentity: humanGameIdentity || undefined,
-      avatarImageUrls: Object.keys(avatarImageUrls).length ? avatarImageUrls : undefined,
+      avatarImageUrls: Object.keys(trimmedAvatarImageUrls).length ? trimmedAvatarImageUrls : undefined,
       savedAt: new Date().toISOString(),
     };
 
