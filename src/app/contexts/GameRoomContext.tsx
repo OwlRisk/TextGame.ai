@@ -29,8 +29,10 @@ interface GameRoomContextType {
   privateMessages: Record<string, PrivateMessage[]>;
   gameProgress: string;
   myBoardContent: Record<string, string>; // playerId -> board content
-  sections: Array<{ id: string; name: string }>;
+  sections: Array<{ id: string; name: string; content: string }>;
   sectionsLoading: boolean;
+  /** Chronological log of key game events recorded by RECORD_EVENT / ELIMINATE directives. */
+  gameEvents: string[];
   gameEnded: boolean;
   gameResult: { winner: string; message: string } | null;
   aiSuggestedPrompts: string[];
@@ -61,8 +63,9 @@ interface GameRoomContextType {
   setTypingUsers: React.Dispatch<React.SetStateAction<{ name: string; avatar: string }[]>>;
   setGameProgress: React.Dispatch<React.SetStateAction<string>>;
   setMyBoardContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  setSections: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string }>>>;
+  setSections: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string; content: string }>>>;
   setSectionsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setGameEvents: React.Dispatch<React.SetStateAction<string[]>>;
   setGameEnded: React.Dispatch<React.SetStateAction<boolean>>;
   setGameResult: React.Dispatch<React.SetStateAction<{ winner: string; message: string } | null>>;
   setAiSuggestedPrompts: React.Dispatch<React.SetStateAction<string[]>>;
@@ -96,8 +99,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [privateMessages, setPrivateMessages] = useState<Record<string, PrivateMessage[]>>({});
   const [gameProgress, setGameProgress] = useState<string>("");
   const [myBoardContent, setMyBoardContent] = useState<Record<string, string>>({});
-  const [sections, setSections] = useState<Array<{ id: string; name: string }>>([]);
+  const [sections, setSections] = useState<Array<{ id: string; name: string; content: string }>>([]);
   const [sectionsLoading, setSectionsLoading] = useState(false);
+  const [gameEvents, setGameEvents] = useState<string[]>([]);
   const [gameEnded, setGameEnded] = useState(false);
   const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
   const [aiSuggestedPrompts, setAiSuggestedPrompts] = useState<string[]>([]);
@@ -137,7 +141,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId as string | null);
       if (state.gameProgress) setGameProgress((state.gameProgress as string) ?? "");
       if (state.myBoardContent) setMyBoardContent((state.myBoardContent as Record<string, string>) ?? {});
-      if (state.sections) setSections(state.sections as Array<{ id: string; name: string }>);
+      if (state.sections) setSections(state.sections as Array<{ id: string; name: string; content: string }>);
+      if (state.gameEvents && Array.isArray(state.gameEvents)) setGameEvents(state.gameEvents as string[]);
       if (state.privateMessages && typeof state.privateMessages === "object") {
         const pm: Record<string, PrivateMessage[]> = {};
         for (const [pid, list] of Object.entries(state.privateMessages) as [
@@ -199,6 +204,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     gameProgress,
     myBoardContent,
     sections,
+    gameEvents,
     privateMessages,
     humanGameIdentity,
     avatarImageUrls,
@@ -237,6 +243,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       gameProgress,
       myBoardContent,
       sections,
+      gameEvents,
       privateMessages: trimmedPrivateMessages,
       humanGameIdentity: humanGameIdentity || undefined,
       avatarImageUrls: Object.keys(avatarImageUrls).length ? avatarImageUrls : undefined,
@@ -412,6 +419,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setPrivateMessages({});
     setGameProgress("");
     setMyBoardContent({});
+    setGameEvents([]);
     setGameEnded(false);
     setGameResult(null);
     setAiSuggestedPrompts([]);
@@ -434,6 +442,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         myBoardContent,
         sections,
         sectionsLoading,
+        gameEvents,
         gameEnded,
         gameResult,
         aiSuggestedPrompts,
@@ -458,6 +467,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         setMyBoardContent,
         setSections,
         setSectionsLoading,
+        setGameEvents,
         setGameEnded,
         setGameResult,
         setAiSuggestedPrompts,

@@ -18,9 +18,11 @@ interface PlayerProfileDialogProps {
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   /** When set, human player uses this name for avatar key (match PlayerPanel) */
   humanGameIdentity?: { name: string } | null;
+  /** Whether the current user is the game master — GMs can see all roles */
+  isUserGameMaster?: boolean;
 }
 
-export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatarImageUrls = {}, onAvatarUrlLoaded, humanGameIdentity }: PlayerProfileDialogProps) {
+export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatarImageUrls = {}, onAvatarUrlLoaded, humanGameIdentity, isUserGameMaster }: PlayerProfileDialogProps) {
   if (!player) return null;
 
   const isUser = !player.isAI;
@@ -87,7 +89,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
               })()
             )}
             <div className="flex-1 min-w-0">
-              {player.role && (
+              {player.role && (isUser || isUserGameMaster || player.roleRevealed) && (
                 <p className="text-sm font-medium text-zinc-300">{player.role}</p>
               )}
             </div>

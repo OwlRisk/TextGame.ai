@@ -52,21 +52,27 @@ describe('parseHostActions – actions', () => {
     const { actions } = parseHostActions(raw);
     expect(actions).toHaveLength(1);
     expect(actions[0].type).toBe('my_board');
-    expect(actions[0].playerRef).toBe('You');
-    expect(actions[0].content).toBe('You are the Werewolf.');
+    const a = actions[0];
+    if (a.type !== 'my_board') throw new Error('Expected my_board');
+    expect(a.playerRef).toBe('You');
+    expect(a.content).toBe('You are the Werewolf.');
   });
 
   it('extracts playerRef with player name', () => {
     const raw = '[BOARD:Alice]\nAlice is the Seer.\n[/BOARD]';
     const { actions } = parseHostActions(raw);
-    expect(actions[0].playerRef).toBe('Alice');
-    expect(actions[0].content).toBe('Alice is the Seer.');
+    const a = actions[0];
+    if (a.type !== 'my_board') throw new Error('Expected my_board');
+    expect(a.playerRef).toBe('Alice');
+    expect(a.content).toBe('Alice is the Seer.');
   });
 
   it('handles spaces around player name in tag', () => {
     const raw = '[BOARD:  Bob  ]\nContent\n[/BOARD]';
     const { actions } = parseHostActions(raw);
-    expect(actions[0].playerRef).toBe('Bob');
+    const a = actions[0];
+    if (a.type !== 'my_board') throw new Error('Expected my_board');
+    expect(a.playerRef).toBe('Bob');
   });
 
   it('extracts multiple actions in order', () => {
@@ -74,16 +80,20 @@ describe('parseHostActions – actions', () => {
       '[BOARD:Alice]\nAlice content\n[/BOARD]\n[BOARD:Bob]\nBob content\n[/BOARD]';
     const { actions } = parseHostActions(raw);
     expect(actions).toHaveLength(2);
-    expect(actions[0].playerRef).toBe('Alice');
-    expect(actions[1].playerRef).toBe('Bob');
+    const a0 = actions[0]; if (a0.type !== 'my_board') throw new Error('Expected my_board');
+    const a1 = actions[1]; if (a1.type !== 'my_board') throw new Error('Expected my_board');
+    expect(a0.playerRef).toBe('Alice');
+    expect(a1.playerRef).toBe('Bob');
   });
 
   it('preserves multi-line content inside block', () => {
     const raw = '[BOARD:You]\nLine 1\nLine 2\nLine 3\n[/BOARD]';
     const { actions } = parseHostActions(raw);
-    expect(actions[0].content).toContain('Line 1');
-    expect(actions[0].content).toContain('Line 2');
-    expect(actions[0].content).toContain('Line 3');
+    const a = actions[0];
+    if (a.type !== 'my_board') throw new Error('Expected my_board');
+    expect(a.content).toContain('Line 1');
+    expect(a.content).toContain('Line 2');
+    expect(a.content).toContain('Line 3');
   });
 
   it('returns empty actions for plain text', () => {
@@ -95,7 +105,9 @@ describe('parseHostActions – actions', () => {
     const raw = '[board:You]\nSecret role\n[/board]';
     const { actions } = parseHostActions(raw);
     expect(actions).toHaveLength(1);
-    expect(actions[0].content).toBe('Secret role');
+    const a = actions[0];
+    if (a.type !== 'my_board') throw new Error('Expected my_board');
+    expect(a.content).toBe('Secret role');
   });
 });
 

@@ -78,7 +78,7 @@ Create a host that perfectly fits this game's theme and atmosphere.`;
     logger.log(`[Generate Host] Generating host for game: ${gameName || "Unknown"}`);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.2",
+      model: process.env.OPENAI_CHAT_MODEL || "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

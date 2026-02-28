@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         { role: 'system', content: system },
         { role: 'user', content: userContent },
       ],
-      max_tokens: 160,
+      max_completion_tokens: 160,
       temperature: 0.85,
     });
 

@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
 import { SlashCommandsDialog } from "@/app/components/slash-commands-dialog";
 import { getPreferredModel } from "@/lib/model-prefs";
+import { marked } from "marked";
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
 const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
@@ -102,11 +103,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     isRoomLoading,
     myBoardContent,
     setMyBoardContent,
+    sections,
+    setSections,
+    gameEvents,
+    setGameEvents,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const [quickRepliesLoading, setQuickRepliesLoading] = useState(false);
+  // Tracks the last message key for which suggest-quick-replies failed.
+  // Prevents hammering the API with retries for the same message when other deps change.
+  const quickRepliesFailKeyRef = useRef<string | null>(null);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
@@ -219,9 +227,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Fetch human in-game identity when missing (persisted with room state).
   // Wait for room to load first — if the room has a saved identity we must not overwrite it.
+  // Use a ref to prevent retrying on API failure (avoids infinite-retry loop).
+  const humanIdentityFetchedRef = useRef<string | null>(null);
   useEffect(() => {
     if (isRoomLoading) return; // wait for saved identity to arrive from DB/cache
-    if (!currentGame?.config || !session?.access_token || humanGameIdentity !== null) return;
+    if (!currentGame?.config || !session?.access_token) return;
+    if (humanGameIdentity !== null && humanGameIdentity.name !== "Player") return;
+    // Only attempt once per game to avoid hammering the API on repeated failures
+    if (humanIdentityFetchedRef.current === currentGame.id) return;
+    humanIdentityFetchedRef.current = currentGame.id;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     headers["Authorization"] = `Bearer ${session.access_token}`;
     fetch("/api/generate-human-game-identity", {
@@ -358,6 +372,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
+    // Prevent concurrent rounds: second message while AI is still replying would cause parallel Host calls
+    if (isRoundInProgress) return;
 
     // Move this game to the top of the sidebar (only triggered when player speaks)
     if (gameId) touchGame(gameId);
@@ -431,9 +447,27 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         ? boardEntries.join("\n\n")
         : "(No private board content yet)";
 
+      const eventLogSummary = gameEvents.length > 0
+        ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
+        : "(No events recorded yet)";
+
       const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
 
-REPLY LENGTH: Match the moment. A phase transition or vote result: 1–3 sentences. A dramatic reveal or climax: up to 5 sentences. Never write walls of text — one clear action or question per reply. If you have more to say, spread it across future turns.
+OUTPUT FORMAT — MANDATORY: Every reply MUST be split into exactly two sections separated by a line containing only "---":
+
+1. PUBLIC MESSAGE (before ---): What players see in chat and hear via text-to-speech. Keep this to 1–2 sentences maximum — it is read aloud. Never put directives, role info, or private content here.
+2. DIRECTIVES (after ---): All invisible commands — ASSIGN_ROLE, BOARD blocks, SECTION blocks, NEXT_SPEAKER, REVEAL_ROLE, GAME_OVER. Nothing after --- is ever shown or spoken to players.
+
+Example:
+Night falls—make your choices in silence.
+---
+ASSIGN_ROLE: Oren Pike -> Villager
+[BOARD:Oren Pike]
+You are the Villager. Stay alert.
+[/BOARD]
+NEXT_SPEAKER: Garrick Wold
+
+Always output --- even if there are no directives. The public message must always come first.
 
 When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
 
@@ -453,11 +487,20 @@ CRITICAL — Keep the discussion going: list 2–3 AI speakers most of the time 
 
 VOTING PHASE RULE (VERY IMPORTANT): When it is time to vote (e.g., "Time to vote", "Cast your vote"), you MUST list ALL remaining AI players who have not yet voted in a single NEXT_SPEAKER line. Do NOT stop at 2–3 names — include every eligible AI player so voting completes automatically without human intervention between votes. Only add ${humanName} at the end after all AI votes are collected (or if the human hasn't voted yet). Example with 5 AI players: NEXT_SPEAKER: Juno, Edda, Maribel, Tomas, Gideon, ${humanName}
 
+NIGHT PHASE RULE (VERY IMPORTANT): During the night, role-action players (Werewolves, Seer, Doctor, etc.) act privately. Use BOARD blocks to give each one their private instructions and results. Then:
+- List ALL role-action AI players in a single NEXT_SPEAKER so they respond one after another automatically.
+- Do NOT include ${humanName} in NEXT_SPEAKER during the night if their role has no night action (e.g. Villager). Villagers have nothing to do at night — skip them.
+- When the system sends "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]", it means AI players have finished — announce morning and transition to the Day phase. End your reply with NEXT_SPEAKER: ${humanName} (or open discussion) so the human can participate.
+- Never loop endlessly asking players to "make their choices" — if all actions are submitted, advance immediately.
+
 --- CURRENT GAME STATE ---
 Phase: ${gamePhase || "intro"}
 
 Players:
 ${playerRoster}
+
+Game Event Log (chronological record of key events — use this as your memory):
+${eventLogSummary}
 
 Private Board (what you have already sent to each player — do NOT repeat this publicly):
 ${boardSummary}
@@ -467,7 +510,7 @@ ${currentGame?.config?.rules || "No specific rules defined."}
 
 Role assignment: You assign each player's role (including the human). When you assign a role, add one line per assignment (hidden from chat):
 ASSIGN_ROLE: <player name> -> <role>
-Use the exact player name from the list above; for the human use: ASSIGN_ROLE: ${humanName} -> <role>. These lines are hidden from chat and applied silently by the game.
+Use the EXACT player name — only the text before [AI] or [YOU/HUMAN] in the list above. Do NOT append personality, background, occupation, or any other text to the name (e.g. write "Oren Pike", never "Oren Pike, Millwright"). For the human use: ASSIGN_ROLE: ${humanName} -> <role>. These lines are hidden from chat and applied silently by the game.
 
 Role reveal: By default, players' roles are hidden in the Players panel — only each player can see their own role. When the game logic calls for it (e.g. a player is eliminated and their role should be shown, or the game ends), publicly reveal a role with:
 REVEAL_ROLE: <player name>
@@ -478,7 +521,18 @@ GAME_OVER: <winner description>
 Example: GAME_OVER: Villagers win — all werewolves have been eliminated!
 When you output GAME_OVER, also output REVEAL_ROLE: All so all roles are shown. Do NOT output NEXT_SPEAKER after GAME_OVER.
 
-Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the exact player name or "You" for the human. Example:
+Player elimination: When a player is eliminated (voted out, killed at night, etc.), mark them with (in the DIRECTIVES section):
+ELIMINATE: <player name>
+This sets their status to "eliminated" and they will no longer speak. Use the exact name. Also output REVEAL_ROLE: <player name> so their role is shown.
+
+Game Event Log: To record a key event for your own memory (night results, eliminations, vote outcomes, discoveries, etc.), add in the DIRECTIVES section:
+RECORD_EVENT: <one-line summary of what happened>
+Examples: "Night 1 — Werewolves killed Oren Pike. Seer found Garrick Wold is Werewolf."
+         "Day 1 — Garrick Wold eliminated by vote 6-2. Role: Werewolf."
+         "Doctor saved Mira Thorne from werewolf attack."
+Record events after each night resolution and each elimination. These are injected back into your context as your memory, so you never forget what happened.
+
+Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the EXACT player name (text before [AI] in the list, no epithets) or "You" for the human. Example:
 [BOARD:${humanName}]
 You are the Werewolf. Tonight you may eliminate one player.
 [/BOARD]
@@ -494,6 +548,12 @@ ${gameRoomEntries.length > 1 ? `Available Game Rooms (use exact name): ${gameRoo
 Examples for a social deduction game: at game start, give werewolves their private room: [ACCESS:Werewolves only]Gideon, Juno[/ACCESS]
 Examples for an exploration game: when the human enters a location, grant access: [ACCESS:Library]${humanName}[/ACCESS]
 
+Sidebar Sections (optional): To record important game information in a persistent sidebar panel visible to all players (e.g. vote log, night results, player status, clues), use a section block. Markdown is supported. The content is shown in the sidebar under SECTIONS — NOT in the chat.
+[SECTION:Section Title]
+Content here. Markdown supported: **bold**, *italic*, bullet lists, etc.
+[/SECTION]
+Re-using the same title updates that section in place. Use this for recurring updates (e.g. "Night Log", "Vote History") so players can reference the full history. Good times to use: after each night, after each vote, when revealing key information. You may include multiple [SECTION:...]...[/SECTION] blocks per reply.
+
 Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image. Output exactly these tags on their own lines:
 <REPLY_TYPE>image</REPLY_TYPE>
 <IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
@@ -505,25 +565,52 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
         const revealLineRegex = /^\s*REVEAL_ROLE:\s*(.+?)\s*$/im;
         const gameOverLineRegex = /^\s*GAME_OVER:\s*(.+?)\s*$/im;
+        const recordEventRegex = /^\s*RECORD_EVENT:\s*(.+?)\s*$/im;
+        const eliminateRegex = /^\s*ELIMINATE:\s*(.+?)\s*$/im;
         const roleUpdates: { playerId: string; role: string }[] = [];
         const revealIds: string[] = [];
+        const newEvents: string[] = [];
+        const eliminateIds: string[] = [];
         const lines = content.split(/\r?\n/);
         const keptLines: string[] = [];
         for (const line of lines) {
           const assignMatch = line.match(assignLineRegex);
           const revealMatch = line.match(revealLineRegex);
           const gameOverMatch = line.match(gameOverLineRegex);
+          const recordEventMatch = line.match(recordEventRegex);
+          const eliminateMatch = line.match(eliminateRegex);
           if (gameOverMatch) {
             // GAME_OVER: <winner description> — ends the game
             setGamePhase("ended");
+            newEvents.push(`GAME OVER — ${gameOverMatch[1].trim()}`);
+          } else if (recordEventMatch) {
+            newEvents.push(recordEventMatch[1].trim());
+          } else if (eliminateMatch) {
+            const namePart = eliminateMatch[1].trim();
+            const nameBase = namePart.split(",")[0].trim();
+            const target = players.find((p) =>
+              !p.isGameMaster && (p.name === namePart || p.name === nameBase)
+            );
+            if (target) {
+              eliminateIds.push(target.id);
+              newEvents.push(`${target.name} was eliminated (role: ${target.role ?? "unknown"})`);
+            }
           } else if (assignMatch) {
             const namePart = assignMatch[1].trim();
             const rolePart = assignMatch[2].trim();
             if (!rolePart) continue;
             const isYou = namePart.toLowerCase() === "you";
+            // Fuzzy match: AI sometimes appends epithets (e.g. "Oren Pike, Millwright").
+            // Try exact first, then fall back to matching the portion before the first comma.
+            const nameBase = namePart.split(",")[0].trim();
             const player = isYou
               ? players.find((p) => p.id === userId)
-              : players.find((p) => p.name === namePart || (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart));
+              : players.find((p) =>
+                  p.name === namePart ||
+                  p.name === nameBase ||
+                  (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart) ||
+                  (p.id === userId && (humanGameIdentity?.name ?? "").trim() === nameBase)
+                );
             const targetId = isYou ? userId : player?.id;
             if (targetId) roleUpdates.push({ playerId: targetId, role: rolePart });
           } else if (revealMatch) {
@@ -534,26 +621,32 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               players.forEach((p) => { if (!p.isGameMaster) revealIds.push(p.id); });
             } else {
               const isYou = namePart.toLowerCase() === "you" || namePart.toLowerCase() === (humanName ?? "").toLowerCase();
+              const nameBase = namePart.split(",")[0].trim();
               const target = isYou
                 ? players.find((p) => p.id === userId)
-                : players.find((p) => p.name === namePart);
+                : players.find((p) => p.name === namePart || p.name === nameBase);
               if (target) revealIds.push(target.id);
             }
           } else {
             keptLines.push(line);
           }
         }
-        if (roleUpdates.length > 0 || revealIds.length > 0) {
+        if (roleUpdates.length > 0 || revealIds.length > 0 || eliminateIds.length > 0) {
           setPlayers((prev) =>
             prev.map((p) => {
               const roleUp = roleUpdates.find((r) => r.playerId === p.id);
               const reveal = revealIds.includes(p.id);
-              if (roleUp && reveal) return { ...p, role: roleUp.role, roleRevealed: true };
-              if (roleUp) return { ...p, role: roleUp.role };
-              if (reveal) return { ...p, roleRevealed: true };
-              return p;
+              const eliminate = eliminateIds.includes(p.id);
+              const updates: Partial<typeof p> = {};
+              if (roleUp) updates.role = roleUp.role;
+              if (reveal) updates.roleRevealed = true;
+              if (eliminate) updates.stats = { ...(p.stats ?? {}), Status: "eliminated" };
+              return Object.keys(updates).length ? { ...p, ...updates } : p;
             })
           );
+        }
+        if (newEvents.length > 0) {
+          setGameEvents((prev) => [...prev, ...newEvents]);
         }
         return keptLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
       };
@@ -583,7 +676,10 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               speakerQueue.push({ type: "everyone" });
               break;
             } else {
-              const player = players.find((p) => !p.isGameMaster && p.name === name);
+              // Fuzzy: AI sometimes appends epithets (e.g. "Garrick Wold, Wolf-Trapper").
+              // Try exact first, then fall back to the portion before the first comma.
+              const nameBase = name.split(",")[0].trim();
+              const player = players.find((p) => !p.isGameMaster && (p.name === name || p.name === nameBase));
               if (player?.isAI) speakerQueue.push({ type: "ai", player });
             }
           }
@@ -591,7 +687,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         return { hostContent, who, speakerQueue };
       };
 
-      /** Parse [BOARD:Name]...[/BOARD] / [ACCESS:Room]...[/ACCESS] etc., apply actions, return public text. */
+      /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
         const { cleanContent, actions } = parseHostActions(content);
         for (const a of actions) {
@@ -606,7 +702,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             if (!channelEntry) continue;
             const chId = channelEntry.id;
 
-            if (a.playerRefs.includes("*") ) {
+            if (a.playerRefs.includes("*")) {
               // Explicitly public: remove any restriction
               setChannelPermissions((prev) => {
                 const next = { ...prev };
@@ -625,9 +721,50 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                 setSelectedChannelId((cur) => (cur === chId ? defaultGameChannelId : cur));
               }
             }
+          } else if (a.type === "section") {
+            const id = "section-" + a.title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+            setSections((prev) => {
+              const idx = prev.findIndex((s) => s.id === id);
+              if (idx >= 0) {
+                const next = [...prev];
+                next[idx] = { ...next[idx], content: a.content };
+                return next;
+              }
+              return [...prev, { id, name: a.title, content: a.content }];
+            });
           }
         }
         return cleanContent;
+      };
+
+      /**
+       * Extract the public message portion from the accumulated stream.
+       * With the new --- separator format: everything before --- is the public message.
+       * Fallback (no --- yet): strip any partial/complete [BOARD:...] blocks to avoid
+       * leaking private role info while the stream is still in progress.
+       */
+      const getStreamingDisplay = (raw: string): string => {
+        const sepIdx = raw.search(/\n---\s*(\n|$)/);
+        if (sepIdx >= 0) return raw.slice(0, sepIdx).trim();
+        // No separator yet — redact BOARD blocks as a safety fallback
+        let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
+        cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
+        return cleaned.replace(/\n{2,}/g, "\n\n").trim();
+      };
+
+      /**
+       * Split host output at --- into (message, directives).
+       * If no separator is found, treat the entire content as directives (fallback).
+       */
+      const splitHostOutput = (raw: string): { message: string; directives: string } => {
+        const sepIdx = raw.search(/\n---\s*(\n|$)/);
+        if (sepIdx >= 0) {
+          const message = raw.slice(0, sepIdx).trim();
+          const directives = raw.slice(raw.indexOf("\n", sepIdx + 1) + 1).trim();
+          return { message, directives };
+        }
+        // Fallback: old format — entire content goes through directive parsers and clean
+        return { message: "", directives: raw };
       };
 
       /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
@@ -636,6 +773,11 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
           { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
           chId
         );
+        // Give the host enough room for all structural output (BOARD blocks, ASSIGN_ROLE lines,
+        // SECTION blocks, etc.). The AI is already instructed to be concise in its narrative,
+        // so a generous budget doesn't make replies verbose — it just prevents truncation.
+        // Server-side cap is 4096; we leave headroom for complex games and large player counts.
+        const streamTokenBudget = Math.min(4096, 500 + players.length * 80);
         try {
           const res = await fetch("/api/chat/stream", {
             method: "POST",
@@ -643,7 +785,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             body: JSON.stringify({
               systemPrompt: hostSystemPrompt,
               messages: [{ role: "user", content: userContent }],
-              maxCompletionTokens: 220,
+              maxCompletionTokens: streamTokenBudget,
               preferredModel: getPreferredModel(),
             }),
           });
@@ -667,7 +809,9 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                   const data = JSON.parse(payload) as { content?: string };
                   if (typeof data.content === "string") {
                     acc += data.content;
-                    updateStreamingMessage(messageId, acc, false);
+                    // Only show the public message portion (before ---).
+                    // If --- hasn't arrived yet, fall back to redacting BOARD blocks.
+                    updateStreamingMessage(messageId, getStreamingDisplay(acc), false);
                   }
                 } catch {
                   // ignore parse
@@ -675,9 +819,18 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               }
             }
           }
-          const { hostContent, who, speakerQueue } = parseHostResult(acc);
-          const afterActions = applyHostActionsAndClean(hostContent);
-          const displayContent = applyHostRoleAssignments(afterActions);
+          // Split into public message and directive section
+          const { message: splitMessage, directives } = splitHostOutput(acc);
+          // Process all directives (NEXT_SPEAKER, ASSIGN_ROLE, BOARD, SECTION, etc.)
+          const { hostContent: directivesClean, who, speakerQueue } = parseHostResult(directives);
+          applyHostActionsAndClean(directivesClean);
+          applyHostRoleAssignments(directivesClean);
+          // Determine the final public display
+          const displayContent = splitMessage || (() => {
+            // Fallback: derive display from directives clean content (old behavior)
+            const afterActions = applyHostActionsAndClean(directivesClean);
+            return applyHostRoleAssignments(afterActions);
+          })();
           updateStreamingMessage(messageId, displayContent || " ", true);
           return { hostContent: displayContent, who, speakerQueue };
         } catch (e) {
@@ -770,12 +923,13 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       ] as Array<{ senderName: string; content: string }>;
 
       // Execute the ordered speaker queue produced by Host's NEXT_SPEAKER directive.
-      // Each entry is either an AI player (speaks in order), "human" (stop and wait), or "everyone" (one AI at random).
-      const runSpeakerQueue = async (queue: SpeakerQueueItem[]): Promise<void> => {
+      // Returns true if the queue ended at a human turn (game waits for user input),
+      // false if the queue exhausted without a human (auto-advance may be triggered).
+      const runSpeakerQueue = async (queue: SpeakerQueueItem[]): Promise<boolean> => {
         for (const item of queue) {
           if (item.type === "human") {
             setCurrentSpeakerId(userId);
-            return;
+            return true;
           }
           if (item.type === "everyone") {
             setCurrentSpeakerId(null);
@@ -789,7 +943,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
                 recentForNext = [...recentForNext, { senderName: pick.name, content: txt }];
               }
             }
-            return;
+            return true; // treat "everyone" as human-stopping point
           }
           // type === "ai" — skip if eliminated
           const itemStatus = (item.player.stats?.Status as string | undefined)?.toLowerCase();
@@ -807,11 +961,33 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             else if (!nextItem) setCurrentSpeakerId(null);
           }
         }
+        return false; // queue exhausted without a human turn
       };
 
-      await runSpeakerQueue(speakerQueue);
+      // Run the first queue from the host's response.
+      // If it ends WITHOUT the human (e.g. pure AI night-phase sequence), auto-advance
+      // the game by calling the host again — up to MAX_AUTO_ADVANCES times — so the
+      // game never gets stuck waiting for a villager who has no night action.
+      const MAX_AUTO_ADVANCES = 6;
+      let currentQueue = speakerQueue;
+      let humanReached = await runSpeakerQueue(currentQueue);
 
-      setCurrentSpeakerId((id) => (id === userId ? id : null));
+      for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
+        await hostPace();
+        const advanced = await callHostStream(
+          "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]",
+          channelId
+        );
+        if (!advanced.hostContent) break;
+        recentForNext = [
+          ...recentForNext,
+          { senderName: gmName, content: advanced.hostContent },
+        ];
+        currentQueue = advanced.speakerQueue;
+        humanReached = await runSpeakerQueue(currentQueue);
+      }
+
+      if (!humanReached) setCurrentSpeakerId((id) => (id === userId ? id : null));
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast.error("Failed to get response from Game Master");
@@ -847,6 +1023,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
   const gameChannels = [
     { id: "rules", name: "Rules", type: "text" as const },
     { id: "progress", name: "Progress", type: "text" as const },
+    ...sections.map((s) => ({ id: s.id, name: s.name, type: "text" as const })),
     ...visibleGameRoomEntries,
   ];
   const gameRoomIds = new Set(gameRoomEntries.map((c) => c.id));
@@ -877,6 +1054,13 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
       setQuickRepliesLoading(false);
       return;
     }
+    // Skip if we already tried (and failed) for this exact message — avoids hammering
+    // the API when other deps (gamePhase, isRoundInProgress) change for the same message.
+    const attemptKey = `${selectedChannelId ?? ''}:${lastMessage?.id ?? messagesForChannel.length}`;
+    if (quickRepliesFailKeyRef.current === attemptKey) {
+      setQuickRepliesLoading(false);
+      return;
+    }
     const abort = new AbortController();
     setQuickRepliesLoading(true);
     const recent = messagesForChannel.slice(-8).map((m) => ({ senderName: m.senderName, content: m.content }));
@@ -896,10 +1080,11 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
     })
       .then((r) => r.ok ? r.json() : Promise.reject(new Error("Failed")))
       .then((data: { suggestions?: string[] }) => {
+        quickRepliesFailKeyRef.current = null;
         const list = Array.isArray(data.suggestions) ? data.suggestions.filter((s) => s && s.length <= 120).slice(0, 3) : [];
         setQuickReplies(list.length > 0 ? list : []);
       })
-      .catch(() => setQuickReplies([]))
+      .catch(() => { quickRepliesFailKeyRef.current = attemptKey; setQuickReplies([]); })
       .finally(() => setQuickRepliesLoading(false));
     return () => {
       abort.abort();
@@ -1077,11 +1262,12 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
         )}
         {selectedChannelId === "rules" ? (
           <ScrollArea className="flex-1 p-6">
-            <div className="prose prose-invert max-w-none space-y-6">
+            <div className="space-y-6 max-w-2xl">
               {(currentGame?.config?.rules ?? "").trim() ? (
-                <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                  {currentGame?.config?.rules}
-                </pre>
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                  dangerouslySetInnerHTML={{ __html: marked(currentGame!.config!.rules!) as string }}
+                />
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
                   <p className="text-sm font-medium">No rules defined for this game.</p>
@@ -1107,11 +1293,12 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
           </ScrollArea>
         ) : selectedChannelId === "progress" ? (
           <ScrollArea className="flex-1 p-6">
-            <div className="prose prose-invert max-w-none">
+            <div className="max-w-2xl">
               {(gameProgress ?? "").trim() ? (
-                <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                  {gameProgress}
-                </pre>
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                  dangerouslySetInnerHTML={{ __html: marked(gameProgress) as string }}
+                />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
                   <p className="text-sm font-medium">No progress yet.</p>
@@ -1120,9 +1307,30 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
               )}
             </div>
           </ScrollArea>
-        ) : isGameChannel ? (
+        ) : (() => {
+          const activeSection = sections.find((s) => s.id === selectedChannelId);
+          if (activeSection) return (
+            <ScrollArea className="flex-1 p-6">
+              <div className="max-w-2xl">
+                <h2 className="text-base font-semibold text-zinc-200 mb-4">{activeSection.name}</h2>
+                {activeSection.content.trim() ? (
+                  <div
+                    className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                    dangerouslySetInnerHTML={{ __html: marked(activeSection.content) as string }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
+                    <p className="text-sm font-medium">No content yet.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          );
+          return null;
+        })() ?? (isGameChannel ? (
           <ChatArea
             channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room"}
+            channelId={selectedChannelId ?? undefined}
             messages={messagesForChannel}
             players={players}
             onSendMessage={handleSendMessage}
@@ -1144,7 +1352,7 @@ Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, 
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
           />
-        ) : null}
+        ) : null)}
       </div>
 
       {/* 玩家面板 + My Board（仅自己可见，仅 AI Host 可编辑）：桌面显示，移动端在右侧 Sheet */}

@@ -144,12 +144,23 @@ function PrivateMessagesSection({ messages, label = "Private from Host" }: { mes
  * Split `text` into TTS-ready sentences starting at `fromChar`.
  * Returns completed sentences (ending in . ! ?) and the new char offset.
  * Sentences shorter than 8 chars are skipped to avoid tiny audio fragments.
+ * Only the first MAX_TTS_CHARS characters of the message are considered —
+ * this keeps voice output short even if the AI generates a long reply.
  */
+
+/** Max characters TTS will read for the Host narrator (~2-3 sentences, ~20-30s). */
+const MAX_TTS_CHARS_HOST = 300;
+/** Max characters TTS will read for AI players (~1 sentence, ~10s). */
+const MAX_TTS_CHARS_PLAYER = 150;
+
 function extractTTSSentences(
   text: string,
-  fromChar: number
+  fromChar: number,
+  maxChars: number = MAX_TTS_CHARS_HOST
 ): { sentences: string[]; newOffset: number } {
-  const slice = text.slice(fromChar);
+  // Hard cap: never read beyond maxChars into the message
+  const cappedText = text.slice(0, maxChars);
+  const slice = cappedText.slice(fromChar);
   const sentences: string[] = [];
   // Match anything up to and including . ! ? (greedy per sentence)
   const re = /[^.!?]*[.!?]+(?:\s+|$)/g;
@@ -182,6 +193,8 @@ export interface Message {
 
 interface ChatAreaProps {
   channelName: string;
+  /** Stable channel identifier used for TTS reset — prevents spurious resets when display name changes casing. */
+  channelId?: string;
   messages: Message[];
   onSendMessage: (content: string) => void;
   isGameActive: boolean;
@@ -230,6 +243,7 @@ interface ChatAreaProps {
 
 export function ChatArea({ 
   channelName, 
+  channelId,
   messages, 
   onSendMessage,
   isGameActive,
@@ -356,6 +370,9 @@ export function ChatArea({
   const initialMessageIdsRef = useRef<Set<string> | null>(null);
   // True once we've queued any TTS this session; used to tell "new game (we already played m1)" from "existing room (first paint with 2+ messages)".
   const hasQueuedTTSInSessionRef = useRef(false);
+  // Set by the channel-reset effect so the TTS effect knows to snapshot ALL existing messages
+  // as historical (including single-message channels) — prevents replaying on channel switch.
+  const justSwitchedChannelRef = useRef(false);
   // Text revealed so far per AI message — grows sentence-by-sentence as TTS plays.
   const displayedContentRef = useRef<Map<string, string>>(new Map());
   // Bumped each time a sentence is revealed, to trigger a re-render.
@@ -399,6 +416,26 @@ export function ChatArea({
     setRevealTick((t) => t + 1);
   }, []);
 
+  // Stop TTS and reset state when switching game OR channel — historical messages of the new channel
+  // must not be played, only newly arriving ones should trigger TTS.
+  // Use channelId (stable identifier) rather than channelName (display name that can change case).
+  // IMPORTANT: This effect must be declared BEFORE the main TTS processing effect so that React
+  // runs it first on the same render. This ensures the refs are cleared before TTS snapshots them.
+  const ttsChannelKey = channelId ?? channelName;
+  useEffect(() => {
+    stopInworldTTS();
+    initialMessageIdsRef.current = null;
+    hasQueuedTTSInSessionRef.current = false;
+    justSwitchedChannelRef.current = true;
+    ttsProgressRef.current.clear();
+    ttsQueuedRef.current.clear();
+    ttsCompletedRef.current.clear();
+    displayedContentRef.current.clear();
+    ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
+    ttsFallbackTimeoutsRef.current.clear();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, ttsChannelKey]);
+
   // Strict one-message-at-a-time TTS queue.
   //
   // Key invariants:
@@ -417,6 +454,22 @@ export function ChatArea({
   //   4. Effect re-runs → M1 skipped (completed). M2 not queued → show text, queue audio.
   useEffect(() => {
     if (!voiceEnabled || !inworldTTSSupported) return;
+
+    // Channel/game just switched: snapshot ALL existing messages as historical so they are
+    // never replayed — even if there is only 1 message (e.g. host greeting in General).
+    if (justSwitchedChannelRef.current) {
+      justSwitchedChannelRef.current = false;
+      if (messages.length === 0) return;
+      initialMessageIdsRef.current = new Set(messages.map((m) => m.id));
+      for (const m of messages) {
+        if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
+        ttsQueuedRef.current.add(m.id);
+        ttsCompletedRef.current.add(m.id);
+        displayedContentRef.current.set(m.id, (m.content || '').trim());
+      }
+      setRevealTick((t) => t + 1);
+      return;
+    }
 
     // First time we see messages: snapshot "initial/cached" IDs — never play TTS for these.
     // Don't snapshot on empty (slow load) or single message (could be first message of new game).
@@ -466,9 +519,11 @@ export function ChatArea({
       const alreadyShown = (displayedContentRef.current.get(m.id) ?? '').length > 0;
 
       const voiceId = voiceIdForMessage(m);
+      const isHostMessage = players.find((p) => p.id === m.senderId)?.isGameMaster === true;
+      const ttsCap = isHostMessage ? MAX_TTS_CHARS_HOST : MAX_TTS_CHARS_PLAYER;
       let fromChar = 0;
       for (;;) {
-        const { sentences, newOffset } = extractTTSSentences(content, fromChar);
+        const { sentences, newOffset } = extractTTSSentences(content, fromChar, ttsCap);
         if (sentences.length === 0) break;
         sentences.forEach((s) => {
           if (alreadyShown) {
@@ -567,20 +622,6 @@ export function ChatArea({
     }
     return () => {};
   }, [voiceEnabled, inworldTTSSupported, messages, revealTick]);
-
-  // Stop TTS when switching to a different game; reset "initial messages" and session flag
-  useEffect(() => {
-    stopInworldTTS();
-    initialMessageIdsRef.current = null;
-    hasQueuedTTSInSessionRef.current = false;
-    ttsProgressRef.current.clear();
-    ttsQueuedRef.current.clear();
-    ttsCompletedRef.current.clear();
-    displayedContentRef.current.clear();
-    ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
-    ttsFallbackTimeoutsRef.current.clear();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId]);
 
   const MIN_INPUT_HEIGHT = 40;
   const MAX_INPUT_HEIGHT = 120;
@@ -1123,6 +1164,7 @@ export function ChatArea({
               <Button
                 size="sm"
                 className="h-8 px-4 text-sm bg-amber-500 hover:bg-amber-500/90 text-zinc-900 font-medium shrink-0"
+                disabled={sendDisabled}
                 onClick={() => handleSend(introYourTurnReply)}
               >
                 {introYourTurnReply}
@@ -1157,6 +1199,7 @@ export function ChatArea({
                       variant="outline"
                       size="sm"
                       className="h-8 px-3 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200"
+                      disabled={sendDisabled}
                       onClick={() => handleSend(text)}
                     >
                       {text}
@@ -1191,6 +1234,7 @@ export function ChatArea({
                       variant="outline"
                       size="sm"
                       className="h-9 px-4 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/50"
+                      disabled={sendDisabled}
                       onClick={() => handleSend(text)}
                     >
                       {text}
@@ -1344,7 +1388,7 @@ export function ChatArea({
                 }
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (canSend) handleSend();
+                  if (!sendDisabled) handleSend();
                 }
               }}
               placeholder={isRoundInProgress ? "Host & AI replying…" : `Message #${channelName}`}

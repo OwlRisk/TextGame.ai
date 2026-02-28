@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useGeneratedAvatar, type UseGeneratedAvatarOptions } from "@/lib/avatar";
 import { GAME_MASTER_AVATAR } from "@/lib/game-master-avatar";
@@ -45,7 +45,18 @@ export function GeneratedAvatar({
 }: GeneratedAvatarProps) {
   const isGM = type === "gm";
   const apiType = type === "host" ? "host" : "player";
-  const hasInitialUrl = Boolean(initialUrl && (initialUrl.startsWith("http") || initialUrl.startsWith("data:")));
+  const hasValidInitialUrl = Boolean(initialUrl && (initialUrl.startsWith("http") || initialUrl.startsWith("data:")));
+
+  // Track if initialUrl failed to load (e.g. expired Supabase URL, private bucket 403, etc.)
+  const [initialUrlFailed, setInitialUrlFailed] = useState(false);
+  // Reset failure state whenever initialUrl itself changes
+  useEffect(() => { setInitialUrlFailed(false); }, [initialUrl]);
+
+  const useInitialUrl = hasValidInitialUrl && !initialUrlFailed;
+
+  // Always run the hook so it pre-loads from localStorage/cache.
+  // This ensures instant fallback if initialUrl turns out to be broken,
+  // without triggering an extra API call (cache/localStorage is checked first).
   const { src, loading } = useGeneratedAvatar(name, {
     type: apiType,
     gameId,
@@ -53,12 +64,12 @@ export function GeneratedAvatar({
     background,
     personality,
     gender,
-    enabled: isGM ? false : !hasInitialUrl && enabled,
+    enabled: isGM ? false : enabled,
   });
 
-  // Use persisted URL when available (e.g. loaded from another device)
-  const displaySrc = hasInitialUrl ? initialUrl : src;
-  const displayLoading = hasInitialUrl ? false : loading;
+  // Prefer initialUrl when valid; fall back to hook src if it failed or isn't set
+  const displaySrc = useInitialUrl ? initialUrl : src;
+  const displayLoading = useInitialUrl ? false : loading;
 
   // Persist URL when we get a result from the API (http or data:) so it syncs across components and re-login
   const key = name && apiType ? avatarCacheKey(name, apiType) : "";
@@ -91,7 +102,14 @@ export function GeneratedAvatar({
     <Avatar
       className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}
     >
-      {showImage && <AvatarImage src={displaySrc!} alt={name ?? "Avatar"} className="object-cover" />}
+      {showImage && (
+        <AvatarImage
+          src={displaySrc!}
+          alt={name ?? "Avatar"}
+          className="object-cover"
+          onError={useInitialUrl ? () => setInitialUrlFailed(true) : undefined}
+        />
+      )}
       {showFallback && (
         <AvatarFallback
           className={cn(
