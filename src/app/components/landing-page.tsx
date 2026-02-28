@@ -625,6 +625,10 @@ function MiniChat({ messages }: {
 }
 
 function HowGameWorksSection() {
+  const [current, setCurrent] = useState(0);
+  const [dir, setDir] = useState<1 | -1>(1); // animation direction
+  const [animKey, setAnimKey] = useState(0);
+
   const panels = [
     {
       step: "01",
@@ -676,61 +680,139 @@ function HowGameWorksSection() {
     },
   ];
 
+  const go = (next: number, d: 1 | -1) => {
+    setDir(d);
+    setAnimKey((k) => k + 1);
+    setCurrent(next);
+  };
+
+  const p = panels[current];
+
   return (
     <div className="mb-32">
-      <div className="text-center mb-14">
+      <div className="text-center mb-12">
         <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
           <span className="text-sm font-bold text-violet-400">HOW IT WORKS</span>
         </div>
         <h3 className="text-4xl font-black text-white mb-4">What actually happens inside a game</h3>
         <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-          Four things run simultaneously — here&apos;s what each one does, shown with real in-game messages.
+          Four things run simultaneously — shown with real in-game messages.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {panels.map((p) => (
-          <div
-            key={p.step}
-            className="group relative bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
-            style={{ "--accent": p.accent } as React.CSSProperties}
+      {/* Step indicator tabs */}
+      <div className="flex justify-center gap-2 mb-8">
+        {panels.map((panel, i) => (
+          <button
+            key={i}
+            onClick={() => go(i, i > current ? 1 : -1)}
+            className="group flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200"
+            style={
+              i === current
+                ? { background: `${panel.accent}18`, borderColor: `${panel.accent}60`, color: panel.accent }
+                : { background: "transparent", borderColor: "#3f3f46", color: "#71717a" }
+            }
           >
-            {/* step badge + emoji */}
-            <div className="flex items-center gap-3 mb-3">
-              <span
-                className="text-[10px] font-black px-2 py-0.5 rounded-full"
-                style={{ background: `${p.accent}20`, color: p.accent }}
-              >
-                STEP {p.step}
-              </span>
-              <span className="text-xl">{p.emoji}</span>
-            </div>
-
-            {/* title */}
-            <h4 className="text-lg font-bold text-white mb-2">{p.title}</h4>
-
-            {/* description */}
-            <p className="text-sm text-zinc-400 leading-relaxed mb-1">{p.desc}</p>
-
-            {/* divider */}
-            <div className="my-3 border-t border-zinc-800" />
-
-            {/* mini chat mockup */}
-            <div
-              className="rounded-xl p-3"
-              style={{ background: `${p.accent}08`, border: `1px solid ${p.accent}20` }}
+            <span className="text-base">{panel.emoji}</span>
+            <span className="text-xs font-bold hidden sm:inline">{panel.title.split(" ").slice(0, 2).join(" ")}</span>
+            <span
+              className="text-[10px] font-black"
+              style={i === current ? { color: p.accent } : { color: "#52525b" }}
             >
-              <div className="flex items-center gap-1.5 mb-2">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.accent }} />
-                <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: p.accent }}>
-                  Live example
-                </span>
-              </div>
-              <MiniChat messages={p.chat} />
-            </div>
-          </div>
+              {panel.step}
+            </span>
+          </button>
         ))}
       </div>
+
+      {/* Panel */}
+      <div className="max-w-3xl mx-auto">
+        <div
+          key={animKey}
+          className="relative bg-zinc-900/60 border rounded-2xl p-8 transition-all"
+          style={{
+            borderColor: `${p.accent}40`,
+            boxShadow: `0 0 40px ${p.accent}10`,
+            animation: `slideIn${dir > 0 ? "Right" : "Left"} 0.25s ease both`,
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="text-[11px] font-black px-2.5 py-0.5 rounded-full"
+                  style={{ background: `${p.accent}20`, color: p.accent }}
+                >
+                  STEP {p.step} / 04
+                </span>
+                <span className="text-2xl">{p.emoji}</span>
+              </div>
+              <h4 className="text-2xl font-black text-white">{p.title}</h4>
+            </div>
+          </div>
+          <p className="text-base text-zinc-400 leading-relaxed mb-6">{p.desc}</p>
+
+          {/* Chat mockup */}
+          <div
+            className="rounded-xl p-4"
+            style={{ background: `${p.accent}08`, border: `1px solid ${p.accent}20` }}
+          >
+            <div className="flex items-center gap-1.5 mb-3">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.accent }} />
+              <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: p.accent }}>
+                Live example
+              </span>
+            </div>
+            <MiniChat messages={p.chat} />
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between mt-6">
+            <button
+              onClick={() => go(current - 1, -1)}
+              disabled={current === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm font-medium"
+            >
+              ← Previous
+            </button>
+
+            {/* Dot indicators */}
+            <div className="flex gap-1.5">
+              {panels.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => go(i, i > current ? 1 : -1)}
+                  className="rounded-full transition-all duration-200"
+                  style={
+                    i === current
+                      ? { width: "20px", height: "8px", background: p.accent }
+                      : { width: "8px", height: "8px", background: "#3f3f46" }
+                  }
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={() => go(current + 1, 1)}
+              disabled={current === panels.length - 1}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              style={
+                current < panels.length - 1
+                  ? { borderColor: `${p.accent}60`, color: p.accent, background: `${p.accent}10` }
+                  : { borderColor: "#3f3f46", color: "#52525b" }
+              }
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInLeft  { from { opacity: 0; transform: translateX(-32px); } to { opacity: 1; transform: translateX(0); } }
+      `}</style>
     </div>
   );
 }
