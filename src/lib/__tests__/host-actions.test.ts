@@ -111,6 +111,162 @@ describe('parseHostActions – actions', () => {
   });
 });
 
+// ─── parseHostActions: ACCESS blocks ─────────────────────────────────────
+
+describe('parseHostActions – ACCESS blocks', () => {
+  it('strips an ACCESS block from the message', () => {
+    const raw = 'Night begins.\n[ACCESS:Werewolf Den]Alice, Bob[/ACCESS]\nSleep well.';
+    const { cleanContent } = parseHostActions(raw);
+    expect(cleanContent).not.toContain('[ACCESS');
+    expect(cleanContent).not.toContain('[/ACCESS]');
+    expect(cleanContent).toContain('Night begins.');
+    expect(cleanContent).toContain('Sleep well.');
+  });
+
+  it('extracts channelRef and playerRefs from ACCESS block', () => {
+    const raw = '[ACCESS:Werewolf Den]Alice, Bob[/ACCESS]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    const a = actions[0];
+    if (a.type !== 'access') throw new Error('Expected access');
+    expect(a.channelRef).toBe('Werewolf Den');
+    expect(a.playerRefs).toEqual(['Alice', 'Bob']);
+  });
+
+  it('trims whitespace around player names in ACCESS block', () => {
+    const raw = '[ACCESS:Room]  Alice ,  Bob  [/ACCESS]';
+    const { actions } = parseHostActions(raw);
+    const a = actions[0];
+    if (a.type !== 'access') throw new Error('Expected access');
+    expect(a.playerRefs).toEqual(['Alice', 'Bob']);
+  });
+
+  it('treats "*" content as public (playerRefs = ["*"])', () => {
+    const raw = '[ACCESS:Town Square]*[/ACCESS]';
+    const { actions } = parseHostActions(raw);
+    const a = actions[0];
+    if (a.type !== 'access') throw new Error('Expected access');
+    expect(a.playerRefs).toEqual(['*']);
+  });
+
+  it('treats empty content as locked (playerRefs = [])', () => {
+    const raw = '[ACCESS:Secret Room][/ACCESS]';
+    const { actions } = parseHostActions(raw);
+    const a = actions[0];
+    if (a.type !== 'access') throw new Error('Expected access');
+    expect(a.playerRefs).toEqual([]);
+  });
+
+  it('handles multiple ACCESS blocks in one reply', () => {
+    const raw = '[ACCESS:Room A]Alice[/ACCESS]\n[ACCESS:Room B]Bob[/ACCESS]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(2);
+    const a0 = actions[0]; if (a0.type !== 'access') throw new Error('Expected access');
+    const a1 = actions[1]; if (a1.type !== 'access') throw new Error('Expected access');
+    expect(a0.channelRef).toBe('Room A');
+    expect(a1.channelRef).toBe('Room B');
+  });
+
+  it('is case-insensitive for ACCESS tag', () => {
+    const raw = '[access:Room]Alice[/access]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    const a = actions[0];
+    if (a.type !== 'access') throw new Error('Expected access');
+    expect(a.channelRef).toBe('Room');
+  });
+});
+
+// ─── parseHostActions: SECTION blocks ────────────────────────────────────
+
+describe('parseHostActions – SECTION blocks', () => {
+  it('strips a SECTION block from the message', () => {
+    const raw = 'Day 1 begins.\n[SECTION:Vote Log]\nNo votes yet.\n[/SECTION]\nSpeak up!';
+    const { cleanContent } = parseHostActions(raw);
+    expect(cleanContent).not.toContain('[SECTION');
+    expect(cleanContent).not.toContain('[/SECTION]');
+    expect(cleanContent).toContain('Day 1 begins.');
+    expect(cleanContent).toContain('Speak up!');
+  });
+
+  it('extracts title and content from SECTION block', () => {
+    const raw = '[SECTION:Vote Log]\nAlice: 3 votes\nBob: 2 votes\n[/SECTION]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    const a = actions[0];
+    if (a.type !== 'section') throw new Error('Expected section');
+    expect(a.title).toBe('Vote Log');
+    expect(a.content).toContain('Alice: 3 votes');
+    expect(a.content).toContain('Bob: 2 votes');
+  });
+
+  it('handles multi-line markdown content in SECTION', () => {
+    const raw = '[SECTION:Night Log]\n**Night 1**: Werewolves killed Alice.\n- Seer investigated Bob.\n[/SECTION]';
+    const { actions } = parseHostActions(raw);
+    const a = actions[0];
+    if (a.type !== 'section') throw new Error('Expected section');
+    expect(a.content).toContain('**Night 1**');
+    expect(a.content).toContain('- Seer investigated Bob.');
+  });
+
+  it('handles multiple SECTION blocks in one reply', () => {
+    const raw = '[SECTION:Votes]\nVote data\n[/SECTION]\n[SECTION:Clues]\nClue data\n[/SECTION]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(2);
+    const a0 = actions[0]; if (a0.type !== 'section') throw new Error('Expected section');
+    const a1 = actions[1]; if (a1.type !== 'section') throw new Error('Expected section');
+    expect(a0.title).toBe('Votes');
+    expect(a1.title).toBe('Clues');
+  });
+
+  it('trims whitespace around SECTION title', () => {
+    const raw = '[SECTION:  Player Status  ]\nContent\n[/SECTION]';
+    const { actions } = parseHostActions(raw);
+    const a = actions[0];
+    if (a.type !== 'section') throw new Error('Expected section');
+    expect(a.title).toBe('Player Status');
+  });
+
+  it('is case-insensitive for SECTION tag', () => {
+    const raw = '[section:Log]\nEntry\n[/section]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    const a = actions[0];
+    if (a.type !== 'section') throw new Error('Expected section');
+    expect(a.title).toBe('Log');
+  });
+});
+
+// ─── parseHostActions: mixed block types ──────────────────────────────────
+
+describe('parseHostActions – mixed block types', () => {
+  it('extracts BOARD, ACCESS, and SECTION from the same reply in order', () => {
+    const raw = [
+      'Game continues.',
+      '[BOARD:Alice]\nYou are the Seer.\n[/BOARD]',
+      '[ACCESS:Werewolf Den]Bob[/ACCESS]',
+      '[SECTION:Night Log]\nNight 1 complete.\n[/SECTION]',
+      'Good luck.',
+    ].join('\n');
+    const { cleanContent, actions } = parseHostActions(raw);
+    expect(cleanContent).toContain('Game continues.');
+    expect(cleanContent).toContain('Good luck.');
+    expect(cleanContent).not.toContain('[BOARD');
+    expect(cleanContent).not.toContain('[ACCESS');
+    expect(cleanContent).not.toContain('[SECTION');
+    expect(actions).toHaveLength(3);
+    expect(actions[0].type).toBe('my_board');
+    expect(actions[1].type).toBe('access');
+    expect(actions[2].type).toBe('section');
+  });
+
+  it('returns empty cleanContent when reply contains only blocks', () => {
+    const raw = '[BOARD:You]\nSecret\n[/BOARD][SECTION:Log]\nEntry\n[/SECTION]';
+    const { cleanContent } = parseHostActions(raw);
+    expect(cleanContent).toBe('');
+  });
+});
+
 // ─── resolvePlayerRefToId ─────────────────────────────────────────────────
 
 describe('resolvePlayerRefToId', () => {
