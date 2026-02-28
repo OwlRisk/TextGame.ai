@@ -232,6 +232,31 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipContent>
           </Tooltip>
 
+          {/* Create Game – show when unauthenticated or no games yet */}
+          {(!user || games.length === 0) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="relative group">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-14 w-14 bg-green-600 hover:bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/40"
+                    onClick={onCreateGame}
+                  >
+                    <Plus className="size-7 text-white transition-transform duration-300 group-hover:scale-110" />
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                sideOffset={8}
+                className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
+              >
+                Create Game
+              </TooltipContent>
+            </Tooltip>
+          )}
+
         </div>
 
         <div className="w-10 h-0.5 bg-zinc-700 rounded-full my-2" />
