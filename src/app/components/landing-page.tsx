@@ -159,12 +159,6 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
     },
   ];
 
-  const howItWorks = [
-    { number: "1", title: "Sign up free", subtitle: "Google, one click", icon: "👤" },
-    { number: "2", title: "Describe your idea", subtitle: "in plain English", icon: "💬" },
-    { number: "3", title: "Play instantly", subtitle: "AI builds & runs your game", icon: "🎮" },
-  ];
-
   useEffect(() => {
     if (!isAutoPlaying) return;
     const games = Object.keys(GAME_SCENARIOS) as Array<keyof typeof GAME_SCENARIOS>;
@@ -411,124 +405,7 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
           </div>
         </div>
 
-        {/* How It Works */}
-        <div className="mb-32">
-          <div className="text-center mb-16">
-            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">
-                HOW IT WORKS
-              </span>
-            </div>
-            <h3 className="text-4xl font-black text-white mb-4">
-              Get Started in 3 Simple Steps
-            </h3>
-            <p className="text-lg text-zinc-400">
-              From idea to gameplay in under 2 minutes
-            </p>
-          </div>
-          <div className="relative max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
-              {howItWorks.map((step, index) => (
-                <div key={index} className="relative">
-                  <div className="flex justify-center mb-6">
-                    <div className="relative">
-                      <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full text-white font-black text-xl shadow-xl">
-                        {step.number}
-                      </div>
-                      {index < howItWorks.length - 1 && (
-                        <div className="hidden md:block absolute left-full top-1/2 -translate-y-1/2 w-[calc(100vw/3-8rem)] max-w-[200px]">
-                          <div className="flex items-center gap-2 px-4">
-                            <div className="flex-1 h-[2px] bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-30" />
-                            <svg
-                              className="w-4 h-4 text-violet-500 opacity-50"
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="group relative bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
-                    <div className="flex justify-center mb-6">
-                      <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg">
-                        {step.number === "1" && (
-                          <svg
-                            className="w-10 h-10 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                        )}
-                        {step.number === "2" && (
-                          <svg
-                            className="w-10 h-10 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                            />
-                          </svg>
-                        )}
-                        {step.number === "3" && (
-                          <svg
-                            className="w-10 h-10 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <h4 className="text-xl font-bold text-white mb-2">
-                        {step.title}
-                      </h4>
-                      <p className="text-sm text-zinc-500">{step.subtitle}</p>
-                    </div>
-                  </div>
-                  {index < howItWorks.length - 1 && (
-                    <div className="md:hidden flex justify-center my-6">
-                      <svg
-                        className="w-6 h-6 text-violet-500 opacity-50"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <HowGameWorksSection />
 
         {/* Features */}
         <div className="mb-32">
@@ -702,6 +579,157 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
             </div>
           </div>
         </footer>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mini chat bubble used inside the explainer panels ───────────────────────
+function MiniChat({ messages }: {
+  messages: Array<{
+    name: string;
+    color: string;   // hex
+    text: string;
+    badge?: string;  // optional label like "HOST" "AI" "YOU"
+    badgeColor?: string;
+  }>;
+}) {
+  return (
+    <div className="space-y-2.5 mt-3">
+      {messages.map((m, i) => (
+        <div key={i} className="flex gap-2 items-start">
+          <div
+            className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-black text-white mt-0.5"
+            style={{ background: m.color }}
+          >
+            {m.name.charAt(0)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-[11px] font-bold text-zinc-300">{m.name}</span>
+              {m.badge && (
+                <span
+                  className="text-[9px] font-bold px-1.5 py-0 rounded-full"
+                  style={{ background: `${m.badgeColor ?? m.color}30`, color: m.badgeColor ?? m.color }}
+                >
+                  {m.badge}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-zinc-400 leading-relaxed">{m.text}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HowGameWorksSection() {
+  const panels = [
+    {
+      step: "01",
+      emoji: "💬",
+      title: "Design with the Game Master",
+      desc: "Describe your game idea in plain English. The GM asks a few questions, writes the rules, picks player roles, and sets up the room — all in a conversation. No forms, no configuration.",
+      accent: "#8b5cf6",
+      chat: [
+        { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I want a werewolf game with 6 players, with a Seer and a Doctor." },
+        { name: "Game Master", color: "#8b5cf6", badge: "GM", badgeColor: "#8b5cf6", text: "Got it! I've written the rules and set up two rooms: General (everyone) and Werewolves only (private). Ready to start?" },
+        { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "Looks great — let's go!" },
+      ],
+    },
+    {
+      step: "02",
+      emoji: "👑",
+      title: "The Host runs every phase",
+      desc: "Once the game starts, an AI Host takes over as the permanent moderator. It announces phases, assigns secret roles, narrates events, and decides who speaks next — you never need to manage logistics.",
+      accent: "#f59e0b",
+      chat: [
+        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Night falls. Villagers close their eyes. 🌙" },
+        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Werewolves, open your eyes — your private room is now active. Choose your target." },
+        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "Dawn breaks. Tomas Vance was found eliminated. Day phase begins." },
+      ],
+    },
+    {
+      step: "03",
+      emoji: "🤖",
+      title: "AI players think, argue, and bluff",
+      desc: "Every seat is filled by an AI character with a unique name, personality, and secret role. They discuss, accuse, defend themselves, and vote — autonomously. The game flows even when you're silent.",
+      accent: "#10b981",
+      chat: [
+        { name: "Maribel", color: "#3b82f6", badge: "AI", badgeColor: "#10b981", text: "I've been watching Gideon. He was way too quiet last night." },
+        { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "That's rich coming from you. Where were you during the vote?" },
+        { name: "Juno", color: "#8b5cf6", badge: "AI", badgeColor: "#10b981", text: "Both of you are deflecting. I'm voting Maribel." },
+      ],
+    },
+    {
+      step: "04",
+      emoji: "🎮",
+      title: "You play your role — the AI reacts",
+      desc: "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
+      accent: "#ec4899",
+      chat: [
+        { name: "You", color: "#6366f1", badge: "YOU", badgeColor: "#6366f1", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain." },
+        { name: "Gideon", color: "#ef4444", badge: "AI", badgeColor: "#10b981", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking." },
+        { name: "Warden Lunaris", color: "#7c3aed", badge: "HOST", badgeColor: "#7c3aed", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
+      ],
+    },
+  ];
+
+  return (
+    <div className="mb-32">
+      <div className="text-center mb-14">
+        <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+          <span className="text-sm font-bold text-violet-400">HOW IT WORKS</span>
+        </div>
+        <h3 className="text-4xl font-black text-white mb-4">What actually happens inside a game</h3>
+        <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+          Four things run simultaneously — here&apos;s what each one does, shown with real in-game messages.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {panels.map((p) => (
+          <div
+            key={p.step}
+            className="group relative bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+            style={{ "--accent": p.accent } as React.CSSProperties}
+          >
+            {/* step badge + emoji */}
+            <div className="flex items-center gap-3 mb-3">
+              <span
+                className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                style={{ background: `${p.accent}20`, color: p.accent }}
+              >
+                STEP {p.step}
+              </span>
+              <span className="text-xl">{p.emoji}</span>
+            </div>
+
+            {/* title */}
+            <h4 className="text-lg font-bold text-white mb-2">{p.title}</h4>
+
+            {/* description */}
+            <p className="text-sm text-zinc-400 leading-relaxed mb-1">{p.desc}</p>
+
+            {/* divider */}
+            <div className="my-3 border-t border-zinc-800" />
+
+            {/* mini chat mockup */}
+            <div
+              className="rounded-xl p-3"
+              style={{ background: `${p.accent}08`, border: `1px solid ${p.accent}20` }}
+            >
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.accent }} />
+                <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: p.accent }}>
+                  Live example
+                </span>
+              </div>
+              <MiniChat messages={p.chat} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
