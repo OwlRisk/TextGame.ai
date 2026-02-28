@@ -404,22 +404,22 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
 
             {/* Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-              Create multiplayer{" "}
+              Your game idea,{" "}
               <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                AI games
+                playable
               </span>
               {" "}in 2 minutes
             </h2>
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-5 leading-relaxed">
-              No coding. No setup. Describe your game and play with AI characters in seconds.
+              Describe your idea in plain English. AI fills every seat, runs the game, and reacts to everything you do.
             </p>
 
             {/* 3-step flow */}
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               {[
                 { num: "1", text: "Describe your idea" },
-                { num: "2", text: "GM builds the game" },
+                { num: "2", text: "AI sets up the game" },
                 { num: "3", text: "Play with AI characters" },
               ].map((step, i, arr) => (
                 <div key={step.num} className="flex items-center gap-2">
@@ -442,8 +442,8 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     <Users className="h-5 w-5 text-violet-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">AI characters</div>
-                    <div className="text-xs text-zinc-500">Up to 10 players</div>
+                    <div className="text-sm font-bold text-white">AI players</div>
+                    <div className="text-xs text-zinc-500">Each with unique personality</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -452,7 +452,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-white">20+ templates</div>
-                    <div className="text-xs text-zinc-500">Ready to use</div>
+                    <div className="text-xs text-zinc-500">One-click start</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -460,8 +460,8 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     <MessageCircle className="h-5 w-5 text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">Custom rules</div>
-                    <div className="text-xs text-zinc-500">Full control</div>
+                    <div className="text-sm font-bold text-white">Any game you imagine</div>
+                    <div className="text-xs text-zinc-500">Fully customizable rules</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -470,7 +470,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-white">Free to start</div>
-                    <div className="text-xs text-zinc-500">No card needed</div>
+                    <div className="text-xs text-zinc-500">First game on us</div>
                   </div>
                 </div>
               </div>
@@ -504,7 +504,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             <div className="space-y-4">
               <div className="flex items-center gap-2 px-1">
                 <Zap className="h-4 w-4 text-violet-400" />
-                <p className="text-sm font-bold text-zinc-400">Try these examples:</p>
+                <p className="text-sm font-bold text-zinc-400">Start with a classic:</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {quickStarts.map((item) => (
