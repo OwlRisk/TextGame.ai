@@ -53,7 +53,18 @@ export interface GameConfig {
     color: string;
   };
   /** GM-defined game rooms (e.g. General, Mafia only, Werewolves only). Each room has its own chat. */
-  channels?: { id: string; name: string }[];
+  channels?: {
+    id: string;
+    name: string;
+    /**
+     * public      – everyone can see and speak (default)
+     * private_ai  – restricted AI members hold free discussion (no structured outcome)
+     * decision    – restricted AI members confer until consensus; result is summarised and
+     *               injected into the HOST's context on the next turn
+     * broadcast   – host-only announcements; players read-only
+     */
+    roomType?: "public" | "private_ai" | "decision" | "broadcast";
+  }[];
   /** Player-facing slash commands for this game (e.g. /vote, /role). Shown in the / autocomplete. */
   slashCommands?: Array<{ cmd: string; hint: string }>;
   /** Custom label for the player's private panel Tab (defaults to "My Board"). E.g. "Briefing", "Role Card", "Intel". */

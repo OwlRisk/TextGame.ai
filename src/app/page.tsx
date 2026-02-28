@@ -63,6 +63,7 @@ export default function HomePage() {
         <LandingPage
           onSignIn={handleSignIn}
           onExploreGames={handleExploreGames}
+          onCreateGame={handleCreateGame}
         />
       ) : null}
 

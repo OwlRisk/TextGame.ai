@@ -143,6 +143,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
 
+  // Summaries from "decision" private channels that need to be injected into the HOST's
+  // context on the player's next message turn. Reset after each HOST call that consumes them.
+  const pendingDecisionSummariesRef = useRef<string[]>([]);
+
   /** 移动端左侧抽屉：'app' 应用导航 | 'channels' 频道列表 */
   const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
   const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
@@ -419,7 +423,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         : currentGame?.config?.template === "undercover"
           ? "#0ea5e9"
           : "#ec4899";
-      const aiOnly = players.filter((p) => p.isAI && !p.isGameMaster);
+      // Only include AI players who can access the current channel so "everyone"
+      // replies don't accidentally pick an AI from a different faction's private room.
+      const channelPermsForAiOnly = channelPermissions[channelId];
+      const aiOnly = players.filter(
+        (p) =>
+          p.isAI &&
+          !p.isGameMaster &&
+          (!channelPermsForAiOnly ||
+            channelPermsForAiOnly.includes("*") ||
+            channelPermsForAiOnly.includes(p.id))
+      );
 
       // Build player roster for host context
       const humanPlayer = players.find((p) => p.id === userId);
@@ -547,7 +561,30 @@ ${hasMultipleRooms ? `
 [ACCESS:<RoomName>]Player1, Player2[/ACCESS]   ← restrict to named players
 [ACCESS:<RoomName>]*[/ACCESS]                  ← make public (everyone)
 [ACCESS:<RoomName>][/ACCESS]                   ← lock (no one)
-Available rooms (use exact names): ${gameRoomEntries.map((c) => c.name).join(", ")}
+
+Available rooms and their types:
+${(currentGame?.config?.channels ?? gameRoomEntries).map((c) => {
+  const roomType = (c as { roomType?: string }).roomType ?? "public";
+  const hint =
+    roomType === "decision"
+      ? "AI-only private room — use AUTO_CHANNEL here at the start of each private phase with a clear goal; the system will summarise the outcome and prepend it to your next context"
+      : roomType === "private_ai"
+      ? "AI-only private room — use AUTO_CHANNEL for free side-discussion (no structured outcome)"
+      : roomType === "broadcast"
+      ? "read-only for players; host-only announcements"
+      : "public — everyone can see and speak";
+  return `  "${c.name}" (${roomType}) — ${hint}`;
+}).join("\n")}
+
+**Private channel auto-conversation**:
+AUTO_CHANNEL: <RoomName> [| <goal>]
+- "decision" rooms: members confer until consensus; result is summarised and injected into YOUR next context automatically — you will know the decision without being told here.
+- "private_ai" rooms: free discussion, no structured outcome.
+Place AUTO_CHANNEL BEFORE NEXT_SPEAKER. Only valid for rooms with explicit [ACCESS:...] restrictions.
+Examples:
+  AUTO_CHANNEL: Werewolves only | Pick a villager to eliminate tonight
+  AUTO_CHANNEL: Mafia only | Decide who to threaten next round
+  NEXT_SPEAKER: ${humanName}
 ` : ""}
 **Sidebar sections** (persistent notes visible to all players):
 [SECTION:<Title>]
@@ -673,7 +710,21 @@ ${rulesText || "No specific rules defined."}`.trim();
         | { type: "everyone" }
         | { type: "ai"; player: typeof players[0] };
 
-      const parseHostResult = (raw: string): { hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[] } => {
+      // Fuzzy channel name resolver: exact match first, then partial containment.
+      // Prevents AUTO_CHANNEL / ACCESS directives from silently failing when the
+      // HOST slightly misspells a room name (e.g. "Werewolf only" vs "Werewolves only").
+      const resolveChannelByName = (name: string): string | null => {
+        const n = name.toLowerCase().trim();
+        const exact = gameRoomEntries.find((c) => c.name.toLowerCase() === n);
+        if (exact) return exact.id;
+        // Partial: query contains entry name, or entry name contains query
+        const partial = gameRoomEntries.find(
+          (c) => c.name.toLowerCase().includes(n) || n.includes(c.name.toLowerCase())
+        );
+        return partial?.id ?? null;
+      };
+
+      const parseHostResult = (raw: string): { hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null } => {
         let hostContent = raw.trim();
         const nextSpeakerMatch = hostContent.match(/\nNEXT_SPEAKER:\s*(.+?)\s*$/im);
         let who: string | null = null;
@@ -700,7 +751,20 @@ ${rulesText || "No specific rules defined."}`.trim();
             }
           }
         }
-        return { hostContent, who, speakerQueue };
+        // AUTO_CHANNEL: triggers an autonomous AI conversation in a private channel.
+        // Supports optional goal via pipe: AUTO_CHANNEL: Room Name | Pick tonight's target
+        const autoChannelMatch = hostContent.match(/\nAUTO_CHANNEL:\s*(.+?)\s*$/im);
+        let autoChannelId: string | null = null;
+        let autoChannelGoal: string | null = null;
+        if (autoChannelMatch) {
+          const raw = autoChannelMatch[1].trim();
+          const pipeIdx = raw.indexOf("|");
+          const channelName = pipeIdx >= 0 ? raw.slice(0, pipeIdx).trim() : raw;
+          autoChannelGoal = pipeIdx >= 0 ? raw.slice(pipeIdx + 1).trim() : null;
+          autoChannelId = resolveChannelByName(channelName);
+          hostContent = hostContent.replace(/\nAUTO_CHANNEL:\s*.+?\s*$/im, "").trim();
+        }
+        return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal };
       };
 
       /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
@@ -711,12 +775,9 @@ ${rulesText || "No specific rules defined."}`.trim();
             const playerId = resolvePlayerRefToId(a.playerRef, players, userId, humanGameIdentity?.name);
             if (playerId) setMyBoardContent((prev) => ({ ...prev, [playerId]: a.content }));
           } else if (a.type === "access") {
-            // Resolve channel ref (case-insensitive name match → id)
-            const channelEntry = gameRoomEntries.find(
-              (c) => c.name.toLowerCase() === a.channelRef.toLowerCase()
-            );
-            if (!channelEntry) continue;
-            const chId = channelEntry.id;
+            // Resolve channel ref with fuzzy matching so minor HOST misspellings still work.
+            const chId = resolveChannelByName(a.channelRef);
+            if (!chId) continue;
 
             if (a.playerRefs.includes("*")) {
               // Explicitly public: remove any restriction
@@ -784,7 +845,7 @@ ${rulesText || "No specific rules defined."}`.trim();
       };
 
       /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
-      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; imageUrl?: string }> => {
+      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
         const messageId = addStreamingMessage(
           { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
           chId
@@ -807,7 +868,7 @@ ${rulesText || "No specific rules defined."}`.trim();
           });
           if (!res.ok || !res.body) {
             updateStreamingMessage(messageId, "…", true);
-            return { hostContent: "", who: null, speakerQueue: [] };
+            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
           }
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
@@ -837,8 +898,8 @@ ${rulesText || "No specific rules defined."}`.trim();
           }
           // Split into public message and directive section
           const { message: splitMessage, directives } = splitHostOutput(acc);
-          // Process all directives (NEXT_SPEAKER, ASSIGN_ROLE, BOARD, SECTION, etc.)
-          const { hostContent: directivesClean, who, speakerQueue } = parseHostResult(directives);
+          // Process all directives (NEXT_SPEAKER, ASSIGN_ROLE, BOARD, SECTION, AUTO_CHANNEL, etc.)
+          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(directives);
           applyHostActionsAndClean(directivesClean);
           applyHostRoleAssignments(directivesClean);
           // Determine the final public display
@@ -848,15 +909,15 @@ ${rulesText || "No specific rules defined."}`.trim();
             return applyHostRoleAssignments(afterActions);
           })();
           updateStreamingMessage(messageId, displayContent || " ", true);
-          return { hostContent: displayContent, who, speakerQueue };
+          return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal };
         } catch (e) {
           console.error("Host stream error:", e);
           updateStreamingMessage(messageId, "…", true);
-          return { hostContent: "", who: null, speakerQueue: [] };
+          return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
         }
       };
 
-      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; imageUrl?: string }> => {
+      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
@@ -868,7 +929,7 @@ ${rulesText || "No specific rules defined."}`.trim();
             preferredModel: getPreferredModel(),
           }),
         });
-        if (!res.ok) return { hostContent: "", who: null, speakerQueue: [] };
+        if (!res.ok) return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
         const data = await res.json();
         let hostContent = (data.message || "").trim();
         const parsed = parseHostResult(hostContent);
@@ -877,7 +938,7 @@ ${rulesText || "No specific rules defined."}`.trim();
         return { ...parsed, hostContent, imageUrl: data.imageUrl };
       };
 
-      const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>): Promise<string | null> => {
+      const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>, channelGoal?: string | null): Promise<string | null> => {
         // Skip eliminated players — they should not speak
         const speakerStatus = (speaker.stats?.Status as string | undefined)?.toLowerCase();
         if (speakerStatus === "eliminated" || speakerStatus === "dead") return null;
@@ -901,6 +962,7 @@ ${rulesText || "No specific rules defined."}`.trim();
               },
               recentMessages: recent,
               preferredModel: getPreferredModel(),
+              ...(channelGoal ? { channelGoal } : {}),
             }),
           });
           if (!res.ok) return null;
@@ -912,9 +974,142 @@ ${rulesText || "No specific rules defined."}`.trim();
         }
       };
 
+      // Run an autonomous AI-only conversation in a private channel.
+      // Called when HOST emits AUTO_CHANNEL: <RoomName> [| goal text] in its DIRECTIVES section.
+      // Behaviour depends on the channel's roomType:
+      //   "decision"   – runs until consensus detected (or maxRounds), then generates a 1-sentence
+      //                  summary that is queued for injection into the HOST's next context call.
+      //   "private_ai" – free discussion for maxRounds; no structured outcome.
+      const runPrivateChannelConversation = async (targetChannelId: string, goal: string | null, maxRounds = 3): Promise<void> => {
+        const perms = channelPermissions[targetChannelId];
+        if (!perms || perms.includes("*")) return;
+        const channelAiPlayers = playersRef.current.filter(
+          (p) => p.isAI && !p.isGameMaster && perms.includes(p.id)
+        );
+        if (channelAiPlayers.length === 0) return;
+
+        const roomType = currentGame?.config?.channels?.find((c) => c.id === targetChannelId)?.roomType ?? "private_ai";
+
+        const channelRecent = messages
+          .filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === targetChannelId)
+          .slice(-10)
+          .map((m) => ({ senderName: m.senderName, content: m.content }));
+        let recentContext = channelRecent;
+
+        // For decision rooms: check consensus after each complete round using LLM.
+        // Returns either null (no consensus yet) or a one-sentence decision summary.
+        // Language-agnostic — works regardless of the conversation language.
+        const checkConsensusAndSummarise = async (
+          context: Array<{ senderName: string; content: string }>,
+          channelName: string
+        ): Promise<string | null> => {
+          if (context.length === 0) return null;
+          try {
+            const transcript = context.map((m) => `${m.senderName}: ${m.content}`).join("\n");
+            const goalLine = goal ? `Task: ${goal}\n` : "";
+            const res = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+              body: JSON.stringify({
+                messages: [
+                  {
+                    role: "system",
+                    content:
+                      'You decide whether a group conversation has reached a clear consensus. ' +
+                      'If yes, reply with exactly "YES: <one sentence stating the decision, including specific names/choices>". ' +
+                      'If no, reply with exactly "NO". No other output.',
+                  },
+                  {
+                    role: "user",
+                    content: `${goalLine}Channel: ${channelName}\n\n${transcript}\n\nHas the group reached a decision?`,
+                  },
+                ],
+                preferredModel: getPreferredModel(),
+              }),
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            const msg = (data.message || "").trim();
+            if (msg.toUpperCase().startsWith("YES:")) {
+              return msg.slice(4).trim();
+            }
+          } catch {
+            // Non-critical — fall through and continue rounds.
+          }
+          return null;
+        };
+
+        let earlyDecisionSummary: string | null = null;
+
+        for (let round = 0; round < maxRounds && !earlyDecisionSummary; round++) {
+          for (const player of channelAiPlayers) {
+            if (earlyDecisionSummary) break;
+            const freshPlayer = playersRef.current.find((p) => p.id === player.id) ?? player;
+            const status = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
+            if (status === "eliminated" || status === "dead") continue;
+            setCurrentSpeakerId(freshPlayer.id);
+            const txt = await runPlayerSpeak(freshPlayer, recentContext, goal);
+            if (txt) {
+              addMessage(
+                { senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true },
+                targetChannelId
+              );
+              await hostPace();
+              recentContext = [...recentContext, { senderName: freshPlayer.name, content: txt }];
+            }
+          }
+          // After each full round (all players spoke), check for consensus in decision rooms.
+          // Skip round 0 — too early; need at least one exchange before judging.
+          if (roomType === "decision" && round > 0) {
+            const channelName = gameRoomEntries.find((c) => c.id === targetChannelId)?.name ?? targetChannelId;
+            earlyDecisionSummary = await checkConsensusAndSummarise(recentContext, channelName);
+          }
+        }
+        setCurrentSpeakerId(null);
+
+        // Queue the decision summary for injection into HOST context on the next human turn.
+        if (roomType === "decision") {
+          const channelName = gameRoomEntries.find((c) => c.id === targetChannelId)?.name ?? targetChannelId;
+          const summary =
+            earlyDecisionSummary ??
+            // Fallback: if early consensus check wasn't triggered (only ran 1 round), summarise now.
+            await (async () => {
+              if (recentContext.length === 0) return null;
+              try {
+                const transcript = recentContext.map((m) => `${m.senderName}: ${m.content}`).join("\n");
+                const goalLine = goal ? ` (task: ${goal})` : "";
+                const res = await fetch("/api/chat", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+                  body: JSON.stringify({
+                    messages: [
+                      { role: "system", content: "Summarise the group's decision in exactly one concise sentence. Include specific names and choices. No preamble." },
+                      { role: "user", content: `Channel: ${channelName}${goalLine}\n\n${transcript}\n\nSummarise:` },
+                    ],
+                    preferredModel: getPreferredModel(),
+                  }),
+                });
+                if (!res.ok) return null;
+                const data = await res.json();
+                return (data.message || "").trim() || null;
+              } catch { return null; }
+            })();
+          if (summary) {
+            pendingDecisionSummariesRef.current.push(`[${channelName}] ${summary}`);
+          }
+        }
+      };
+
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
-      const firstUserContent = `Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, speakerQueue, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
+      // Inject any queued decision summaries from previous private-channel conversations
+      // so the HOST is aware of what was decided before this turn began.
+      const decisionSummaryPrefix = pendingDecisionSummariesRef.current.length > 0
+        ? `[System: cross-channel decisions since last turn]\n${pendingDecisionSummariesRef.current.join("\n")}\n\n`
+        : "";
+      pendingDecisionSummariesRef.current = [];
+
+      const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
+      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       if (!hostContent && !firstImageUrl) {
         setIsRoundInProgress(false);
         return;
@@ -982,6 +1177,13 @@ ${rulesText || "No specific rules defined."}`.trim();
         }
         return false; // queue exhausted without a human turn
       };
+
+      // If Host requested a private channel side-conversation (AUTO_CHANNEL), run it now
+      // before returning control to the player. Only triggered on the first host response,
+      // not inside the auto-advance loop, to avoid cascading side effects.
+      if (firstAutoChannelId) {
+        await runPrivateChannelConversation(firstAutoChannelId, firstAutoChannelGoal);
+      }
 
       // Run the first queue from the host's response.
       // If it ends WITHOUT the human (e.g. pure AI night-phase sequence), auto-advance
@@ -1103,6 +1305,16 @@ ${rulesText || "No specific rules defined."}`.trim();
     }
     return counts;
   }, [messages, seenMessageCounts, gameRoomIds, defaultGameChannelId, selectedChannelId]);
+
+  // Show only players who can access the currently selected channel.
+  // Uses channelPermissions directly — no hardcoding of channel types.
+  // If no permissions are defined (or the list contains "*"), all players are shown.
+  // The host (isGameMaster) is always shown regardless of restrictions.
+  const playersForChannel = useMemo(() => {
+    const perms = selectedChannelId ? channelPermissions[selectedChannelId] : undefined;
+    if (!perms || perms.includes("*")) return players;
+    return players.filter((p) => p.isGameMaster || perms.includes(p.id));
+  }, [players, selectedChannelId, channelPermissions]);
 
   // Quick reply: only update when it's "user's turn" (round just ended, last message from Host/AI).
   // Do not refetch when the user just sent a message — keep current suggestions until Host/AI reply again.
@@ -1406,7 +1618,7 @@ ${rulesText || "No specific rules defined."}`.trim();
             channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room"}
             channelId={selectedChannelId ?? undefined}
             messages={messagesForChannel}
-            players={players}
+            players={playersForChannel}
             onSendMessage={handleSendMessage}
             isGameActive={gamePhase !== "ended"}
             currentSpeakerId={currentSpeakerId}
@@ -1444,7 +1656,7 @@ ${rulesText || "No specific rules defined."}`.trim();
           <>
             <div className="hidden md:block flex-shrink-0 w-80">
               <PlayerPanelWithBoard
-                players={players}
+                players={playersForChannel}
                 gameId={gameId}
                 humanGameIdentity={humanGameIdentity}
                 avatarImageUrls={avatarImageUrls}
@@ -1461,7 +1673,7 @@ ${rulesText || "No specific rules defined."}`.trim();
             <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
               <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700">
                 <PlayerPanelWithBoard
-                  players={players}
+                  players={playersForChannel}
                   gameId={gameId}
                   humanGameIdentity={humanGameIdentity}
                   avatarImageUrls={avatarImageUrls}

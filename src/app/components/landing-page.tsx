@@ -10,15 +10,19 @@ import {
   Star,
   ChevronDown,
   Lightbulb,
+  Clock,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { GAME_TEMPLATES } from "@/lib/game-templates";
 
 interface LandingPageProps {
   onSignIn: () => void;
   onExploreGames?: () => void;
+  onCreateGame?: (presetId?: string) => void;
 }
 
 /** Map Tailwind color class (e.g. bg-blue-500) to hex for fallback avatar background */
@@ -149,7 +153,7 @@ const GAME_SCENARIOS = {
   },
 };
 
-export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
+export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<
     keyof typeof GAME_SCENARIOS
   >("werewolf");
@@ -191,15 +195,6 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
         "Mystery, deduction, roleplay, trivia — if you can describe it, you can play it.",
       gradient: "from-green-500 to-emerald-500",
     },
-  ];
-
-  const featuredGames = [
-    { emoji: "🐺", title: "Werewolf", description: "Classic social deduction — find the werewolves before it's too late" },
-    { emoji: "🕵️", title: "Who's the Spy", description: "Describe your secret word without giving it away" },
-    { emoji: "🔍", title: "Murder Mystery", description: "A crime has been committed — everyone is a suspect" },
-    { emoji: "🃏", title: "Mafia", description: "Townspeople vs. hidden mafia — vote wisely" },
-    { emoji: "🧙", title: "Fantasy Roleplay", description: "Build a world, pick your roles, and adventure together" },
-    { emoji: "✨", title: "Your Custom Game", description: "Describe any idea — the AI builds and runs it for you" },
   ];
 
   const howItWorks = [
@@ -612,7 +607,7 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
           </div>
         </div>
 
-        {/* Game Templates */}
+        {/* Game Templates — driven by real GAME_TEMPLATES data */}
         <div className="mb-32">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
@@ -622,19 +617,58 @@ export function LandingPage({ onSignIn, onExploreGames }: LandingPageProps) {
             <p className="text-lg text-zinc-400">Pick a classic or describe something entirely new</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredGames.map((game, index) => (
-              <div
-                key={index}
-                className="group bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-5 transition-all duration-300 hover:scale-[1.02]"
+            {GAME_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.id}
+                onClick={() => onCreateGame ? onCreateGame(tpl.id) : onSignIn()}
+                className="group relative bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-5 transition-all duration-300 hover:scale-[1.02] text-left"
               >
-                <div className="flex items-start gap-3">
-                  <div className="text-3xl mt-0.5">{game.emoji}</div>
+                {/* hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity" />
+
+                <div className="relative flex items-start gap-3 mb-3">
+                  <span className="text-3xl mt-0.5 transition-transform group-hover:scale-110">{tpl.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-white mb-1">{game.title}</h4>
-                    <p className="text-xs text-zinc-500 leading-relaxed">{game.description}</p>
+                    <h4 className="font-bold text-white mb-0.5">{tpl.name}</h4>
+                    <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">{tpl.description}</p>
                   </div>
                 </div>
-              </div>
+
+                {/* Meta row */}
+                <div className="relative flex items-center gap-3 mb-3 text-xs text-zinc-500">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {tpl.minPlayers === tpl.maxPlayers
+                      ? `${tpl.minPlayers} players`
+                      : `${tpl.minPlayers}–${tpl.maxPlayers} players`}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {tpl.estimatedTime}
+                  </span>
+                </div>
+
+                {/* Role badges */}
+                {tpl.roles && tpl.roles.length > 0 && (
+                  <div className="relative flex flex-wrap gap-1.5 mb-3">
+                    {tpl.roles.map((role) => (
+                      <span
+                        key={role}
+                        className="inline-block bg-zinc-800/80 border border-zinc-700/60 text-zinc-400 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* CTA */}
+                <div className="relative flex items-center justify-end">
+                  <span className="text-xs text-violet-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    Play this game <ArrowRight className="h-3 w-3" />
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
         </div>

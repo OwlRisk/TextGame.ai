@@ -123,12 +123,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, preferredModel } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, preferredModel, channelGoal } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
       gamePhase?: string;
       preferredModel?: string;
+      /** Optional task injected when the player is in a private "decision" channel. */
+      channelGoal?: string;
       player: {
         name: string;
         role?: string;
@@ -173,6 +175,12 @@ export async function POST(request: NextRequest) {
     if (rules?.trim()) {
       lines.push('');
       lines.push(`Game rules (summary):\n${rules.slice(0, 1200)}`);
+    }
+
+    if (channelGoal?.trim()) {
+      lines.push(`Current group task: ${channelGoal.trim()}`);
+      lines.push(`React to what was just said and help the group reach this decision. Once you agree or the group has decided, state the conclusion clearly.`);
+      lines.push('');
     }
 
     lines.push('');

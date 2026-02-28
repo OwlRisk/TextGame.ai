@@ -317,8 +317,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     personality?: string;
     background?: string;
   }>>([]);
+  type ChannelRoomType = "public" | "private_ai" | "decision" | "broadcast";
+  const VALID_ROOM_TYPES = new Set<string>(["public", "private_ai", "decision", "broadcast"]);
+  const toRoomType = (v: unknown): ChannelRoomType | undefined =>
+    typeof v === "string" && VALID_ROOM_TYPES.has(v) ? (v as ChannelRoomType) : undefined;
+
   /** Channels (game rooms) decided by the GM via <CONFIG_CHANNELS>. null = use template default. */
-  const [gmChannels, setGmChannels] = useState<{ id: string; name: string }[] | null>(null);
+  const [gmChannels, setGmChannels] = useState<{ id: string; name: string; roomType?: ChannelRoomType }[] | null>(null);
 
   // Host personality - try last selected, then default
   const [selectedHostId, setSelectedHostId] = useState<string>(() => {
@@ -1221,11 +1226,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     if (configChannelsMatch && configChannelsMatch[1]) {
       try {
         const raw = configChannelsMatch[1].trim();
-        const arr = JSON.parse(raw) as Array<{ id: string; name: string }>;
+        const arr = JSON.parse(raw) as Array<{ id: string; name: string; roomType?: unknown }>;
         if (Array.isArray(arr) && arr.length > 0) {
-          const valid = arr.filter((c): c is { id: string; name: string } =>
-            c && typeof c === 'object' && typeof c.id === 'string' && typeof c.name === 'string'
-          );
+          const valid = arr
+            .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && typeof c.name === 'string')
+            .map((c) => ({ id: c.id, name: c.name, roomType: toRoomType(c.roomType) }));
           if (valid.length > 0) setGmChannels(valid);
         }
       } catch {
@@ -2187,17 +2192,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
                     toast.dismiss(startToastId);
                     const tid = selectedTemplate?.id || "custom";
-                    const defaultChannelsByTemplate: Record<string, { id: string; name: string }[]> = {
+                    const defaultChannelsByTemplate: Record<string, NonNullable<GameConfig["channels"]>> = {
                       werewolf: [
-                        { id: "general", name: "General" },
-                        { id: "werewolves-only", name: "Werewolves only" },
+                        { id: "general", name: "General", roomType: "public" },
+                        { id: "werewolves-only", name: "Werewolves only", roomType: "decision" },
                       ],
                       mafia: [
-                        { id: "general", name: "General" },
-                        { id: "mafia-only", name: "Mafia only" },
+                        { id: "general", name: "General", roomType: "public" },
+                        { id: "mafia-only", name: "Mafia only", roomType: "decision" },
                       ],
-                      undercover: [{ id: "general", name: "General" }],
-                      custom: [{ id: "general", name: "General" }],
+                      undercover: [{ id: "general", name: "General", roomType: "public" }],
+                      custom: [{ id: "general", name: "General", roomType: "public" }],
                     };
                     const gameConfig: GameConfig = {
                       template: tid as "werewolf" | "undercover" | "custom",
