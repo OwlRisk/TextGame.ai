@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Gamepad2,
   Play,
-  TrendingUp,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -277,7 +276,6 @@ const INSIDE_GAME_STEPS = [
 const GAME_SCENARIOS = {
   werewolf: {
     title: "🐺 Werewolf",
-    rule: "Villagers debate and vote to eliminate werewolves by day. Werewolves hunt at night. Find them first.",
     messages: [
       { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", time: "Night 1", text: "Night falls. The village sleeps — but the wolves are awake. Werewolves, choose your target." },
       { avatar: null, color: "bg-blue-500", name: "Alex", time: "Day 2", text: "I think Blake is acting suspicious. They barely said anything last round." },
@@ -286,7 +284,6 @@ const GAME_SCENARIOS = {
   },
   mafia: {
     title: "🎭 Mafia",
-    rule: "Townspeople vote out suspects by day. The hidden Mafia eliminates one citizen each night. Trust no one.",
     messages: [
       { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Don Ferrante", time: "Night 1", text: "The city sleeps. Mafia members — open your eyes and choose tonight's target." },
       { avatar: null, color: "bg-red-500", name: "Lucia", time: "Day 2", text: "Marco was found outside the bakery at midnight. That's not a coincidence." },
@@ -295,7 +292,6 @@ const GAME_SCENARIOS = {
   },
   spy: {
     title: "🕵️ Who's the Spy",
-    rule: "Everyone gets the same word except the spy, who has a different one. Describe your word without saying it — and find the spy.",
     messages: [
       { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", time: "Round 1", text: "Your secret word has been sent to each of you. Describe it in one sentence — don't make it too obvious!" },
       { avatar: null, color: "bg-purple-500", name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning..." },
@@ -304,7 +300,6 @@ const GAME_SCENARIOS = {
   },
   mystery: {
     title: "🔍 Murder Mystery",
-    rule: "A crime has been committed. Question suspects, find clues, and name the killer — before they escape.",
     messages: [
       { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Detective Kate", time: "Scene 1", text: "A priceless diamond has vanished from the museum. Every person in this room is a suspect." },
       { avatar: null, color: "bg-red-500", name: "Morgan", time: "Scene 1", text: "I saw someone near the display case around 9 PM..." },
@@ -560,11 +555,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 <span className="ml-auto text-xs text-zinc-500 bg-zinc-700/60 rounded-md px-2.5 py-1">
                   {currentScenario.title}
                 </span>
-              </div>
-              {/* Rule bar */}
-              <div className="px-4 py-2.5 bg-violet-500/10 border-b border-violet-500/20 flex items-start gap-2">
-                <Sparkles className="h-3.5 w-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-violet-300/90 leading-relaxed">{currentScenario.rule}</p>
               </div>
               {/* Streaming messages */}
               <div className="p-4 space-y-4 h-[340px] overflow-y-auto">
