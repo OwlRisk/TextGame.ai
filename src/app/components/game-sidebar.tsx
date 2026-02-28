@@ -138,10 +138,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-12 w-12 rounded-2xl transition-all duration-300 relative ${
+                    className={`h-12 w-12 rounded-2xl transition-all duration-200 relative ${
                       selectedGameId === "home"
-                        ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!bg-gradient-to-br hover:!from-violet-600 hover:!to-fuchsia-600 hover:brightness-110"
-                        : "bg-zinc-800 hover:bg-gradient-to-br hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30 hover:scale-105"
+                        ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50"
+                        : "bg-gradient-to-br from-violet-600/80 to-fuchsia-600/80 hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30"
                     }`}
                     asChild
                   >
@@ -172,10 +172,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-12 w-12 rounded-2xl transition-all duration-300 relative ${
+                    className={`h-12 w-12 rounded-2xl transition-all duration-200 relative ${
                       selectedGameId === "my-games"
-                        ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50 hover:!bg-blue-600 hover:brightness-110"
-                        : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105"
+                        ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50"
+                        : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl"
                     }`}
                     asChild
                   >
@@ -206,10 +206,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-12 w-12 rounded-2xl transition-all duration-300 relative ${
+                    className={`h-12 w-12 rounded-2xl transition-all duration-200 relative ${
                       selectedGameId === "discover"
-                        ? "bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/50 hover:!bg-gradient-to-br hover:!from-amber-500 hover:!to-orange-500 hover:brightness-110"
-                        : "bg-zinc-800 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:rounded-xl hover:shadow-lg hover:shadow-amber-500/40 hover:scale-105"
+                        ? "bg-orange-600 rounded-xl shadow-lg shadow-orange-500/50"
+                        : "bg-zinc-800 hover:bg-orange-600 hover:rounded-xl"
                     }`}
                     asChild
                   >
