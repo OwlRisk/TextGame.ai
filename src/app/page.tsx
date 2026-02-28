@@ -62,7 +62,6 @@ export default function HomePage() {
       {showLanding ? (
         <LandingPage
           onSignIn={handleSignIn}
-          onExploreGames={handleExploreGames}
           onCreateGame={handleCreateGame}
         />
       ) : null}

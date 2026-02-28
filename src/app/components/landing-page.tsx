@@ -9,19 +9,15 @@ import {
   Zap,
   Star,
   ChevronDown,
-  Lightbulb,
-  Clock,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
-import { GAME_TEMPLATES } from "@/lib/game-templates";
 
 interface LandingPageProps {
   onSignIn: () => void;
-  onExploreGames?: () => void;
   onCreateGame?: (presetId?: string) => void;
 }
 
@@ -112,7 +108,7 @@ const GAME_SCENARIOS = {
   },
 };
 
-export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingPageProps) {
+export function LandingPage({ onSignIn, onCreateGame }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<
     keyof typeof GAME_SCENARIOS
   >("werewolf");
@@ -138,9 +134,9 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
     },
     {
       icon: Sparkles,
-      title: "20+ ready templates",
+      title: "Templates + custom",
       description:
-        "Jump in with classics like Werewolf, Mafia, or Who's the Spy — or go fully custom.",
+        "Jump in with classics like Werewolf, Mafia, or Who's the Spy — or describe any game of your own.",
       gradient: "from-blue-500 to-cyan-500",
     },
     {
@@ -204,10 +200,30 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
               in minutes.
             </h2>
 
-            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-6 md:mb-8 leading-relaxed">
-              Chat with an AI Game Master to build your rules, roles, and world.
-              AI characters fill every seat — start playing the moment you&apos;re done.
+            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-5 leading-relaxed">
+              You chat with an AI Game Master who designs and runs your game.
+              Describe your idea — the GM writes rules, assigns secret roles, and starts the session.
+              AI characters fill every seat, no friends required.
             </p>
+
+            {/* 3-step mechanic flow */}
+            <div className="mb-6 flex items-center gap-2 flex-wrap">
+              {[
+                { num: "1", text: "Describe your idea" },
+                { num: "2", text: "GM builds the game" },
+                { num: "3", text: "Play with AI characters" },
+              ].map((step, i, arr) => (
+                <div key={step.num} className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-400 text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                    {step.num}
+                  </span>
+                  <span className="text-sm text-zinc-300 whitespace-nowrap">{step.text}</span>
+                  {i < arr.length - 1 && (
+                    <ArrowRight className="h-3.5 w-3.5 text-zinc-600 flex-shrink-0" />
+                  )}
+                </div>
+              ))}
+            </div>
 
             <div className="mb-6 p-5 bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-700/50 rounded-xl">
               <div className="grid grid-cols-2 gap-4">
@@ -222,11 +238,11 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-10 h-10 bg-fuchsia-500/10 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-fuchsia-400" />
+                    <Crown className="h-5 w-5 text-fuchsia-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">20+ templates</div>
-                    <div className="text-xs text-zinc-500">Ready to use</div>
+                    <div className="text-sm font-bold text-white">Solo-friendly</div>
+                    <div className="text-xs text-zinc-500">No friends needed</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -276,16 +292,6 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
                 </svg>
                 Sign in with Google
               </Button>
-              {onExploreGames && (
-                <Button
-                  onClick={onExploreGames}
-                  size="lg"
-                  className="mt-3 w-full max-w-xl min-h-[44px] bg-violet-600/90 hover:bg-violet-500 border border-violet-400/60 text-white font-bold text-base sm:text-lg py-5 sm:py-6 rounded-xl transition-all"
-                >
-                  <Lightbulb className="h-5 w-5 mr-2 shrink-0" />
-                  Browse templates
-                </Button>
-              )}
               <p className="mt-4 text-center text-sm text-zinc-400">
                 Free to start · From idea to game in under 2 minutes
               </p>
@@ -443,72 +449,6 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Game Templates — driven by real GAME_TEMPLATES data */}
-        <div className="mb-32">
-          <div className="text-center mb-12">
-            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">TEMPLATES</span>
-            </div>
-            <h3 className="text-3xl font-black text-white mb-3">Start with a template or go custom</h3>
-            <p className="text-lg text-zinc-400">Pick a classic or describe something entirely new</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {GAME_TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.id}
-                onClick={() => onCreateGame ? onCreateGame(tpl.id) : onSignIn()}
-                className="group relative bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-5 transition-all duration-300 hover:scale-[1.02] text-left"
-              >
-                {/* hover glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity" />
-
-                <div className="relative flex items-start gap-3 mb-3">
-                  <span className="text-3xl mt-0.5 transition-transform group-hover:scale-110">{tpl.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-white mb-0.5">{tpl.name}</h4>
-                    <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">{tpl.description}</p>
-                  </div>
-                </div>
-
-                {/* Meta row */}
-                <div className="relative flex items-center gap-3 mb-3 text-xs text-zinc-500">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {tpl.minPlayers === tpl.maxPlayers
-                      ? `${tpl.minPlayers} players`
-                      : `${tpl.minPlayers}–${tpl.maxPlayers} players`}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {tpl.estimatedTime}
-                  </span>
-                </div>
-
-                {/* Role badges */}
-                {tpl.roles && tpl.roles.length > 0 && (
-                  <div className="relative flex flex-wrap gap-1.5 mb-3">
-                    {tpl.roles.map((role) => (
-                      <span
-                        key={role}
-                        className="inline-block bg-zinc-800/80 border border-zinc-700/60 text-zinc-400 text-[10px] font-medium px-2 py-0.5 rounded-full"
-                      >
-                        {role}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* CTA */}
-                <div className="relative flex items-center justify-end">
-                  <span className="text-xs text-violet-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                    Play this game <ArrowRight className="h-3 w-3" />
-                  </span>
-                </div>
-              </button>
-            ))}
           </div>
         </div>
 
@@ -843,7 +783,7 @@ function FAQSection() {
     {
       question: "Do I need to sign in? Is it free?",
       answer:
-        "You can browse the site without signing in. To create, save, and manage games (and use My Games), sign in with Google. New accounts get free starting credits to try the platform. Your games are stored in your account so you can return anytime.",
+        "Sign in with Google to get started — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Your games are saved to your account and available across devices.",
     },
     {
       question: "Where are my games saved?",
