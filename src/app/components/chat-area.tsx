@@ -872,6 +872,21 @@ export function ChatArea({
               <span className="text-xs text-zinc-500">Pull up for older messages</span>
             </div>
           )}
+          {messages.length === 0 && !isRoundInProgress && (
+            <div className="flex flex-col items-center justify-center py-20 text-center select-none">
+              <div className="text-4xl mb-4 opacity-40">💬</div>
+              <p className="text-zinc-500 text-sm font-medium">No messages yet</p>
+              <p className="text-zinc-600 text-xs mt-1">Start the conversation!</p>
+            </div>
+          )}
+          {messages.length === 0 && isRoundInProgress && (
+            <div className="flex flex-col items-center justify-center py-20 text-center select-none">
+              <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                <span className="h-3.5 w-3.5 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin flex-shrink-0" />
+                Game is starting…
+              </div>
+            </div>
+          )}
           {visibleMessages.map((message, index) => {
             const showAvatar = index === 0 || visibleMessages[index - 1].senderId !== message.senderId;
 
@@ -1227,7 +1242,7 @@ export function ChatArea({
             </button>
             {quickReplyOpen && quickReplies.length > 0 && (
               <div className="px-3 pb-3">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch]">
                   {quickReplies.map((text) => (
                     <Button
                       key={text}

@@ -62,6 +62,8 @@ interface ChannelListProps {
   channelPermissions?: Record<string, string[]>;
   /** Full player list for showing member avatars in channel rows. */
   allPlayers?: PlayerInfo[];
+  /** Unread message counts per channelId — shows a badge on non-selected channels. */
+  unreadCounts?: Record<string, number>;
 }
 
 export function ChannelList({ 
@@ -81,6 +83,7 @@ export function ChannelList({
   onAvatarUrlLoaded,
   channelPermissions = {},
   allPlayers = [],
+  unreadCounts = {},
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -183,6 +186,12 @@ export function ChannelList({
                           <Users className="h-4 w-4 flex-shrink-0" />
                         )}
                         <span className="text-sm truncate flex-1 text-left">{channel.name}</span>
+                        {/* Unread badge */}
+                        {(unreadCounts[channel.id] ?? 0) > 0 && selectedChannelId !== channel.id && (
+                          <span className="flex-shrink-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                            {unreadCounts[channel.id]! > 99 ? "99+" : unreadCounts[channel.id]}
+                          </span>
+                        )}
                         {/* Member avatar stack */}
                         {memberPlayers.length > 0 && (
                           <div className="flex -space-x-1.5 flex-shrink-0">

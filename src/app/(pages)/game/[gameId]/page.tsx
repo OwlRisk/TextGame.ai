@@ -1077,6 +1077,33 @@ ${rulesText || "No specific rules defined."}`.trim();
     [isGameChannel, messages, selectedChannelId, defaultGameChannelId]
   );
 
+  // Unread message counts per game channel — tracked by recording the message count at the
+  // moment the user switches to a channel, then computing the delta as new messages arrive.
+  const [seenMessageCounts, setSeenMessageCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!selectedChannelId) return;
+    const currentCount = messages.filter(
+      (m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId
+    ).length;
+    setSeenMessageCounts((prev) => ({ ...prev, [selectedChannelId]: currentCount }));
+    // Intentionally only re-runs on selectedChannelId change, not on every new message.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChannelId]);
+
+  const unreadCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const channelId of gameRoomIds) {
+      if (channelId === selectedChannelId) continue;
+      const total = messages.filter(
+        (m) => (m.channelId ?? defaultGameChannelId) === channelId
+      ).length;
+      const seen = seenMessageCounts[channelId] ?? 0;
+      const delta = total - seen;
+      if (delta > 0) counts[channelId] = delta;
+    }
+    return counts;
+  }, [messages, seenMessageCounts, gameRoomIds, defaultGameChannelId, selectedChannelId]);
+
   // Quick reply: only update when it's "user's turn" (round just ended, last message from Host/AI).
   // Do not refetch when the user just sent a message — keep current suggestions until Host/AI reply again.
   useEffect(() => {
@@ -1195,7 +1222,7 @@ ${rulesText || "No specific rules defined."}`.trim();
 
   if (!currentGame) {
     return (
-      <div className="h-screen flex items-center justify-center bg-zinc-900 text-white">
+      <div className="h-[100dvh] flex items-center justify-center bg-zinc-900 text-white">
         <div className="text-center">
           {gamesLoading || sharedLoadPending ? (
             <>
@@ -1243,6 +1270,7 @@ ${rulesText || "No specific rules defined."}`.trim();
     onAvatarUrlLoaded,
     channelPermissions,
     allPlayers: players,
+    unreadCounts,
     onDeleteChannel: (id: string | undefined) => {
       if (id === "rules" || id === "progress") {
         toast.info("Sections cannot be removed");
@@ -1253,7 +1281,7 @@ ${rulesText || "No specific rules defined."}`.trim();
   };
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
+    <div className="h-[100dvh] flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
       {/* 移动端顶栏：仅小屏显示 */}
       <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95">
         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "app" ? null : "app"))} aria-label="打开菜单">

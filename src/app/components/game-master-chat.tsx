@@ -2220,7 +2220,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
                   className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isStartingGame ? "Starting…" : "Start Game"}
+                  {isStartingGame ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+                      Starting…
+                    </span>
+                  ) : "Start Game"}
                 </Button>
                 {isRulesEmpty && (
                   <p className="w-full text-xs text-zinc-500 mt-1.5 text-right">Chat with GM to generate rules first.</p>

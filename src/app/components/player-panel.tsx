@@ -183,10 +183,16 @@ function PlayerCard({
     >
       <div className="flex items-start gap-2.5">
         <div className="relative flex-shrink-0">
+          {isSpeaking && (
+            <span className="absolute -bottom-0.5 -right-0.5 z-10 flex h-3 w-3 pointer-events-none">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
+            </span>
+          )}
           {!player.isAI && !useGameAvatarForHuman ? (
             <Avatar
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
-                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+                isSpeaking ? "ring-2 ring-green-500/60 scale-105" : "group-hover:scale-105"
               }`}
             >
               {userAvatarUrl ? (
@@ -208,7 +214,7 @@ function PlayerCard({
               initialUrl={avatarImageUrls[avatarCacheKey(humanAvatarName, "player")]}
               onAvatarLoaded={onAvatarUrlLoaded}
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${
-                isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+                isSpeaking ? "ring-2 ring-green-500/60 scale-105" : "group-hover:scale-105"
               }`}
               fallbackColor={player.avatar}
             />
@@ -223,7 +229,7 @@ function PlayerCard({
                   initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
                   onAvatarLoaded={onAvatarUrlLoaded}
                   className={`h-9 w-9 shadow-md transition-transform duration-200 ${
-                    isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"
+                    isSpeaking ? "ring-2 ring-green-500/60 scale-105" : "group-hover:scale-105"
                   }`}
                   fallbackColor={player.avatar}
                 />
