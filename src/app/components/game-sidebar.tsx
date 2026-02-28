@@ -151,7 +151,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Link>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+            <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
               🏠 Home
             </TooltipContent>
           </Tooltip>
@@ -177,7 +177,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Link>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+            <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
               🎮 My Games
             </TooltipContent>
           </Tooltip>
@@ -203,7 +203,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Link>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+            <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
               🧭 Discover
             </TooltipContent>
           </Tooltip>
@@ -221,7 +221,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <Plus className="h-7 w-7 text-white" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8} className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150">
+              <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
                 ✨ Create Game
               </TooltipContent>
             </Tooltip>
@@ -268,11 +268,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                           </Link>
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent 
-                        side="right"
-                        sideOffset={8}
-                        className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg shadow-lg border-none font-semibold text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
-                      >
+                      <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white [&>svg]:hidden">
                         {game.name}
                       </TooltipContent>
                     </Tooltip>
@@ -437,18 +433,16 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 hover:bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30 cursor-pointer"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="!h-12 !w-12 !p-0 rounded-full bg-zinc-800 hover:!bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30"
                   onClick={() => router.push('/signin')}
                 >
                   <LogIn className="h-6 w-6 text-white" />
-                </button>
+                </Button>
               </TooltipTrigger>
-              <TooltipContent 
-                side="right" 
-                sideOffset={8}
-                className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-md shadow-lg border-none font-medium text-sm [&>svg]:hidden animate-in fade-in-0 zoom-in-95 duration-150"
-              >
+              <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
                 Sign In
               </TooltipContent>
             </Tooltip>
