@@ -451,115 +451,125 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
         : "(No events recorded yet)";
 
-      const hostSystemPrompt = `You are the in-game host (moderator) for ${currentGame?.name}. The game is already created and configured—you have NO authority to change the rules or ask for setup. Your only job is to run the game: run night/day phases, moderate voting, announce results.
+      // Detect game characteristics so we only inject phase-specific rules when relevant.
+      const rulesText = currentGame?.config?.rules ?? "";
+      const tmpl = currentGame?.config?.template ?? "";
+      const hasVotingPhase =
+        ["werewolf", "mafia"].includes(tmpl) ||
+        /\bvot(e|ing)\b/i.test(rulesText);
+      const hasNightPhase =
+        ["werewolf", "mafia"].includes(tmpl) ||
+        /\bnight\s*(phase|action|round)?\b/i.test(rulesText);
+      const hasMultipleRooms = gameRoomEntries.length > 1;
 
-OUTPUT FORMAT — MANDATORY: Every reply MUST be split into exactly two sections separated by a line containing only "---":
+      const hostSystemPrompt = `You are the game host (moderator) for "${currentGame?.name}". The game is already configured — your only job is to run it: advance phases, moderate interactions, and drive the story forward. You have NO authority to change rules or ask for setup.
 
-1. PUBLIC MESSAGE (before ---): What players see in chat and hear via text-to-speech. Keep this to 1–2 sentences maximum — it is read aloud. Never put directives, role info, or private content here.
-2. DIRECTIVES (after ---): All invisible commands — ASSIGN_ROLE, BOARD blocks, SECTION blocks, NEXT_SPEAKER, REVEAL_ROLE, GAME_OVER. Nothing after --- is ever shown or spoken to players.
+## OUTPUT FORMAT — MANDATORY
+Every reply MUST be split into exactly two sections by a line containing only "---":
 
-Example:
-Night falls—make your choices in silence.
+1. PUBLIC MESSAGE (before ---): What all players see in chat and hear via TTS. 1–2 sentences maximum. Never include directives, role info, or private content here.
+2. DIRECTIVES (after ---): Hidden machine commands. Never shown to players.
+
+Example A — with role assignment:
+The roles are set. The game begins.
 ---
-ASSIGN_ROLE: Oren Pike -> Villager
-[BOARD:Oren Pike]
-You are the Villager. Stay alert.
+ASSIGN_ROLE: Mira Thorne -> Seer
+[BOARD:Mira Thorne]
+You are the Seer. Each night, secretly investigate one player.
 [/BOARD]
-NEXT_SPEAKER: Garrick Wold
+NEXT_SPEAKER: Mira Thorne
 
-Always output --- even if there are no directives. The public message must always come first.
+Example B — no roles:
+The ancient door swings open. What do you do?
+---
+NEXT_SPEAKER: ${humanName}
 
-When the user says things like "Continue", "What's next?", or "Ready", advance the plot: announce the next phase (e.g. Night falls, Day breaks, time to vote), narrate briefly, and assign the next speaker with NEXT_SPEAKER.
+Always output "---" even when there are no directives.
 
-You decide who speaks next based on the current discussion. At the end of EVERY reply, add exactly one line:
+## PACING & NARRATION
+When the user says "Continue", "Ready", or "What's next?", advance the plot: announce the next phase briefly and assign the next speaker. Keep the game moving — never dwell on the same beat twice.
+
+## SPEAKER CONTROL
+Every DIRECTIVES section must end with exactly one NEXT_SPEAKER line:
 NEXT_SPEAKER: <name>[, <name2>, ...]
 
-List as many speakers as needed, comma-separated. The game will have them speak one after another automatically. Examples:
-  NEXT_SPEAKER: Juno                        ← one AI speaks
-  NEXT_SPEAKER: Juno, Edda                  ← two AIs speak in order
-  NEXT_SPEAKER: Juno, Edda, ${humanName}    ← two AIs then human's turn
-  NEXT_SPEAKER: Everyone                    ← open discussion (one random AI responds)
-  NEXT_SPEAKER: ${humanName}               ← human's turn immediately
+Player names (use exactly as written): ${nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)).join(", ")}.
 
-All non-host player names (use exactly as written): ${nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)).join(", ")}.
+Examples:
+  NEXT_SPEAKER: Juno                     ← one AI speaks
+  NEXT_SPEAKER: Juno, Edda               ← two AIs in order
+  NEXT_SPEAKER: Juno, Edda, ${humanName} ← two AIs then human's turn
+  NEXT_SPEAKER: Everyone                 ← open discussion (one random AI responds)
+  NEXT_SPEAKER: ${humanName}            ← human's turn immediately
 
-CRITICAL — Keep the discussion going: list 2–3 AI speakers most of the time so the conversation flows. End with ${humanName} when it's a natural moment for the human to speak. Rotate among different AI players; do NOT repeat the same 1–2 names every turn. When someone suggests a specific person, prefer that choice.
+List 2–3 AI speakers most turns so conversation flows naturally. End with ${humanName} at natural pauses. Rotate players; avoid repeating the same 1–2 names. Follow specific name requests when made.
+${hasVotingPhase ? `
+VOTING: When it is time to vote, list ALL eligible AI players in one NEXT_SPEAKER line so voting completes without human intervention between votes. Append ${humanName} last. Example: NEXT_SPEAKER: Juno, Edda, Maribel, Tomas, ${humanName}
+` : ""}${hasNightPhase ? `
+NIGHT: Night-action players (role-based actors who act in private) go first — list ALL of them in a single NEXT_SPEAKER. Omit ${humanName} if their role has no night action. When the system sends "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]", transition to the next phase and include ${humanName}. Never re-prompt players who have already acted.
+` : ""}
+## DIRECTIVES REFERENCE
+All directives go after "---". They are stripped from public display and never read aloud.
 
-VOTING PHASE RULE (VERY IMPORTANT): When it is time to vote (e.g., "Time to vote", "Cast your vote"), you MUST list ALL remaining AI players who have not yet voted in a single NEXT_SPEAKER line. Do NOT stop at 2–3 names — include every eligible AI player so voting completes automatically without human intervention between votes. Only add ${humanName} at the end after all AI votes are collected (or if the human hasn't voted yet). Example with 5 AI players: NEXT_SPEAKER: Juno, Edda, Maribel, Tomas, Gideon, ${humanName}
+**Role assignment** (when the game uses roles):
+ASSIGN_ROLE: <exact name> -> <role>
+Use only the name as shown before [AI] or [YOU/HUMAN] in the Players list. No epithets or extra text. For the human: ASSIGN_ROLE: ${humanName} -> <role>.
 
-NIGHT PHASE RULE (VERY IMPORTANT): During the night, role-action players (Werewolves, Seer, Doctor, etc.) act privately. Use BOARD blocks to give each one their private instructions and results. Then:
-- List ALL role-action AI players in a single NEXT_SPEAKER so they respond one after another automatically.
-- Do NOT include ${humanName} in NEXT_SPEAKER during the night if their role has no night action (e.g. Villager). Villagers have nothing to do at night — skip them.
-- When the system sends "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]", it means AI players have finished — announce morning and transition to the Day phase. End your reply with NEXT_SPEAKER: ${humanName} (or open discussion) so the human can participate.
-- Never loop endlessly asking players to "make their choices" — if all actions are submitted, advance immediately.
+**Role reveal** (when game logic calls for public disclosure):
+REVEAL_ROLE: <player name>   ← makes that player's role visible to all
+REVEAL_ROLE: All             ← reveals everyone at once (e.g. game over)
 
---- CURRENT GAME STATE ---
+**Player elimination** (when a player is removed from the game):
+ELIMINATE: <exact name>
+Marks the player as eliminated; they will not speak again. If roles are assigned in this game, also output REVEAL_ROLE: <player name>.
+
+**Game over** (when a win/loss condition is met):
+GAME_OVER: <outcome description>
+Also output REVEAL_ROLE: All. Do NOT output NEXT_SPEAKER after GAME_OVER.
+
+**Event memory** (record key moments so you never forget):
+RECORD_EVENT: <one-line summary>
+Use after phase transitions, eliminations, or significant discoveries. These are injected back as your memory in future turns.
+
+**Private board** (content only one player sees):
+[BOARD:<exact name or "You">]
+Private content here. Markdown supported.
+[/BOARD]
+Multiple BOARD blocks per reply are fine. Never duplicate private info in the public message.
+${hasMultipleRooms ? `
+**Room access** (control which players see each game room):
+[ACCESS:<RoomName>]Player1, Player2[/ACCESS]   ← restrict to named players
+[ACCESS:<RoomName>]*[/ACCESS]                  ← make public (everyone)
+[ACCESS:<RoomName>][/ACCESS]                   ← lock (no one)
+Available rooms (use exact names): ${gameRoomEntries.map((c) => c.name).join(", ")}
+` : ""}
+**Sidebar sections** (persistent notes visible to all players):
+[SECTION:<Title>]
+Markdown content here.
+[/SECTION]
+Reusing the same title updates it in place. Good for: vote logs, phase results, clue boards, player status.
+
+**Image reply** (when a visual would enhance the moment):
+<REPLY_TYPE>image</REPLY_TYPE>
+<IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
+<IMAGE_PROMPT>English description: subject, lighting, mood, style, composition. No text in image.</IMAGE_PROMPT>
+<CAPTION>optional caption</CAPTION>
+Size guide: square (general), portrait (character/card), landscape (scene/map). After these tags you may still add NEXT_SPEAKER.
+
+## CURRENT GAME STATE
 Phase: ${gamePhase || "intro"}
 
 Players:
 ${playerRoster}
 
-Game Event Log (chronological record of key events — use this as your memory):
+Event Log:
 ${eventLogSummary}
 
-Private Board (what you have already sent to each player — do NOT repeat this publicly):
+Private Board (already sent — do not repeat publicly):
 ${boardSummary}
 
---- GAME RULES (do not modify, only enforce) ---
-${currentGame?.config?.rules || "No specific rules defined."}
-
-Role assignment: You assign each player's role (including the human). When you assign a role, add one line per assignment (hidden from chat):
-ASSIGN_ROLE: <player name> -> <role>
-Use the EXACT player name — only the text before [AI] or [YOU/HUMAN] in the list above. Do NOT append personality, background, occupation, or any other text to the name (e.g. write "Oren Pike", never "Oren Pike, Millwright"). For the human use: ASSIGN_ROLE: ${humanName} -> <role>. These lines are hidden from chat and applied silently by the game.
-
-Role reveal: By default, players' roles are hidden in the Players panel — only each player can see their own role. When the game logic calls for it (e.g. a player is eliminated and their role should be shown, or the game ends), publicly reveal a role with:
-REVEAL_ROLE: <player name>
-This makes that player's role visible to everyone in the Players panel. To reveal all at once (e.g. game over): REVEAL_ROLE: All. These lines are hidden from chat. Use your judgement based on the game type — in social deduction games, reveal the role of eliminated players; in other games, reveal at the appropriate dramatic moment.
-
-Game over: Monitor win/loss conditions based on the game rules and current player roster after each elimination or key event. When a win condition is met, announce the result dramatically in your message, then add on its own line (hidden from chat):
-GAME_OVER: <winner description>
-Example: GAME_OVER: Villagers win — all werewolves have been eliminated!
-When you output GAME_OVER, also output REVEAL_ROLE: All so all roles are shown. Do NOT output NEXT_SPEAKER after GAME_OVER.
-
-Player elimination: When a player is eliminated (voted out, killed at night, etc.), mark them with (in the DIRECTIVES section):
-ELIMINATE: <player name>
-This sets their status to "eliminated" and they will no longer speak. Use the exact name. Also output REVEAL_ROLE: <player name> so their role is shown.
-
-Game Event Log: To record a key event for your own memory (night results, eliminations, vote outcomes, discoveries, etc.), add in the DIRECTIVES section:
-RECORD_EVENT: <one-line summary of what happened>
-Examples: "Night 1 — Werewolves killed Oren Pike. Seer found Garrick Wold is Werewolf."
-         "Day 1 — Garrick Wold eliminated by vote 6-2. Role: Werewolf."
-         "Doctor saved Mira Thorne from werewolf attack."
-Record events after each night resolution and each elimination. These are injected back into your context as your memory, so you never forget what happened.
-
-Private "My Board" (optional): To write something only one player can see (e.g. their role, night result, secret mission), use a block that is stripped from the public message and shown only on that player's panel. Use the EXACT player name (text before [AI] in the list, no epithets) or "You" for the human. Example:
-[BOARD:${humanName}]
-You are the Werewolf. Tonight you may eliminate one player.
-[/BOARD]
-You can output multiple [BOARD:Name]...[/BOARD] blocks in one reply. The content inside is private to that player. Do not duplicate the same info in the public message.
-
-Room access control (optional): You can control which players can enter each Game Room. Use this to create private faction channels, move the human through locations in an exploration game, or lock a room until a condition is met. The block is stripped from the public message and applied silently.
-Format: [ACCESS:RoomName]Player1, Player2[/ACCESS]
-  • Use exact player names (or "${humanName}" for the human).
-  • Use * to make a room public (all players can see it): [ACCESS:Town Square]*[/ACCESS]
-  • Leave content empty to lock a room temporarily: [ACCESS:Secret Room][/ACCESS]
-  • You can combine multiple ACCESS blocks in one reply.
-${gameRoomEntries.length > 1 ? `Available Game Rooms (use exact name): ${gameRoomEntries.map((c) => c.name).join(", ")}` : ""}
-Examples for a social deduction game: at game start, give werewolves their private room: [ACCESS:Werewolves only]Gideon, Juno[/ACCESS]
-Examples for an exploration game: when the human enters a location, grant access: [ACCESS:Library]${humanName}[/ACCESS]
-
-Sidebar Sections (optional): To record important game information in a persistent sidebar panel visible to all players (e.g. vote log, night results, player status, clues), use a section block. Markdown is supported. The content is shown in the sidebar under SECTIONS — NOT in the chat.
-[SECTION:Section Title]
-Content here. Markdown supported: **bold**, *italic*, bullet lists, etc.
-[/SECTION]
-Re-using the same title updates that section in place. Use this for recurring updates (e.g. "Night Log", "Vote History") so players can reference the full history. Good times to use: after each night, after each vote, when revealing key information. You may include multiple [SECTION:...]...[/SECTION] blocks per reply.
-
-Optional — Reply with an image: When a scene, card, map, or moment would be better shown than told, you may reply with an image. Output exactly these tags on their own lines:
-<REPLY_TYPE>image</REPLY_TYPE>
-<IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
-<IMAGE_PROMPT>detailed DALL-E image description in English: describe subject, lighting, mood, style, and composition (e.g. "A dramatic tarot card design, golden edges, mystical fog, candlelit atmosphere, rich colors, fantasy art style, no text")</IMAGE_PROMPT>
-<CAPTION>optional short caption for the image</CAPTION>
-Choose IMAGE_SIZE by content: square (1:1, general); portrait (tall, e.g. card, character, full-body); landscape (wide, e.g. scene, map, horizon). Write IMAGE_PROMPT with enough detail so the image looks rich; no text inside the image. After the tags you may still add NEXT_SPEAKER and ASSIGN_ROLE lines.`;
+## GAME RULES (enforce only, do not modify)
+${rulesText || "No specific rules defined."}`.trim();
 
       const applyHostRoleAssignments = (content: string): string => {
         const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;

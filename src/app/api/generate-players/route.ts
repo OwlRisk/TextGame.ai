@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
       const maxAI = typeof maxPlayers === 'number' && maxPlayers >= 2 ? maxPlayers - 1 : 19;
       const decideCountPrompt = `You are a game master. Based on the game rules below, decide the optimal number of AI players (user + AI = total). 
 
-Game Template: ${gameTemplate || 'social deduction'}
+Game Template: ${gameTemplate || 'custom'}
 Valid AI player range: ${minAI}-${maxAI} (total players: ${minAI + 1}-${maxAI + 1})
 
 Game Rules:
-${rules || 'Standard social deduction game'}
+${rules || 'No specific rules provided.'}
 
 Consider: game balance, role distribution, pacing. Output ONLY a single number between ${minAI} and ${maxAI}, nothing else.`;
 
@@ -105,10 +105,10 @@ Also include at top level: "civilianWord": "your civilian word", "undercoverWord
 
     const prompt = `Generate ${playerCount} unique AI players for this game. (Seed: ${randomSeed})
 
-Game: ${gameTemplate || 'social deduction'}
+Game: ${gameTemplate || 'custom'}
 
 Rules:
-${rules || 'Standard social deduction game'}
+${rules || 'No specific rules provided.'}
 
 Based on this game's theme and setting, decide what naming style fits best:
 - Modern/abstract games → modern names (Emma, Lucas, Sofia)

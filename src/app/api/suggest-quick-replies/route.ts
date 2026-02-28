@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = `You are a game room assistant. Given the game rules and the recent conversation in the room, suggest 1 to 3 short "quick reply" options that the human player could tap to send. 
 - Decide how many options make sense (1, 2, or 3). Fewer is fine when one obvious reply is enough.
-- Each option must be one short sentence, natural and relevant to the current situation (e.g. "Continue.", "I'm ready.", "I vote for Maya.", "I have a night action.").
-- Match the tone of the game. Output only the suggestions, one per line. No numbering, no quotes, no extra text. Use English.`;
+- Each option must be one short sentence, natural and relevant to the current situation (e.g. "Continue.", "I'm ready.", "Let's move on.", "I agree with that.").
+- Match the tone and genre of the game. Output only the suggestions, one per line. No numbering, no quotes, no extra text. Use English.`;
 
     const userPrompt = `Game: ${gameName}${gamePhase ? `\nPhase: ${gamePhase}` : ''}
 

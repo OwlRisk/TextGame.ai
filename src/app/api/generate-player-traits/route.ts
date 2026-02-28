@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         {
           role: 'system',
           content:
-            'You are a creative game writer who invents vivid, realistic characters for social deduction games. Always respond with valid JSON.',
+            'You are a creative game writer who invents vivid, realistic characters for any game genre. Always respond with valid JSON.',
         },
         { role: 'user', content: prompt },
       ],
