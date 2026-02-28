@@ -48,107 +48,66 @@ function colorToHex(twClass: string): string {
 
 const GAME_SCENARIOS = {
   werewolf: {
-    title: "Werewolf",
+    title: "🐺 Werewolf",
+    rule: "Villagers debate and vote to eliminate werewolves by day. Werewolves hunt at night. Find them first.",
     messages: [
-      {
-        avatar: "GM",
-        color: "from-violet-500 to-fuchsia-500",
-        name: "Game Master",
-        time: "12:30 PM",
-        text: "Welcome to Werewolf! I'll be your host today. The villagers must identify the werewolves before it's too late. Let's begin the night phase...",
-      },
-      {
-        avatar: null,
-        color: "bg-blue-500",
-        name: "Alex",
-        time: "12:31 PM",
-        text: "I think Blake is acting suspicious...",
-      },
-      {
-        avatar: null,
-        color: "bg-green-500",
-        name: "Casey",
-        time: "12:31 PM",
-        text: "I was with Blake during the night phase. It can't be them!",
-      },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", time: "Night 1", text: "Night falls. The village sleeps — but the wolves are awake. Werewolves, choose your target." },
+      { avatar: null, color: "bg-blue-500", name: "Alex", time: "Day 2", text: "I think Blake is acting suspicious. They barely said anything last round." },
+      { avatar: null, color: "bg-green-500", name: "Casey", time: "Day 2", text: "I was watching Blake during the night phase. It can't be them!" },
+    ],
+  },
+  mafia: {
+    title: "🎭 Mafia",
+    rule: "Townspeople vote out suspects by day. The hidden Mafia eliminates one citizen each night. Trust no one.",
+    messages: [
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Don Ferrante", time: "Night 1", text: "The city sleeps. Mafia members — open your eyes and choose tonight's target." },
+      { avatar: null, color: "bg-red-500", name: "Lucia", time: "Day 2", text: "Marco was found outside the bakery at midnight. That's not a coincidence." },
+      { avatar: null, color: "bg-yellow-600", name: "Marco", time: "Day 2", text: "I was getting bread for my family! Ask anyone!" },
     ],
   },
   spy: {
-    title: "Who's the Spy",
+    title: "🕵️ Who's the Spy",
+    rule: "Everyone gets the same word except the spy, who has a different one. Describe your word without saying it — and find the spy.",
     messages: [
-      {
-        avatar: "GM",
-        color: "from-violet-500 to-fuchsia-500",
-        name: "Game Master",
-        time: "2:15 PM",
-        text: "Your word is 'Coffee'. The spy has a different word. Describe yours without being too obvious!",
-      },
-      {
-        avatar: null,
-        color: "bg-purple-500",
-        name: "Jordan",
-        time: "2:16 PM",
-        text: "Mine is a hot beverage people drink in the morning...",
-      },
-      {
-        avatar: null,
-        color: "bg-pink-500",
-        name: "Riley",
-        time: "2:16 PM",
-        text: "I think Jordan might be the spy. That's too vague!",
-      },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", time: "Round 1", text: "Your secret word has been sent to each of you. Describe it in one sentence — don't make it too obvious!" },
+      { avatar: null, color: "bg-purple-500", name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning..." },
+      { avatar: null, color: "bg-pink-500", name: "Riley", time: "Round 1", text: "That's suspiciously vague, Jordan. I'm watching you." },
     ],
   },
   mystery: {
-    title: "Mystery",
+    title: "🔍 Murder Mystery",
+    rule: "A crime has been committed. Question suspects, find clues, and name the killer — before they escape.",
     messages: [
-      {
-        avatar: "GM",
-        color: "from-violet-500 to-fuchsia-500",
-        name: "Detective Kate",
-        time: "4:20 PM",
-        text: "A priceless diamond has been stolen from the museum. Everyone here is a suspect. Let's start investigating...",
-      },
-      {
-        avatar: null,
-        color: "bg-red-500",
-        name: "Morgan",
-        time: "4:21 PM",
-        text: "I saw someone near the display case around 9 PM...",
-      },
-      {
-        avatar: null,
-        color: "bg-yellow-600",
-        name: "Taylor",
-        time: "4:22 PM",
-        text: "That's impossible! The museum closes at 8 PM!",
-      },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Detective Kate", time: "Scene 1", text: "A priceless diamond has vanished from the museum. Every person in this room is a suspect." },
+      { avatar: null, color: "bg-red-500", name: "Morgan", time: "Scene 1", text: "I saw someone near the display case around 9 PM..." },
+      { avatar: null, color: "bg-yellow-600", name: "Taylor", time: "Scene 1", text: "That's impossible — the museum closes at 8!" },
+    ],
+  },
+  tarot: {
+    title: "🃏 Tarot Reading",
+    rule: "Ask a question and receive a personal card reading. The AI host draws, interprets, and reflects with you.",
+    messages: [
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "The Oracle", time: "Reading", text: "Take a breath. What question or intention do you bring to this reading today?" },
+      { avatar: null, color: "bg-amber-500", name: "You", time: "Reading", text: "I'm at a crossroads with my career and don't know which path to take." },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "The Oracle", time: "Reading", text: "I draw The Fool — a leap of faith, a fresh start. This card asks: what would you do if you weren't afraid?" },
+    ],
+  },
+  roleplay: {
+    title: "🧙 Fantasy Roleplay",
+    rule: "Step into a character in a living world. The AI Game Master narrates and reacts to every choice you make.",
+    messages: [
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "The Chronicler", time: "Chapter 1", text: "You stand at the gates of Ironhold. The city is under siege and the king is missing. What do you do?" },
+      { avatar: null, color: "bg-indigo-500", name: "Nova", time: "Chapter 1", text: "I slip through the side gate and head for the castle's east tower." },
+      { avatar: null, color: "bg-teal-500", name: "Echo", time: "Chapter 1", text: "I'll create a distraction at the main gate — buy you some time." },
     ],
   },
   custom: {
-    title: "Custom Game",
+    title: "✨ Your Own Game",
+    rule: "Describe any idea in plain English — the AI designs the rules, roles, and world, then runs the entire session.",
     messages: [
-      {
-        avatar: "GM",
-        color: "from-violet-500 to-fuchsia-500",
-        name: "Game Master",
-        time: "6:00 PM",
-        text: "Welcome to 'Time Travelers Council'! Each of you is from a different era. Work together to fix the timeline...",
-      },
-      {
-        avatar: null,
-        color: "bg-indigo-500",
-        name: "Nova",
-        time: "6:01 PM",
-        text: "As someone from 2124, I can confirm this paradox is serious.",
-      },
-      {
-        avatar: null,
-        color: "bg-teal-500",
-        name: "Echo",
-        time: "6:01 PM",
-        text: "In my timeline, we solved this using quantum mechanics...",
-      },
+      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", time: "Setup", text: "Welcome to 'Time Travelers Council'! Each of you is from a different era — work together to fix the paradox before it unravels history." },
+      { avatar: null, color: "bg-indigo-500", name: "Nova", time: "Turn 1", text: "As someone from 2124, I can confirm this paradox is already catastrophic." },
+      { avatar: null, color: "bg-teal-500", name: "Echo", time: "Turn 1", text: "In my timeline we solved this with quantum anchoring — but we need the 1987 code first." },
     ],
   },
 };
@@ -160,10 +119,13 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   const quickStarts = [
-    { id: "werewolf" as const, emoji: "🐺", label: "Werewolf" },
-    { id: "spy" as const, emoji: "🕵️", label: "Who's the Spy" },
-    { id: "mystery" as const, emoji: "🔍", label: "Mystery" },
-    { id: "custom" as const, emoji: "✨", label: "Custom" },
+    { id: "werewolf" as const,  emoji: "🐺", label: "Werewolf"     },
+    { id: "mafia" as const,     emoji: "🎭", label: "Mafia"        },
+    { id: "spy" as const,       emoji: "🕵️", label: "Who's the Spy" },
+    { id: "mystery" as const,   emoji: "🔍", label: "Mystery"      },
+    { id: "tarot" as const,     emoji: "🃏", label: "Tarot"        },
+    { id: "roleplay" as const,  emoji: "🧙", label: "Roleplay"     },
+    { id: "custom" as const,    emoji: "✨", label: "Custom"       },
   ];
 
   const features = [
@@ -335,12 +297,12 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                 <Zap className="h-4 w-4 text-violet-400" />
-                <p className="text-sm font-bold text-zinc-400">Try these examples:</p>
+                <p className="text-sm font-bold text-zinc-400">See how it plays — pick a game type:</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch]">
                 {quickStarts.map((item) => (
                   <button
                     key={item.id}
@@ -348,28 +310,23 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
                       setSelectedGame(item.id);
                       setIsAutoPlaying(false);
                     }}
-                    className={`group relative bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-300 hover:scale-[1.02] rounded-xl px-4 py-3 overflow-hidden ${
+                    className={`group relative flex-shrink-0 bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-200 rounded-xl px-3 py-2 overflow-hidden ${
                       selectedGame === item.id
-                        ? "border-violet-500 shadow-lg shadow-violet-500/20"
+                        ? "border-violet-500 shadow-lg shadow-violet-500/20 bg-zinc-800/80"
                         : "border-zinc-800 hover:border-violet-500/50"
                     }`}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {selectedGame === item.id && (
-                      <div className="absolute top-2 right-2 w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
-                    )}
-                    <div className="relative flex items-center gap-3">
-                      <span
-                        className={`text-3xl transition-transform ${selectedGame === item.id ? "scale-110" : "group-hover:scale-110"}`}
-                      >
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg transition-transform ${selectedGame === item.id ? "scale-110" : "group-hover:scale-110"}`}>
                         {item.emoji}
                       </span>
-                      <span
-                        className={`text-sm font-bold transition-colors ${selectedGame === item.id ? "text-white" : "text-zinc-300 group-hover:text-white"}`}
-                      >
+                      <span className={`text-xs font-bold whitespace-nowrap transition-colors ${selectedGame === item.id ? "text-white" : "text-zinc-400 group-hover:text-white"}`}>
                         {item.label}
                       </span>
                     </div>
+                    {selectedGame === item.id && (
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-violet-500 rounded-full" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -391,7 +348,12 @@ export function LandingPage({ onSignIn, onExploreGames, onCreateGame }: LandingP
                   {currentScenario.title}
                 </span>
               </div>
-              <div className="p-4 space-y-3 h-[400px] overflow-y-auto">
+              {/* Rule explanation bar */}
+              <div className="px-4 py-2.5 bg-violet-500/10 border-b border-violet-500/20 flex items-start gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-violet-300/90 leading-relaxed">{currentScenario.rule}</p>
+              </div>
+              <div className="p-4 space-y-3 h-[340px] overflow-y-auto">
                 {currentScenario.messages.map((msg, index) => (
                   <div key={index} className="flex gap-3 group">
                     <GeneratedAvatar
