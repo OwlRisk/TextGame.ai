@@ -240,33 +240,35 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   <ContextMenuTrigger>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative overflow-hidden p-0 ${
-                            selectedGameId === game.id ? "rounded-xl" : "hover:rounded-xl"
-                          }`}
-                          style={{ backgroundColor: game.color }}
-                          asChild
-                        >
-                          <Link href={`/game/${game.id}`} prefetch onClick={() => { onSelectGame(game.id); onNavigate?.(); }}>
-                            {iconGeneratingId === game.id ? (
-                              <Loader2 className="h-6 w-6 text-white animate-spin" />
-                            ) : (game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
-                              <img
-                                src={game.icon}
-                                alt={game.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                              />
-                            ) : (
-                              <span className="text-xl leading-none">{game.icon}</span>
-                            )}
-                            {selectedGameId === game.id && (
-                              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                            )}
-                          </Link>
-                        </Button>
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`!h-12 !w-12 rounded-2xl transition-all duration-200 overflow-hidden p-0 ${
+                              selectedGameId === game.id ? "rounded-xl" : "hover:rounded-xl"
+                            }`}
+                            style={{ backgroundColor: game.color }}
+                            asChild
+                          >
+                            <Link href={`/game/${game.id}`} prefetch onClick={() => { onSelectGame(game.id); onNavigate?.(); }}>
+                              {iconGeneratingId === game.id ? (
+                                <Loader2 className="h-6 w-6 text-white animate-spin" />
+                              ) : (game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
+                                <img
+                                  src={game.icon}
+                                  alt={game.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              ) : (
+                                <span className="text-xl leading-none">{game.icon}</span>
+                              )}
+                            </Link>
+                          </Button>
+                          {selectedGameId === game.id && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full pointer-events-none" />
+                          )}
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white [&>svg]:hidden">
                         {game.name}
