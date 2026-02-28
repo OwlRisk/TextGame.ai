@@ -138,8 +138,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 size="icon"
                 className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
                   selectedGameId === "home"
-                    ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!from-violet-600 hover:!to-fuchsia-600 hover:!bg-gradient-to-br"
-                    : "bg-gradient-to-br from-violet-600/80 to-fuchsia-600/80 hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30"
+                    ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/50 hover:!from-violet-600 hover:!to-fuchsia-600"
+                    : "bg-zinc-800 hover:bg-gradient-to-br hover:from-violet-600 hover:to-fuchsia-600 hover:rounded-xl hover:shadow-lg hover:shadow-violet-500/30"
                 }`}
                 asChild
               >
