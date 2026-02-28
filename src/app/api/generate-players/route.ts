@@ -150,7 +150,9 @@ Top-level structure: { "players": [ ... ] }`}`;
     
     // Parse and validate JSON
     try {
-      const parsed = JSON.parse(response.trim());
+      // Strip markdown code fences (```json ... ```) that models sometimes wrap around JSON.
+      const stripped = response.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      const parsed = JSON.parse(stripped);
       const players = Array.isArray(parsed) ? parsed : (parsed.players || []);
       
       if (!Array.isArray(players)) {
@@ -183,11 +185,8 @@ Top-level structure: { "players": [ ... ] }`}`;
 
     } catch (parseError) {
       console.error('Error parsing player JSON:', parseError);
-      console.error('Response was:', response);
-      
-      // Fallback: return error but don't crash
       return NextResponse.json(
-        { error: 'Failed to parse generated players', raw: response },
+        { error: 'Failed to parse generated players' },
         { status: 500 }
       );
     }

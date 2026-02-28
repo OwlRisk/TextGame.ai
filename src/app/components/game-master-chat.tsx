@@ -532,6 +532,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   // Background merged into Rules - no separate tab needed
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
   const [isStartingGame, setIsStartingGame] = useState(false);
+  // AbortController for the Start Game fetch chain; aborted on component unmount to avoid state
+  // updates after the component is gone.
+  const startGameAbortRef = useRef<AbortController | null>(null);
   const rulesPanelRef = useRef<HTMLDivElement>(null); // Scroll into view when GM edits rules
 
   // Convert Markdown to HTML (for Tiptap initial content and external sync)
@@ -692,6 +695,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     };
+  }, []);
+
+  // Abort any in-flight Start Game requests when the component unmounts.
+  useEffect(() => {
+    return () => { startGameAbortRef.current?.abort(); };
   }, []);
 
   // Load sessions: from DB when logged in, else localStorage
@@ -2103,6 +2111,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     setIsStartingGame(true);
                     const startToastId = "start-game";
                     toast.loading("Preparing game...", { id: startToastId });
+                    // Create a new AbortController so unmounting cancels in-flight requests.
+                    startGameAbortRef.current?.abort();
+                    const abortCtrl = new AbortController();
+                    startGameAbortRef.current = abortCtrl;
                     try {
                     let finalConfiguredPlayers = configuredPlayers;
                     let finalPlayerCount = configuredPlayers.length > 0 ? configuredPlayers.length : playerCount;
@@ -2114,6 +2126,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         const response = await fetch('/api/generate-players', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
+                          signal: abortCtrl.signal,
                           body: JSON.stringify({
                             playerCount: playerCount || 0,
                             gameTemplate: selectedTemplate?.id || "custom",
@@ -2129,9 +2142,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           finalPlayerCount = data.players?.length ?? (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6);
                           setConfiguredPlayers(data.players);
                           if (playerCount === 0) setPlayerCount(finalPlayerCount);
+                        } else {
+                          console.error('[Game Master] ❌ Player generation failed. Status:', response.status);
+                          toast.warning("⚠️ Player generation failed. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
                         }
                       } catch (error) {
                         console.error('Error generating players:', error);
+                        toast.warning("⚠️ Player generation error. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
                       }
                     }
 
@@ -2143,6 +2160,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       const response = await fetch('/api/generate-host', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        signal: abortCtrl.signal,
                         body: JSON.stringify({
                           gameRules: customRules,
                           gameName: gameName || selectedTemplate?.name || "Custom Game"
@@ -2196,6 +2214,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     await onCreateGame(gameConfig);
                     } finally {
                       setIsStartingGame(false);
+                      startGameAbortRef.current = null;
                     }
                   }}
                   disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
