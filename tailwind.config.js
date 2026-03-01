@@ -57,10 +57,15 @@ module.exports = {
           '0%, 100%': { backgroundPosition: '0% 50%' },
           '50%': { backgroundPosition: '100% 50%' },
         },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'voice-bar': 'voice-bar 600ms ease-in-out infinite',
         gradient: 'gradient 4s ease infinite',
+        marquee: 'marquee 30s linear infinite',
       },
     },
   },

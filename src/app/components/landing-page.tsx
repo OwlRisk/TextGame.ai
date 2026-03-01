@@ -18,7 +18,6 @@ import {
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { GAME_MASTER_AVATAR } from "@/lib/game-master-avatar";
 
 interface LandingPageProps {
@@ -27,8 +26,21 @@ interface LandingPageProps {
 }
 
 
+/** Static pre-generated avatar map for landing page characters */
+const LANDING_AVATAR_MAP: Record<string, string> = {
+  Alex:    "/avatars/preview/landing-avatar-alex.png",
+  Casey:   "/avatars/preview/landing-avatar-casey.png",
+  Drew:    "/avatars/preview/landing-avatar-drew.png",
+  Lucia:   "/avatars/preview/landing-avatar-lucia.png",
+  Marco:   "/avatars/preview/landing-avatar-marco.png",
+  Jordan:  "/avatars/preview/landing-avatar-jordan.png",
+  Riley:   "/avatars/preview/landing-avatar-riley.png",
+  Morgan:  "/avatars/preview/landing-avatar-morgan.png",
+  Taylor:  "/avatars/preview/landing-avatar-taylor.png",
+};
+
 /** Shared avatar renderer for landing page preview messages */
-function PreviewAvatar({ name, isHost, role, personality, gender }: {
+function PreviewAvatar({ name, isHost }: {
   name: string;
   isHost?: boolean;
   role?: string;
@@ -44,16 +56,19 @@ function PreviewAvatar({ name, isHost, role, personality, gender }: {
       />
     );
   }
+
+  const src = LANDING_AVATAR_MAP[name];
+  const initials = name.substring(0, 2).toUpperCase();
   return (
-    <GeneratedAvatar
-      name={name}
-      type="player"
-      role={role}
-      personality={personality}
-      gender={gender}
-      enabled={true}
-      className="w-9 h-9 ring-1 ring-zinc-600/50"
-    />
+    <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
+      {src ? (
+        <img src={src} alt={name} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-white">
+          {initials}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -563,14 +578,11 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 <MessageList messages={currentScenario.messages} gameKey={selectedGame} />
                 {/* Typing indicator */}
                 <div className="flex gap-3">
-                  <GeneratedAvatar
+                  <PreviewAvatar
                     name="Drew"
-                    type="player"
                     role="Villager"
                     personality="Quiet observer"
                     gender="other"
-                    enabled={true}
-                    className="w-9 h-9 ring-1 ring-zinc-600/50"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
@@ -590,6 +602,74 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                   Type your message...
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── AI Character Showcase ─────────────────────────────────── */}
+        <div className="mb-32 overflow-hidden">
+          <div className="text-center mb-12">
+            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
+              <span className="text-sm font-bold text-violet-400">AI PLAYERS</span>
+            </div>
+            <h3 className="text-3xl font-black text-white mb-3">Every seat filled with a unique character</h3>
+            <p className="text-zinc-400">Each AI player has their own personality, role, and strategy. No two games feel the same.</p>
+          </div>
+
+          {/* Scrolling marquee */}
+          <div className="relative">
+            {/* Fade edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none" />
+
+            <div className="flex gap-4 animate-marquee" style={{ width: "max-content" }}>
+              {[
+                { name: "Alex",   role: "Villager",  personality: "Outspoken and analytical",          game: "🐺 Werewolf" },
+                { name: "Casey",  role: "Doctor",    personality: "Calm, protective instincts",        game: "🐺 Werewolf" },
+                { name: "Lucia",  role: "Detective", personality: "Sharp, suspicious of everyone",     game: "🎭 Mafia"    },
+                { name: "Marco",  role: "Civilian",  personality: "Nervous, eager to prove innocence", game: "🎭 Mafia"    },
+                { name: "Jordan", role: "Civilian",  personality: "Clever, deliberately vague",        game: "🕵️ Who's the Spy" },
+                { name: "Riley",  role: "Spy",       personality: "Paranoid, accuses to deflect",      game: "🕵️ Who's the Spy" },
+                { name: "Morgan", role: "Witness",   personality: "Nervous, detail-oriented",          game: "🔍 Mystery"  },
+                { name: "Taylor", role: "Suspect",   personality: "Confrontational, quick to contradict", game: "🔍 Mystery" },
+                { name: "Drew",   role: "Villager",  personality: "Quiet, watchful observer",          game: "🐺 Werewolf" },
+                // duplicate for seamless loop
+                { name: "Alex",   role: "Villager",  personality: "Outspoken and analytical",          game: "🐺 Werewolf" },
+                { name: "Casey",  role: "Doctor",    personality: "Calm, protective instincts",        game: "🐺 Werewolf" },
+                { name: "Lucia",  role: "Detective", personality: "Sharp, suspicious of everyone",     game: "🎭 Mafia"    },
+                { name: "Marco",  role: "Civilian",  personality: "Nervous, eager to prove innocence", game: "🎭 Mafia"    },
+                { name: "Jordan", role: "Civilian",  personality: "Clever, deliberately vague",        game: "🕵️ Who's the Spy" },
+                { name: "Riley",  role: "Spy",       personality: "Paranoid, accuses to deflect",      game: "🕵️ Who's the Spy" },
+                { name: "Morgan", role: "Witness",   personality: "Nervous, detail-oriented",          game: "🔍 Mystery"  },
+                { name: "Taylor", role: "Suspect",   personality: "Confrontational, quick to contradict", game: "🔍 Mystery" },
+                { name: "Drew",   role: "Villager",  personality: "Quiet, watchful observer",          game: "🐺 Werewolf" },
+              ].map((char, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-44 bg-zinc-900/60 border border-zinc-700/60 rounded-2xl p-4 hover:border-violet-500/50 hover:bg-zinc-800/60 transition-all duration-300 group"
+                >
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="relative">
+                      <img
+                        src={LANDING_AVATAR_MAP[char.name] ?? ""}
+                        alt={char.name}
+                        className="w-16 h-16 rounded-full object-cover ring-2 ring-zinc-700/80 group-hover:ring-violet-500/50 transition-all"
+                      />
+                      <div className="absolute -bottom-1 -right-1 bg-zinc-800 border border-zinc-700 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-violet-400">
+                        AI
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-white text-sm">{char.name}</div>
+                      <div className="text-[11px] text-violet-400 font-semibold mb-1">{char.role}</div>
+                      <div className="text-[10px] text-zinc-500 leading-tight">{char.personality}</div>
+                    </div>
+                    <div className="text-[9px] text-zinc-600 bg-zinc-800/80 rounded-full px-2 py-0.5 w-full truncate">
+                      {char.game}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
