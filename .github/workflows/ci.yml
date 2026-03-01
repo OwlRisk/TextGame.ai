@@ -41,7 +41,6 @@ jobs:
           OPENAI_API_KEY: sk-placeholder
           # Stripe
           STRIPE_SECRET_KEY: sk_test_placeholder
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
           STRIPE_WEBHOOK_SECRET: whsec_placeholder
           STRIPE_PRO_PRICE_ID: price_placeholder
           STRIPE_PLUS_PRICE_ID: price_placeholder

@@ -142,7 +142,9 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      case 'invoice.payment_succeeded': {
+      // Stripe may emit either invoice.payment_succeeded (older) or invoice.paid (newer UI/API)
+      case 'invoice.payment_succeeded':
+      case 'invoice.paid': {
         const invoice = event.data.object as Stripe.Invoice;
 
         if (invoice.subscription && invoice.billing_reason === 'subscription_cycle') {
