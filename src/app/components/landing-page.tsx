@@ -18,37 +18,43 @@ import {
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
+import { GeneratedAvatar } from "@/app/components/generated-avatar";
+import { GAME_MASTER_AVATAR } from "@/lib/game-master-avatar";
 
 interface LandingPageProps {
   onSignIn: () => void;
   onCreateGame?: (presetId?: string) => void;
 }
 
-/** Map Tailwind color class to anime avatar path */
-function twColorToAvatar(color: string, isGM = false): string {
-  if (isGM || color.includes("violet") || color.includes("fuchsia")) return "/avatars/avatar-gm.png";
-  if (color.includes("blue") || color.includes("indigo"))            return "/avatars/avatar-blue.png";
-  if (color.includes("green") || color.includes("teal"))             return "/avatars/avatar-green.png";
-  if (color.includes("red"))                                         return "/avatars/avatar-red.png";
-  if (color.includes("yellow") || color.includes("amber") || color.includes("orange")) return "/avatars/avatar-amber.png";
-  if (color.includes("purple") || color.includes("pink"))            return "/avatars/avatar-pink.png";
-  return "/avatars/avatar-blue.png";
-}
 
-/** Map hex color / badge to anime avatar path (used in MiniChat) */
-function hexToAvatar(hexColor: string, badge?: string): string {
-  if (badge === "GM" || badge === "HOST") return "/avatars/avatar-gm.png";
-  const map: Record<string, string> = {
-    "#6366f1": "/avatars/avatar-blue.png",
-    "#8b5cf6": "/avatars/avatar-gm.png",
-    "#7c3aed": "/avatars/avatar-gm.png",
-    "#3b82f6": "/avatars/avatar-blue.png",
-    "#ef4444": "/avatars/avatar-red.png",
-    "#10b981": "/avatars/avatar-green.png",
-    "#ec4899": "/avatars/avatar-pink.png",
-    "#f59e0b": "/avatars/avatar-amber.png",
-  };
-  return map[hexColor] ?? "/avatars/avatar-blue.png";
+/** Shared avatar renderer for landing page preview messages */
+function PreviewAvatar({ name, isHost, role, personality, gender }: {
+  name: string;
+  isHost?: boolean;
+  role?: string;
+  personality?: string;
+  gender?: string;
+}) {
+  if (isHost) {
+    return (
+      <img
+        src={GAME_MASTER_AVATAR}
+        alt={name}
+        className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
+      />
+    );
+  }
+  return (
+    <GeneratedAvatar
+      name={name}
+      type="player"
+      role={role}
+      personality={personality}
+      gender={gender}
+      enabled={true}
+      className="w-9 h-9 ring-1 ring-zinc-600/50"
+    />
+  );
 }
 
 // ─── Streaming text component ─────────────────────────────────────────────────
@@ -99,9 +105,11 @@ function MessageList({
   gameKey,
 }: {
   messages: Array<{
-    avatar: string | null;
-    color: string;
+    isHost?: boolean;
     name: string;
+    role?: string;
+    personality?: string;
+    gender?: string;
     time: string;
     text: string;
   }>;
@@ -121,11 +129,7 @@ function MessageList({
     <>
       {messages.slice(0, visibleCount).map((msg, index) => (
         <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn">
-          <img
-            src={twColorToAvatar(msg.color, msg.avatar === "GM")}
-            alt={msg.name}
-            className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
-          />
+          <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} />
           <div className="flex-1">
             <div className="flex items-baseline gap-2 mb-0.5">
               <span className="font-semibold text-white text-sm">{msg.name}</span>
@@ -149,9 +153,11 @@ function InsideGameMessageList({
   gameKey,
 }: {
   messages: Array<{
-    avatar: string | null;
-    color: string;
+    isHost?: boolean;
     name: string;
+    role?: string;
+    personality?: string;
+    gender?: string;
     badge: string | null;
     time: string;
     text: string;
@@ -172,11 +178,7 @@ function InsideGameMessageList({
     <>
       {messages.slice(0, visibleCount).map((msg, index) => (
         <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn">
-          <img
-            src={twColorToAvatar(msg.color, msg.avatar === "GM")}
-            alt={msg.name}
-            className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
-          />
+          <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} />
           <div className="flex-1">
             <div className="flex items-baseline gap-2 mb-1">
               <span className="font-bold text-white text-sm">{msg.name}</span>
@@ -219,10 +221,10 @@ const INSIDE_GAME_STEPS = [
     description:
       "Just chat with the Game Master in plain English. Describe what you want — whether it's classic Werewolf or your wildest custom idea. The GM helps you design rules, roles, and victory conditions.",
     messages: [
-      { avatar: null, color: "bg-blue-500", name: "You", badge: "YOU", time: "2:30 PM", text: "I want to create a sci-fi mystery game set on a space station. Someone sabotaged the oxygen system!" },
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", badge: null, time: "2:30 PM", text: "Great idea! Let's set up a 'Traitor on Mars Station' game. How many crew members? Should there be 1 or 2 traitors? And what special roles do you want — Engineer, Security Chief, Scientist?" },
-      { avatar: null, color: "bg-blue-500", name: "You", badge: "YOU", time: "2:31 PM", text: "6 crew members total, 1 traitor. Add an Engineer who can inspect systems, and a Security Chief who can lock rooms." },
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", badge: null, time: "2:31 PM", text: "Perfect! I've set up your game. Ready to start? I'll assign roles secretly and begin the first round." },
+      { name: "You", badge: "YOU", time: "2:30 PM", text: "I want to create a sci-fi mystery game set on a space station. Someone sabotaged the oxygen system!", role: "Player", personality: "Curious and strategic", gender: "other" },
+      { isHost: true, name: "Game Master", badge: null, time: "2:30 PM", text: "Great idea! Let's set up a 'Traitor on Mars Station' game. How many crew members? Should there be 1 or 2 traitors? And what special roles do you want — Engineer, Security Chief, Scientist?" },
+      { name: "You", badge: "YOU", time: "2:31 PM", text: "6 crew members total, 1 traitor. Add an Engineer who can inspect systems, and a Security Chief who can lock rooms.", role: "Player", personality: "Curious and strategic", gender: "other" },
+      { isHost: true, name: "Game Master", badge: null, time: "2:31 PM", text: "Perfect! I've set up your game. Ready to start? I'll assign roles secretly and begin the first round." },
     ],
   },
   {
@@ -235,9 +237,9 @@ const INSIDE_GAME_STEPS = [
     description:
       "The Host AI manages everything — assigns secret roles, announces game phases, tracks votes, reveals information at the right time, and keeps the story flowing. You just focus on playing.",
     messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "3:15 PM", text: "🌙 Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "3:16 PM", text: "☀️ Morning arrives. The crew discovers the communication array is damaged! Engineer Nova, you may inspect one system." },
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "3:17 PM", text: "⚠️ It's time to vote! Discuss who you think is the traitor. You have 3 minutes. Type /vote @playername when ready." },
+      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "3:15 PM", text: "🌙 Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
+      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "3:16 PM", text: "☀️ Morning arrives. The crew discovers the communication array is damaged! Engineer Nova, you may inspect one system." },
+      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "3:17 PM", text: "⚠️ It's time to vote! Discuss who you think is the traitor. You have 3 minutes. Type /vote @playername when ready." },
     ],
   },
   {
@@ -250,9 +252,9 @@ const INSIDE_GAME_STEPS = [
     description:
       "Each AI player has their own personality, role, and objectives. They observe what happens, form opinions, make strategic decisions, and respond naturally to your actions. They'll lie, defend themselves, or team up — just like real players.",
     messages: [
-      { avatar: null, color: "bg-purple-500", name: "Dr. Chen", badge: "AI", time: "4:20 PM", text: "I was in the medical bay all night. Anyone can confirm? I'm getting suspicious of whoever was near the comm array..." },
-      { avatar: null, color: "bg-green-500", name: "Captain Rex", badge: "AI", time: "4:20 PM", text: "Dr. Chen is acting defensive. That's a red flag! I saw them leaving the engineering deck around the time of the sabotage." },
-      { avatar: null, color: "bg-orange-500", name: "Engineer Nova", badge: "AI", time: "4:21 PM", text: "Wait! I used my ability to inspect the comm array. The damage pattern suggests someone with medical knowledge... 👀" },
+      { name: "Dr. Chen", badge: "AI", time: "4:20 PM", text: "I was in the medical bay all night. Anyone can confirm? I'm getting suspicious of whoever was near the comm array...", role: "Scientist", personality: "Methodical, defensive under pressure", gender: "female" },
+      { name: "Captain Rex", badge: "AI", time: "4:20 PM", text: "Dr. Chen is acting defensive. That's a red flag! I saw them leaving the engineering deck around the time of the sabotage.", role: "Security Chief", personality: "Assertive, blunt, leadership instinct", gender: "male" },
+      { name: "Engineer Nova", badge: "AI", time: "4:21 PM", text: "Wait! I used my ability to inspect the comm array. The damage pattern suggests someone with medical knowledge... 👀", role: "Engineer", personality: "Analytical, observant, cautious", gender: "female" },
     ],
   },
   {
@@ -265,9 +267,9 @@ const INSIDE_GAME_STEPS = [
     description:
       "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
     messages: [
-      { avatar: null, color: "bg-blue-500", name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain." },
-      { avatar: null, color: "bg-red-500", name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking." },
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", badge: "HOST", time: "5:11 PM", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
+      { name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain.", role: "Seer", personality: "Careful, observant", gender: "other" },
+      { name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking.", role: "Werewolf", personality: "Manipulative, aggressive deflection", gender: "male" },
+      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "5:11 PM", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
     ],
   },
 ];
@@ -277,33 +279,33 @@ const GAME_SCENARIOS = {
   werewolf: {
     title: "🐺 Werewolf",
     messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Warden Lunaris", time: "Night 1", text: "Night falls. The village sleeps — but the wolves are awake. Werewolves, choose your target." },
-      { avatar: null, color: "bg-blue-500", name: "Alex", time: "Day 2", text: "I think Blake is acting suspicious. They barely said anything last round." },
-      { avatar: null, color: "bg-green-500", name: "Casey", time: "Day 2", text: "I was watching Blake during the night phase. It can't be them!" },
+      { isHost: true, name: "Warden Lunaris", time: "Night 1", text: "Night falls. The village sleeps — but the wolves are awake. Werewolves, choose your target." },
+      { name: "Alex", time: "Day 2", text: "I think Blake is acting suspicious. They barely said anything last round.", role: "Villager", personality: "Outspoken and analytical", gender: "male" },
+      { name: "Casey", time: "Day 2", text: "I was watching Blake during the night phase. It can't be them!", role: "Doctor", personality: "Calm, protective instincts", gender: "female" },
     ],
   },
   mafia: {
     title: "🎭 Mafia",
     messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Don Ferrante", time: "Night 1", text: "The city sleeps. Mafia members — open your eyes and choose tonight's target." },
-      { avatar: null, color: "bg-red-500", name: "Lucia", time: "Day 2", text: "Marco was found outside the bakery at midnight. That's not a coincidence." },
-      { avatar: null, color: "bg-yellow-600", name: "Marco", time: "Day 2", text: "I was getting bread for my family! Ask anyone!" },
+      { isHost: true, name: "Don Ferrante", time: "Night 1", text: "The city sleeps. Mafia members — open your eyes and choose tonight's target." },
+      { name: "Lucia", time: "Day 2", text: "Marco was found outside the bakery at midnight. That's not a coincidence.", role: "Detective", personality: "Sharp, suspicious of everyone", gender: "female" },
+      { name: "Marco", time: "Day 2", text: "I was getting bread for my family! Ask anyone!", role: "Civilian", personality: "Nervous, eager to prove innocence", gender: "male" },
     ],
   },
   spy: {
     title: "🕵️ Who's the Spy",
     messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Game Master", time: "Round 1", text: "Your secret word has been sent to each of you. Describe it in one sentence — don't make it too obvious!" },
-      { avatar: null, color: "bg-purple-500", name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning..." },
-      { avatar: null, color: "bg-pink-500", name: "Riley", time: "Round 1", text: "That's suspiciously vague, Jordan. I'm watching you." },
+      { isHost: true, name: "Game Master", time: "Round 1", text: "Your secret word has been sent to each of you. Describe it in one sentence — don't make it too obvious!" },
+      { name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning...", role: "Civilian", personality: "Clever, deliberately vague", gender: "other" },
+      { name: "Riley", time: "Round 1", text: "That's suspiciously vague, Jordan. I'm watching you.", role: "Spy", personality: "Paranoid, accuses to deflect", gender: "female" },
     ],
   },
   mystery: {
     title: "🔍 Murder Mystery",
     messages: [
-      { avatar: "GM", color: "from-violet-500 to-fuchsia-500", name: "Detective Kate", time: "Scene 1", text: "A priceless diamond has vanished from the museum. Every person in this room is a suspect." },
-      { avatar: null, color: "bg-red-500", name: "Morgan", time: "Scene 1", text: "I saw someone near the display case around 9 PM..." },
-      { avatar: null, color: "bg-yellow-600", name: "Taylor", time: "Scene 1", text: "That's impossible — the museum closes at 8!" },
+      { isHost: true, name: "Detective Kate", time: "Scene 1", text: "A priceless diamond has vanished from the museum. Every person in this room is a suspect." },
+      { name: "Morgan", time: "Scene 1", text: "I saw someone near the display case around 9 PM...", role: "Witness", personality: "Nervous, detail-oriented", gender: "other" },
+      { name: "Taylor", time: "Scene 1", text: "That's impossible — the museum closes at 8!", role: "Suspect", personality: "Confrontational, quick to contradict", gender: "male" },
     ],
   },
 };
@@ -561,10 +563,14 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 <MessageList messages={currentScenario.messages} gameKey={selectedGame} />
                 {/* Typing indicator */}
                 <div className="flex gap-3">
-                  <img
-                    src="/avatars/avatar-amber.png"
-                    alt="Drew"
-                    className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
+                  <GeneratedAvatar
+                    name="Drew"
+                    type="player"
+                    role="Villager"
+                    personality="Quiet observer"
+                    gender="other"
+                    enabled={true}
+                    className="w-9 h-9 ring-1 ring-zinc-600/50"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
