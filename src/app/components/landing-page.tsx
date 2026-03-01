@@ -698,11 +698,17 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 >
                   <div className="flex flex-col items-center text-center gap-3">
                     <div className="relative">
-                      <img
-                        src={LANDING_AVATAR_MAP[char.name] ?? ""}
-                        alt={char.name}
-                        className="w-16 h-16 rounded-full object-cover ring-2 ring-zinc-700/80 group-hover:ring-violet-500/50 transition-all"
-                      />
+                      {LANDING_AVATAR_MAP[char.name] ? (
+                        <img
+                          src={LANDING_AVATAR_MAP[char.name]}
+                          alt={char.name}
+                          className="w-16 h-16 rounded-full object-cover ring-2 ring-zinc-700/80 group-hover:ring-violet-500/50 transition-all"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 ring-2 ring-zinc-700/80 flex items-center justify-center text-white font-bold text-lg">
+                          {char.name.charAt(0)}
+                        </div>
+                      )}
                       <div className="absolute -bottom-1 -right-1 bg-zinc-800 border border-zinc-700 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-violet-400">
                         AI
                       </div>

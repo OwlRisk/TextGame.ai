@@ -567,7 +567,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               <img
                 src={template.cover}
                 alt={template.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
               <div className={`w-full h-full bg-gradient-to-br ${template.color} flex items-center justify-center text-5xl`}>
@@ -622,7 +622,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             <img
               src={template.cover}
               alt={template.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className={`w-full h-full bg-gradient-to-br ${template.color} flex items-center justify-center text-4xl`}>
