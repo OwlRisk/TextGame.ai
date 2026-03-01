@@ -61,11 +61,13 @@ function PreviewAvatar({ name, isHost }: {
 
   // Named in-game hosts (Warden Lunaris, Don Ferrante, etc.) have their own avatar.
   // Only fall back to the generic GAME_MASTER_AVATAR for "Game Master".
-  if (isHost && !src) {
+  if (isHost) {
+    const avatarSrc = src || GAME_MASTER_AVATAR;
     return (
       <img
-        src={GAME_MASTER_AVATAR}
+        src={avatarSrc}
         alt={name}
+        onError={(e) => { (e.currentTarget as HTMLImageElement).src = GAME_MASTER_AVATAR; }}
         className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
       />
     );
@@ -75,7 +77,12 @@ function PreviewAvatar({ name, isHost }: {
   return (
     <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
       {src ? (
-        <img src={src} alt={name} className="w-full h-full object-cover" />
+        <img
+          src={src}
+          alt={name}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = GAME_MASTER_AVATAR; }}
+          className="w-full h-full object-cover"
+        />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-white">
           {initials}
