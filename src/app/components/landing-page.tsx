@@ -423,7 +423,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
           <div>
             {/* Logo */}
             <div className="flex items-center gap-3 mb-8">
-              <div className="text-5xl">{BRAND_CONFIG.logo.emoji}</div>
               <div>
                 <h1 className="text-4xl font-black text-white tracking-tight">
                   {BRAND_CONFIG.name}
