@@ -38,6 +38,11 @@ const LANDING_AVATAR_MAP: Record<string, string> = {
   Riley:           "/avatars/preview/landing-avatar-riley.png",
   Morgan:          "/avatars/preview/landing-avatar-morgan.png",
   Taylor:          "/avatars/preview/landing-avatar-taylor.png",
+  // Inside a Game steps – AI players
+  "Dr. Chen":       "/avatars/preview/landing-avatar-dr-chen.png",
+  "Captain Rex":    "/avatars/preview/landing-avatar-captain-rex.png",
+  "Engineer Nova":  "/avatars/preview/landing-avatar-engineer-nova.png",
+  Gideon:           "/avatars/preview/landing-avatar-gideon.png",
   // In-game hosts (each game has its own named host character)
   "Warden Lunaris":  "/avatars/preview/landing-avatar-warden-lunaris.png",
   "Don Ferrante":    "/avatars/preview/landing-avatar-don-ferrante.png",
