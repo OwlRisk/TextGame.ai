@@ -377,9 +377,45 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
   ];
 
   const featuredGames = [
-    { emoji: "🧛", title: "Vampire Court", author: "Jordan", plays: 1234, rating: 4.9 },
-    { emoji: "🚀", title: "Space Mutiny", author: "Alex", plays: 892, rating: 4.8 },
-    { emoji: "🏰", title: "Kingdom Intrigue", author: "Sam", plays: 2103, rating: 4.9 },
+    {
+      emoji: "🧛",
+      title: "Vampire Court",
+      author: "Jordan",
+      plays: 1234,
+      rating: 4.9,
+      players: "4–8",
+      tags: ["Deduction", "Social"],
+      description: "One vampire hides among nobles. Vote before the next feeding — or become the next victim.",
+      cover: "/games/game-cover-vampire-court.png",
+      accent: "from-rose-500/20 to-purple-500/10",
+      border: "hover:border-rose-500/50",
+    },
+    {
+      emoji: "🚀",
+      title: "Space Mutiny",
+      author: "Alex",
+      plays: 892,
+      rating: 4.8,
+      players: "3–6",
+      tags: ["Sci-fi", "Hidden Role"],
+      description: "The crew is 3 days from Earth. One engineer has been compromised. Trust no one.",
+      cover: "/games/game-cover-space-mutiny.png",
+      accent: "from-blue-500/20 to-cyan-500/10",
+      border: "hover:border-blue-500/50",
+    },
+    {
+      emoji: "🏰",
+      title: "Kingdom Intrigue",
+      author: "Sam",
+      plays: 2103,
+      rating: 4.9,
+      players: "5–10",
+      tags: ["Strategy", "Roleplay"],
+      description: "Nobles scheme for the throne. Forge alliances, spread rumors, and claim the crown.",
+      cover: "/games/game-cover-kingdom-intrigue.png",
+      accent: "from-amber-500/20 to-yellow-500/10",
+      border: "hover:border-amber-500/50",
+    },
   ];
 
   const howItWorks = [
@@ -799,29 +835,61 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
               <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
             </div>
             <h3 className="text-3xl font-black text-white mb-3">Trending Games</h3>
-            <p className="text-lg text-zinc-400">See what others are creating</p>
+            <p className="text-lg text-zinc-400">Created by players, ready to play</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {featuredGames.map((game, index) => (
               <div
                 key={index}
-                className="group bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                onClick={onSignIn}
+                className={`group relative bg-zinc-900/60 border border-zinc-800 ${game.border} rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer overflow-hidden`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="text-3xl">{game.emoji}</div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-white truncate">{game.title}</h4>
-                    <p className="text-xs text-zinc-500">by {game.author}</p>
-                    <div className="flex items-center gap-3 mt-2 text-xs">
-                      <span className="flex items-center gap-1 text-zinc-400">
-                        <Play className="h-3 w-3" />
-                        {game.plays.toLocaleString()}
+                {/* Cover image */}
+                <div className="relative h-40 overflow-hidden">
+                  <img
+                    src={game.cover}
+                    alt={game.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {/* gradient overlay for text legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
+                  {/* rating badge */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1 text-yellow-400 text-xs font-bold">
+                    <Star className="h-3 w-3 fill-yellow-400" />
+                    {game.rating}
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  {/* Title & author */}
+                  <h4 className="font-black text-white text-base mb-0.5">{game.title}</h4>
+                  <p className="text-xs text-zinc-500 mb-3">by {game.author}</p>
+
+                  {/* Description */}
+                  <p className="text-sm text-zinc-400 leading-relaxed mb-4">{game.description}</p>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {game.tags.map((tag) => (
+                      <span key={tag} className="text-[11px] font-medium px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-full">
+                        {tag}
                       </span>
-                      <span className="flex items-center gap-1 text-yellow-500">
-                        <Star className="h-3 w-3 fill-yellow-500" />
-                        {game.rating}
-                      </span>
-                    </div>
+                    ))}
+                    <span className="text-[11px] font-medium px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-full flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {game.players} players
+                    </span>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+                    <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+                      <Play className="h-3 w-3" />
+                      {game.plays.toLocaleString()} plays
+                    </span>
+                    <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Play now →
+                    </span>
                   </div>
                 </div>
               </div>
