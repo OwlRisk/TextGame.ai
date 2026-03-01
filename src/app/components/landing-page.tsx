@@ -28,15 +28,20 @@ interface LandingPageProps {
 
 /** Static pre-generated avatar map for landing page characters */
 const LANDING_AVATAR_MAP: Record<string, string> = {
-  Alex:    "/avatars/preview/landing-avatar-alex.png",
-  Casey:   "/avatars/preview/landing-avatar-casey.png",
-  Drew:    "/avatars/preview/landing-avatar-drew.png",
-  Lucia:   "/avatars/preview/landing-avatar-lucia.png",
-  Marco:   "/avatars/preview/landing-avatar-marco.png",
-  Jordan:  "/avatars/preview/landing-avatar-jordan.png",
-  Riley:   "/avatars/preview/landing-avatar-riley.png",
-  Morgan:  "/avatars/preview/landing-avatar-morgan.png",
-  Taylor:  "/avatars/preview/landing-avatar-taylor.png",
+  // Players
+  Alex:            "/avatars/preview/landing-avatar-alex.png",
+  Casey:           "/avatars/preview/landing-avatar-casey.png",
+  Drew:            "/avatars/preview/landing-avatar-drew.png",
+  Lucia:           "/avatars/preview/landing-avatar-lucia.png",
+  Marco:           "/avatars/preview/landing-avatar-marco.png",
+  Jordan:          "/avatars/preview/landing-avatar-jordan.png",
+  Riley:           "/avatars/preview/landing-avatar-riley.png",
+  Morgan:          "/avatars/preview/landing-avatar-morgan.png",
+  Taylor:          "/avatars/preview/landing-avatar-taylor.png",
+  // In-game hosts (each game has its own named host character)
+  "Warden Lunaris":  "/avatars/preview/landing-avatar-warden-lunaris.png",
+  "Don Ferrante":    "/avatars/preview/landing-avatar-don-ferrante.png",
+  "Detective Kate":  "/avatars/preview/landing-avatar-detective-kate.png",
 };
 
 /** Shared avatar renderer for landing page preview messages */
@@ -47,7 +52,11 @@ function PreviewAvatar({ name, isHost }: {
   personality?: string;
   gender?: string;
 }) {
-  if (isHost) {
+  const src = LANDING_AVATAR_MAP[name];
+
+  // Named in-game hosts (Warden Lunaris, Don Ferrante, etc.) have their own avatar.
+  // Only fall back to the generic GAME_MASTER_AVATAR for "Game Master".
+  if (isHost && !src) {
     return (
       <img
         src={GAME_MASTER_AVATAR}
@@ -57,7 +66,6 @@ function PreviewAvatar({ name, isHost }: {
     );
   }
 
-  const src = LANDING_AVATAR_MAP[name];
   const initials = name.substring(0, 2).toUpperCase();
   return (
     <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
