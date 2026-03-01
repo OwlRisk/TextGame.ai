@@ -23,6 +23,7 @@ interface GameTemplate {
   description: string;
   longDescription?: string;
   icon: string;
+  cover?: string;
   category: string;
   tags: string[];
   players: string;
@@ -46,6 +47,7 @@ const FEATURED_TEMPLATE: GameTemplate = {
   longDescription:
     "Step into a village plagued by werewolves. Each night, werewolves choose a victim. Each day, villagers vote to eliminate a suspect. Special roles like Seer, Doctor, and Hunter add strategic depth. Can you survive?",
   icon: "🐺",
+  cover: "/games/game-cover-werewolf.png",
   category: "Social Deduction",
   tags: ["Classic", "Strategy", "Deception", "Roleplay"],
   players: "6-12",
@@ -84,6 +86,7 @@ const CORE_TEMPLATES: GameTemplate[] = [
     name: "Codenames",
     description: "Two teams compete to identify their agents using one-word clues. Creative thinking required!",
     icon: "🔍",
+    cover: "/games/game-cover-codenames.png",
     category: "Party",
     tags: ["Team Game", "Word Association", "Strategic"],
     players: "4-12",
@@ -112,6 +115,7 @@ WINNING:
     name: "Avalon: Quest for Honor",
     description: "Knights of the Round Table must complete quests, but traitors hide among them.",
     icon: "⚔️",
+    cover: "/games/game-cover-avalon.png",
     category: "Social Deduction",
     tags: ["Strategic", "Team-based", "Hidden Roles"],
     players: "5-10",
@@ -139,6 +143,7 @@ WINNING:
     name: "Undercover Agent",
     description: "Find the spy among you by describing secret words. Fast-paced word association game.",
     icon: "🕵️",
+    cover: "/games/game-cover-undercover.png",
     category: "Party",
     tags: ["Quick Play", "Word Game", "Beginner Friendly"],
     players: "4-10",
@@ -172,6 +177,7 @@ const SOCIAL_DEDUCTION: GameTemplate[] = [
     name: "Mafia: City of Shadows",
     description: "Complex game of lies and deception. Multiple factions, hidden agendas, and intense strategy.",
     icon: "🎭",
+    cover: "/games/game-cover-mafia.png",
     category: "Social Deduction",
     tags: ["Advanced", "Roleplay", "Strategic"],
     players: "6-15",
@@ -196,6 +202,7 @@ WINNING:
   {
     id: "secret-hitler",
     name: "Secret Hitler",
+    cover: "/games/game-cover-secret-hitler.png",
     description: "Political intrigue in 1930s Germany. Liberals vs Fascists. Identify Hitler before it's too late.",
     icon: "🎩",
     category: "Social Deduction",
@@ -209,6 +216,7 @@ WINNING:
   {
     id: "spyfall",
     name: "Spyfall",
+    cover: "/games/game-cover-spyfall.png",
     description: "Everyone knows the location except the spy. Ask questions to find who doesn't belong.",
     icon: "🌍",
     category: "Social Deduction",
@@ -222,6 +230,7 @@ WINNING:
   {
     id: "resistance",
     name: "The Resistance",
+    cover: "/games/game-cover-resistance.png",
     description: "Rebels fight against the Empire. Complete missions while spies sabotage from within.",
     icon: "🤐",
     category: "Social Deduction",
@@ -238,6 +247,7 @@ const PARTY_GAMES: GameTemplate[] = [
   {
     id: "who-most-likely",
     name: "Who's Most Likely",
+    cover: "/games/game-cover-who-most-likely.png",
     description: "Vote on who's most likely to do hilarious scenarios. Perfect icebreaker!",
     icon: "🤔",
     category: "Party",
@@ -251,6 +261,7 @@ const PARTY_GAMES: GameTemplate[] = [
   {
     id: "20-questions",
     name: "20 Questions",
+    cover: "/games/game-cover-20-questions.png",
     description: "Think of something, others ask yes/no questions. Can they guess it in 20 tries?",
     icon: "❓",
     category: "Party",
@@ -264,6 +275,7 @@ const PARTY_GAMES: GameTemplate[] = [
   {
     id: "two-truths-lie",
     name: "Two Truths and a Lie",
+    cover: "/games/game-cover-two-truths.png",
     description: "Share three statements about yourself. Others guess which one is false!",
     icon: "🤥",
     category: "Party",
@@ -277,6 +289,7 @@ const PARTY_GAMES: GameTemplate[] = [
   {
     id: "two-rooms",
     name: "Two Rooms and a Boom",
+    cover: "/games/game-cover-two-rooms.png",
     description: "Players split into two rooms. The President must survive, the Bomber must get close.",
     icon: "💣",
     category: "Party",
@@ -295,6 +308,7 @@ const MYSTERY_GAMES: GameTemplate[] = [
     name: "Detective Mystery",
     description: "Solve intricate cases by gathering clues, interrogating suspects, and catching culprits.",
     icon: "🔎",
+    cover: "/games/game-cover-detective.png",
     category: "Mystery",
     tags: ["Deduction", "Story-Rich", "Investigation"],
     players: "3-8",
@@ -320,6 +334,7 @@ WINNING:
   {
     id: "clue",
     name: "Clue: Mansion Murder",
+    cover: "/games/game-cover-clue.png",
     description: "Classic whodunit. Was it Colonel Mustard in the Library with the Candlestick?",
     icon: "🔪",
     category: "Mystery",
@@ -338,6 +353,7 @@ const ROLEPLAY_GAMES: GameTemplate[] = [
     name: "Tarot Reading",
     description: "A reflective Tarot reading with the Host as reader. Ask a question and receive card-based guidance.",
     icon: "🃏",
+    cover: "/games/game-cover-tarot.png",
     category: "Solo",
     tags: ["Reflection", "Mystical", "Solo"],
     players: "1",
@@ -356,6 +372,7 @@ No win/lose—session ends when the reading feels complete.`,
   {
     id: "improv-comedy",
     name: "Improv Comedy",
+    cover: "/games/game-cover-improv.png",
     description: "Take on random scenarios and characters. Make your friends laugh with spontaneous creativity!",
     icon: "🎭",
     category: "Creative",
@@ -369,6 +386,7 @@ No win/lose—session ends when the reading feels complete.`,
   {
     id: "storyteller",
     name: "Epic Storyteller",
+    cover: "/games/game-cover-storyteller.png",
     description: "Collaborative storytelling where each player adds to an evolving narrative adventure.",
     icon: "📖",
     category: "Creative",
@@ -398,6 +416,7 @@ const EDUCATIONAL_GAMES: GameTemplate[] = [
   {
     id: "trivia",
     name: "Trivia Championship",
+    cover: "/games/game-cover-trivia.png",
     description: "Test your knowledge across history, science, pop culture and more.",
     icon: "💡",
     category: "Knowledge",
@@ -422,6 +441,7 @@ WINNING:
   {
     id: "debate",
     name: "Debate Arena",
+    cover: "/games/game-cover-debate.png",
     description: "Argue your case on philosophy, ethics, and logic. Best argument wins.",
     icon: "⚖️",
     category: "Educational",
@@ -437,6 +457,7 @@ WINNING:
     name: "The Time Vault",
     description: "Work together to solve interconnected puzzles and escape before time runs out.",
     icon: "🚪",
+    cover: "/games/game-cover-escape-room.png",
     category: "Puzzle",
     tags: ["Cooperative", "Logic", "Teamwork"],
     players: "2-6",
@@ -516,27 +537,36 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
       return (
         <div
           key={template.id}
-          className="group relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 hover:border-violet-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+          className="group relative bg-zinc-900/60 border border-zinc-800 hover:border-violet-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer"
           onClick={() => handleSelect(template)}
         >
-          {template.badge && (
-            <div className="absolute top-4 right-4 z-10">
-              <div className="px-3 py-1 rounded-full bg-zinc-950/80 backdrop-blur-sm border border-zinc-700 text-xs font-bold text-white">
+          {/* Cover image */}
+          <div className="relative h-36 overflow-hidden">
+            {template.cover ? (
+              <img
+                src={template.cover}
+                alt={template.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${template.color} flex items-center justify-center text-5xl`}>
+                {template.icon}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
+            {template.badge && (
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-zinc-950/70 backdrop-blur-sm border border-zinc-700 text-xs font-bold text-white">
                 {template.badge}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          <div className={`absolute inset-0 bg-gradient-to-br ${template.color} opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none`} />
-
-          <div className="relative p-6">
-            <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">{template.icon}</div>
-
-            <h3 className="text-xl font-black text-white mb-2 group-hover:text-violet-300 transition-colors">
+          <div className="p-5">
+            <h3 className="text-base font-black text-white mb-1.5 group-hover:text-violet-300 transition-colors">
               {template.name}
             </h3>
 
-            <p className="text-sm text-zinc-400 mb-4 leading-relaxed min-h-[60px]">{template.description}</p>
+            <p className="text-sm text-zinc-400 mb-4 leading-relaxed line-clamp-2">{template.description}</p>
 
             <div className="flex items-center gap-3 text-xs text-zinc-500 mb-4">
               <div className="flex items-center gap-1.5">
@@ -562,29 +592,41 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     return (
       <div
         key={template.id}
-        className="group relative bg-zinc-900/30 border border-zinc-800 hover:border-violet-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+        className="group relative bg-zinc-900/40 border border-zinc-800 hover:border-violet-500/40 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer"
         onClick={() => handleSelect(template)}
       >
-        <div className={`absolute inset-0 bg-gradient-to-br ${template.color} opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none`} />
+        {/* Cover or gradient header */}
+        <div className="relative h-24 overflow-hidden">
+          {template.cover ? (
+            <img
+              src={template.cover}
+              alt={template.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br ${template.color} flex items-center justify-center text-4xl`}>
+              {template.icon}
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/30 to-transparent" />
+        </div>
 
-        <div className="relative p-5">
-          <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform">{template.icon}</div>
-
-          <h3 className="text-lg font-black text-white mb-2 group-hover:text-violet-300 transition-colors">
+        <div className="p-4">
+          <h3 className="text-sm font-black text-white mb-1 group-hover:text-violet-300 transition-colors leading-tight">
             {template.name}
           </h3>
 
           <p className="text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed">{template.description}</p>
 
-          <div className="flex items-center gap-2 text-xs text-zinc-600 mb-3">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-600 mb-3">
             <Users className="h-3 w-3" />
             <span>{template.players}</span>
-            <span>•</span>
+            <span className="text-zinc-700">·</span>
             <Clock className="h-3 w-3" />
             <span>{template.duration}</span>
           </div>
 
-          <Button size="sm" variant="outline" className="w-full bg-zinc-800/50 border-zinc-700 text-white hover:bg-zinc-700 text-xs">
+          <Button size="sm" variant="outline" className="w-full bg-zinc-800/50 border-zinc-700 text-white hover:bg-zinc-700 text-xs h-8">
             <Play className="h-3 w-3 mr-1.5" />
             Use Template
           </Button>
@@ -621,45 +663,55 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             className="relative group rounded-2xl overflow-hidden border border-zinc-800 hover:border-violet-500/50 transition-all cursor-pointer"
             onClick={() => handleSelect(FEATURED_TEMPLATE)}
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${FEATURED_TEMPLATE.color} opacity-30`} />
-            <div className="absolute inset-0 backdrop-blur-3xl" />
-
-            <div className="relative p-8 flex gap-8">
-              <div className="flex-shrink-0">
-                <div className="w-32 h-32 bg-zinc-900/50 backdrop-blur-sm rounded-2xl flex items-center justify-center text-7xl border border-zinc-700 group-hover:scale-110 transition-transform">
-                  {FEATURED_TEMPLATE.icon}
-                </div>
+            {/* Cover image background */}
+            {FEATURED_TEMPLATE.cover && (
+              <div className="absolute inset-0">
+                <img
+                  src={FEATURED_TEMPLATE.cover}
+                  alt={FEATURED_TEMPLATE.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-zinc-950/50" />
               </div>
+            )}
 
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="text-3xl font-black text-white mb-2 group-hover:text-violet-300 transition-colors">
-                      {FEATURED_TEMPLATE.name}
-                    </h3>
+            <div className="relative p-8 flex gap-8 min-h-[260px] items-center">
+              <div className="flex-1 max-w-2xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-3xl">{FEATURED_TEMPLATE.icon}</span>
+                  <div className="flex gap-2">
+                    {FEATURED_TEMPLATE.tags.slice(0, 2).map((tag) => (
+                      <span key={tag} className="text-[11px] font-bold px-2 py-0.5 bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
-                <p className="text-zinc-300 mb-4 text-lg leading-relaxed">{FEATURED_TEMPLATE.longDescription}</p>
+                <h3 className="text-3xl font-black text-white mb-2 group-hover:text-violet-300 transition-colors">
+                  {FEATURED_TEMPLATE.name}
+                </h3>
+
+                <p className="text-zinc-300 mb-4 text-base leading-relaxed">{FEATURED_TEMPLATE.longDescription}</p>
 
                 {FEATURED_TEMPLATE.features && (
-                  <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="grid grid-cols-2 gap-2 mb-6">
                     {FEATURED_TEMPLATE.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm text-zinc-400">
-                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
                         <span>{feature}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-6 text-sm text-zinc-400">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-5 text-sm text-zinc-400">
+                    <div className="flex items-center gap-1.5">
                       <Users className="h-4 w-4" />
-                      <span>{FEATURED_TEMPLATE.players} players</span>
+                      <span>{FEATURED_TEMPLATE.players}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <Clock className="h-4 w-4" />
                       <span>{FEATURED_TEMPLATE.duration}</span>
                     </div>
@@ -673,7 +725,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                       e.stopPropagation();
                       handleSelect(FEATURED_TEMPLATE);
                     }}
-                    className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold"
+                    className="ml-auto bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-900/40"
                   >
                     <Play className="h-4 w-4 mr-2" />
                     Play Now
