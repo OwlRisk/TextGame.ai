@@ -1,6 +1,7 @@
 "use client";
 
-import { Users, Clock, Play, Lightbulb, Crown, Search, Flame, Swords, Drama, MessageCircle } from "lucide-react";
+import { useState } from "react";
+import { Users, Clock, Play, Lightbulb, Crown, Flame, Swords, Drama, MessageCircle, Search } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 
@@ -505,7 +506,27 @@ export function getPresetById(presetId: string | null): DiscoverPreset | null {
   };
 }
 
+const CATEGORIES = [
+  { id: "all",       label: "All Games",       icon: Flame },
+  { id: "deduction", label: "Social Deduction", icon: Swords },
+  { id: "party",     label: "Party",            icon: MessageCircle },
+  { id: "mystery",   label: "Mystery",          icon: Search },
+  { id: "creative",  label: "Creative",         icon: Drama },
+  { id: "brain",     label: "Brain Games",      icon: Lightbulb },
+] as const;
+
+const CATEGORY_MAP: Record<string, GameTemplate[]> = {
+  deduction: [...CORE_TEMPLATES.filter(t => t.category === "Social Deduction"), ...SOCIAL_DEDUCTION],
+  party:     PARTY_GAMES,
+  mystery:   MYSTERY_GAMES,
+  creative:  ROLEPLAY_GAMES,
+  brain:     EDUCATIONAL_GAMES,
+};
+
 export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
@@ -595,8 +616,8 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         className="group relative bg-zinc-900/40 border border-zinc-800 hover:border-violet-500/40 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer"
         onClick={() => handleSelect(template)}
       >
-        {/* Cover or gradient header */}
-        <div className="relative h-24 overflow-hidden">
+        {/* Cover */}
+        <div className="relative h-36 overflow-hidden">
           {template.cover ? (
             <img
               src={template.cover}
@@ -608,7 +629,10 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               {template.icon}
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
+          <div className="absolute top-2.5 right-2.5">
+            <Badge className={`${getDifficultyColor(template.difficulty)} border text-[10px]`}>{template.difficulty}</Badge>
+          </div>
         </div>
 
         <div className="p-4">
@@ -618,195 +642,169 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
 
           <p className="text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed">{template.description}</p>
 
-          <div className="flex items-center gap-1.5 text-xs text-zinc-600 mb-3">
-            <Users className="h-3 w-3" />
-            <span>{template.players}</span>
-            <span className="text-zinc-700">·</span>
-            <Clock className="h-3 w-3" />
-            <span>{template.duration}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-zinc-600">
+              <Users className="h-3 w-3" />
+              <span>{template.players}</span>
+              <span className="text-zinc-700">·</span>
+              <Clock className="h-3 w-3" />
+              <span>{template.duration}</span>
+            </div>
+            <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              Play →
+            </span>
           </div>
-
-          <Button size="sm" variant="outline" className="w-full bg-zinc-800/50 border-zinc-700 text-white hover:bg-zinc-700 text-xs h-8">
-            <Play className="h-3 w-3 mr-1.5" />
-            Use Template
-          </Button>
         </div>
       </div>
     );
   };
+
+  // Filtered game list for non-"all" tabs
+  const filteredGames = (() => {
+    const pool = activeCategory === "all"
+      ? [...CORE_TEMPLATES, ...SOCIAL_DEDUCTION, ...PARTY_GAMES, ...MYSTERY_GAMES, ...ROLEPLAY_GAMES, ...EDUCATIONAL_GAMES]
+      : (CATEGORY_MAP[activeCategory] ?? []);
+    if (!searchQuery.trim()) return pool;
+    const q = searchQuery.toLowerCase();
+    return pool.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.tags.some((tag) => tag.toLowerCase().includes(q))
+    );
+  })();
 
   return (
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(139,92,246,0.12),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(236,72,153,0.08),transparent_50%)] pointer-events-none" />
 
-      <div className="relative max-w-6xl mx-auto px-8 py-12">
+      <div className="relative max-w-6xl mx-auto px-8 py-10">
+
         {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-black text-white mb-4 tracking-tight">
+        <div className="text-center mb-8">
+          <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
             Choose Your <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Adventure</span>
           </h1>
-
-          <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-            All games are conversation-based. No complex cards, just pure social interaction and strategy.
+          <p className="text-lg text-zinc-400 max-w-xl mx-auto">
+            Conversation-based games powered by AI. Pick a template and start playing in seconds.
           </p>
         </div>
 
-        {/* Featured Template */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Crown className="h-5 w-5 text-yellow-500" />
-            <h2 className="text-2xl font-black text-white">Featured This Week</h2>
-          </div>
+        {/* Featured Template — only show on "all" tab with no search */}
+        {activeCategory === "all" && !searchQuery && (
+          <div className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              <h2 className="text-lg font-black text-white">Featured This Week</h2>
+            </div>
 
-          <div
-            className="relative group rounded-2xl overflow-hidden border border-zinc-800 hover:border-violet-500/50 transition-all cursor-pointer"
-            onClick={() => handleSelect(FEATURED_TEMPLATE)}
-          >
-            {/* Cover image background */}
-            {FEATURED_TEMPLATE.cover && (
-              <div className="absolute inset-0">
-                <img
-                  src={FEATURED_TEMPLATE.cover}
-                  alt={FEATURED_TEMPLATE.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-zinc-950/50" />
-              </div>
-            )}
-
-            <div className="relative p-8 flex gap-8 min-h-[260px] items-center">
-              <div className="flex-1 max-w-2xl">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl">{FEATURED_TEMPLATE.icon}</span>
-                  <div className="flex gap-2">
-                    {FEATURED_TEMPLATE.tags.slice(0, 2).map((tag) => (
-                      <span key={tag} className="text-[11px] font-bold px-2 py-0.5 bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+            <div
+              className="relative group rounded-2xl overflow-hidden border border-zinc-800 hover:border-violet-500/50 transition-all cursor-pointer"
+              onClick={() => handleSelect(FEATURED_TEMPLATE)}
+            >
+              {FEATURED_TEMPLATE.cover && (
+                <div className="absolute inset-0">
+                  <img
+                    src={FEATURED_TEMPLATE.cover}
+                    alt={FEATURED_TEMPLATE.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-zinc-950/50" />
                 </div>
+              )}
 
-                <h3 className="text-3xl font-black text-white mb-2 group-hover:text-violet-300 transition-colors">
-                  {FEATURED_TEMPLATE.name}
-                </h3>
-
-                <p className="text-zinc-300 mb-4 text-base leading-relaxed">{FEATURED_TEMPLATE.longDescription}</p>
-
-                {FEATURED_TEMPLATE.features && (
-                  <div className="grid grid-cols-2 gap-2 mb-6">
-                    {FEATURED_TEMPLATE.features.map((feature, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm text-zinc-400">
-                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-5 text-sm text-zinc-400">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4" />
-                      <span>{FEATURED_TEMPLATE.players}</span>
+              <div className="relative p-8 flex gap-8 min-h-[240px] items-center">
+                <div className="flex-1 max-w-2xl">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-3xl">{FEATURED_TEMPLATE.icon}</span>
+                    <div className="flex gap-2">
+                      {FEATURED_TEMPLATE.tags.slice(0, 2).map((tag) => (
+                        <span key={tag} className="text-[11px] font-bold px-2 py-0.5 bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4" />
-                      <span>{FEATURED_TEMPLATE.duration}</span>
-                    </div>
-                    <Badge className={`${getDifficultyColor(FEATURED_TEMPLATE.difficulty)} border text-xs font-bold`}>
-                      {FEATURED_TEMPLATE.difficulty}
-                    </Badge>
                   </div>
-
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelect(FEATURED_TEMPLATE);
-                    }}
-                    className="ml-auto bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-900/40"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Play Now
-                  </Button>
+                  <h3 className="text-3xl font-black text-white mb-2 group-hover:text-violet-300 transition-colors">
+                    {FEATURED_TEMPLATE.name}
+                  </h3>
+                  <p className="text-zinc-300 mb-4 text-base leading-relaxed">{FEATURED_TEMPLATE.longDescription}</p>
+                  {FEATURED_TEMPLATE.features && (
+                    <div className="grid grid-cols-2 gap-2 mb-5">
+                      {FEATURED_TEMPLATE.features.map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm text-zinc-400">
+                          <div className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-5 text-sm text-zinc-400">
+                      <div className="flex items-center gap-1.5"><Users className="h-4 w-4" /><span>{FEATURED_TEMPLATE.players}</span></div>
+                      <div className="flex items-center gap-1.5"><Clock className="h-4 w-4" /><span>{FEATURED_TEMPLATE.duration}</span></div>
+                      <Badge className={`${getDifficultyColor(FEATURED_TEMPLATE.difficulty)} border text-xs font-bold`}>{FEATURED_TEMPLATE.difficulty}</Badge>
+                    </div>
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); handleSelect(FEATURED_TEMPLATE); }}
+                      className="ml-auto bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-900/40"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Play Now
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Core Templates */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Flame className="h-5 w-5 text-orange-500" />
-            <h2 className="text-2xl font-black text-white">Essential Collection</h2>
+        {/* Category Tabs + Search */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          {/* Tabs */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {CATEGORIES.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveCategory(id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                  activeCategory === id
+                    ? "bg-violet-600 text-white shadow-md shadow-violet-900/40"
+                    : "bg-zinc-800/60 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {CORE_TEMPLATES.map((template) => renderGameCard(template, "medium"))}
-          </div>
-        </div>
-
-        {/* Social Deduction Games */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Swords className="h-5 w-5 text-blue-400" />
-            <h2 className="text-2xl font-black text-white">Social Deduction</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {SOCIAL_DEDUCTION.map((template) => renderGameCard(template))}
-          </div>
-        </div>
-
-        {/* Party Games */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <MessageCircle className="h-5 w-5 text-pink-400" />
-            <h2 className="text-2xl font-black text-white">Party Games</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {PARTY_GAMES.map((template) => renderGameCard(template))}
+          {/* Search */}
+          <div className="relative w-full sm:w-56">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search games..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"
+            />
           </div>
         </div>
 
-        {/* Mystery Games */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Search className="h-5 w-5 text-amber-400" />
-            <h2 className="text-2xl font-black text-white">Mystery & Investigation</h2>
+        {/* Game Grid */}
+        {filteredGames.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredGames.map((template) => renderGameCard(template, "small"))}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {MYSTERY_GAMES.map((template) => renderGameCard(template))}
+        ) : (
+          <div className="text-center py-20 text-zinc-500">
+            <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="text-lg font-semibold">No games found</p>
+            <p className="text-sm mt-1">Try a different keyword or category</p>
           </div>
-        </div>
-
-        {/* Roleplay & Creative */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Drama className="h-5 w-5 text-purple-400" />
-            <h2 className="text-2xl font-black text-white">Roleplay & Creative</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {ROLEPLAY_GAMES.map((template) => renderGameCard(template))}
-          </div>
-        </div>
-
-        {/* Educational & Puzzle */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Lightbulb className="h-5 w-5 text-green-400" />
-            <h2 className="text-2xl font-black text-white">Brain Games</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {EDUCATIONAL_GAMES.map((template) => renderGameCard(template))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
