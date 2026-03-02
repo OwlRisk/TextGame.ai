@@ -7,6 +7,7 @@ export function stripMarkdownForTTS(text: string): string {
   return text
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
     .replace(/`(.*?)`/g, '$1')
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/^[-*•]\s+/gm, '')
@@ -26,6 +27,7 @@ export function prepareTextForTTS(text: string, maxLength = 4096): string {
     // Inline formatting
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
     .replace(/~~(.*?)~~/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
     // Links: [label](url) -> "label"; bare URLs can stay or be dropped
