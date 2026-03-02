@@ -10,7 +10,7 @@ import {
   setCustomerId,
   updateSubscriptionStatus,
 } from '@/lib/tokens';
-import { getTierFromStripePriceId } from '@/lib/subscription';
+import { getTierFromStripePriceId, isPaidTier } from '@/lib/subscription';
 import { shouldGrantMonthlyAllowance } from '@/lib/stripe-helpers';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 import { logger } from '@/lib/logger';
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
         subscription.id,
         new Date(subscription.current_period_end * 1000)
       );
-      if (shouldGrant) {
+      if (shouldGrant && isPaidTier(tier)) {
         await grantMonthlyAllowance(user.id, tier);
       }
       invalidateBalanceCache(user.id);

@@ -4,6 +4,8 @@
  * database pool, or Next.js internals.
  */
 
+import type { SubscriptionStatus } from '@/lib/tokens';
+
 /**
  * Map a Stripe subscription status + resolved tier to the app's subscription status.
  *
@@ -19,8 +21,8 @@
 export function resolveSubscriptionStatus(
   stripeStatus: string,
   tier: string | null
-): string {
-  if (stripeStatus === 'active') return tier ?? 'pro';
+): SubscriptionStatus {
+  if (stripeStatus === 'active') return (tier as SubscriptionStatus) ?? 'pro';
   if (stripeStatus === 'canceled') return 'cancelled';
   return 'free';
 }
@@ -36,7 +38,7 @@ export function resolveSubscriptionStatus(
  *  - past_due          → "free"  (access revoked while Stripe retries)
  *  - active | trialing → null    (still retrying, don't change status)
  */
-export function resolvePaymentFailedStatus(stripeStatus: string): string | null {
+export function resolvePaymentFailedStatus(stripeStatus: string): SubscriptionStatus | null {
   if (stripeStatus === 'canceled' || stripeStatus === 'unpaid') return 'cancelled';
   if (stripeStatus === 'past_due') return 'free';
   return null;
