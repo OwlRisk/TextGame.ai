@@ -24,7 +24,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.openai.com https://*.oaiusercontent.com https://*.supabase.co",
+              "img-src 'self' data: blob: https://*.openai.com https://*.oaiusercontent.com https://*.supabase.co https://*.googleusercontent.com",
               "font-src 'self' data:",
               "media-src 'self' blob:",
               "connect-src 'self' https://*.openai.com https://*.supabase.co https://*.supabase.in wss://*.supabase.co",
