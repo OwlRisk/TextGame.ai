@@ -465,10 +465,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Sign In"
                   className="!h-12 !w-12 !p-0 rounded-full bg-zinc-800 hover:!bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30"
                   onClick={() => router.push('/signin')}
                 >
-                  <LogIn className="h-6 w-6 text-white" />
+                  <LogIn className="h-6 w-6 text-white" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">

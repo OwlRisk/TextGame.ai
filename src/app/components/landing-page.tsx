@@ -1006,11 +1006,12 @@ function InsideGameSection() {
       </div>
 
       {/* Tab navigation */}
-      <div className="flex flex-wrap justify-center gap-3 mb-12">
+      <div role="tablist" aria-label="Game stages" className="flex flex-wrap justify-center gap-3 mb-12">
         {INSIDE_GAME_STEPS.map((step, index) => (
           <button
             key={step.id}
             type="button"
+            role="tab"
             aria-selected={selectedStep === index}
             onClick={() => setSelectedStep(index)}
             className={`group relative px-6 py-3 rounded-full border transition-all duration-300 ${
