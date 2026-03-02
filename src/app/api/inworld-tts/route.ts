@@ -6,8 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { env } from '@/lib/env';
-import { deductTokens, ttsCostToCoins } from '@/lib/tokens';
-import { getUserBalance } from '@/lib/user-balance';
+import { deductTokens, ttsCostToCoins, getUserBalance } from '@/lib/tokens';
 
 const INWORLD_TTS_URL = 'https://api.inworld.ai/tts/v1/voice';
 const MAX_TEXT_LENGTH = 2000;
