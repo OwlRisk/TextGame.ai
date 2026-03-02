@@ -117,7 +117,7 @@ export function HelpSupportContent() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => { setSubmitted(false); setMessage(''); setFeedbackType('general'); }}
+                   onClick={() => { setSubmitted(false); setMessage(''); }}
                   className="mt-2 border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs"
                 >
                   Send another message
