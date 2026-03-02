@@ -9,12 +9,22 @@ function getOpenAI() {
 }
 
 /**
- * Soft limit: communicated to the AI via the system prompt — the ideal target length.
- * Hard limit: enforced by max_completion_tokens — the absolute ceiling.
- * Tune these two constants to control player speech length globally.
+ * Hard limit: enforced by max_completion_tokens — the absolute ceiling for all player speech.
+ * The soft limit (target length) is determined dynamically by the AI itself based on
+ * the current game phase and rules — see PACING_RULE in buildSystemPrompt.
  */
-const PLAYER_SPEAK_SOFT_LIMIT = "1–2 sentences (≈20–40 words). 3 sentences only for a pivotal accusation or reveal. Never more than 3 sentences.";
 const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 120;
+
+/**
+ * Pacing rule injected into every player prompt.
+ * The AI reads the current game phase and rules to decide how long to speak.
+ */
+const PACING_RULE = `PACING — YOU DECIDE THE LENGTH:
+Read the current game phase and rules to judge how much to say. Do not use a fixed length for every message.
+- Action / reaction / vote phase → 1 sentence. No analysis needed.
+- Discussion / debate / accusation phase → if you are accusing someone or defending yourself, include exactly ONE concrete observation or piece of reasoning. 2–3 sentences max.
+- Storytelling / roleplay / emotional moment → match the drama; 1–3 sentences.
+- When in doubt, shorter is better. Never more than 3 sentences. No speeches or monologues.`;
 
 const EMOTION_TAGS_SECTION = `EMOTION & SOUND TAGS (optional, use sparingly and only when they feel genuinely natural):
 - ONE emotion tag at the very start when it fits: [angry] [happy] [sad] [surprised] [fearful] [disgusted] [laughing] [whispering]
@@ -35,8 +45,6 @@ function buildSystemPrompt(
   gameName: string
 ): string {
   const base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...".`;
-  const lengthRule = `LENGTH: ${PLAYER_SPEAK_SOFT_LIMIT} No speeches, no monologues.`;
-
   switch (gameTemplate) {
     case 'werewolf':
     case 'mafia': {
@@ -44,10 +52,11 @@ function buildSystemPrompt(
 
 RULES:
 - No flowery language or dramatic speeches.
-- If you're a werewolf/mafia: blend in, deflect, mislead subtly.
-- If you're a villager/detective: observe, deduce, call people out.
+- If you're a werewolf/mafia: blend in, deflect, mislead subtly—but give a plausible reason when pressed.
+- If you're a villager/detective: observe, deduce, call people out with evidence.
 - Never reveal your role directly unless the game explicitly asks.
-- ${lengthRule}
+
+${PACING_RULE}
 
 ${EMOTION_TAGS_SECTION}`;
     }
@@ -58,7 +67,8 @@ ${EMOTION_TAGS_SECTION}`;
 RULES:
 - Describe your word sideways; don't say it outright.
 - React to what others said—agree, push back, or add a new angle.
-- ${lengthRule}
+
+${PACING_RULE}
 
 ${EMOTION_TAGS_SECTION}`;
     }
@@ -69,7 +79,8 @@ ${EMOTION_TAGS_SECTION}`;
 RULES:
 - No game-theory talk or accusations.
 - Build on what was just shared or offer a different lens.
-- ${lengthRule}
+
+${PACING_RULE}
 
 ${EMOTION_TAGS_SECTION}`;
     }
@@ -80,7 +91,8 @@ ${EMOTION_TAGS_SECTION}`;
 
 RULES:
 - Just your gut reaction and brief reasoning—no long explanations.
-- ${lengthRule}
+
+${PACING_RULE}
 
 ${EMOTION_TAGS_SECTION}`;
     }
@@ -92,7 +104,8 @@ ${EMOTION_TAGS_SECTION}`;
 RULES:
 - Speak as your character, not as a player discussing the game.
 - Be vivid and emotionally grounded.
-- ${lengthRule}
+
+${PACING_RULE}
 
 ${EMOTION_TAGS_SECTION}`;
     }
@@ -102,7 +115,8 @@ ${EMOTION_TAGS_SECTION}`;
 
 RULES:
 - No monologues. React specifically to the last thing said.
-- ${lengthRule}
+
+${PACING_RULE}
 
 ${EMOTION_TAGS_SECTION}`;
     }
