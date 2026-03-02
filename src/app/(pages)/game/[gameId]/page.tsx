@@ -104,6 +104,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     isRoomLoading,
     myBoardContent,
     setMyBoardContent,
+    playerNotes,
+    setPlayerNotes,
     sections,
     setSections,
     gameEvents,
@@ -128,8 +130,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
    * ["*"] = explicitly public.
    */
   const [channelPermissions, setChannelPermissions] = useState<Record<string, string[]>>({});
-  /** Each AI player's private notes written via [MY_NOTES] — persists across turns within a session. */
-  const [playerNotes, setPlayerNotes] = useState<Record<string, string>>({});
   const { gameId } = use(params);
   const pathname = usePathname();
 

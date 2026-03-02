@@ -29,6 +29,8 @@ interface GameRoomContextType {
   privateMessages: Record<string, PrivateMessage[]>;
   gameProgress: string;
   myBoardContent: Record<string, string>; // playerId -> board content
+  /** AI player's own private notes written via [MY_NOTES] — persisted per-game. */
+  playerNotes: Record<string, string>; // playerId -> notes
   sections: Array<{ id: string; name: string; content: string }>;
   sectionsLoading: boolean;
   /** Chronological log of key game events recorded by RECORD_EVENT / ELIMINATE directives. */
@@ -63,6 +65,7 @@ interface GameRoomContextType {
   setTypingUsers: React.Dispatch<React.SetStateAction<{ name: string; avatar: string }[]>>;
   setGameProgress: React.Dispatch<React.SetStateAction<string>>;
   setMyBoardContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  setPlayerNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   setSections: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string; content: string }>>>;
   setSectionsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setGameEvents: React.Dispatch<React.SetStateAction<string[]>>;
@@ -99,6 +102,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [privateMessages, setPrivateMessages] = useState<Record<string, PrivateMessage[]>>({});
   const [gameProgress, setGameProgress] = useState<string>("");
   const [myBoardContent, setMyBoardContent] = useState<Record<string, string>>({});
+  const [playerNotes, setPlayerNotes] = useState<Record<string, string>>({});
   const [sections, setSections] = useState<Array<{ id: string; name: string; content: string }>>([]);
   const [sectionsLoading, setSectionsLoading] = useState(false);
   const [gameEvents, setGameEvents] = useState<string[]>([]);
@@ -141,6 +145,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId as string | null);
       if (state.gameProgress) setGameProgress((state.gameProgress as string) ?? "");
       if (state.myBoardContent) setMyBoardContent((state.myBoardContent as Record<string, string>) ?? {});
+      if (state.playerNotes && typeof state.playerNotes === "object") {
+        setPlayerNotes(state.playerNotes as Record<string, string>);
+      }
       if (state.sections) setSections(state.sections as Array<{ id: string; name: string; content: string }>);
       if (state.gameEvents && Array.isArray(state.gameEvents)) setGameEvents(state.gameEvents as string[]);
       if (state.privateMessages && typeof state.privateMessages === "object") {
@@ -203,6 +210,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     selectedChannelId,
     gameProgress,
     myBoardContent,
+    playerNotes,
     sections,
     gameEvents,
     privateMessages,
@@ -249,6 +257,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       selectedChannelId,
       gameProgress,
       myBoardContent,
+      playerNotes: Object.keys(playerNotes).length ? playerNotes : undefined,
       sections,
       gameEvents,
       privateMessages: trimmedPrivateMessages,
@@ -447,6 +456,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         privateMessages,
         gameProgress,
         myBoardContent,
+        playerNotes,
         sections,
         sectionsLoading,
         gameEvents,
@@ -472,6 +482,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         setTypingUsers,
         setGameProgress,
         setMyBoardContent,
+        setPlayerNotes,
         setSections,
         setSectionsLoading,
         setGameEvents,
