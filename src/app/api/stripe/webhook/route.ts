@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { addTokens, updateSubscriptionStatus, rechargeCoinsFromPayment, grantMonthlyAllowance } from '@/lib/tokens';
 import { getTierFromStripePriceId } from '@/lib/subscription';
 import { invalidateBalanceCache } from '@/lib/balance-cache';
+import { resolveSubscriptionStatus, resolvePaymentFailedStatus } from '@/lib/stripe-helpers';
 import Stripe from 'stripe';
 import { pool } from '@/lib/pg-pool';
 import { logger } from '@/lib/logger';
@@ -105,12 +106,7 @@ export async function POST(request: NextRequest) {
         const userId = result.rows[0].user_id;
         const priceId = subscription.items?.data?.[0]?.price?.id;
         const tier = priceId ? getTierFromStripePriceId(priceId) : null;
-        const status =
-          subscription.status === 'active'
-            ? (tier ?? 'pro')
-            : subscription.status === 'canceled'
-              ? 'cancelled'
-              : 'free';
+        const status = resolveSubscriptionStatus(subscription.status, tier);
 
         await updateSubscriptionStatus(
           userId,
@@ -187,12 +183,7 @@ export async function POST(request: NextRequest) {
           if (result.rows.length > 0) {
             const userId = result.rows[0].user_id;
             // Mark as past_due or cancelled depending on Stripe subscription status
-            const newStatus =
-              sub.status === 'canceled' || sub.status === 'unpaid'
-                ? 'cancelled'
-                : sub.status === 'past_due'
-                  ? 'free'
-                  : null;
+            const newStatus = resolvePaymentFailedStatus(sub.status);
 
             if (newStatus) {
               await updateSubscriptionStatus(

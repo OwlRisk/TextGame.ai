@@ -4,6 +4,7 @@ import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server'
 import { getCustomerId, updateSubscriptionStatus, grantMonthlyAllowance } from '@/lib/tokens';
 import { invalidateBalanceCache } from '@/lib/balance-cache';
 import { getTierFromStripePriceId, type SubscriptionTier } from '@/lib/subscription';
+import { shouldGrantMonthlyAllowance } from '@/lib/stripe-helpers';
 
 /**
  * Sync subscription from Stripe to our DB.
@@ -60,9 +61,7 @@ export async function POST(request: NextRequest) {
       periodEnd
     );
 
-    const shouldGrant =
-      (status === 'pro' || status === 'plus' || status === 'ultra') &&
-      (currentStatus === 'free' || currentStatus !== status);
+    const shouldGrant = shouldGrantMonthlyAllowance(status, currentStatus);
     if (shouldGrant) {
       await grantMonthlyAllowance(user.id, status);
     }

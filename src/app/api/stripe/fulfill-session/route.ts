@@ -11,6 +11,7 @@ import {
   updateSubscriptionStatus,
 } from '@/lib/tokens';
 import { getTierFromStripePriceId } from '@/lib/subscription';
+import { shouldGrantMonthlyAllowance } from '@/lib/stripe-helpers';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 import { logger } from '@/lib/logger';
 
@@ -97,8 +98,7 @@ export async function POST(request: NextRequest) {
 
       // Avoid duplicate grant when webhook has already fulfilled this subscription.
       const before = await getUserBalance(user.id);
-      const isPaidTier = tier === 'pro' || tier === 'plus' || tier === 'ultra';
-      const shouldGrant = isPaidTier && before.subscriptionStatus !== tier;
+      const shouldGrant = shouldGrantMonthlyAllowance(tier, before.subscriptionStatus);
 
       await updateSubscriptionStatus(
         user.id,
