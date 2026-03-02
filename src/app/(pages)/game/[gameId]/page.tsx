@@ -1349,6 +1349,15 @@ ${rulesText || "No specific rules defined."}`.trim();
       setQuickRepliesLoading(false);
       return;
     }
+    // Don't show quick replies until the user has spoken at least once in this channel.
+    // This prevents "default" suggestions from appearing at the start of the game
+    // before the user has engaged.
+    const userHasSpoken = messagesForChannel.some((m) => m.senderId === userId);
+    if (!userHasSpoken) {
+      setQuickReplies([]);
+      setQuickRepliesLoading(false);
+      return;
+    }
     if (isRoundInProgress) {
       setQuickRepliesLoading(false);
       return;

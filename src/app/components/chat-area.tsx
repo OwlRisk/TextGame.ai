@@ -301,7 +301,6 @@ export function ChatArea({
   slashCommands,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
-  const [quickReplyOpen, setQuickReplyOpen] = useState(true);
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -761,7 +760,7 @@ export function ChatArea({
       scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }, 50);
     return () => clearTimeout(t);
-  }, [quickReplyOpen, quickReplies.length]);
+  }, [quickReplies.length]);
 
   // Load more when user scrolls up: IntersectionObserver on top sentinel
   useEffect(() => {
@@ -1256,42 +1255,37 @@ export function ChatArea({
           </div>
         )}
         {(quickRepliesLoading || quickReplies.length > 0) && canSend && !isRecording && (
-          <div className="mb-3 rounded-lg border border-zinc-700/60 bg-zinc-800/50 overflow-hidden backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={() => setQuickReplyOpen(!quickReplyOpen)}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-            >
-              <span className="flex items-center gap-2">
-                <span className="text-zinc-500">⚡</span>
-                {quickRepliesLoading && quickReplies.length === 0
-                  ? "Loading quick replies…"
-                  : "Quick reply"}
-              </span>
-              {quickReplies.length > 0 && (quickReplyOpen ? <ChevronUp className="h-4 w-4 text-zinc-500" /> : <ChevronDown className="h-4 w-4 text-zinc-500" />)}
-            </button>
-            {quickReplyOpen && quickReplies.length > 0 && (
-              <div className="px-3 pb-3">
-                <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch]">
-                  {quickReplies.map((text) => (
-                    <Button
-                      key={text}
-                      variant="outline"
-                      size="sm"
-                      className="h-9 px-4 text-sm border-zinc-600/80 bg-zinc-700/40 hover:bg-zinc-600/50 text-zinc-300 hover:text-zinc-200 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/50"
-                      disabled={sendDisabled}
-                      onClick={() => handleSend(text)}
-                    >
-                      {text}
-                    </Button>
-                  ))}
-                </div>
+          <div className="mb-2">
+            {/* Loading skeleton */}
+            {quickRepliesLoading && quickReplies.length === 0 && (
+              <div className="flex items-center gap-2 px-1 mb-2 text-xs text-zinc-600">
+                <span className="inline-block w-3 h-3 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
+                <span>Suggesting replies…</span>
               </div>
             )}
-            {quickReplyOpen && quickRepliesLoading && quickReplies.length === 0 && (
-              <div className="px-3 pb-3 flex items-center gap-2 text-xs text-zinc-500">
-                <span className="inline-block w-3 h-3 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
-                Loading…
+            {/* Quick reply cards — click fills the input for review before sending */}
+            {quickReplies.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                {quickReplies.slice(0, 3).map((text) => (
+                  <button
+                    key={text}
+                    type="button"
+                    disabled={sendDisabled}
+                    onClick={() => {
+                      setInput(text);
+                      // Focus the textarea so user can review / edit before sending
+                      setTimeout(() => {
+                        const ta = document.querySelector<HTMLTextAreaElement>("textarea[placeholder]");
+                        ta?.focus();
+                        ta?.setSelectionRange(ta.value.length, ta.value.length);
+                      }, 0);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600/80 text-zinc-300 hover:text-zinc-100 text-sm leading-snug transition-all disabled:opacity-40 disabled:cursor-not-allowed group"
+                  >
+                    <span className="mr-2 text-amber-500/70 text-xs select-none group-hover:text-amber-400 transition-colors">⚡</span>
+                    {text}
+                  </button>
+                ))}
               </div>
             )}
           </div>
