@@ -67,6 +67,8 @@ function PreviewAvatar({ name, isHost }: {
       <img
         src={avatarSrc}
         alt={name}
+        width={36}
+        height={36}
         onError={(e) => { (e.currentTarget as HTMLImageElement).src = GAME_MASTER_AVATAR; }}
         className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
       />
@@ -80,6 +82,8 @@ function PreviewAvatar({ name, isHost }: {
         <img
           src={src}
           alt={name}
+          width={36}
+          height={36}
           onError={(e) => { (e.currentTarget as HTMLImageElement).src = GAME_MASTER_AVATAR; }}
           className="w-full h-full object-cover"
         />
@@ -128,7 +132,7 @@ function StreamingText({
     <span className="text-sm text-zinc-300 leading-relaxed">
       {displayedText}
       {currentIndex < text.length && (
-        <span className="inline-block w-[2px] h-4 bg-violet-400 animate-pulse ml-0.5">​</span>
+        <span aria-hidden="true" className="inline-block w-[2px] h-4 bg-violet-400 animate-pulse ml-0.5" />
       )}
     </span>
   );
@@ -449,10 +453,12 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
       {/* Animated background blobs */}
       <div
+        aria-hidden="true"
         className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.1),transparent_50%)] pointer-events-none animate-pulse"
         style={{ animationDuration: "4s" }}
       />
       <div
+        aria-hidden="true"
         className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.08),transparent_50%)] pointer-events-none animate-pulse"
         style={{ animationDuration: "6s", animationDelay: "1s" }}
       />
@@ -551,6 +557,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             {/* Google Sign-in – glowing button */}
             <div className="mb-6 relative">
               <div
+                aria-hidden="true"
                 className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl blur-xl opacity-30 animate-pulse"
                 style={{ animationDuration: "3s" }}
               />
@@ -578,15 +585,17 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 <Zap className="h-4 w-4 text-violet-400" />
                 <p className="text-sm font-bold text-zinc-400">Start with a classic:</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                 {quickStarts.map((item) => (
                   <button
                     key={item.id}
+                    type="button"
+                    aria-pressed={selectedGame === item.id}
                     onClick={() => {
                       setSelectedGame(item.id);
                       setIsAutoPlaying(false);
                     }}
-                    className={`group relative bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-300 hover:scale-[1.02] rounded-xl px-4 py-3 overflow-hidden ${
+                    className={`group relative bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-300 hover:scale-[1.02] rounded-xl px-4 py-3 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
                       selectedGame === item.id
                         ? "border-violet-500 shadow-lg shadow-violet-500/20"
                         : "border-zinc-800 hover:border-violet-500/50"
@@ -614,7 +623,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
 
           {/* Right column – animated chat preview */}
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-3xl" />
+            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-3xl" />
             <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-zinc-700/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
               {/* Window chrome */}
               <div className="bg-zinc-800/70 px-4 py-3 border-b border-zinc-700/80 flex items-center gap-3">
@@ -643,7 +652,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     <div className="flex items-baseline gap-2 mb-1">
                       <span className="font-semibold text-white text-sm">Drew</span>
                     </div>
-                    <div className="flex gap-1 items-center">
+                    <div className="flex gap-1 items-center" aria-hidden="true">
                       <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse" />
                       <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-75" />
                       <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-150" />
@@ -672,7 +681,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
           </div>
 
           {/* Scrolling marquee */}
-          <div className="relative">
+          <div className="relative" aria-hidden="true">
             {/* Fade edges */}
             <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none" />
             <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none" />
@@ -709,6 +718,9 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                         <img
                           src={LANDING_AVATAR_MAP[char.name]}
                           alt={char.name}
+                          width={64}
+                          height={64}
+                          loading="lazy"
                           className="w-16 h-16 rounded-full object-cover ring-2 ring-zinc-700/80 group-hover:ring-violet-500/50 transition-all"
                         />
                       ) : (
@@ -852,16 +864,21 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {featuredGames.map((game, index) => (
-              <div
+              <button
                 key={index}
+                type="button"
                 onClick={onSignIn}
-                className={`group relative bg-zinc-900/60 border border-zinc-800 ${game.border} rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer overflow-hidden`}
+                aria-label={`Play ${game.title}`}
+                className={`group relative bg-zinc-900/60 border border-zinc-800 ${game.border} rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer overflow-hidden text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500`}
               >
                 {/* Cover image */}
                 <div className="relative h-40 overflow-hidden">
                   <img
                     src={game.cover}
                     alt={game.title}
+                    width={400}
+                    height={160}
+                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   {/* gradient overlay for text legibility */}
@@ -905,7 +922,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     </span>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -916,8 +933,8 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
         {/* ── Final CTA ─────────────────────────────────────────────── */}
         <div className="mb-24">
           <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-3xl p-12 md:p-16">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
                 Ready to Create Your Game?
