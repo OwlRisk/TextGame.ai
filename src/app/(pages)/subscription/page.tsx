@@ -50,10 +50,23 @@ const PAID_FEATURES = [
 ] as const;
 
 
-const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: string; creditsNum: number }> = {
-  pro: { price: '$20 / month', priceNum: '$20', credits: '2,000 credits / month', creditsNum: 2000 },
-  plus: { price: '$60 / month', priceNum: '$60', credits: '6,000 credits / month', creditsNum: 6000 },
-  ultra: { price: '$200 / month', priceNum: '$200', credits: '40,000 credits / month', creditsNum: 40000 },
+const BASE_PAID_FEATURES = [
+  '113 AI voices · 16 languages',
+  'GPT-5.2 · GPT-4o selectable',
+  'Image generation',
+  '14 voice emotion expressions',
+] as const;
+
+const ULTRA_EXCLUSIVE_FEATURES = [
+  { text: 'Early access to new features', highlight: true },
+  { text: 'Priority AI processing', highlight: true },
+  { text: 'Priority support', highlight: true },
+] as const;
+
+const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: string; creditsNum: number; badge?: string; accentFrom: string; accentTo: string; borderColor: string; badgeGradient?: string }> = {
+  pro:   { price: '$20 / month', priceNum: '$20',  credits: '2,000 credits / month',  creditsNum: 2000,  badge: 'Best value', accentFrom: 'from-violet-500', accentTo: 'to-violet-600', borderColor: 'border-violet-500/50', badgeGradient: 'from-violet-500 to-violet-600' },
+  plus:  { price: '$60 / month', priceNum: '$60',  credits: '6,000 credits / month',  creditsNum: 6000,  badge: 'Popular',    accentFrom: 'from-fuchsia-500', accentTo: 'to-purple-600', borderColor: 'border-fuchsia-500/60', badgeGradient: 'from-fuchsia-500 to-purple-600' },
+  ultra: { price: '$200 / month', priceNum: '$200', credits: '40,000 credits / month', creditsNum: 40000, accentFrom: 'from-amber-500', accentTo: 'to-orange-500', borderColor: 'border-amber-500/40' },
 };
 
 function getPlanFeatures(tier: string): string[] {
@@ -549,135 +562,142 @@ function SubscriptionPageContent() {
           {/* ───── FREE STATE：三档选一 ───── */}
           {!initialLoading && currentTier === 'free' && (
             <div className="flex flex-col">
-              {/* 顶部标题与说明 */}
+              {/* Header */}
               <div className="px-6 md:px-10 pt-8 pb-6 border-b border-zinc-800/80">
-                <div className="max-w-3xl">
-                  <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                    Subscription
-                  </h1>
-                  <p className="text-zinc-400 text-sm md:text-base">
-                    Start free with 6 voice roles and image generation. Upgrade for more voices, GPT-5.2, and monthly credits. Cancel anytime. If you upgrade later, your billing cycle resets from the upgrade day and unused time is credited toward the new plan.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 max-w-5xl">
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">Choose your plan</h1>
+                    <p className="text-zinc-500 text-sm">Unlock monthly credits, 113 AI voices, and GPT-5.2. Cancel anytime.</p>
+                  </div>
                   <Button
                     variant="outline"
                     onClick={handleSyncPlan}
                     disabled={syncingPlan || !session?.access_token}
-                    className="mt-4 h-9 rounded-lg text-xs font-medium border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+                    className="shrink-0 h-9 rounded-lg text-xs font-medium border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
                   >
                     {syncingPlan ? (
-                      <>
-                        <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
-                        Syncing…
-                      </>
+                      <><RefreshCw className="size-3.5 mr-1.5 animate-spin" />Syncing…</>
                     ) : (
-                      <>
-                        <RefreshCw className="size-3.5 mr-1.5" />
-                        Already subscribed? Sync plan
-                      </>
+                      <><RefreshCw className="size-3.5 mr-1.5" />Already subscribed? Sync plan</>
                     )}
                   </Button>
                 </div>
               </div>
 
-              {/* 四档：Free + Pro / Plus / Ultra */}
+              {/* Pricing cards */}
               <div className="px-6 md:px-10 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                  {/* Free 档 */}
-                  <div className="flex flex-col rounded-2xl border-2 border-zinc-700 bg-zinc-900/80 overflow-hidden">
-                    <div className="p-6 border-b border-zinc-800">
-                      <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
-                        Free
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
+
+                  {/* Free */}
+                  <div className="flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden opacity-75">
+                    <div className="p-6">
+                      <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Free</div>
+                      <div className="flex items-baseline gap-1 mb-1">
+                        <span className="text-4xl font-black text-zinc-300">$0</span>
+                        <span className="text-zinc-600 text-sm">/ mo</span>
                       </div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-4xl font-bold text-white">$0</span>
-                        <span className="text-zinc-500 text-sm">/ month</span>
-                      </div>
-                      <p className="text-zinc-400 text-sm font-medium mt-2">No monthly credits · basic features</p>
+                      <p className="text-zinc-600 text-xs mt-2">No monthly credits</p>
                     </div>
-                    <ul className="p-6 space-y-3 flex-1">
-                      {FREE_FEATURES.map((f) => (
-                        <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
-                          <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                          <span>{f}</span>
+                    <div className="px-6 pb-3">
+                      <div className="h-px bg-zinc-800 mb-4" />
+                      <ul className="space-y-2.5 mb-5">
+                        <li className="flex items-center gap-2 text-xs text-zinc-500">
+                          <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />3 AI voices · 14 emotions
                         </li>
-                      ))}
-                      <li className="flex items-start gap-2 text-sm text-zinc-300">
-                        <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <span>AI voice emotions &amp; sounds — 14 built-in expressions</span>
-                      </li>
-                    </ul>
-                    <div className="p-6 pt-0">
-                      <div className="w-full h-11 rounded-xl flex items-center justify-center text-sm font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+                        <li className="flex items-center gap-2 text-xs text-zinc-500">
+                          <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />Image generation
+                        </li>
+                        <li className="flex items-center gap-2 text-xs text-zinc-500">
+                          <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />Basic features
+                        </li>
+                      </ul>
+                      <div className="w-full h-10 rounded-xl flex items-center justify-center text-xs font-semibold bg-zinc-800/80 text-zinc-500 border border-zinc-700/50">
                         Current plan
                       </div>
                     </div>
                   </div>
+
                   {/* Pro / Plus / Ultra */}
                   {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
                     const p = PLAN_PRICING[tier];
                     if (!p) return null;
-                    const isPopular = tier === 'plus';
+                    const hasBadge = !!p.badge;
                     return (
                       <div
                         key={tier}
-                        className={`relative flex flex-col rounded-2xl border-2 overflow-hidden transition-colors ${
-                          isPopular
-                            ? 'border-violet-500/60 bg-zinc-900/90 shadow-lg shadow-violet-500/10'
-                            : 'border-zinc-800 bg-zinc-900/80 hover:border-violet-500/50'
-                        }`}
+                        className={`relative flex flex-col rounded-2xl border-2 overflow-hidden transition-all duration-200 ${p.borderColor} bg-zinc-900 ${hasBadge ? 'shadow-xl shadow-fuchsia-500/10 scale-[1.02]' : 'hover:scale-[1.01]'}`}
                       >
-                        {isPopular && (
-                          <div className="absolute top-0 right-0 rounded-bl-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3 py-1 text-xs font-semibold text-white">
-                            Popular
+                        {/* Badge */}
+                        {p.badge && (
+                          <div className={`absolute top-0 inset-x-0 flex justify-center`}>
+                            <div className={`bg-gradient-to-r ${p.badgeGradient} text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1 rounded-b-lg`}>
+                              {p.badge}
+                            </div>
                           </div>
                         )}
-                        <div className="p-6 border-b border-zinc-800">
-                          <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+
+                        <div className={`p-6 ${p.badge ? 'pt-8' : ''}`}>
+                          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">
                             {tier}
                           </div>
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-4xl font-bold text-white">{p.priceNum}</span>
-                            <span className="text-zinc-500 text-sm">/ month</span>
+                          <div className="flex items-baseline gap-1 mb-3">
+                            <span className="text-4xl font-black text-white">{p.priceNum}</span>
+                            <span className="text-zinc-500 text-sm">/ mo</span>
                           </div>
-                          <p className="text-violet-300/90 text-sm font-medium mt-2">{p.credits}</p>
+                          {/* Credits highlight */}
+                          <div className={`rounded-xl bg-gradient-to-r ${p.accentFrom} ${p.accentTo} p-px`}>
+                            <div className="rounded-[11px] bg-zinc-900 px-3 py-2">
+                              <div className="text-sm font-bold text-white tabular-nums">{p.credits.replace(' / month', '')}</div>
+                              <div className="text-[11px] text-zinc-400 mt-0.5">renews monthly</div>
+                            </div>
+                          </div>
                         </div>
-                        <ul className="p-6 space-y-3 flex-1">
-                          {PAID_FEATURES.map((f) => (
-                            <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
-                              <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                              <span>{f}</span>
-                            </li>
-                          ))}
-                          <li className="flex items-start gap-2 text-sm text-zinc-300">
-                            <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                            <span>AI voice emotions &amp; sounds — 14 built-in expressions</span>
-                          </li>
-                        </ul>
-                        <div className="p-6 pt-0">
+
+                        <div className="px-6 pb-5 flex-1 flex flex-col">
+                          <div className="h-px bg-zinc-800 mb-4" />
+                          <ul className="space-y-2.5 flex-1 mb-5">
+                            {BASE_PAID_FEATURES.map((f) => (
+                              <li key={f} className="flex items-center gap-2 text-xs text-zinc-300">
+                                <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0" />{f}
+                              </li>
+                            ))}
+                            {tier === 'ultra' && (
+                              <>
+                                <li className="flex items-center gap-2 pt-1">
+                                  <div className="h-px flex-1 bg-amber-500/20" />
+                                  <span className="text-[10px] font-semibold text-amber-500/80 uppercase tracking-widest shrink-0">Ultra exclusive</span>
+                                  <div className="h-px flex-1 bg-amber-500/20" />
+                                </li>
+                                {ULTRA_EXCLUSIVE_FEATURES.map((f) => (
+                                  <li key={f.text} className="flex items-center gap-2 text-xs text-amber-300/90">
+                                    <Star className="size-3.5 text-amber-400 shrink-0 fill-amber-400/30" />{f.text}
+                                  </li>
+                                ))}
+                              </>
+                            )}
+                          </ul>
                           <Button
                             onClick={() => handleUpgrade(tier)}
                             disabled={loading || syncing}
-                            className="w-full h-11 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white"
+                            className={`w-full h-11 rounded-xl text-sm font-bold bg-gradient-to-r ${p.accentFrom} ${p.accentTo} hover:opacity-90 text-white shadow-lg border-0`}
                           >
-                            {syncing ? (
-                              'Syncing…'
-                            ) : loadingTier === tier ? (
-                              <>
-                                <RefreshCw className="size-4 mr-1.5 animate-spin" />
-                                Processing…
-                              </>
+                            {syncing ? 'Syncing…' : loadingTier === tier ? (
+                              <><RefreshCw className="size-4 mr-1.5 animate-spin" />Processing…</>
                             ) : (
-                              <>
-                                Get {tier.charAt(0).toUpperCase() + tier.slice(1)} <ArrowRight className="size-4 ml-1" />
-                              </>
+                              <>Get {tier.charAt(0).toUpperCase() + tier.slice(1)}<ArrowRight className="size-4 ml-1.5" /></>
                             )}
                           </Button>
-                          <p className="text-center text-xs text-zinc-600 mt-3">Secured by Stripe</p>
+                          <p className="text-center text-[10px] text-zinc-600 mt-2.5">Secured by Stripe</p>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+
+                {/* Footer note */}
+                <p className="text-center text-xs text-zinc-600 mt-6 max-w-xl mx-auto">
+                  Cancel anytime · Unused credits carry over · Prorated billing when upgrading
+                </p>
               </div>
             </div>
           )}
