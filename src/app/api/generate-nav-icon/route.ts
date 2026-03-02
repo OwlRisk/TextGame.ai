@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
+import { isDatabaseConfigured } from '@/lib/db-ready';
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -31,6 +33,29 @@ export async function POST(request: NextRequest) {
         { error: 'slug is required and must be one of: home, my-games, discover' },
         { status: 400 }
       );
+    }
+
+    if (isDatabaseConfigured()) {
+      try {
+        const hasTokens = await deductTokens(
+          user.id,
+          imageGenCostToCoins('dall-e-2'),
+          'image_generation',
+          `Generate nav icon [${slug}]`
+        );
+        if (!hasTokens) {
+          return NextResponse.json(
+            {
+              error: 'Insufficient tokens',
+              message: 'You need more tokens to generate icons. Please purchase tokens or upgrade to Pro.',
+              code: 'INSUFFICIENT_TOKENS',
+            },
+            { status: 402 }
+          );
+        }
+      } catch (_tokenErr) {
+        // Token table may not exist yet — proceed anyway
+      }
     }
 
     const openai = getOpenAI();

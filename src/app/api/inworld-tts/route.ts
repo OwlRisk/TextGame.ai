@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { env } from '@/lib/env';
+import { deductTokens, ttsCostToCoins } from '@/lib/tokens';
+import { getUserBalance } from '@/lib/user-balance';
 
 const INWORLD_TTS_URL = 'https://api.inworld.ai/tts/v1/voice';
 const MAX_TEXT_LENGTH = 2000;
@@ -52,6 +54,26 @@ export async function POST(request: NextRequest) {
 
     const VALID_MODELS = ['inworld-tts-1.5-max', 'inworld-tts-1.5-mini', 'inworld-tts-1-max', 'inworld-tts-1'];
     const modelId = VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-max';
+
+    // Check and deduct coins before calling upstream
+    const coinsRequired = ttsCostToCoins(text.length, modelId);
+    const balance = await getUserBalance(user.id);
+    if (balance.totalBalance < coinsRequired) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient tokens',
+          message: 'You need more tokens to continue. Please purchase tokens or upgrade to Pro.',
+          code: 'INSUFFICIENT_TOKENS',
+        },
+        { status: 402 }
+      );
+    }
+    await deductTokens(
+      user.id,
+      coinsRequired,
+      'tts',
+      `Inworld TTS ${modelId} — ${text.length} chars`
+    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TTS_REQUEST_TIMEOUT_MS);

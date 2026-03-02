@@ -25,14 +25,22 @@ async function withUserContext<T>(userId: string, fn: (client: PoolClient) => Pr
 }
 
 // ========== 充值 / 扣费公式 ==========
-// 约定：1 coin = 一定量的 GPT 消费（美元）
-// 例如：用户充值 $10 → 平台给其中 $5 等价于 GPT 额度 → 即 500 coins（1 coin = $0.01 GPT）
+// 约定：1 coin 面值 = $0.01，但实际只对应 1/PLATFORM_MARKUP 的 API 成本。
+// 例：用户充值 $10 → GPT_BUDGET_RATIO=0.5 → $5 等价 API 额度 → 500 coins
+// 每次 API 调用按 PLATFORM_MARKUP 倍扣费，保证平台利润。
 
-/** 1 coin 代表的 GPT 消费（美元），用于充值与扣费统一换算 */
+/** 1 coin 的面值（美元），用于充值换算 */
 export const COIN_VALUE_USD = 0.01;
 
-/** 充值金额中用于 GPT 的比例，例如 0.5 表示 $10 充值 → $5 的 GPT 额度 */
+/** 充值金额中用于 API 的比例（0.5 = 50%），决定充值 coins 数量 */
 export const GPT_BUDGET_RATIO = 0.5;
+
+/**
+ * 平台加价倍率：实际 API 成本扣费时乘以此倍数。
+ * 设为 3 表示用户每花 1 coin（$0.01 面值）只享有 $0.01/3 ≈ $0.0033 的真实 API 额度。
+ * 各套餐利润率：Pro/Plus ≈ 67%，Ultra（折扣券）≈ 33%。
+ */
+export const PLATFORM_MARKUP = 3;
 
 /**
  * 根据实际支付金额（美分）计算应到账的 coins
@@ -47,19 +55,43 @@ export function rechargeCoinsFromPayment(amountCents: number): number {
 }
 
 /**
- * GPT API 成本（美元）→ 扣减的 coins
+ * GPT/TTS API 成本（美元）→ 扣减的 coins（含平台加价倍率）
  */
 export function usdToCoins(usd: number): number {
   if (usd <= 0) return 1;
-  return Math.max(1, Math.ceil(usd / COIN_VALUE_USD));
+  return Math.max(1, Math.ceil((usd / COIN_VALUE_USD) * PLATFORM_MARKUP));
 }
 
-/** OpenAI 模型定价：每 100 万 token 的 input / output 价格（美元），可随官方调价更新 */
+/**
+ * OpenAI 模型定价：每 100 万 token 的 input / output 价格（美元）。
+ * 以 OpenAI 官方 Standard 价格为准，可随官方调价更新。
+ * 截至 2026-03: https://platform.openai.com/docs/pricing
+ */
 const OPENAI_PRICE_PER_1M: Record<string, { input: number; output: number }> = {
-  'gpt-4o': { input: 2.5, output: 10 },
-  'gpt-4o-mini': { input: 0.15, output: 0.6 },
-  'gpt-4o-2024-11-20': { input: 2.5, output: 10 },
-  'gpt-5.2': { input: 2.5, output: 10 }, // 与 gpt-4o 同档，后续可单独配置
+  // GPT-5 系列
+  'gpt-5.2':              { input: 1.75, output: 14.00 },
+  'gpt-5.2-chat-latest':  { input: 1.75, output: 14.00 },
+  'gpt-5.3-codex':        { input: 1.75, output: 14.00 },
+  'gpt-5.2-codex':        { input: 1.75, output: 14.00 },
+  'gpt-5.2-pro':          { input: 21.00, output: 168.00 },
+  'gpt-5.1':              { input: 1.25, output: 10.00 },
+  'gpt-5.1-chat-latest':  { input: 1.25, output: 10.00 },
+  'gpt-5.1-codex-max':    { input: 1.25, output: 10.00 },
+  'gpt-5.1-codex':        { input: 1.25, output: 10.00 },
+  'gpt-5':                { input: 1.25, output: 10.00 },
+  'gpt-5-chat-latest':    { input: 1.25, output: 10.00 },
+  'gpt-5-codex':          { input: 1.25, output: 10.00 },
+  'gpt-5-pro':            { input: 15.00, output: 120.00 },
+  'gpt-5-mini':           { input: 0.25, output: 2.00 },
+  'gpt-5-nano':           { input: 0.05, output: 0.40 },
+  // GPT-4.1 系列
+  'gpt-4.1':              { input: 2.00, output: 8.00 },
+  'gpt-4.1-mini':         { input: 0.40, output: 1.60 },
+  'gpt-4.1-nano':         { input: 0.10, output: 0.40 },
+  // GPT-4o 系列
+  'gpt-4o':               { input: 2.50, output: 10.00 },
+  'gpt-4o-2024-11-20':    { input: 2.50, output: 10.00 },
+  'gpt-4o-mini':          { input: 0.15, output: 0.60 },
 };
 
 function getModelPrice(model: string): { input: number; output: number } {
@@ -92,14 +124,56 @@ export function estimatedTokensToCoins(totalTokens: number, model?: string): num
   return usdToCoins(usd);
 }
 
-// Token costs for various operations (fixed costs for non-token operations)
+/**
+ * Inworld TTS 定价：每 100 万字符的价格（美元）。
+ * 截至 2026-03: https://platform.openai.com/docs/pricing (Inworld via OpenAI)
+ */
+export const INWORLD_TTS_PRICE_PER_1M_CHARS: Record<string, number> = {
+  'inworld-tts-1.5-max':  10.00,
+  'inworld-tts-1-max':    10.00,
+  'inworld-tts-1.5-mini': 5.00,
+  'inworld-tts-1':        5.00,
+};
+
+/**
+ * 根据 TTS 字符数和模型计算扣除的 coins（含 PLATFORM_MARKUP 加价）。
+ * 公式：usdToCoins((chars / 1_000_000) × pricePerMillion)，最少 1 coin。
+ */
+export function ttsCostToCoins(chars: number, model: string): number {
+  if (chars <= 0) return 0;
+  const pricePerMillion =
+    INWORLD_TTS_PRICE_PER_1M_CHARS[model] ??
+    INWORLD_TTS_PRICE_PER_1M_CHARS['inworld-tts-1.5-max'];
+  const usd = (chars / 1_000_000) * pricePerMillion;
+  return usdToCoins(usd);
+}
+
+/**
+ * 图片生成模型定价（每张图，美元）。
+ * 截至 2026-03: https://platform.openai.com/docs/pricing
+ */
+export const IMAGE_GEN_PRICE_USD: Record<string, number> = {
+  'dall-e-2':    0.016,  // 256×256 standard
+  'dall-e-3':    0.040,  // 1024×1024 standard
+  'dall-e-3-hd': 0.080,  // 1024×1024 HD
+  'flux':        0.050,  // Replicate flux-dev 估算
+  'stable-diffusion': 0.030, // Replicate SDXL 估算
+};
+
+/**
+ * 根据图片生成模型计算扣除的 coins（含 PLATFORM_MARKUP 加价）。
+ * 未知模型 fallback 到 dall-e-3。
+ */
+export function imageGenCostToCoins(model: string): number {
+  const price = IMAGE_GEN_PRICE_USD[model] ?? IMAGE_GEN_PRICE_USD['dall-e-3'];
+  return usdToCoins(price);
+}
+
+// Token costs for fixed-cost operations (not based on API pricing)
 export const TOKEN_COSTS = {
-  GENERATE_AVATAR: 16,
-  GENERATE_ICON: 16,
   QUICK_REPLY_SUGGESTION: 2,
   PROMPT_SUGGESTION: 2,
   VOICE_TRANSCRIPTION_PER_MIN: 6,
-  TTS_PER_1K_CHARS: 15,
 } as const;
 
 /**

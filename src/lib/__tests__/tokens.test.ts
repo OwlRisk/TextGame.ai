@@ -6,9 +6,14 @@ import {
   estimatedTokensToCoins,
   estimateTokensFromText,
   estimateChatTokens,
+  ttsCostToCoins,
+  imageGenCostToCoins,
   COIN_VALUE_USD,
   GPT_BUDGET_RATIO,
+  PLATFORM_MARKUP,
   TOKEN_COSTS,
+  INWORLD_TTS_PRICE_PER_1M_CHARS,
+  IMAGE_GEN_PRICE_USD,
   DEFAULT_COIN_PACKAGES,
 } from '../tokens';
 
@@ -53,21 +58,26 @@ describe('rechargeCoinsFromPayment', () => {
 // ─── usdToCoins ───────────────────────────────────────────────────────────
 
 describe('usdToCoins', () => {
-  it('$0.01 → 1 coin', () => {
-    expect(usdToCoins(0.01)).toBe(1);
+  it('PLATFORM_MARKUP is 3', () => {
+    expect(PLATFORM_MARKUP).toBe(3);
   });
 
-  it('$0.10 → 10 coins', () => {
-    expect(usdToCoins(0.10)).toBe(10);
+  it('$0.01 API cost → 3 coins (3x markup)', () => {
+    // ceil(0.01 / 0.01 * 3) = 3
+    expect(usdToCoins(0.01)).toBe(3);
   });
 
-  it('$1.00 → 100 coins', () => {
-    expect(usdToCoins(1.00)).toBe(100);
+  it('$0.10 API cost → 30 coins', () => {
+    expect(usdToCoins(0.10)).toBe(30);
   });
 
-  it('ceils fractional coins', () => {
-    // $0.015 → ceil(0.015 / 0.01) = ceil(1.5) = 2
-    expect(usdToCoins(0.015)).toBe(2);
+  it('$1.00 API cost → 300 coins', () => {
+    expect(usdToCoins(1.00)).toBe(300);
+  });
+
+  it('ceils fractional coins after markup', () => {
+    // $0.005 → ceil(0.005 / 0.01 * 3) = ceil(1.5) = 2
+    expect(usdToCoins(0.005)).toBe(2);
   });
 
   it('zero or negative → minimum 1 coin', () => {
@@ -78,31 +88,56 @@ describe('usdToCoins', () => {
   it('very small cost → still at least 1', () => {
     expect(usdToCoins(0.001)).toBe(1);
   });
+
+  it('is consistent with PLATFORM_MARKUP constant', () => {
+    const usd = 0.05;
+    expect(usdToCoins(usd)).toBe(Math.max(1, Math.ceil((usd / COIN_VALUE_USD) * PLATFORM_MARKUP)));
+  });
 });
 
 // ─── gptUsageToCoins ──────────────────────────────────────────────────────
 
 describe('gptUsageToCoins', () => {
-  it('gpt-4o: 1M prompt + 1M completion tokens → correct coins', () => {
-    // input $2.5/1M + output $10/1M → usd = 12.5 → coins = ceil(12.5/0.01) = 1250
-    expect(gptUsageToCoins('gpt-4o', 1_000_000, 1_000_000)).toBe(1250);
+  it('gpt-4o: 1M prompt + 1M completion tokens → correct coins (3x markup)', () => {
+    // input $2.5/1M + output $10/1M → usd = 12.5 → coins = ceil(12.5/0.01 * 3) = 3750
+    expect(gptUsageToCoins('gpt-4o', 1_000_000, 1_000_000)).toBe(3750);
   });
 
-  it('gpt-4o-mini: 1M prompt + 1M completion → cheap model', () => {
-    // input $0.15/1M + output $0.6/1M → usd = 0.75 → coins = ceil(0.75/0.01) = 75
-    expect(gptUsageToCoins('gpt-4o-mini', 1_000_000, 1_000_000)).toBe(75);
+  it('gpt-4o-mini: 1M prompt + 1M completion → cheap model (3x markup)', () => {
+    // input $0.15/1M + output $0.6/1M → usd = 0.75 → coins = ceil(0.75/0.01 * 3) = 225
+    expect(gptUsageToCoins('gpt-4o-mini', 1_000_000, 1_000_000)).toBe(225);
   });
 
-  it('gpt-5.2: same pricing as gpt-4o', () => {
-    expect(gptUsageToCoins('gpt-5.2', 1_000_000, 1_000_000)).toBe(
-      gptUsageToCoins('gpt-4o', 1_000_000, 1_000_000)
-    );
+  it('gpt-5.2 costs more than gpt-4o (higher tier)', () => {
+    expect(gptUsageToCoins('gpt-5.2', 1_000_000, 1_000_000))
+      .toBeGreaterThan(gptUsageToCoins('gpt-4o', 1_000_000, 1_000_000));
   });
 
   it('unknown model falls back to gpt-5.2 pricing', () => {
     expect(gptUsageToCoins('unknown-model', 1_000_000, 1_000_000)).toBe(
       gptUsageToCoins('gpt-5.2', 1_000_000, 1_000_000)
     );
+  });
+
+  it('gpt-5.2 uses $1.75 input / $14.00 output pricing (3x markup)', () => {
+    // 1M input + 1M output: 15.75 USD → ceil(15.75/0.01 * 3) = 4725
+    expect(gptUsageToCoins('gpt-5.2', 1_000_000, 1_000_000)).toBe(4725);
+  });
+
+  it('gpt-4.1 uses $2.00 input / $8.00 output pricing (3x markup)', () => {
+    // 10.00 USD → ceil(10/0.01 * 3) = 3000
+    expect(gptUsageToCoins('gpt-4.1', 1_000_000, 1_000_000)).toBe(3000);
+  });
+
+  it('gpt-4.1-mini uses $0.40 input / $1.60 output pricing (3x markup)', () => {
+    // 2.00 USD → ceil(2/0.01 * 3) = 600
+    expect(gptUsageToCoins('gpt-4.1-mini', 1_000_000, 1_000_000)).toBe(600);
+  });
+
+  it('gpt-5-nano is the cheapest supported model', () => {
+    const nano = gptUsageToCoins('gpt-5-nano', 1_000_000, 1_000_000);
+    const mini = gptUsageToCoins('gpt-4o-mini', 1_000_000, 1_000_000);
+    expect(nano).toBeLessThan(mini);
   });
 
   it('zero tokens → minimum 1 coin', () => {
@@ -204,10 +239,123 @@ describe('TOKEN_COSTS', () => {
   });
 
   it('has required cost keys', () => {
-    expect(TOKEN_COSTS).toHaveProperty('GENERATE_AVATAR');
-    expect(TOKEN_COSTS).toHaveProperty('GENERATE_ICON');
     expect(TOKEN_COSTS).toHaveProperty('QUICK_REPLY_SUGGESTION');
-    expect(TOKEN_COSTS).toHaveProperty('TTS_PER_1K_CHARS');
+    expect(TOKEN_COSTS).toHaveProperty('VOICE_TRANSCRIPTION_PER_MIN');
+  });
+});
+
+// ─── IMAGE_GEN_PRICE_USD ──────────────────────────────────────────────────
+
+describe('IMAGE_GEN_PRICE_USD', () => {
+  it('covers all supported image models', () => {
+    const expected = ['dall-e-2', 'dall-e-3', 'dall-e-3-hd', 'flux', 'stable-diffusion'];
+    expected.forEach((model) => {
+      expect(IMAGE_GEN_PRICE_USD).toHaveProperty(model);
+      expect(IMAGE_GEN_PRICE_USD[model]).toBeGreaterThan(0);
+    });
+  });
+
+  it('dall-e-3 costs more than dall-e-2', () => {
+    expect(IMAGE_GEN_PRICE_USD['dall-e-3']).toBeGreaterThan(IMAGE_GEN_PRICE_USD['dall-e-2']);
+  });
+
+  it('dall-e-3-hd costs more than dall-e-3', () => {
+    expect(IMAGE_GEN_PRICE_USD['dall-e-3-hd']).toBeGreaterThan(IMAGE_GEN_PRICE_USD['dall-e-3']);
+  });
+});
+
+// ─── imageGenCostToCoins ──────────────────────────────────────────────────
+
+describe('imageGenCostToCoins', () => {
+  it('dall-e-2: $0.016 × 3x markup = ceil(0.016/0.01 * 3) = 5 coins', () => {
+    // ceil(1.6 * 3) = ceil(4.8) = 5
+    expect(imageGenCostToCoins('dall-e-2')).toBe(5);
+  });
+
+  it('dall-e-3: $0.04 × 3x markup = 12 coins', () => {
+    // ceil(4 * 3) = 12
+    expect(imageGenCostToCoins('dall-e-3')).toBe(12);
+  });
+
+  it('dall-e-3-hd: $0.08 × 3x markup = 24 coins', () => {
+    // ceil(8 * 3) = 24
+    expect(imageGenCostToCoins('dall-e-3-hd')).toBe(24);
+  });
+
+  it('dall-e-3 costs more than dall-e-2', () => {
+    expect(imageGenCostToCoins('dall-e-3')).toBeGreaterThan(imageGenCostToCoins('dall-e-2'));
+  });
+
+  it('unknown model falls back to dall-e-3 pricing', () => {
+    expect(imageGenCostToCoins('unknown-model')).toBe(imageGenCostToCoins('dall-e-3'));
+  });
+
+  it('returns at least 1 coin for any model', () => {
+    expect(imageGenCostToCoins('dall-e-2')).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ─── INWORLD_TTS_PRICE_PER_1M_CHARS ──────────────────────────────────────
+
+describe('INWORLD_TTS_PRICE_PER_1M_CHARS', () => {
+  it('covers all supported Inworld TTS models', () => {
+    const expected = ['inworld-tts-1.5-max', 'inworld-tts-1-max', 'inworld-tts-1.5-mini', 'inworld-tts-1'];
+    expected.forEach((model) => {
+      expect(INWORLD_TTS_PRICE_PER_1M_CHARS).toHaveProperty(model);
+      expect(INWORLD_TTS_PRICE_PER_1M_CHARS[model]).toBeGreaterThan(0);
+    });
+  });
+
+  it('max models cost more than mini/standard models', () => {
+    expect(INWORLD_TTS_PRICE_PER_1M_CHARS['inworld-tts-1.5-max'])
+      .toBeGreaterThan(INWORLD_TTS_PRICE_PER_1M_CHARS['inworld-tts-1.5-mini']);
+  });
+});
+
+// ─── ttsCostToCoins ───────────────────────────────────────────────────────
+
+describe('ttsCostToCoins', () => {
+  it('returns 0 for empty text', () => {
+    expect(ttsCostToCoins(0, 'inworld-tts-1.5-mini')).toBe(0);
+  });
+
+  it('returns 0 for negative chars', () => {
+    expect(ttsCostToCoins(-10, 'inworld-tts-1.5-mini')).toBe(0);
+  });
+
+  it('inworld-tts-1.5-mini: 1M chars = 1500 coins ($5/1M × 3x markup)', () => {
+    // $5/1M / $0.01 * 3 = 1500
+    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-mini')).toBe(1500);
+  });
+
+  it('inworld-tts-1.5-max: 1M chars = 3000 coins ($10/1M × 3x markup)', () => {
+    // $10/1M / $0.01 * 3 = 3000
+    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-max')).toBe(3000);
+  });
+
+  it('small text (100 chars) costs at least 1 coin', () => {
+    expect(ttsCostToCoins(100, 'inworld-tts-1.5-mini')).toBeGreaterThanOrEqual(1);
+  });
+
+  it('unknown model falls back to inworld-tts-1.5-max pricing', () => {
+    expect(ttsCostToCoins(1_000_000, 'unknown-tts-model'))
+      .toBe(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-max'));
+  });
+
+  it('max model costs more than mini for same char count', () => {
+    const large = 500_000;
+    expect(ttsCostToCoins(large, 'inworld-tts-1.5-max'))
+      .toBeGreaterThan(ttsCostToCoins(large, 'inworld-tts-1.5-mini'));
+  });
+
+  it('typical message (200 chars) costs 1 coin with mini', () => {
+    // 200/1M * $5 = $0.001 → ceil(0.001/0.01 * 3) = ceil(0.3) = 1
+    expect(ttsCostToCoins(200, 'inworld-tts-1.5-mini')).toBe(1);
+  });
+
+  it('2000 chars with max costs 6 coins (3x markup)', () => {
+    // 2000/1M * $10 = $0.02 → ceil(0.02/0.01 * 3) = ceil(6) = 6
+    expect(ttsCostToCoins(2000, 'inworld-tts-1.5-max')).toBe(6);
   });
 });
 

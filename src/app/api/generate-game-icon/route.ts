@@ -4,6 +4,8 @@ import OpenAI from 'openai';
 import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
+import { isDatabaseConfigured } from '@/lib/db-ready';
 
 const GAME_ICON_BUCKET = 'avatars';
 const GAME_ICON_SIZE = 64;
@@ -119,6 +121,30 @@ export async function POST(request: NextRequest) {
 
     let iconPrompt: string;
     let imageUrl: string;
+
+    // Deduct tokens before generation (only when we reach this point — cache miss)
+    if (isDatabaseConfigured()) {
+      try {
+        const hasTokens = await deductTokens(
+          user.id,
+          imageGenCostToCoins('dall-e-2'),
+          'image_generation',
+          `Generate game icon for "${String(gameName).slice(0, 60)}"`
+        );
+        if (!hasTokens) {
+          return NextResponse.json(
+            {
+              error: 'Insufficient tokens',
+              message: 'You need more tokens to generate icons. Please purchase tokens or upgrade to Pro.',
+              code: 'INSUFFICIENT_TOKENS',
+            },
+            { status: 402 }
+          );
+        }
+      } catch (_tokenErr) {
+        // Token table may not exist yet — proceed anyway
+      }
+    }
 
     // Step 1: Try to generate a creative concept with GPT (best-effort; if GPT fails for any
     // reason we fall through to a simple name-based prompt so DALL-E can still run).

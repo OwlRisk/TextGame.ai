@@ -5,7 +5,7 @@ import Replicate from 'replicate';
 import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { deductTokens, TOKEN_COSTS } from '@/lib/tokens';
+import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 import { logger } from '@/lib/logger';
 
@@ -381,9 +381,9 @@ export async function POST(request: NextRequest) {
       try {
         const hasTokens = await deductTokens(
           user.id,
-          TOKEN_COSTS.GENERATE_AVATAR,
+          imageGenCostToCoins(model),
           'image_generation',
-          `Generate avatar for ${name} (${avatarType})`
+          `Generate avatar for ${name} (${avatarType}) [${model}]`
         );
 
         if (!hasTokens) {
