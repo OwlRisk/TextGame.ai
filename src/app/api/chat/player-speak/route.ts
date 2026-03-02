@@ -8,6 +8,14 @@ function getOpenAI() {
   return new OpenAI({ apiKey });
 }
 
+/**
+ * Soft limit: communicated to the AI via the system prompt — the ideal target length.
+ * Hard limit: enforced by max_completion_tokens — the absolute ceiling.
+ * Tune these two constants to control player speech length globally.
+ */
+const PLAYER_SPEAK_SOFT_LIMIT = "1–2 sentences (≈20–40 words). 3 sentences only for a pivotal accusation or reveal. Never more than 3 sentences.";
+const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 120;
+
 const EMOTION_TAGS_SECTION = `EMOTION & SOUND TAGS (optional, use sparingly and only when they feel genuinely natural):
 - ONE emotion tag at the very start when it fits: [angry] [happy] [sad] [surprised] [fearful] [disgusted] [laughing] [whispering]
 - Sound effects anywhere in the line: [cough] [sigh] [laugh] [breathe] [clear_throat] [yawn]
@@ -27,7 +35,7 @@ function buildSystemPrompt(
   gameName: string
 ): string {
   const base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...".`;
-  const lengthRule = `LENGTH: Match the moment — a quick reaction or vote can be 1 sentence; a key argument or reveal can be 2–3 sentences. Never more than 3 sentences. No speeches, no monologues.`;
+  const lengthRule = `LENGTH: ${PLAYER_SPEAK_SOFT_LIMIT} No speeches, no monologues.`;
 
   switch (gameTemplate) {
     case 'werewolf':
@@ -197,7 +205,7 @@ export async function POST(request: NextRequest) {
         { role: 'system', content: system },
         { role: 'user', content: userContent },
       ],
-      max_completion_tokens: 160,
+      max_completion_tokens: PLAYER_SPEAK_HARD_LIMIT_TOKENS,
       temperature: 0.85,
     });
 
