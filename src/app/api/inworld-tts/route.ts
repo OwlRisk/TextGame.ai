@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Check and deduct coins before calling upstream
     const coinsRequired = ttsCostToCoins(text.length, modelId);
     const balance = await getUserBalance(user.id);
-    if (balance.totalBalance < coinsRequired) {
+    if (balance.tokens < coinsRequired) {
       return NextResponse.json(
         {
           error: 'Insufficient tokens',
