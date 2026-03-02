@@ -915,7 +915,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     alt={game.title}
                     width={400}
                     height={160}
-                    loading="lazy"
+                    priority
                     sizes="(min-width: 768px) 400px, 100vw"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
