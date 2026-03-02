@@ -128,6 +128,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
    * ["*"] = explicitly public.
    */
   const [channelPermissions, setChannelPermissions] = useState<Record<string, string[]>>({});
+  /** Each AI player's private notes written via [MY_NOTES] — persists across turns within a session. */
+  const [playerNotes, setPlayerNotes] = useState<Record<string, string>>({});
   const { gameId } = use(params);
   const pathname = usePathname();
 
@@ -967,6 +969,8 @@ ${rulesText || "No specific rules defined."}`.trim();
                 // Pass private My Board content so the player knows their secret info
                 boardContent: myBoardContent[speaker.id] ?? undefined,
               },
+              // Pass the player's own notes from previous turns
+              ...(playerNotes[speaker.id] ? { playerNotes: playerNotes[speaker.id] } : {}),
               recentMessages: recent,
               preferredModel: getPreferredModel(),
               ...(channelGoal ? { channelGoal } : {}),
@@ -974,7 +978,16 @@ ${rulesText || "No specific rules defined."}`.trim();
           });
           if (!res.ok) return null;
           const data = await res.json();
-          return (data.message || "").trim() || null;
+          const rawMessage = (data.message || "").trim();
+          if (!rawMessage) return null;
+
+          // Extract [MY_NOTES] from the player's message and save them privately
+          const { cleanContent, actions } = parseHostActions(rawMessage);
+          const notesAction = actions.find((a) => a.type === "player_notes");
+          if (notesAction && notesAction.type === "player_notes") {
+            setPlayerNotes((prev) => ({ ...prev, [speaker.id]: notesAction.content }));
+          }
+          return cleanContent || null;
         } catch (err) {
           console.error("Error generating AI player reply:", err);
           return null;

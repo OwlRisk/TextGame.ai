@@ -386,3 +386,65 @@ describe('parseHostActions – GAME_OVER', () => {
     expect(actions[0].type).toBe('game_over');
   });
 });
+
+// ─── parseHostActions: MY_NOTES (player private memory) ──────────────────
+
+describe('parseHostActions – MY_NOTES', () => {
+  it('extracts a player_notes action with content', () => {
+    const raw = 'I think Bob is the killer.\n[MY_NOTES]\n- Suspect Bob\n- Ally with Dave\n[/MY_NOTES]';
+    const { actions, cleanContent } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('player_notes');
+    const a = actions[0] as { type: 'player_notes'; content: string };
+    expect(a.content).toContain('Suspect Bob');
+    expect(a.content).toContain('Ally with Dave');
+    expect(cleanContent).toContain('I think Bob is the killer.');
+    expect(cleanContent).not.toContain('[MY_NOTES]');
+    expect(cleanContent).not.toContain('[/MY_NOTES]');
+  });
+
+  it('strips [MY_NOTES] block from public message', () => {
+    const raw = 'Interesting move.[MY_NOTES]Watch Alice.[/MY_NOTES]';
+    const { cleanContent } = parseHostActions(raw);
+    expect(cleanContent).toBe('Interesting move.');
+    expect(cleanContent).not.toContain('Watch Alice');
+  });
+
+  it('returns empty string in content when [MY_NOTES] block is empty', () => {
+    const raw = 'Nothing to note.[MY_NOTES][/MY_NOTES]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('player_notes');
+    const a = actions[0] as { type: 'player_notes'; content: string };
+    expect(a.content).toBe('');
+  });
+
+  it('does not produce player_notes action when no block is present', () => {
+    const { actions } = parseHostActions('Just a normal message.');
+    expect(actions.filter((a) => a.type === 'player_notes')).toHaveLength(0);
+  });
+
+  it('handles [MY_NOTES] alongside [BOARD] and [GAME_OVER]', () => {
+    const raw = [
+      '[BOARD:Alice]\nYou are the Seer.\n[/BOARD]',
+      'Night falls.',
+      '[MY_NOTES]- Dave is suspicious[/MY_NOTES]',
+      '[GAME_OVER]Villagers win![/GAME_OVER]',
+    ].join('\n');
+    const { actions, cleanContent } = parseHostActions(raw);
+    expect(actions.find((a) => a.type === 'my_board')).toBeTruthy();
+    expect(actions.find((a) => a.type === 'player_notes')).toBeTruthy();
+    expect(actions.find((a) => a.type === 'game_over')).toBeTruthy();
+    expect(cleanContent).toContain('Night falls.');
+    expect(cleanContent).not.toContain('[MY_NOTES]');
+    expect(cleanContent).not.toContain('[BOARD');
+    expect(cleanContent).not.toContain('[GAME_OVER]');
+  });
+
+  it('is case-insensitive for [my_notes] tag', () => {
+    const raw = '[my_notes]remember this[/my_notes]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('player_notes');
+  });
+});

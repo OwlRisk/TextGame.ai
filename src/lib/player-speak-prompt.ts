@@ -22,6 +22,15 @@ Read the current game phase and rules to judge how much to say. Do not use a fix
 - If the Host asks you to elaborate or continue → focus your next point clearly in 2–3 sentences; the Host will prompt you again if more is needed.
 - When in doubt, shorter is better. Never more than 3 sentences per turn. No speeches or monologues.`;
 
+export const MY_NOTES_SECTION = `PRIVATE NOTES (optional — use to remember things across turns):
+At the very end of your reply, you may append a [MY_NOTES] block to update your private memory. This is invisible to other players.
+Format (append after your spoken line, keep it brief — 1-3 bullet points max):
+  [MY_NOTES]
+  - Key observation or suspicion
+  - Your current goal or strategy
+  [/MY_NOTES]
+Only write notes when there is something genuinely worth remembering. Skip it on unimportant turns.`;
+
 export const EMOTION_TAGS_SECTION = `EMOTION & SOUND TAGS (optional, use sparingly and only when they feel genuinely natural):
 - ONE emotion tag at the very start when it fits: [angry] [happy] [sad] [surprised] [fearful] [disgusted] [laughing] [whispering]
 - Sound effects anywhere in the line: [cough] [sigh] [laugh] [breathe] [clear_throat] [yawn]
@@ -54,7 +63,9 @@ RULES:
 
 ${PACING_RULE}
 
-${EMOTION_TAGS_SECTION}`;
+${EMOTION_TAGS_SECTION}
+
+${MY_NOTES_SECTION}`;
     }
 
     case 'undercover': {
@@ -66,7 +77,9 @@ RULES:
 
 ${PACING_RULE}
 
-${EMOTION_TAGS_SECTION}`;
+${EMOTION_TAGS_SECTION}
+
+${MY_NOTES_SECTION}`;
     }
 
     case 'tarot': {
@@ -78,7 +91,9 @@ RULES:
 
 ${PACING_RULE}
 
-${EMOTION_TAGS_SECTION}`;
+${EMOTION_TAGS_SECTION}
+
+${MY_NOTES_SECTION}`;
     }
 
     case 'trivia':
@@ -90,7 +105,9 @@ RULES:
 
 ${PACING_RULE}
 
-${EMOTION_TAGS_SECTION}`;
+${EMOTION_TAGS_SECTION}
+
+${MY_NOTES_SECTION}`;
     }
 
     case 'roleplay':
@@ -103,7 +120,9 @@ RULES:
 
 ${PACING_RULE}
 
-${EMOTION_TAGS_SECTION}`;
+${EMOTION_TAGS_SECTION}
+
+${MY_NOTES_SECTION}`;
     }
 
     default: {
@@ -114,7 +133,9 @@ RULES:
 
 ${PACING_RULE}
 
-${EMOTION_TAGS_SECTION}`;
+${EMOTION_TAGS_SECTION}
+
+${MY_NOTES_SECTION}`;
     }
   }
 }

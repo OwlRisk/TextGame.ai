@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, preferredModel, channelGoal } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, preferredModel, channelGoal, playerNotes } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
       preferredModel?: string;
       /** Optional task injected when the player is in a private "decision" channel. */
       channelGoal?: string;
+      /** Player's own private notes from previous turns (written via [MY_NOTES] tags). */
+      playerNotes?: string;
       player: {
         name: string;
         role?: string;
@@ -79,6 +81,12 @@ export async function POST(request: NextRequest) {
 
     if (player.personality) lines.push(`Your personality: ${player.personality}`);
     if (player.background) lines.push(`Your background: ${player.background}`);
+
+    // Player's own persistent notes from previous turns
+    if (playerNotes?.trim()) {
+      lines.push('');
+      lines.push(`Your private notes from previous turns:\n${playerNotes.trim().slice(0, 500)}`);
+    }
 
     if (rules?.trim()) {
       lines.push('');

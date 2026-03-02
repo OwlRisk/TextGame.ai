@@ -19,6 +19,12 @@ export type HostAction =
   | { type: "section"; title: string; content: string }
   /** GAME_OVER: AI Host signals the game has ended. summary = optional winner/result text. */
   | { type: "game_over"; summary: string }
+  /**
+   * PLAYER_NOTES: written by the AI player itself (not the Host) to persist private thoughts
+   * across turns. Stripped from the public message and stored per-player.
+   * content replaces the player's previous notes each turn.
+   */
+  | { type: "player_notes"; content: string }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -63,6 +69,13 @@ const BLOCK_PARSERS: BlockParser[] = [
     // label group is unused (empty string); content is the winner/result summary.
     regex: /\[GAME_OVER\]\s*([\s\S]*?)\s*\[\/GAME_OVER\]/gi,
   },
+  {
+    tag: "MY_NOTES",
+    actionType: "player_notes",
+    // [MY_NOTES] player's private thoughts [/MY_NOTES]
+    // label group is unused; content is the player's notes.
+    regex: /\[MY_NOTES\]\s*([\s\S]*?)\s*\[\/MY_NOTES\]/gi,
+  },
 ];
 
 /**
@@ -94,6 +107,9 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
       } else if (parser.actionType === "game_over") {
         // For [GAME_OVER], label is empty; content (match[1]) is the summary
         actions.push({ type: "game_over", summary: label || content });
+      } else if (parser.actionType === "player_notes") {
+        // For [MY_NOTES], label is empty; content (match[1]) is the player's private notes
+        actions.push({ type: "player_notes", content: label || content });
       }
       replacements.push({ full: match[0], replacement: "" });
     }
