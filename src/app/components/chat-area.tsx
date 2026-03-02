@@ -391,7 +391,8 @@ export function ChatArea({
     [players]
   );
 
-  // When voice is first turned on, mark all existing messages as already handled
+  // When voice is turned on, restore displayed content for all existing messages so text
+  // doesn't flash blank. Also mark them as handled so they won't re-play.
   const prevVoiceEnabledRef = useRef(voiceEnabled);
   useEffect(() => {
     if (voiceEnabled && !prevVoiceEnabledRef.current) {
@@ -402,7 +403,11 @@ export function ChatArea({
         ttsQueuedRef.current.add(m.id);
         ttsCompletedRef.current.add(m.id);
         ttsProgressRef.current.set(m.id, (m.content || '').length);
+        if (m.isAI && !m.isSystemMessage && !m.isPrivate) {
+          displayedContentRef.current.set(m.id, (m.content || '').trim());
+        }
       }
+      setRevealTick((t) => t + 1);
     }
     prevVoiceEnabledRef.current = voiceEnabled;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -571,7 +576,8 @@ export function ChatArea({
       ttsProgressRef.current.clear();
       ttsQueuedRef.current.clear();
       ttsCompletedRef.current.clear();
-      displayedContentRef.current.clear();
+      // Don't clear displayedContentRef — keep text visible so messages don't flash blank
+      // when toggling voice off. The content will be restored if voice is turned back on.
       ttsFallbackTimeoutsRef.current.forEach((t) => clearTimeout(t));
       ttsFallbackTimeoutsRef.current.clear();
     }
