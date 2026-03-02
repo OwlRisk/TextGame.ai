@@ -15,10 +15,46 @@ import {
   Play,
   ArrowRight,
 } from "lucide-react";
+import NextImage from "next/image";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
 import { GAME_MASTER_AVATAR } from "@/lib/game-master-avatar";
+
+/** Next.js Image with onError fallback via state */
+function SafeAvatar({
+  src,
+  fallback,
+  alt,
+  width,
+  height,
+  className,
+  loading,
+  priority,
+}: {
+  src: string;
+  fallback: string;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+  loading?: "lazy" | "eager";
+  priority?: boolean;
+}) {
+  const [imgSrc, setImgSrc] = useState(src);
+  return (
+    <NextImage
+      src={imgSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      loading={priority ? undefined : loading}
+      priority={priority}
+      onError={() => setImgSrc(fallback)}
+    />
+  );
+}
 
 interface LandingPageProps {
   onSignIn: () => void;
@@ -64,12 +100,12 @@ function PreviewAvatar({ name, isHost }: {
   if (isHost) {
     const avatarSrc = src || GAME_MASTER_AVATAR;
     return (
-      <img
+      <SafeAvatar
         src={avatarSrc}
+        fallback={GAME_MASTER_AVATAR}
         alt={name}
         width={36}
         height={36}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).src = GAME_MASTER_AVATAR; }}
         className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
       />
     );
@@ -79,12 +115,12 @@ function PreviewAvatar({ name, isHost }: {
   return (
     <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
       {src ? (
-        <img
+        <SafeAvatar
           src={src}
+          fallback={GAME_MASTER_AVATAR}
           alt={name}
           width={36}
           height={36}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = GAME_MASTER_AVATAR; }}
           className="w-full h-full object-cover"
         />
       ) : (
@@ -715,8 +751,9 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                   <div className="flex flex-col items-center text-center gap-3">
                     <div className="relative">
                       {LANDING_AVATAR_MAP[char.name] ? (
-                        <img
+                        <SafeAvatar
                           src={LANDING_AVATAR_MAP[char.name]}
+                          fallback={GAME_MASTER_AVATAR}
                           alt={char.name}
                           width={64}
                           height={64}
