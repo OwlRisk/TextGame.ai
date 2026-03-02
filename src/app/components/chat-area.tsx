@@ -16,6 +16,30 @@ import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { parseInlineFormatting, EMOTION_EMOJI } from "@/lib/format-message";
 
+/**
+ * Returns a human-readable timestamp for a chat message.
+ * - Today      → "07:29 PM"
+ * - Yesterday  → "Yesterday 07:29 PM"
+ * - Older      → "Mar 1, 07:29 PM"
+ */
+function formatMessageTime(date: Date): string {
+  const now = new Date();
+  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  if (isToday) return timeStr;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate();
+  if (isYesterday) return `Yesterday ${timeStr}`;
+  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${timeStr}`;
+}
+
 // Format message content with markdown-like syntax
 
 /** Replace Inworld emotion/sound tags with their corresponding emoji in display text.
@@ -936,7 +960,7 @@ export function ChatArea({
                           Private
                         </span>
                         <span className="text-[11px] text-violet-400/60 ml-auto shrink-0">
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {formatMessageTime(message.timestamp)}
                         </span>
                       </div>
                       <div className="text-violet-100 text-sm leading-[1.65] break-words">
@@ -1028,7 +1052,7 @@ export function ChatArea({
                           )}
                         </div>
                         <span className="text-[11px] text-zinc-500 shrink-0" aria-hidden="true">
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {formatMessageTime(message.timestamp)}
                         </span>
                       </div>
                       <div

@@ -29,6 +29,24 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { parseInlineFormatting } from "@/lib/format-message";
+
+function formatMessageTime(date: Date): string {
+  const now = new Date();
+  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  if (isToday) return timeStr;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate();
+  if (isYesterday) return `Yesterday ${timeStr}`;
+  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${timeStr}`;
+}
 import { HostSelector } from "@/app/components/host-selector";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { getGameSessions, createGameSession, updateGameSession, deleteGameSession } from "@/lib/db";
@@ -1930,7 +1948,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         </div>
                       </div>
                       <div className={`text-[11px] text-zinc-500 mt-1.5 ${isUser ? "pr-1" : "pl-1"}`}>
-                        {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {formatMessageTime(message.timestamp)}
                       </div>
                     </div>
                   </div>
