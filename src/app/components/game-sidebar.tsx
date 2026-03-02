@@ -143,8 +143,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 }`}
                 asChild
               >
-                <Link href={user ? "/create" : "/"} prefetch onClick={() => { onSelectGame("home"); onNavigate?.(); }}>
-                  <Home className="h-7 w-7 text-white" />
+                <Link href={user ? "/create" : "/"} prefetch aria-label="Home" onClick={() => { onSelectGame("home"); onNavigate?.(); }}>
+                  <Home className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "home" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                   )}
@@ -169,8 +169,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 }`}
                 asChild
               >
-                <Link href="/my-games" prefetch onClick={() => { onSelectGame("my-games"); onNavigate?.(); }}>
-                  <Gamepad2 className="h-7 w-7 text-white" />
+                <Link href="/my-games" prefetch aria-label="My Games" onClick={() => { onSelectGame("my-games"); onNavigate?.(); }}>
+                  <Gamepad2 className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "my-games" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                   )}
@@ -195,8 +195,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 }`}
                 asChild
               >
-                <Link href="/discover" prefetch onClick={() => { onSelectGame("discover"); onNavigate?.(); }}>
-                  <Compass className="h-7 w-7 text-white" />
+                <Link href="/discover" prefetch aria-label="Discover" onClick={() => { onSelectGame("discover"); onNavigate?.(); }}>
+                  <Compass className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "discover" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                   )}
@@ -221,8 +221,8 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 }`}
                 asChild
               >
-                <Link href="/games" prefetch onClick={() => { onSelectGame("games"); onNavigate?.(); }}>
-                  <Library className="h-7 w-7 text-white" />
+                <Link href="/games" prefetch aria-label="Game Library" onClick={() => { onSelectGame("games"); onNavigate?.(); }}>
+                  <Library className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "games" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
                   )}
@@ -242,9 +242,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   variant="ghost"
                   size="icon"
                   className="!h-12 !w-12 bg-green-600 hover:!bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-200"
+                  aria-label="Create Game"
                   onClick={onCreateGame}
                 >
-                  <Plus className="h-7 w-7 text-white" />
+                  <Plus className="h-7 w-7 text-white" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
@@ -276,7 +277,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                             style={{ backgroundColor: game.color }}
                             asChild
                           >
-                            <Link href={`/game/${game.id}`} prefetch onClick={() => { onSelectGame(game.id); onNavigate?.(); }}>
+                            <Link href={`/game/${game.id}`} prefetch aria-label={game.name} onClick={() => { onSelectGame(game.id); onNavigate?.(); }}>
                               {iconGeneratingId === game.id ? (
                                 <Loader2 className="h-6 w-6 text-white animate-spin" />
                               ) : (game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (

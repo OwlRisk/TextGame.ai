@@ -1010,6 +1010,8 @@ function InsideGameSection() {
         {INSIDE_GAME_STEPS.map((step, index) => (
           <button
             key={step.id}
+            type="button"
+            aria-selected={selectedStep === index}
             onClick={() => setSelectedStep(index)}
             className={`group relative px-6 py-3 rounded-full border transition-all duration-300 ${
               selectedStep === index
@@ -1046,9 +1048,12 @@ function InsideGameSection() {
             {/* Navigation */}
             <div className="flex items-center justify-between mt-12">
               <div className="flex items-center gap-2">
-                {INSIDE_GAME_STEPS.map((_, index) => (
+                {INSIDE_GAME_STEPS.map((step, index) => (
                   <button
                     key={index}
+                    type="button"
+                    aria-label={`Go to step: ${step.title}`}
+                    aria-current={selectedStep === index ? "step" : undefined}
                     onClick={() => setSelectedStep(index)}
                     className={`transition-all duration-300 rounded-full ${
                       selectedStep === index
@@ -1060,16 +1065,20 @@ function InsideGameSection() {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
+                  aria-label="Previous step"
                   onClick={handlePrevious}
                   className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-fuchsia-500/50 transition-all"
                 >
-                  <ChevronLeft className="h-5 w-5 text-zinc-400" />
+                  <ChevronLeft className="h-5 w-5 text-zinc-400" aria-hidden="true" />
                 </button>
                 <button
+                  type="button"
+                  aria-label="Next step"
                   onClick={handleNext}
                   className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-fuchsia-500/50 transition-all"
                 >
-                  <ChevronRight className="h-5 w-5 text-zinc-400" />
+                  <ChevronRight className="h-5 w-5 text-zinc-400" aria-hidden="true" />
                 </button>
               </div>
             </div>

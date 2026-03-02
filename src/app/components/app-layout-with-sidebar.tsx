@@ -79,7 +79,7 @@ export function AppLayoutWithSidebar({
             <GameSidebar {...sidebarProps} onNavigate={() => setMobileMenuOpen(false)} />
           </SheetContent>
         </Sheet>
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">{children}</div>
+        <main className="flex-1 flex flex-col overflow-hidden min-w-0">{children}</main>
       </div>
     </div>
   );
