@@ -218,11 +218,16 @@ export function UsageContent() {
             </div>
             {stats.totalSpent > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={stats.chartData} barSize={18}>
+                <BarChart
+                  data={stats.chartData}
+                  barSize={18}
+                  barCategoryGap="30%"
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis dataKey="date" stroke="#71717a" fontSize={11} tickLine={false} />
                   <YAxis stroke="#71717a" fontSize={11} tickLine={false} />
                   <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                     contentStyle={{
                       backgroundColor: '#18181b',
                       border: '1px solid #3f3f46',
