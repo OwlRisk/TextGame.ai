@@ -9,9 +9,9 @@ function getOpenAI() {
 }
 
 /**
- * Hard limit: enforced by max_completion_tokens — the absolute ceiling for all player speech.
- * The soft limit (target length) is determined dynamically by the AI itself based on
- * the current game phase and rules — see PACING_RULE in buildSystemPrompt.
+ * Hard limit: enforced by max_completion_tokens — the absolute ceiling per message.
+ * Elaboration is achieved by the Host triggering the player again via NEXT_SPEAKER
+ * (multiple short turns), not by raising this limit.
  */
 const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 120;
 
@@ -24,7 +24,8 @@ Read the current game phase and rules to judge how much to say. Do not use a fix
 - Action / reaction / vote phase → 1 sentence. No analysis needed.
 - Discussion / debate / accusation phase → if you are accusing someone or defending yourself, include exactly ONE concrete observation or piece of reasoning. 2–3 sentences max.
 - Storytelling / roleplay / emotional moment → match the drama; 1–3 sentences.
-- When in doubt, shorter is better. Never more than 3 sentences. No speeches or monologues.`;
+- If the Host asks you to elaborate or continue → focus your next point clearly in 2–3 sentences; the Host will prompt you again if more is needed.
+- When in doubt, shorter is better. Never more than 3 sentences per turn. No speeches or monologues.`;
 
 const EMOTION_TAGS_SECTION = `EMOTION & SOUND TAGS (optional, use sparingly and only when they feel genuinely natural):
 - ONE emotion tag at the very start when it fits: [angry] [happy] [sad] [surprised] [fearful] [disgusted] [laughing] [whispering]

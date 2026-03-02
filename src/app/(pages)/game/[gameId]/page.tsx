@@ -523,6 +523,7 @@ Examples:
   NEXT_SPEAKER: ${humanName}            ← human's turn immediately
 
 List 2–3 AI speakers most turns so conversation flows naturally. End with ${humanName} at natural pauses. Rotate players; avoid repeating the same 1–2 names. Follow specific name requests when made.
+When your public message asks a specific player to elaborate, explain further, continue, or respond (e.g. "Alex, tell us more" / "Alex，你详细说说"), you MUST put that player's name first in NEXT_SPEAKER so they speak immediately.
 ${hasVotingPhase ? `
 VOTING: When it is time to vote, list ALL eligible AI players in one NEXT_SPEAKER line so voting completes without human intervention between votes. Append ${humanName} last. Example: NEXT_SPEAKER: Juno, Edda, Maribel, Tomas, ${humanName}
 ` : ""}${hasNightPhase ? `
