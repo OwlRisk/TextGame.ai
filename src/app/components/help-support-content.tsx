@@ -137,13 +137,7 @@ export function HelpSupportContent() {
                     id="message"
                     value={message}
                     onChange={(e) => setMessage(e.target.value.slice(0, MAX_CHARS))}
-                    placeholder={
-                      feedbackType === 'bug'
-                        ? 'Describe what happened and how to reproduce it...'
-                        : feedbackType === 'feature'
-                        ? 'What would you like to see added or improved?'
-                        : 'Share your thoughts, ideas, or questions...'
-                    }
+                    placeholder="Share your thoughts, report a bug, or suggest a feature..."
                     className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 min-h-[130px] resize-none text-sm"
                     required
                   />
