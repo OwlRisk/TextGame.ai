@@ -63,11 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setSession(null);
-    router.push('/');
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 100);
-  }, [router]);
+    window.location.replace('/');
+  }, []);
 
   const isInvalidRefreshToken = useCallback((err: unknown) => {
     if (!err || typeof err !== 'object') return false;
@@ -270,10 +267,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(null);
       setSession(null);
-      router.push('/');
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 100);
+      // Hard redirect after Supabase has cleared the localStorage token,
+      // so the root page always starts fresh with no stale auth state.
+      window.location.replace('/');
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
