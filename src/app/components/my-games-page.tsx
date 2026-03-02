@@ -3,7 +3,7 @@
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
-import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, TrendingUp, Star } from "lucide-react";
+import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import { toast } from "sonner";
 
@@ -18,19 +18,57 @@ interface Game {
 
 interface MyGamesPageProps {
   games: Game[];
+  isLoading?: boolean;
   onSelectGame: (gameId: string) => void;
   onCreateGame: () => void;
   onDeleteGame?: (gameId: string) => void;
 }
 
-export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }: MyGamesPageProps) {
+function SkeletonCard() {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-7 animate-pulse">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-12 h-12 rounded-xl bg-white/10" />
+        <div className="h-5 w-20 rounded-full bg-white/10" />
+      </div>
+      <div className="h-5 w-2/3 rounded bg-white/10 mb-3" />
+      <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-white/10">
+        <div className="h-8 rounded bg-white/10" />
+        <div className="h-8 rounded bg-white/10" />
+      </div>
+      <div className="space-y-2 mb-4">
+        <div className="h-4 w-1/2 rounded bg-white/10" />
+        <div className="h-4 w-1/3 rounded bg-white/10" />
+      </div>
+      <div className="h-8 rounded-lg bg-white/10" />
+    </div>
+  );
+}
+
+function SkeletonSection({ count = 3 }: { count?: number }) {
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-5 h-5 rounded bg-white/10 animate-pulse" />
+        <div className="h-6 w-32 rounded bg-white/10 animate-pulse" />
+        <div className="h-5 w-8 rounded-full bg-white/10 animate-pulse" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {Array.from({ length: count }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGame, onDeleteGame }: MyGamesPageProps) {
   const activeGames = games.filter(g => g.isActive);
   const completedGames = games.filter(g => !g.isActive);
   
   const handleDuplicateGame = (game: Game, e: React.MouseEvent) => {
     e.stopPropagation();
     toast.success(`"${game.name}" duplicated! Opening...`);
-    // In real app, this would pre-fill the create-game chat with this game's config
     setTimeout(() => {
       onCreateGame();
     }, 500);
@@ -48,7 +86,11 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent mb-1">My Games</h1>
             <p className="text-sm text-zinc-400 font-medium">
-              {games.length} {games.length === 1 ? 'game' : 'games'} total
+              {isLoading ? (
+                <span className="inline-block h-4 w-24 rounded bg-white/10 animate-pulse align-middle" />
+              ) : (
+                <>{games.length} {games.length === 1 ? 'game' : 'games'} total</>
+              )}
             </p>
           </div>
 
@@ -64,7 +106,11 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="max-w-7xl mx-auto px-10 py-16">
-          {games.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-10">
+              <SkeletonSection count={3} />
+            </div>
+          ) : games.length === 0 ? (
             // Empty State - Enhanced
             <div className="flex flex-col items-center justify-center py-16">
               <div className="relative">
@@ -154,35 +200,16 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
                             </Badge>
                           </div>
 
-                          <h3 className="text-lg font-bold text-white mb-3">{game.name}</h3>
+                          <h3 className="text-lg font-bold text-white mb-4">{game.name}</h3>
                           
-                          {/* Stats: show — until real data is available */}
-                          <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-white/10">
+                          <div className="space-y-2 text-sm text-zinc-400 mb-5">
                             <div className="flex items-center gap-2">
-                              <TrendingUp className="h-4 w-4 text-violet-400" />
-                              <div>
-                                <div className="text-xs text-zinc-500">Played</div>
-                                <div className="text-sm font-bold text-white">—</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                              <div>
-                                <div className="text-xs text-zinc-500">Rating</div>
-                                <div className="text-sm font-bold text-white">—</div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Basic Info */}
-                          <div className="space-y-2 text-sm text-zinc-400 mb-4">
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" />
+                              <Users className="h-4 w-4 text-violet-400 flex-shrink-0" />
                               <span>{game.config.playerCount + 1} players</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>In progress</span>
+                              <Clock className="h-4 w-4 text-green-400 flex-shrink-0" />
+                              <span className="text-green-300">In progress</span>
                             </div>
                           </div>
 
@@ -266,15 +293,15 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
                           </Badge>
                         </div>
 
-                        <h3 className="text-lg font-bold text-white mb-2">{game.name}</h3>
+                        <h3 className="text-lg font-bold text-white mb-4">{game.name}</h3>
                         
-                        <div className="space-y-2 text-sm text-zinc-400 mb-4">
+                        <div className="space-y-2 text-sm text-zinc-400 mb-5">
                           <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
+                            <Users className="h-4 w-4 text-zinc-500 flex-shrink-0" />
                             <span>{game.config.playerCount + 1} players</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
+                            <Clock className="h-4 w-4 text-zinc-500 flex-shrink-0" />
                             <span>Finished</span>
                           </div>
                         </div>

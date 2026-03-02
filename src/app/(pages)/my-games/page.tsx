@@ -12,7 +12,7 @@ import { Lock, LogIn } from "lucide-react";
 
 export default function MyGamesPageRoute() {
   const router = useRouter();
-  const { games, selectGame } = useGameContext();
+  const { games, selectGame, gamesLoading, isHydrated } = useGameContext();
   const { user, loading, signInWithGoogle } = useAuth();
 
   // 进入 My Games 页时同步侧边栏高亮为 "my-games"
@@ -59,6 +59,7 @@ export default function MyGamesPageRoute() {
     <>
       <MyGamesPage
         games={games}
+        isLoading={loading || gamesLoading || !isHydrated}
         onSelectGame={(gameId) => {
           selectGame(gameId);
           router.push(`/game/${gameId}`);
