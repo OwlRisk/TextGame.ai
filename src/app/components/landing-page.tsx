@@ -910,12 +910,13 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
               >
                 {/* Cover image */}
                 <div className="relative h-40 overflow-hidden">
-                  <img
+                  <NextImage
                     src={game.cover}
                     alt={game.title}
                     width={400}
                     height={160}
                     loading="lazy"
+                    sizes="(min-width: 768px) 400px, 100vw"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   {/* gradient overlay for text legibility */}
