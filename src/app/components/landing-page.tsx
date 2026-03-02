@@ -519,7 +519,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             {/* Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
               Your game idea,{" "}
-              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent animate-gradient">
                 playable
               </span>
               {" "}in 2 minutes

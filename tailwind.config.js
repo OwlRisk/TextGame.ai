@@ -54,8 +54,8 @@ module.exports = {
           '50%': { transform: 'scaleY(1)', opacity: '1' },
         },
         gradient: {
-          '0%, 100%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
+          '0%, 100%': { filter: 'hue-rotate(0deg)' },
+          '50%': { filter: 'hue-rotate(30deg)' },
         },
         marquee: {
           '0%': { transform: 'translateX(0)' },
