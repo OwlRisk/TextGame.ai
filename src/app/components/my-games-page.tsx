@@ -37,7 +37,7 @@ export function MyGamesPage({ games, onSelectGame, onCreateGame, onDeleteGame }:
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-zinc-950 via-zinc-900 to-black h-full overflow-hidden relative">
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-zinc-950 via-zinc-900 to-black min-h-0 relative">
       {/* Ambient Background - Enhanced */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
