@@ -1,12 +1,10 @@
 'use client';
 
-import { ArrowLeft, Send, Mail, Bug, Lightbulb, MessageSquare, CheckCircle2, ChevronDown, Zap, CreditCard, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Send, Mail, CheckCircle2, ChevronDown, Zap, CreditCard, RefreshCw, Bug } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
-import { Input } from '@/app/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useAuth } from '@/app/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const MAX_CHARS = 2000;
@@ -36,12 +34,8 @@ const FAQ_ITEMS = [
 
 export function HelpSupportContent() {
   const router = useRouter();
-  const { user } = useAuth();
-  const userEmail = user?.email ?? '';
 
-  const [feedbackType, setFeedbackType] = useState<'bug' | 'feature' | 'general'>('general');
   const [message, setMessage] = useState('');
-  const [email, setEmail] = useState(userEmail);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -53,16 +47,11 @@ export function HelpSupportContent() {
       return;
     }
     setIsSubmitting(true);
-    const typeLabel = feedbackTypes.find((t) => t.value === feedbackType)?.label ?? feedbackType;
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject: `[${typeLabel}]`,
-          message: `Type: ${typeLabel}\n\n${message.trim()}`,
-          replyTo: email.trim() || undefined,
-        }),
+        body: JSON.stringify({ message: message.trim() }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -76,11 +65,6 @@ export function HelpSupportContent() {
     }
   };
 
-  const feedbackTypes: { value: 'bug' | 'feature' | 'general'; label: string; icon: React.ElementType; color: string; border: string; bg: string }[] = [
-    { value: 'bug',     label: 'Bug Report',       icon: Bug,           color: 'text-red-400',    border: 'border-red-500/50',    bg: 'bg-red-500/10' },
-    { value: 'feature', label: 'Feature Request',  icon: Lightbulb,     color: 'text-violet-400', border: 'border-violet-500/50', bg: 'bg-violet-500/10' },
-    { value: 'general', label: 'General Feedback', icon: MessageSquare, color: 'text-blue-400',   border: 'border-blue-500/50',   bg: 'bg-blue-500/10' },
-  ];
 
   return (
     <div className="flex-1 flex flex-col bg-[#0a0a0a] h-full overflow-y-auto">
@@ -128,7 +112,7 @@ export function HelpSupportContent() {
                 </div>
                 <div>
                   <p className="text-white font-semibold text-lg">Thanks for reaching out!</p>
-                  <p className="text-zinc-400 text-sm mt-1">We&apos;ll get back to you{email ? ` at ${email}` : ''} soon.</p>
+                  <p className="text-zinc-400 text-sm mt-1">We&apos;ll review it and get back to you soon.</p>
                 </div>
                 <Button
                   variant="outline"
@@ -141,27 +125,6 @@ export function HelpSupportContent() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
-                {/* Type selector */}
-                <div className="grid grid-cols-3 gap-2">
-                  {feedbackTypes.map((type) => {
-                    const Icon = type.icon;
-                    const active = feedbackType === type.value;
-                    return (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => setFeedbackType(type.value)}
-                        className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-center transition-all ${
-                          active ? `${type.bg} ${type.border}` : 'bg-zinc-800/40 border-zinc-700/60 hover:border-zinc-600'
-                        }`}
-                      >
-                        <Icon className={`h-4 w-4 ${active ? type.color : 'text-zinc-500'}`} />
-                        <span className={`text-xs font-medium leading-tight ${active ? type.color : 'text-zinc-500'}`}>{type.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
                 {/* Message */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -183,21 +146,6 @@ export function HelpSupportContent() {
                     }
                     className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 min-h-[130px] resize-none text-sm"
                     required
-                  />
-                </div>
-
-                {/* Email — pre-filled if logged in */}
-                <div>
-                  <label htmlFor="email" className="text-sm font-medium text-zinc-300 mb-2 block">
-                    Reply email <span className="text-zinc-600 font-normal">(optional)</span>
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 text-sm"
                   />
                 </div>
 

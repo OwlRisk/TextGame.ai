@@ -4,6 +4,7 @@ import { GameProvider } from "@/app/contexts/GameContext";
 import { AuthProvider } from "@/app/contexts/AuthContext";
 import { SuppressFastRefreshLogs } from "@/app/components/suppress-fast-refresh-logs";
 import { SITE_NAME, SITE_DOMAIN, SITE_DESCRIPTION } from "@/lib/site";
+import { Analytics } from "@vercel/analytics/next";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -56,6 +57,7 @@ export default function RootLayout({
         <AuthProvider>
           <GameProvider>{children}</GameProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
