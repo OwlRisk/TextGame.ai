@@ -346,25 +346,6 @@ export function UsageContent() {
         </div>
       )}
 
-      {/* How usage is calculated */}
-      <div className="bg-zinc-900/30 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
-        <details className="group">
-          <summary className="text-sm text-zinc-500 cursor-pointer list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
-            <span className="group-open:inline hidden">▼</span>
-            <span className="group-open:hidden inline">▶</span>
-            How usage is calculated
-          </summary>
-          <div className="mt-3 text-xs text-zinc-500 space-y-2 pl-4 border-l border-zinc-700">
-            <p>• 1 credit = $0.01 face value; actual API cost is charged at 3× to cover platform costs.</p>
-            <p>• Recharge: 50% of payment goes to credits (e.g. $10 → 500 credits).</p>
-            <p>• AI Text: charged by model (GPT-5.2, GPT-4o, etc.) and token count per call.</p>
-            <p>• Image: dall-e-2 ≈ 5 cr / dall-e-3 ≈ 12 cr / HD ≈ 24 cr per image.</p>
-            <p>• Voice/TTS: inworld-tts-1.5-mini ≈ 1 cr / 1.5-max ≈ 3 cr per 1,000 chars.</p>
-            <p>• Subscription: Pro 2,000 / Plus 6,000 / Ultra 40,000 credits per month.</p>
-          </div>
-        </details>
-      </div>
-
       {/* Transaction List - 与参考一致样式 */}
       <div className="flex-1 px-6 py-4 min-h-0">
         {loadingTx ? (
