@@ -3,6 +3,11 @@
  * Kept separate from discover-page.tsx (client component) so Server Components can import it.
  */
 
+export interface GameFAQ {
+  question: string;
+  answer: string;
+}
+
 export interface GameSEOData {
   slug: string;
   /** templateId used in /create?preset= */
@@ -25,6 +30,8 @@ export interface GameSEOData {
   roles?: { name: string; description: string }[];
   /** Feature highlights shown on the landing page */
   features: string[];
+  /** FAQ items for structured data + page display */
+  faq: GameFAQ[];
   /** Related game slugs */
   related: string[];
 }
@@ -73,6 +80,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Fully voiced AI characters",
       "Day/Night cycle with real discussion",
     ],
+    faq: [
+      { question: "How many players do you need to play Werewolf?", answer: "Werewolf works best with 6–12 players. The AI game master fills any remaining spots with AI players, so you can start with as few as 2 real people." },
+      { question: "Do I need a human moderator to play Werewolf online?", answer: "No — the AI game master handles everything automatically: assigning roles, running night phases, managing votes, and announcing results." },
+      { question: "What roles are in AI Werewolf?", answer: "The default roles are Villager, Werewolf, Seer, and Doctor. You can customize roles when creating your game." },
+      { question: "Is Werewolf free to play?", answer: "Yes, you can play Werewolf for free. An account gives you access to the full AI host experience." },
+      { question: "How long does a game of Werewolf take?", answer: "A typical game lasts 30–45 minutes, depending on the number of players and how quickly the group makes decisions." },
+    ],
     related: ["mafia", "avalon", "undercover"],
   },
   {
@@ -118,6 +132,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Multiple faction roles",
       "Fully hosted — no moderator needed",
     ],
+    faq: [
+      { question: "What is the difference between Mafia and Werewolf?", answer: "Mafia uses a Mafia crime family instead of werewolves, and typically features a Detective and Doctor role. The core deduction mechanics are similar, but Mafia has a more urban crime theme." },
+      { question: "How many players do you need for Mafia?", answer: "Mafia works best with 6–15 players. The AI host can fill seats with AI players if your group is smaller." },
+      { question: "Can I customize the Mafia roles?", answer: "Yes. When creating your game, you can add or remove roles like Detective, Doctor, or Godfather to suit your group." },
+      { question: "Does the AI host keep secrets between players?", answer: "Absolutely. The AI manages all private night-action results separately and only reveals information at the right time." },
+    ],
     related: ["werewolf", "avalon", "resistance"],
   },
   {
@@ -161,6 +181,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "No prep needed — AI generates words",
       "Beginner friendly",
       "Works great on video calls",
+    ],
+    faq: [
+      { question: "How do you play Undercover (Who's the Spy)?", answer: "Each player receives a secret word. One player (the Undercover) has a slightly different word. Players take turns describing their word without saying it, then vote to eliminate who they think is the spy." },
+      { question: "How many players does Undercover need?", answer: "Undercover works best with 4–10 players. It's one of the fastest and most accessible party games for any group size." },
+      { question: "What is the Mr. White role?", answer: "Mr. White has no word at all. They must bluff convincingly — and can win by correctly guessing the Civilians' word if they are eliminated." },
+      { question: "How long does a round of Undercover take?", answer: "A typical round lasts 15–20 minutes, making it perfect for a quick group activity." },
     ],
     related: ["werewolf", "spyfall", "two-truths-lie"],
   },
@@ -208,6 +234,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Arthurian roleplay atmosphere",
       "Strategic depth with every play",
     ],
+    faq: [
+      { question: "What is Avalon: The Resistance?", answer: "Avalon is a social deduction game where Good knights try to complete three quests while Evil players secretly sabotage them. Merlin knows all Evil players, but revealing himself means instant defeat." },
+      { question: "How many players does Avalon need?", answer: "Avalon works best with 5–10 players. The AI host adjusts role distribution automatically based on player count." },
+      { question: "What makes Avalon harder than Werewolf?", answer: "Avalon has more complex roles (Merlin, Percival, Assassin) and an added assassination mechanic at the end. It rewards strategic deception and careful deduction." },
+      { question: "Can the AI play as characters in Avalon?", answer: "Yes. The AI game master fills any empty seats with AI characters that behave consistently with their assigned role." },
+    ],
     related: ["werewolf", "resistance", "mafia"],
   },
   {
@@ -252,6 +284,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Rich story-driven gameplay",
       "Multiple mystery genres",
     ],
+    faq: [
+      { question: "Can I play Detective Mystery solo?", answer: "Yes. The AI host can run the entire game as a solo mystery experience, playing all suspects and witnesses while you act as the detective." },
+      { question: "Is every mystery case different?", answer: "Yes. The AI generates a unique case for each session — different victim, suspects, motive, and method every time." },
+      { question: "How do I win the Detective Mystery game?", answer: "You win by correctly naming the culprit, their motive, and their method. All three must be correct." },
+      { question: "Can I ask the AI suspects any question?", answer: "Yes. During investigation rounds you can ask any question in natural language. The AI responds in character as each suspect." },
+    ],
     related: ["clue", "spyfall", "escape-room"],
   },
   {
@@ -290,6 +328,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "2–6 player co-op",
       "Hints available from the AI host",
       "Multiple difficulty settings",
+    ],
+    faq: [
+      { question: "How does an online AI escape room work?", answer: "The AI game master describes the room and its contents in text. You type what you want to do — examine objects, combine items, enter codes — and the AI responds in real time to your actions." },
+      { question: "Can I play the escape room solo?", answer: "Yes. The AI escape room is designed for 2–6 players but works perfectly as a solo experience." },
+      { question: "Are hints available if I get stuck?", answer: "Yes. You can ask the AI host for a hint at any time. Hints are context-aware and progressively reveal more detail." },
+      { question: "Is every escape room layout different?", answer: "Yes. The AI generates a new room configuration, puzzles, and story each session." },
     ],
     related: ["detective-mystery", "trivia", "avalon"],
   },
@@ -330,6 +374,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Customizable difficulty",
       "Multiple rounds and categories",
     ],
+    faq: [
+      { question: "What topics can I pick for trivia?", answer: "You can pick any topic you like — history, science, sports, movies, music, pop culture, and more. The AI generates questions on demand for virtually any subject." },
+      { question: "How does the AI check trivia answers?", answer: "The AI evaluates answers in natural language, so minor spelling differences or paraphrased correct answers are accepted." },
+      { question: "Can I play trivia alone?", answer: "Yes. You can play solo against the AI, set your own difficulty, and track your score across rounds." },
+      { question: "How many rounds are in a trivia game?", answer: "You choose the number of rounds when creating your game — typically 5–20 questions per session." },
+    ],
     related: ["debate", "two-truths-lie", "20-questions"],
   },
   {
@@ -368,6 +418,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Personalized interpretation for your question",
       "Thoughtful, reflective tone",
       "Solo or shared session",
+    ],
+    faq: [
+      { question: "Is AI Tarot reading accurate?", answer: "AI Tarot is designed for reflection, storytelling, and self-exploration. It draws on traditional card symbolism to offer thoughtful, personalized interpretations — treat it as a creative tool for introspection." },
+      { question: "Which spreads are available?", answer: "You can choose from a single daily card, a three-card spread (past/present/future), or a full Celtic Cross spread for in-depth readings." },
+      { question: "Do I need to know anything about Tarot to use it?", answer: "No. The AI reader explains each card's meaning and how it relates to your question in plain language — no prior knowledge needed." },
+      { question: "Can I ask follow-up questions?", answer: "Yes. After your reading, you can ask the AI to clarify any card, explore a specific theme further, or request a new spread." },
     ],
     related: ["detective-mystery", "storyteller"],
   },
@@ -411,6 +467,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Fast 15–25 minute rounds",
       "Beginner-friendly rules",
       "Great for remote teams",
+    ],
+    faq: [
+      { question: "How do you play Codenames online?", answer: "Two teams each have a Spymaster who sees which words on the board belong to their team. Spymasters give one-word clues and a number; their team guesses matching words. First team to find all their words wins." },
+      { question: "What happens if you hit the Assassin card?", answer: "Your team loses immediately. The Assassin word is the most dangerous card on the board — the Spymaster must craft clues that avoid it." },
+      { question: "How many players does Codenames need?", answer: "You need at least 4 players (2 per team), but it works with up to 12. The AI can fill seats if you have an odd number." },
+      { question: "Is there a time limit per turn?", answer: "No enforced time limit by default, but you can ask the AI host to add a timer for a more fast-paced experience." },
     ],
     related: ["undercover", "two-truths-lie", "trivia"],
   },

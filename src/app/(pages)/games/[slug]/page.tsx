@@ -52,8 +52,8 @@ export default async function GameLandingPage({ params }: Props) {
 
   const relatedGames = GAME_SEO_DATA.filter((g) => game.related.includes(g.slug));
 
-  // JSON-LD structured data
-  const jsonLd = {
+  // JSON-LD: Game
+  const gameJsonLd = {
     "@context": "https://schema.org",
     "@type": "Game",
     name: game.name,
@@ -63,12 +63,46 @@ export default async function GameLandingPage({ params }: Props) {
     ...(game.coverImage ? { image: `${SITE_DOMAIN}${game.coverImage}` } : {}),
   };
 
+  // JSON-LD: BreadcrumbList
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_DOMAIN },
+      { "@type": "ListItem", position: 2, name: "Games", item: `${SITE_DOMAIN}/games` },
+      { "@type": "ListItem", position: 3, name: game.name, item: `${SITE_DOMAIN}/games/${slug}` },
+    ],
+  };
+
+  // JSON-LD: FAQPage
+  const faqJsonLd = game.faq && game.faq.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: game.faq.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+      }
+    : null;
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(gameJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
 
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200">
         {/* Nav */}
@@ -197,6 +231,27 @@ export default async function GameLandingPage({ params }: Props) {
                     <h3 className="text-sm font-semibold text-white">{role.name}</h3>
                     <p className="text-xs text-zinc-400 leading-relaxed">{role.description}</p>
                   </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* FAQ */}
+          {game.faq && game.faq.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="text-xl font-semibold text-white">Frequently Asked Questions</h2>
+              <div className="space-y-3">
+                {game.faq.map((item) => (
+                  <details
+                    key={item.question}
+                    className="group rounded-xl bg-zinc-800/60 border border-zinc-700/50 px-5 py-4 cursor-pointer"
+                  >
+                    <summary className="text-sm font-medium text-zinc-200 list-none flex items-center justify-between gap-3 select-none">
+                      {item.question}
+                      <ChevronRight className="h-4 w-4 text-zinc-500 shrink-0 transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-3 text-sm text-zinc-400 leading-relaxed">{item.answer}</p>
+                  </details>
                 ))}
               </div>
             </section>

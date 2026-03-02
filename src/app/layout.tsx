@@ -58,6 +58,28 @@ export const metadata: Metadata = {
   },
 };
 
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_DOMAIN,
+  description: SITE_DESCRIPTION,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${SITE_DOMAIN}/games?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: SITE_DOMAIN,
+  logo: `${SITE_DOMAIN}/icon.svg`,
+  sameAs: [],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -66,6 +88,35 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full overflow-hidden [-webkit-tap-highlight-color:transparent]">
       <body className="antialiased h-full overflow-hidden safe-area-padding" suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        {/* Static crawlable content for search engines (hidden from sighted users) */}
+        <noscript>
+          <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
+            <h1>{SITE_NAME}</h1>
+            <p>{SITE_DESCRIPTION}</p>
+            <nav>
+              <a href="/discover">Discover Games</a>
+              <a href="/games">Game Library</a>
+              <a href="/games/werewolf">Play Werewolf Online</a>
+              <a href="/games/mafia">Play Mafia Online</a>
+              <a href="/games/undercover">Play Undercover Online</a>
+              <a href="/games/avalon">Play Avalon Online</a>
+              <a href="/games/escape-room">Play Escape Room Online</a>
+              <a href="/games/trivia">Play Trivia Online</a>
+              <a href="/games/tarot">AI Tarot Reading</a>
+              <a href="/signin">Sign In</a>
+              <a href="/terms">Terms of Service</a>
+              <a href="/privacy">Privacy Policy</a>
+            </nav>
+          </div>
+        </noscript>
         <SuppressFastRefreshLogs />
         <AuthProvider>
           <GameProvider>{children}</GameProvider>

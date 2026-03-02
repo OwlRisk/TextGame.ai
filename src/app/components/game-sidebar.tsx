@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, Settings, RefreshCw, Terminal } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, Settings, RefreshCw, Terminal, Library } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -205,6 +205,32 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
               🧭 Discover
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Games Library */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
+                  selectedGameId === "games"
+                    ? "bg-emerald-600 rounded-xl shadow-lg shadow-emerald-500/50 hover:!bg-emerald-600"
+                    : "bg-zinc-800 hover:bg-emerald-600 hover:rounded-xl"
+                }`}
+                asChild
+              >
+                <Link href="/games" prefetch onClick={() => { onSelectGame("games"); onNavigate?.(); }}>
+                  <Library className="h-7 w-7 text-white" />
+                  {selectedGameId === "games" && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                  )}
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
+              📚 Game Library
             </TooltipContent>
           </Tooltip>
 
