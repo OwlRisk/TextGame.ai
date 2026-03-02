@@ -40,21 +40,21 @@ function formatDate(dateText: string | null): string {
 
 
 /** Free：3 种 AI 语音 + 图片生成 */
-const FREE_FEATURES = ['3 AI voices · 14 emotion expressions', 'Image generation'] as const;
+const FREE_FEATURES = ['Full feature access', 'No monthly credit refill', 'Buy credits as needed'] as const;
 
 /** Pro / Plus / Ultra 共用权益（仅 credits 数量不同） */
 const PAID_FEATURES = [
-  '113 AI voices · 16 languages · 14 emotions',
+  '100+ AI voices · 16 languages',
   'Image generation',
-  'GPT-5.2 · GPT-4o · GPT-4 Turbo (selectable in Settings)',
+  'Latest GPT models (selectable in Settings)',
 ] as const;
 
 
 const BASE_PAID_FEATURES = [
-  '113 AI voices · 16 languages',
-  'GPT-5.2 · GPT-4o selectable',
+  '100+ AI voices · 16 languages',
+  'Latest GPT models, selectable',
   'Image generation',
-  '14 voice emotion expressions',
+  'Voice emotion expressions',
 ] as const;
 
 const ULTRA_EXCLUSIVE_FEATURES = [
@@ -89,7 +89,6 @@ function SubscriptionPageContent() {
   const [openingPortal, setOpeningPortal] = useState(false);
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
   const [changingTier, setChangingTier] = useState<SubscriptionTier | null>(null);
-  const [syncingPlan, setSyncingPlan] = useState(false);
   const fulfillDoneRef = useRef(false);
 
   const refreshTier = useCallback(async () => {
@@ -231,32 +230,6 @@ function SubscriptionPageContent() {
     }
   };
 
-  const handleSyncPlan = useCallback(async () => {
-    if (!session?.access_token) return;
-    setSyncingPlan(true);
-    try {
-      const res = await fetch('/api/stripe/sync-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: session.access_token }),
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Sync failed');
-      if (data.tier && data.tier !== 'free') {
-        toast.success(`Synced. You're on ${data.tier.charAt(0).toUpperCase() + data.tier.slice(1)}.`);
-        await Promise.all([refreshTier(), refreshDetails()]);
-      } else {
-        toast.info('No active subscription found in Stripe.');
-        await refreshTier();
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(e instanceof Error ? e.message : 'Could not sync plan.');
-    } finally {
-      setSyncingPlan(false);
-    }
-  }, [session?.access_token, refreshTier, refreshDetails]);
 
   const handleChangePlan = async (targetTier: SubscriptionTier) => {
     if (!session?.access_token || targetTier === currentTier) return;
@@ -464,7 +437,7 @@ function SubscriptionPageContent() {
                       ))}
                       <div className="flex items-center gap-3 px-5 py-4">
                         <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
-                        <span className="text-sm text-zinc-300">AI voice emotions &amp; sounds — 14 built-in expressions</span>
+                        <span className="text-sm text-zinc-300">Voice emotion expressions &amp; sounds</span>
                       </div>
                     </div>
                   </div>
@@ -564,23 +537,9 @@ function SubscriptionPageContent() {
             <div className="flex flex-col">
               {/* Header */}
               <div className="px-6 md:px-10 pt-8 pb-6 border-b border-zinc-800/80">
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 max-w-5xl">
-                  <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">Choose your plan</h1>
-                    <p className="text-zinc-500 text-sm">Unlock monthly credits, 113 AI voices, and GPT-5.2. Cancel anytime.</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={handleSyncPlan}
-                    disabled={syncingPlan || !session?.access_token}
-                    className="shrink-0 h-9 rounded-lg text-xs font-medium border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
-                  >
-                    {syncingPlan ? (
-                      <><RefreshCw className="size-3.5 mr-1.5 animate-spin" />Syncing…</>
-                    ) : (
-                      <><RefreshCw className="size-3.5 mr-1.5" />Already subscribed? Sync plan</>
-                    )}
-                  </Button>
+                <div className="max-w-5xl">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">Choose your plan</h1>
+                    <p className="text-zinc-500 text-sm">Unlock the full experience — AI voices, powerful models, and monthly credits. Cancel anytime.</p>
                 </div>
               </div>
 
@@ -596,20 +555,16 @@ function SubscriptionPageContent() {
                         <span className="text-4xl font-black text-zinc-300">$0</span>
                         <span className="text-zinc-600 text-sm">/ mo</span>
                       </div>
-                      <p className="text-zinc-600 text-xs mt-2">No monthly credits</p>
+                      <p className="text-zinc-600 text-xs mt-2">Start free · buy credits as you go</p>
                     </div>
                     <div className="px-6 pb-3">
                       <div className="h-px bg-zinc-800 mb-4" />
                       <ul className="space-y-2.5 mb-5">
-                        <li className="flex items-center gap-2 text-xs text-zinc-500">
-                          <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />3 AI voices · 14 emotions
-                        </li>
-                        <li className="flex items-center gap-2 text-xs text-zinc-500">
-                          <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />Image generation
-                        </li>
-                        <li className="flex items-center gap-2 text-xs text-zinc-500">
-                          <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />Basic features
-                        </li>
+                        {FREE_FEATURES.map((f) => (
+                          <li key={f} className="flex items-center gap-2 text-xs text-zinc-500">
+                            <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />{f}
+                          </li>
+                        ))}
                       </ul>
                       <div className="w-full h-10 rounded-xl flex items-center justify-center text-xs font-semibold bg-zinc-800/80 text-zinc-500 border border-zinc-700/50">
                         Current plan
