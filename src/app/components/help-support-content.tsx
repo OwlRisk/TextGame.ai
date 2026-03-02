@@ -1,42 +1,66 @@
 'use client';
 
-import { ArrowLeft, Send, Mail, ExternalLink, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Send, Mail, Bug, Lightbulb, MessageSquare, CheckCircle2, ChevronDown, Zap, CreditCard, RefreshCw } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Input } from '@/app/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from '@/app/contexts/AuthContext';
 import { toast } from 'sonner';
+
+const MAX_CHARS = 2000;
+
+const FAQ_ITEMS = [
+  {
+    icon: Zap,
+    q: 'How do credits work?',
+    a: 'Credits power all AI interactions — text generation, voice, and image creation. Subscription plans include a monthly credit allocation that renews automatically. Unused credits carry over.',
+  },
+  {
+    icon: CreditCard,
+    q: 'Can I get a refund?',
+    a: 'Subscription charges can be reviewed within 7 days of payment. Reach out to feedback@cvnio.com with your order details and we\'ll take care of it.',
+  },
+  {
+    icon: RefreshCw,
+    q: 'My subscription isn\'t showing — what do I do?',
+    a: 'Occasionally Stripe webhooks are delayed. Wait a few minutes and refresh. If it still doesn\'t show, contact us with your payment receipt and we\'ll sync it manually.',
+  },
+  {
+    icon: Bug,
+    q: 'How do I report a bug?',
+    a: 'Use the form below and select "Bug Report". Include what you were doing, what happened, and what you expected — the more detail, the faster we can fix it.',
+  },
+];
 
 export function HelpSupportContent() {
   const router = useRouter();
+  const { user } = useAuth();
+  const userEmail = user?.email ?? '';
+
   const [feedbackType, setFeedbackType] = useState<'bug' | 'feature' | 'general'>('general');
-  const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(userEmail);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim() || !message.trim()) {
-      toast.error('Please fill in all required fields');
+    if (!message.trim()) {
+      toast.error('Please write a message before submitting');
       return;
     }
     setIsSubmitting(true);
     const typeLabel = feedbackTypes.find((t) => t.value === feedbackType)?.label ?? feedbackType;
-    const fullMessage = [
-      `Type: ${typeLabel}`,
-      '',
-      message.trim(),
-    ].join('\n');
-
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subject: `[${typeLabel}] ${subject.trim()}`,
-          message: fullMessage,
+          subject: `[${typeLabel}]`,
+          message: `Type: ${typeLabel}\n\n${message.trim()}`,
           replyTo: email.trim() || undefined,
         }),
       });
@@ -44,11 +68,7 @@ export function HelpSupportContent() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to send');
       }
-      toast.success('Message sent! We\'ll get back to you soon.');
-      setSubject('');
-      setMessage('');
-      setEmail('');
-      setFeedbackType('general');
+      setSubmitted(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to send. Please try again.');
     } finally {
@@ -56,177 +76,176 @@ export function HelpSupportContent() {
     }
   };
 
-  const feedbackTypes: { value: 'bug' | 'feature' | 'general'; label: string; color: string; bgColor: string }[] = [
-    { value: 'bug', label: '🐛 Bug Report', color: 'text-red-400', bgColor: 'bg-red-500/10' },
-    { value: 'feature', label: '✨ Feature Request', color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
-    { value: 'general', label: '💬 General Feedback', color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+  const feedbackTypes: { value: 'bug' | 'feature' | 'general'; label: string; icon: React.ElementType; color: string; border: string; bg: string }[] = [
+    { value: 'bug',     label: 'Bug Report',       icon: Bug,           color: 'text-red-400',    border: 'border-red-500/50',    bg: 'bg-red-500/10' },
+    { value: 'feature', label: 'Feature Request',  icon: Lightbulb,     color: 'text-violet-400', border: 'border-violet-500/50', bg: 'bg-violet-500/10' },
+    { value: 'general', label: 'General Feedback', icon: MessageSquare, color: 'text-blue-400',   border: 'border-blue-500/50',   bg: 'bg-blue-500/10' },
   ];
 
   return (
     <div className="flex-1 flex flex-col bg-[#0a0a0a] h-full overflow-y-auto">
-      <div className="bg-zinc-900/50 border-b border-zinc-800 px-6 py-4">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800 -ml-2"
-          >
+      {/* Header */}
+      <div className="bg-zinc-900/50 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white hover:bg-zinc-800 -ml-2">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-xl font-bold text-white">Help & Support</h1>
-            <p className="text-xs text-zinc-500">We&apos;d love to hear from you</p>
+            <p className="text-xs text-zinc-500">We read every message</p>
           </div>
         </div>
       </div>
 
       <div className="flex-1 px-6 py-8">
-        <div className="max-w-3xl mx-auto space-y-8">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors flex items-center gap-5">
-            <div className="h-12 w-12 rounded-full bg-violet-500/10 flex items-center justify-center shrink-0">
-              <Mail className="h-6 w-6 text-violet-400" />
+        <div className="max-w-2xl mx-auto space-y-6">
+
+          {/* Email contact */}
+          <a
+            href="mailto:feedback@cvnio.com"
+            className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 hover:border-violet-500/40 rounded-xl px-5 py-4 transition-colors group"
+          >
+            <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+              <Mail className="h-5 w-5 text-violet-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-white font-semibold mb-0.5">Email Support</h3>
-              <p className="text-zinc-400 text-sm">Questions, bugs, or anything else — we read every email.</p>
+              <p className="text-sm font-medium text-white">Email us directly</p>
+              <p className="text-xs text-zinc-500 truncate">feedback@cvnio.com</p>
             </div>
-            <a
-              href="mailto:feedback@cvnio.com"
-              className="text-violet-400 hover:text-violet-300 text-sm font-medium inline-flex items-center gap-1 shrink-0"
-            >
-              feedback@cvnio.com
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
+            <span className="text-xs text-violet-400 group-hover:text-violet-300 shrink-0">Open →</span>
+          </a>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <Send className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div>
-                <h2 className="text-white font-semibold text-lg">Send Feedback</h2>
-                <p className="text-zinc-400 text-sm">Help us improve</p>
-              </div>
+          {/* Feedback form */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="px-6 pt-6 pb-4 border-b border-zinc-800/60">
+              <h2 className="text-base font-semibold text-white">Send Feedback</h2>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="text-sm font-medium text-zinc-300 mb-3 block">Type of Feedback</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {feedbackTypes.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setFeedbackType(type.value)}
-                      className={`p-4 rounded-lg border transition-all text-left ${
-                        feedbackType === type.value
-                          ? `${type.bgColor} border-current`
-                          : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
-                      }`}
-                    >
-                      <span
-                        className={`text-sm font-medium ${
-                          feedbackType === type.value ? type.color : 'text-zinc-400'
+
+            {submitted ? (
+              <div className="px-6 py-14 flex flex-col items-center text-center gap-4">
+                <div className="h-14 w-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-lg">Thanks for reaching out!</p>
+                  <p className="text-zinc-400 text-sm mt-1">We&apos;ll get back to you{email ? ` at ${email}` : ''} soon.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setSubmitted(false); setMessage(''); setFeedbackType('general'); }}
+                  className="mt-2 border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs"
+                >
+                  Send another message
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+                {/* Type selector */}
+                <div className="grid grid-cols-3 gap-2">
+                  {feedbackTypes.map((type) => {
+                    const Icon = type.icon;
+                    const active = feedbackType === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setFeedbackType(type.value)}
+                        className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-center transition-all ${
+                          active ? `${type.bg} ${type.border}` : 'bg-zinc-800/40 border-zinc-700/60 hover:border-zinc-600'
                         }`}
                       >
-                        {type.label}
-                      </span>
-                    </button>
-                  ))}
+                        <Icon className={`h-4 w-4 ${active ? type.color : 'text-zinc-500'}`} />
+                        <span className={`text-xs font-medium leading-tight ${active ? type.color : 'text-zinc-500'}`}>{type.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-              <div>
-                <label htmlFor="subject" className="text-sm font-medium text-zinc-300 mb-2 block">
-                  Subject <span className="text-red-400">*</span>
-                </label>
-                <Input
-                  id="subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Brief description of your feedback"
-                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-violet-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="message" className="text-sm font-medium text-zinc-300 mb-2 block">
-                  Message <span className="text-red-400">*</span>
-                </label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Please provide as much detail as possible..."
-                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-violet-500 min-h-[150px] resize-none"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="text-sm font-medium text-zinc-300 mb-2 block">
-                  Email <span className="text-zinc-500">(optional)</span>
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@example.com"
-                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-violet-500"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 inline-block" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Submit Feedback
-                  </>
-                )}
-              </Button>
-            </form>
+
+                {/* Message */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="message" className="text-sm font-medium text-zinc-300">Message</label>
+                    <span className={`text-xs tabular-nums ${message.length > MAX_CHARS * 0.9 ? 'text-amber-400' : 'text-zinc-600'}`}>
+                      {message.length}/{MAX_CHARS}
+                    </span>
+                  </div>
+                  <Textarea
+                    id="message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value.slice(0, MAX_CHARS))}
+                    placeholder={
+                      feedbackType === 'bug'
+                        ? 'Describe what happened and how to reproduce it...'
+                        : feedbackType === 'feature'
+                        ? 'What would you like to see added or improved?'
+                        : 'Share your thoughts, ideas, or questions...'
+                    }
+                    className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 min-h-[130px] resize-none text-sm"
+                    required
+                  />
+                </div>
+
+                {/* Email — pre-filled if logged in */}
+                <div>
+                  <label htmlFor="email" className="text-sm font-medium text-zinc-300 mb-2 block">
+                    Reply email <span className="text-zinc-600 font-normal">(optional)</span>
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 text-sm"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !message.trim()}
+                  className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Sending…</>
+                  ) : (
+                    <><Send className="h-4 w-4 mr-2" />Send Message</>
+                  )}
+                </Button>
+              </form>
+            )}
           </div>
 
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
-            <h2 className="text-white font-semibold text-lg mb-4">Frequently Asked Questions</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-white font-medium text-sm mb-1 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-400" />
-                  How do credits work?
-                </h3>
-                <p className="text-zinc-400 text-sm ml-6">
-                  Credits are used for AI interactions during gameplay. Subscription plans include monthly credits.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-white font-medium text-sm mb-1 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-400" />
-                  Can I get a refund?
-                </h3>
-                <p className="text-zinc-400 text-sm ml-6">
-                  Please contact us at feedback@cvnio.com and we&apos;ll review your request.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-white font-medium text-sm mb-1 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-400" />
-                  How do I report a bug?
-                </h3>
-                <p className="text-zinc-400 text-sm ml-6">
-                  Use the feedback form above and select &quot;Bug Report&quot;. Include steps to reproduce for faster resolution.
-                </p>
-              </div>
+          {/* FAQ */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="px-6 pt-5 pb-4 border-b border-zinc-800/60">
+              <h2 className="text-base font-semibold text-white">Frequently Asked Questions</h2>
+            </div>
+            <div className="divide-y divide-zinc-800/60">
+              {FAQ_ITEMS.map((item, i) => {
+                const Icon = item.icon;
+                const isOpen = openFaq === i;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    className="w-full px-6 py-4 text-left hover:bg-zinc-800/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-4 w-4 text-zinc-500 shrink-0" />
+                      <span className="flex-1 text-sm font-medium text-zinc-200">{item.q}</span>
+                      <ChevronDown className={`h-4 w-4 text-zinc-500 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                    {isOpen && (
+                      <p className="mt-3 ml-7 text-sm text-zinc-400 leading-relaxed text-left">{item.a}</p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
         </div>
       </div>
     </div>
