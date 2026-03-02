@@ -10,7 +10,10 @@ import {
   ArrowUpRight,
   Calendar,
   DollarSign,
+  ImageIcon,
   Loader2,
+  MessageSquare,
+  Mic,
   Plus,
   RefreshCw,
   TrendingDown,
@@ -23,6 +26,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { motion } from 'motion/react';
@@ -46,20 +50,29 @@ const TYPE_CONFIG: Record<
   default: { label: 'Transaction', icon: Activity, color: 'text-zinc-400', bgColor: 'bg-zinc-500/10', prefix: '' },
 };
 
-/** 扣费类型对应的展示名称（用于「按类型汇总」） */
-const USAGE_CATEGORY_LABELS: Record<string, string> = {
-  ai_chat: 'Chat (GPT)',
-  ai_chat_stream: 'Chat (Stream)',
-  game_creation: 'Game / Host',
-  image_generation: 'Avatar / Image',
-  quick_reply: 'Quick reply',
-  prompt_suggestion: 'Prompt suggestion',
-  voice_transcription: 'Voice transcription',
-  tts: 'TTS',
+/** Map individual transaction types → top-level chart category */
+const CATEGORY_GROUP: Record<string, 'text' | 'image' | 'voice' | 'other'> = {
+  ai_chat:            'text',
+  ai_chat_stream:     'text',
+  game_creation:      'text',
+  image_generation:   'image',
+  tts:                'voice',
+  voice_transcription:'voice',
+  quick_reply:        'other',
+  prompt_suggestion:  'other',
 };
-function getUsageCategoryLabel(type: string): string {
-  return USAGE_CATEGORY_LABELS[type] || type.replace(/_/g, ' ') || 'Other';
-}
+
+const CATEGORY_META: Record<'text' | 'image' | 'voice' | 'other', {
+  label: string;
+  color: string;
+  fill: string;
+  Icon: typeof MessageSquare;
+}> = {
+  text:  { label: 'AI Text',  color: 'text-violet-400',  fill: '#a855f7', Icon: MessageSquare },
+  image: { label: 'Image',    color: 'text-amber-400',   fill: '#f59e0b', Icon: ImageIcon },
+  voice: { label: 'Voice/TTS',color: 'text-sky-400',     fill: '#38bdf8', Icon: Mic },
+  other: { label: 'Other',    color: 'text-zinc-400',    fill: '#71717a', Icon: Activity },
+};
 
 function getTypeConfig(tx: Transaction) {
   if (tx.amount > 0) {
@@ -127,40 +140,41 @@ export function UsageContent() {
     const monthSpent = spendingRecords
       .filter((r) => new Date(r.createdAt) >= startOfMonth)
       .reduce((sum, r) => sum + Math.abs(r.amount), 0);
-    const chartData: { date: string; spent: number }[] = [];
+    const chartData: { date: string; text: number; image: number; voice: number; other: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      const daySpent = spendingRecords
-        .filter((r) => {
-          const t = new Date(r.createdAt);
-          return t >= dayStart && t < dayEnd;
-        })
-        .reduce((sum, r) => sum + Math.abs(r.amount), 0);
+      const dayRecords = spendingRecords.filter((r) => {
+        const t = new Date(r.createdAt);
+        return t >= dayStart && t < dayEnd;
+      });
+      const byGroup = { text: 0, image: 0, voice: 0, other: 0 };
+      dayRecords.forEach((r) => {
+        const group = CATEGORY_GROUP[r.transactionType] ?? 'other';
+        byGroup[group] += Math.abs(r.amount);
+      });
       chartData.push({
         date: dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        spent: daySpent,
+        ...byGroup,
       });
     }
-    const usageByCategory: { type: string; label: string; amount: number }[] = [];
-    const categorySums: Record<string, number> = {};
+
+    // Grouped totals for the summary cards
+    const groupTotals: Record<'text' | 'image' | 'voice' | 'other', number> = { text: 0, image: 0, voice: 0, other: 0 };
     spendingRecords.forEach((r) => {
-      const t = r.transactionType || 'other';
-      categorySums[t] = (categorySums[t] ?? 0) + Math.abs(r.amount);
+      const group = CATEGORY_GROUP[r.transactionType] ?? 'other';
+      groupTotals[group] += Math.abs(r.amount);
     });
-    Object.entries(categorySums)
-      .sort((a, b) => b[1] - a[1])
-      .forEach(([type, amount]) => {
-        usageByCategory.push({ type, label: getUsageCategoryLabel(type), amount });
-      });
+    const totalGrouped = Object.values(groupTotals).reduce((s, v) => s + v, 0);
 
     return {
       weekSpent,
       monthSpent,
       chartData,
       totalSpent: spendingRecords.reduce((s, r) => s + Math.abs(r.amount), 0),
-      usageByCategory,
+      groupTotals,
+      totalGrouped,
     };
   }, [transactions]);
 
@@ -203,8 +217,8 @@ export function UsageContent() {
               </div>
             </div>
             {stats.totalSpent > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={stats.chartData}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={stats.chartData} barSize={18}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis dataKey="date" stroke="#71717a" fontSize={11} tickLine={false} />
                   <YAxis stroke="#71717a" fontSize={11} tickLine={false} />
@@ -216,13 +230,25 @@ export function UsageContent() {
                       fontSize: '12px',
                     }}
                     labelStyle={{ color: '#a1a1aa' }}
-                    formatter={(value: number) => [value, 'Spent']}
+                    formatter={(value: number, name: string) => [
+                      value,
+                      CATEGORY_META[name as keyof typeof CATEGORY_META]?.label ?? name,
+                    ]}
                   />
-                  <Bar dataKey="spent" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                  <Legend
+                    formatter={(value) =>
+                      CATEGORY_META[value as keyof typeof CATEGORY_META]?.label ?? value
+                    }
+                    wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                  />
+                  <Bar dataKey="text"  stackId="a" fill={CATEGORY_META.text.fill}  radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="image" stackId="a" fill={CATEGORY_META.image.fill} radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="voice" stackId="a" fill={CATEGORY_META.voice.fill} radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="other" stackId="a" fill={CATEGORY_META.other.fill} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[200px] flex items-center justify-center">
+              <div className="h-[220px] flex items-center justify-center">
                 <div className="text-center">
                   <TrendingDown className="h-8 w-8 text-zinc-700 mx-auto mb-2" />
                   <p className="text-xs text-zinc-600">No spending data yet</p>
@@ -273,19 +299,44 @@ export function UsageContent() {
       </div>
 
       {/* Usage by category */}
-      {stats.usageByCategory.length > 0 && (
+      {stats.totalSpent > 0 && (
         <div className="bg-zinc-900/30 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
-          <h3 className="text-sm font-semibold text-white mb-3">Usage by category</h3>
-          <div className="flex flex-wrap gap-3">
-            {stats.usageByCategory.map(({ type, label, amount }) => (
-              <div
-                key={type}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800"
-              >
-                <span className="text-zinc-400 text-sm">{label}</span>
-                <span className="text-white font-semibold tabular-nums">-{amount.toLocaleString()}</span>
-              </div>
-            ))}
+          <h3 className="text-sm font-semibold text-white mb-3">Breakdown by category</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {(Object.entries(stats.groupTotals) as [keyof typeof CATEGORY_META, number][])
+              .filter(([, amount]) => amount > 0)
+              .sort(([, a], [, b]) => b - a)
+              .map(([group, amount]) => {
+                const meta = CATEGORY_META[group];
+                const Icon = meta.Icon;
+                const pct = stats.totalGrouped > 0 ? Math.round((amount / stats.totalGrouped) * 100) : 0;
+                return (
+                  <div
+                    key={group}
+                    className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${meta.fill}18` }}
+                      >
+                        <Icon className="h-3.5 w-3.5" style={{ color: meta.fill }} />
+                      </div>
+                      <span className="text-xs text-zinc-400 font-medium">{meta.label}</span>
+                    </div>
+                    <div className="text-xl font-bold text-white tabular-nums">
+                      {amount.toLocaleString()}
+                    </div>
+                    <div className="w-full bg-zinc-800 rounded-full h-1">
+                      <div
+                        className="h-1 rounded-full transition-all"
+                        style={{ width: `${pct}%`, backgroundColor: meta.fill }}
+                      />
+                    </div>
+                    <div className="text-[10px] text-zinc-500">{pct}% of total</div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
@@ -299,9 +350,11 @@ export function UsageContent() {
             How usage is calculated
           </summary>
           <div className="mt-3 text-xs text-zinc-500 space-y-2 pl-4 border-l border-zinc-700">
-            <p>• 1 credit (coin) = $0.01 of GPT equivalent cost. Balance is stored in credits.</p>
+            <p>• 1 credit = $0.01 face value; actual API cost is charged at 3× to cover platform costs.</p>
             <p>• Recharge: 50% of payment goes to credits (e.g. $10 → 500 credits).</p>
-            <p>• Deduction: GPT calls are charged by model and token count; avatars, suggestions, voice/TTS use fixed rates.</p>
+            <p>• AI Text: charged by model (GPT-5.2, GPT-4o, etc.) and token count per call.</p>
+            <p>• Image: dall-e-2 ≈ 5 cr / dall-e-3 ≈ 12 cr / HD ≈ 24 cr per image.</p>
+            <p>• Voice/TTS: inworld-tts-1.5-mini ≈ 1 cr / 1.5-max ≈ 3 cr per 1,000 chars.</p>
             <p>• Subscription: Pro 2,000 / Plus 6,000 / Ultra 40,000 credits per month.</p>
           </div>
         </details>
