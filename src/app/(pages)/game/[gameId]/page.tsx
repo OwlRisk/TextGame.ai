@@ -411,7 +411,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     try {
       // Build recent context so Host can choose next speaker based on current discussion
       const channelMessages = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
-      const recentSlice = channelMessages.slice(-25);
+      const recentSlice = channelMessages.slice(-35);
       const recentContext =
         recentSlice.length === 0
           ? "(No prior messages in this channel.)"
@@ -1012,7 +1012,7 @@ ${rulesText || "No specific rules defined."}`.trim();
 
         const channelRecent = messages
           .filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === targetChannelId)
-          .slice(-10)
+          .slice(-15)
           .map((m) => ({ senderName: m.senderName, content: m.content }));
         let recentContext = channelRecent;
 
@@ -1148,7 +1148,7 @@ ${rulesText || "No specific rules defined."}`.trim();
 
       await hostPace();
       let recentForNext = [
-        ...channelMessagesForRecent.slice(-10).map((m) => ({ senderName: m.senderName, content: m.content })),
+        ...channelMessagesForRecent.slice(-18).map((m) => ({ senderName: m.senderName, content: m.content })),
         { senderName: humanName, content },
         { senderName: gmName, content: hostContent },
       ] as Array<{ senderName: string; content: string }>;
