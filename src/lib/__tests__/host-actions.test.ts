@@ -320,3 +320,69 @@ describe('resolvePlayerRefToId', () => {
     expect(resolvePlayerRefToId('Alice', [], USER_ID)).toBeNull();
   });
 });
+
+// ─── parseHostActions: GAME_OVER ──────────────────────────────────────────
+
+describe('parseHostActions – GAME_OVER', () => {
+  it('extracts a game_over action with a summary', () => {
+    const raw = 'The villagers have won!\n[GAME_OVER]Villagers win — all werewolves eliminated.[/GAME_OVER]';
+    const { actions, cleanContent } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toEqual({ type: 'game_over', summary: 'Villagers win — all werewolves eliminated.' });
+    expect(cleanContent).toContain('The villagers have won!');
+    expect(cleanContent).not.toContain('[GAME_OVER]');
+    expect(cleanContent).not.toContain('[/GAME_OVER]');
+  });
+
+  it('extracts a game_over action when summary is empty', () => {
+    const raw = 'Game over.\n[GAME_OVER][/GAME_OVER]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('game_over');
+    const a = actions[0] as { type: 'game_over'; summary: string };
+    expect(a.summary).toBe('');
+  });
+
+  it('strips the [GAME_OVER] block from clean content', () => {
+    const raw = 'Round ends.\n[GAME_OVER]Mafia wins.[/GAME_OVER]\nThanks for playing!';
+    const { cleanContent } = parseHostActions(raw);
+    expect(cleanContent).not.toContain('[GAME_OVER]');
+    expect(cleanContent).not.toContain('Mafia wins.');
+    expect(cleanContent).toContain('Round ends.');
+    expect(cleanContent).toContain('Thanks for playing!');
+  });
+
+  it('handles multi-line summary inside [GAME_OVER]', () => {
+    const raw = '[GAME_OVER]The detective found the killer.\nEvil loses.[/GAME_OVER]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    const a = actions[0] as { type: 'game_over'; summary: string };
+    expect(a.summary).toContain('The detective found the killer.');
+  });
+
+  it('does not produce a game_over action when no block is present', () => {
+    const { actions } = parseHostActions('The game continues. Night falls.');
+    const gameOverActions = actions.filter((a) => a.type === 'game_over');
+    expect(gameOverActions).toHaveLength(0);
+  });
+
+  it('handles [GAME_OVER] alongside other blocks', () => {
+    const raw =
+      '[BOARD:Alice]\nYou are the Seer.\n[/BOARD]\nNight ends.\n[GAME_OVER]Villagers win![/GAME_OVER]';
+    const { actions, cleanContent } = parseHostActions(raw);
+    const boardActions = actions.filter((a) => a.type === 'my_board');
+    const gameOverActions = actions.filter((a) => a.type === 'game_over');
+    expect(boardActions).toHaveLength(1);
+    expect(gameOverActions).toHaveLength(1);
+    expect(cleanContent).not.toContain('[BOARD');
+    expect(cleanContent).not.toContain('[GAME_OVER]');
+    expect(cleanContent).toContain('Night ends.');
+  });
+
+  it('is case-insensitive for [game_over] tag', () => {
+    const raw = '[game_over]werewolves win[/game_over]';
+    const { actions } = parseHostActions(raw);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('game_over');
+  });
+});
