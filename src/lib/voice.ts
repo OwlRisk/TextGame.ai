@@ -359,6 +359,7 @@ export function useInworldTTS() {
   const queueRef = useRef<Array<TTSQueueItem>>([]);
   const processingRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentBlobUrlRef = useRef<string | null>(null);
 
   const processQueue = useCallback(async () => {
     if (processingRef.current || queueRef.current.length === 0) {
@@ -379,7 +380,13 @@ export function useInworldTTS() {
         processQueue();
         return;
       }
-      const audio = new Audio('data:audio/mpeg;base64,' + audioBase64);
+      // Convert base64 to Blob URL so CSP "media-src 'self' blob:" allows playback
+      // (data: URIs are blocked by CSP in production)
+      const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: 'audio/mpeg' });
+      const blobUrl = URL.createObjectURL(blob);
+      currentBlobUrlRef.current = blobUrl;
+      const audio = new Audio(blobUrl);
       const storedSpeed = typeof window !== 'undefined'
         ? parseFloat(localStorage.getItem('tts_speed') ?? '1') || 1
         : 1;
@@ -387,12 +394,20 @@ export function useInworldTTS() {
       audioRef.current = audio;
       await new Promise<void>((resolve, reject) => {
         audio.onended = () => {
+          currentBlobUrlRef.current = null;
+          URL.revokeObjectURL(blobUrl);
           // Reveal text only after this sentence has finished playing (say多少显示多少)
           next.onPlay?.();
           resolve();
         };
-        audio.onerror = () => reject(new Error('Playback failed'));
+        audio.onerror = () => {
+          currentBlobUrlRef.current = null;
+          URL.revokeObjectURL(blobUrl);
+          reject(new Error('Playback failed'));
+        };
         audio.play().catch((err: unknown) => {
+          currentBlobUrlRef.current = null;
+          URL.revokeObjectURL(blobUrl);
           if (err instanceof Error && err.name === 'NotAllowedError') {
             next.onPlay?.();
             resolve();
@@ -440,6 +455,10 @@ export function useInworldTTS() {
       audioRef.current.pause();
       audioRef.current = null;
     }
+    if (currentBlobUrlRef.current) {
+      URL.revokeObjectURL(currentBlobUrlRef.current);
+      currentBlobUrlRef.current = null;
+    }
     setIsPlaying(false);
     processingRef.current = false;
   }, []);
@@ -451,6 +470,10 @@ export function useInworldTTS() {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (currentBlobUrlRef.current) {
+        URL.revokeObjectURL(currentBlobUrlRef.current);
+        currentBlobUrlRef.current = null;
       }
       processingRef.current = false;
     };
