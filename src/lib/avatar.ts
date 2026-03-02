@@ -91,7 +91,6 @@ export async function fetchGeneratedAvatar(
 
   const promise = (async () => {
     try {
-      console.log('[Avatar] fetch start', key);
       const res = await fetch('/api/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,8 +105,6 @@ export async function fetchGeneratedAvatar(
           gender: gender || undefined,
         }),
       });
-
-      console.log('[Avatar] response', res.status, res.statusText);
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -131,7 +128,6 @@ export async function fetchGeneratedAvatar(
       }
 
       const data = (await res.json()) as { image: string };
-      console.log('[Avatar] success', key);
       cache.set(key, data.image);
       saveToStorage(key, data.image);
       return data.image;
