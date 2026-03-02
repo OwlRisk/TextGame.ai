@@ -461,6 +461,8 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                     Private panel name <span className="normal-case text-zinc-500 font-normal">(each player's secret info from Host)</span>
                   </label>
                   <input
+                    id="player-board-label"
+                    name="player-board-label"
                     type="text"
                     value={playerBoardLabel}
                     onChange={(e) => setPlayerBoardLabel(e.target.value)}

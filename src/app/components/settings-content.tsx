@@ -221,6 +221,8 @@ export function SettingsContent() {
                           className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
                         >−</button>
                         <input
+                          id="tts-temperature"
+                          name="tts-temperature"
                           type="range" min="0.7" max="1.5" step="0.1"
                           value={ttsTemperature}
                           onChange={(e) => { setTtsTemperature(e.target.value); localStorage.setItem('tts_temperature', e.target.value); }}
@@ -268,6 +270,8 @@ export function SettingsContent() {
                           className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
                         >−</button>
                         <input
+                          id="tts-speed"
+                          name="tts-speed"
                           type="range" min="0.5" max="1.5" step="0.05"
                           value={ttsSpeed}
                           onChange={(e) => { setTtsSpeed(e.target.value); localStorage.setItem('tts_speed', e.target.value); }}
