@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
     if (!isSetupPhase) {
       systemMessage += `\n\nRULES ARE LOCKED: Rules are decided in GM chat (setup) before the game starts; the Host has NO authority to change rules—only to run the game. Once the game has started, rules are immutable. Do NOT output <EDIT_RULES>, <ADD_TO_RULES>, or <REPLACE_IN_RULES>. Only narrate, manage turns, and run the game—never modify the rules.`;
       systemMessage += `\n\nTalk like a real person in your announcements and narrative. Keep announcements short—one or two sentences often enough; users are human. Whether you use emojis (or not) is entirely up to your character.`;
+      systemMessage += `\n\nGAME OVER DETECTION: You must detect when the game has naturally concluded according to the rules (e.g. all werewolves eliminated, mafia exposed, a winner is determined, a final round ends, a puzzle is solved, etc.). When the game is over:\n1. Deliver your final announcement and reveal all roles/results in natural, dramatic narration.\n2. At the very end of your message, append exactly: [GAME_OVER]One sentence summarising the outcome and winner(s).[/GAME_OVER]\nThis tag is invisible to players—it only signals the system to mark the game as finished. Only output it once, when the game is definitively over. Do NOT output it mid-game or speculatively.`;
     }
 
     if (isSetupPhase) {

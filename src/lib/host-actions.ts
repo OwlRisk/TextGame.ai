@@ -17,6 +17,8 @@ export type HostAction =
    */
   | { type: "access"; channelRef: string; playerRefs: PlayerRef[] }
   | { type: "section"; title: string; content: string }
+  /** GAME_OVER: AI Host signals the game has ended. summary = optional winner/result text. */
+  | { type: "game_over"; summary: string }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -54,6 +56,13 @@ const BLOCK_PARSERS: BlockParser[] = [
     // [SECTION:Title] ... content (markdown) ... [/SECTION]
     regex: /\[SECTION:\s*([^\]\r\n]+?)\s*\]\s*([\s\S]*?)\s*\[\/SECTION\]/gi,
   },
+  {
+    tag: "GAME_OVER",
+    actionType: "game_over",
+    // [GAME_OVER] optional summary text [/GAME_OVER]
+    // label group is unused (empty string); content is the winner/result summary.
+    regex: /\[GAME_OVER\]\s*([\s\S]*?)\s*\[\/GAME_OVER\]/gi,
+  },
 ];
 
 /**
@@ -82,6 +91,9 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
         actions.push({ type: "access", channelRef: label, playerRefs });
       } else if (parser.actionType === "section") {
         actions.push({ type: "section", title: label, content });
+      } else if (parser.actionType === "game_over") {
+        // For [GAME_OVER], label is empty; content (match[1]) is the summary
+        actions.push({ type: "game_over", summary: label || content });
       }
       replacements.push({ full: match[0], replacement: "" });
     }

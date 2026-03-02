@@ -809,6 +809,12 @@ ${rulesText || "No specific rules defined."}`.trim();
               }
               return [...prev, { id, name: a.title, content: a.content }];
             });
+          } else if (a.type === "game_over") {
+            updateGame(gameId, { isActive: false });
+            toast.success(a.summary || "Game over!", {
+              duration: 8000,
+              description: "This game has been marked as completed.",
+            });
           }
         }
         return cleanContent;

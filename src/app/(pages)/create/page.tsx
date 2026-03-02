@@ -131,7 +131,7 @@ function CreateGamePageContent() {
             ? "#0ea5e9"
             : "#ec4899",
         config: finalConfig,
-        isActive: false,
+        isActive: true,
         updatedAt: new Date().toISOString(),
       };
 
