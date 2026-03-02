@@ -1256,36 +1256,37 @@ export function ChatArea({
         )}
         {(quickRepliesLoading || quickReplies.length > 0) && canSend && !isRecording && (
           <div className="mb-2">
-            {/* Loading skeleton */}
             {quickRepliesLoading && quickReplies.length === 0 && (
-              <div className="flex items-center gap-2 px-1 mb-2 text-xs text-zinc-600">
-                <span className="inline-block w-3 h-3 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
-                <span>Suggesting replies…</span>
+              <div className="flex items-center gap-1.5 px-0.5 text-xs text-zinc-600">
+                <span className="inline-block w-2.5 h-2.5 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
+                <span>Suggesting…</span>
               </div>
             )}
-            {/* Quick reply cards — click fills the input for review before sending */}
             {quickReplies.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                {quickReplies.slice(0, 3).map((text) => (
-                  <button
-                    key={text}
-                    type="button"
-                    disabled={sendDisabled}
-                    onClick={() => {
-                      setInput(text);
-                      // Focus the textarea so user can review / edit before sending
-                      setTimeout(() => {
-                        const ta = document.querySelector<HTMLTextAreaElement>("textarea[placeholder]");
-                        ta?.focus();
-                        ta?.setSelectionRange(ta.value.length, ta.value.length);
-                      }, 0);
-                    }}
-                    className="w-full text-left px-3.5 py-2.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600/80 text-zinc-300 hover:text-zinc-100 text-sm leading-snug transition-all disabled:opacity-40 disabled:cursor-not-allowed group"
-                  >
-                    <span className="mr-2 text-amber-500/70 text-xs select-none group-hover:text-amber-400 transition-colors">⚡</span>
-                    {text}
-                  </button>
-                ))}
+              <div className="flex flex-wrap gap-1.5">
+                {quickReplies.slice(0, 3).map((text) => {
+                  const label = text.length > 38 ? text.slice(0, 37) + "…" : text;
+                  return (
+                    <button
+                      key={text}
+                      type="button"
+                      title={text}
+                      disabled={sendDisabled}
+                      onClick={() => {
+                        setInput(text);
+                        setTimeout(() => {
+                          const ta = document.querySelector<HTMLTextAreaElement>("textarea[placeholder]");
+                          ta?.focus();
+                          ta?.setSelectionRange(ta.value.length, ta.value.length);
+                        }, 0);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <span className="text-amber-500/60 text-[10px]">⚡</span>
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
