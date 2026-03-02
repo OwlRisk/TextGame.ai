@@ -1,8 +1,13 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Read the terms of service for textgame.ai — AI-powered text game platform.",
+  alternates: { canonical: "/terms" },
+};
 
 export default function TermsPage() {
   return (

@@ -15,12 +15,25 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_DOMAIN),
   title: {
     default: SITE_NAME,
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   manifest: "/site.webmanifest",
+  keywords: [
+    "AI text game",
+    "text-based game",
+    "AI game host",
+    "multiplayer text adventure",
+    "werewolf game AI",
+    "AI role-playing game",
+    "game design AI",
+  ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
@@ -30,7 +43,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: `${SITE_DOMAIN}/hero.webp`,
+        url: "/hero.webp",
         width: 1200,
         height: 630,
         alt: SITE_NAME,
@@ -41,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: [`${SITE_DOMAIN}/hero.webp`],
+    images: ["/hero.webp"],
   },
 };
 

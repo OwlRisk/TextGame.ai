@@ -1,37 +1,19 @@
-"use client";
+import type { Metadata } from "next";
+import DiscoverView from "./discover-view";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { DiscoverPage, type DiscoverPreset } from "@/app/components/discover-page";
-import { Toaster } from "@/app/components/ui/sonner";
-import { useGameContext } from "@/app/contexts/GameContext";
-import { useAuth } from "@/app/contexts/AuthContext";
-import { toast } from "sonner";
+export const metadata: Metadata = {
+  title: "Discover Games",
+  description:
+    "Browse AI-powered text games created by the community. Find werewolf, mystery, adventure and more — play instantly with an AI host.",
+  alternates: { canonical: "/discover" },
+  openGraph: {
+    title: "Discover Games · textgame.ai",
+    description:
+      "Browse AI-powered text games created by the community. Find werewolf, mystery, adventure and more.",
+    type: "website",
+  },
+};
 
-export default function DiscoverPageRoute() {
-  const router = useRouter();
-  const { selectGame } = useGameContext();
-  const { user, loading } = useAuth();
-
-  // 进入 Discover 页时同步侧边栏高亮为 "discover"
-  useEffect(() => {
-    selectGame("discover");
-  }, [selectGame]);
-
-  const handleCreateGame = (preset: DiscoverPreset) => {
-    if (!user && !loading) {
-      const returnUrl = `/create?preset=${preset.id}`;
-      router.push(`/signin?returnUrl=${encodeURIComponent(returnUrl)}`);
-      toast.info("Sign in to create this game");
-      return;
-    }
-    router.push(`/create?preset=${preset.id}`);
-  };
-
-  return (
-    <>
-      <DiscoverPage onCreateGame={handleCreateGame} />
-      <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
-    </>
-  );
+export default function DiscoverPage() {
+  return <DiscoverView />;
 }

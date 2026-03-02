@@ -1,8 +1,13 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Learn how textgame.ai collects, uses, and protects your personal information.",
+  alternates: { canonical: "/privacy" },
+};
 
 export default function PrivacyPage() {
   return (
