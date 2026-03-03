@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bot, Volume2, Image as ImageIcon, Sparkles, Info } from 'lucide-react';
+import { ArrowLeft, Bot, Volume2, Image as ImageIcon, Sparkles, Info, Lock } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Switch } from '@/app/components/ui/switch';
 import { Label } from '@/app/components/ui/label';
@@ -158,15 +158,20 @@ export function SettingsContent() {
                   Voices are auto-matched to each character&apos;s personality and gender.
                 </p>
               </div>
-              <Switch
-                checked={ttsEnabled}
-                onCheckedChange={(checked) => {
-                  setTtsEnabled(checked);
-                  localStorage.setItem('voice_enabled', String(checked));
-                  toast.success(checked ? 'Voice enabled' : 'Voice disabled');
-                }}
-                className="data-[state=checked]:bg-emerald-600"
-              />
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`text-xs font-medium tabular-nums transition-colors ${ttsEnabled ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                  {ttsEnabled ? 'On' : 'Off'}
+                </span>
+                <Switch
+                  checked={ttsEnabled}
+                  onCheckedChange={(checked) => {
+                    setTtsEnabled(checked);
+                    localStorage.setItem('voice_enabled', String(checked));
+                    toast.success(checked ? 'Voice enabled' : 'Voice disabled');
+                  }}
+                  className="data-[state=checked]:bg-emerald-500"
+                />
+              </div>
             </div>
 
             {ttsEnabled && (
@@ -308,19 +313,35 @@ export function SettingsContent() {
                 <h2 className="text-white font-semibold text-lg mb-0.5">Image Generation</h2>
                 <p className="text-zinc-400 text-sm">Generate scene images during gameplay</p>
               </div>
-              <Switch
-                checked={imageGenEnabled && isPaid}
-                onCheckedChange={(checked) => {
-                  if (!isPaid) {
-                    toast.error('Image generation requires a paid plan');
-                    return;
-                  }
-                  setImageGenEnabled(checked);
-                  toast.success(checked ? 'Image generation enabled' : 'Disabled');
-                }}
-                disabled={!isPaid}
-                className="data-[state=checked]:bg-purple-600"
-              />
+              <div className="flex items-center gap-2 shrink-0">
+                {!isPaid ? (
+                  <button
+                    onClick={() => router.push('/subscription')}
+                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-violet-300 transition-colors px-2 py-1 rounded-md hover:bg-violet-500/10"
+                  >
+                    <Lock className="h-3 w-3" />
+                    <span>Upgrade</span>
+                  </button>
+                ) : (
+                  <span className={`text-xs font-medium tabular-nums transition-colors ${imageGenEnabled ? 'text-purple-400' : 'text-zinc-500'}`}>
+                    {imageGenEnabled ? 'On' : 'Off'}
+                  </span>
+                )}
+                <Switch
+                  checked={imageGenEnabled && isPaid}
+                  onCheckedChange={(checked) => {
+                    if (!isPaid) {
+                      router.push('/subscription');
+                      return;
+                    }
+                    setImageGenEnabled(checked);
+                    localStorage.setItem('image_gen_enabled', String(checked));
+                    toast.success(checked ? 'Image generation enabled' : 'Disabled');
+                  }}
+                  disabled={!isPaid}
+                  className="data-[state=checked]:bg-purple-500"
+                />
+              </div>
             </div>
             {!isPaid && (
               <div className="flex items-start gap-2 p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
