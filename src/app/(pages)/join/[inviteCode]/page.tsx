@@ -147,7 +147,14 @@ export default function JoinPage({ params }: { params: Promise<{ inviteCode: str
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
           {/* Game header */}
           <div className="text-center mb-8">
-            <div className="text-5xl mb-3">{gameInfo?.icon ?? "🎮"}</div>
+            <div className="flex justify-center mb-3">
+              {gameInfo?.icon && (gameInfo.icon.startsWith("data:") || gameInfo.icon.startsWith("http") || gameInfo.icon.startsWith("/")) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={gameInfo.icon} alt={gameInfo.name} className="w-16 h-16 rounded-xl object-cover" />
+              ) : (
+                <span className="text-5xl">{gameInfo?.icon ?? "🎮"}</span>
+              )}
+            </div>
             <h1 className="text-xl font-black text-white mb-1">{gameInfo?.name ?? "Game"}</h1>
             <p className="text-zinc-400 text-sm">You've been invited to join</p>
           </div>
