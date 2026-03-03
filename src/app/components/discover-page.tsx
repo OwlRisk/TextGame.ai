@@ -30,7 +30,7 @@ interface GameTemplate {
   tags: string[];
   players: string;
   duration: string;
-  difficulty: string;
+  style: "Casual" | "Strategic" | "Competitive";
   color: string;
   badge?: string;
   features?: string[];
@@ -54,7 +54,7 @@ const FEATURED_TEMPLATE: GameTemplate = {
   tags: ["Classic", "Strategy", "Deception", "Roleplay"],
   players: "6-12",
   duration: "30-45 min",
-  difficulty: "Medium",
+  style: "Strategic",
   color: "from-purple-900 to-indigo-900",
   features: [
     "🎭 8+ unique character roles",
@@ -93,7 +93,7 @@ const CORE_TEMPLATES: GameTemplate[] = [
     tags: ["Team Game", "Word Association", "Strategic"],
     players: "4-12",
     duration: "15-25 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-orange-600 to-red-600",
     badge: "🔥 Most Popular",
     rules: `OBJECTIVE: Two teams compete to contact all their agents first using one-word clues.
@@ -122,7 +122,7 @@ WINNING:
     tags: ["Strategic", "Team-based", "Hidden Roles"],
     players: "5-10",
     duration: "30-40 min",
-    difficulty: "Medium",
+    style: "Strategic",
     color: "from-blue-700 to-indigo-800",
     badge: "⭐ Classic",
     rules: `OBJECTIVE: Good players complete 3 quests; Evil players sabotage from within.
@@ -150,7 +150,7 @@ WINNING:
     tags: ["Quick Play", "Word Game", "Beginner Friendly"],
     players: "4-10",
     duration: "15-20 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-blue-600 to-cyan-600",
     badge: "✨ Quick & Fun",
     templateId: "undercover",
@@ -184,7 +184,7 @@ const SOCIAL_DEDUCTION: GameTemplate[] = [
     tags: ["Advanced", "Roleplay", "Strategic"],
     players: "6-15",
     duration: "45-60 min",
-    difficulty: "Hard",
+    style: "Competitive",
     color: "from-red-600 to-pink-600",
     templateId: "mafia",
     rules: `OBJECTIVE: Townspeople eliminate all Mafia. Mafia eliminate all Townspeople.
@@ -211,7 +211,7 @@ WINNING:
     tags: ["Political", "Deception", "Team-based"],
     players: "5-10",
     duration: "30-45 min",
-    difficulty: "Medium",
+    style: "Strategic",
     color: "from-gray-700 to-red-800",
     rules: buildFallbackRules("Secret Hitler"),
   },
@@ -225,7 +225,7 @@ WINNING:
     tags: ["Quick", "Deduction", "Bluffing"],
     players: "3-8",
     duration: "15-20 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-green-600 to-teal-600",
     rules: buildFallbackRules("Spyfall"),
   },
@@ -239,7 +239,7 @@ WINNING:
     tags: ["Team-based", "Missions", "Fast-paced"],
     players: "5-10",
     duration: "30-40 min",
-    difficulty: "Medium",
+    style: "Strategic",
     color: "from-indigo-700 to-purple-700",
     rules: buildFallbackRules("The Resistance"),
   },
@@ -256,7 +256,7 @@ const PARTY_GAMES: GameTemplate[] = [
     tags: ["Icebreaker", "Voting", "Funny"],
     players: "3-12",
     duration: "10-20 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-pink-600 to-rose-600",
     rules: buildFallbackRules("Who's Most Likely"),
   },
@@ -270,7 +270,7 @@ const PARTY_GAMES: GameTemplate[] = [
     tags: ["Classic", "Guessing", "Family Friendly"],
     players: "2-10",
     duration: "10-15 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-blue-500 to-cyan-500",
     rules: buildFallbackRules("20 Questions"),
   },
@@ -284,7 +284,7 @@ const PARTY_GAMES: GameTemplate[] = [
     tags: ["Icebreaker", "Social", "Personal"],
     players: "3-12",
     duration: "15-25 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-green-500 to-emerald-500",
     rules: buildFallbackRules("Two Truths and a Lie"),
   },
@@ -298,7 +298,7 @@ const PARTY_GAMES: GameTemplate[] = [
     tags: ["Chaotic", "Negotiation", "Team-based"],
     players: "6-20",
     duration: "20-30 min",
-    difficulty: "Medium",
+    style: "Strategic",
     color: "from-red-700 to-orange-700",
     rules: buildFallbackRules("Two Rooms and a Boom"),
   },
@@ -315,7 +315,7 @@ const MYSTERY_GAMES: GameTemplate[] = [
     tags: ["Deduction", "Story-Rich", "Investigation"],
     players: "3-8",
     duration: "30-40 min",
-    difficulty: "Medium",
+    style: "Strategic",
     color: "from-amber-600 to-orange-600",
     rules: `OBJECTIVE: Identify the culprit, motive, and method before time runs out.
 
@@ -343,7 +343,7 @@ WINNING:
     tags: ["Classic", "Deduction", "Investigation"],
     players: "3-6",
     duration: "30-45 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-purple-700 to-indigo-700",
     rules: buildFallbackRules("Clue"),
   },
@@ -360,7 +360,7 @@ const ROLEPLAY_GAMES: GameTemplate[] = [
     tags: ["Reflection", "Mystical", "Solo"],
     players: "1",
     duration: "10-20 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-amber-700 to-yellow-600",
     templateId: "tarot",
     playerCount: 0,
@@ -381,7 +381,7 @@ No win/lose—session ends when the reading feels complete.`,
     tags: ["Comedy", "Roleplay", "Creative"],
     players: "3-10",
     duration: "20-40 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-fuchsia-600 to-pink-600",
     rules: buildFallbackRules("Improv Comedy"),
   },
@@ -395,7 +395,7 @@ No win/lose—session ends when the reading feels complete.`,
     tags: ["Cooperative", "Creative", "Open-ended"],
     players: "3-8",
     duration: "30-50 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-violet-600 to-purple-600",
     rules: `OBJECTIVE: Create a cohesive story together.
 
@@ -425,12 +425,12 @@ const EDUCATIONAL_GAMES: GameTemplate[] = [
     tags: ["Educational", "Quick", "Competitive"],
     players: "2-10",
     duration: "20-30 min",
-    difficulty: "Easy",
+    style: "Casual",
     color: "from-yellow-600 to-orange-600",
     rules: `OBJECTIVE: Score the most points by answering questions.
 
 SETUP:
-- Choose categories and difficulty
+- Choose categories and style
 - Decide round count and scoring rules
 
 GAMEPLAY:
@@ -450,7 +450,7 @@ WINNING:
     tags: ["Debate", "Persuasion", "Critical Thinking"],
     players: "2-8",
     duration: "25-35 min",
-    difficulty: "Medium",
+    style: "Strategic",
     color: "from-indigo-600 to-purple-600",
     rules: buildFallbackRules("Debate Arena"),
   },
@@ -464,7 +464,7 @@ WINNING:
     tags: ["Cooperative", "Logic", "Teamwork"],
     players: "2-6",
     duration: "40-60 min",
-    difficulty: "Hard",
+    style: "Competitive",
     color: "from-green-600 to-emerald-600",
     rules: `OBJECTIVE: Solve puzzles to escape before the timer ends.
 
@@ -528,13 +528,13 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
-        return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Medium":
+  const getStyleColor = (style: string) => {
+    switch (style) {
+      case "Casual":
+        return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+      case "Strategic":
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Hard":
+      case "Competitive":
         return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-zinc-500/20 text-zinc-300 border-zinc-500/30";
@@ -601,7 +601,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                 <Clock className="h-3.5 w-3.5" />
                 <span>{template.duration}</span>
               </div>
-              <Badge className={`${getDifficultyColor(template.difficulty)} border text-xs`}>{template.difficulty}</Badge>
+              <Badge className={`${getStyleColor(template.style)} border text-xs`}>{template.style}</Badge>
             </div>
 
             <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold">
@@ -636,7 +636,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
           <div className="absolute top-2.5 right-2.5">
-            <Badge className={`${getDifficultyColor(template.difficulty)} border text-[10px]`}>{template.difficulty}</Badge>
+            <Badge className={`${getStyleColor(template.style)} border text-[10px]`}>{template.style}</Badge>
           </div>
         </div>
 
@@ -753,7 +753,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                     <div className="flex items-center gap-5 text-sm text-zinc-400">
                       <div className="flex items-center gap-1.5"><Users className="h-4 w-4" /><span>{FEATURED_TEMPLATE.players}</span></div>
                       <div className="flex items-center gap-1.5"><Clock className="h-4 w-4" /><span>{FEATURED_TEMPLATE.duration}</span></div>
-                      <Badge className={`${getDifficultyColor(FEATURED_TEMPLATE.difficulty)} border text-xs font-bold`}>{FEATURED_TEMPLATE.difficulty}</Badge>
+                      <Badge className={`${getStyleColor(FEATURED_TEMPLATE.style)} border text-xs font-bold`}>{FEATURED_TEMPLATE.style}</Badge>
                     </div>
                     <Button
                       onClick={(e) => { e.stopPropagation(); handleSelect(FEATURED_TEMPLATE); }}

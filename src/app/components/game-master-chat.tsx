@@ -2104,19 +2104,38 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 </p>
               </div>
             </div>
-            {/* Game Document button — mobile only */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden flex-shrink-0 h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative"
-              onClick={() => setMobileRulesOpen(true)}
-              aria-label="Game Document"
-            >
-              <FileText className="h-5 w-5" />
-              {isRulesBeingEdited && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              )}
-            </Button>
+            {/* Right: Game Document + Start Game — mobile only */}
+            <div className="lg:hidden flex items-center gap-1.5 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative"
+                onClick={() => setMobileRulesOpen(true)}
+                aria-label="Game Document"
+              >
+                <FileText className="h-5 w-5" />
+                {isRulesBeingEdited && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                )}
+              </Button>
+              {(() => {
+                const isRulesEmpty = !customRules?.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
+                return (
+                  <Button
+                    size="sm"
+                    onClick={handleStartGame}
+                    disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
+                    className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  >
+                    {isStartingGame ? (
+                      <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+                    ) : (
+                      "Start Game"
+                    )}
+                  </Button>
+                );
+              })()}
+            </div>
           </div>
         </div>
 
