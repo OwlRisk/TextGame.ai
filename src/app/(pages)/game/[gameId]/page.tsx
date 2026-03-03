@@ -192,6 +192,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // C-6: Use game-scoped localStorage key (`guestId_${gameId}`) so that
   //      different game rooms do not share the same guest identity, preventing
   //      cross-room tracking and stale identity bleed-through.
+  // Migration: if the scoped key is absent, check the legacy global "guestId"
+  //      key and migrate it, preventing duplicate member records.
   useEffect(() => {
     if (typeof window === "undefined" || !gameId) return;
     const guestIdKey = `guestId_${gameId}`;
@@ -202,9 +204,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       setGuestId(urlGuestId);
       localStorage.setItem(guestIdKey, urlGuestId);
     } else if (!session?.user?.id) {
-      // Not logged in – check game-scoped localStorage fallback
+      // Check game-scoped key first; fall back to legacy global key (one-time migration)
       const stored = localStorage.getItem(guestIdKey);
-      if (stored) setGuestId(stored);
+      if (stored) {
+        setGuestId(stored);
+      } else {
+        const legacy = localStorage.getItem("guestId");
+        if (legacy) {
+          setGuestId(legacy);
+          localStorage.setItem(guestIdKey, legacy);
+          localStorage.removeItem("guestId");
+        }
+      }
     }
     if (urlMemberId) {
       setGuestMemberId(urlMemberId);

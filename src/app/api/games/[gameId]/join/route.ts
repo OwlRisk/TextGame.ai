@@ -75,6 +75,20 @@ export async function POST(
     return NextResponse.json({ error: "Failed to join game" }, { status: 500 });
   }
 
+  // Dedup: remove stale ghost rows that share the same nickname in this game
+  // but have a different guest_id. This cleans up duplicate records created
+  // by the pre-C-6 global "guestId" key vs. the new scoped key migration.
+  if (effectiveGuestId) {
+    await supabaseAdmin
+      .from("game_members")
+      .delete()
+      .eq("game_id", gameId)
+      .eq("nickname", memberPayload.nickname)
+      .eq("is_owner", false)
+      .neq("id", member.id)
+      .is("user_id", null); // only clean up anonymous rows
+  }
+
   return NextResponse.json({
     memberId: member.id,
     gameId,

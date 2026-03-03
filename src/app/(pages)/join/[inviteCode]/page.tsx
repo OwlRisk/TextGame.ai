@@ -65,13 +65,25 @@ export default function JoinPage({ params }: { params: Promise<{ inviteCode: str
       // Generate or load guest ID from localStorage.
       // C-6: Use a game-scoped key (`guestId_${gameId}`) so different rooms
       //      get different guest identities, preventing cross-room tracking.
+      // Migration: if the scoped key is absent but the old global "guestId"
+      //      key exists (written by code before C-6), reuse that UUID so the
+      //      server can upsert the existing game_members row instead of creating
+      //      a duplicate record (the "two Nikki" bug).
       let guestId: string | null = null;
       if (!user && gameId) {
         const guestIdKey = `guestId_${gameId}`;
         guestId = localStorage.getItem(guestIdKey);
         if (!guestId) {
-          guestId = crypto.randomUUID();
-          localStorage.setItem(guestIdKey, guestId);
+          // One-time migration from old global key
+          const legacyGuestId = localStorage.getItem("guestId");
+          if (legacyGuestId) {
+            guestId = legacyGuestId;
+            localStorage.setItem(guestIdKey, legacyGuestId);
+            localStorage.removeItem("guestId"); // clean up old key
+          } else {
+            guestId = crypto.randomUUID();
+            localStorage.setItem(guestIdKey, guestId);
+          }
         }
       }
 
