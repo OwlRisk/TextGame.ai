@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { GameSidebar } from "@/app/components/game-sidebar";
-import { UsageDisplay } from "@/app/components/usage-display";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
 import { Menu } from "lucide-react";
@@ -64,7 +63,6 @@ export function AppLayoutWithSidebar({
           <Menu className="size-5 text-zinc-300" />
         </Button>
         <span className="text-sm font-medium text-zinc-300 ml-2 truncate flex-1">{mobileTitle}</span>
-        <UsageDisplay compact />
       </header>
       <div className="flex-1 flex overflow-hidden min-h-0">
         <div className="hidden md:flex flex-shrink-0 z-10">

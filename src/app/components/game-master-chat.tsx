@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
-import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus, PanelLeft } from "lucide-react";
+import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus, PanelLeft, FileText } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import type { DiscoverPreset } from "@/app/components/discover-page";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -290,6 +290,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [isStreaming, setIsStreaming] = useState(false); // Track if currently streaming
   const [showOutOfCredits, setShowOutOfCredits] = useState(false);
   const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
+  const [mobileRulesOpen, setMobileRulesOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -1705,6 +1706,109 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
   };
 
+  const handleStartGame = async () => {
+    const isRulesEmpty = !customRules || !customRules.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
+    if (isRulesEmpty) return;
+    setIsStartingGame(true);
+    const startToastId = "start-game";
+    toast.loading("Preparing game...", { id: startToastId });
+    startGameAbortRef.current?.abort();
+    const abortCtrl = new AbortController();
+    startGameAbortRef.current = abortCtrl;
+    try {
+      let finalConfiguredPlayers = configuredPlayers;
+      let finalPlayerCount = configuredPlayers.length > 0 ? configuredPlayers.length : playerCount;
+      if (configuredPlayers.length === 0) {
+        toast.loading("Setting up players...", { id: startToastId });
+        try {
+          const response = await fetch('/api/generate-players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: abortCtrl.signal,
+            body: JSON.stringify({
+              playerCount: playerCount || 0,
+              gameTemplate: selectedTemplate?.id || "custom",
+              rules: customRules,
+              minPlayers: selectedTemplate?.minPlayers ?? 2,
+              maxPlayers: selectedTemplate?.maxPlayers ?? 20
+            })
+          });
+          if (response.ok) {
+            const data = await response.json();
+            finalConfiguredPlayers = data.players;
+            finalPlayerCount = data.players?.length ?? (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6);
+            setConfiguredPlayers(data.players);
+            if (playerCount === 0) setPlayerCount(finalPlayerCount);
+          } else {
+            console.error('[Game Master] ❌ Player generation failed. Status:', response.status);
+            toast.warning("⚠️ Player generation failed. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
+          }
+        } catch (error) {
+          console.error('Error generating players:', error);
+          toast.warning("⚠️ Player generation error. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
+        }
+      }
+      type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string };
+      let generatedHostData: GeneratedHost | null = null;
+      toast.loading("Generating host...", { id: startToastId });
+      try {
+        const response = await fetch('/api/generate-host', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: abortCtrl.signal,
+          body: JSON.stringify({
+            gameRules: customRules,
+            gameName: gameName || selectedTemplate?.name || "Custom Game"
+          })
+        });
+        if (response.ok) {
+          const host = await response.json() as GeneratedHost;
+          generatedHostData = host;
+          setSessions(prev => prev.map(s =>
+            s.id === currentSessionId ? { ...s, generatedHost: host } : s
+          ));
+        } else {
+          const errorText = await response.text();
+          console.error('[Game Master] ❌ Host generation failed. Status:', response.status, 'Response:', errorText);
+          toast.warning("⚠️ Host generation failed. Will use default host (Echo).", { id: startToastId, duration: 4000 });
+        }
+      } catch (error) {
+        console.error('[Game Master] ❌ Failed to generate host:', error);
+        toast.warning("⚠️ Host generation error. Will use default host (Echo).", { id: startToastId, duration: 4000 });
+      }
+      toast.dismiss(startToastId);
+      const tid = selectedTemplate?.id || "custom";
+      const defaultChannelsByTemplate: Record<string, NonNullable<GameConfig["channels"]>> = {
+        werewolf: [
+          { id: "general", name: "General", roomType: "public" },
+          { id: "werewolves-only", name: "Werewolves only", roomType: "decision" },
+        ],
+        mafia: [
+          { id: "general", name: "General", roomType: "public" },
+          { id: "mafia-only", name: "Mafia only", roomType: "decision" },
+        ],
+        undercover: [{ id: "general", name: "General", roomType: "public" }],
+        custom: [{ id: "general", name: "General", roomType: "public" }],
+      };
+      const gameConfig: GameConfig = {
+        template: tid as "werewolf" | "undercover" | "custom",
+        playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
+        rules: customRules,
+        name: gameName || selectedTemplate?.name || "Custom Game",
+        hostId: selectedHostId,
+        tone: "balanced",
+        hideRolesInPlayerList: tid === "werewolf" || tid === "mafia",
+        configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
+        generatedHost: generatedHostData || undefined,
+        channels: (gmChannels && gmChannels.length > 0) ? gmChannels : (defaultChannelsByTemplate[tid] ?? defaultChannelsByTemplate.custom),
+      };
+      await onCreateGame(gameConfig);
+    } finally {
+      setIsStartingGame(false);
+      startGameAbortRef.current = null;
+    }
+  };
+
   const handleSend = async (messageOverride?: string) => {
     const message = messageOverride || input.trim();
     if (message && !isGMTyping && !isStreaming) {
@@ -1914,6 +2018,50 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </SheetContent>
       </Sheet>
 
+      {/* Game Document Sheet — mobile only */}
+      <Sheet open={mobileRulesOpen} onOpenChange={setMobileRulesOpen}>
+        <SheetContent
+          side="right"
+          title="Game Document"
+          className="w-[85vw] max-w-sm p-0 gap-0 border-l border-white/10 bg-zinc-950/95 backdrop-blur-xl flex flex-col [&>button:last-child]:hidden"
+        >
+          <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
+            <h2 className="text-base font-bold text-white flex-1">Game Document</h2>
+            {isRulesBeingEdited && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-xs text-amber-400 font-medium">AI editing...</span>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+            <EditorContent editor={gameDocEditor} />
+          </div>
+          {(() => {
+            const isRulesEmpty = !customRules || !customRules.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
+            return (
+              <div className="px-4 py-3 border-t border-white/10 flex-shrink-0 flex flex-col gap-1.5">
+                <Button
+                  onClick={() => { setMobileRulesOpen(false); handleStartGame(); }}
+                  disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
+                  className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isStartingGame ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+                      Starting…
+                    </span>
+                  ) : "Start Game"}
+                </Button>
+                {isRulesEmpty && (
+                  <p className="text-xs text-zinc-500 text-center">Chat with GM to generate rules first.</p>
+                )}
+              </div>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
+
       {/* Main Chat Area + resizable split */}
       <div className="flex flex-1 min-w-0 min-h-0 overflow-hidden">
       <div className="flex flex-col min-w-0 min-h-0 flex-1 overflow-hidden">
@@ -1956,6 +2104,19 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 </p>
               </div>
             </div>
+            {/* Game Document button — mobile only */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden flex-shrink-0 h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative"
+              onClick={() => setMobileRulesOpen(true)}
+              aria-label="Game Document"
+            >
+              <FileText className="h-5 w-5" />
+              {isRulesBeingEdited && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </Button>
           </div>
         </div>
 
@@ -2195,133 +2356,21 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   const isRulesEmpty = !customRules || !customRules.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
                   return (
                     <>
-                <Button
-                  onClick={async () => {
-                    if (isRulesEmpty) {
-                      return;
-                    }
-                    setIsStartingGame(true);
-                    const startToastId = "start-game";
-                    toast.loading("Preparing game...", { id: startToastId });
-                    // Create a new AbortController so unmounting cancels in-flight requests.
-                    startGameAbortRef.current?.abort();
-                    const abortCtrl = new AbortController();
-                    startGameAbortRef.current = abortCtrl;
-                    try {
-                    let finalConfiguredPlayers = configuredPlayers;
-                    let finalPlayerCount = configuredPlayers.length > 0 ? configuredPlayers.length : playerCount;
-
-                    // If no players configured, automatically generate them
-                    if (configuredPlayers.length === 0) {
-                      toast.loading("Setting up players...", { id: startToastId });
-                      try {
-                        const response = await fetch('/api/generate-players', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          signal: abortCtrl.signal,
-                          body: JSON.stringify({
-                            playerCount: playerCount || 0,
-                            gameTemplate: selectedTemplate?.id || "custom",
-                            rules: customRules,
-                            minPlayers: selectedTemplate?.minPlayers ?? 2,
-                            maxPlayers: selectedTemplate?.maxPlayers ?? 20
-                          })
-                        });
-                        
-                        if (response.ok) {
-                          const data = await response.json();
-                          finalConfiguredPlayers = data.players;
-                          finalPlayerCount = data.players?.length ?? (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6);
-                          setConfiguredPlayers(data.players);
-                          if (playerCount === 0) setPlayerCount(finalPlayerCount);
-                        } else {
-                          console.error('[Game Master] ❌ Player generation failed. Status:', response.status);
-                          toast.warning("⚠️ Player generation failed. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
-                        }
-                      } catch (error) {
-                        console.error('Error generating players:', error);
-                        toast.warning("⚠️ Player generation error. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
-                      }
-                    }
-
-                    // Generate AI Host based on game rules
-                    type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string };
-                    let generatedHostData: GeneratedHost | null = null;
-                    toast.loading("Generating host...", { id: startToastId });
-                    try {
-                      const response = await fetch('/api/generate-host', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        signal: abortCtrl.signal,
-                        body: JSON.stringify({
-                          gameRules: customRules,
-                          gameName: gameName || selectedTemplate?.name || "Custom Game"
-                        })
-                      });
-
-                      if (response.ok) {
-                        const host = await response.json() as GeneratedHost;
-                        generatedHostData = host;
-                        setSessions(prev => prev.map(s =>
-                          s.id === currentSessionId
-                            ? { ...s, generatedHost: host }
-                            : s
-                        ));
-                      } else {
-                        const errorText = await response.text();
-                        console.error('[Game Master] ❌ Host generation failed. Status:', response.status, 'Response:', errorText);
-                        toast.warning("⚠️ Host generation failed. Will use default host (Echo).", { id: startToastId, duration: 4000 });
-                      }
-                    } catch (error) {
-                      console.error('[Game Master] ❌ Failed to generate host:', error);
-                      toast.warning("⚠️ Host generation error. Will use default host (Echo).", { id: startToastId, duration: 4000 });
-                    }
-
-                    toast.dismiss(startToastId);
-                    const tid = selectedTemplate?.id || "custom";
-                    const defaultChannelsByTemplate: Record<string, NonNullable<GameConfig["channels"]>> = {
-                      werewolf: [
-                        { id: "general", name: "General", roomType: "public" },
-                        { id: "werewolves-only", name: "Werewolves only", roomType: "decision" },
-                      ],
-                      mafia: [
-                        { id: "general", name: "General", roomType: "public" },
-                        { id: "mafia-only", name: "Mafia only", roomType: "decision" },
-                      ],
-                      undercover: [{ id: "general", name: "General", roomType: "public" }],
-                      custom: [{ id: "general", name: "General", roomType: "public" }],
-                    };
-                    const gameConfig: GameConfig = {
-                      template: tid as "werewolf" | "undercover" | "custom",
-                      playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
-                      rules: customRules,
-                      name: gameName || selectedTemplate?.name || "Custom Game",
-                      hostId: selectedHostId,
-                      tone: "balanced", // Default tone
-                      hideRolesInPlayerList: tid === "werewolf" || tid === "mafia",
-                      configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
-                      generatedHost: generatedHostData || undefined,
-                      channels: (gmChannels && gmChannels.length > 0) ? gmChannels : (defaultChannelsByTemplate[tid] ?? defaultChannelsByTemplate.custom),
-                    };
-                    await onCreateGame(gameConfig);
-                    } finally {
-                      setIsStartingGame(false);
-                      startGameAbortRef.current = null;
-                    }
-                  }}
-                  disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
-                  className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isStartingGame ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
-                      Starting…
-                    </span>
-                  ) : "Start Game"}
-                </Button>
-                {isRulesEmpty && (
-                  <p className="w-full text-xs text-zinc-500 mt-1.5 text-right">Chat with GM to generate rules first.</p>
-                )}
+                      <Button
+                        onClick={handleStartGame}
+                        disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
+                        className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isStartingGame ? (
+                          <span className="flex items-center gap-2">
+                            <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+                            Starting…
+                          </span>
+                        ) : "Start Game"}
+                      </Button>
+                      {isRulesEmpty && (
+                        <p className="w-full text-xs text-zinc-500 mt-1.5 text-right">Chat with GM to generate rules first.</p>
+                      )}
                     </>
                   );
                 })()}
