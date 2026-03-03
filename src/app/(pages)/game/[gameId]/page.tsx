@@ -291,18 +291,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         if ((newPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
           setIsOwnerOnline(true);
         }
-        // sync event fires after join and rebuilds the full list
+        // Explicitly sync guests on join — don't rely on sync event firing
+        const state = channel.presenceState<{ role: string; nickname?: string }>();
+        syncGuestsFromState(state);
       })
       .on("presence", { event: "leave" }, ({ leftPresences }) => {
+        const state = channel.presenceState<{ role: string; nickname?: string }>();
         if ((leftPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
-          // Re-check full state: another owner tab may still be open
-          const state = channel.presenceState<{ role: string; nickname?: string }>();
-          const ownerStillPresent = Object.values(state)
-            .flat()
-            .some((p) => p.role === "owner");
+          const ownerStillPresent = Object.values(state).flat().some((p) => p.role === "owner");
           setIsOwnerOnline(ownerStillPresent);
         }
-        // sync event fires after leave and rebuilds the full list
+        // Explicitly sync guests on leave — don't rely on sync event firing
+        syncGuestsFromState(state);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
