@@ -9,6 +9,7 @@ import { PlayerBoardData } from "@/app/components/player-board";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
+import { isPlayerEliminated, resolveYouBadge } from "@/lib/player-badges";
 
 interface PlayerPanelWithBoardProps {
   players: Player[];
@@ -120,11 +121,7 @@ export function PlayerPanelWithBoard({
                 Players — {players.length}
               </div>
               {(() => {
-                // A player is "out of game" if Host explicitly set their Status to a non-active state.
-                // Covers: eliminated, dead, out, exiled, banished, retired, spectating, removed, etc.
-                const OUT_STATUSES = ["eliminated", "dead", "out", "exiled", "banished", "retired", "spectating", "removed", "disqualified", "voted out"];
-                const getStatus = (p: Player) => ((p.stats?.Status as string | undefined) ?? p.status ?? "").toLowerCase();
-                const isOut = (p: Player) => OUT_STATUSES.some(s => getStatus(p).includes(s));
+                const isOut = (p: Player) => isPlayerEliminated(p);
                 const alive = players.filter((p) => !isOut(p));
                 const eliminated = players.filter((p) => isOut(p));
                 const cardProps = (player: Player) => ({
@@ -221,9 +218,8 @@ function PlayerCard({
   const handleRowClick = () => {
     if (canViewProfile) onViewProfile?.(player);
   };
-  const OUT_STATUSES = ["eliminated", "dead", "out", "exiled", "banished", "retired", "spectating", "removed", "disqualified", "voted out"];
   const rawStatus = (player.stats?.Status as string | undefined) ?? player.status ?? "";
-  const isEliminated = OUT_STATUSES.some(s => rawStatus.toLowerCase().includes(s));
+  const isEliminated = isPlayerEliminated(player);
 
   return (
     <div
@@ -297,7 +293,7 @@ function PlayerCard({
                       HOST
                     </Badge>
                   )}
-                  {!player.isAI && !isEliminated && !!currentUserId && player.id === currentUserId && (
+                  {resolveYouBadge(player, currentUserId) && (
                     <Badge className="inline-flex items-center justify-center leading-none bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
                       YOU
                     </Badge>

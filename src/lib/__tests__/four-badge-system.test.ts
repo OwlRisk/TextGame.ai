@@ -1,21 +1,28 @@
 import { describe, it, expect } from 'vitest';
+import {
+  OnlineBadge,
+  OutStatus,
+  resolveOnlineBadge,
+  resolveYouBadge,
+  isPlayerEliminated,
+  OUT_STATUS_VALUES,
+  type RoomMember,
+} from '../player-badges';
 
 // ─── Four-badge system tests ──────────────────────────────────────────────────
 // Covers the complete badge taxonomy across both panels:
 //
-//   Player panel (right side – player-panel.tsx)
-//     GM   – amber Crown badge on the AI game master character section header
-//     YOU  – blue badge on the human (non-AI) player card
+//   Player panel (right side – player-panel-with-board.tsx)
+//     GM   – amber Crown badge on the AI game master section header
+//     YOU  – blue badge on the human (non-AI) player card (resolveYouBadge)
 //
 //   Players Online (left sidebar – channel-list.tsx)
-//     Host  – violet badge on the human room owner
-//     Guest – emerald badge on invited human guests
-//     You   – grey badge on the current viewer's own row
-//
-// All helpers are pure functions extracted from production code.
+//     Host  – violet badge on the human room owner   (OnlineBadge.Host)
+//     Guest – emerald badge on invited human guests  (OnlineBadge.Guest)
+//     You   – grey badge on the current viewer's row (OnlineBadge.You)
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 1 – Player panel: section routing (isGameMaster split)
+// Local helpers (mirroring pure logic in production components)
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Player {
@@ -25,15 +32,37 @@ interface Player {
   isAI: boolean;
   role?: string;
   roleRevealed?: boolean;
+  stats?: Record<string, string | number>;
+  status?: string;
 }
 
 function getGMPlayers(players: Player[]): Player[] {
   return players.filter((p) => p.isGameMaster);
 }
-
 function getRegularPlayers(players: Player[]): Player[] {
   return players.filter((p) => !p.isGameMaster);
 }
+
+function resolveSubtitle(player: Player, isOwnerView: boolean): string | null {
+  if (player.isGameMaster) return 'Game Master';
+  if (player.role && player.isAI && (isOwnerView || player.roleRevealed)) return player.role;
+  return null;
+}
+
+function showMuteControls(isOwnerView: boolean, player: Player): boolean {
+  return isOwnerView && !player.isGameMaster;
+}
+
+function deriveViewerMemberId(
+  isGuestPlayer: boolean,
+  guestMemberId: string | null | undefined
+): string | undefined {
+  return isGuestPlayer ? (guestMemberId ?? undefined) : undefined;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 1 – Player panel: section routing (isGameMaster split)
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe('player panel — section routing', () => {
   const gm: Player = { id: 'gm-1', name: 'Warden Lunaris', isGameMaster: true, isAI: true };
@@ -56,9 +85,7 @@ describe('player panel — section routing', () => {
     const all = [gm, aiPlayer, humanPlayer];
     const gmIds = new Set(getGMPlayers(all).map((p) => p.id));
     const regularIds = new Set(getRegularPlayers(all).map((p) => p.id));
-    for (const id of gmIds) {
-      expect(regularIds.has(id)).toBe(false);
-    }
+    for (const id of gmIds) expect(regularIds.has(id)).toBe(false);
   });
 
   it('all players appear in exactly one section', () => {
@@ -71,7 +98,7 @@ describe('player panel — section routing', () => {
     expect(getRegularPlayers([])).toHaveLength(0);
   });
 
-  it('a game without a GM character has empty GM section', () => {
+  it('game without a GM has empty GM section', () => {
     const noGm = [aiPlayer, humanPlayer];
     expect(getGMPlayers(noGm)).toHaveLength(0);
     expect(getRegularPlayers(noGm)).toHaveLength(2);
@@ -79,68 +106,55 @@ describe('player panel — section routing', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 2 – Player panel: PlayerCard badge rules
+// Section 2 – YOU badge (resolveYouBadge from player-badges.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 
-type PlayerCardBadge = 'YOU' | null;
+describe('player panel — YOU badge (resolveYouBadge)', () => {
+  const ownerUserId = 'user-owner';
 
-/** Mirrors the YOU badge condition: shown when !player.isAI */
-function resolvePlayerCardBadge(player: Player): PlayerCardBadge {
-  return player.isAI ? null : 'YOU';
-}
-
-describe('player panel — YOU badge', () => {
-  it('human player (isAI=false) gets YOU badge', () => {
-    expect(resolvePlayerCardBadge({ id: '1', name: 'Alex', isAI: false })).toBe('YOU');
+  it('human player matching currentUserId gets YOU', () => {
+    const p: Player = { id: ownerUserId, name: 'Alex', isAI: false };
+    expect(resolveYouBadge(p, ownerUserId)).toBe(true);
   });
 
-  it('AI player does NOT get YOU badge', () => {
-    expect(resolvePlayerCardBadge({ id: '2', name: 'Mara', isAI: true })).toBeNull();
+  it('AI player does NOT get YOU', () => {
+    const p: Player = { id: 'ai-1', name: 'Mara', isAI: true };
+    expect(resolveYouBadge(p, ownerUserId)).toBe(false);
   });
 
-  it('GM character (isAI=true) does NOT get YOU badge', () => {
+  it('GM (isAI=true) does NOT get YOU', () => {
     const gm: Player = { id: 'gm-1', name: 'Oracle', isGameMaster: true, isAI: true };
-    expect(resolvePlayerCardBadge(gm)).toBeNull();
+    expect(resolveYouBadge(gm, ownerUserId)).toBe(false);
   });
 
-  it('exactly one YOU badge in a standard 10-player game', () => {
+  it('guest (currentUserId="" empty string) never gets YOU', () => {
+    const human: Player = { id: '', name: 'Slot', isAI: false };
+    expect(resolveYouBadge(human, '')).toBe(false);
+    expect(resolveYouBadge(human, undefined)).toBe(false);
+  });
+
+  it('exactly 1 YOU in a standard 10-player game', () => {
     const players: Player[] = [
       { id: 'gm', name: 'GM', isGameMaster: true, isAI: true },
-      { id: 'h', name: 'Alex', isAI: false },
+      { id: ownerUserId, name: 'Alex', isAI: false },
       ...Array.from({ length: 8 }, (_, i) => ({ id: `ai-${i}`, name: `AI ${i}`, isAI: true })),
     ];
-    const badges = players.map(resolvePlayerCardBadge);
-    expect(badges.filter((b) => b === 'YOU')).toHaveLength(1);
+    expect(players.filter((p) => resolveYouBadge(p, ownerUserId))).toHaveLength(1);
   });
 
-  it('zero YOU badges in an all-AI game', () => {
+  it('0 YOU badges for guests (empty userId)', () => {
     const players: Player[] = [
       { id: 'gm', name: 'GM', isGameMaster: true, isAI: true },
-      { id: 'ai-1', name: 'Bot 1', isAI: true },
-      { id: 'ai-2', name: 'Bot 2', isAI: true },
+      { id: '', name: 'Human Slot', isAI: false },
+      { id: 'ai-1', name: 'Bot', isAI: true },
     ];
-    expect(players.map(resolvePlayerCardBadge).filter((b) => b === 'YOU')).toHaveLength(0);
+    expect(players.filter((p) => resolveYouBadge(p, ''))).toHaveLength(0);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 3 – Player panel: subtitle text rules
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Mirrors subtitle visibility and text in PlayerCard:
- *   player.isGameMaster → "Game Master"
- *   !isGameMaster + has role + isAI + (ownerView OR roleRevealed) → role string
- *   otherwise → null
- */
-function resolveSubtitle(
-  player: Player,
-  isOwnerView: boolean
-): string | null {
-  if (player.isGameMaster) return 'Game Master';
-  if (player.role && player.isAI && (isOwnerView || player.roleRevealed)) return player.role;
-  return null;
-}
 
 describe('player panel — subtitle text', () => {
   it('GM card subtitle is "Game Master"', () => {
@@ -159,7 +173,7 @@ describe('player panel — subtitle text', () => {
     expect(resolveSubtitle(p, false)).toBe('Seer');
   });
 
-  it('AI player with role is hidden from guests unless revealed', () => {
+  it('AI player with unrevealed role is hidden from guests', () => {
     const p: Player = { id: 'ai', name: 'Mara', isAI: true, role: 'Mafia' };
     expect(resolveSubtitle(p, false)).toBeNull();
   });
@@ -170,170 +184,156 @@ describe('player panel — subtitle text', () => {
     expect(resolveSubtitle(p, false)).toBeNull();
   });
 
-  it('AI player with no role assigned has no subtitle', () => {
+  it('AI player with no role has no subtitle', () => {
     const p: Player = { id: 'ai', name: 'Bot', isAI: true };
     expect(resolveSubtitle(p, true)).toBeNull();
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 4 – Players Online: badge taxonomy completeness
+// Section 4 – Players Online: badge taxonomy (uses shared enum + helper)
 // ─────────────────────────────────────────────────────────────────────────────
 
-type OnlineBadge = 'You' | 'Host' | 'Guest';
-
-interface RoomMember {
-  id: string;
-  nickname: string;
-  is_owner: boolean;
-}
-
-function resolveOnlineBadge(m: RoomMember, viewerMemberId: string | undefined): OnlineBadge {
-  const isViewer = viewerMemberId ? m.id === viewerMemberId : m.is_owner;
-  if (isViewer) return 'You';
-  if (m.is_owner) return 'Host';
-  return 'Guest';
-}
-
 describe('Players Online — badge taxonomy', () => {
-  const owner: RoomMember = { id: 'o', nickname: 'Alice', is_owner: true };
-  const g1: RoomMember = { id: 'g1', nickname: 'Bob', is_owner: false };
-  const g2: RoomMember = { id: 'g2', nickname: 'Carol', is_owner: false };
+  const owner: RoomMember = { id: 'o', nickname: 'Alice', is_owner: true, player_id: null };
+  const g1: RoomMember = { id: 'g1', nickname: 'Bob', is_owner: false, player_id: null };
+  const g2: RoomMember = { id: 'g2', nickname: 'Carol', is_owner: false, player_id: null };
   const all = [owner, g1, g2];
 
   describe('owner view (viewerMemberId=undefined)', () => {
     const badges = all.map((m) => resolveOnlineBadge(m, undefined));
 
-    it('contains You', () => expect(badges).toContain('You'));
-    it('does not contain Host (owner sees themselves as You)', () => expect(badges).not.toContain('Host'));
-    it('contains Guest', () => expect(badges).toContain('Guest'));
-    it('exactly 1 You', () => expect(badges.filter((b) => b === 'You')).toHaveLength(1));
-    it('exactly 2 Guest', () => expect(badges.filter((b) => b === 'Guest')).toHaveLength(2));
+    it('contains You',   () => expect(badges).toContain(OnlineBadge.You));
+    it('no Host (owner sees themselves as You)', () => expect(badges).not.toContain(OnlineBadge.Host));
+    it('contains Guest', () => expect(badges).toContain(OnlineBadge.Guest));
+    it('exactly 1 You',  () => expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(1));
+    it('exactly 2 Guest',() => expect(badges.filter((b) => b === OnlineBadge.Guest)).toHaveLength(2));
   });
 
   describe('guest-1 view (viewerMemberId=g1)', () => {
     const badges = all.map((m) => resolveOnlineBadge(m, 'g1'));
 
-    it('contains You', () => expect(badges).toContain('You'));
-    it('contains Host', () => expect(badges).toContain('Host'));
-    it('contains Guest', () => expect(badges).toContain('Guest'));
-    it('exactly 1 You', () => expect(badges.filter((b) => b === 'You')).toHaveLength(1));
-    it('exactly 1 Host', () => expect(badges.filter((b) => b === 'Host')).toHaveLength(1));
-    it('exactly 1 Guest (only other guests)', () => expect(badges.filter((b) => b === 'Guest')).toHaveLength(1));
+    it('contains You',   () => expect(badges).toContain(OnlineBadge.You));
+    it('contains Host',  () => expect(badges).toContain(OnlineBadge.Host));
+    it('contains Guest', () => expect(badges).toContain(OnlineBadge.Guest));
+    it('exactly 1 You',  () => expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(1));
+    it('exactly 1 Host', () => expect(badges.filter((b) => b === OnlineBadge.Host)).toHaveLength(1));
+    it('exactly 1 Guest',() => expect(badges.filter((b) => b === OnlineBadge.Guest)).toHaveLength(1));
   });
 
   describe('guest-2 view (viewerMemberId=g2)', () => {
-    const badges = all.map((m) => resolveOnlineBadge(m, 'g2'));
-
-    it('g2 row is You', () => expect(resolveOnlineBadge(g2, 'g2')).toBe('You'));
-    it('owner row is Host', () => expect(resolveOnlineBadge(owner, 'g2')).toBe('Host'));
-    it('g1 row is Guest', () => expect(resolveOnlineBadge(g1, 'g2')).toBe('Guest'));
-    it('exactly 1 You', () => expect(badges.filter((b) => b === 'You')).toHaveLength(1));
+    it('g2 row is You',   () => expect(resolveOnlineBadge(g2, 'g2')).toBe(OnlineBadge.You));
+    it('owner row is Host',() => expect(resolveOnlineBadge(owner, 'g2')).toBe(OnlineBadge.Host));
+    it('g1 row is Guest', () => expect(resolveOnlineBadge(g1, 'g2')).toBe(OnlineBadge.Guest));
+    it('exactly 1 You in full list', () => {
+      const badges = all.map((m) => resolveOnlineBadge(m, 'g2'));
+      expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(1);
+    });
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 5 – Cross-panel: GM badge is distinct from Players Online badges
+// Section 5 – OutStatus enum: all values present and correct
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('cross-panel badge non-overlap', () => {
-  it('GM badge value ("GM") is not in the Players Online badge set', () => {
-    const playerPanelBadge = 'GM';
-    const onlineBadges: OnlineBadge[] = ['You', 'Host', 'Guest'];
-    expect(onlineBadges).not.toContain(playerPanelBadge);
+describe('OutStatus enum', () => {
+  it('contains all expected status strings', () => {
+    expect(OUT_STATUS_VALUES).toContain(OutStatus.Eliminated);
+    expect(OUT_STATUS_VALUES).toContain(OutStatus.Dead);
+    expect(OUT_STATUS_VALUES).toContain(OutStatus.VotedOut);
+    expect(OUT_STATUS_VALUES).toContain(OutStatus.Spectating);
   });
 
-  it('YOU badge value ("YOU") is not in the Players Online badge set', () => {
-    const playerCardBadge = 'YOU'; // uppercase in player-panel
-    const onlineBadges: OnlineBadge[] = ['You', 'Host', 'Guest'];
-    // They look similar but are different strings (case-sensitive)
-    expect(onlineBadges).not.toContain(playerCardBadge);
+  it('isPlayerEliminated uses enum values (case-insensitive)', () => {
+    for (const status of OUT_STATUS_VALUES) {
+      const player = { stats: { Status: status.toUpperCase() } };
+      expect(isPlayerEliminated(player)).toBe(true);
+    }
   });
 
-  it('all four labels are distinct strings', () => {
-    const labels = ['GM', 'YOU', 'You', 'Host', 'Guest'];
-    const uniqueLabels = new Set(labels);
-    expect(uniqueLabels.size).toBe(labels.length);
+  it('alive player is not eliminated', () => {
+    expect(isPlayerEliminated({ stats: { Status: 'Alive' } })).toBe(false);
+  });
+
+  it('no status → not eliminated', () => {
+    expect(isPlayerEliminated({})).toBe(false);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 6 – mute/controls visibility (owner only, not for GM)
+// Section 6 – Cross-panel: all badge values are distinct strings
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Mirrors the mute button visibility rule in PlayerCard:
- *   shown when isUserGameMaster && !player.isGameMaster
- */
-function showMuteControls(isOwnerView: boolean, player: Player): boolean {
-  return isOwnerView && !player.isGameMaster;
-}
+describe('cross-panel badge uniqueness', () => {
+  it('all five badge labels are distinct', () => {
+    const labels = ['GM', 'YOU', OnlineBadge.You, OnlineBadge.Host, OnlineBadge.Guest];
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it('GM is not in the OnlineBadge enum', () => {
+    expect(Object.values(OnlineBadge)).not.toContain('GM');
+  });
+
+  it('YOU (upper) differs from You (title-case)', () => {
+    expect('YOU').not.toBe(OnlineBadge.You);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 7 – Mute controls visibility
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe('mute controls visibility', () => {
   const gm: Player = { id: 'gm', name: 'Oracle', isGameMaster: true, isAI: true };
-  const aiPlayer: Player = { id: 'ai', name: 'Mara', isAI: true };
+  const ai: Player = { id: 'ai', name: 'Mara', isAI: true };
   const human: Player = { id: 'h', name: 'Alex', isAI: false };
 
-  it('owner sees mute button on AI players', () => {
-    expect(showMuteControls(true, aiPlayer)).toBe(true);
-  });
-
-  it('owner sees mute button on human players', () => {
-    expect(showMuteControls(true, human)).toBe(true);
-  });
-
-  it('owner does NOT see mute button on GM (isGameMaster=true)', () => {
-    expect(showMuteControls(true, gm)).toBe(false);
-  });
-
+  it('owner sees mute on AI players', () => expect(showMuteControls(true, ai)).toBe(true));
+  it('owner sees mute on human players', () => expect(showMuteControls(true, human)).toBe(true));
+  it('owner does NOT see mute on GM', () => expect(showMuteControls(true, gm)).toBe(false));
   it('guests never see mute controls', () => {
-    expect(showMuteControls(false, aiPlayer)).toBe(false);
+    expect(showMuteControls(false, ai)).toBe(false);
     expect(showMuteControls(false, human)).toBe(false);
     expect(showMuteControls(false, gm)).toBe(false);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 7 – Edge cases
+// Section 8 – Full room matrix (owner / guest-1 / guest-2) via shared helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('edge cases', () => {
-  it('a guest with no memberId yet sees no You in Players Online', () => {
-    const members: RoomMember[] = [
-      { id: 'o', nickname: 'Alice', is_owner: true },
-      { id: 'g1', nickname: 'Bob', is_owner: false },
+describe('full room matrix', () => {
+  const owner: RoomMember = { id: 'owner-1', nickname: 'Host', is_owner: true, player_id: null };
+  const g1: RoomMember = { id: 'guest-1', nickname: 'G1', is_owner: false, player_id: null };
+  const g2: RoomMember = { id: 'guest-2', nickname: 'G2', is_owner: false, player_id: null };
+
+  it('owner view: [You, Guest, Guest]', () => {
+    const vId = deriveViewerMemberId(false, null);
+    expect([owner, g1, g2].map((m) => resolveOnlineBadge(m, vId)))
+      .toEqual([OnlineBadge.You, OnlineBadge.Guest, OnlineBadge.Guest]);
+  });
+
+  it('guest-1 view: [Host, You, Guest]', () => {
+    const vId = deriveViewerMemberId(true, 'guest-1');
+    expect([owner, g1, g2].map((m) => resolveOnlineBadge(m, vId)))
+      .toEqual([OnlineBadge.Host, OnlineBadge.You, OnlineBadge.Guest]);
+  });
+
+  it('guest-2 view: [Host, Guest, You]', () => {
+    const vId = deriveViewerMemberId(true, 'guest-2');
+    expect([owner, g1, g2].map((m) => resolveOnlineBadge(m, vId)))
+      .toEqual([OnlineBadge.Host, OnlineBadge.Guest, OnlineBadge.You]);
+  });
+
+  it('every view has exactly one You', () => {
+    const views = [
+      deriveViewerMemberId(false, null),
+      deriveViewerMemberId(true, 'guest-1'),
+      deriveViewerMemberId(true, 'guest-2'),
     ];
-    // viewerMemberId=undefined AND viewer is not owner → viewerMemberId falls back to is_owner
-    // but if the guest has not yet received their memberId, they pass undefined
-    // In that case: owner row = You (fallback), guest row = Guest — viewer cannot identify self
-    const badges = members.map((m) => resolveOnlineBadge(m, undefined));
-    expect(badges).toEqual(['You', 'Guest']);
-  });
-
-  it('two GMs in player list both appear in GM section', () => {
-    const players: Player[] = [
-      { id: 'gm-1', name: 'Oracle', isGameMaster: true, isAI: true },
-      { id: 'gm-2', name: 'Shadow', isGameMaster: true, isAI: true },
-      { id: 'ai-1', name: 'Mara', isAI: true },
-    ];
-    expect(getGMPlayers(players)).toHaveLength(2);
-    expect(getRegularPlayers(players)).toHaveLength(1);
-  });
-
-  it('GM character isAI=true so never gets YOU badge', () => {
-    const gm: Player = { id: 'gm', name: 'Oracle', isGameMaster: true, isAI: true };
-    expect(resolvePlayerCardBadge(gm)).toBeNull();
-  });
-
-  it('Players Online with only one member (solo owner) still shows the section', () => {
-    const solo: RoomMember[] = [{ id: 'o', nickname: 'Alice', is_owner: true }];
-    expect(solo.length > 0).toBe(true);
-    expect(resolveOnlineBadge(solo[0], undefined)).toBe('You');
-  });
-
-  it('subtitle for GM is always "Game Master" regardless of isOwnerView', () => {
-    const gm: Player = { id: 'gm', name: 'Oracle', isGameMaster: true, isAI: true, role: 'Narrator' };
-    expect(resolveSubtitle(gm, true)).toBe('Game Master');
-    expect(resolveSubtitle(gm, false)).toBe('Game Master');
+    for (const vId of views) {
+      const badges = [owner, g1, g2].map((m) => resolveOnlineBadge(m, vId));
+      expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(1);
+    }
   });
 });

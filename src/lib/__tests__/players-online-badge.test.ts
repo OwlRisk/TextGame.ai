@@ -1,32 +1,14 @@
 import { describe, it, expect } from 'vitest';
+import { OnlineBadge, resolveOnlineBadge, type RoomMember } from '../player-badges';
 
 // ─── Players Online badge logic ───────────────────────────────────────────────
 // Tests for the badge-assignment rules in channel-list.tsx and the member-list
 // visibility logic in game/[gameId]/page.tsx.
-// All helpers are pure functions extracted from production code for isolation.
 
-// ── Core badge resolution ─────────────────────────────────────────────────────
-
-type Badge = 'You' | 'Host' | 'Guest';
-
-interface Member {
-  id: string;
-  nickname: string;
-  is_owner: boolean;
-  player_id: string | null;
-}
-
-/**
- * Mirrors the badge-resolution logic inside channel-list.tsx.
- * viewerMemberId present  → compare by ID
- * viewerMemberId absent   → fall back to is_owner (owner views their own room)
- */
-function resolveBadge(m: Member, viewerMemberId: string | undefined): Badge {
-  const isViewer = viewerMemberId ? m.id === viewerMemberId : m.is_owner;
-  if (isViewer) return 'You';
-  if (m.is_owner) return 'Host';
-  return 'Guest';
-}
+// Local alias keeps test code concise while using the shared enum + helper.
+type Badge = OnlineBadge;
+type Member = RoomMember;
+const resolveBadge = resolveOnlineBadge;
 
 describe('resolveBadge — owner is viewing (no viewerMemberId)', () => {
   const owner: Member = { id: 'owner-1', nickname: 'Alice', is_owner: true, player_id: null };
@@ -34,33 +16,33 @@ describe('resolveBadge — owner is viewing (no viewerMemberId)', () => {
   const guest2: Member = { id: 'g2', nickname: 'Carol', is_owner: false, player_id: null };
 
   it('owner row shows You', () => {
-    expect(resolveBadge(owner, undefined)).toBe('You');
+    expect(resolveBadge(owner, undefined)).toBe(OnlineBadge.You);
   });
 
   it('first guest row shows Guest', () => {
-    expect(resolveBadge(guest1, undefined)).toBe('Guest');
+    expect(resolveBadge(guest1, undefined)).toBe(OnlineBadge.Guest);
   });
 
   it('second guest row shows Guest', () => {
-    expect(resolveBadge(guest2, undefined)).toBe('Guest');
+    expect(resolveBadge(guest2, undefined)).toBe(OnlineBadge.Guest);
   });
 
   it('there is exactly one You in a 3-member list', () => {
     const members = [owner, guest1, guest2];
     const badges = members.map((m) => resolveBadge(m, undefined));
-    expect(badges.filter((b) => b === 'You')).toHaveLength(1);
+    expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(1);
   });
 
   it('all non-owners are Guest when owner views', () => {
     const members = [owner, guest1, guest2];
     const badges = members.map((m) => resolveBadge(m, undefined));
-    expect(badges.filter((b) => b === 'Guest')).toHaveLength(2);
+    expect(badges.filter((b) => b === OnlineBadge.Guest)).toHaveLength(2);
   });
 
   it('no Host badge appears when owner is the viewer (they see You instead)', () => {
     const members = [owner, guest1, guest2];
     const badges = members.map((m) => resolveBadge(m, undefined));
-    expect(badges).not.toContain('Host');
+    expect(badges).not.toContain(OnlineBadge.Host);
   });
 });
 
@@ -70,36 +52,35 @@ describe('resolveBadge — guest is viewing (viewerMemberId set)', () => {
   const otherGuest: Member = { id: 'g2', nickname: 'Carol', is_owner: false, player_id: null };
 
   it('viewing guest row shows You', () => {
-    expect(resolveBadge(viewingGuest, 'g1')).toBe('You');
+    expect(resolveBadge(viewingGuest, 'g1')).toBe(OnlineBadge.You);
   });
 
   it('owner row shows Host from guest perspective', () => {
-    expect(resolveBadge(owner, 'g1')).toBe('Host');
+    expect(resolveBadge(owner, 'g1')).toBe(OnlineBadge.Host);
   });
 
   it('other guest row shows Guest', () => {
-    expect(resolveBadge(otherGuest, 'g1')).toBe('Guest');
+    expect(resolveBadge(otherGuest, 'g1')).toBe(OnlineBadge.Guest);
   });
 
   it('no duplicate You badges in a 3-member list', () => {
     const members = [owner, viewingGuest, otherGuest];
     const badges = members.map((m) => resolveBadge(m, 'g1'));
-    expect(badges.filter((b) => b === 'You')).toHaveLength(1);
+    expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(1);
   });
 
-  it('no Host badge for a member whose id does not match owner when viewerMemberId is passed', () => {
-    // owner IS is_owner:true, so Host badge should appear
+  it('owner IS is_owner:true so Host badge appears exactly once', () => {
     const badges = [owner, viewingGuest, otherGuest].map((m) => resolveBadge(m, 'g1'));
-    expect(badges).toContain('Host');
-    expect(badges.filter((b) => b === 'Host')).toHaveLength(1);
+    expect(badges).toContain(OnlineBadge.Host);
+    expect(badges.filter((b) => b === OnlineBadge.Host)).toHaveLength(1);
   });
 
   it('unrecognised viewerMemberId → no You badge, owner shows Host, all others Guest', () => {
     const members = [owner, viewingGuest, otherGuest];
     const badges = members.map((m) => resolveBadge(m, 'unknown-id'));
-    expect(badges.filter((b) => b === 'You')).toHaveLength(0);
-    expect(badges.filter((b) => b === 'Host')).toHaveLength(1);
-    expect(badges.filter((b) => b === 'Guest')).toHaveLength(2);
+    expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(0);
+    expect(badges.filter((b) => b === OnlineBadge.Host)).toHaveLength(1);
+    expect(badges.filter((b) => b === OnlineBadge.Guest)).toHaveLength(2);
   });
 });
 
@@ -107,11 +88,11 @@ describe('resolveBadge — solo room (only owner)', () => {
   const owner: Member = { id: 'owner-1', nickname: 'Alice', is_owner: true, player_id: null };
 
   it('owner shows You when alone', () => {
-    expect(resolveBadge(owner, undefined)).toBe('You');
+    expect(resolveBadge(owner, undefined)).toBe(OnlineBadge.You);
   });
 
   it('owner shows You with explicit viewerMemberId', () => {
-    expect(resolveBadge(owner, 'owner-1')).toBe('You');
+    expect(resolveBadge(owner, 'owner-1')).toBe(OnlineBadge.You);
   });
 });
 
@@ -281,19 +262,19 @@ describe('full badge list — standard room scenarios', () => {
   it('owner view: [You, Guest, Guest]', () => {
     const vId = deriveViewerMemberId(false, null);
     const badges = [owner, g1, g2].map((m) => resolveBadge(m, vId));
-    expect(badges).toEqual(['You', 'Guest', 'Guest']);
+    expect(badges).toEqual([OnlineBadge.You, OnlineBadge.Guest, OnlineBadge.Guest]);
   });
 
   it('guest-1 view: [Host, You, Guest]', () => {
     const vId = deriveViewerMemberId(true, 'guest-1');
     const badges = [owner, g1, g2].map((m) => resolveBadge(m, vId));
-    expect(badges).toEqual(['Host', 'You', 'Guest']);
+    expect(badges).toEqual([OnlineBadge.Host, OnlineBadge.You, OnlineBadge.Guest]);
   });
 
   it('guest-2 view: [Host, Guest, You]', () => {
     const vId = deriveViewerMemberId(true, 'guest-2');
     const badges = [owner, g1, g2].map((m) => resolveBadge(m, vId));
-    expect(badges).toEqual(['Host', 'Guest', 'You']);
+    expect(badges).toEqual([OnlineBadge.Host, OnlineBadge.Guest, OnlineBadge.You]);
   });
 
   it('exactly one You in every view', () => {
@@ -304,13 +285,13 @@ describe('full badge list — standard room scenarios', () => {
     ];
     for (const vId of views) {
       const badges = [owner, g1, g2].map((m) => resolveBadge(m, vId));
-      expect(badges.filter((b) => b === 'You')).toHaveLength(1);
+      expect(badges.filter((b) => b === OnlineBadge.You)).toHaveLength(1);
     }
   });
 
   it('no Host badge is ever shown to the owner (they see You)', () => {
     const vId = deriveViewerMemberId(false, null);
     const badges = [owner, g1, g2].map((m) => resolveBadge(m, vId));
-    expect(badges).not.toContain('Host');
+    expect(badges).not.toContain(OnlineBadge.Host);
   });
 });

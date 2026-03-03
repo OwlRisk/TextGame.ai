@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { OutStatus, resolveYouBadge, isPlayerEliminated } from '../player-badges';
 
 // ─── YOU badge visibility logic (player-panel-with-board.tsx) ─────────────────
 // Tests for the bug where guests saw "YOU" on the owner's character card.
@@ -16,7 +17,7 @@ import { describe, it, expect } from 'vitest';
 // All helpers are pure functions extracted from production code.
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Core predicate
+// Core predicate — delegates to shared helpers from player-badges.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Player {
@@ -27,23 +28,9 @@ interface Player {
   status?: string;
 }
 
-const OUT_STATUSES = [
-  'eliminated', 'dead', 'out', 'exiled', 'banished',
-  'retired', 'spectating', 'removed', 'disqualified', 'voted out',
-];
-
-function isEliminated(player: Player): boolean {
-  const raw = ((player.stats?.Status as string | undefined) ?? player.status ?? '').toLowerCase();
-  return OUT_STATUSES.some((s) => raw.includes(s));
-}
-
-/**
- * Mirrors the fixed YOU badge condition in player-panel-with-board.tsx:
- *   !player.isAI && !isEliminated && !!currentUserId && player.id === currentUserId
- */
-function shouldShowYou(player: Player, currentUserId: string | undefined): boolean {
-  return !player.isAI && !isEliminated(player) && !!currentUserId && player.id === currentUserId;
-}
+// Alias shared helpers for concise test code
+const isEliminated = isPlayerEliminated;
+const shouldShowYou = resolveYouBadge;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 1 – Owner (authenticated) sees YOU on their own slot
@@ -140,11 +127,11 @@ describe('eliminated player — YOU always hidden', () => {
   const ownerUserId = 'user-owner';
 
   const cases: Array<{ label: string; status: string }> = [
-    { label: 'eliminated', status: 'Eliminated' },
-    { label: 'dead',       status: 'Dead' },
-    { label: 'out',        status: 'Out' },
-    { label: 'voted out',  status: 'Voted Out' },
-    { label: 'exiled',     status: 'Exiled' },
+    { label: 'eliminated', status: OutStatus.Eliminated },
+    { label: 'dead',       status: OutStatus.Dead },
+    { label: 'out',        status: OutStatus.Out },
+    { label: 'voted out',  status: OutStatus.VotedOut },
+    { label: 'exiled',     status: OutStatus.Exiled },
   ];
 
   for (const { label, status } of cases) {
