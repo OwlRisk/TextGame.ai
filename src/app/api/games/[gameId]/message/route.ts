@@ -137,8 +137,43 @@ export async function POST(
   });
 
   if (rpcErr) {
-    console.error("[message/route] RPC error:", rpcErr);
-    return NextResponse.json({ error: "Failed to save message" }, { status: 500 });
+    // Log the full error for debugging (visible in Vercel logs).
+    console.error("[message/route] RPC error:", rpcErr.code, rpcErr.message, rpcErr.details);
+
+    // Fallback: direct read-modify-write upsert.
+    // Slightly less safe under extreme concurrency, but avoids a hard 500 when
+    // the append_game_message function is not yet deployed in this environment
+    // (migration 003 not yet run).
+    console.warn("[message/route] Falling back to direct upsert for game", gameId);
+
+    const { data: currentRow } = await supabaseAdmin
+      .from("game_room_state")
+      .select("state")
+      .eq("game_id", gameId)
+      .maybeSingle();
+
+    const currentState = (currentRow?.state as Record<string, unknown>) ?? {};
+    const existingMessages = (currentState.messages as unknown[]) ?? [];
+    const trimmedMessages = existingMessages.slice(-59); // keep room for the new one
+
+    const fallbackState = {
+      ...currentState,
+      messages:  [...trimmedMessages, newMessage],
+      savedAt:   new Date().toISOString(),
+      clientId:  "guest_write",
+    };
+
+    const { error: upsertErr } = await supabaseAdmin
+      .from("game_room_state")
+      .upsert(
+        { game_id: gameId, user_id: ownerUserId, state: fallbackState, updated_at: new Date().toISOString() },
+        { onConflict: "game_id" }
+      );
+
+    if (upsertErr) {
+      console.error("[message/route] Fallback upsert error:", upsertErr);
+      return NextResponse.json({ error: "Failed to save message" }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ ok: true, message: newMessage });
