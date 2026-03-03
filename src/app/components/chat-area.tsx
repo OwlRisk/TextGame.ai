@@ -214,6 +214,9 @@ export interface Message {
   channelId?: string;
   /** Optional image URL (e.g. Host chose to reply with an image). */
   imageUrl?: string;
+  /** True for messages sent by a non-owner guest (via /api/games/[gameId]/message). Used to prevent
+   *  name-based player matching from accidentally assigning an AI avatar to a guest message. */
+  isGuestMessage?: boolean;
 }
 
 interface ChatAreaProps {
@@ -972,7 +975,9 @@ export function ChatArea({
             }
 
             const messagePlayer = showAvatar ? players.find(
-              p => p.id === message.senderId || p.name === message.senderName
+              // Match by senderId first; only fall back to name matching for AI messages
+              // to prevent a guest's nickname accidentally matching an AI player's name
+              p => p.id === message.senderId || (message.isAI && p.name === message.senderName)
             ) : null;
             const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
 

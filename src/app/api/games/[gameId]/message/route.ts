@@ -108,7 +108,7 @@ export async function POST(
     id: messageId ?? `msg-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     senderId: member.player_id ?? (effectiveGuestId ?? effectiveUserId ?? "unknown"),
     senderName: member.nickname,
-    senderAvatar: "#6366f1",
+    senderAvatar: "#10b981",  // emerald green — visually distinct from AI (#6366f1) and owner
     content: safeContent,
     timestamp: new Date().toISOString(),
     isAI: false,

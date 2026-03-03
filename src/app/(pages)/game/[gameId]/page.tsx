@@ -1767,9 +1767,10 @@ ${rulesText || "No specific rules defined."}`.trim();
         id: messageId,
         senderId: guestId ?? "guest",
         senderName: guestNickname ?? "Guest",
-        senderAvatar: "#8b5cf6",
+        senderAvatar: "#10b981",  // emerald green — matches server-side senderAvatar for guest messages
         content,
         isAI: false,
+        isGuestMessage: true,
       },
       channelId
     );
