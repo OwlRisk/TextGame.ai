@@ -265,8 +265,22 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     // (isOwner is reliable once gamesLoading is false)
     if (gamesLoading) return;
 
+    // Read guestId/nickname directly from URL or localStorage instead of React state.
+    // This prevents a double-channel race condition: if we depend on `guestId` state,
+    // the effect runs first with guestId=null (key="anon"), then re-runs when state
+    // updates — creating two channels with the same name simultaneously, causing
+    // Supabase to reject the second subscription silently (guest never appears).
+    const directGuestId = !session?.user?.id
+      ? (new URLSearchParams(window.location.search).get("guestId")
+          ?? localStorage.getItem(`guestId_${gameId}`)
+          ?? null)
+      : null;
+    const directNickname = !session?.user?.id
+      ? (localStorage.getItem(`nickname_${gameId}`) ?? guestNickname ?? "Guest")
+      : null;
+
     const channel = supabase.channel(`presence:${gameId}`, {
-      config: { presence: { key: session?.user?.id ?? guestId ?? "anon" } },
+      config: { presence: { key: session?.user?.id ?? directGuestId ?? "anon" } },
     });
 
     const syncGuestsFromState = (state: Record<string, Array<{ role?: string; nickname?: string }>>) => {
@@ -309,7 +323,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           if (isOwner) {
             await channel.track({ role: "owner", userId: session?.user?.id });
           } else {
-            await channel.track({ role: "guest", nickname: guestNickname ?? "Guest" });
+            await channel.track({ role: "guest", nickname: directNickname ?? "Guest" });
           }
         }
       });
@@ -324,11 +338,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      // Explicitly untrack before removing the channel so Supabase fires the
-      // presence leave event on other clients immediately (React navigation / unmount).
-      channel.untrack().finally(() => supabase.removeChannel(channel));
+      // removeChannel sends a phx_leave message synchronously, which fires the
+      // presence leave event on other clients immediately (no heartbeat wait).
+      supabase.removeChannel(channel);
     };
-  }, [gameId, gamesLoading, isOwner, session?.user?.id, guestId, guestNickname]);
+  // guestId/guestNickname intentionally excluded: we read them directly from
+  // URL/localStorage above so the channel is created with the correct key on the
+  // first run, preventing the double-channel race condition.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, gamesLoading, isOwner, session?.user?.id]);
 
   // ─── All participants: load + refresh member list ─────────────────────────
   // Owner refreshes every 15 s; guests also load on mount so Players Online
