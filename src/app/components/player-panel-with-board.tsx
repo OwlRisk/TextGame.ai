@@ -386,7 +386,8 @@ function PlayerCard({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-xs text-red-400 cursor-pointer hover:bg-zinc-800"
-                        onClick={() => onAssignGuest!(boundGuest.memberId!, null)}
+                        disabled={!boundGuest.memberId}
+                        onClick={() => boundGuest.memberId && onAssignGuest?.(boundGuest.memberId, null)}
                       >
                         <UserMinus className="h-3 w-3 mr-1.5" />
                         Unassign
@@ -402,7 +403,7 @@ function PlayerCard({
                     <DropdownMenuItem
                       key={g.id}
                       className="text-xs cursor-pointer hover:bg-zinc-800"
-                      onClick={() => onAssignGuest!(g.memberId!, player.id)}
+                      onClick={() => g.memberId && onAssignGuest?.(g.memberId, player.id)}
                     >
                       <UserPlus className="h-3 w-3 mr-1.5 text-emerald-400" />
                       {g.nickname}

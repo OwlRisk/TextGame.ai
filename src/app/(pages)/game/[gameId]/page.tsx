@@ -170,7 +170,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
    */
   const guestPlayerBinding = useMemo(() => {
     if (!isGuestPlayer || !guestId) return null;
-    return roomMembers.find((m) => m.guest_id === guestId)?.player_id ?? null;
+    return roomMembers.find((m) => m.guest_id === guestId && !m.is_owner)?.player_id ?? null;
   }, [isGuestPlayer, guestId, roomMembers]);
 
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
@@ -1800,9 +1800,9 @@ ${rulesText || "No specific rules defined."}`.trim();
    * Calls PATCH /api/games/[gameId]/members/[memberId] then refreshes the member list.
    */
   const handleAssignGuestToPlayer = useCallback(async (memberId: string, playerId: string | null) => {
-    if (!session?.access_token) return;
+    if (!session?.access_token || !memberId) return;
     try {
-      await fetch(`/api/games/${gameId}/members/${memberId}`, {
+      const res = await fetch(`/api/games/${gameId}/members/${memberId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -1810,6 +1810,10 @@ ${rulesText || "No specific rules defined."}`.trim();
         },
         body: JSON.stringify({ playerId }),
       });
+      if (!res.ok) {
+        toast.error(playerId ? "Failed to assign guest" : "Failed to unassign guest");
+        return;
+      }
       // Refresh member list to reflect new binding
       const url = `/api/games/${gameId}/members`;
       const data = await fetch(url, {
@@ -1817,7 +1821,7 @@ ${rulesText || "No specific rules defined."}`.trim();
       }).then((r) => r.ok ? r.json() : null);
       if (data?.members) setRoomMembers(data.members);
     } catch {
-      /* non-critical */
+      toast.error(playerId ? "Failed to assign guest" : "Failed to unassign guest");
     }
   }, [gameId, session?.access_token]);
 
