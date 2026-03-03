@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Menu, Hash, Users, Link2, Check } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
+import { supabase } from "@/lib/supabase";
 import { safeMarked } from "@/lib/safe-marked";
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
 const HOST_PACE_MS = 2200;
@@ -129,6 +130,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [guestId, setGuestId] = useState<string | null>(null);
   const [guestMemberId, setGuestMemberId] = useState<string | null>(null);
   const [guestNickname, setGuestNickname] = useState<string | null>(null);
+  // Presence: is the room owner currently online?
+  const [isOwnerOnline, setIsOwnerOnline] = useState<boolean | null>(null); // null = unknown (loading)
 
   // ─── Multiplayer: owner / guest detection ───────────────────────────────────
   // GameContext only loads games belonging to the logged-in user; if this game
@@ -204,6 +207,55 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       if (storedNickname) setGuestNickname(storedNickname);
     }
   }, [gameId, session?.user?.id]);
+
+  // ─── Presence: owner broadcasts online status; guests/others subscribe ────
+  useEffect(() => {
+    if (!gameId) return;
+    // All clients are ready to detect owner presence after games list is loaded
+    // (isOwner is reliable once gamesLoading is false)
+    if (gamesLoading) return;
+
+    const channel = supabase.channel(`presence:${gameId}`, {
+      config: { presence: { key: session?.user?.id ?? guestId ?? "anon" } },
+    });
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState<{ role: string }>();
+        const ownerPresent = Object.values(state)
+          .flat()
+          .some((p) => p.role === "owner");
+        setIsOwnerOnline(ownerPresent);
+      })
+      .on("presence", { event: "join" }, ({ newPresences }) => {
+        if ((newPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
+          setIsOwnerOnline(true);
+        }
+      })
+      .on("presence", { event: "leave" }, ({ leftPresences }) => {
+        if ((leftPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
+          // Re-check full state: another owner tab may still be open
+          const state = channel.presenceState<{ role: string }>();
+          const ownerStillPresent = Object.values(state)
+            .flat()
+            .some((p) => p.role === "owner");
+          setIsOwnerOnline(ownerStillPresent);
+        }
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          if (isOwner) {
+            await channel.track({ role: "owner", userId: session?.user?.id });
+          } else {
+            await channel.track({ role: "guest", nickname: guestNickname ?? "Guest" });
+          }
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [gameId, gamesLoading, isOwner, session?.user?.id, guestId, guestNickname]);
 
   // Load room members (for owner: show who has joined)
   useEffect(() => {
@@ -1739,6 +1791,15 @@ ${rulesText || "No specific rules defined."}`.trim();
               Playing as <span className="font-semibold text-white">{guestNickname}</span> · Guest
             </span>
             <span className="text-xs text-zinc-500">AI responses are managed by the host</span>
+          </div>
+        )}
+        {/* Host offline warning (shown to guests only) */}
+        {isGuestPlayer && isOwnerOnline === false && (
+          <div className="flex-shrink-0 px-4 py-2 bg-amber-950/40 border-b border-amber-700/30 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
+            <span className="text-xs text-amber-300">
+              Host is offline — your messages are saved and will be answered when they return.
+            </span>
           </div>
         )}
         {/* Owner: show members who have joined via invite */}
