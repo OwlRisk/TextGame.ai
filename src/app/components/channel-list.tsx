@@ -68,8 +68,10 @@ interface ChannelListProps {
   onInvite?: () => void;
   /** When true, show "Copied!" feedback on the invite button. */
   inviteJustCopied?: boolean;
-  /** List of human players who have joined via invite link (owner only). */
+  /** List of human players who have joined via invite link. */
   roomMembers?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>;
+  /** The current viewer's member ID — used to show "You" on their own entry. */
+  viewerMemberId?: string;
 }
 
 export function ChannelList({ 
@@ -93,6 +95,7 @@ export function ChannelList({
   onInvite,
   inviteJustCopied = false,
   roomMembers,
+  viewerMemberId,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -258,8 +261,8 @@ export function ChannelList({
           </div>
         </div>
 
-        {/* Room members section (owner only, shown when someone has joined via invite) */}
-        {roomMembers && roomMembers.length > 1 && (
+        {/* Room members section — shown to all participants when anyone else is online */}
+        {roomMembers && roomMembers.length > 0 && (
           <>
             <Separator className="my-3 bg-zinc-700/50" />
             <div>
@@ -267,15 +270,22 @@ export function ChannelList({
                 <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Players Online</span>
                 <span className="text-xs text-zinc-500">{roomMembers.length}</span>
               </div>
-              {roomMembers.map((m) => (
-                <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg">
-                  <div className="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                  <span className="text-sm text-zinc-300 truncate flex-1">{m.nickname}</span>
-                  {m.is_owner && (
-                    <span className="text-[10px] text-violet-400 font-medium">Host</span>
-                  )}
-                </div>
-              ))}
+              {roomMembers.map((m) => {
+                const isViewer = viewerMemberId ? m.id === viewerMemberId : m.is_owner;
+                return (
+                  <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg">
+                    <div className="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
+                    <span className="text-sm text-zinc-300 truncate flex-1">{m.nickname}</span>
+                    {isViewer ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-600/60 text-zinc-300 font-bold tracking-wide">You</span>
+                    ) : m.is_owner ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-400 font-bold tracking-wide border border-violet-500/30">Host</span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold tracking-wide border border-emerald-500/25">Guest</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

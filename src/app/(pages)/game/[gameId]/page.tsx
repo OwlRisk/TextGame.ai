@@ -257,38 +257,25 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     };
   }, [gameId, gamesLoading, isOwner, session?.user?.id, guestId, guestNickname]);
 
-  // Load room members (for owner: show who has joined)
+  // ─── All participants: load + refresh member list ─────────────────────────
+  // Owner refreshes every 15 s; guests also load on mount so Players Online
+  // appears immediately without waiting for the first poll tick.
   useEffect(() => {
-    if (!gameId || !isOwner) return;
+    if (!gameId) return;
+
     const load = () => {
       fetch(`/api/games/${gameId}/members`)
         .then((r) => r.ok ? r.json() : null)
-        .then((data) => { if (data?.members) setRoomMembers(data.members); })
+        .then((data: { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }> } | null) => {
+          if (data?.members) setRoomMembers(data.members);
+        })
         .catch(() => {/* non-critical */});
     };
-    load();
-    // Refresh member list every 15s when owner is in-room
+
+    load(); // immediate first fetch for everyone
     const interval = setInterval(load, 15_000);
     return () => clearInterval(interval);
-  }, [gameId, isOwner]);
-
-  // ─── Guest: poll member list every 15 s ───────────────────────────────────
-  // (Message/state polling is handled inside GameRoomContext for non-auth users)
-  useEffect(() => {
-    if (!isGuestPlayer || !gameId) return;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/games/${gameId}/members`);
-        if (!res.ok) return;
-        const data = await res.json() as { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }> };
-        if (data.members) setRoomMembers(data.members);
-      } catch {/* ignore */}
-    };
-    poll(); // immediate first fetch
-    const interval = setInterval(poll, 15_000);
-    return () => clearInterval(interval);
-  }, [isGuestPlayer, gameId]);
+  }, [gameId]);
 
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
@@ -1728,7 +1715,11 @@ ${rulesText || "No specific rules defined."}`.trim();
     shareJustCopied: shareCopied,
     onInvite: isOwner && session?.access_token ? handleInvite : undefined,
     inviteJustCopied: inviteCopied,
-    roomMembers: isOwner ? roomMembers : undefined,
+    // Show Players Online to everyone (owner + guests) when there are members
+    roomMembers: roomMembers.length > 0 ? roomMembers : undefined,
+    // viewerMemberId: owner has is_owner=true so we detect them via is_owner;
+    // guests pass their memberId so their own row shows "You" not "Guest"
+    viewerMemberId: isGuestPlayer ? (guestMemberId ?? undefined) : undefined,
     textSectionLabel: "Sections",
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
@@ -1820,8 +1811,8 @@ ${rulesText || "No specific rules defined."}`.trim();
             </span>
           </div>
         )}
-        {/* Owner: show members who have joined via invite */}
-        {isOwner && roomMembers.length > 1 && (
+        {/* Show other participants to everyone when someone else is in the room */}
+        {roomMembers.length > 1 && (
           <div className="flex-shrink-0 px-4 py-1.5 bg-emerald-950/30 border-b border-emerald-800/20 flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
             <span className="text-xs text-emerald-300">
