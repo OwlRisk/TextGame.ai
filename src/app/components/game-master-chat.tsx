@@ -5,7 +5,8 @@ import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus } from "lucide-react";
+import { Sheet, SheetContent } from "@/app/components/ui/sheet";
+import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus, PanelLeft } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import type { DiscoverPreset } from "@/app/components/discover-page";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -289,6 +290,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [isGMTyping, setIsGMTyping] = useState(true);
   const [isStreaming, setIsStreaming] = useState(false); // Track if currently streaming
   const [showOutOfCredits, setShowOutOfCredits] = useState(false);
+  const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -1779,11 +1781,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </div>
       )}
       
-      {/* Session History Sidebar */}
-      <div className="flex-shrink-0 w-52 sm:w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col relative z-10 overflow-hidden">
+      {/* Session History Sidebar — desktop only */}
+      <div className="hidden md:flex flex-shrink-0 w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex-col relative z-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-transparent pointer-events-none" />
         
-        <div className="p-3 sm:p-4 border-b border-white/10 relative flex-shrink-0">
+        <div className="p-4 border-b border-white/10 relative flex-shrink-0">
           <Button
             onClick={createNewSession}
             className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-violet-500/20 transition-all"
@@ -1844,7 +1846,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    // Keep only the most recent 20 sessions
                     const sortedSessions = [...sessions].sort((a, b) => 
                       new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
                     );
@@ -1863,27 +1864,88 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </div>
       </div>
 
+      {/* Session History Sheet — mobile only */}
+      <Sheet open={mobileSessionsOpen} onOpenChange={setMobileSessionsOpen}>
+        <SheetContent
+          side="left"
+          title="Sessions"
+          className="w-72 max-w-[85vw] p-0 gap-0 border-r border-white/10 bg-zinc-950/95 backdrop-blur-xl flex flex-col"
+        >
+          <div className="p-4 border-b border-white/10 flex-shrink-0">
+            <Button
+              onClick={() => { createNewSession(); setMobileSessionsOpen(false); }}
+              className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-violet-500/20 transition-all"
+            >
+              <MessageSquarePlus className="h-4 w-4 mr-2" />
+              New Session
+            </Button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+            <div className="p-2 space-y-1 w-full">
+              {sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className={`group relative rounded-lg transition-all duration-200 overflow-hidden ${
+                    currentSessionId === session.id
+                      ? "bg-white/10 border border-white/20"
+                      : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
+                  }`}
+                >
+                  <button
+                    onClick={() => { loadSession(session.id, undefined, true); setMobileSessionsOpen(false); }}
+                    className="w-full min-w-0 p-3 text-left"
+                  >
+                    <div className="text-sm font-medium text-white mb-0.5 line-clamp-1">
+                      {session.title}
+                    </div>
+                    <div className="text-xs text-zinc-500 truncate">
+                      {(() => {
+                        const dateStr = new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        if (session.messages.length === 0) return `${dateStr} · No messages yet`;
+                        const last = session.messages[session.messages.length - 1];
+                        const preview = (last?.content ?? '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\n+/g, ' ').trim();
+                        return preview ? `${dateStr} — ${preview}` : `${dateStr} · ${session.messages.length} msgs`;
+                      })()}
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Main Chat Area + resizable split */}
       <div className="flex flex-1 min-w-0 min-h-0 overflow-hidden">
       <div className="flex flex-col min-w-0 min-h-0 flex-1 overflow-hidden">
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
-          <div className="h-16 px-6 sm:px-8 flex items-center justify-between relative gap-4">
-            <div className="flex items-center gap-4 min-w-0">
+          <div className="h-14 sm:h-16 px-3 sm:px-6 md:px-8 flex items-center justify-between relative gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Mobile sessions toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden flex-shrink-0 h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10"
+                onClick={() => setMobileSessionsOpen(true)}
+                aria-label="View sessions"
+              >
+                <PanelLeft className="h-5 w-5" />
+              </Button>
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/30 to-orange-600/30 blur-xl rounded-full" />
                 <GeneratedAvatar
                   name="Game Master"
                   type="gm"
-                  className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-white/10 shadow-xl shadow-amber-500/20 relative"
+                  className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-white/10 shadow-xl shadow-amber-500/20 relative"
                   fallbackColor="#f59e0b"
-                  fallback={<Sparkles className="h-6 w-6 sm:h-7 sm:w-7 animate-pulse" />}
+                  fallback={<Sparkles className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />}
                 />
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight truncate">Game Master</h1>
-                <p className="text-xs sm:text-sm text-zinc-500 font-medium truncate">
+                <h1 className="text-lg sm:text-xl font-semibold text-white tracking-tight truncate">Game Master</h1>
+                <p className="text-xs text-zinc-500 font-medium truncate">
                   {isGMTyping || isStreaming ? (
                     <span className="inline-flex items-center gap-1.5 text-amber-400/90">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
