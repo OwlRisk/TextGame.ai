@@ -120,46 +120,24 @@ export function PlayerPanelWithBoard({
               <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 tracking-wide">
                 Players — {players.length}
               </div>
-              {(() => {
-                const isOut = (p: Player) => isPlayerEliminated(p);
-                const alive = players.filter((p) => !isOut(p));
-                const eliminated = players.filter((p) => isOut(p));
-                const cardProps = (player: Player) => ({
-                  key: player.id,
-                  player,
-                  isSpeaking: currentSpeakerId === player.id,
-                  isUserGameMaster,
-                  gameId,
-                  onToggleMute,
-                  onSelectSpeaker,
-                  onViewProfile: openProfile,
-                  isHiddenRoleGame,
-                  currentUserId,
-                  avatarImageUrls,
-                  onAvatarUrlLoaded,
-                });
-                return (
-                  <>
-                    <div className="space-y-1.5">
-                      {alive.map((p) => <PlayerCard {...cardProps(p)} />)}
-                    </div>
-                    {eliminated.length > 0 && (
-                      <>
-                        <div className="flex items-center gap-2 pt-2 pb-1">
-                          <div className="h-px flex-1 bg-zinc-700/50" />
-                          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
-                            Out of Game
-                          </span>
-                          <div className="h-px flex-1 bg-zinc-700/50" />
-                        </div>
-                        <div className="space-y-1.5">
-                          {eliminated.map((p) => <PlayerCard {...cardProps(p)} />)}
-                        </div>
-                      </>
-                    )}
-                  </>
-                );
-              })()}
+              <div className="space-y-1.5">
+                {players.map((player) => (
+                  <PlayerCard
+                    key={player.id}
+                    player={player}
+                    isSpeaking={currentSpeakerId === player.id}
+                    isUserGameMaster={isUserGameMaster}
+                    gameId={gameId}
+                    onToggleMute={onToggleMute}
+                    onSelectSpeaker={onSelectSpeaker}
+                    onViewProfile={openProfile}
+                    isHiddenRoleGame={isHiddenRoleGame}
+                    currentUserId={currentUserId}
+                    avatarImageUrls={avatarImageUrls}
+                    onAvatarUrlLoaded={onAvatarUrlLoaded}
+                  />
+                ))}
+              </div>
             </div>
           </ScrollArea>
         </TabsContent>
@@ -218,7 +196,6 @@ function PlayerCard({
   const handleRowClick = () => {
     if (canViewProfile) onViewProfile?.(player);
   };
-  const rawStatus = (player.stats?.Status as string | undefined) ?? player.status ?? "";
   const isEliminated = isPlayerEliminated(player);
 
   return (
@@ -229,11 +206,11 @@ function PlayerCard({
       onKeyDown={canViewProfile ? (e) => e.key === "Enter" && handleRowClick() : undefined}
       className={`group p-2 rounded-lg transition-all duration-200 ${
         isEliminated
-          ? "opacity-35"
+          ? "opacity-55 pointer-events-none"
           : isSpeaking
           ? "bg-green-600/20 ring-1 ring-green-600/50 shadow-sm"
           : "hover:bg-zinc-800/40 hover:shadow-sm"
-      } ${canViewProfile ? "cursor-pointer" : ""}`}
+      } ${canViewProfile && !isEliminated ? "cursor-pointer" : ""}`}
       title={canViewProfile ? "View profile" : undefined}
     >
       <div className="flex items-start gap-2.5">
@@ -283,7 +260,11 @@ function PlayerCard({
                 <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                   <span
                     className={`text-sm font-semibold truncate ${
-                      player.isGameMaster ? "text-amber-300" : !player.isAI ? "text-blue-200" : "text-white"
+                      isEliminated
+                        ? "line-through text-zinc-500"
+                        : player.isGameMaster ? "text-amber-300"
+                        : !player.isAI ? "text-blue-200"
+                        : "text-white"
                     }`}
                   >
                     {displayName}
@@ -314,10 +295,6 @@ function PlayerCard({
             (player.id === currentUserId || player.roleRevealed)
               ? <div className="text-xs text-violet-300 font-medium">{player.role}</div>
               : null
-          )}
-          {/* Show actual status label when player is out of game */}
-          {isEliminated && rawStatus && (
-            <div className="text-[10px] text-zinc-600 mt-0.5">{rawStatus}</div>
           )}
         </div>
         {isUserGameMaster && !player.isGameMaster && (
