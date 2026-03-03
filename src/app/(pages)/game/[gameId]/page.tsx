@@ -314,7 +314,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         }
       });
 
+    // When the browser tab is closed/refreshed, React's useEffect cleanup does NOT run.
+    // Calling channel.untrack() in beforeunload makes Supabase fire the leave event
+    // on other clients immediately instead of waiting ~30 s for heartbeat timeout.
+    const handleBeforeUnload = () => {
+      channel.untrack();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
       supabase.removeChannel(channel);
     };
   }, [gameId, gamesLoading, isOwner, session?.user?.id, guestId, guestNickname]);

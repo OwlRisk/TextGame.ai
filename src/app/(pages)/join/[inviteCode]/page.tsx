@@ -24,17 +24,34 @@ export default function JoinPage({ params }: { params: Promise<{ inviteCode: str
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Pre-fill nickname from auth profile
+  // Pre-fill nickname: from auth profile (logged-in) or localStorage (returning guest)
   useEffect(() => {
-    if (user && !nickname) {
-      const displayName =
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.email?.split("@")[0] ||
-        "";
-      setNickname(displayName);
+    if (user) {
+      if (!nickname) {
+        const displayName =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split("@")[0] ||
+          "";
+        setNickname(displayName);
+      }
+      return;
     }
-  }, [user, nickname]);
+    // Guest: once we know the gameId, check if this guest already joined before
+    if (!gameId) return;
+    const storedNickname = localStorage.getItem(`nickname_${gameId}`);
+    const storedGuestId = localStorage.getItem(`guestId_${gameId}`);
+    const storedMemberId = localStorage.getItem(`member_${gameId}`);
+    if (storedGuestId && storedMemberId) {
+      // Already joined → go straight to the game room, skip the form
+      router.replace(`/game/${gameId}?guestId=${storedGuestId}&memberId=${storedMemberId}`);
+      return;
+    }
+    if (storedNickname && !nickname) {
+      setNickname(storedNickname);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, gameId]);
 
   // Look up game by invite code
   useEffect(() => {
