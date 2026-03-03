@@ -208,17 +208,22 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     } else {
       // Guest (unauthenticated): load from DB so avatars/players/state are populated.
       // The game_room_state table has USING(true) RLS so anon clients can read.
-      // Also apply any cached local state as a fast-path while DB responds.
+      // IMPORTANT: strip humanGameIdentity before applying so guests don't inherit
+      // the owner's character name. Guests use their own guestNickname instead.
+      const applyGuestState = (raw: Record<string, unknown>) => {
+        const { humanGameIdentity: _ignored, ...rest } = raw;
+        applyState(rest);
+      };
       try {
         const saved = localStorage.getItem(`gameRoom_${gameId}`);
-        if (saved) applyState(JSON.parse(saved));
+        if (saved) applyGuestState(JSON.parse(saved));
       } catch (e) {
         console.error("Error loading game room state:", e);
       }
       getGameRoomState(gameId)
         .then(({ data, error }) => {
           if (!error && data != null) {
-            applyState(data as Record<string, unknown>);
+            applyGuestState(data as Record<string, unknown>);
           }
         })
         .catch(() => {/* non-critical for guests */})
@@ -389,12 +394,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         ...(remoteState.avatarImageUrls as Record<string, string>),
       }));
     }
-    if (remoteState.players && Array.isArray(remoteState.players)) {
-      // Already handled above, but also update humanGameIdentity from players if present
-    }
-    if (remoteState.humanGameIdentity && typeof (remoteState.humanGameIdentity as Record<string, unknown>)?.name === "string") {
-      setHumanGameIdentity({ name: (remoteState.humanGameIdentity as Record<string, string>).name });
-    }
+    // NOTE: humanGameIdentity is intentionally NOT synced from remote state.
+    // It is a per-user concept — the owner's identity must not overwrite the
+    // guest's identity (guestNickname) when Realtime/polling delivers state.
   }, []);
 
   // ─── Guest polling fallback ──────────────────────────────────────────────
