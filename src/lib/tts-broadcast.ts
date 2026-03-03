@@ -23,17 +23,34 @@ interface PendingEntry {
   timeout: ReturnType<typeof setTimeout>;
 }
 
-/** Derive a short cache key from text + voiceId (collision-safe within a session). */
-function makeKey(text: string, voiceId: string): string {
-  return `${text.slice(0, 48)}||${voiceId}`;
+/**
+ * M-7: djb2 hash so the full text is represented by a compact key.
+ * Avoids the collision bug where two sentences sharing the same 48-character
+ * prefix would incorrectly hit the same cache entry.
+ */
+function djb2Hash(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    hash |= 0; // keep 32-bit signed
+  }
+  return (hash >>> 0).toString(36); // unsigned hex-like string
 }
+
+function makeKey(text: string, voiceId: string): string {
+  return `${djb2Hash(text)}||${voiceId}`;
+}
+
+/** I-4: Maximum number of audio entries to keep in the in-memory cache. */
+const MAX_CACHE_SIZE = 100;
 
 class TTSBroadcastManager {
   private _gameId: string | null = null;
   private _isOwner = false;
   private _channel: ReturnType<typeof supabase.channel> | null = null;
-  private _cache = new Map<string, string>();       // key → audioBase64
-  private _pending = new Map<string, PendingEntry>(); // key → waiting resolve
+  /** key → audioBase64 (LRU-evicted when > MAX_CACHE_SIZE) */
+  private _cache = new Map<string, string>();
+  private _pending = new Map<string, PendingEntry>();
 
   /** True when the manager is active (i.e. a gameId has been configured). */
   get isActive() {
@@ -58,7 +75,7 @@ class TTSBroadcastManager {
       .on('broadcast', { event: 'tts_audio' }, (msg) => {
         const { key, audioBase64 } = msg.payload as { key: string; audioBase64: string };
         if (!key || !audioBase64) return;
-        this._cache.set(key, audioBase64);
+        this._setCached(key, audioBase64);
         const entry = this._pending.get(key);
         if (entry) {
           clearTimeout(entry.timeout);
@@ -79,6 +96,22 @@ class TTSBroadcastManager {
     this._gameId = null;
     this._cache.clear();
     this._pending.clear();
+  }
+
+  /**
+   * I-4: Insert or update a cache entry.
+   * Evicts the oldest entry when the cache exceeds MAX_CACHE_SIZE.
+   */
+  private _setCached(key: string, audio: string) {
+    if (this._cache.has(key)) {
+      // Refresh: delete + re-insert to move to end (most-recently-used)
+      this._cache.delete(key);
+    } else if (this._cache.size >= MAX_CACHE_SIZE) {
+      // Evict oldest (first inserted) entry
+      const firstKey = this._cache.keys().next().value;
+      if (firstKey !== undefined) this._cache.delete(firstKey);
+    }
+    this._cache.set(key, audio);
   }
 
   /**
@@ -105,7 +138,7 @@ class TTSBroadcastManager {
     if (this._isOwner) {
       const audio = await ownerFetcher();
       if (audio) {
-        this._cache.set(key, audio);
+        this._setCached(key, audio);
         // Broadcast to all non-owner clients in the room.
         this._channel?.send({
           type: 'broadcast',

@@ -46,6 +46,19 @@ function makeMockChannel() {
 const VOICE = 'voice-abc';
 const AUDIO = 'base64audio==';
 
+// Mirror the production makeKey so tests can construct expected keys
+function djb2Hash(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    hash |= 0;
+  }
+  return (hash >>> 0).toString(36);
+}
+function makeTestKey(text: string, voiceId: string): string {
+  return `${djb2Hash(text)}||${voiceId}`;
+}
+
 // ─── Shared channel reference updated in beforeEach ───────────────────────────
 let mockChannel = makeMockChannel();
 
@@ -139,15 +152,15 @@ describe('TTSBroadcastManager – owner mode', () => {
     expect(mockChannel.send).not.toHaveBeenCalled();
   });
 
-  it('uses first 48 chars of text as cache key (different suffixes = same cache)', async () => {
+  it('M-7: full text is hashed — different suffixes produce DIFFERENT cache keys (no false collision)', async () => {
     const base = 'A'.repeat(48);
-    const fetcher = vi.fn().mockResolvedValue(AUDIO);
-    await ttsBroadcast.getAudio(base + 'extra1', VOICE, fetcher);
-    // Same first 48 chars → cache hit, fetcher NOT called again
-    const fetcher2 = vi.fn().mockResolvedValue('other-audio');
-    const result = await ttsBroadcast.getAudio(base + 'extra2', VOICE, fetcher2);
-    expect(fetcher2).not.toHaveBeenCalled();
-    expect(result).toBe(AUDIO);
+    const f1 = vi.fn().mockResolvedValue('audio-1');
+    const f2 = vi.fn().mockResolvedValue('audio-2');
+    await ttsBroadcast.getAudio(base + 'extra1', VOICE, f1);
+    // Different full text → different hash → cache miss → fetcher IS called
+    const result = await ttsBroadcast.getAudio(base + 'extra2', VOICE, f2);
+    expect(f2).toHaveBeenCalledOnce();
+    expect(result).toBe('audio-2');
   });
 
   it('different texts produce different cache keys (no collision)', async () => {
@@ -178,7 +191,7 @@ describe('TTSBroadcastManager – guest mode', () => {
 
   it('does NOT call the ownerFetcher (guest has no API token)', async () => {
     const fetcher = vi.fn().mockResolvedValue(AUDIO);
-    const key = `${'Hello guest'.slice(0, 48)}||${VOICE}`;
+    const key = makeTestKey('Hello guest', VOICE);
     setTimeout(() => mockChannel._emit('tts_audio', { key, audioBase64: AUDIO }), 10);
 
     const result = await ttsBroadcast.getAudio('Hello guest', VOICE, fetcher);
@@ -196,7 +209,7 @@ describe('TTSBroadcastManager – guest mode', () => {
   });
 
   it('serves from cache when broadcast arrived before getAudio is called', async () => {
-    const key = `${'Pre-cached text'.slice(0, 48)}||${VOICE}`;
+    const key = makeTestKey('Pre-cached text', VOICE);
     mockChannel._emit('tts_audio', { key, audioBase64: AUDIO });
     await new Promise((r) => setTimeout(r, 5));
 
@@ -208,7 +221,7 @@ describe('TTSBroadcastManager – guest mode', () => {
 
   it('resolves pending request when broadcast arrives', async () => {
     const fetcher = vi.fn();
-    const key = `${'Broadcast test'.slice(0, 48)}||${VOICE}`;
+    const key = makeTestKey('Broadcast test', VOICE);
 
     const promise = ttsBroadcast.getAudio('Broadcast test', VOICE, fetcher, 500);
     setTimeout(() => mockChannel._emit('tts_audio', { key, audioBase64: AUDIO }), 20);

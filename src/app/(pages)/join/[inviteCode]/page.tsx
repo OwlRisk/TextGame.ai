@@ -62,13 +62,16 @@ export default function JoinPage({ params }: { params: Promise<{ inviteCode: str
     setError(null);
 
     try {
-      // Generate or load guest ID from localStorage
+      // Generate or load guest ID from localStorage.
+      // C-6: Use a game-scoped key (`guestId_${gameId}`) so different rooms
+      //      get different guest identities, preventing cross-room tracking.
       let guestId: string | null = null;
-      if (!user) {
-        guestId = localStorage.getItem("guestId");
+      if (!user && gameId) {
+        const guestIdKey = `guestId_${gameId}`;
+        guestId = localStorage.getItem(guestIdKey);
         if (!guestId) {
           guestId = crypto.randomUUID();
-          localStorage.setItem("guestId", guestId);
+          localStorage.setItem(guestIdKey, guestId);
         }
       }
 
@@ -94,9 +97,9 @@ export default function JoinPage({ params }: { params: Promise<{ inviteCode: str
         return;
       }
 
-      // Persist guest session for use in the game room
-      if (data.guestId) {
-        localStorage.setItem("guestId", data.guestId);
+      // Persist guest session for use in the game room (game-scoped key)
+      if (data.guestId && gameId) {
+        localStorage.setItem(`guestId_${gameId}`, data.guestId);
       }
       if (data.memberId) {
         localStorage.setItem(`member_${gameId}`, data.memberId);

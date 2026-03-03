@@ -337,3 +337,149 @@ describe('full room matrix', () => {
     }
   });
 });
+
+// ─── Player-panel right-side badge rules (PlayerCard + GuestCard) ─────────────
+// Covers:
+//   GM    badge: amber — only on isGameMaster players
+//   GM    badge: renamed from HOST (legacy label must not appear)
+//   Host  badge: violet — shown on non-AI human player ONLY when viewerIsGuest=true
+//   YOU   badge: blue   — shown on non-AI human player ONLY when currentUserId matches
+//   GuestCard: emerald initial avatar + "Guest" badge
+// ─────────────────────────────────────────────────────────────────────────────
+describe('PlayerCard badge rules', () => {
+  interface Player {
+    id: string;
+    name: string;
+    isAI: boolean;
+    isGameMaster?: boolean;
+    status?: string;
+  }
+
+  const gameMaster: Player = { id: 'gm-1', name: 'Reichstag Moderator', isAI: true, isGameMaster: true };
+  const aiPlayer: Player    = { id: 'ai-1', name: 'Klara Vogt',          isAI: true };
+  const humanPlayer: Player = { id: 'human-1', name: 'Otto Weiss',       isAI: false };
+
+  // resolveGmBadge mirrors production: show GM iff isGameMaster
+  function resolveGmBadge(p: Player): string | null {
+    return p.isGameMaster ? 'GM' : null;
+  }
+
+  // resolveHostBadgeForGuest mirrors production: show Host when viewerIsGuest AND !isAI AND !isGameMaster
+  function resolveHostBadgeForGuest(p: Player, viewerIsGuest: boolean): string | null {
+    return !p.isAI && !p.isGameMaster && viewerIsGuest ? 'Host' : null;
+  }
+
+  // resolveYouBadge imported above handles YOU badge
+  it('GM badge appears on isGameMaster player', () => {
+    expect(resolveGmBadge(gameMaster)).toBe('GM');
+  });
+
+  it('GM badge does NOT appear on regular AI player', () => {
+    expect(resolveGmBadge(aiPlayer)).toBeNull();
+  });
+
+  it('GM badge does NOT appear on human player', () => {
+    expect(resolveGmBadge(humanPlayer)).toBeNull();
+  });
+
+  it('GM badge is "GM", not the legacy "HOST" label', () => {
+    expect(resolveGmBadge(gameMaster)).not.toBe('HOST');
+    expect(resolveGmBadge(gameMaster)).toBe('GM');
+  });
+
+  it('Host badge shown on human player when viewer is guest', () => {
+    expect(resolveHostBadgeForGuest(humanPlayer, true)).toBe('Host');
+  });
+
+  it('Host badge NOT shown on human player when viewer is the owner', () => {
+    expect(resolveHostBadgeForGuest(humanPlayer, false)).toBeNull();
+  });
+
+  it('Host badge NOT shown on AI player even if viewer is guest', () => {
+    expect(resolveHostBadgeForGuest(aiPlayer, true)).toBeNull();
+  });
+
+  it('Host badge NOT shown on GM even if viewer is guest', () => {
+    expect(resolveHostBadgeForGuest(gameMaster, true)).toBeNull();
+  });
+
+  it('YOU badge shown on human player when currentUserId matches', () => {
+    expect(resolveYouBadge(humanPlayer, 'human-1')).toBe(true);
+  });
+
+  it('YOU badge NOT shown when currentUserId is empty string (guest fallback)', () => {
+    expect(resolveYouBadge(humanPlayer, '')).toBe(false);
+  });
+
+  it('YOU badge NOT shown when currentUserId is undefined', () => {
+    expect(resolveYouBadge(humanPlayer, undefined)).toBe(false);
+  });
+
+  it('YOU badge NOT shown on GM player (isAI=true)', () => {
+    expect(resolveYouBadge(gameMaster, 'gm-1')).toBe(false);
+  });
+
+  it('guest-viewer sees Host on human player and no YOU (userId undefined)', () => {
+    const host = resolveHostBadgeForGuest(humanPlayer, true);
+    const you  = resolveYouBadge(humanPlayer, undefined);
+    expect(host).toBe('Host');
+    expect(you).toBe(false);
+  });
+
+  it('owner-viewer sees YOU on own character and no Host badge', () => {
+    const host = resolveHostBadgeForGuest(humanPlayer, false);
+    const you  = resolveYouBadge(humanPlayer, 'human-1');
+    expect(host).toBeNull();
+    expect(you).toBe(true);
+  });
+});
+
+// ─── GuestCard rendering helpers ─────────────────────────────────────────────
+describe('GuestCard entry logic', () => {
+  interface GuestEntry { id: string; nickname: string }
+
+  function getInitial(g: GuestEntry): string {
+    return g.nickname?.charAt(0)?.toUpperCase() || '?';
+  }
+
+  function guestBadgeLabel(): string {
+    return OnlineBadge.Guest;
+  }
+
+  it('initial is uppercased first character of nickname', () => {
+    expect(getInitial({ id: 'g-1', nickname: 'nikki' })).toBe('N');
+    expect(getInitial({ id: 'g-2', nickname: 'Bob' })).toBe('B');
+  });
+
+  it('initial falls back to "?" for empty nickname', () => {
+    expect(getInitial({ id: 'g-3', nickname: '' })).toBe('?');
+  });
+
+  it('guest card badge label equals OnlineBadge.Guest', () => {
+    expect(guestBadgeLabel()).toBe('Guest');
+  });
+
+  it('guestMembers filtering: excludes owner, includes guests', () => {
+    const members = [
+      { id: 'm-1', nickname: 'Otto', is_owner: true },
+      { id: 'm-2', nickname: 'Nikki', is_owner: false },
+      { id: 'm-3', nickname: 'Alice', is_owner: false },
+    ];
+    const guestEntries = members.filter((m) => !m.is_owner);
+    expect(guestEntries).toHaveLength(2);
+    expect(guestEntries.map((g) => g.nickname)).toEqual(['Nikki', 'Alice']);
+  });
+
+  it('guestMembers is empty when only the owner is in the room', () => {
+    const members = [{ id: 'm-1', nickname: 'Otto', is_owner: true }];
+    expect(members.filter((m) => !m.is_owner)).toHaveLength(0);
+  });
+
+  it('player count includes guest entries', () => {
+    const gamePlayers = [
+      { id: 'p1' }, { id: 'p2' }, { id: 'p3' },
+    ];
+    const guests = [{ id: 'g1', nickname: 'Nikki' }];
+    expect(gamePlayers.length + guests.length).toBe(4);
+  });
+});

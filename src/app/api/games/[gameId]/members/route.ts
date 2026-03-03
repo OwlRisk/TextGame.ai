@@ -1,18 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUserFromRequest } from "@/lib/auth-server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
  * GET /api/games/[gameId]/members
- * Returns the list of members for a game (public within the room).
+ * Returns the member list for a game.
+ *
+ * Auth: requires either a valid Bearer token (authenticated user) OR
+ *       a ?guestId=<uuid> query param that is a verified member of the game.
+ *       This prevents arbitrary enumeration of players in rooms the caller
+ *       has no connection to.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await params;
   if (!gameId) return NextResponse.json({ error: "gameId required" }, { status: 400 });
   if (!supabaseAdmin) return NextResponse.json({ error: "Server config error" }, { status: 500 });
 
+  // ── Verify caller is a member of this game ─────────────────────────────────
+  const user = await getAuthUserFromRequest(request).catch(() => null);
+  const guestId = request.nextUrl.searchParams.get("guestId");
+
+  if (!user && !guestId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify membership
+  let memberQuery = supabaseAdmin
+    .from("game_members")
+    .select("id")
+    .eq("game_id", gameId);
+
+  if (user) {
+    memberQuery = memberQuery.eq("user_id", user.id);
+  } else {
+    memberQuery = memberQuery.eq("guest_id", guestId!);
+  }
+
+  const { data: membership, error: memberErr } = await memberQuery.maybeSingle();
+  if (memberErr || !membership) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // ── Fetch all members ──────────────────────────────────────────────────────
   const { data, error } = await supabaseAdmin
     .from("game_members")
     .select("id, game_id, nickname, player_id, is_owner, joined_at")

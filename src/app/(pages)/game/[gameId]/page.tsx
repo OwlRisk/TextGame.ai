@@ -86,6 +86,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const { games, selectedGameId, selectGame, updateGame, touchGame, addGame, gamesLoading } = useGameContext();
   const {
     messages,
+    setMessages,
     players,
     addMessage,
     addStreamingMessage,
@@ -166,6 +167,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
 
+  // C-4: Stable ref to handleSendMessage so the guest-message-trigger effect
+  // (which would otherwise re-run on every render because handleSendMessage is a new
+  // function reference each time) can call the latest version without being listed
+  // as an effect dependency.
+  const handleSendMessageRef = useRef<((content: string) => Promise<void>) | null>(null);
+
   // Summaries from "decision" private channels that need to be injected into the HOST's
   // context on the player's next message turn. Reset after each HOST call that consumes them.
   const pendingDecisionSummariesRef = useRef<string[]>([]);
@@ -182,30 +189,32 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   }, [pathname]);
 
   // ─── Multiplayer: read guestId / memberId from URL search params ────────────
+  // C-6: Use game-scoped localStorage key (`guestId_${gameId}`) so that
+  //      different game rooms do not share the same guest identity, preventing
+  //      cross-room tracking and stale identity bleed-through.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !gameId) return;
+    const guestIdKey = `guestId_${gameId}`;
     const searchParams = new URLSearchParams(window.location.search);
     const urlGuestId = searchParams.get("guestId");
     const urlMemberId = searchParams.get("memberId");
     if (urlGuestId) {
       setGuestId(urlGuestId);
-      localStorage.setItem("guestId", urlGuestId);
+      localStorage.setItem(guestIdKey, urlGuestId);
     } else if (!session?.user?.id) {
-      // Not logged in – check localStorage fallback
-      const stored = localStorage.getItem("guestId");
+      // Not logged in – check game-scoped localStorage fallback
+      const stored = localStorage.getItem(guestIdKey);
       if (stored) setGuestId(stored);
     }
     if (urlMemberId) {
       setGuestMemberId(urlMemberId);
-      if (gameId) localStorage.setItem(`member_${gameId}`, urlMemberId);
-    } else if (gameId) {
+      localStorage.setItem(`member_${gameId}`, urlMemberId);
+    } else {
       const stored = localStorage.getItem(`member_${gameId}`);
       if (stored) setGuestMemberId(stored);
     }
-    if (gameId) {
-      const storedNickname = localStorage.getItem(`nickname_${gameId}`);
-      if (storedNickname) setGuestNickname(storedNickname);
-    }
+    const storedNickname = localStorage.getItem(`nickname_${gameId}`);
+    if (storedNickname) setGuestNickname(storedNickname);
   }, [gameId, session?.user?.id]);
 
   // ─── Presence: owner broadcasts online status; guests/others subscribe ────
@@ -264,7 +273,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     if (!gameId) return;
 
     const load = () => {
-      fetch(`/api/games/${gameId}/members`)
+      // C-1: Members API now requires auth. Pass Bearer token for authenticated
+      // users; pass guestId query param for guests.
+      const currentGuestId = guestId ?? (typeof window !== "undefined" ? localStorage.getItem(`guestId_${gameId}`) : null);
+      const url = currentGuestId
+        ? `/api/games/${gameId}/members?guestId=${encodeURIComponent(currentGuestId)}`
+        : `/api/games/${gameId}/members`;
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      fetch(url, { headers })
         .then((r) => r.ok ? r.json() : null)
         .then((data: { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }> } | null) => {
           if (data?.members) setRoomMembers(data.members);
@@ -275,7 +292,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     load(); // immediate first fetch for everyone
     const interval = setInterval(load, 15_000);
     return () => clearInterval(interval);
-  }, [gameId]);
+  }, [gameId, guestId, session?.access_token]);
 
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
@@ -300,7 +317,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     const urlGuestId = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("guestId")
       : null;
-    const guestIdForLoad = urlGuestId ?? guestId ?? (typeof window !== "undefined" ? localStorage.getItem("guestId") : null);
+    // C-6: Use game-scoped key for localStorage lookup
+    const guestIdForLoad = urlGuestId ?? guestId ?? (typeof window !== "undefined" ? localStorage.getItem(`guestId_${gameId}`) : null);
     const url = guestIdForLoad
       ? `/api/games/${gameId}/guest-view?guestId=${encodeURIComponent(guestIdForLoad)}`
       : `/api/games/${gameId}/public`;
@@ -772,7 +790,9 @@ ${rulesText || "No specific rules defined."}`.trim();
           } else if (eliminateMatch) {
             const namePart = eliminateMatch[1].trim();
             const nameBase = namePart.split(",")[0].trim();
-            const target = players.find((p) =>
+            // C-5: use playersRef.current (not stale closure `players`) because
+            // this function runs after multiple awaits; React state may have changed.
+            const target = playersRef.current.find((p) =>
               !p.isGameMaster && (p.name === namePart || p.name === nameBase)
             );
             if (target) {
@@ -786,10 +806,11 @@ ${rulesText || "No specific rules defined."}`.trim();
             const isYou = namePart.toLowerCase() === "you";
             // Fuzzy match: AI sometimes appends epithets (e.g. "Oren Pike, Millwright").
             // Try exact first, then fall back to matching the portion before the first comma.
+            // C-5: use playersRef.current for freshest player data after awaits.
             const nameBase = namePart.split(",")[0].trim();
             const player = isYou
-              ? players.find((p) => p.id === userId)
-              : players.find((p) =>
+              ? playersRef.current.find((p) => p.id === userId)
+              : playersRef.current.find((p) =>
                   p.name === namePart ||
                   p.name === nameBase ||
                   (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart) ||
@@ -1368,6 +1389,10 @@ ${rulesText || "No specific rules defined."}`.trim();
     }
   };
 
+  // C-4: Keep the ref current on every render so the trigger effect always
+  // calls the latest version without needing it in the dependency array.
+  handleSendMessageRef.current = handleSendMessage;
+
   const handleRetryLastMessage = useCallback(() => {
     if (lastFailedSendContent) {
       handleSendMessage(lastFailedSendContent);
@@ -1377,10 +1402,11 @@ ${rulesText || "No specific rules defined."}`.trim();
 
   // ─── Owner: auto-trigger AI when a guest message arrives via Realtime ────────
   // Track the last processed message ID so we only respond to NEW guest messages.
+  // C-4: Use handleSendMessageRef instead of handleSendMessage directly so this
+  // effect is NOT re-run on every render (the function reference changes each render).
   const lastProcessedGuestMsgRef = useRef<string | null>(null);
   useEffect(() => {
     if (!isOwner || isRoundInProgress) return;
-    // Find the most recent guest message not yet processed
     const guestMessages = messages.filter(
       (m) => (m as unknown as { isGuestMessage?: boolean }).isGuestMessage && !m.isAI
     );
@@ -1388,9 +1414,9 @@ ${rulesText || "No specific rules defined."}`.trim();
     const latest = guestMessages[guestMessages.length - 1];
     if (latest.id === lastProcessedGuestMsgRef.current) return;
     lastProcessedGuestMsgRef.current = latest.id;
-    // Trigger host AI response to the guest's message (same flow as owner typing)
-    handleSendMessage(latest.content);
-  }, [messages, isOwner, isRoundInProgress, handleSendMessage]);
+    // Trigger host AI response via stable ref to avoid stale closure
+    handleSendMessageRef.current?.(latest.content);
+  }, [messages, isOwner, isRoundInProgress]); // handleSendMessage intentionally omitted — use ref
 
   // GM-defined game rooms (always compute so hook order is stable; safe when currentGame is null)
   // Derive a stable cache key from channel IDs so useMemo doesn't recompute on every context update.
@@ -1631,6 +1657,9 @@ ${rulesText || "No specific rules defined."}`.trim();
   /**
    * Guest sends a message via the server-side API route (bypasses auth requirement).
    * The server appends the message to game_room_state and Realtime notifies the owner.
+   *
+   * I-5: If the server call fails, we roll back the optimistic message so the
+   *      guest is not misled into thinking their message was delivered.
    */
   const handleGuestSendMessage = useCallback(async (content: string) => {
     if (!content.trim() || !gameId) return;
@@ -1656,7 +1685,7 @@ ${rulesText || "No specific rules defined."}`.trim();
     );
 
     try {
-      await fetch(`/api/games/${gameId}/message`, {
+      const res = await fetch(`/api/games/${gameId}/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1667,11 +1696,23 @@ ${rulesText || "No specific rules defined."}`.trim();
           channelId,
         }),
       });
+      if (!res.ok) {
+        // I-5: Roll back the optimistic message on failure
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        if (res.status === 429) {
+          toast.error("Sending too fast — please wait a moment.");
+        } else {
+          toast.error(data.error ?? "Failed to send message");
+        }
+      }
     } catch (e) {
       console.error("[guest message]", e);
+      // I-5: Roll back the optimistic message on network error
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
       toast.error("Failed to send message");
     }
-  }, [gameId, guestId, guestNickname, selectedChannelId, currentGame?.config?.channels, addMessage]);
+  }, [gameId, guestId, guestNickname, selectedChannelId, currentGame?.config?.channels, addMessage, setMessages]);
 
   if (!currentGame) {
     return (
@@ -1928,6 +1969,8 @@ ${rulesText || "No specific rules defined."}`.trim();
                 activeTab={rightPanelTab}
                 onTabChange={setRightPanelTab}
                 playerBoardLabel={currentGame?.config?.playerBoardLabel}
+                viewerIsGuest={isGuestPlayer}
+                guestMembers={roomMembers.filter((m) => !m.is_owner)}
               />
             </div>
 
@@ -1945,6 +1988,8 @@ ${rulesText || "No specific rules defined."}`.trim();
                   activeTab={rightPanelTab}
                   onTabChange={setRightPanelTab}
                   playerBoardLabel={currentGame?.config?.playerBoardLabel}
+                  viewerIsGuest={isGuestPlayer}
+                  guestMembers={roomMembers.filter((m) => !m.is_owner)}
                 />
               </SheetContent>
             </Sheet>

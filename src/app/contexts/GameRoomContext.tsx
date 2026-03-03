@@ -208,10 +208,12 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     } else {
       // Guest (unauthenticated): load from DB so avatars/players/state are populated.
       // The game_room_state table has USING(true) RLS so anon clients can read.
-      // IMPORTANT: strip humanGameIdentity before applying so guests don't inherit
-      // the owner's character name. Guests use their own guestNickname instead.
+      // IMPORTANT:
+      //   - strip humanGameIdentity: guests must not inherit the owner's character name
+      //   - reset selectedChannelId: guests always start from the default channel
+      //     (owner may have left the session on a private channel the guest can't access)
       const applyGuestState = (raw: Record<string, unknown>) => {
-        const { humanGameIdentity: _ignored, ...rest } = raw;
+        const { humanGameIdentity: _ignored, selectedChannelId: _ch, ...rest } = raw;
         applyState(rest);
       };
       try {
@@ -351,6 +353,12 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   // ─── Realtime subscription ────────────────────────────────────────────────
   // Merge remote state received via Supabase Realtime (postgres_changes or broadcast).
   // Only messages not already in local state are added; streaming messages are never merged.
+  //
+  // I-3: When the update was written by a guest (clientId === "guest_write"), we only
+  // merge the messages array. We intentionally skip players/gamePhase/etc. because
+  // the guest-triggered DB write uses the snapshot it *read* — which may be stale.
+  // Overwriting the owner's current state with that stale snapshot would undo any
+  // role assignments or game-phase changes the AI just processed.
   const mergeRemoteState = useCallback((remoteState: Record<string, unknown>) => {
     if (!isMountedRef.current) return;
 
@@ -370,6 +378,14 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         return merged.slice(-100);
       });
     }
+
+    // Skip non-message state updates that originated from a guest write.
+    // The guest_write RPC only appends a message and preserves existing state,
+    // but the Realtime payload still contains the full state blob (with stale
+    // players/gamePhase from when the guest first loaded the page).
+    const isGuestWrite = remoteState.clientId === "guest_write";
+    if (isGuestWrite) return;
+
     if (remoteState.players && Array.isArray(remoteState.players)) {
       setPlayers(remoteState.players as Player[]);
     }
@@ -460,29 +476,14 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         ...(channelId != null && { channelId }),
       };
       setMessages((prev) => {
-        // Prevent duplicates
-        const last = prev[prev.length - 1];
-        if (
-          last &&
-          last.senderId === newMessage.senderId &&
-          last.content === newMessage.content
-        )
-          return prev;
-
-        const exists = prev.some(
-          (m) =>
-            m.senderId === newMessage.senderId &&
-            m.content === newMessage.content &&
-            Math.abs(m.timestamp.getTime() - newMessage.timestamp.getTime()) < 2000
-        );
-        if (exists) return prev;
+        // I-6: Primary dedup by ID — reliable for all pre-generated message IDs
+        // (optimistic updates, guest messages, etc.). Falls back to content
+        // matching only for legacy / AI messages that share auto-generated IDs.
+        if (prev.some((m) => m.id === newMessage.id)) return prev;
 
         // Limit to last 100 messages
         const updated = [...prev, newMessage];
-        if (updated.length > 100) {
-          return updated.slice(-100);
-        }
-        return updated;
+        return updated.length > 100 ? updated.slice(-100) : updated;
       });
       return newMessage.id;
     },

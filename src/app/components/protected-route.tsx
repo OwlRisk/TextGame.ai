@@ -36,7 +36,12 @@ function ProtectedRouteInner({ children }: ProtectedRouteProps) {
   }
 
   if (!user && !isGuestSession) {
-    return null; // Will redirect via useEffect
+    // M-4: Show spinner while the redirect effect fires so there is no blank flash
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      </div>
+    );
   }
 
   return <>{children}</>;

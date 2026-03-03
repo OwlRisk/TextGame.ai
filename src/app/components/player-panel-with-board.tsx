@@ -9,7 +9,12 @@ import { PlayerBoardData } from "@/app/components/player-board";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
-import { isPlayerEliminated, resolveYouBadge } from "@/lib/player-badges";
+import { isPlayerEliminated, resolveYouBadge, OnlineBadge } from "@/lib/player-badges";
+
+interface GuestEntry {
+  id: string;
+  nickname: string;
+}
 
 interface PlayerPanelWithBoardProps {
   players: Player[];
@@ -36,6 +41,10 @@ interface PlayerPanelWithBoardProps {
   avatarImageUrls?: Record<string, string>;
   /** Call when an avatar URL is loaded so the room can persist it. */
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  /** When true the viewer is a guest — human player slot shows "Host" instead of nothing. */
+  viewerIsGuest?: boolean;
+  /** Human guests who joined via invite link — rendered at the bottom of the player list. */
+  guestMembers?: GuestEntry[];
 }
 
 export function PlayerPanelWithBoard({ 
@@ -55,6 +64,8 @@ export function PlayerPanelWithBoard({
   avatarImageUrls = {},
   onAvatarUrlLoaded,
   playerBoardLabel = "My Board",
+  viewerIsGuest = false,
+  guestMembers = [],
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -118,7 +129,7 @@ export function PlayerPanelWithBoard({
           <ScrollArea className="h-full">
             <div className="p-3 space-y-3">
               <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 tracking-wide">
-                Players — {players.length}
+                Players — {players.length + guestMembers.length}
               </div>
               <div className="space-y-1.5">
                 {players.map((player) => (
@@ -135,7 +146,12 @@ export function PlayerPanelWithBoard({
                     currentUserId={currentUserId}
                     avatarImageUrls={avatarImageUrls}
                     onAvatarUrlLoaded={onAvatarUrlLoaded}
+                    viewerIsGuest={viewerIsGuest}
                   />
+                ))}
+                {/* Guest participants joined via invite link */}
+                {guestMembers.map((g) => (
+                  <GuestCard key={g.id} guest={g} />
                 ))}
               </div>
             </div>
@@ -179,6 +195,7 @@ function PlayerCard({
   currentUserId,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  viewerIsGuest = false,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -191,6 +208,7 @@ function PlayerCard({
   currentUserId?: string;
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  viewerIsGuest?: boolean;
 }) {
   const canViewProfile = !!onViewProfile;
   const handleRowClick = () => {
@@ -214,19 +232,11 @@ function PlayerCard({
       title={canViewProfile ? "View profile" : undefined}
     >
       <div className="flex items-start gap-2.5">
-        {/* Avatar with skull overlay for eliminated */}
+        {/* Avatar — M-2: AI (including GM) and human share the same GeneratedAvatar
+              component; only the props differ (getAvatarPropsForPlayer handles AI/GM,
+              human players use type="player"). */}
         <div className="relative flex-shrink-0">
-          {player.isGameMaster ? (
-            <GeneratedAvatar
-              {...getAvatarPropsForPlayer(player)}
-              gameId={gameId}
-              enabled={true}
-              className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"}`}
-              fallbackColor={player.avatar}
-              initialUrl={avatarImageUrls[avatarCacheKey(getAvatarPropsForPlayer(player).name ?? player.name, getAvatarPropsForPlayer(player).type)]}
-              onAvatarLoaded={onAvatarUrlLoaded}
-            />
-          ) : player.isAI ? (
+          {player.isAI ? (
             <GeneratedAvatar
               {...getAvatarPropsForPlayer(player)}
               gameId={gameId}
@@ -271,7 +281,13 @@ function PlayerCard({
                   </span>
                   {player.isGameMaster && (
                     <Badge className="inline-flex items-center justify-center leading-none bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wider shadow-sm rounded-md">
-                      HOST
+                      GM
+                    </Badge>
+                  )}
+                  {/* Viewer is a guest: show Host badge on the human room owner's character */}
+                  {!player.isAI && !player.isGameMaster && viewerIsGuest && (
+                    <Badge className="inline-flex items-center justify-center leading-none bg-violet-500/20 text-violet-300 border-violet-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
+                      Host
                     </Badge>
                   )}
                   {resolveYouBadge(player, currentUserId) && (
@@ -313,6 +329,28 @@ function PlayerCard({
             </Button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function GuestCard({ guest }: { guest: GuestEntry }) {
+  const initial = guest.nickname?.charAt(0)?.toUpperCase() || "?";
+  return (
+    <div className="p-2 rounded-lg">
+      <div className="flex items-center gap-2.5">
+        <div className="h-9 w-9 rounded-full bg-emerald-800/40 border border-emerald-700/40 flex items-center justify-center text-emerald-300 text-sm font-bold flex-shrink-0">
+          {initial}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-emerald-200 truncate">{guest.nickname}</span>
+            <Badge className="inline-flex items-center justify-center leading-none bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
+              {OnlineBadge.Guest}
+            </Badge>
+          </div>
+          <div className="text-xs text-zinc-500 mt-0.5">Spectator</div>
+        </div>
       </div>
     </div>
   );

@@ -30,12 +30,25 @@ export async function POST(
 
   let inviteCode = game.invite_code;
   if (!inviteCode) {
-    inviteCode = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toLowerCase();
+    const candidate = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toLowerCase();
+    // Use a conditional update that only applies when invite_code is still NULL.
+    // This prevents a race condition where two concurrent requests both see
+    // invite_code=null and generate different codes; the second write is a no-op
+    // and we re-fetch to get whichever code won.
     const { error: updateErr } = await supabaseAdmin
       .from("games")
-      .update({ invite_code: inviteCode, updated_at: new Date().toISOString() })
-      .eq("id", gameId);
+      .update({ invite_code: candidate, updated_at: new Date().toISOString() })
+      .eq("id", gameId)
+      .is("invite_code", null); // only set if not already set
     if (updateErr) return NextResponse.json({ error: "Failed to generate invite code" }, { status: 500 });
+
+    // Re-read to get the code that actually won (ours or a concurrent request's)
+    const { data: refreshed } = await supabaseAdmin
+      .from("games")
+      .select("invite_code")
+      .eq("id", gameId)
+      .single();
+    inviteCode = refreshed?.invite_code ?? candidate;
   }
 
   const base = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;

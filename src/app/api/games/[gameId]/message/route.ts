@@ -5,12 +5,38 @@ import { supabaseAdmin } from "@/lib/supabase";
 /**
  * POST /api/games/[gameId]/message
  * Send a message as a guest player (or authenticated non-owner player).
- * The server writes the message into game_room_state and triggers a DB change
- * that Realtime subscribers (including the owner) will receive.
  *
- * Body: { guestId?: string; content: string; nickname: string; playerId?: string }
- * Auth: Bearer token (if logged in) OR guestId in body (if anonymous)
+ * Uses a Postgres RPC (`append_game_message`) to atomically append the message
+ * to game_room_state, preventing the read-modify-write race condition that
+ * could cause concurrent messages to overwrite each other.
+ *
+ * Body: { guestId?: string; content: string; nickname: string; playerId?: string; messageId?: string }
  */
+
+/** Patterns that could inject AI directives into the prompt. Strip these lines. */
+const DIRECTIVE_REGEX =
+  /^(ASSIGN_ROLE|REVEAL_ROLE|ELIMINATE|RECORD_EVENT|GAME_OVER|MY_BOARD_FOR|MY_NOTES|ACCESS|CHANNEL_SUMMARY)\s*:/i;
+
+/**
+ * Sanitize user-supplied content before it is injected into the AI prompt.
+ * Removes lines that match known directive keywords so guests cannot
+ * trigger game-logic commands (prompt injection).
+ */
+function sanitizeContent(raw: string): string {
+  return raw
+    .split("\n")
+    .filter((line) => !DIRECTIVE_REGEX.test(line.trim()))
+    .join("\n")
+    .trim();
+}
+
+// ─── Simple in-process rate limiter ─────────────────────────────────────────
+// Tracks the last send time per (gameId + memberId) pair.
+// This is per-instance (serverless-friendly: prevents bursts within a single
+// cold-start window); persistent rate-limiting requires Redis or Supabase.
+const lastSentAt = new Map<string, number>();
+const RATE_LIMIT_MS = 1_000; // minimum gap between messages per member
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
@@ -25,13 +51,13 @@ export async function POST(
     nickname?: string;
     playerId?: string;
     channelId?: string;
-    messageId?: string; // client-generated ID for deduplication against optimistic update
+    messageId?: string;
   };
 
   const { guestId, content, nickname, playerId, channelId = "game-room", messageId } = body;
   if (!content?.trim()) return NextResponse.json({ error: "content required" }, { status: 400 });
 
-  // Identify the sender
+  // ── Identify the sender ────────────────────────────────────────────────────
   const user = await getAuthUserFromRequest(request).catch(() => null);
   const effectiveUserId = user?.id ?? null;
   const effectiveGuestId = !user ? guestId : null;
@@ -40,7 +66,7 @@ export async function POST(
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  // Validate membership
+  // ── Validate membership ────────────────────────────────────────────────────
   let memberQuery = supabaseAdmin
     .from("game_members")
     .select("id, nickname, player_id, is_owner")
@@ -57,35 +83,43 @@ export async function POST(
     return NextResponse.json({ error: "Not a member of this game" }, { status: 403 });
   }
 
-  // Fetch current game_room_state
-  const { data: roomRow, error: roomErr } = await supabaseAdmin
-    .from("game_room_state")
-    .select("state")
-    .eq("game_id", gameId)
-    .maybeSingle();
+  // ── Rate limiting ──────────────────────────────────────────────────────────
+  const rateLimitKey = `${gameId}:${member.id}`;
+  const now = Date.now();
+  const last = lastSentAt.get(rateLimitKey) ?? 0;
+  if (now - last < RATE_LIMIT_MS) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+  lastSentAt.set(rateLimitKey, now);
+  // Prune old entries to prevent unbounded growth
+  if (lastSentAt.size > 10_000) {
+    const cutoff = now - 60_000;
+    for (const [k, t] of lastSentAt) {
+      if (t < cutoff) lastSentAt.delete(k);
+    }
+  }
 
-  if (roomErr) return NextResponse.json({ error: "Failed to read game state" }, { status: 500 });
+  // ── Content sanitization (prevent prompt injection) ───────────────────────
+  const safeContent = sanitizeContent(content);
+  if (!safeContent) {
+    return NextResponse.json({ error: "Message content is empty after sanitization" }, { status: 400 });
+  }
 
-  const currentState = (roomRow?.state ?? {}) as Record<string, unknown>;
-  const existingMessages = Array.isArray(currentState.messages) ? currentState.messages : [];
-
+  // ── Build message object ───────────────────────────────────────────────────
   const newMessage = {
-    // Use client-provided ID if present so the Realtime echo matches the
-    // optimistic local message and mergeRemoteState deduplicates it correctly.
     id: messageId ?? `msg-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     senderId: playerId ?? member.player_id ?? (effectiveGuestId ?? effectiveUserId ?? "unknown"),
     senderName: nickname ?? member.nickname,
     senderAvatar: "#6366f1",
-    content: content.trim(),
+    content: safeContent,
     timestamp: new Date().toISOString(),
     isAI: false,
     channelId,
-    // Tag as guest message so owner's client can trigger AI response
     isGuestMessage: true,
     guestMemberId: member.id,
   };
 
-  // Append message and upsert state (owner's user_id stays as-is, we update the state JSON)
+  // ── Fetch owner userId for the upsert fallback ────────────────────────────
   const { data: gameRow } = await supabaseAdmin
     .from("games")
     .select("user_id")
@@ -94,22 +128,18 @@ export async function POST(
 
   const ownerUserId = gameRow?.user_id ?? effectiveUserId ?? "unknown";
 
-  const updatedMessages = [...existingMessages.slice(-59), newMessage];
-  const newState = {
-    ...currentState,
-    messages: updatedMessages,
-    savedAt: new Date().toISOString(),
-    clientId: `guest_${member.id}`, // non-owner clientId so owner doesn't skip it
-  };
+  // ── Atomically append message via Postgres RPC (fixes race condition) ─────
+  const { error: rpcErr } = await supabaseAdmin.rpc("append_game_message", {
+    p_game_id:   gameId,
+    p_message:   newMessage,
+    p_owner_uid: ownerUserId,
+    p_max_msgs:  60,
+  });
 
-  const { error: upsertErr } = await supabaseAdmin
-    .from("game_room_state")
-    .upsert(
-      { game_id: gameId, user_id: ownerUserId, state: newState, updated_at: new Date().toISOString() },
-      { onConflict: "game_id" }
-    );
-
-  if (upsertErr) return NextResponse.json({ error: "Failed to save message" }, { status: 500 });
+  if (rpcErr) {
+    console.error("[message/route] RPC error:", rpcErr);
+    return NextResponse.json({ error: "Failed to save message" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true, message: newMessage });
 }
