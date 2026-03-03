@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const DIFFICULTY_COLOR: Record<string, string> = {
+const STYLE_COLOR: Record<string, string> = {
   Casual:      "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
   Strategic:   "bg-yellow-500/15 text-yellow-300 border border-yellow-500/30",
   Competitive: "bg-red-500/15 text-red-300 border border-red-500/30",
@@ -142,8 +142,8 @@ export default async function GameLandingPage({ params }: Props) {
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
                     {game.category}
                   </span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${DIFFICULTY_COLOR[game.difficulty]}`}>
-                    {game.difficulty}
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STYLE_COLOR[game.style]}`}>
+                    {game.style}
                   </span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
@@ -169,7 +169,7 @@ export default async function GameLandingPage({ params }: Props) {
               </span>
               <span className="flex items-center gap-1.5">
                 <BarChart2 className="h-4 w-4 text-violet-400" />
-                {game.difficulty}
+                {game.style}
               </span>
             </div>
 

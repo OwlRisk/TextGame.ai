@@ -101,7 +101,7 @@ export default function GamesPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-3xl leading-none">{game.icon}</span>
-                    <span className="text-xs text-zinc-500 mt-1">{game.difficulty}</span>
+                    <span className="text-xs text-zinc-500 mt-1">{game.style}</span>
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-white group-hover:text-violet-300 transition-colors leading-snug">
