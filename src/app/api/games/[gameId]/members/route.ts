@@ -27,21 +27,36 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify membership
-  let memberQuery = supabaseAdmin
-    .from("game_members")
-    .select("id")
-    .eq("game_id", gameId);
+  // Game owners are allowed even if they have no row in game_members yet
+  // (they may not have gone through the explicit join flow).
+  let callerIsAuthorized = false;
 
   if (user) {
-    memberQuery = memberQuery.eq("user_id", user.id);
-  } else {
-    memberQuery = memberQuery.eq("guest_id", guestId!);
+    const { data: game } = await supabaseAdmin
+      .from("games")
+      .select("user_id")
+      .eq("id", gameId)
+      .maybeSingle();
+    if (game?.user_id === user.id) callerIsAuthorized = true;
   }
 
-  const { data: membership, error: memberErr } = await memberQuery.maybeSingle();
-  if (memberErr || !membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!callerIsAuthorized) {
+    // Verify membership via game_members
+    let memberQuery = supabaseAdmin
+      .from("game_members")
+      .select("id")
+      .eq("game_id", gameId);
+
+    if (user) {
+      memberQuery = memberQuery.eq("user_id", user.id);
+    } else {
+      memberQuery = memberQuery.eq("guest_id", guestId!);
+    }
+
+    const { data: membership, error: memberErr } = await memberQuery.maybeSingle();
+    if (memberErr || !membership) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   // ── Fetch all members ──────────────────────────────────────────────────────
