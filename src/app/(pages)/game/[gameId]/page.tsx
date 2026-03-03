@@ -1879,11 +1879,8 @@ ${rulesText || "No specific rules defined."}`.trim();
     shareJustCopied: shareCopied,
     onInvite: isOwner && session?.access_token ? handleInvite : undefined,
     inviteJustCopied: inviteCopied,
-    // Show Players Online to everyone (owner + guests) when there are members
-    roomMembers: roomMembers.length > 0 ? roomMembers : undefined,
-    // viewerMemberId: owner has is_owner=true so we detect them via is_owner;
-    // guests pass their memberId so their own row shows "You" not "Guest"
-    viewerMemberId: isGuestPlayer ? (guestMemberId ?? undefined) : undefined,
+    // Players Online section removed — right panel (enrichedGuestMembers) shows
+    // real-time Presence data more accurately; left sidebar used stale DB poll.
     textSectionLabel: "Sections",
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
