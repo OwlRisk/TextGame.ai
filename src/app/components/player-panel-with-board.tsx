@@ -297,7 +297,7 @@ function PlayerCard({
                       HOST
                     </Badge>
                   )}
-                  {!player.isAI && !isEliminated && (
+                  {!player.isAI && !isEliminated && !!currentUserId && player.id === currentUserId && (
                     <Badge className="inline-flex items-center justify-center leading-none bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
                       YOU
                     </Badge>
