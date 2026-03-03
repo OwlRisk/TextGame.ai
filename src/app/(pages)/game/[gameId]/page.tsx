@@ -126,6 +126,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [shareCopied, setShareCopied] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [roomMembers, setRoomMembers] = useState<Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>>([]);
+  // Guests currently online according to Supabase Presence (real-time, auto-cleared on disconnect)
+  const [onlineGuestPresences, setOnlineGuestPresences] = useState<Array<{ id: string; nickname: string }>>([]);
 
   // Guest player: arrived via /join/[inviteCode] with guestId URL param
   const [guestId, setGuestId] = useState<string | null>(null);
@@ -239,28 +241,40 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       config: { presence: { key: session?.user?.id ?? guestId ?? "anon" } },
     });
 
+    const syncGuestsFromState = (state: Record<string, Array<{ role?: string; nickname?: string }>>) => {
+      const guests = Object.entries(state).flatMap(([key, entries]) =>
+        entries
+          .filter((p) => p.role === "guest")
+          .map((p) => ({ id: key, nickname: p.nickname ?? "Guest" }))
+      );
+      setOnlineGuestPresences(guests);
+    };
+
     channel
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ role: string }>();
+        const state = channel.presenceState<{ role: string; nickname?: string }>();
         const ownerPresent = Object.values(state)
           .flat()
           .some((p) => p.role === "owner");
         setIsOwnerOnline(ownerPresent);
+        syncGuestsFromState(state);
       })
       .on("presence", { event: "join" }, ({ newPresences }) => {
         if ((newPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
           setIsOwnerOnline(true);
         }
+        // sync event fires after join and rebuilds the full list
       })
       .on("presence", { event: "leave" }, ({ leftPresences }) => {
         if ((leftPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
           // Re-check full state: another owner tab may still be open
-          const state = channel.presenceState<{ role: string }>();
+          const state = channel.presenceState<{ role: string; nickname?: string }>();
           const ownerStillPresent = Object.values(state)
             .flat()
             .some((p) => p.role === "owner");
           setIsOwnerOnline(ownerStillPresent);
         }
+        // sync event fires after leave and rebuilds the full list
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -1863,13 +1877,13 @@ ${rulesText || "No specific rules defined."}`.trim();
             </span>
           </div>
         )}
-        {/* Show other participants to everyone when someone else is in the room */}
-        {roomMembers.length > 1 && (
+        {/* Show other participants to everyone when someone else is online */}
+        {onlineGuestPresences.length > 0 && (
           <div className="flex-shrink-0 px-4 py-1.5 bg-emerald-950/30 border-b border-emerald-800/20 flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
             <span className="text-xs text-emerald-300">
-              {roomMembers.length} players in room:{" "}
-              {roomMembers.map((m) => m.nickname).join(", ")}
+              {onlineGuestPresences.length + 1} players in room:{" "}
+              {onlineGuestPresences.map((m) => m.nickname).join(", ")}
             </span>
           </div>
         )}
@@ -1981,7 +1995,7 @@ ${rulesText || "No specific rules defined."}`.trim();
                 onTabChange={setRightPanelTab}
                 playerBoardLabel={currentGame?.config?.playerBoardLabel}
                 viewerIsGuest={isGuestPlayer}
-                guestMembers={roomMembers.filter((m) => !m.is_owner)}
+                guestMembers={onlineGuestPresences}
               />
             </div>
 
@@ -2000,7 +2014,7 @@ ${rulesText || "No specific rules defined."}`.trim();
                   onTabChange={setRightPanelTab}
                   playerBoardLabel={currentGame?.config?.playerBoardLabel}
                   viewerIsGuest={isGuestPlayer}
-                  guestMembers={roomMembers.filter((m) => !m.is_owner)}
+                  guestMembers={onlineGuestPresences}
                 />
               </SheetContent>
             </Sheet>
