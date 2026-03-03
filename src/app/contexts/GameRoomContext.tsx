@@ -397,6 +397,26 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     }
   }, []);
 
+  // ─── Guest polling fallback ──────────────────────────────────────────────
+  // postgres_changes Realtime is not reliable for unauthenticated (anon) clients.
+  // When there is no logged-in user, poll the DB every 3 s to pick up new
+  // messages / state updates (AI responses, player updates, avatars, etc.)
+  // This gives guests a near-real-time "meeting" experience without auth.
+  useEffect(() => {
+    if (!gameId || !isHydrated || user?.id) return; // owners use Realtime, skip
+
+    const poll = () => {
+      getGameRoomState(gameId)
+        .then(({ data, error }) => {
+          if (!error && data != null) mergeRemoteState(data as Record<string, unknown>);
+        })
+        .catch(() => {/* non-critical */});
+    };
+
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [gameId, isHydrated, user?.id, mergeRemoteState]);
+
   useEffect(() => {
     if (!gameId) return;
 

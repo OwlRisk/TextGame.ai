@@ -272,9 +272,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return () => clearInterval(interval);
   }, [gameId, isOwner]);
 
-  // ─── Guest: poll for new messages when Realtime is not available ──────────
-  // (Realtime requires being logged in; guests use polling as fallback)
-  const lastPollMessageCountRef = useRef(0);
+  // ─── Guest: poll member list every 15 s ───────────────────────────────────
+  // (Message/state polling is handled inside GameRoomContext for non-auth users)
   useEffect(() => {
     if (!isGuestPlayer || !gameId) return;
 
@@ -286,8 +285,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         if (data.members) setRoomMembers(data.members);
       } catch {/* ignore */}
     };
-    // Poll member list every 10s for guest
-    const interval = setInterval(poll, 10_000);
+    poll(); // immediate first fetch
+    const interval = setInterval(poll, 15_000);
     return () => clearInterval(interval);
   }, [isGuestPlayer, gameId]);
 
