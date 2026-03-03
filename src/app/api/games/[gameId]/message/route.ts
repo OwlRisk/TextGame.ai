@@ -48,13 +48,11 @@ export async function POST(
   const body = await request.json().catch(() => ({})) as {
     guestId?: string;
     content?: string;
-    nickname?: string;
-    playerId?: string;
     channelId?: string;
     messageId?: string;
   };
 
-  const { guestId, content, nickname, playerId, channelId = "game-room", messageId } = body;
+  const { guestId, content, channelId = "game-room", messageId } = body;
   if (!content?.trim()) return NextResponse.json({ error: "content required" }, { status: 400 });
 
   // ── Identify the sender ────────────────────────────────────────────────────
@@ -108,8 +106,8 @@ export async function POST(
   // ── Build message object ───────────────────────────────────────────────────
   const newMessage = {
     id: messageId ?? `msg-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
-    senderId: playerId ?? member.player_id ?? (effectiveGuestId ?? effectiveUserId ?? "unknown"),
-    senderName: nickname ?? member.nickname,
+    senderId: member.player_id ?? (effectiveGuestId ?? effectiveUserId ?? "unknown"),
+    senderName: member.nickname,
     senderAvatar: "#6366f1",
     content: safeContent,
     timestamp: new Date().toISOString(),

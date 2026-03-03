@@ -1435,6 +1435,11 @@ ${rulesText || "No specific rules defined."}`.trim();
   // C-4: Use handleSendMessageRef instead of handleSendMessage directly so this
   // effect is NOT re-run on every render (the function reference changes each render).
   const lastProcessedGuestMsgRef = useRef<string | null>(null);
+  // Tracks whether we have seen the initial DB-loaded messages yet.
+  // On the first run that contains guest messages we record the latest ID without
+  // triggering the AI — this prevents re-firing for historical messages after a
+  // page refresh.  Only messages that arrive AFTER initialization will trigger AI.
+  const autoTriggerInitializedRef = useRef(false);
   useEffect(() => {
     if (!isOwner || isRoundInProgress) return;
     const guestMessages = messages.filter(
@@ -1442,6 +1447,15 @@ ${rulesText || "No specific rules defined."}`.trim();
     );
     if (guestMessages.length === 0) return;
     const latest = guestMessages[guestMessages.length - 1];
+
+    if (!autoTriggerInitializedRef.current) {
+      // First time we see guest messages: these are historical (loaded from DB on mount).
+      // Mark the latest as processed so we don't re-trigger AI for them after refresh.
+      autoTriggerInitializedRef.current = true;
+      lastProcessedGuestMsgRef.current = latest.id;
+      return;
+    }
+
     if (latest.id === lastProcessedGuestMsgRef.current) return;
     lastProcessedGuestMsgRef.current = latest.id;
     // Trigger host AI response. Pass skipAddMessage so the guest's existing message
