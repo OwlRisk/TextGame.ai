@@ -1795,32 +1795,6 @@ ${rulesText || "No specific rules defined."}`.trim();
     }
   }, [gameId, guestId, guestNickname, selectedChannelId, currentGame?.config?.channels, addMessage, setMessages]);
 
-  if (!currentGame) {
-    return (
-      <div className="h-[100dvh] flex items-center justify-center bg-zinc-900 text-white">
-        <div className="text-center">
-          {gamesLoading || sharedLoadPending ? (
-            <>
-              <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-violet-500 border-t-transparent mb-4" aria-hidden />
-              <p className="text-zinc-400">Loading game…</p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold mb-4">Game not found</h1>
-              <p className="text-zinc-400 text-sm mb-4">This game may have been deleted or the link is invalid.</p>
-              <button
-                onClick={() => router.push("/")}
-                className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700"
-              >
-                Go Home
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   /**
    * Owner assigns (or unassigns) an online guest to an AI player slot.
    * Calls PATCH /api/games/[gameId]/members/[memberId] then refreshes the member list.
@@ -1846,6 +1820,32 @@ ${rulesText || "No specific rules defined."}`.trim();
       /* non-critical */
     }
   }, [gameId, session?.access_token]);
+
+  if (!currentGame) {
+    return (
+      <div className="h-[100dvh] flex items-center justify-center bg-zinc-900 text-white">
+        <div className="text-center">
+          {gamesLoading || sharedLoadPending ? (
+            <>
+              <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-violet-500 border-t-transparent mb-4" aria-hidden />
+              <p className="text-zinc-400">Loading game…</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold mb-4">Game not found</h1>
+              <p className="text-zinc-400 text-sm mb-4">This game may have been deleted or the link is invalid.</p>
+              <button
+                onClick={() => router.push("/")}
+                className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700"
+              >
+                Go Home
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const sidebarCommon = {
     games,
