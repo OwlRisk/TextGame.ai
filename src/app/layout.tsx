@@ -87,6 +87,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full overflow-hidden [-webkit-tap-highlight-color:transparent]">
+      <head>
+        {/* Preconnect to Supabase for faster auth/db calls */}
+        <link rel="preconnect" href="https://hazjbhhreltgjexxaazn.supabase.co" />
+        <link rel="dns-prefetch" href="https://hazjbhhreltgjexxaazn.supabase.co" />
+        {/* Preconnect to Vercel Analytics */}
+        <link rel="preconnect" href="https://va.vercel-scripts.com" />
+      </head>
       <body className="antialiased h-full overflow-hidden safe-area-padding" suppressHydrationWarning>
         <script
           type="application/ld+json"

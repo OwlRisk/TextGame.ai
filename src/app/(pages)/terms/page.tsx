@@ -20,7 +20,7 @@ export default function TermsPage() {
           </Button>
         </Link>
         <h1 className="text-2xl font-bold text-white mb-2">Terms of Service</h1>
-        <p className="text-sm text-zinc-500 mb-8">Last updated: February 2025</p>
+        <p className="text-sm text-zinc-500 mb-8">Last updated: March 2026</p>
 
         <div className="space-y-6 text-zinc-300 text-sm leading-relaxed">
           <section>
@@ -42,19 +42,25 @@ export default function TermsPage() {
             </p>
           </section>
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">4. Intellectual Property</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">4. Credits &amp; Subscriptions</h2>
+            <p>
+              Subscription plans are billed monthly and include a credit allocation that renews each billing period. Credits are consumed by AI interactions and do not have cash value. Unused credits carry over within an active subscription. Refund requests for subscription charges may be submitted within 7 days of payment by contacting us — we review each case individually. Credits purchased separately are non-refundable once consumed.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">5. Intellectual Property</h2>
             <p>
               The interface, copy, branding, and technology in this service are owned by us or the relevant rights holders. You may not copy, modify, or use them for commercial purposes without permission.
             </p>
           </section>
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">5. Disclaimer</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">6. Disclaimer</h2>
             <p>
               The service is provided &quot;as is.&quot; To the extent permitted by law, we are not liable for the availability, accuracy, or any direct or indirect loss arising from use of the service.
             </p>
           </section>
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">6. Changes to Terms</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">7. Changes to Terms</h2>
             <p>
               We may revise these terms; the updated version will be posted on this page. Continued use of the service constitutes acceptance of the revised terms.
             </p>
@@ -62,7 +68,7 @@ export default function TermsPage() {
           <section>
             <p className="text-zinc-500">
               If you have questions, contact us at{' '}
-              <a href="mailto:contact@cvnio.com" className="underline hover:text-zinc-300">contact@cvnio.com</a>.
+              <a href="mailto:info@cvnio.com" className="underline hover:text-zinc-300">info@cvnio.com</a>.
             </p>
           </section>
         </div>

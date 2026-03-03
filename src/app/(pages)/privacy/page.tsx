@@ -20,26 +20,33 @@ export default function PrivacyPage() {
           </Button>
         </Link>
         <h1 className="text-2xl font-bold text-white mb-2">Privacy Policy</h1>
-        <p className="text-sm text-zinc-500 mb-8">Last updated: February 2025</p>
+        <p className="text-sm text-zinc-500 mb-8">Last updated: March 2026</p>
 
         <div className="space-y-6 text-zinc-300 text-sm leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">1. Information We Collect</h2>
             <p>
-              To provide sign-in and game features we process your login data (e.g. email and identifier when using Google sign-in) via Supabase Auth. Game configurations and conversation content you create in the app may be stored or processed as designed, for syncing and restoring games across devices.
+              To provide sign-in and game features we process your login data (e.g. email and identifier when using Google sign-in) via Supabase Auth. Game configurations and conversation content you create in the app may be stored or processed for syncing and restoring games across devices. If you subscribe or purchase credits, your payment is processed by Stripe — we do not store your card details. We also collect anonymous usage analytics (page views, interactions) via Vercel Analytics to improve the product.
             </p>
           </section>
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">2. How We Use It</h2>
             <p>
-              We use this information to provide and maintain the service, sync accounts and data, improve the product, and comply with legal requests when required.
+              We use this information to provide and maintain the service, sync accounts and data, process payments, and improve the product. We do not sell your personal data to third parties.
             </p>
           </section>
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">3. Third-Party Services</h2>
             <p>
-              We use Supabase for authentication and database storage, and may use third-party APIs (e.g. OpenAI, voice) for AI host and game features. Those services have their own privacy policies; we recommend reviewing them.
+              We use the following third-party services, each with their own privacy policies:
             </p>
+            <ul className="mt-2 space-y-1 list-disc list-inside text-zinc-400">
+              <li><strong className="text-zinc-300">Supabase</strong> — authentication and database storage</li>
+              <li><strong className="text-zinc-300">OpenAI</strong> — AI text generation and image creation</li>
+              <li><strong className="text-zinc-300">Inworld</strong> — AI voice / text-to-speech</li>
+              <li><strong className="text-zinc-300">Stripe</strong> — payment processing and subscription management</li>
+              <li><strong className="text-zinc-300">Vercel</strong> — hosting and anonymous usage analytics</li>
+            </ul>
           </section>
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">4. Security and Retention</h2>
@@ -50,7 +57,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">5. Your Rights</h2>
             <p>
-              You have the right to access, correct, or delete your personal information, and to exercise these rights by signing out, deleting your account, or contacting us.
+              You have the right to access, correct, or delete your personal information. You can exercise these rights by signing out, deleting your account in Settings, or contacting us directly.
             </p>
           </section>
           <section>
@@ -62,7 +69,7 @@ export default function PrivacyPage() {
           <section>
             <p className="text-zinc-500">
               For questions or requests, contact us at{' '}
-              <a href="mailto:contact@cvnio.com" className="underline hover:text-zinc-300">contact@cvnio.com</a>.
+              <a href="mailto:info@cvnio.com" className="underline hover:text-zinc-300">info@cvnio.com</a>.
             </p>
           </section>
         </div>

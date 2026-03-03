@@ -5,6 +5,9 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    browsersListForSwc: true,
+  },
   async headers() {
     return [
       {
