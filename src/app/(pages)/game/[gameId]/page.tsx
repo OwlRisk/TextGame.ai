@@ -173,7 +173,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // (which would otherwise re-run on every render because handleSendMessage is a new
   // function reference each time) can call the latest version without being listed
   // as an effect dependency.
-  const handleSendMessageRef = useRef<((content: string) => Promise<void>) | null>(null);
+  const handleSendMessageRef = useRef<((content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => Promise<void>) | null>(null);
 
   // Summaries from "decision" private channels that need to be injected into the HOST's
   // context on the player's next message turn. Reset after each HOST call that consumes them.
@@ -553,7 +553,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }).catch((e) => console.warn("Initial player replies failed", e));
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
     // Prevent concurrent rounds: second message while AI is still replying would cause parallel Host calls
     if (isRoundInProgress) return;
@@ -563,18 +563,23 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     const cfgChannels = currentGame?.config?.channels;
     const roomIds = cfgChannels?.length ? new Set(cfgChannels.map((c) => c.id)) : new Set(["game-room"]);
-    const channelId = selectedChannelId && roomIds.has(selectedChannelId) ? selectedChannelId : (cfgChannels?.[0]?.id ?? "game-room");
+    const channelId = options?.channelId
+      ?? (selectedChannelId && roomIds.has(selectedChannelId) ? selectedChannelId : (cfgChannels?.[0]?.id ?? "game-room"));
 
-    addMessage(
-      {
-        senderId: userId,
-        senderName: humanGameIdentity?.name || "You",
-        senderAvatar: "#6366f1",
-        content,
-        isAI: false,
-      },
-      channelId
-    );
+    // When triggered by a guest message the guest's message is already in the chat.
+    // Skip adding a duplicate owner message in that case.
+    if (!options?.skipAddMessage) {
+      addMessage(
+        {
+          senderId: userId,
+          senderName: humanGameIdentity?.name || "You",
+          senderAvatar: "#6366f1",
+          content,
+          isAI: false,
+        },
+        channelId
+      );
+    }
 
     // Get AI response (host reply in same channel)
     setLastFailedSendContent(null);
@@ -1439,8 +1444,13 @@ ${rulesText || "No specific rules defined."}`.trim();
     const latest = guestMessages[guestMessages.length - 1];
     if (latest.id === lastProcessedGuestMsgRef.current) return;
     lastProcessedGuestMsgRef.current = latest.id;
-    // Trigger host AI response via stable ref to avoid stale closure
-    handleSendMessageRef.current?.(latest.content);
+    // Trigger host AI response. Pass skipAddMessage so the guest's existing message
+    // is not duplicated under the owner's name. Pass channelId so the AI replies
+    // in the same channel the guest used, not necessarily the owner's current view.
+    handleSendMessageRef.current?.(latest.content, {
+      skipAddMessage: true,
+      channelId: (latest as unknown as { channelId?: string }).channelId ?? undefined,
+    });
   }, [messages, isOwner, isRoundInProgress]); // handleSendMessage intentionally omitted — use ref
 
   // GM-defined game rooms (always compute so hook order is stable; safe when currentGame is null)
