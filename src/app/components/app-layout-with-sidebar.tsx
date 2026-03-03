@@ -52,7 +52,7 @@ export function AppLayoutWithSidebar({
   };
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
+    <div className="h-[100dvh] flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
       <header className={`${hideMobileHeader ? "hidden" : "md:hidden"} flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95`}>
         <Button
           variant="ghost"

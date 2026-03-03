@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
-import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus, PanelLeft } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
@@ -1960,9 +1959,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           </div>
         </div>
 
-        {/* Chat Messages */}
-        <ScrollArea className="flex-1 min-h-0 select-text">
-          <div className="max-w-none mx-auto py-8 sm:py-12 px-4 sm:px-6 md:px-8 space-y-6 sm:space-y-8">
+        {/* Chat Messages — native scroll for iOS touch support */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain select-text">
+          <div className="max-w-none mx-auto py-4 sm:py-10 px-3 sm:px-6 md:px-8 space-y-4 sm:space-y-6">
             {messages.map((message, index) => {
               // Filter out empty messages (including empty temp messages)
               if (!message.content.trim()) {
@@ -1973,7 +1972,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               return (
                 <div
                   key={message.id}
-                  className={`flex gap-3 sm:gap-4 ${isUser ? "flex-row-reverse" : ""} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  className={`flex gap-2 sm:gap-3 ${isUser ? "flex-row-reverse" : ""} animate-in fade-in slide-in-from-bottom-2 duration-300`}
                   style={{ animationDelay: `${Math.min(index * 30, 150)}ms` }}
                 >
                   <div className="relative flex-shrink-0">
@@ -1987,16 +1986,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     <GeneratedAvatar
                       name="Game Master"
                       type="gm"
-                      className="h-10 w-10 sm:h-11 sm:w-11 border-2 border-white/10 shadow-lg relative border-amber-500/20"
+                      className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-white/10 shadow-lg relative border-amber-500/20"
                       fallbackColor="#f59e0b"
-                      fallback={<Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />}
+                      fallback={<Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                     />
                     ) : (
-                      <Avatar className="h-10 w-10 sm:h-11 sm:w-11 border-2 shadow-lg relative border-violet-500/20">
+                      <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 shadow-lg relative border-violet-500/20">
                         {userAvatarUrl ? (
                           <AvatarImage src={userAvatarUrl} alt="You" className="object-cover" />
                         ) : null}
-                        <AvatarFallback className="bg-gradient-to-br from-violet-500 via-indigo-500 to-violet-600 text-white font-semibold text-xs">
+                        <AvatarFallback className="bg-gradient-to-br from-violet-500 via-indigo-500 to-violet-600 text-white font-semibold text-[10px] sm:text-xs">
                           YOU
                         </AvatarFallback>
                       </Avatar>
@@ -2004,20 +2003,20 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   </div>
 
                   <div className={`flex-1 min-w-0 ${isUser ? "flex justify-end" : ""}`}>
-                    <div className={`max-w-[90%] sm:max-w-[85%] ${isUser ? "flex flex-col items-end" : ""}`}>
+                    <div className={`max-w-[88%] sm:max-w-[82%] ${isUser ? "flex flex-col items-end" : ""}`}>
                       <div
-                        className={`rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 shadow-lg backdrop-blur-xl relative overflow-hidden ${
+                        className={`rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-5 sm:py-4 shadow-lg backdrop-blur-xl relative overflow-hidden ${
                           message.role === "gm"
                             ? "bg-zinc-800/80 border border-white/[0.08] text-zinc-100"
                             : "bg-violet-600/85 border border-white/10 text-white"
                         } ${isStreamingMsg ? "ring-1 ring-amber-500/20" : ""}`}
                       >
                         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
-                        <div className="text-[15px] sm:text-base leading-relaxed relative z-10 font-normal select-text">
+                        <div className="text-sm sm:text-[15px] leading-relaxed relative z-10 font-normal select-text">
                           {formatMessage(message.role === "gm" ? cleanGMMessageContentForDisplay(message.content) : message.content)}
                         </div>
                       </div>
-                      <div className={`text-[11px] text-zinc-500 mt-1.5 ${isUser ? "pr-1" : "pl-1"}`}>
+                      <div className={`text-[10px] sm:text-[11px] text-zinc-500 mt-1 ${isUser ? "pr-1" : "pl-1"}`}>
                         {formatMessageTime(message.timestamp)}
                       </div>
                     </div>
@@ -2028,14 +2027,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
             <div ref={scrollRef} />
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Input */}
         {conversationState !== "completed" && (
-          <div className="p-4 sm:p-5 border-t border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
+          <div className="px-3 py-3 sm:p-5 border-t border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
             <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5 pointer-events-none" />
             
-            <div className="max-w-none mx-auto relative space-y-3">
+            <div className="max-w-none mx-auto relative space-y-2 sm:space-y-3">
               {(isRecording || isTranscribing) && !voiceError ? (
                 <div className="relative w-full px-1">
                   <div
@@ -2087,8 +2086,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               ) : (
                 <>
                   {displayChips.length > 0 && !isGMTyping && !isStreaming && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      <span className="text-xs text-zinc-500 self-center mr-1">Quick reply:</span>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                      <span className="text-xs text-zinc-500 self-center mr-1 hidden sm:inline">Quick reply:</span>
                       {displayChips.map((chip) => (
                         <Button
                           key={chip.value}
@@ -2096,7 +2095,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           variant="outline"
                           size="sm"
                           title={chip.fullLabel ?? chip.label}
-                          className="h-auto min-h-8 max-w-[280px] sm:max-w-[320px] px-3 py-1.5 text-sm text-left whitespace-normal border-white/20 bg-white/5 hover:bg-white/10 text-zinc-200 hover:text-white leading-snug"
+                          className="h-auto min-h-[2rem] max-w-[calc(100%-4px)] sm:max-w-[320px] px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-left whitespace-normal border-white/20 bg-white/5 hover:bg-white/10 text-zinc-200 hover:text-white leading-snug"
                           onClick={() => handleSend(chip.value)}
                         >
                           {chip.label}
@@ -2123,7 +2122,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         placeholder={
                           isGMTyping || isStreaming ? "GM is thinking..." : "Chat with Game Master, design your game rules..."
                         }
-                        className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm sm:text-base rounded-xl sm:rounded-2xl px-4 sm:px-5 py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
+                        className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
                         style={{ minHeight: `${MIN_INPUT_H}px`, maxHeight: `${MAX_INPUT_H}px` }}
                         disabled={isGMTyping}
                         rows={1}
@@ -2139,7 +2138,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       }}
                       disabled={isGMTyping || (!mounted ? true : !voiceSupported)}
                       size="icon"
-                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 transition-all duration-200 disabled:opacity-50 disabled:shadow-none bg-zinc-700/80 hover:bg-zinc-600/80 border border-white/10 hover:border-white/20"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 transition-all duration-200 disabled:opacity-50 disabled:shadow-none bg-zinc-700/80 hover:bg-zinc-600/80 border border-white/10 hover:border-white/20"
                       title="Voice input"
                     >
                       <Mic className="h-4 w-4 sm:h-5 sm:w-5 relative z-10 text-zinc-300" />
@@ -2148,7 +2147,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       onClick={() => handleSend()}
                       disabled={!input.trim() || isGMTyping}
                       size="icon"
-                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 bg-violet-600 hover:bg-violet-500 border border-violet-500/30 hover:border-violet-400/40 transition-all duration-200 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0 bg-violet-600 hover:bg-violet-500 border border-violet-500/30 hover:border-violet-400/40 transition-all duration-200 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
                     >
                       <Send className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </Button>
