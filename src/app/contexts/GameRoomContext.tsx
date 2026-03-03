@@ -206,13 +206,23 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           setIsHydrated(true);
         });
     } else {
+      // Guest (unauthenticated): load from DB so avatars/players/state are populated.
+      // The game_room_state table has USING(true) RLS so anon clients can read.
+      // Also apply any cached local state as a fast-path while DB responds.
       try {
         const saved = localStorage.getItem(`gameRoom_${gameId}`);
         if (saved) applyState(JSON.parse(saved));
       } catch (e) {
         console.error("Error loading game room state:", e);
       }
-      setIsHydrated(true);
+      getGameRoomState(gameId)
+        .then(({ data, error }) => {
+          if (!error && data != null) {
+            applyState(data as Record<string, unknown>);
+          }
+        })
+        .catch(() => {/* non-critical for guests */})
+        .finally(() => setIsHydrated(true));
     }
   }, [gameId, user?.id]);
 
@@ -372,6 +382,18 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     }
     if (remoteState.gameEvents && Array.isArray(remoteState.gameEvents)) {
       setGameEvents(remoteState.gameEvents as string[]);
+    }
+    if (remoteState.avatarImageUrls && typeof remoteState.avatarImageUrls === "object") {
+      setAvatarImageUrls((prev) => ({
+        ...prev,
+        ...(remoteState.avatarImageUrls as Record<string, string>),
+      }));
+    }
+    if (remoteState.players && Array.isArray(remoteState.players)) {
+      // Already handled above, but also update humanGameIdentity from players if present
+    }
+    if (remoteState.humanGameIdentity && typeof (remoteState.humanGameIdentity as Record<string, unknown>)?.name === "string") {
+      setHumanGameIdentity({ name: (remoteState.humanGameIdentity as Record<string, string>).name });
     }
   }, []);
 
