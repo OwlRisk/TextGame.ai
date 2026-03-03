@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Users, Clock, Play, Lightbulb, Crown, Flame, Swords, Drama, MessageCircle, Search } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -564,10 +565,12 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           {/* Cover image */}
           <div className="relative h-36 overflow-hidden">
             {template.cover ? (
-              <img
+              <Image
                 src={template.cover}
                 alt={template.name}
-                loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                fill
+                sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
               <div className={`w-full h-full bg-gradient-to-br ${template.color} flex items-center justify-center text-5xl`}>
@@ -619,10 +622,12 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {/* Cover */}
         <div className="relative h-36 overflow-hidden">
           {template.cover ? (
-            <img
+            <Image
               src={template.cover}
               alt={template.name}
-              loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 100vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className={`w-full h-full bg-gradient-to-br ${template.color} flex items-center justify-center text-4xl`}>
@@ -705,10 +710,14 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             >
               {FEATURED_TEMPLATE.cover && (
                 <div className="absolute inset-0">
-                  <img
+                  <Image
                     src={FEATURED_TEMPLATE.cover}
                     alt={FEATURED_TEMPLATE.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    fill
+                    priority
+                    fetchPriority="high"
+                    sizes="(min-width: 1024px) 900px, 100vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-zinc-950/50" />
                 </div>
