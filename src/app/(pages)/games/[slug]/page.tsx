@@ -41,9 +41,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const DIFFICULTY_COLOR: Record<string, string> = {
-  Easy:   "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
-  Medium: "bg-yellow-500/15 text-yellow-300 border border-yellow-500/30",
-  Hard:   "bg-red-500/15 text-red-300 border border-red-500/30",
+  Casual:      "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
+  Strategic:   "bg-yellow-500/15 text-yellow-300 border border-yellow-500/30",
+  Competitive: "bg-red-500/15 text-red-300 border border-red-500/30",
 };
 
 export default async function GameLandingPage({ params }: Props) {

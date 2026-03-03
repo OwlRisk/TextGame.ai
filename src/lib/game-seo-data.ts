@@ -22,7 +22,7 @@ export interface GameSEOData {
   coverImage?: string;
   players: string;
   duration: string;
-  difficulty: "Easy" | "Medium" | "Hard";
+  difficulty: "Casual" | "Strategic" | "Competitive";
   category: string;
   /** Detailed how-to-play steps */
   howToPlay: string[];
@@ -58,7 +58,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-werewolf.webp",
     players: "6–12",
     duration: "30–45 min",
-    difficulty: "Medium",
+    difficulty: "Strategic",
     category: "Social Deduction",
     howToPlay: [
       "The AI host secretly assigns roles: Villagers, Werewolves, Seer, and Doctor.",
@@ -110,7 +110,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-mafia.webp",
     players: "6–15",
     duration: "45–60 min",
-    difficulty: "Hard",
+    difficulty: "Competitive",
     category: "Social Deduction",
     howToPlay: [
       "The AI host assigns roles: Town Members, Mafia, Detective, and Doctor.",
@@ -161,7 +161,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-undercover.webp",
     players: "4–10",
     duration: "15–20 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Party",
     howToPlay: [
       "The AI host secretly assigns words: most players get the same word (Civilians); one player gets a similar but different word (Undercover); optionally one player gets no word (Mr. White).",
@@ -211,7 +211,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-avalon.webp",
     players: "5–10",
     duration: "30–40 min",
-    difficulty: "Medium",
+    difficulty: "Competitive",
     category: "Social Deduction",
     howToPlay: [
       "The AI host assigns roles: Merlin, Percival, Servants of Arthur (Good) vs Assassin, Mordred, Minions of Mordred (Evil).",
@@ -263,7 +263,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-detective.webp",
     players: "3–8",
     duration: "30–40 min",
-    difficulty: "Medium",
+    difficulty: "Strategic",
     category: "Mystery",
     howToPlay: [
       "The AI host generates a unique murder case: a victim, suspects, locations, and clues.",
@@ -313,7 +313,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-escape-room.webp",
     players: "2–6",
     duration: "40–60 min",
-    difficulty: "Hard",
+    difficulty: "Strategic",
     category: "Puzzle",
     howToPlay: [
       "The AI host sets the scene and describes the room, objects, and your starting clues.",
@@ -358,7 +358,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-trivia.webp",
     players: "2–10",
     duration: "20–30 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Knowledge",
     howToPlay: [
       "Choose your topics (history, science, movies, sports, etc.) and the number of rounds.",
@@ -403,7 +403,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-tarot.webp",
     players: "1",
     duration: "10–20 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Solo / Reflective",
     howToPlay: [
       "Share your question or intention with the AI reader — or ask for a general reading.",
@@ -448,7 +448,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-codenames.webp",
     players: "4–12",
     duration: "15–25 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Party",
     howToPlay: [
       "The AI host sets up a 5×5 grid of 25 word cards.",
@@ -500,7 +500,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-spyfall.webp",
     players: "3–8",
     duration: "15–20 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Social Deduction",
     howToPlay: [
       "The AI host secretly assigns everyone the same location (e.g., Hospital, Beach, Space Station).",
@@ -549,7 +549,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-resistance.webp",
     players: "5–10",
     duration: "30–40 min",
-    difficulty: "Medium",
+    difficulty: "Strategic",
     category: "Social Deduction",
     howToPlay: [
       "The AI host secretly assigns roles: Resistance members (majority) and Spies (minority).",
@@ -598,7 +598,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-clue.webp",
     players: "3–6",
     duration: "30–45 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Mystery",
     howToPlay: [
       "The AI host randomly selects a suspect, room, and weapon as the secret solution.",
@@ -646,7 +646,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-secret-hitler.webp",
     players: "5–10",
     duration: "30–45 min",
-    difficulty: "Medium",
+    difficulty: "Competitive",
     category: "Social Deduction",
     howToPlay: [
       "The AI host secretly assigns roles: Liberals (majority) and Fascists (minority, including Hitler).",
@@ -696,7 +696,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-who-most-likely.webp",
     players: "3–12",
     duration: "10–20 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Party",
     howToPlay: [
       "The AI host reads a 'Most Likely to…' prompt (e.g., 'Most likely to accidentally start a food fight').",
@@ -741,7 +741,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-20-questions.webp",
     players: "2–10",
     duration: "10–15 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Party",
     howToPlay: [
       "One player (the Thinker) secretly chooses a person, place, animal, or object.",
@@ -786,7 +786,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-two-truths.webp",
     players: "3–12",
     duration: "15–25 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Party",
     howToPlay: [
       "The active player thinks of two true statements and one false statement about themselves.",
@@ -831,7 +831,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-two-rooms.webp",
     players: "6–20",
     duration: "20–30 min",
-    difficulty: "Medium",
+    difficulty: "Strategic",
     category: "Party",
     howToPlay: [
       "Players are split into two groups (rooms) and secretly assigned roles, including the President (Blue team) and the Bomber (Red team).",
@@ -880,7 +880,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-improv.webp",
     players: "3–10",
     duration: "20–40 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Creative",
     howToPlay: [
       "The AI host sets a random scene — a location, a situation, and optional character constraints.",
@@ -925,7 +925,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-storyteller.webp",
     players: "3–8",
     duration: "30–50 min",
-    difficulty: "Easy",
+    difficulty: "Casual",
     category: "Creative",
     howToPlay: [
       "Choose a theme or setting (fantasy, sci-fi, mystery, etc.) — or let the AI host pick.",
@@ -970,7 +970,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-debate.webp",
     players: "2–8",
     duration: "25–35 min",
-    difficulty: "Medium",
+    difficulty: "Competitive",
     category: "Educational",
     howToPlay: [
       "The AI host presents a debate topic — philosophical, ethical, social, or deliberately absurd.",
@@ -1015,7 +1015,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-vampire-court.webp",
     players: "4–8",
     duration: "25–35 min",
-    difficulty: "Medium",
+    difficulty: "Strategic",
     category: "Social Deduction",
     howToPlay: [
       "The AI host secretly assigns roles: one or more Vampires and the remaining Nobles.",
@@ -1064,7 +1064,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-space-mutiny.webp",
     players: "3–6",
     duration: "20–30 min",
-    difficulty: "Medium",
+    difficulty: "Strategic",
     category: "Social Deduction",
     howToPlay: [
       "The AI host assigns roles: Crew members and one Saboteur (the compromised engineer).",
@@ -1113,7 +1113,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     coverImage: "/games/game-cover-kingdom-intrigue.webp",
     players: "5–10",
     duration: "30–45 min",
-    difficulty: "Medium",
+    difficulty: "Strategic",
     category: "Social Deduction",
     howToPlay: [
       "Each player takes on the role of a noble in the royal court, with a secret agenda.",
