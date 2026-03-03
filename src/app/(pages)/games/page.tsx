@@ -20,6 +20,13 @@ export const metadata: Metadata = {
     title: "AI Game Library · textgame.ai",
     description: "Browse 15+ text games with an AI game master. Free to play, no setup needed.",
     type: "website",
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "AI Game Library · textgame.ai" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Game Library · textgame.ai",
+    description: "Browse 15+ text games with an AI game master. Free to play, no setup needed.",
+    images: ["/hero.webp"],
   },
 };
 
@@ -161,7 +168,7 @@ export default function GamesPage() {
 
       <footer className="border-t border-zinc-800/50 mt-10">
         <div className="max-w-4xl mx-auto px-4 py-6 flex flex-wrap gap-4 items-center justify-between text-xs text-zinc-600">
-          <span>© 2025 textgame.ai</span>
+          <span>© 2026 textgame.ai</span>
           <div className="flex gap-4">
             <Link href="/terms" className="hover:text-zinc-400 transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-zinc-400 transition-colors">Privacy</Link>

@@ -35,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: `${game.name} · textgame.ai`,
       description: game.metaDescription,
+      ...(game.coverImage ? { images: [game.coverImage] } : {}),
     },
   };
 }
@@ -301,7 +302,7 @@ export default async function GameLandingPage({ params }: Props) {
         {/* Footer */}
         <footer className="border-t border-zinc-800/50 mt-10">
           <div className="max-w-4xl mx-auto px-4 py-6 flex flex-wrap gap-4 items-center justify-between text-xs text-zinc-600">
-            <span>© 2025 textgame.ai</span>
+            <span>© 2026 textgame.ai</span>
             <div className="flex gap-4">
               <Link href="/terms" className="hover:text-zinc-400 transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-zinc-400 transition-colors">Privacy</Link>

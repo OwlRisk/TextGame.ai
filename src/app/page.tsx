@@ -1,83 +1,39 @@
-"use client";
+import type { Metadata } from "next";
+import { SITE_DOMAIN } from "@/lib/site";
+import HomeClient from "./home-client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
-import { LandingPage } from "@/app/components/landing-page";
-import { Toaster } from "@/app/components/ui/sonner";
-import { useGameContext } from "@/app/contexts/GameContext";
-import { useAuth } from "@/app/contexts/AuthContext";
+export const metadata: Metadata = {
+  title: "textgame.ai — AI-Powered Text Games with a Live Game Master",
+  description:
+    "Design and play text-based games in a conversation. An AI game master runs every phase — roles, rules, night actions, and votes. No setup, no moderator needed. Free to play.",
+  keywords: [
+    "AI game master",
+    "text-based games online",
+    "AI party games",
+    "online social deduction game",
+    "werewolf online",
+    "AI host game",
+    "multiplayer text game",
+    "free online games",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "textgame.ai — AI-Powered Text Games with a Live Game Master",
+    description:
+      "Design and play text-based games in a conversation. An AI host runs every phase automatically — no moderator needed.",
+    type: "website",
+    url: SITE_DOMAIN,
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "textgame.ai" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "textgame.ai — AI-Powered Text Games with a Live Game Master",
+    description:
+      "Design and play text-based games in a conversation. An AI host runs every phase automatically.",
+    images: ["/hero.webp"],
+  },
+};
 
 export default function HomePage() {
-  const router = useRouter();
-  const { selectGame, games, updateGame } = useGameContext();
-  const { user, loading, signInWithGoogle } = useAuth();
-
-  // Only show the landing page after the client has confirmed the visitor is
-  // a guest. Initialising to false (not shown during SSR / hydration) prevents
-  // any 1-frame flash of the landing page that logged-in users could see.
-  const [showLanding, setShowLanding] = useState(false);
-
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/create");
-      return;
-    }
-    selectGame("home");
-    // Show the landing page only once we know for sure the user is not logged in.
-    setShowLanding(!loading && !user);
-  }, [loading, user, router, selectGame]);
-
-  const handleCreateGame = (presetId?: string) => {
-    if (!user && !loading) {
-      router.push("/signin");
-    } else {
-      router.push(presetId ? `/create?preset=${presetId}` : "/create");
-    }
-  };
-
-  const handleExploreGames = () => {
-    router.push("/discover");
-  };
-
-  const handleSignIn = async () => {
-    try {
-      await signInWithGoogle("/create");
-    } catch {
-      toast.error("登录失败，请重试");
-    }
-  };
-
-  return (
-    <AppLayoutWithSidebar
-      mobileTitle="Home"
-      games={games}
-      selectedGameId="home"
-      onSelectGame={(gameId) => selectGame(gameId)}
-      onCreateGame={handleCreateGame}
-      onOpenProfile={() => router.push("/profile")}
-      onUpdateGame={updateGame}
-    >
-      {showLanding ? (
-        <LandingPage
-          onSignIn={handleSignIn}
-          onCreateGame={handleCreateGame}
-        />
-      ) : null}
-
-      <Toaster
-        position="top-right"
-        expand={false}
-        richColors
-        closeButton
-        offset={{ top: "72px", right: "20px" }}
-        gap={12}
-        toastOptions={{
-          style: { zIndex: 9999 },
-          duration: 4000,
-        }}
-      />
-    </AppLayoutWithSidebar>
-  );
+  return <HomeClient />;
 }
