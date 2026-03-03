@@ -6,7 +6,7 @@ import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
 
-const SIDEBAR_EXCLUDED_PATHS = ["/signin"];
+const SIDEBAR_EXCLUDED_PATHS = ["/signin", "/games"];
 
 const PATHNAME_TO_TITLE: Record<string, string> = {
   "/create": "Create Game",
