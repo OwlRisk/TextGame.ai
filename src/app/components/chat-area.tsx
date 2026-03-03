@@ -237,8 +237,6 @@ interface ChatAreaProps {
   gamePhaseLabel?: string;
   alivePlayers?: Player[];
   lastVotedOutId?: string | null;
-  /** Game-specific slash commands shown in / autocomplete. Falls back to built-in defaults if not provided. */
-  slashCommands?: Array<{ cmd: string; hint: string }>;
   /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
   quickReplies?: string[];
   /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
@@ -298,7 +296,6 @@ export function ChatArea({
   isRoundInProgress = false,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
-  slashCommands,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
@@ -322,7 +319,6 @@ export function ChatArea({
   // @ mention / / command autocomplete
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionAnchor, setMentionAnchor] = useState(0);
-  const [commandQuery, setCommandQuery] = useState<string | null>(null);
   const [popupIndex, setPopupIndex] = useState(0);
 
   const popupRef = useRef<HTMLDivElement>(null);
@@ -334,32 +330,13 @@ export function ChatArea({
     active?.scrollIntoView({ block: 'nearest' });
   }, [popupIndex]);
 
-  const SLASH_COMMANDS = useMemo(() => {
-    const source = slashCommands && slashCommands.length > 0
-      ? slashCommands
-      : [
-          { cmd: '/vote',   hint: 'Vote to eliminate a player' },
-          { cmd: '/role',   hint: 'Check your current role'    },
-          { cmd: '/rules',  hint: 'Display game rules'         },
-          { cmd: '/skip',   hint: 'Ask host to move to next phase' },
-          { cmd: '/status', hint: 'Show current game status'   },
-        ];
-    return source.map(c => ({ ...c, template: c.cmd.includes(' ') ? c.cmd : `${c.cmd} ` }));
-  }, [slashCommands]);
-
   const mentionMatches = useMemo(() => {
     if (mentionQuery === null) return [];
     return players
       .filter(p => !p.isGameMaster && p.id !== userId && p.name.toLowerCase().includes(mentionQuery.toLowerCase()));
   }, [mentionQuery, players, userId]);
 
-  const commandMatches = useMemo(() => {
-    if (commandQuery === null) return [];
-    return SLASH_COMMANDS.filter(c => c.cmd.slice(1).startsWith(commandQuery.toLowerCase()));
-  }, [commandQuery, SLASH_COMMANDS]);
-
-  const showPopup = (mentionQuery !== null && mentionMatches.length > 0) ||
-                    (commandQuery !== null && commandMatches.length > 0);
+  const showPopup = mentionQuery !== null && mentionMatches.length > 0;
 
   const voice = useVoiceInput();
   const { user } = useAuth();
@@ -693,7 +670,6 @@ export function ChatArea({
     const newText = `${before}@${player.name} ${after}`;
     setInput(newText);
     setMentionQuery(null);
-    setCommandQuery(null);
     requestAnimationFrame(() => {
       inputRef.current?.focus();
       const pos = before.length + player.name.length + 2;
@@ -701,17 +677,6 @@ export function ChatArea({
       resizeInput();
     });
   }, [input, mentionAnchor, resizeInput]);
-
-  const applyCommand = useCallback((cmd: { template: string }) => {
-    setInput(cmd.template);
-    setCommandQuery(null);
-    setMentionQuery(null);
-    requestAnimationFrame(() => {
-      inputRef.current?.focus();
-      inputRef.current?.setSelectionRange(cmd.template.length, cmd.template.length);
-      resizeInput();
-    });
-  }, [resizeInput]);
 
   // Resize on input change (fallback for voice input)
   useEffect(() => {
@@ -1337,37 +1302,22 @@ export function ChatArea({
         ) : (
           <div className="flex gap-2 items-end">
             <div className="relative flex-1 min-w-0">
-              {/* @ mention / / command popup */}
+              {/* @ mention popup */}
               {showPopup && (
                 <div ref={popupRef} className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-y-auto shadow-2xl z-50 max-h-52">
-                  {mentionQuery !== null ? (
-                    mentionMatches.map((player, i) => (
-                      <button
-                        key={player.id}
-                        type="button"
-                        data-selected={i === popupIndex ? "true" : undefined}
-                        onMouseDown={(e) => { e.preventDefault(); applyMention(player); }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? 'bg-violet-600 text-white' : 'text-zinc-200 hover:bg-zinc-800'}`}
-                      >
-                        <span className="text-violet-300 font-bold text-xs w-4 shrink-0">@</span>
-                        <span className="font-medium truncate">{player.name}</span>
-                        {player.role && <span className={`ml-auto text-xs shrink-0 ${i === popupIndex ? 'text-violet-200' : 'text-zinc-500'}`}>{player.role}</span>}
-                      </button>
-                    ))
-                  ) : (
-                    commandMatches.map((cmd, i) => (
-                      <button
-                        key={cmd.cmd}
-                        type="button"
-                        data-selected={i === popupIndex ? "true" : undefined}
-                        onMouseDown={(e) => { e.preventDefault(); applyCommand(cmd); }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? 'bg-violet-600 text-white' : 'text-zinc-200 hover:bg-zinc-800'}`}
-                      >
-                        <span className={`font-mono font-semibold shrink-0 ${i === popupIndex ? 'text-white' : 'text-amber-400'}`}>{cmd.cmd}</span>
-                        <span className={`text-xs truncate ${i === popupIndex ? 'text-violet-200' : 'text-zinc-400'}`}>{cmd.hint}</span>
-                      </button>
-                    ))
-                  )}
+                  {mentionMatches.map((player, i) => (
+                    <button
+                      key={player.id}
+                      type="button"
+                      data-selected={i === popupIndex ? "true" : undefined}
+                      onMouseDown={(e) => { e.preventDefault(); applyMention(player); }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? 'bg-violet-600 text-white' : 'text-zinc-200 hover:bg-zinc-800'}`}
+                    >
+                      <span className="text-violet-300 font-bold text-xs w-4 shrink-0">@</span>
+                      <span className="font-medium truncate">{player.name}</span>
+                      {player.role && <span className={`ml-auto text-xs shrink-0 ${i === popupIndex ? 'text-violet-200' : 'text-zinc-500'}`}>{player.role}</span>}
+                    </button>
+                  ))}
                 </div>
               )}
             <Textarea
@@ -1384,45 +1334,32 @@ export function ChatArea({
                 if (mentionMatch) {
                   setMentionQuery(mentionMatch[1]);
                   setMentionAnchor(mentionMatch.index!);
-                  setCommandQuery(null);
                   setPopupIndex(0);
                 } else {
                   setMentionQuery(null);
                 }
-                // Detect / command (only when input starts with /)
-                const cmdMatch = !mentionMatch && val.match(/^\/([^\s]*)$/);
-                if (cmdMatch) {
-                  setCommandQuery(cmdMatch[1]);
-                  setPopupIndex(0);
-                } else if (!mentionMatch) {
-                  setCommandQuery(null);
-                }
               }}
               onKeyDown={(e) => {
                 if (showPopup) {
-                  const items = mentionQuery !== null ? mentionMatches : commandMatches;
                   if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    setPopupIndex(i => (i - 1 + items.length) % items.length);
+                    setPopupIndex(i => (i - 1 + mentionMatches.length) % mentionMatches.length);
                     return;
                   }
                   if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    setPopupIndex(i => (i + 1) % items.length);
+                    setPopupIndex(i => (i + 1) % mentionMatches.length);
                     return;
                   }
                   if (e.key === 'Enter' || e.key === 'Tab') {
                     e.preventDefault();
-                    if (mentionQuery !== null && mentionMatches[popupIndex]) {
+                    if (mentionMatches[popupIndex]) {
                       applyMention(mentionMatches[popupIndex]);
-                    } else if (commandQuery !== null && commandMatches[popupIndex]) {
-                      applyCommand(commandMatches[popupIndex]);
                     }
                     return;
                   }
                   if (e.key === 'Escape') {
                     setMentionQuery(null);
-                    setCommandQuery(null);
                     return;
                   }
                 }

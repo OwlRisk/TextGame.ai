@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GAME_TEMPLATES, DEFAULT_SLASH_COMMANDS, getGameTemplate } from '../game-templates';
+import { GAME_TEMPLATES, getGameTemplate } from '../game-templates';
 
 // ─── GAME_TEMPLATES: structural integrity ─────────────────────────────────
 
@@ -141,33 +141,3 @@ describe('getGameTemplate', () => {
   });
 });
 
-// ─── DEFAULT_SLASH_COMMANDS ───────────────────────────────────────────────
-
-describe('DEFAULT_SLASH_COMMANDS', () => {
-  it('has entries for every known social deduction template', () => {
-    const expected = ['werewolf', 'mafia', 'undercover', 'tarot', 'custom'];
-    for (const id of expected) {
-      expect(DEFAULT_SLASH_COMMANDS[id], `missing slash commands for "${id}"`).toBeDefined();
-    }
-  });
-
-  it('every command starts with /', () => {
-    for (const [templateId, cmds] of Object.entries(DEFAULT_SLASH_COMMANDS)) {
-      for (const { cmd } of cmds) {
-        expect(cmd, `command "${cmd}" in "${templateId}" should start with /`).toMatch(/^\//);
-      }
-    }
-  });
-
-  it('every command has a non-empty hint', () => {
-    for (const [templateId, cmds] of Object.entries(DEFAULT_SLASH_COMMANDS)) {
-      for (const { hint } of cmds) {
-        expect(hint.trim().length, `empty hint in "${templateId}"`).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  it('werewolf has a /vote command', () => {
-    expect(DEFAULT_SLASH_COMMANDS.werewolf.some((c) => c.cmd === '/vote')).toBe(true);
-  });
-});

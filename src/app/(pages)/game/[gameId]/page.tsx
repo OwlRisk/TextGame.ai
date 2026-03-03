@@ -17,7 +17,6 @@ import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
-import { SlashCommandsDialog } from "@/app/components/slash-commands-dialog";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { safeMarked } from "@/lib/safe-marked";
@@ -154,7 +153,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
   /** 右侧玩家面板当前 Tab：Players | My Board（仅自己可见、仅 Host 可编辑） */
   const [rightPanelTab, setRightPanelTab] = useState<"players" | "board">("players");
-  const [editCommandsGameId, setEditCommandsGameId] = useState<string | null>(null);
 
   useEffect(() => {
     setMobileLeftDrawer(null);
@@ -1494,7 +1492,6 @@ ${rulesText || "No specific rules defined."}`.trim();
     onCreateGame: () => router.push("/create"),
     onOpenProfile: () => router.push("/profile"),
     onUpdateGame: updateGame,
-    onEditCommands: (id: string) => setEditCommandsGameId(id),
   };
   const channelListCommon = {
     gameName: currentGame?.name ?? "Game",
@@ -1590,20 +1587,6 @@ ${rulesText || "No specific rules defined."}`.trim();
                 </div>
               )}
 
-              {/* Slash commands section */}
-              {(currentGame?.config?.slashCommands ?? []).length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">Available Commands</h3>
-                  <div className="grid gap-1.5">
-                    {(currentGame!.config.slashCommands!).map(({ cmd, hint }) => (
-                      <div key={cmd} className="flex items-center gap-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-3 py-2">
-                        <span className="font-mono font-semibold text-amber-400 text-sm shrink-0">{cmd}</span>
-                        <span className="text-zinc-400 text-sm">{hint}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </ScrollArea>
         ) : selectedChannelId === "progress" ? (
@@ -1660,7 +1643,6 @@ ${rulesText || "No specific rules defined."}`.trim();
             isRoundInProgress={isRoundInProgress}
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
-            slashCommands={currentGame?.config?.slashCommands}
             onOpenPlayerBoard={() => {
               setMobileRightDrawer(true);
               setRightPanelTab("board");
@@ -1733,25 +1715,6 @@ ${rulesText || "No specific rules defined."}`.trim();
           duration: 4000,
         }}
       />
-
-      {/* Slash commands editor — opened via sidebar right-click → Edit Commands */}
-      {editCommandsGameId && (() => {
-        const targetGame = games.find(g => g.id === editCommandsGameId);
-        return (
-          <SlashCommandsDialog
-            open={!!editCommandsGameId}
-            onClose={() => setEditCommandsGameId(null)}
-            gameName={targetGame?.name}
-            commands={targetGame?.config?.slashCommands ?? []}
-            onSave={(cmds) => {
-              if (!targetGame) return;
-              updateGame(targetGame.id, {
-                config: { ...targetGame.config, slashCommands: cmds },
-              });
-            }}
-          />
-        );
-      })()}
     </div>
   );
 }

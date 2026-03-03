@@ -10,9 +10,8 @@ import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
-import { GameTemplate, DEFAULT_SLASH_COMMANDS, GAME_TEMPLATES } from "@/lib/game-templates";
+import { GameTemplate, GAME_TEMPLATES } from "@/lib/game-templates";
 export type { GameTemplate };
-export { DEFAULT_SLASH_COMMANDS };
 
 interface GameSetupDialogProps {
   open: boolean;
@@ -65,8 +64,6 @@ export interface GameConfig {
      */
     roomType?: "public" | "private_ai" | "decision" | "broadcast";
   }[];
-  /** Player-facing slash commands for this game (e.g. /vote, /role). Shown in the / autocomplete. */
-  slashCommands?: Array<{ cmd: string; hint: string }>;
   /** Custom label for the player's private panel Tab (defaults to "My Board"). E.g. "Briefing", "Role Card", "Intel". */
   playerBoardLabel?: string;
 }
@@ -78,13 +75,6 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-/** Format slash commands for display in GM confirmation messages */
-function formatCommandsBlock(templateId: string): string {
-  const cmds = DEFAULT_SLASH_COMMANDS[templateId];
-  if (!cmds || cmds.length === 0) return "";
-  const lines = cmds.map(c => `  ${c.cmd} — ${c.hint}`).join("\n");
-  return `**Chat Commands:**\n${lines}\n\n`;
-}
 
 type ConversationState = "greeting" | "game-type" | "player-count" | "rules-discussion" | "confirmation" | "completed";
 
@@ -295,7 +285,6 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             `**Game Type:** ${selectedTemplate!.name}\n` +
             `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
-            formatCommandsBlock(selectedTemplate!.id) +
             `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
           );
@@ -337,7 +326,6 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             `**Game Type:** ${selectedTemplate!.name}\n` +
             `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:**\n${finalRules}\n\n` +
-            formatCommandsBlock(selectedTemplate!.id) +
             `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
           );
@@ -357,7 +345,6 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             customRoles: selectedTemplate!.roles,
             hostId: selectedHostId!,
             hideRolesInPlayerList,
-            slashCommands: DEFAULT_SLASH_COMMANDS[selectedTemplate!.id] ?? [],
             ...(playerBoardLabel.trim() && { playerBoardLabel: playerBoardLabel.trim() }),
           });
           setConversationState("completed");
@@ -508,7 +495,6 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                           customRoles: selectedTemplate!.roles,
                           hostId: selectedHostId!,
                           hideRolesInPlayerList,
-                          slashCommands: DEFAULT_SLASH_COMMANDS[selectedTemplate!.id] ?? [],
                           ...(playerBoardLabel.trim() && { playerBoardLabel: playerBoardLabel.trim() }),
                         });
                         

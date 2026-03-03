@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, Settings, RefreshCw, Terminal } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, Settings, RefreshCw } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -39,7 +39,7 @@ interface Game {
   name: string;
   icon: string;
   color: string;
-  config?: { rules?: string; template?: string; slashCommands?: Array<{ cmd: string; hint: string }> };
+  config?: { rules?: string; template?: string };
 }
 
 interface GameSidebarProps {
@@ -50,12 +50,11 @@ interface GameSidebarProps {
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
   onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
-  onEditCommands?: (gameId: string) => void;
   /** 移动端抽屉内使用时，导航后关闭抽屉 */
   onNavigate?: () => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onUpdateGame, onEditCommands, onNavigate }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onUpdateGame, onNavigate }: GameSidebarProps) {
   const router = useRouter();
   const { user, session, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -291,16 +290,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                         Regenerate Icon
                       </ContextMenuItem>
                     )}
-                    {onEditCommands && (
-                      <ContextMenuItem
-                        className="cursor-pointer focus:bg-zinc-700"
-                        onClick={() => onEditCommands(game.id)}
-                      >
-                        <Terminal className="mr-2 h-4 w-4" />
-                        Edit Commands
-                      </ContextMenuItem>
-                    )}
-                    {(onUpdateGame || onEditCommands) && <ContextMenuSeparator className="bg-zinc-700" />}
+                    {onUpdateGame && <ContextMenuSeparator className="bg-zinc-700" />}
                     <ContextMenuItem 
                       className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                       onClick={() => {
