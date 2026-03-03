@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
@@ -13,13 +13,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Guest players joining via invite link carry ?guestId=... in the URL.
+  // Allow them through without requiring a login.
+  const isGuestSession = !!searchParams.get("guestId");
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isGuestSession) {
       const returnUrl = pathname ? `/signin?returnUrl=${encodeURIComponent(pathname)}` : "/signin";
       router.push(returnUrl);
     }
-  }, [user, loading, router, pathname]);
+  }, [user, loading, router, pathname, isGuestSession]);
 
   if (loading) {
     return (
@@ -29,7 +34,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  if (!user && !isGuestSession) {
     return null; // Will redirect via useEffect
   }
 
