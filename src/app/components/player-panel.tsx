@@ -94,7 +94,7 @@ export function PlayerPanel({
                 <Crown className="h-3 w-3 text-amber-400" />
                 <span>{player.name}</span>
                 <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 rounded text-[10px] font-bold tracking-wider border border-amber-500/30 shadow-sm">
-                  AI Host
+                  GM
                 </span>
               </div>
               <PlayerCard
