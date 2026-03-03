@@ -324,7 +324,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      supabase.removeChannel(channel);
+      // Explicitly untrack before removing the channel so Supabase fires the
+      // presence leave event on other clients immediately (React navigation / unmount).
+      channel.untrack().finally(() => supabase.removeChannel(channel));
     };
   }, [gameId, gamesLoading, isOwner, session?.user?.id, guestId, guestNickname]);
 
