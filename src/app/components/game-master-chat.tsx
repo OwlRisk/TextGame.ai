@@ -29,6 +29,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { parseInlineFormatting } from "@/lib/format-message";
+import { OutOfCreditsModal } from "@/app/components/out-of-credits-modal";
 
 function formatMessageTime(date: Date): string {
   const now = new Date();
@@ -287,6 +288,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [conversationState, setConversationState] = useState<ConversationState>("greeting");
   const [isGMTyping, setIsGMTyping] = useState(true);
   const [isStreaming, setIsStreaming] = useState(false); // Track if currently streaming
+  const [showOutOfCredits, setShowOutOfCredits] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -1649,11 +1651,15 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         // onError: Handle errors
         (error: Error) => {
           console.error('Error streaming AI response:', error);
-          
-          // Check if it's an API key configuration error
+
+          const isInsufficientTokens =
+            error.message === 'INSUFFICIENT_TOKENS' ||
+            (error as any).code === 'INSUFFICIENT_TOKENS';
           const isConfigError = error.message?.includes('OPENAI_API_KEY') || error.message?.includes('API key');
-          
-          if (isConfigError) {
+
+          if (isInsufficientTokens) {
+            setShowOutOfCredits(true);
+          } else if (isConfigError) {
             toast.error('OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.', {
               duration: 10000,
             });
@@ -1671,7 +1677,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
             );
           }
-          
+
           // Remove temp message
           setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
           setIsGMTyping(false);
@@ -1680,14 +1686,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       );
     } catch (error: any) {
       console.error('Error getting AI response:', error);
-      // Remove temp message if it exists
       setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
       setIsGMTyping(false);
       setIsStreaming(false);
-      
-      // Only handle error here if onError callback wasn't called (e.g., error before streaming starts)
-      // Most errors should be handled by onError callback, so we check if we're still streaming
-      if (!isStreaming) {
+
+      const isInsufficientTokens =
+        error.message === 'INSUFFICIENT_TOKENS' || error.code === 'INSUFFICIENT_TOKENS';
+
+      if (isInsufficientTokens) {
+        setShowOutOfCredits(true);
+      } else if (!isStreaming) {
         toast.error(error.message || 'Failed to get AI response. Please try again.');
         addGMMessage(
           "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
@@ -2296,6 +2304,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <OutOfCreditsModal
+        open={showOutOfCredits}
+        onClose={() => setShowOutOfCredits(false)}
+      />
     </div>
   );
 }

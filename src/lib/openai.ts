@@ -137,9 +137,11 @@ export async function streamAIChatResponse(
 
       if (!response.ok) {
         let errorMessage = 'Failed to stream AI response';
+        let errorCode: string | undefined;
         try {
           const error = await response.json();
           errorMessage = error.error || errorMessage;
+          errorCode = error.code;
         } catch (e) {
           try {
             const text = await response.text();
@@ -152,6 +154,14 @@ export async function streamAIChatResponse(
             // Fallback to default message
           }
         }
+
+        // Credits exhausted — throw a distinctly identifiable error
+        if (response.status === 402 || errorCode === 'INSUFFICIENT_TOKENS') {
+          const err = new Error('INSUFFICIENT_TOKENS') as Error & { code: string };
+          err.code = 'INSUFFICIENT_TOKENS';
+          throw err;
+        }
+
         // Log original for debugging (warn for connection/network, error for auth/server)
         const isConnectionError = /connection|network|timeout|refused|fetch failed/i.test(errorMessage);
         if (isConnectionError) {
