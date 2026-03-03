@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { ttsBroadcast } from './tts-broadcast';
 
 /** Strip markdown to plain text for TTS */
 export function stripMarkdownForTTS(text: string): string {
@@ -339,18 +340,32 @@ interface TTSQueueItem {
  */
 async function prefetchTTSAudio(text: string, voiceId: string): Promise<string | null> {
   const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-max';
-  try {
-    const res = await fetch('/api/inworld-tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.slice(0, 2000), voiceId, modelId }),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { audioBase64?: string };
-    return data.audioBase64 ?? null;
-  } catch {
-    return null;
+
+  /** Raw API call — used directly by the owner (or single-player). */
+  const callApi = async (): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/inworld-tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.slice(0, 2000), voiceId, modelId }),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { audioBase64?: string };
+      return data.audioBase64 ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // In multiplayer mode route through the broadcast manager so that:
+  //   owner  → calls API + broadcasts result to guests
+  //   guests → wait for owner's broadcast (no API call, no token deduction)
+  if (ttsBroadcast.isActive) {
+    return ttsBroadcast.getAudio(text, voiceId, callApi);
   }
+
+  // Single-player fallback: call API directly (unchanged behaviour).
+  return callApi();
 }
 
 export function useInworldTTS() {

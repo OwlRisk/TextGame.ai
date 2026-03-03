@@ -1827,6 +1827,7 @@ ${rulesText || "No specific rules defined."}`.trim();
               setRightPanelTab("board");
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
+            isOwner={isGuestPlayer ? false : (isOwner ? true : undefined)}
           />
         ) : null)}
       </div>

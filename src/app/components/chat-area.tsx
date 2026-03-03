@@ -9,6 +9,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useVoiceInput, useInworldTTS } from "@/lib/voice";
+import { ttsBroadcast } from "@/lib/tts-broadcast";
 import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
@@ -261,6 +262,13 @@ interface ChatAreaProps {
   avatarImageUrls?: Record<string, string>;
   /** Call when an avatar URL is loaded so the room can persist it. */
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  /**
+   * True when this client is the game owner (created the game).
+   * When true:  TTS is generated here and broadcast to guests.
+   * When false: TTS audio is received from owner's broadcast (no API call).
+   * When undefined (single-player / unknown): each client calls the API directly.
+   */
+  isOwner?: boolean;
 }
 
 export function ChatArea({ 
@@ -296,12 +304,34 @@ export function ChatArea({
   isRoundInProgress = false,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  isOwner,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // ─── TTS Broadcast: setup manager when gameId + isOwner are known ─────────
+  // isOwner===undefined → single-player (no broadcast). isOwner===true → owner
+  // generates & broadcasts. isOwner===false → guest receives broadcast.
+  useEffect(() => {
+    if (!gameId || isOwner === undefined) {
+      ttsBroadcast.teardown();
+      return;
+    }
+    ttsBroadcast.setup(gameId, isOwner);
+    return () => {
+      // Only tear down when leaving the game (gameId changes or component unmounts).
+      // Do NOT pass cleanup to the isOwner dependency — the channel is stable per gameId.
+    };
+  }, [gameId, isOwner]);
+
+  // Tear down on unmount
+  useEffect(() => {
+    return () => { ttsBroadcast.teardown(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Lazy-load messages: show last N first, load more when user scrolls up
   const INITIAL_PAGE_SIZE = 40;
