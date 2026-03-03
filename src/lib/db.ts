@@ -232,7 +232,86 @@ export async function saveGameRoomState(
   return { error: null };
 }
 
-// Game drafts (saved configs not yet created as games)
+// ─── Multiplayer: invite codes + game members ─────────────────────────────────
+
+/** Generate or return the invite code for a game (owner only). */
+export async function getOrCreateInviteCode(gameId: string): Promise<{ inviteCode: string | null; error: unknown }> {
+  const { data, error } = await supabase
+    .from('games')
+    .select('invite_code')
+    .eq('id', gameId)
+    .single();
+
+  if (error) { logDbError('getOrCreateInviteCode/select', error); return { inviteCode: null, error }; }
+
+  if (data?.invite_code) return { inviteCode: data.invite_code, error: null };
+
+  // Generate a short 8-char code
+  const code = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toLowerCase();
+  const { error: updateErr } = await supabase
+    .from('games')
+    .update({ invite_code: code, updated_at: new Date().toISOString() })
+    .eq('id', gameId);
+
+  if (updateErr) { logDbError('getOrCreateInviteCode/update', updateErr); return { inviteCode: null, error: updateErr }; }
+
+  return { inviteCode: code, error: null };
+}
+
+/** Look up a game by its invite code (public, no auth). */
+export async function getGameByInviteCode(inviteCode: string) {
+  const { data, error } = await supabase
+    .from('games')
+    .select('id, name, icon, color, config, user_id')
+    .eq('invite_code', inviteCode)
+    .single();
+
+  if (error) { logDbError('getGameByInviteCode', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+/** List members for a game. */
+export async function getGameMembers(gameId: string) {
+  const { data, error } = await supabase
+    .from('game_members')
+    .select('id, game_id, user_id, guest_id, nickname, player_id, is_owner, joined_at')
+    .eq('game_id', gameId)
+    .order('joined_at', { ascending: true });
+
+  if (error) { logDbError('getGameMembers', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+/** Add a game member (called server-side with service role to bypass RLS for guests). */
+export async function addGameMember(member: {
+  game_id: string;
+  user_id?: string | null;
+  guest_id?: string | null;
+  nickname: string;
+  player_id?: string | null;
+  is_owner?: boolean;
+}) {
+  const { data, error } = await supabase
+    .from('game_members')
+    .upsert(
+      {
+        game_id: member.game_id,
+        user_id: member.user_id ?? null,
+        guest_id: member.guest_id ?? null,
+        nickname: member.nickname,
+        player_id: member.player_id ?? null,
+        is_owner: member.is_owner ?? false,
+      },
+      { onConflict: member.user_id ? 'game_id,user_id' : 'game_id,guest_id' }
+    )
+    .select()
+    .single();
+
+  if (error) { logDbError('addGameMember', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+// ─── Game drafts (saved configs not yet created as games) ──────────────────────
 type GameDraftInsert = Database['public']['Tables']['game_drafts']['Insert'];
 type GameDraftUpdate = Database['public']['Tables']['game_drafts']['Update'];
 

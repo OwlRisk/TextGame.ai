@@ -28,7 +28,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 // Note: If supabaseUrl or supabaseAnonKey is empty, operations will fail
 // Make sure to set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      realtime: { params: { eventsPerSecond: 10 } },
+    })
   : createClient('https://placeholder.supabase.co', 'placeholder-key'); // Placeholder to prevent errors
 
 // Server-side Supabase client (with service role key for admin operations)
@@ -168,6 +170,38 @@ export interface Database {
           user_id?: string;
           state?: any;
           updated_at?: string;
+        };
+      };
+      game_members: {
+        Row: {
+          id: string;
+          game_id: string;
+          user_id: string | null;
+          guest_id: string | null;
+          nickname: string;
+          player_id: string | null;
+          is_owner: boolean;
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          game_id: string;
+          user_id?: string | null;
+          guest_id?: string | null;
+          nickname: string;
+          player_id?: string | null;
+          is_owner?: boolean;
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          game_id?: string;
+          user_id?: string | null;
+          guest_id?: string | null;
+          nickname?: string;
+          player_id?: string | null;
+          is_owner?: boolean;
+          joined_at?: string;
         };
       };
     };

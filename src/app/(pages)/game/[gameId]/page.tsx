@@ -16,7 +16,7 @@ import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
-import { Menu, Hash, Users } from "lucide-react";
+import { Menu, Hash, Users, Link2, Check } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { safeMarked } from "@/lib/safe-marked";
@@ -79,6 +79,8 @@ async function seedInitialPlayerReplies(
 
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
+  // Extract gameId at the top so it's available for all state/effect hooks below
+  const { gameId } = use(params);
   const { session } = useAuth();
   const { games, selectedGameId, selectGame, updateGame, touchGame, addGame, gamesLoading } = useGameContext();
   const {
@@ -109,6 +111,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setSections,
     gameEvents,
     setGameEvents,
+    saveNow,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -119,6 +122,23 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const quickRepliesFailKeyRef = useRef<string | null>(null);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [roomMembers, setRoomMembers] = useState<Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>>([]);
+
+  // Guest player: arrived via /join/[inviteCode] with guestId URL param
+  const [guestId, setGuestId] = useState<string | null>(null);
+  const [guestMemberId, setGuestMemberId] = useState<string | null>(null);
+  const [guestNickname, setGuestNickname] = useState<string | null>(null);
+
+  // ─── Multiplayer: owner / guest detection ───────────────────────────────────
+  // GameContext only loads games belonging to the logged-in user; if this game
+  // is in the list, the current user created it (= owner).
+  // NOTE: gameId is extracted via use(params) at line ~149; isOwner depends on games list.
+  // We use a lazy computed value that will be correct after games load.
+  const isOwner = !!games.find((g) => g.id === gameId) && !!session?.user?.id;
+  /** True if this client is a non-owner participant (guest or auth player who joined via invite) */
+  const isGuestPlayer = !isOwner && !!guestId;
+
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   /**
@@ -129,7 +149,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
    * ["*"] = explicitly public.
    */
   const [channelPermissions, setChannelPermissions] = useState<Record<string, string[]>>({});
-  const { gameId } = use(params);
   const pathname = usePathname();
 
   // Cancels seedInitialPlayerReplies when gameId changes or component unmounts
@@ -158,6 +177,67 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setMobileLeftDrawer(null);
     setMobileRightDrawer(false);
   }, [pathname]);
+
+  // ─── Multiplayer: read guestId / memberId from URL search params ────────────
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlGuestId = searchParams.get("guestId");
+    const urlMemberId = searchParams.get("memberId");
+    if (urlGuestId) {
+      setGuestId(urlGuestId);
+      localStorage.setItem("guestId", urlGuestId);
+    } else if (!session?.user?.id) {
+      // Not logged in – check localStorage fallback
+      const stored = localStorage.getItem("guestId");
+      if (stored) setGuestId(stored);
+    }
+    if (urlMemberId) {
+      setGuestMemberId(urlMemberId);
+      if (gameId) localStorage.setItem(`member_${gameId}`, urlMemberId);
+    } else if (gameId) {
+      const stored = localStorage.getItem(`member_${gameId}`);
+      if (stored) setGuestMemberId(stored);
+    }
+    if (gameId) {
+      const storedNickname = localStorage.getItem(`nickname_${gameId}`);
+      if (storedNickname) setGuestNickname(storedNickname);
+    }
+  }, [gameId, session?.user?.id]);
+
+  // Load room members (for owner: show who has joined)
+  useEffect(() => {
+    if (!gameId || !isOwner) return;
+    const load = () => {
+      fetch(`/api/games/${gameId}/members`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => { if (data?.members) setRoomMembers(data.members); })
+        .catch(() => {/* non-critical */});
+    };
+    load();
+    // Refresh member list every 15s when owner is in-room
+    const interval = setInterval(load, 15_000);
+    return () => clearInterval(interval);
+  }, [gameId, isOwner]);
+
+  // ─── Guest: poll for new messages when Realtime is not available ──────────
+  // (Realtime requires being logged in; guests use polling as fallback)
+  const lastPollMessageCountRef = useRef(0);
+  useEffect(() => {
+    if (!isGuestPlayer || !gameId) return;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/games/${gameId}/members`);
+        if (!res.ok) return;
+        const data = await res.json() as { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }> };
+        if (data.members) setRoomMembers(data.members);
+      } catch {/* ignore */}
+    };
+    // Poll member list every 10s for guest
+    const interval = setInterval(poll, 10_000);
+    return () => clearInterval(interval);
+  }, [isGuestPlayer, gameId]);
 
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
@@ -1233,6 +1313,8 @@ ${rulesText || "No specific rules defined."}`.trim();
       setLastFailedSendContent(content);
     } finally {
       setIsRoundInProgress(false);
+      // Immediately flush state to DB so other room members see updates via Realtime
+      saveNow();
     }
   };
 
@@ -1242,6 +1324,23 @@ ${rulesText || "No specific rules defined."}`.trim();
       setLastFailedSendContent(null);
     }
   }, [lastFailedSendContent, handleSendMessage]);
+
+  // ─── Owner: auto-trigger AI when a guest message arrives via Realtime ────────
+  // Track the last processed message ID so we only respond to NEW guest messages.
+  const lastProcessedGuestMsgRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isOwner || isRoundInProgress) return;
+    // Find the most recent guest message not yet processed
+    const guestMessages = messages.filter(
+      (m) => (m as unknown as { isGuestMessage?: boolean }).isGuestMessage && !m.isAI
+    );
+    if (guestMessages.length === 0) return;
+    const latest = guestMessages[guestMessages.length - 1];
+    if (latest.id === lastProcessedGuestMsgRef.current) return;
+    lastProcessedGuestMsgRef.current = latest.id;
+    // Trigger host AI response to the guest's message (same flow as owner typing)
+    handleSendMessage(latest.content);
+  }, [messages, isOwner, isRoundInProgress, handleSendMessage]);
 
   // GM-defined game rooms (always compute so hook order is stable; safe when currentGame is null)
   // Derive a stable cache key from channel IDs so useMemo doesn't recompute on every context update.
@@ -1459,6 +1558,64 @@ ${rulesText || "No specific rules defined."}`.trim();
     }
   }, [gameId, session?.access_token]);
 
+  /** Generate invite link and copy to clipboard. Owner only. */
+  const handleInvite = useCallback(async () => {
+    if (!session?.access_token || !gameId) return;
+    try {
+      const res = await fetch(`/api/games/${gameId}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) { toast.error("Failed to generate invite link"); return; }
+      const data = (await res.json()) as { inviteUrl: string };
+      const ok = await copyToClipboard(data.inviteUrl);
+      toast.success(ok ? "Invite link copied! Share it with players." : `Invite: ${data.inviteUrl}`);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2500);
+    } catch (e) {
+      console.error("[invite]", e);
+      toast.error("Failed to generate invite link");
+    }
+  }, [gameId, session?.access_token]);
+
+  /**
+   * Guest sends a message via the server-side API route (bypasses auth requirement).
+   * The server appends the message to game_room_state and Realtime notifies the owner.
+   */
+  const handleGuestSendMessage = useCallback(async (content: string) => {
+    if (!content.trim() || !gameId) return;
+    const cfgChannels = currentGame?.config?.channels;
+    const channelId = selectedChannelId ?? cfgChannels?.[0]?.id ?? "game-room";
+
+    // Optimistically add message to local UI
+    addMessage(
+      {
+        senderId: guestId ?? "guest",
+        senderName: guestNickname ?? "Guest",
+        senderAvatar: "#8b5cf6",
+        content,
+        isAI: false,
+      },
+      channelId
+    );
+
+    try {
+      await fetch(`/api/games/${gameId}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestId,
+          content,
+          nickname: guestNickname ?? "Guest",
+          channelId,
+        }),
+      });
+    } catch (e) {
+      console.error("[guest message]", e);
+      toast.error("Failed to send message");
+    }
+  }, [gameId, guestId, guestNickname, selectedChannelId, currentGame?.config?.channels, addMessage]);
+
   if (!currentGame) {
     return (
       <div className="h-[100dvh] flex items-center justify-center bg-zinc-900 text-white">
@@ -1499,10 +1656,13 @@ ${rulesText || "No specific rules defined."}`.trim();
     selectedChannelId,
     onShare: handleShare,
     shareJustCopied: shareCopied,
+    onInvite: isOwner && session?.access_token ? handleInvite : undefined,
+    inviteJustCopied: inviteCopied,
+    roomMembers: isOwner ? roomMembers : undefined,
     textSectionLabel: "Sections",
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
-    gameUserDisplayName: humanGameIdentity?.name || null,
+    gameUserDisplayName: humanGameIdentity?.name || guestNickname || null,
     gameId,
     avatarImageUrls,
     onAvatarUrlLoaded,
@@ -1572,6 +1732,25 @@ ${rulesText || "No specific rules defined."}`.trim();
             Loading room from cloud…
           </div>
         )}
+        {/* Guest player identity banner */}
+        {isGuestPlayer && guestNickname && (
+          <div className="flex-shrink-0 px-4 py-2 bg-violet-950/30 border-b border-violet-800/20 flex items-center justify-between">
+            <span className="text-xs text-violet-300">
+              Playing as <span className="font-semibold text-white">{guestNickname}</span> · Guest
+            </span>
+            <span className="text-xs text-zinc-500">AI responses are managed by the host</span>
+          </div>
+        )}
+        {/* Owner: show members who have joined via invite */}
+        {isOwner && roomMembers.length > 1 && (
+          <div className="flex-shrink-0 px-4 py-1.5 bg-emerald-950/30 border-b border-emerald-800/20 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+            <span className="text-xs text-emerald-300">
+              {roomMembers.length} players in room:{" "}
+              {roomMembers.map((m) => m.nickname).join(", ")}
+            </span>
+          </div>
+        )}
         {selectedChannelId === "rules" ? (
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-6 max-w-2xl">
@@ -1631,16 +1810,16 @@ ${rulesText || "No specific rules defined."}`.trim();
             channelId={selectedChannelId ?? undefined}
             messages={messagesForChannel}
             players={playersForChannel}
-            onSendMessage={handleSendMessage}
+            onSendMessage={isGuestPlayer ? handleGuestSendMessage : handleSendMessage}
             isGameActive={gamePhase !== "ended"}
             currentSpeakerId={currentSpeakerId}
-            userId={userId}
+            userId={isGuestPlayer ? (guestId ?? userId) : userId}
             gameId={gameId}
-            quickReplies={quickReplies}
-            quickRepliesLoading={quickRepliesLoading}
-            lastFailedSendContent={lastFailedSendContent}
+            quickReplies={isGuestPlayer ? [] : quickReplies}
+            quickRepliesLoading={isGuestPlayer ? false : quickRepliesLoading}
+            lastFailedSendContent={isGuestPlayer ? null : lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
-            isRoundInProgress={isRoundInProgress}
+            isRoundInProgress={isGuestPlayer ? false : isRoundInProgress}
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
             onOpenPlayerBoard={() => {

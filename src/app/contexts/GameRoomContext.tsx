@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { getGameRoomState, saveGameRoomState } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { Message } from "@/app/components/chat-area";
 import { Player } from "@/app/components/player-panel";
 import {
@@ -78,6 +79,8 @@ interface GameRoomContextType {
 
   // Utility
   resetGame: () => void;
+  /** Immediately flush current state to DB (bypasses the 2s debounce). Call after player messages. */
+  saveNow: () => void;
   userId: string;
 }
 
@@ -118,6 +121,23 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (!key || !url || !url.startsWith("http")) return;
     setAvatarImageUrls((prev) => (prev[key] === url ? prev : { ...prev, [key]: url }));
   }, []);
+
+  // Stable per-session ID to filter out our own Realtime echo
+  const clientIdRef = useRef<string>("");
+  if (!clientIdRef.current) {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("rt_client_id");
+      if (stored) {
+        clientIdRef.current = stored;
+      } else {
+        const id = crypto.randomUUID();
+        sessionStorage.setItem("rt_client_id", id);
+        clientIdRef.current = id;
+      }
+    } else {
+      clientIdRef.current = "ssr";
+    }
+  }
 
   const isMountedRef = useRef(true);
 
@@ -196,6 +216,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     }
   }, [gameId, user?.id]);
 
+  /** Immediately flush current state to DB (bypasses the 2-second debounce). */
+  const saveNow = useCallback(() => {
+    if (isHydrated) setSaveTrigger((s) => s + 1);
+  }, [isHydrated]);
+
   // Bump saveTrigger when state changes (debounced) so save effect runs with fixed deps
   useEffect(() => {
     if (!isHydrated) return;
@@ -264,6 +289,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       humanGameIdentity: humanGameIdentity || undefined,
       avatarImageUrls: Object.keys(trimmedAvatarImageUrls).length ? trimmedAvatarImageUrls : undefined,
       savedAt: new Date().toISOString(),
+      // Per-session ID so Realtime subscribers can skip their own echoes
+      clientId: clientIdRef.current as string,
     };
 
     try {
@@ -305,6 +332,77 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     }
     // Fixed length: gameId, userId, isHydrated, saveTrigger only
   }, [gameId, userId, isHydrated, saveTrigger]);
+
+  // ─── Realtime subscription ────────────────────────────────────────────────
+  // Merge remote state received via Supabase Realtime (postgres_changes or broadcast).
+  // Only messages not already in local state are added; streaming messages are never merged.
+  const mergeRemoteState = useCallback((remoteState: Record<string, unknown>) => {
+    if (!isMountedRef.current) return;
+
+    if (remoteState.messages && Array.isArray(remoteState.messages)) {
+      setMessages((prev) => {
+        const remoteMessages = (remoteState.messages as Array<Record<string, unknown>>).map((m) => ({
+          ...(m as object),
+          timestamp: new Date(m.timestamp as string),
+          isStreaming: false,
+        })) as Message[];
+        const localIds = new Set(prev.map((m) => m.id));
+        const newMsgs = remoteMessages.filter((m) => !localIds.has(m.id));
+        if (newMsgs.length === 0) return prev;
+        const merged = [...prev, ...newMsgs].sort(
+          (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+        );
+        return merged.slice(-100);
+      });
+    }
+    if (remoteState.players && Array.isArray(remoteState.players)) {
+      setPlayers(remoteState.players as Player[]);
+    }
+    if (typeof remoteState.gamePhase === "string" && remoteState.gamePhase) {
+      setGamePhase(remoteState.gamePhase);
+    }
+    if (remoteState.gamePhaseState && typeof remoteState.gamePhaseState === "object") {
+      setGamePhaseState(remoteState.gamePhaseState as GamePhaseState);
+    }
+    if (typeof remoteState.gameProgress === "string") {
+      setGameProgress(remoteState.gameProgress);
+    }
+    if (remoteState.myBoardContent && typeof remoteState.myBoardContent === "object") {
+      setMyBoardContent(remoteState.myBoardContent as Record<string, string>);
+    }
+    if (remoteState.gameEvents && Array.isArray(remoteState.gameEvents)) {
+      setGameEvents(remoteState.gameEvents as string[]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!gameId) return;
+
+    const channel = supabase
+      .channel(`game_room_rt:${gameId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "game_room_state",
+          filter: `game_id=eq.${gameId}`,
+        },
+        (payload) => {
+          const remoteState = (payload.new as { state?: Record<string, unknown>; clientId?: string })
+            ?.state as Record<string, unknown> | undefined;
+          if (!remoteState) return;
+          // Skip our own saves to avoid re-processing state we just wrote
+          if (remoteState.clientId === (clientIdRef.current as string)) return;
+          mergeRemoteState(remoteState);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [gameId, mergeRemoteState]);
 
   const addMessage = useCallback(
     (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => {
@@ -491,6 +589,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         setAiSuggestedPrompts,
         setHumanGameIdentity,
         resetGame,
+        saveNow,
         userId,
       }}
     >

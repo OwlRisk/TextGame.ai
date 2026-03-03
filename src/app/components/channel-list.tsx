@@ -1,4 +1,4 @@
-import { Hash, Share2, Users, Lock, Trash2 } from "lucide-react";
+import { Hash, Share2, Users, Lock, Trash2, Link2, Check } from "lucide-react";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
@@ -64,6 +64,12 @@ interface ChannelListProps {
   allPlayers?: PlayerInfo[];
   /** Unread message counts per channelId — shows a badge on non-selected channels. */
   unreadCounts?: Record<string, number>;
+  /** Callback to generate and copy an invite link. Owner only. */
+  onInvite?: () => void;
+  /** When true, show "Copied!" feedback on the invite button. */
+  inviteJustCopied?: boolean;
+  /** List of human players who have joined via invite link (owner only). */
+  roomMembers?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>;
 }
 
 export function ChannelList({ 
@@ -84,6 +90,9 @@ export function ChannelList({
   channelPermissions = {},
   allPlayers = [],
   unreadCounts = {},
+  onInvite,
+  inviteJustCopied = false,
+  roomMembers,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -97,8 +106,27 @@ export function ChannelList({
   return (
     <div className="w-52 md:w-56 lg:w-64 h-full flex-shrink-0 bg-zinc-800 flex flex-col min-h-0 overflow-hidden">
       {/* Game Header */}
-      <div className="h-14 px-5 flex items-center justify-between border-b border-zinc-900/50 shadow-sm">
-        <h2 className="font-semibold text-base text-white truncate">{gameName}</h2>
+      <div className="h-14 px-3 flex items-center justify-between border-b border-zinc-900/50 shadow-sm gap-1">
+        <h2 className="font-semibold text-base text-white truncate flex-1 pl-2">{gameName}</h2>
+        {/* Invite button (owner only) */}
+        {onInvite && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`h-8 focus-visible:ring-2 focus-visible:ring-violet-500/50 ${inviteJustCopied ? "min-w-[5rem]" : "w-8 px-0"}`}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onInvite(); }}
+            title={inviteJustCopied ? "Invite link copied!" : "Invite players"}
+          >
+            {inviteJustCopied ? (
+              <span className="text-xs font-medium text-emerald-400 flex items-center gap-1">
+                <Check className="h-3 w-3" />Copied
+              </span>
+            ) : (
+              <Link2 className="h-4 w-4 text-violet-400 hover:text-violet-300" />
+            )}
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
@@ -229,6 +257,28 @@ export function ChannelList({
             })}
           </div>
         </div>
+
+        {/* Room members section (owner only, shown when someone has joined via invite) */}
+        {roomMembers && roomMembers.length > 1 && (
+          <>
+            <Separator className="my-3 bg-zinc-700/50" />
+            <div>
+              <div className="flex items-center justify-between px-3 mb-2">
+                <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Players Online</span>
+                <span className="text-xs text-zinc-500">{roomMembers.length}</span>
+              </div>
+              {roomMembers.map((m) => (
+                <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
+                  <span className="text-sm text-zinc-300 truncate flex-1">{m.nickname}</span>
+                  {m.is_owner && (
+                    <span className="text-[10px] text-violet-400 font-medium">Host</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </ScrollArea>
 
       {/* User Section：固定在底部 */}
