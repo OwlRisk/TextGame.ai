@@ -23,6 +23,7 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   manifest: "/site.webmanifest",
   keywords: [
+    "textgame.ai",
     "AI text game",
     "text-based game",
     "AI game host",
@@ -30,6 +31,10 @@ export const metadata: Metadata = {
     "werewolf game AI",
     "AI role-playing game",
     "game design AI",
+    "ai rpg",
+    "ai text adventure",
+    "character ai alternative",
+    "ai character game",
   ],
   alternates: {
     canonical: "/",
