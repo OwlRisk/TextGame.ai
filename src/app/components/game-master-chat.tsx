@@ -1868,7 +1868,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         <SheetContent
           side="left"
           title="Sessions"
-          className="w-72 max-w-[85vw] p-0 gap-0 border-r border-white/10 bg-zinc-950/95 backdrop-blur-xl flex flex-col"
+          className="w-72 max-w-[85vw] p-0 gap-0 border-r border-white/10 bg-zinc-950/95 backdrop-blur-xl flex flex-col [&>button:last-child]:hidden"
         >
           <div className="p-4 border-b border-white/10 flex-shrink-0">
             <Button
