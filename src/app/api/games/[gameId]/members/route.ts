@@ -62,7 +62,7 @@ export async function GET(
   // ── Fetch all members ──────────────────────────────────────────────────────
   const { data, error } = await supabaseAdmin
     .from("game_members")
-    .select("id, game_id, nickname, player_id, is_owner, joined_at")
+    .select("id, game_id, nickname, player_id, is_owner, joined_at, guest_id")
     .eq("game_id", gameId)
     .order("joined_at", { ascending: true });
 

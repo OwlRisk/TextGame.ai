@@ -1,9 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { Volume2, VolumeX, User, Package, Info } from "lucide-react";
+import { Volume2, VolumeX, User, Package, Info, UserPlus, UserMinus } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Badge } from "@/app/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
 import { Player } from "@/app/components/player-panel";
 import { PlayerBoardData } from "@/app/components/player-board";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
@@ -11,9 +19,13 @@ import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { isPlayerEliminated, resolveYouBadge, OnlineBadge } from "@/lib/player-badges";
 
-interface GuestEntry {
+export interface GuestEntry {
   id: string;
   nickname: string;
+  memberId?: string;
+  playerId?: string;
+  playerName?: string;
+  playerRole?: string;
 }
 
 interface PlayerPanelWithBoardProps {
@@ -45,6 +57,11 @@ interface PlayerPanelWithBoardProps {
   viewerIsGuest?: boolean;
   /** Human guests who joined via invite link — rendered at the bottom of the player list. */
   guestMembers?: GuestEntry[];
+  /**
+   * Owner-only: assign an online guest to a player slot.
+   * memberId = game_members.id, playerId = Player.id (null to unassign).
+   */
+  onAssignGuest?: (memberId: string, playerId: string | null) => void;
 }
 
 export function PlayerPanelWithBoard({ 
@@ -66,6 +83,7 @@ export function PlayerPanelWithBoard({
   playerBoardLabel = "My Board",
   viewerIsGuest = false,
   guestMembers = [],
+  onAssignGuest,
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -147,6 +165,8 @@ export function PlayerPanelWithBoard({
                     avatarImageUrls={avatarImageUrls}
                     onAvatarUrlLoaded={onAvatarUrlLoaded}
                     viewerIsGuest={viewerIsGuest}
+                    guestMembers={guestMembers}
+                    onAssignGuest={onAssignGuest}
                   />
                 ))}
                 {/* Guest participants joined via invite link */}
@@ -196,6 +216,8 @@ function PlayerCard({
   avatarImageUrls = {},
   onAvatarUrlLoaded,
   viewerIsGuest = false,
+  guestMembers = [],
+  onAssignGuest,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -209,12 +231,19 @@ function PlayerCard({
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   viewerIsGuest?: boolean;
+  guestMembers?: GuestEntry[];
+  onAssignGuest?: (memberId: string, playerId: string | null) => void;
 }) {
   const canViewProfile = !!onViewProfile;
   const handleRowClick = () => {
     if (canViewProfile) onViewProfile?.(player);
   };
   const isEliminated = isPlayerEliminated(player);
+  // Guest currently bound to this player slot (if any)
+  const boundGuest = guestMembers.find((g) => g.playerId === player.id);
+  // Guests available to assign (not already bound to another player, and have a memberId)
+  const availableGuests = guestMembers.filter((g) => !g.playerId && g.memberId);
+  const canAssign = isUserGameMaster && player.isAI && !player.isGameMaster && !!onAssignGuest;
 
   return (
     <div
@@ -295,6 +324,11 @@ function PlayerCard({
                       YOU
                     </Badge>
                   )}
+                  {boundGuest && (
+                    <Badge className="inline-flex items-center justify-center leading-none bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
+                      {boundGuest.nickname}
+                    </Badge>
+                  )}
                   {!isEliminated && canViewProfile && player.isAI && (
                     <Info className="h-3.5 w-3.5 text-zinc-500 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
                   )}
@@ -315,6 +349,68 @@ function PlayerCard({
         </div>
         {isUserGameMaster && !player.isGameMaster && (
           <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            {/* Assign / unassign guest to this AI slot */}
+            {canAssign && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 hover:bg-zinc-600/50"
+                    title={boundGuest ? `Unassign ${boundGuest.nickname}` : "Assign a guest"}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {boundGuest ? (
+                      <UserMinus className="h-3 w-3 text-emerald-400" />
+                    ) : (
+                      <UserPlus className="h-3 w-3 text-zinc-400 hover:text-white" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="left"
+                  align="start"
+                  className="bg-zinc-900 border-zinc-700 text-zinc-200 min-w-[160px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuLabel className="text-zinc-400 text-xs">
+                    {boundGuest ? "Assigned guest" : "Assign online guest"}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-zinc-700" />
+                  {boundGuest && (
+                    <>
+                      <DropdownMenuItem
+                        className="text-xs text-emerald-300 cursor-default opacity-60"
+                      >
+                        {boundGuest.nickname} (current)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-xs text-red-400 cursor-pointer hover:bg-zinc-800"
+                        onClick={() => onAssignGuest!(boundGuest.memberId!, null)}
+                      >
+                        <UserMinus className="h-3 w-3 mr-1.5" />
+                        Unassign
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {!boundGuest && availableGuests.length === 0 && (
+                    <DropdownMenuItem disabled className="text-xs text-zinc-500">
+                      No unassigned guests online
+                    </DropdownMenuItem>
+                  )}
+                  {availableGuests.map((g) => (
+                    <DropdownMenuItem
+                      key={g.id}
+                      className="text-xs cursor-pointer hover:bg-zinc-800"
+                      onClick={() => onAssignGuest!(g.memberId!, player.id)}
+                    >
+                      <UserPlus className="h-3 w-3 mr-1.5 text-emerald-400" />
+                      {g.nickname}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -336,20 +432,32 @@ function PlayerCard({
 
 function GuestCard({ guest }: { guest: GuestEntry }) {
   const initial = guest.nickname?.charAt(0)?.toUpperCase() || "?";
+  const isBound = !!guest.playerId;
   return (
-    <div className="p-2 rounded-lg">
+    <div className={`p-2 rounded-lg ${isBound ? "bg-emerald-950/20 ring-1 ring-emerald-700/30" : ""}`}>
       <div className="flex items-center gap-2.5">
-        <div className="h-9 w-9 rounded-full bg-emerald-800/40 border border-emerald-700/40 flex items-center justify-center text-emerald-300 text-sm font-bold flex-shrink-0">
+        <div className={`h-9 w-9 rounded-full border flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+          isBound
+            ? "bg-emerald-700/40 border-emerald-500/50 text-emerald-200"
+            : "bg-emerald-800/40 border-emerald-700/40 text-emerald-300"
+        }`}>
           {initial}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-sm font-semibold text-emerald-200 truncate">{guest.nickname}</span>
             <Badge className="inline-flex items-center justify-center leading-none bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
               {OnlineBadge.Guest}
             </Badge>
           </div>
-          <div className="text-xs text-zinc-500 mt-0.5">Spectator</div>
+          {isBound ? (
+            <div className="text-[10px] text-emerald-400/80 mt-0.5 truncate">
+              Playing as {guest.playerName ?? "Unknown"}
+              {guest.playerRole ? ` · ${guest.playerRole}` : ""}
+            </div>
+          ) : (
+            <div className="text-xs text-zinc-500 mt-0.5">Spectator</div>
+          )}
         </div>
       </div>
     </div>

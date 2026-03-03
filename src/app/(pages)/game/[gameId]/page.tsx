@@ -125,7 +125,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
-  const [roomMembers, setRoomMembers] = useState<Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>>([]);
+  const [roomMembers, setRoomMembers] = useState<Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null; guest_id: string | null }>>([]);
   // Guests currently online according to Supabase Presence (real-time, auto-cleared on disconnect)
   const [onlineGuestPresences, setOnlineGuestPresences] = useState<Array<{ id: string; nickname: string }>>([]);
 
@@ -144,6 +144,34 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const isOwner = !!games.find((g) => g.id === gameId) && !!session?.user?.id;
   /** True if this client is a non-owner participant (guest or auth player who joined via invite) */
   const isGuestPlayer = !isOwner && !!guestId;
+
+  /**
+   * For each online guest (from Presence), enrich with their bound player info from roomMembers.
+   * guest_id (presence key = guestId UUID) is matched against roomMembers[].guest_id.
+   */
+  const enrichedGuestMembers = useMemo(() => {
+    return onlineGuestPresences.map((g) => {
+      const member = roomMembers.find((m) => m.guest_id === g.id && !m.is_owner);
+      const boundPlayer = member?.player_id ? players.find((p) => p.id === member.player_id) : null;
+      return {
+        id: g.id,
+        nickname: g.nickname,
+        memberId: member?.id,
+        playerId: boundPlayer?.id,
+        playerName: boundPlayer?.name,
+        playerRole: boundPlayer?.role,
+      };
+    });
+  }, [onlineGuestPresences, roomMembers, players]);
+
+  /**
+   * For guest clients: the player_id this guest is bound to (set by owner via PATCH endpoint).
+   * Used to look up their MY_BOARD content.
+   */
+  const guestPlayerBinding = useMemo(() => {
+    if (!isGuestPlayer || !guestId) return null;
+    return roomMembers.find((m) => m.guest_id === guestId)?.player_id ?? null;
+  }, [isGuestPlayer, guestId, roomMembers]);
 
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
@@ -308,7 +336,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
       fetch(url, { headers })
         .then((r) => r.ok ? r.json() : null)
-        .then((data: { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }> } | null) => {
+        .then((data: { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null; guest_id: string | null }> } | null) => {
           if (data?.members) setRoomMembers(data.members);
         })
         .catch(() => {/* non-critical */});
@@ -626,10 +654,14 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         if (isHuman) {
           return `  • ${name} [YOU/HUMAN] | ${role} | ${statusStr}`;
         }
+        // If an online guest is bound to this AI slot, label them as GUEST so the AI knows
+        // a real person is playing this character
+        const boundGuest = roomMembers.find((m) => m.player_id === p.id && !m.is_owner);
         const personality = p.personality ? `Personality: ${p.personality}` : "";
         const background = p.background ? `Background: ${p.background}` : "";
         const extras = [personality, background].filter(Boolean).join(" | ");
-        return `  • ${name} [AI] | ${role} | ${statusStr}${extras ? ` | ${extras}` : ""}`;
+        const typeLabel = boundGuest ? `GUEST: ${boundGuest.nickname}` : "AI";
+        return `  • ${name} [${typeLabel}] | ${role} | ${statusStr}${extras ? ` | ${extras}` : ""}`;
       }).join("\n");
 
       // Build "My Board" summary: what has already been privately written to each player
@@ -1789,6 +1821,32 @@ ${rulesText || "No specific rules defined."}`.trim();
     );
   }
 
+  /**
+   * Owner assigns (or unassigns) an online guest to an AI player slot.
+   * Calls PATCH /api/games/[gameId]/members/[memberId] then refreshes the member list.
+   */
+  const handleAssignGuestToPlayer = useCallback(async (memberId: string, playerId: string | null) => {
+    if (!session?.access_token) return;
+    try {
+      await fetch(`/api/games/${gameId}/members/${memberId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ playerId }),
+      });
+      // Refresh member list to reflect new binding
+      const url = `/api/games/${gameId}/members`;
+      const data = await fetch(url, {
+        headers: { "Authorization": `Bearer ${session.access_token}` },
+      }).then((r) => r.ok ? r.json() : null);
+      if (data?.members) setRoomMembers(data.members);
+    } catch {
+      /* non-critical */
+    }
+  }, [gameId, session?.access_token]);
+
   const sidebarCommon = {
     games,
     selectedGameId,
@@ -2013,13 +2071,18 @@ ${rulesText || "No specific rules defined."}`.trim();
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
                 playerBoardData={playerBoardData}
-                myBoardContentFromHost={myBoardContent[userId] ?? ""}
+                myBoardContentFromHost={
+                  isGuestPlayer
+                    ? (guestPlayerBinding ? myBoardContent[guestPlayerBinding] ?? "" : "")
+                    : (myBoardContent[userId] ?? "")
+                }
                 currentUserId={userId}
                 activeTab={rightPanelTab}
                 onTabChange={setRightPanelTab}
                 playerBoardLabel={currentGame?.config?.playerBoardLabel}
                 viewerIsGuest={isGuestPlayer}
-                guestMembers={onlineGuestPresences}
+                guestMembers={enrichedGuestMembers}
+                onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
               />
             </div>
 
@@ -2032,13 +2095,18 @@ ${rulesText || "No specific rules defined."}`.trim();
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
                   playerBoardData={playerBoardData}
-                  myBoardContentFromHost={myBoardContent[userId] ?? ""}
+                  myBoardContentFromHost={
+                    isGuestPlayer
+                      ? (guestPlayerBinding ? myBoardContent[guestPlayerBinding] ?? "" : "")
+                      : (myBoardContent[userId] ?? "")
+                  }
                   currentUserId={userId}
                   activeTab={rightPanelTab}
                   onTabChange={setRightPanelTab}
                   playerBoardLabel={currentGame?.config?.playerBoardLabel}
                   viewerIsGuest={isGuestPlayer}
-                  guestMembers={onlineGuestPresences}
+                  guestMembers={enrichedGuestMembers}
+                  onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
                 />
               </SheetContent>
             </Sheet>
