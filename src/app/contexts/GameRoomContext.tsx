@@ -47,7 +47,7 @@ interface GameRoomContextType {
   isRoomLoading: boolean;
 
   // Actions - Messages
-  addMessage: (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => string | undefined;
+  addMessage: (msg: Omit<Message, "id" | "timestamp"> & { id?: string }, channelId?: string) => string | undefined;
   addStreamingMessage: (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
   addEventNotification: (content: string) => void;
@@ -405,11 +405,13 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   }, [gameId, mergeRemoteState]);
 
   const addMessage = useCallback(
-    (msg: Omit<Message, "id" | "timestamp">, channelId?: string) => {
+    (msg: Omit<Message, "id" | "timestamp"> & { id?: string }, channelId?: string) => {
       if (!isMountedRef.current) return;
       const newMessage: Message = {
         ...msg,
-        id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        // Allow callers to supply a pre-generated ID (e.g. guest optimistic update)
+        // so the Realtime echo can be deduplicated by ID.
+        id: msg.id ?? `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         timestamp: new Date(),
         ...(channelId != null && { channelId }),
       };

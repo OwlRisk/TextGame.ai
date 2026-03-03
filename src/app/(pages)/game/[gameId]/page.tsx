@@ -1651,9 +1651,15 @@ ${rulesText || "No specific rules defined."}`.trim();
     const cfgChannels = currentGame?.config?.channels;
     const channelId = selectedChannelId ?? cfgChannels?.[0]?.id ?? "game-room";
 
+    // Generate the message ID here so the local optimistic message and the
+    // Realtime echo share the same ID — preventing the duplicate that occurs
+    // when mergeRemoteState adds the server copy (which had a different ID).
+    const messageId = `msg-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+
     // Optimistically add message to local UI
     addMessage(
       {
+        id: messageId,
         senderId: guestId ?? "guest",
         senderName: guestNickname ?? "Guest",
         senderAvatar: "#8b5cf6",
@@ -1668,6 +1674,7 @@ ${rulesText || "No specific rules defined."}`.trim();
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          messageId,  // server will use this ID so Realtime echo matches
           guestId,
           content,
           nickname: guestNickname ?? "Guest",

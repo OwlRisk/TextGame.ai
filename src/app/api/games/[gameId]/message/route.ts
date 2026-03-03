@@ -25,9 +25,10 @@ export async function POST(
     nickname?: string;
     playerId?: string;
     channelId?: string;
+    messageId?: string; // client-generated ID for deduplication against optimistic update
   };
 
-  const { guestId, content, nickname, playerId, channelId = "game-room" } = body;
+  const { guestId, content, nickname, playerId, channelId = "game-room", messageId } = body;
   if (!content?.trim()) return NextResponse.json({ error: "content required" }, { status: 400 });
 
   // Identify the sender
@@ -69,7 +70,9 @@ export async function POST(
   const existingMessages = Array.isArray(currentState.messages) ? currentState.messages : [];
 
   const newMessage = {
-    id: `msg-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+    // Use client-provided ID if present so the Realtime echo matches the
+    // optimistic local message and mergeRemoteState deduplicates it correctly.
+    id: messageId ?? `msg-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     senderId: playerId ?? member.player_id ?? (effectiveGuestId ?? effectiveUserId ?? "unknown"),
     senderName: nickname ?? member.nickname,
     senderAvatar: "#6366f1",
