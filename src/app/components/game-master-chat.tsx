@@ -276,6 +276,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const authToken = session?.access_token;
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
+  // When a preset is provided on mount, block the session-loader from auto-loading
+  // the user's last session — otherwise the async DB response arrives after the preset
+  // has been applied and overwrites it (race condition).
+  const skipAutoLoadRef = useRef(!!initialPreset);
+
   // Session management
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
@@ -735,12 +740,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       getGameSessions(user.id).then(({ data, error }) => {
         if (error || !data?.length) {
           setSessions([]);
-          createNewSession();
+          // Don't create a blank session when a preset is about to be applied
+          if (!skipAutoLoadRef.current) createNewSession();
           return;
         }
         const sessionsWithDates = data.map((row) => rowToSession(row));
         setSessions(sessionsWithDates);
-        loadSession(sessionsWithDates[0].id, sessionsWithDates);
+        // Skip auto-loading last session when a preset was provided — the preset
+        // effect will create the right session via requestAnimationFrame, and we
+        // must not overwrite it with the async DB response.
+        if (!skipAutoLoadRef.current) loadSession(sessionsWithDates[0].id, sessionsWithDates);
       });
       return;
     }
@@ -766,10 +775,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         localStorage.setItem("gameMasterSessions", JSON.stringify(sessionsToKeep));
       }
       setSessions(sessionsToKeep);
-      if (sessionsToKeep.length > 0) loadSession(sessionsToKeep[0].id, sessionsToKeep);
-      else createNewSession();
+      if (sessionsToKeep.length > 0 && !skipAutoLoadRef.current) loadSession(sessionsToKeep[0].id, sessionsToKeep);
+      else if (!skipAutoLoadRef.current) createNewSession();
     } else {
-      createNewSession();
+      if (!skipAutoLoadRef.current) createNewSession();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
