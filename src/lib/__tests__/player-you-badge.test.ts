@@ -83,11 +83,16 @@ describe('guest view — YOU badge suppressed', () => {
     expect(shouldShowYou(aiPlayer, undefined)).toBe(false);
   });
 
-  it('empty string is falsy — !!currentUserId gates the badge', () => {
-    // This is the core fix: !!'' === false
-    expect(!!'').toBe(false);
-    expect(!!undefined).toBe(false);
-    expect(!!'user-real-id').toBe(true);
+  it('empty-string userId gates the badge — resolveYouBadge returns false', () => {
+    // Core fix: !!currentUserId must be truthy; empty string fails the guard
+    const human: Player = { id: '', isAI: false };
+    expect(shouldShowYou(human, '')).toBe(false);       // empty string
+    expect(shouldShowYou(human, undefined)).toBe(false); // undefined
+  });
+
+  it('non-empty userId passes the guard — resolveYouBadge returns true when id matches', () => {
+    const human: Player = { id: 'real-id', isAI: false };
+    expect(shouldShowYou(human, 'real-id')).toBe(true);
   });
 });
 
@@ -151,32 +156,39 @@ describe('eliminated player — YOU always hidden', () => {
 // Section 5 – isEliminated helper
 // ─────────────────────────────────────────────────────────────────────────────
 
+// isPlayerEliminated accepts PlayerLike = { stats?, status? }.
+// Use this helper so object literals with extra properties (id, isAI) don't
+// trigger TS2353 "excess property" errors when passed directly.
+function mkStatus(overrides: { stats?: Record<string, string>; status?: string } = {}) {
+  return overrides;
+}
+
 describe('isEliminated helper', () => {
   it('returns false for alive player', () => {
-    expect(isEliminated({ id: '1', isAI: false, stats: { Status: 'Alive' } })).toBe(false);
+    expect(isEliminated(mkStatus({ stats: { Status: 'Alive' } }))).toBe(false);
   });
 
   it('returns false for no status', () => {
-    expect(isEliminated({ id: '1', isAI: false })).toBe(false);
+    expect(isEliminated(mkStatus())).toBe(false);
   });
 
   it('returns true for "Eliminated" (case-insensitive)', () => {
-    expect(isEliminated({ id: '1', isAI: false, stats: { Status: 'ELIMINATED' } })).toBe(true);
-    expect(isEliminated({ id: '1', isAI: false, stats: { Status: 'eliminated' } })).toBe(true);
+    expect(isEliminated(mkStatus({ stats: { Status: 'ELIMINATED' } }))).toBe(true);
+    expect(isEliminated(mkStatus({ stats: { Status: 'eliminated' } }))).toBe(true);
   });
 
   it('returns true for "Voted Out"', () => {
-    expect(isEliminated({ id: '1', isAI: false, stats: { Status: 'Voted Out' } })).toBe(true);
+    expect(isEliminated(mkStatus({ stats: { Status: 'Voted Out' } }))).toBe(true);
   });
 
   it('uses player.status as fallback when stats.Status is absent', () => {
-    expect(isEliminated({ id: '1', isAI: false, status: 'dead' })).toBe(true);
-    expect(isEliminated({ id: '1', isAI: false, status: 'online' })).toBe(false);
+    expect(isEliminated(mkStatus({ status: 'dead' }))).toBe(true);
+    expect(isEliminated(mkStatus({ status: 'online' }))).toBe(false);
   });
 
   it('stats.Status takes precedence over player.status', () => {
     // stats.Status alive but player.status says dead — stats wins
-    expect(isEliminated({ id: '1', isAI: false, stats: { Status: 'Alive' }, status: 'dead' })).toBe(false);
+    expect(isEliminated(mkStatus({ stats: { Status: 'Alive' }, status: 'dead' }))).toBe(false);
   });
 });
 
