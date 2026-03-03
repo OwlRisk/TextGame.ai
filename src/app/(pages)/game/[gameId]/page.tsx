@@ -298,16 +298,28 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     selectGame(gameId);
   }, [gameId, selectGame]);
 
-  // If game is not in my list but has a share link, load it so "Open in GameMaster" from /play/[token] works.
+  // If game is not in my list, try two fallbacks:
+  // 1. Guest view: verify guestId membership and load game data (for invite-joined players)
+  // 2. Public/shared view: load game via share token (for /play/[token] links)
   // Wait until gamesLoading is done before deciding the game is truly absent (avoids spurious 404 for owners).
   const [sharedLoadPending, setSharedLoadPending] = useState(false);
   const sharedLoadTriedRef = useRef(false);
   useEffect(() => {
     if (gamesLoading || currentGame || !gameId || sharedLoadTriedRef.current) return;
-    // Only attempt after games have loaded and game is still missing
     sharedLoadTriedRef.current = true;
     setSharedLoadPending(true);
-    fetch(`/api/games/${gameId}/public`)
+
+    // Prefer guest-view endpoint when a guestId is available.
+    // Read directly from URL params to avoid race with the guestId state setter.
+    const urlGuestId = typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("guestId")
+      : null;
+    const guestIdForLoad = urlGuestId ?? guestId ?? (typeof window !== "undefined" ? localStorage.getItem("guestId") : null);
+    const url = guestIdForLoad
+      ? `/api/games/${gameId}/guest-view?guestId=${encodeURIComponent(guestIdForLoad)}`
+      : `/api/games/${gameId}/public`;
+
+    fetch(url)
       .then((res) => (res.ok ? res.json() : null))
       .then((row) => {
         if (row?.id) {
@@ -322,9 +334,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           });
         }
       })
-      .catch((e) => console.error('[game] Failed to load shared game:', e))
+      .catch((e) => console.error('[game] Failed to load game for guest:', e))
       .finally(() => setSharedLoadPending(false));
-  }, [gamesLoading, currentGame, gameId, addGame]);
+  }, [gamesLoading, currentGame, gameId, guestId, addGame]);
 
   // When game has GM-defined channels and context still has legacy "game-room", switch to first channel
   useEffect(() => {
