@@ -230,6 +230,8 @@ export default function RootLayout({
               <a href="/games/tarot">AI Tarot Reading</a>
               <a href="/games/secret-hitler">Play Secret Hitler Online with AI</a>
               <a href="/games/murder-mystery">AI Murder Mystery Game</a>
+              <a href="/blog">Blog — AI Game Guides &amp; Comparisons</a>
+              <a href="/blog/character-ai-alternatives">Best Character.AI Alternatives for Multiplayer Games</a>
               <a href="/subscription">Plans &amp; Pricing</a>
               <a href="/signin">Sign In</a>
               <a href="/terms">Terms of Service</a>

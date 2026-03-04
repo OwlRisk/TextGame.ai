@@ -822,6 +822,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
             <p>© 2026 {BRAND_CONFIG.name} • Any game you describe, playable in minutes</p>
             <div className="flex gap-6">
+              <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
