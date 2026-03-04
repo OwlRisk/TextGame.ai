@@ -7,6 +7,18 @@ export const metadata: Metadata = {
   title: "Terms of Service — textgame.ai",
   description: "Read the terms of service for textgame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
   alternates: { canonical: "/terms" },
+  openGraph: {
+    title: "Terms of Service — textgame.ai",
+    description: "Read the terms of service for textgame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
+    url: "https://textgame.ai/terms",
+    siteName: "textgame.ai",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Terms of Service — textgame.ai",
+    description: "Read the terms of service for textgame.ai — AI-powered text game platform.",
+  },
 };
 
 export default function TermsPage() {

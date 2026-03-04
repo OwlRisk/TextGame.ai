@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, SITE_DOMAIN } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: `Blog — ${SITE_NAME}`,
@@ -159,9 +159,33 @@ const posts: BlogPost[] = [
   },
 ];
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: `Blog — ${SITE_NAME}`,
+  description:
+    "Guides, comparisons, and tips on AI-powered text games, social deduction, roleplay AI, and multiplayer gaming with AI characters.",
+  url: `${SITE_DOMAIN}/blog`,
+  isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_DOMAIN },
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: posts.length,
+    itemListElement: posts.map((post, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_DOMAIN}/blog/${post.slug}`,
+      name: post.title,
+    })),
+  },
+};
+
 export default function BlogIndex() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <h1 className="text-4xl font-black text-white mb-3">Blog</h1>
       <p className="text-lg text-zinc-400 mb-12">
         Guides, comparisons, and ideas for AI-powered multiplayer games.

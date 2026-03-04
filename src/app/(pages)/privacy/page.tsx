@@ -7,6 +7,18 @@ export const metadata: Metadata = {
   title: "Privacy Policy — textgame.ai",
   description: "Learn how textgame.ai collects, uses, and protects your personal information. Covers GDPR, CCPA, guest data, AI-generated content, and multiplayer privacy.",
   alternates: { canonical: "/privacy" },
+  openGraph: {
+    title: "Privacy Policy — textgame.ai",
+    description: "Learn how textgame.ai collects, uses, and protects your personal information. Covers GDPR, CCPA, guest data, AI-generated content, and multiplayer privacy.",
+    url: "https://textgame.ai/privacy",
+    siteName: "textgame.ai",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Privacy Policy — textgame.ai",
+    description: "Learn how textgame.ai collects, uses, and protects your personal information.",
+  },
 };
 
 export default function PrivacyPage() {

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_DOMAIN } from "@/lib/site";
 
-const PUBLIC_ALLOW = ["/", "/discover", "/games", "/games/", "/play/", "/signin", "/terms", "/privacy", "/help"];
+const PUBLIC_ALLOW = ["/", "/discover", "/games", "/games/", "/blog", "/blog/", "/play/", "/signin", "/terms", "/privacy", "/help"];
 const PRIVATE_DISALLOW = ["/profile", "/settings", "/recharge", "/usage", "/subscription", "/my-games", "/create", "/game/", "/api/"];
 
 export default function robots(): MetadataRoute.Robots {
