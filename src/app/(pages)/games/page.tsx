@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Users, Clock } from "lucide-react";
 import { GAME_SEO_DATA } from "@/lib/game-seo-data";
@@ -51,7 +52,7 @@ export default function GamesPage() {
   );
 
   return (
-    <div className="h-full overflow-auto bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200">
+    <div className="h-full overflow-auto scrollbar-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200">
       {/* Nav */}
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-zinc-950/80 border-b border-zinc-800/50">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -97,29 +98,44 @@ export default function GamesPage() {
                 <Link
                   key={game.slug}
                   href={`/games/${game.slug}`}
-                  className="group rounded-xl bg-zinc-800/60 hover:bg-zinc-800 border border-zinc-700/50 hover:border-violet-700/50 p-5 transition-all space-y-3"
+                  className="group rounded-xl bg-zinc-800/60 hover:bg-zinc-800 border border-zinc-700/50 hover:border-violet-700/50 overflow-hidden transition-all"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-3xl leading-none">{game.icon}</span>
-                    <span className="text-xs text-zinc-500 mt-1">{game.style}</span>
-                  </div>
-                  <div className="space-y-1">
+                  {game.coverImage ? (
+                    <div className="relative w-full aspect-[16/9] overflow-hidden">
+                      <Image
+                        src={game.coverImage}
+                        alt={game.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                      <span className="absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/50 text-zinc-300 backdrop-blur-sm">
+                        {game.style}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-[16/9] bg-zinc-800 flex items-center justify-center text-4xl">
+                      {game.icon}
+                    </div>
+                  )}
+                  <div className="p-4 space-y-2">
                     <h3 className="text-sm font-semibold text-white group-hover:text-violet-300 transition-colors leading-snug">
                       {game.name}
                     </h3>
                     <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
                       {game.metaDescription}
                     </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-zinc-600">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {game.players}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {game.duration}
-                    </span>
+                    <div className="flex items-center gap-3 text-xs text-zinc-600">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {game.players}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {game.duration}
+                      </span>
+                    </div>
                   </div>
                 </Link>
               ))}
@@ -137,13 +153,30 @@ export default function GamesPage() {
                 <Link
                   key={game.slug}
                   href={`/games/${game.slug}`}
-                  className="group rounded-xl bg-zinc-800/60 hover:bg-zinc-800 border border-zinc-700/50 hover:border-violet-700/50 p-5 transition-all space-y-3"
+                  className="group rounded-xl bg-zinc-800/60 hover:bg-zinc-800 border border-zinc-700/50 hover:border-violet-700/50 overflow-hidden transition-all"
                 >
-                  <span className="text-3xl leading-none">{game.icon}</span>
-                  <h3 className="text-sm font-semibold text-white group-hover:text-violet-300 transition-colors">
-                    {game.name}
-                  </h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">{game.metaDescription}</p>
+                  {game.coverImage ? (
+                    <div className="relative w-full aspect-[16/9] overflow-hidden">
+                      <Image
+                        src={game.coverImage}
+                        alt={game.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-[16/9] bg-zinc-800 flex items-center justify-center text-4xl">
+                      {game.icon}
+                    </div>
+                  )}
+                  <div className="p-4 space-y-2">
+                    <h3 className="text-sm font-semibold text-white group-hover:text-violet-300 transition-colors">
+                      {game.name}
+                    </h3>
+                    <p className="text-xs text-zinc-500 line-clamp-2">{game.metaDescription}</p>
+                  </div>
                 </Link>
               ))}
             </div>
