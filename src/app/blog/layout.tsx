@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s",
+    default: `Blog · ${SITE_NAME}`,
+  },
+};
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {
   return (

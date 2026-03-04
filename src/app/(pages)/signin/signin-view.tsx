@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Button } from "@/app/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/app/components/ui/card";
 import { Gamepad2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/app/components/ui/sonner";
@@ -75,7 +75,7 @@ function SignInPageInner() {
             </div>
           </div>
           <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold text-white">Welcome to textgame.ai</CardTitle>
+            <h1 className="text-3xl font-bold text-white">Welcome to textgame.ai</h1>
             <CardDescription className="text-zinc-400">
               Sign in to design and play text-based games with an AI host
             </CardDescription>
