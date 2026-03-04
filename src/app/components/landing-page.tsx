@@ -7,13 +7,11 @@ import {
   Users,
   Crown,
   Zap,
-  Star,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Gamepad2,
-  ArrowRight,
-  LayoutGrid,
+  Compass,
 } from "lucide-react";
 import NextImage from "next/image";
 import Link from "next/link";
@@ -389,13 +387,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  const quickStarts = [
-    { id: "werewolf" as const, emoji: "🐺", label: "Werewolf" },
-    { id: "mafia" as const,    emoji: "🎭", label: "Mafia" },
-    { id: "spy" as const,      emoji: "🕵️", label: "Who's the Spy" },
-    { id: "mystery" as const,  emoji: "🔍", label: "Mystery" },
-  ];
-
   const features = [
     {
       icon: MessageCircle,
@@ -456,12 +447,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
     },
   ];
 
-  const howItWorks = [
-    { number: "1", title: "Sign in", subtitle: "with Google", icon: "👤" },
-    { number: "2", title: "Describe game", subtitle: "to Game Master", icon: "💬" },
-    { number: "3", title: "Play instantly", subtitle: "with AI characters", icon: "🎮" },
-  ];
-
   // Auto-rotate preview every 20 s (gives time for messages to stream)
   useEffect(() => {
     if (!isAutoPlaying) return;
@@ -509,148 +494,71 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
 
             {/* Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-              Your game idea,{" "}
-              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent animate-gradient">
-                playable
+              Play multiplayer games with{" "}
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+                AI characters
               </span>
-              {" "}in 2 minutes
             </h2>
 
-            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-5 leading-relaxed">
-              Describe your idea in plain English. AI fills every seat, runs the game, and reacts to everything you do.
+            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
+              Create custom game rules or play classic games like Werewolf and Undercover.
+              <br className="hidden sm:block" />
+              Your AI gaming playground starts here.
             </p>
 
-            {/* 3-step flow */}
-            <div className="mb-6 flex items-center gap-2 flex-wrap">
-              {[
-                { num: "1", text: "Describe your idea" },
-                { num: "2", text: "AI sets up the game" },
-                { num: "3", text: "Play with AI characters" },
-              ].map((step, i, arr) => (
-                <div key={step.num} className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-400 text-[10px] font-black flex items-center justify-center flex-shrink-0">
-                    {step.num}
-                  </span>
-                  <span className="text-sm text-zinc-300 whitespace-nowrap">{step.text}</span>
-                  {i < arr.length - 1 && (
-                    <ArrowRight className="h-3.5 w-3.5 text-zinc-600 flex-shrink-0" />
-                  )}
+            {/* Core features – 3 simple rows */}
+            <div className="mb-10 space-y-3">
+              <div className="flex items-center gap-3 text-zinc-300">
+                <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-lg">
+                  <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
-              ))}
-            </div>
-
-            {/* Social proof grid */}
-            <div className="mb-6 p-5 bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-700/50 rounded-xl">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-violet-500/10 rounded-lg">
-                    <Users className="h-5 w-5 text-violet-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">AI players</div>
-                    <div className="text-xs text-zinc-500">Each with unique personality</div>
-                  </div>
+                <span className="text-base">Smart AI characters that adapt to your game</span>
+              </div>
+              <div className="flex items-center gap-3 text-zinc-300">
+                <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-lg">
+                  <MessageCircle className="h-4 w-4 text-fuchsia-400" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-fuchsia-500/10 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-fuchsia-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">20+ templates</div>
-                    <div className="text-xs text-zinc-500">One-click start</div>
-                  </div>
+                <span className="text-base">Fully customizable rules and gameplay</span>
+              </div>
+              <div className="flex items-center gap-3 text-zinc-300">
+                <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-lg">
+                  <Zap className="h-4 w-4 text-blue-400" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-blue-500/10 rounded-lg">
-                    <MessageCircle className="h-5 w-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">Any game you imagine</div>
-                    <div className="text-xs text-zinc-500">Fully customizable rules</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-green-500/10 rounded-lg">
-                    <Star className="h-5 w-5 text-green-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">Play with friends</div>
-                    <div className="text-xs text-zinc-500">Share a link, join instantly</div>
-                  </div>
-                </div>
+                <span className="text-base">Create and start playing in 2 minutes</span>
               </div>
             </div>
 
-            {/* Google Sign-in – glowing button */}
-            <div className="mb-3 relative">
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl blur-xl opacity-30 animate-pulse"
-                style={{ animationDuration: "3s" }}
-              />
+            {/* Google Sign-in Button */}
+            <div className="mb-4 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl blur-xl opacity-30 animate-pulse" style={{ animationDuration: '3s' }} />
               <Button
                 onClick={onSignIn}
                 size="lg"
                 className="relative w-full bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-6 shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl"
               >
-                <svg className="h-6 w-6 mr-3 shrink-0" viewBox="0 0 24 24">
+                <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Sign in with Google
+                Get Started with Google
               </Button>
             </div>
 
-            {/* Browse Templates – subtle secondary CTA */}
-            <Link
-              href="/discover"
-              className="mb-6 w-full flex items-center justify-center rounded-xl border border-zinc-700 bg-transparent text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 font-medium text-lg py-[1.35rem] transition-colors cursor-pointer"
-            >
-              <LayoutGrid className="h-5 w-5 mr-2.5 shrink-0" />
-              Browse Templates
-            </Link>
-
-            {/* Quick-start 2×2 grid */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 px-1">
-                <Zap className="h-4 w-4 text-violet-400" />
-                <p className="text-sm font-bold text-zinc-400">Start with a classic:</p>
-              </div>
-                <div className="grid grid-cols-2 gap-3">
-                {quickStarts.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    aria-pressed={selectedGame === item.id}
-                    onClick={() => {
-                      setSelectedGame(item.id);
-                      setIsAutoPlaying(false);
-                    }}
-                    className={`group relative bg-zinc-900/50 hover:bg-zinc-800/80 border transition-all duration-300 hover:scale-[1.02] rounded-xl px-4 py-3 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
-                      selectedGame === item.id
-                        ? "border-violet-500 shadow-lg shadow-violet-500/20"
-                        : "border-zinc-800 hover:border-violet-500/50"
-                    }`}
-                  >
-                    {/* Hover gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {/* Active dot */}
-                    {selectedGame === item.id && (
-                      <div className="absolute top-2 right-2 w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
-                    )}
-                    <div className="relative flex items-center gap-3">
-                      <span className={`text-2xl transition-transform ${selectedGame === item.id ? "scale-110" : "group-hover:scale-110"}`}>
-                        {item.emoji}
-                      </span>
-                      <span className={`text-sm font-bold transition-colors ${selectedGame === item.id ? "text-white" : "text-zinc-300 group-hover:text-white"}`}>
-                        {item.label}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+            {/* Browse/Discover Button */}
+            <div>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 transition-all"
+              >
+                <Link href="/discover">
+                  <Compass className="h-5 w-5 mr-2" />
+                  Explore Games First
+                </Link>
+              </Button>
             </div>
           </div>
 
@@ -781,80 +689,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
           </div>
         </div>
 
-        {/* ── How It Works (3 steps) ────────────────────────────────── */}
-        <div className="mb-32">
-          <div className="text-center mb-16">
-            <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">HOW IT WORKS</span>
-            </div>
-            <h3 className="text-4xl font-black text-white mb-4">Get Started in 3 Simple Steps</h3>
-            <p className="text-lg text-zinc-400">From idea to gameplay in under 2 minutes</p>
-          </div>
-
-          <div className="relative max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
-              {howItWorks.map((step, index) => (
-                <div key={index} className="relative">
-                  {/* Step number */}
-                  <div className="flex justify-center mb-6">
-                    <div className="relative">
-                      <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full text-white font-black text-xl shadow-xl">
-                        {step.number}
-                      </div>
-                      {index < howItWorks.length - 1 && (
-                        <div className="hidden md:block absolute left-full top-1/2 -translate-y-1/2 w-[calc(100vw/3-8rem)] max-w-[200px]">
-                          <div className="flex items-center gap-2 px-4">
-                            <div className="flex-1 h-[2px] bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-30" />
-                            <svg className="w-4 h-4 text-violet-500 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card */}
-                  <div className="group relative bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/50 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
-                    <div className="flex justify-center mb-6">
-                      <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg">
-                        {step.number === "1" && (
-                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        )}
-                        {step.number === "2" && (
-                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                        )}
-                        {step.number === "3" && (
-                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <h4 className="text-xl font-bold text-white mb-2">{step.title}</h4>
-                      <p className="text-sm text-zinc-500">{step.subtitle}</p>
-                    </div>
-                  </div>
-
-                  {index < howItWorks.length - 1 && (
-                    <div className="md:hidden flex justify-center my-6">
-                      <svg className="w-6 h-6 text-violet-500 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* ── Inside a Game ─────────────────────────────────────────── */}
         <InsideGameSection />
 
@@ -961,13 +795,10 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 Ready to Create Your Game?
               </h3>
               <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Describe any game, invite your friends, and play — all in under 2 minutes
+                Start creating your AI multiplayer games today
               </p>
               <div className="relative inline-block">
-                <div
-                  className="absolute inset-0 bg-gradient-to-r from-white/50 to-white/50 rounded-xl blur-xl opacity-40 animate-pulse"
-                  style={{ animationDuration: "3s" }}
-                />
+                <div className="absolute inset-0 bg-gradient-to-r from-white/50 to-white/50 rounded-xl blur-xl opacity-40 animate-pulse" style={{ animationDuration: '3s' }} />
                 <Button
                   onClick={onSignIn}
                   size="lg"
@@ -982,9 +813,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                   Sign in with Google
                 </Button>
               </div>
-              <p className="text-sm text-violet-100 mt-4">
-                No credit card required · 2 minutes to your first game
-              </p>
             </div>
           </div>
         </div>
