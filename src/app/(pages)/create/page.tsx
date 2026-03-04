@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { getPresetById } from "@/app/components/discover-page";
 import { ProtectedRoute } from "@/app/components/protected-route";
+import { GAME_TEMPLATES } from "@/lib/game-templates";
 
 export default function CreateGamePage() {
   return (
@@ -21,6 +22,22 @@ export default function CreateGamePage() {
       <CreateGamePageContent />
     </ProtectedRoute>
   );
+}
+
+const TAILWIND_TO_HEX: Record<string, string> = {
+  purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
+  blue: "#2563eb", cyan: "#06b6d4", amber: "#d97706", yellow: "#ca8a04",
+  orange: "#ea580c", gray: "#4b5563", green: "#16a34a", teal: "#0d9488",
+  violet: "#7c3aed", fuchsia: "#c026d3", emerald: "#059669", rose: "#e11d48",
+  slate: "#475569",
+};
+
+function templateToHex(templateId: string | undefined): string {
+  if (!templateId) return "#8b5cf6";
+  const tmpl = GAME_TEMPLATES.find(t => t.id === templateId);
+  if (!tmpl) return "#8b5cf6";
+  const match = tmpl.color.match(/from-(\w+)-/);
+  return (match && TAILWIND_TO_HEX[match[1]]) || "#8b5cf6";
 }
 
 function CreateGamePageContent() {
@@ -92,22 +109,8 @@ function CreateGamePageContent() {
               playerCount: config.playerCount || 0,
               gameTemplate: config.template,
               rules: config.rules,
-              minPlayers:
-                config.template === "werewolf"
-                  ? 5
-                  : config.template === "undercover"
-                  ? 4
-                  : config.template === "mafia"
-                  ? 6
-                  : 2,
-              maxPlayers:
-                config.template === "werewolf"
-                  ? 12
-                  : config.template === "undercover"
-                  ? 10
-                  : config.template === "mafia"
-                  ? 15
-                  : 20,
+              minPlayers: GAME_TEMPLATES.find(t => t.id === config.template)?.minPlayers ?? 2,
+              maxPlayers: GAME_TEMPLATES.find(t => t.id === config.template)?.maxPlayers ?? 20,
             }),
           });
           if (playersRes.ok) {
@@ -124,12 +127,7 @@ function CreateGamePageContent() {
         id: crypto.randomUUID(),
         name: config.name,
         icon: gameIcon,
-        color:
-          config.template === "werewolf"
-            ? "#7c3aed"
-            : config.template === "undercover"
-            ? "#0ea5e9"
-            : "#ec4899",
+        color: templateToHex(config.template),
         config: finalConfig,
         isActive: true,
         updatedAt: new Date().toISOString(),
