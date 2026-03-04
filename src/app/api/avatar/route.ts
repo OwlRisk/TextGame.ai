@@ -36,7 +36,7 @@ export async function GET() {
 }
 
 const AVATAR_BUCKET = 'avatars';
-const AVATAR_OUTPUT_SIZE = 64;
+const AVATAR_OUTPUT_SIZE = 128;
 
 /** DALL-E 2 minimum is 256x256; we resize to 64 to save bandwidth and storage */
 async function resizeAvatarTo64(dataUrl: string): Promise<string> {
@@ -76,7 +76,7 @@ function avatarCacheKey(name: string, type: AvatarType): string {
 }
 
 /** Version prefix: bump to force regeneration when style/prompt changes (e.g. host and player same prompt) */
-const AVATAR_STORAGE_VERSION = 'v5';
+const AVATAR_STORAGE_VERSION = 'v6';
 
 /** Deterministic storage path for upsert */
 function avatarStoragePath(name: string, type: AvatarType): string {
@@ -94,17 +94,16 @@ function getModel(): AvatarModel {
   return 'dalle-3';
 }
 
-/** Solo character: exactly one person in frame, head-and-shoulders portrait */
+/** Solo character: exactly one person in frame, upper-body portrait */
 const SOLO_PORTRAIT =
-  'Solo character portrait. One person only. Head and shoulders framing. Single individual, centered in frame.';
+  'Solo character portrait. One person only. Upper body visible from head to chest. Single individual, centered in frame.';
 
 /** Clean visual output: image contains only the illustrated portrait */
 const CLEAN_PORTRAIT = 'Clean illustrated portrait. Pure visual artwork.';
 
-/** Front-facing face: both eyes fully visible and centered */
+/** Front-facing face: both eyes clearly visible */
 const BOTH_EYES_REQUIRED =
-  'Full face visible, front-facing or very slight three-quarter angle. ' +
-  'Both eyes, nose, and mouth clearly shown. Centered in frame, complete face within image boundaries.';
+  'Face visible, front-facing or slight three-quarter angle. Both eyes clearly shown.';
 
 /** Friendly, wholesome look — keeps avatars suitable for a casual game regardless of role name */
 const FRIENDLY_SAFE =
@@ -184,8 +183,8 @@ function buildPrompt(
   // DALL-E 2 has a 1000 character limit for prompts
   const MAX_PROMPT_LENGTH = 1000;
 
-  // Close-up single-person framing using only positive descriptors (negative words trigger safety filters)
-  const singleStart = 'Close-up anime portrait. ';
+  // Upper-body single-person framing using only positive descriptors (negative words trigger safety filters)
+  const singleStart = 'Anime character portrait. ';
   const singleEnd = ' Solo individual, centered composition.';
 
   // 统一画风：Host 与 Player 使用完全相同的 prompt 结构，仅 background 不同，保证头像风格一致（不额外加 Host 角色词）
