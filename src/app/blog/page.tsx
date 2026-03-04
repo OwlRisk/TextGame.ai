@@ -32,6 +32,33 @@ interface BlogPost {
 
 const posts: BlogPost[] = [
   {
+    slug: "best-social-deduction-games",
+    title: "10 Best Social Deduction Games You Can Play Online in 2026",
+    excerpt:
+      "From Werewolf to Secret Hitler — the best social deduction games you can play online with friends or AI. Includes free options and AI-powered alternatives.",
+    date: "March 4, 2026",
+    readTime: "10 min read",
+    tags: ["Listicle", "Social Deduction", "Online Games"],
+  },
+  {
+    slug: "play-werewolf-online",
+    title: "How to Play Werewolf Online with AI — Rules, Roles & Free Game",
+    excerpt:
+      "Learn the complete rules of Werewolf, every role explained, winning strategies for both teams, and how to play online for free with an AI Game Master.",
+    date: "March 4, 2026",
+    readTime: "9 min read",
+    tags: ["Werewolf", "How to Play", "Strategy"],
+  },
+  {
+    slug: "roleplay-ai-guide",
+    title: "What is Roleplay AI? The Complete Guide to AI Role-Playing Games (2026)",
+    excerpt:
+      "Learn what roleplay AI is, how it works, and the best platforms for AI-powered role-playing games — from social deduction to custom RPGs with AI characters.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Guide", "AI Characters", "Roleplay"],
+  },
+  {
     slug: "character-ai-alternatives",
     title: "5 Best Character.AI Alternatives for Multiplayer Games (2026)",
     excerpt:
