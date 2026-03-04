@@ -4,11 +4,11 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — textgame.ai",
+  title: "Terms of Service",
   description: "Read the terms of service for textgame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
   alternates: { canonical: "/terms" },
   openGraph: {
-    title: "Terms of Service — textgame.ai",
+    title: "Terms of Service · textgame.ai",
     description: "Read the terms of service for textgame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
     url: "https://textgame.ai/terms",
     siteName: "textgame.ai",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200 p-4 sm:p-6 md:p-10">
+    <div className="flex-1 min-h-0 overflow-auto bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200 p-4 sm:p-6 md:p-10">
       <div className="max-w-2xl mx-auto">
         <Link href="/">
           <Button variant="ghost" className="text-zinc-400 hover:text-white mb-8 -ml-2">

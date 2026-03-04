@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SITE_NAME, SITE_DOMAIN } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `Blog — ${SITE_NAME}`,
+  title: "Blog",
   description:
     "Guides, comparisons, and tips on AI-powered text games, social deduction, roleplay AI, and multiplayer gaming with AI characters.",
   keywords: [
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/blog" },
   openGraph: {
-    title: `Blog — ${SITE_NAME}`,
+    title: `Blog · ${SITE_NAME}`,
     description: "Guides, comparisons, and tips on AI-powered text games and multiplayer gaming with AI characters.",
     type: "website",
   },

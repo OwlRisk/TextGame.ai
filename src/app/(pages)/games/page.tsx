@@ -51,7 +51,7 @@ export default function GamesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200">
+    <div className="h-full overflow-auto bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-200">
       {/* Nav */}
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-zinc-950/80 border-b border-zinc-800/50">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
