@@ -582,7 +582,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             </div>
 
             {/* Google Sign-in – glowing button */}
-            <div className="mb-6 relative">
+            <div className="mb-3 relative">
               <div
                 aria-hidden="true"
                 className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl blur-xl opacity-30 animate-pulse"
@@ -601,17 +601,17 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 </svg>
                 Sign in with Google
               </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="w-full mt-3 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-lg py-6 transition-all hover:scale-[1.02]"
+            </div>
+
+            {/* Browse Templates – same prominent style as Google button */}
+            <div className="mb-6">
+              <Link
+                href="/discover"
+                className="relative w-full flex items-center justify-center bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-4 rounded-md shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl cursor-pointer"
               >
-                <Link href="/discover">
-                  <LayoutGrid className="h-5 w-5 mr-3 shrink-0" />
-                  Browse Templates
-                </Link>
-              </Button>
+                <LayoutGrid className="h-6 w-6 mr-3 shrink-0" />
+                Browse Templates
+              </Link>
             </div>
 
             {/* Quick-start 2×2 grid */}
