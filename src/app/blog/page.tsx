@@ -32,6 +32,51 @@ interface BlogPost {
 
 const posts: BlogPost[] = [
   {
+    slug: "play-mafia-online",
+    title: "Play Mafia Online: Free AI-Powered Game for 3-15 Players",
+    excerpt:
+      "Learn the rules of Mafia, every role explained, and how to play online for free with an AI host. Mafia vs Werewolf differences, strategy tips, and more.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Mafia", "How to Play"],
+  },
+  {
+    slug: "create-game-with-ai",
+    title: "How to Create Your Own AI Game — No Coding Required",
+    excerpt:
+      "Step-by-step guide to creating custom AI-powered games. Describe your idea in plain English and the AI builds the rules, roles, and gameplay for you.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Tutorial", "Game Design"],
+  },
+  {
+    slug: "ai-dungeon-vs-textgame",
+    title: "AI Dungeon vs textgame.ai — Which AI Game Platform is Right for You?",
+    excerpt:
+      "Comparing AI Dungeon and textgame.ai: solo adventures vs multiplayer games, freeform vs structured rules. Find out which platform fits your play style.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Comparison", "AI Games"],
+  },
+  {
+    slug: "ai-storytelling-games",
+    title: "AI Storytelling Games: Let AI Write Your Adventure",
+    excerpt:
+      "Discover AI storytelling games where AI generates narrative in response to your choices. Compare platforms, explore types of AI narrative games, and find the best experience.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Guide", "Storytelling"],
+  },
+  {
+    slug: "ai-game-master-guide",
+    title: "What is an AI Game Master? How AI Hosts Tabletop Games",
+    excerpt:
+      "Learn what an AI Game Master is, how it automates hosting tabletop games like Werewolf and D&D, assigns roles, manages phases, and narrates — plus how it compares to human GMs.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Guide", "AI Game Master"],
+  },
+  {
     slug: "best-social-deduction-games",
     title: "10 Best Social Deduction Games You Can Play Online in 2026",
     excerpt:
@@ -39,6 +84,51 @@ const posts: BlogPost[] = [
     date: "March 4, 2026",
     readTime: "10 min read",
     tags: ["Listicle", "Social Deduction", "Online Games"],
+  },
+  {
+    slug: "best-online-party-games",
+    title: "15 Best Online Party Games for Groups — Free, No Download (2026)",
+    excerpt:
+      "The best online party games you can play with friends — social deduction, word games, trivia, bluffing, and storytelling. Free, no download, many with AI hosts.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Listicle", "Party Games"],
+  },
+  {
+    slug: "virtual-team-building-games",
+    title: "Virtual Team Building Games with AI — Fun Ideas for Remote Teams",
+    excerpt:
+      "Discover AI-powered team building games for remote teams — Werewolf, Murder Mystery, Trivia, and more. No moderator needed. Build connection and morale from anywhere.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Team Building", "Remote Work"],
+  },
+  {
+    slug: "best-single-player-ai-games",
+    title: "Best Single Player Games with AI Companions (2026)",
+    excerpt:
+      "Play games alone with AI — solo Werewolf, Murder Mystery, AI Dungeon, and more. No friends online? AI fills every seat. Available 24/7, adapts to you.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Listicle", "Solo Gaming"],
+  },
+  {
+    slug: "play-board-games-online-ai",
+    title: "Play Board Games Online with AI Players — No Friends Needed",
+    excerpt:
+      "Play board game-style games online with AI — Werewolf, Mafia, Avalon, Secret Hitler, and more. AI fills seats, AI hosts. Start anytime, no downloads.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Guide", "Board Games"],
+  },
+  {
+    slug: "play-secret-hitler-online",
+    title: "Play Secret Hitler Online with AI — Rules, Strategy & Free Game",
+    excerpt:
+      "Learn the rules of Secret Hitler, every role explained, winning strategies, and how to play online for free with an AI Game Master. Liberals vs Fascists — no moderator needed.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Secret Hitler", "How to Play"],
   },
   {
     slug: "play-werewolf-online",
