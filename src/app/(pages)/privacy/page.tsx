@@ -4,8 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "Learn how textgame.ai collects, uses, and protects your personal information.",
+  title: "Privacy Policy — textgame.ai",
+  description: "Learn how textgame.ai collects, uses, and protects your personal information. Covers GDPR, CCPA, guest data, AI-generated content, and multiplayer privacy.",
   alternates: { canonical: "/privacy" },
 };
 
@@ -25,50 +25,160 @@ export default function PrivacyPage() {
         <div className="space-y-6 text-zinc-300 text-sm leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">1. Information We Collect</h2>
+            <h3 className="font-medium text-zinc-200 mt-3 mb-1">1.1 Registered Users</h3>
             <p>
-              To provide sign-in and game features we process your login data (e.g. email and identifier when using Google sign-in) via Supabase Auth. Game configurations and conversation content you create in the app may be stored or processed for syncing and restoring games across devices. If you subscribe or purchase credits, your payment is processed by Stripe — we do not store your card details. We also collect anonymous usage analytics (page views, interactions) via Vercel Analytics to improve the product.
+              When you sign in with Google, we receive your email address, display name, and profile identifier via Supabase Auth. Game configurations, conversation content, and game state you create are stored for syncing and restoring games across devices.
+            </p>
+            <h3 className="font-medium text-zinc-200 mt-3 mb-1">1.2 Guest Users (Anonymous)</h3>
+            <p>
+              You can join multiplayer games without creating an account. When you do, we generate a random guest identifier and store it in your browser&apos;s local storage along with your chosen nickname. No email, real name, or device fingerprint is collected from guest users.
+            </p>
+            <h3 className="font-medium text-zinc-200 mt-3 mb-1">1.3 Payment Data</h3>
+            <p>
+              If you subscribe or purchase credits, payment is processed entirely by Stripe. We receive only a transaction confirmation and subscription status — we never see or store your card number, CVV, or billing address.
+            </p>
+            <h3 className="font-medium text-zinc-200 mt-3 mb-1">1.4 Usage Analytics</h3>
+            <p>
+              We collect anonymous, aggregated usage data (page views, feature interactions) via Vercel Analytics. This data contains no personal identifiers and cannot be traced back to individual users.
             </p>
           </section>
+
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">2. How We Use It</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">2. Local Storage &amp; Cookies</h2>
             <p>
-              We use this information to provide and maintain the service, sync accounts and data, process payments, and improve the product. We do not sell your personal data to third parties.
-            </p>
-          </section>
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-2">3. Third-Party Services</h2>
-            <p>
-              We use the following third-party services, each with their own privacy policies:
+              We use your browser&apos;s local storage (not cookies) for functional purposes only:
             </p>
             <ul className="mt-2 space-y-1 list-disc list-inside text-zinc-400">
-              <li><strong className="text-zinc-300">Supabase</strong> — authentication and database storage</li>
+              <li>Authentication session tokens</li>
+              <li>Guest identity (random ID + nickname) per game room</li>
+              <li>User preferences (AI model, voice language)</li>
+            </ul>
+            <p className="mt-2">
+              We do not use tracking cookies, advertising cookies, or any third-party tracking pixels. Since all client-side storage is strictly necessary for the service to function, no cookie consent banner is required under current GDPR guidance.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">3. How We Use Your Information</h2>
+            <ul className="mt-1 space-y-1 list-disc list-inside text-zinc-400">
+              <li>Provide, maintain, and improve the service</li>
+              <li>Sync your account and game data across devices</li>
+              <li>Process payments and manage subscriptions</li>
+              <li>Generate AI game content (text, voice, images) on your behalf</li>
+              <li>Analyze aggregated usage patterns to improve the product</li>
+            </ul>
+            <p className="mt-3 font-medium text-zinc-200">
+              We do not sell, rent, or share your personal data with third parties for marketing or advertising purposes.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">4. AI-Generated Content</h2>
+            <p>
+              Game narratives, character dialogue, voice audio, and images are generated by AI models (OpenAI, Inworld). Your game inputs (rules, messages) are sent to these providers for processing and are subject to their respective data policies. AI-generated outputs may be inaccurate, fictional, or unexpected — they do not represent the views of textgame.ai.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">5. Multiplayer &amp; Data Visibility</h2>
+            <p>
+              In multiplayer game rooms, messages you send are visible to all participants in that room, including the game host, other players, and anonymous guests who join via invite link. Your chosen display name (or nickname for guests) is shown to other players. Please do not share sensitive personal information in game chat.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">6. Third-Party Services</h2>
+            <p>
+              We rely on the following third-party services, each governed by their own privacy policy:
+            </p>
+            <ul className="mt-2 space-y-1 list-disc list-inside text-zinc-400">
+              <li><strong className="text-zinc-300">Supabase</strong> — authentication, database, and real-time communication</li>
               <li><strong className="text-zinc-300">OpenAI</strong> — AI text generation and image creation</li>
-              <li><strong className="text-zinc-300">Inworld</strong> — AI voice / text-to-speech</li>
+              <li><strong className="text-zinc-300">Inworld</strong> — AI voice synthesis (text-to-speech)</li>
               <li><strong className="text-zinc-300">Stripe</strong> — payment processing and subscription management</li>
-              <li><strong className="text-zinc-300">Vercel</strong> — hosting and anonymous usage analytics</li>
+              <li><strong className="text-zinc-300">Vercel</strong> — hosting, edge delivery, and anonymous usage analytics</li>
+              <li><strong className="text-zinc-300">Google</strong> — OAuth sign-in provider</li>
             </ul>
           </section>
+
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">4. Security and Retention</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">7. Data Storage &amp; International Transfers</h2>
             <p>
-              We take reasonable technical and organizational measures to protect your data. Retention depends on product needs and legal requirements. You may delete or export your data where the product supports it.
+              Your data is processed and stored on servers located in the United States through our service providers (Supabase, Vercel, OpenAI). If you are located outside the United States, including in the European Economic Area (EEA), your data will be transferred to and processed in the United States. We rely on standard contractual clauses and our providers&apos; compliance frameworks to ensure adequate protection of your data during such transfers.
             </p>
           </section>
+
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">5. Your Rights</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">8. Data Retention</h2>
             <p>
-              You have the right to access, correct, or delete your personal information. You can exercise these rights by signing out, deleting your account in Settings, or contacting us directly.
+              We retain your account data and game content for as long as your account is active. If you delete your account, we will delete your personal data within 30 days, except where retention is required by law (e.g. payment records). Guest data (random IDs) stored in our database is retained for the lifetime of the game session and may be purged when the game is deleted by its owner.
             </p>
           </section>
+
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">6. Policy Updates</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">9. Security</h2>
             <p>
-              We may update this privacy policy from time to time; the updated version will be posted on this page. Continued use of the service means you accept the updated policy.
+              We implement industry-standard security measures including encrypted connections (HTTPS/TLS), secure authentication via OAuth 2.0, row-level security policies on our database, and server-side access controls. However, no system is 100% secure. If you discover a vulnerability, please contact us immediately.
             </p>
           </section>
+
           <section>
-            <p className="text-zinc-500">
-              For questions or requests, contact us at{' '}
+            <h2 className="text-lg font-semibold text-white mb-2">10. Your Rights</h2>
+
+            <h3 className="font-medium text-zinc-200 mt-3 mb-1">10.1 All Users</h3>
+            <p>
+              You have the right to access, correct, or delete your personal information at any time. You can delete your account from the Settings page, or contact us to request data export or deletion.
+            </p>
+
+            <h3 className="font-medium text-zinc-200 mt-3 mb-1">10.2 European Economic Area (GDPR)</h3>
+            <p>
+              If you are in the EEA, you have additional rights under the General Data Protection Regulation, including:
+            </p>
+            <ul className="mt-1 space-y-1 list-disc list-inside text-zinc-400">
+              <li><strong className="text-zinc-300">Right to access</strong> — request a copy of your personal data</li>
+              <li><strong className="text-zinc-300">Right to rectification</strong> — correct inaccurate data</li>
+              <li><strong className="text-zinc-300">Right to erasure</strong> — request deletion of your data</li>
+              <li><strong className="text-zinc-300">Right to data portability</strong> — receive your data in a machine-readable format</li>
+              <li><strong className="text-zinc-300">Right to object</strong> — object to processing based on legitimate interests</li>
+              <li><strong className="text-zinc-300">Right to lodge a complaint</strong> — file a complaint with your local data protection authority</li>
+            </ul>
+            <p className="mt-2">
+              Our legal basis for processing your data is: (a) performance of a contract (providing the service you signed up for), (b) legitimate interest (improving the service, preventing abuse), and (c) your consent (where applicable).
+            </p>
+
+            <h3 className="font-medium text-zinc-200 mt-3 mb-1">10.3 California (CCPA/CPRA)</h3>
+            <p>
+              If you are a California resident, you have the right to:
+            </p>
+            <ul className="mt-1 space-y-1 list-disc list-inside text-zinc-400">
+              <li>Know what personal information we collect and how it is used</li>
+              <li>Request deletion of your personal information</li>
+              <li>Opt out of the sale of personal information</li>
+              <li>Non-discrimination for exercising your privacy rights</li>
+            </ul>
+            <p className="mt-2">
+              <strong className="text-zinc-200">We do not sell your personal information.</strong> We do not share personal information with third parties for their own marketing purposes. To exercise any of these rights, contact us at the email below.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">11. Children&apos;s Privacy</h2>
+            <p>
+              textgame.ai is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If we learn that we have collected data from a child under 13, we will delete it promptly. If you believe a child under 13 has provided us with personal information, please contact us.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">12. Policy Updates</h2>
+            <p>
+              We may update this privacy policy from time to time. Material changes will be noted by updating the &ldquo;Last updated&rdquo; date at the top. Continued use of the service after changes are posted constitutes acceptance of the updated policy. We encourage you to review this page periodically.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-2">13. Contact Us</h2>
+            <p className="text-zinc-400">
+              For privacy-related questions, data access/deletion requests, or concerns, contact us at{' '}
               <a href="mailto:info@cvnio.com" className="underline hover:text-zinc-300">info@cvnio.com</a>.
             </p>
           </section>
