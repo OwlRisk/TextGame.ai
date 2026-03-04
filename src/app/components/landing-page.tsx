@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Gamepad2,
-  Play,
   ArrowRight,
   LayoutGrid,
 } from "lucide-react";
@@ -263,7 +262,7 @@ function InsideGameMessageList({
                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                     msg.badge === "YOU"
                       ? "bg-blue-500/20 text-blue-400"
-                      : msg.badge === "HOST"
+                      : msg.badge === "GM"
                       ? "bg-fuchsia-500/20 text-fuchsia-400"
                       : "bg-violet-500/20 text-violet-400"
                   }`}
@@ -313,9 +312,9 @@ const INSIDE_GAME_STEPS = [
     description:
       "The Host AI manages everything — assigns secret roles, announces game phases, tracks votes, reveals information at the right time, and keeps the story flowing. You just focus on playing.",
     messages: [
-      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "3:15 PM", text: "🌙 Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
-      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "3:16 PM", text: "☀️ Morning arrives. The crew discovers the communication array is damaged! Engineer Nova, you may inspect one system." },
-      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "3:17 PM", text: "⚠️ It's time to vote! Discuss who you think is the traitor. You have 3 minutes. Type /vote @playername when ready." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:15 PM", text: "🌙 Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:16 PM", text: "☀️ Morning arrives. The crew discovers the communication array is damaged! Engineer Nova, you may inspect one system." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:17 PM", text: "⚠️ It's time to vote! Discuss who you think is the traitor. You have 3 minutes to decide, then vote to eliminate." },
     ],
   },
   {
@@ -345,7 +344,7 @@ const INSIDE_GAME_STEPS = [
     messages: [
       { name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain.", role: "Seer", personality: "Careful, observant", gender: "other" },
       { name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking.", role: "Werewolf", personality: "Manipulative, aggressive deflection", gender: "male" },
-      { isHost: true, name: "Warden Lunaris", badge: "HOST", time: "5:11 PM", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "5:11 PM", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
     ],
   },
 ];
@@ -405,22 +404,22 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
       gradient: "from-violet-500 to-purple-500",
     },
     {
-      icon: Sparkles,
-      title: "Templates + custom",
-      description: "Jump in with classics like Werewolf, Mafia, or Who's the Spy — or describe any game of your own.",
-      gradient: "from-blue-500 to-cyan-500",
-    },
-    {
       icon: Crown,
-      title: "AI runs the whole game",
-      description: "A dedicated Game Master hosts every session. AI characters fill every seat.",
+      title: "AI Game Master + players",
+      description: "A dedicated GM hosts every session — assigns roles, runs phases, and keeps the story flowing. AI fills every seat.",
       gradient: "from-orange-500 to-pink-500",
     },
     {
       icon: Users,
-      title: "Any game, any rules",
-      description: "Mystery, deduction, roleplay, trivia — if you can describe it, you can play it.",
+      title: "Real-time multiplayer",
+      description: "Share a link and friends join instantly — no sign-up required. Play with any mix of humans and AI.",
       gradient: "from-green-500 to-emerald-500",
+    },
+    {
+      icon: Sparkles,
+      title: "Voice & immersion",
+      description: "AI characters speak with unique voices. Every game has its own atmosphere and personality.",
+      gradient: "from-blue-500 to-cyan-500",
     },
   ];
 
@@ -428,9 +427,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
     {
       emoji: "🧛",
       title: "Vampire Court",
-      author: "Jordan",
-      plays: 1234,
-      rating: 4.9,
       players: "4–8",
       tags: ["Deduction", "Social"],
       description: "One vampire hides among nobles. Vote before the next feeding — or become the next victim.",
@@ -441,9 +437,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
     {
       emoji: "🚀",
       title: "Space Mutiny",
-      author: "Alex",
-      plays: 892,
-      rating: 4.8,
       players: "3–6",
       tags: ["Sci-fi", "Hidden Role"],
       description: "The crew is 3 days from Earth. One engineer has been compromised. Trust no one.",
@@ -454,9 +447,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
     {
       emoji: "🏰",
       title: "Kingdom Intrigue",
-      author: "Sam",
-      plays: 2103,
-      rating: 4.9,
       players: "5–10",
       tags: ["Strategy", "Roleplay"],
       description: "Nobles scheme for the throne. Forge alliances, spread rumors, and claim the crown.",
@@ -584,8 +574,8 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     <Star className="h-5 w-5 text-green-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">Free to start</div>
-                    <div className="text-xs text-zinc-500">First game on us</div>
+                    <div className="text-sm font-bold text-white">Play with friends</div>
+                    <div className="text-xs text-zinc-500">Share a link, join instantly</div>
                   </div>
                 </div>
               </div>
@@ -904,8 +894,8 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
               <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">Trending Games</h3>
-            <p className="text-lg text-zinc-400">Created by players, ready to play</p>
+            <h3 className="text-3xl font-black text-white mb-3">Featured Templates</h3>
+            <p className="text-lg text-zinc-400">One-click start — or use them as inspiration for your own</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {featuredGames.map((game, index) => (
@@ -927,21 +917,11 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     sizes="(min-width: 768px) 400px, 100vw"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  {/* gradient overlay for text legibility */}
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
-                  {/* rating badge */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1 text-yellow-400 text-xs font-bold">
-                    <Star className="h-3 w-3 fill-yellow-400" />
-                    {game.rating}
-                  </div>
                 </div>
 
                 <div className="p-5">
-                  {/* Title & author */}
-                  <h4 className="font-black text-white text-base mb-0.5">{game.title}</h4>
-                  <p className="text-xs text-zinc-500 mb-3">by {game.author}</p>
-
-                  {/* Description */}
+                  <h4 className="font-black text-white text-base mb-2">{game.title}</h4>
                   <p className="text-sm text-zinc-400 leading-relaxed mb-4">{game.description}</p>
 
                   {/* Tags */}
@@ -959,12 +939,8 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-                    <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-                      <Play className="h-3 w-3" />
-                      {game.plays.toLocaleString()} plays
-                    </span>
                     <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Play now →
+                      Try this template →
                     </span>
                   </div>
                 </div>
@@ -986,7 +962,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 Ready to Create Your Game?
               </h3>
               <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Join thousands of creators building multiplayer AI games in minutes
+                Describe any game, invite your friends, and play — all in under 2 minutes
               </p>
               <div className="relative inline-block">
                 <div
@@ -1017,7 +993,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
         {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
-            <p>© 2026 {BRAND_CONFIG.name} • Made for gamers, by gamers</p>
+            <p>© 2026 {BRAND_CONFIG.name} • Any game you describe, playable in minutes</p>
             <div className="flex gap-6">
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
@@ -1173,24 +1149,28 @@ function FAQSection() {
       answer: "The Game Master is an AI host that runs your game: it explains rules, runs day/night or discussion phases, and keeps the flow. You can also add AI players so the room is filled even when playing alone. The host and players use natural dialogue so it feels like a real tabletop session.",
     },
     {
-      question: "Can I play with friends or share a game?",
-      answer: "Yes. From your game room you can copy a share link and send it to friends. They open the link in their browser to join. You can play with a mix of human and AI players. Your saved games appear under My Games when you're signed in.",
+      question: "Can I play with friends?",
+      answer: "Yes! Share an invite link from your game room — friends can join instantly in their browser without creating an account. They play as guests alongside your AI characters. You can have any mix of human and AI players in the same game.",
     },
     {
       question: "What templates or game types are available?",
-      answer: "We include templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, and Tarot Reading (single-player). Discover shows these with one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
+      answer: "We include 20+ templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, Murder Mystery, Secret Hitler, and Tarot Reading. Browse them in Discover for one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
     },
     {
       question: "Do I need to sign in? Is it free?",
-      answer: "Sign in with Google to get started — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Your games are saved to your account and available across devices.",
+      answer: "Sign in with Google to create games — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Friends who join your game don't need an account at all.",
+    },
+    {
+      question: "Do AI characters have voices?",
+      answer: "Yes. Each AI character speaks with a unique voice powered by text-to-speech. You can toggle voice on or off for any game. It adds a layer of immersion that makes the game feel like a real tabletop session.",
     },
     {
       question: "Can I create any type of game?",
-      answer: "Absolutely! While we offer 20+ templates for classics like Werewolf and Murder Mystery, you have complete freedom to design custom games with unique rules and mechanics. Just describe your idea to the Game Master.",
+      answer: "Absolutely! While we offer 20+ templates for popular games, you have complete freedom to design custom games with unique rules, roles, and victory conditions. Just describe your idea to the Game Master in plain English.",
     },
     {
       question: "How much does it cost?",
-      answer: "After your free starting credits, you pay only for what you use. Credits start at $10, and pricing is transparent based on actual API costs. No subscriptions or hidden fees.",
+      answer: "New accounts start with free credits. After that, you can purchase additional credits as needed — pricing is transparent and based on actual usage. No subscriptions or hidden fees.",
     },
   ];
 
