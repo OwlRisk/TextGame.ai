@@ -14,6 +14,7 @@ import {
   Gamepad2,
   Play,
   ArrowRight,
+  LayoutGrid,
 } from "lucide-react";
 import NextImage from "next/image";
 import Link from "next/link";
@@ -610,9 +611,16 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 </svg>
                 Sign in with Google
               </Button>
-              <p className="text-center text-sm text-zinc-600 mt-4">
-                Free to start · From idea to game in under 2 minutes
-              </p>
+              <Link href="/discover">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full mt-3 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-lg py-6 transition-all hover:scale-[1.02]"
+                >
+                  <LayoutGrid className="h-5 w-5 mr-3 shrink-0" />
+                  Browse Templates
+                </Button>
+              </Link>
             </div>
 
             {/* Quick-start 2×2 grid */}
