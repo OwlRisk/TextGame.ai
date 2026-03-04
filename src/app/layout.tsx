@@ -122,53 +122,6 @@ const softwareAppJsonLd = {
   },
 };
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "How do I create an AI text game?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Sign in with Google, then describe your game idea in plain English to the AI Game Master — or pick a template like Werewolf, Mafia, or Who's the Spy. Set player count and optional rules. Your game is ready in about 2 minutes, no coding needed.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "What is textgame.ai?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "textgame.ai is an AI-powered platform for creating and playing multiplayer text-based games. An AI Game Master hosts every session — assigning roles, managing phases, and narrating the story. AI characters fill every seat so you can play solo or with friends.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Is textgame.ai a Character.AI alternative?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes — textgame.ai offers AI characters with unique personalities, voices, and strategies in a game context. Unlike Character.AI, it focuses on multiplayer social deduction and RPG games with structured rules, an AI host, and real-time interaction between multiple AI and human players.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Can I play Werewolf online with AI?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Absolutely! textgame.ai has a ready-to-play Werewolf template. The AI Game Master runs day/night phases, assigns roles like Seer and Doctor, and AI players make strategic decisions. Play solo against AI or invite friends to join.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "What games can I create with AI?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "You can create any text-based game — social deduction (Werewolf, Mafia, Secret Hitler), RPGs, murder mysteries, trivia, escape rooms, and fully custom games with your own rules. The AI Game Master adapts to whatever you describe.",
-      },
-    },
-  ],
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -195,10 +148,6 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
         {/* Static crawlable content for search engines (hidden from sighted users) */}
         <noscript>
