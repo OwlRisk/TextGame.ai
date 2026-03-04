@@ -941,7 +941,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       "You can **tell me** what you'd like to change (player count, roles, pacing…) and I'll update the rules for you. " +
       "Or **edit the rules panel directly** on the right — either way works!\n\n" +
       (nextPlayerCount > 0
-        ? `Currently set for **${nextPlayerCount + 1} players** (you + ${nextPlayerCount} AI). Say **"create game"** when you're ready!`
+        ? `Currently set for **${nextPlayerCount + 1} players** (you + ${nextPlayerCount} AI), plus a Host who runs the game. Say **"create game"** when you're ready!`
         : "How many players would you like? Say **\"create game\"** whenever you're ready!");
     const presetWelcomeMessage: ChatMessage = {
       id: `msg-preset-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,

@@ -221,11 +221,14 @@ export async function POST(request: NextRequest) {
 
       systemMessage += `\n\nPLAYER COUNT (GM CAN DECIDE):\n`;
       systemMessage += `You can set the number of AI players when the user asks you to decide, or when you recommend a count.\n`;
-      systemMessage += `Use: <SET_PLAYER_COUNT>N</SET_PLAYER_COUNT> where N is the number of AI players (user + N = total).\n`;
+      systemMessage += `Use: <SET_PLAYER_COUNT>N</SET_PLAYER_COUNT> where N is the number of AI players (user + N = total players).\n`;
+      systemMessage += `IMPORTANT: In the game room, there is always an AI Host character (the narrator/game master) in addition to the players. The Host is NOT counted in N.\n`;
+      systemMessage += `So the game room will show: 1 Host + N AI players + 1 user = N+2 total characters.\n`;
+      systemMessage += `When communicating to the user, always mention the Host. E.g. "I'll configure 8 total players (you + 7 AI), plus the Host who runs the game."\n`;
       systemMessage += `- When a game template is selected, use the template's recommended range (e.g. Werewolf 4-11 AI, Undercover 3-9 AI, Custom 1-19).\n`;
       systemMessage += `- When user says "you decide", "how many?", "recommend", or "up to you", output this tag with your chosen N.\n`;
-      systemMessage += `- The tag is invisible to the user; your message should still say something like "I'll set it to 8 players (you + 7 AI)."\n`;
-      systemMessage += `- Example: "I think 8 works great for Werewolf! <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>" (7 AI + user = 8 total).\n\n`;
+      systemMessage += `- The tag is invisible to the user; your message should still clearly state the breakdown.\n`;
+      systemMessage += `- Example: "I think 8 works great for Werewolf! That's you + 7 AI players, plus the Host. <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>"\n\n`;
       systemMessage += `GAME ROOMS (CHANNELS) — YOU DECIDE:\n`;
       systemMessage += `You decide how many game rooms (channels) the game has. Same-team players often need a private room to communicate (e.g. Werewolves, Mafia).\n`;
       systemMessage += `Each room has a "roomType" that controls its AI behaviour:\n`;

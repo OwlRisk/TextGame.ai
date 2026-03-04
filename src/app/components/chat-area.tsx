@@ -1245,7 +1245,7 @@ export function ChatArea({
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-5 border-t border-violet-900/20 bg-zinc-900/50 backdrop-blur-md">
+      <div className="p-5 border-t border-violet-900/20 bg-zinc-900">
         {/* Eliminated spectator banner */}
         {isEliminated && (
           <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800/80 border border-zinc-600/40 text-zinc-400">
@@ -1378,7 +1378,7 @@ export function ChatArea({
                       type="button"
                       title={text}
                       disabled={sendDisabled}
-                      onClick={() => handleSend(text)}
+                      onClick={() => { setInput(text); inputRef.current?.focus(); }}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <span className="text-amber-500/60 text-[10px]">⚡</span>
