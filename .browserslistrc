@@ -1,9 +1,8 @@
 [production]
-Chrome >= 93
-Firefox >= 92
-Safari >= 15.4
-Edge >= 93
-not IE 11
+Chrome >= 109
+Firefox >= 115
+Safari >= 16.4
+Edge >= 109
 not dead
 
 [development]
