@@ -439,31 +439,20 @@ function SubscriptionPageContent() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleManageBilling}
-                        disabled={openingPortal || syncing || !details?.canManageBilling}
-                        className="flex-1 h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white text-sm font-medium"
-                      >
-                        {openingPortal ? (
-                          <>Opening…</>
-                        ) : (
-                          <>
-                            <CreditCard className="size-4 mr-2" />
-                            Manage subscription
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={handleSyncPlan}
-                        disabled={syncing}
-                        variant="outline"
-                        className="h-10 rounded-xl border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 text-sm"
-                        title="Sync subscription status from Stripe"
-                      >
-                        <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={handleManageBilling}
+                      disabled={openingPortal || syncing || !details?.canManageBilling}
+                      className="w-full h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white text-sm font-medium"
+                    >
+                      {openingPortal ? (
+                        <>Opening…</>
+                      ) : (
+                        <>
+                          <CreditCard className="size-4 mr-2" />
+                          Manage subscription
+                        </>
+                      )}
+                    </Button>
                     <p className="text-xs text-zinc-500 text-center -mt-2">
                       Update payment, change plan, or cancel via Manage subscription.
                     </p>
@@ -487,15 +476,6 @@ function SubscriptionPageContent() {
                       ))}
                     </div>
 
-                    {/* Credits usage reference */}
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-4 py-3">
-                      <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide mb-2">Approximate credit usage</h3>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-zinc-400">
-                        <span>AI message</span><span className="text-right text-zinc-300">~1 credit</span>
-                        <span>Image generation</span><span className="text-right text-zinc-300">~10 credits</span>
-                        <span>AI voice line</span><span className="text-right text-zinc-300">~3 credits</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -711,29 +691,6 @@ function SubscriptionPageContent() {
                   })}
                 </div>
 
-                {/* Credits usage reference */}
-                <div className="mt-6 max-w-md mx-auto rounded-xl border border-zinc-800 bg-zinc-900/30 px-5 py-4">
-                  <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide mb-2.5 text-center">Approximate credit usage</h3>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-zinc-400">
-                    <span>AI message</span><span className="text-right text-zinc-300">~1 credit</span>
-                    <span>Image generation</span><span className="text-right text-zinc-300">~10 credits</span>
-                    <span>AI voice line</span><span className="text-right text-zinc-300">~3 credits</span>
-                  </div>
-                </div>
-
-                {/* Sync button for edge cases */}
-                {session?.access_token && (
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={handleSyncPlan}
-                      disabled={syncing}
-                      className="inline-flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors disabled:opacity-50"
-                    >
-                      <RefreshCw className={`size-3 ${syncing ? 'animate-spin' : ''}`} />
-                      Sync my plan
-                    </button>
-                  </div>
-                )}
 
                 {/* Footer note */}
                 <p className="text-center text-xs text-zinc-600 mt-4 max-w-xl mx-auto">
