@@ -12,8 +12,8 @@ let hasWarned503 = false;
 
 const PERSIST_PREFIX = 'gm_avatar_';
 const PERSIST_KEYS_LIST = 'gm_avatar_keys';
-const PERSIST_MAX_KEYS = 50;
-const PERSIST_EVICT_COUNT = 10;
+const PERSIST_MAX_KEYS = 200;
+const PERSIST_EVICT_COUNT = 30;
 
 /**
  * Identity-only cache key: same person = same avatar everywhere.
