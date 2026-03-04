@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Volume2, VolumeX, User, Package, Info, UserPlus, UserMinus } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
@@ -102,17 +102,17 @@ export function PlayerPanelWithBoard({
     prevBoardContentRef.current = trimmed;
   }, [myBoardContentFromHost]);
 
-  const handleTabChange = (value: string) => {
+  const handleTabChange = useCallback((value: string) => {
     const tab = value as "players" | "board";
     if (!isControlled) setInternalTab(tab);
     onTabChange?.(tab);
     if (tab === "board") setHasBoardUpdate(false);
-  };
+  }, [isControlled, onTabChange]);
 
-  const openProfile = (p: Player) => {
+  const openProfile = useCallback((p: Player) => {
     setProfilePlayer(p);
     setProfileOpen(true);
-  };
+  }, []);
 
   return (
     <div className="w-80 flex-shrink-0 bg-gradient-to-b from-zinc-900/95 via-[#120820]/95 to-zinc-900/95 flex flex-col border-l border-violet-900/20 h-full overflow-hidden backdrop-blur-sm">
@@ -193,7 +193,11 @@ export function PlayerPanelWithBoard({
                   <p className="mt-3 text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed">
                     {myBoardContentFromHost.trim()}
                   </p>
-                ) : null}
+                ) : (
+                  <p className="mt-3 text-xs text-zinc-500 italic">
+                    Nothing here yet. The Game Master will update your board as the game progresses.
+                  </p>
+                )}
               </div>
             </div>
           </ScrollArea>
@@ -203,7 +207,7 @@ export function PlayerPanelWithBoard({
   );
 }
 
-function PlayerCard({ 
+const PlayerCard = memo(function PlayerCard({ 
   player, 
   isSpeaking,
   isUserGameMaster,
@@ -239,6 +243,7 @@ function PlayerCard({
     if (canViewProfile) onViewProfile?.(player);
   };
   const isEliminated = isPlayerEliminated(player);
+  const avatarProps = player.isAI ? getAvatarPropsForPlayer(player) : null;
   // Guest currently bound to this player slot (if any)
   const boundGuest = guestMembers.find((g) => g.playerId === player.id);
   // Guests available to assign (not already bound to another player, and have a memberId)
@@ -265,14 +270,14 @@ function PlayerCard({
               component; only the props differ (getAvatarPropsForPlayer handles AI/GM,
               human players use type="player"). */}
         <div className="relative flex-shrink-0">
-          {player.isAI ? (
+          {player.isAI && avatarProps ? (
             <GeneratedAvatar
-              {...getAvatarPropsForPlayer(player)}
+              {...avatarProps}
               gameId={gameId}
               enabled={true}
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"}`}
               fallbackColor={player.avatar}
-              initialUrl={avatarImageUrls[avatarCacheKey(getAvatarPropsForPlayer(player).name ?? player.name, getAvatarPropsForPlayer(player).type)]}
+              initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
               onAvatarLoaded={onAvatarUrlLoaded}
             />
           ) : (
@@ -429,9 +434,9 @@ function PlayerCard({
       </div>
     </div>
   );
-}
+});
 
-function GuestCard({ guest }: { guest: GuestEntry }) {
+const GuestCard = memo(function GuestCard({ guest }: { guest: GuestEntry }) {
   const initial = guest.nickname?.charAt(0)?.toUpperCase() || "?";
   const isBound = !!guest.playerId;
   return (
@@ -463,4 +468,4 @@ function GuestCard({ guest }: { guest: GuestEntry }) {
       </div>
     </div>
   );
-}
+});

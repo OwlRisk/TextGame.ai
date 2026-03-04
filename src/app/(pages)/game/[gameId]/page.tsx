@@ -16,7 +16,7 @@ import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
-import { Menu, Hash, Users, Link2, Check } from "lucide-react";
+import { Menu, Hash, Users } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +27,23 @@ const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
 
 /** Number of AI players to reply right after the host's initial greeting */
 const INITIAL_PLAYER_REPLIES = 3;
+
+/** Members polling interval (ms) and max consecutive errors before giving up */
+const MEMBERS_POLL_INTERVAL_MS = 15_000;
+const MEMBERS_MAX_ERRORS = 3;
+
+/** Maximum autonomous Host→AI advance loops before waiting for human input */
+const MAX_AUTO_ADVANCES = 6;
+
+/** Number of recent messages to include in the Host context window */
+const HOST_CONTEXT_WINDOW = 35;
+
+/** Server-side max token cap for the streaming response */
+const MAX_STREAM_TOKENS = 4096;
+/** Base token budget before per-player scaling */
+const BASE_STREAM_TOKENS = 500;
+/** Additional tokens per player */
+const TOKENS_PER_PLAYER = 80;
 
 /** After host greeting, have a few AI players reply so the room feels active from the start. */
 async function seedInitialPlayerReplies(
@@ -172,6 +189,22 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     if (!isGuestPlayer || !guestId) return null;
     return roomMembers.find((m) => m.guest_id === guestId && !m.is_owner)?.player_id ?? null;
   }, [isGuestPlayer, guestId, roomMembers]);
+
+  const playerBoardDataMemo: PlayerBoardData = useMemo(() => {
+    const humanPlayer = players.find((p) => p.id === userId);
+    return {
+      characterName: humanGameIdentity?.name ?? humanPlayer?.name ?? "You",
+      avatar: humanPlayer?.avatar ?? "#6366f1",
+      attributes: [],
+      items: [],
+      statusEffects: [],
+    };
+  }, [players, userId, humanGameIdentity]);
+
+  const boardContentForViewer = useMemo(() => {
+    if (isGuestPlayer) return guestPlayerBinding ? myBoardContent[guestPlayerBinding] ?? "" : "";
+    return myBoardContent[userId] ?? "";
+  }, [isGuestPlayer, guestPlayerBinding, myBoardContent, userId]);
 
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
@@ -357,7 +390,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const schedule = () => {
-      timer = setTimeout(() => { load(); }, 15_000);
+      timer = setTimeout(() => { load(); }, MEMBERS_POLL_INTERVAL_MS);
     };
 
     const load = () => {
@@ -371,11 +404,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           } else {
             consecutiveErrors++;
           }
-          if (consecutiveErrors < 3) schedule();
+          if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
         })
         .catch(() => {
           consecutiveErrors++;
-          if (consecutiveErrors < 3) schedule();
+          if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
         });
     };
 
@@ -427,7 +460,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           });
         }
       })
-      .catch((e) => console.error('[game] Failed to load game for guest:', e))
+      .catch((e) => {
+        console.error('[game] Failed to load game for guest:', e);
+        toast.error("Could not load game data");
+      })
       .finally(() => setSharedLoadPending(false));
   }, [gamesLoading, currentGame, gameId, guestId, addGame]);
 
@@ -464,8 +500,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     // Only initialize if no saved state and no players loaded yet
     if (!isInitialized && currentGame && players.length === 0 && !hasSavedState) {
-      initializeGame();
-      setIsInitialized(true);
+      try {
+        initializeGame();
+        setIsInitialized(true);
+      } catch (err) {
+        console.error("initializeGame failed — will retry on next effect run:", err);
+      }
     } else if (!isInitialized && players.length > 0) {
       // Players came from saved state (DB or localStorage) — mark initialized, don't re-init
       setIsInitialized(true);
@@ -651,7 +691,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     try {
       // Build recent context so Host can choose next speaker based on current discussion
       const channelMessages = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
-      const recentSlice = channelMessages.slice(-35);
+      const recentSlice = channelMessages.slice(-HOST_CONTEXT_WINDOW);
       const recentContext =
         recentSlice.length === 0
           ? "(No prior messages in this channel.)"
@@ -921,13 +961,13 @@ ${rulesText || "No specific rules defined."}`.trim();
             const namePart = revealMatch[1].trim();
             const isAll = namePart.toLowerCase() === "all" || namePart.toLowerCase() === "everyone";
             if (isAll) {
-              players.forEach((p) => { if (!p.isGameMaster) revealIds.push(p.id); });
+              playersRef.current.forEach((p) => { if (!p.isGameMaster) revealIds.push(p.id); });
             } else {
               const isYou = namePart.toLowerCase() === "you" || namePart.toLowerCase() === (humanName ?? "").toLowerCase();
               const nameBase = namePart.split(",")[0].trim();
               const target = isYou
-                ? players.find((p) => p.id === userId)
-                : players.find((p) => p.name === namePart || p.name === nameBase);
+                ? playersRef.current.find((p) => p.id === userId)
+                : playersRef.current.find((p) => p.name === namePart || p.name === nameBase);
               if (target) revealIds.push(target.id);
             }
           } else {
@@ -1110,7 +1150,7 @@ ${rulesText || "No specific rules defined."}`.trim();
         // SECTION blocks, etc.). The AI is already instructed to be concise in its narrative,
         // so a generous budget doesn't make replies verbose — it just prevents truncation.
         // Server-side cap is 4096; we leave headroom for complex games and large player counts.
-        const streamTokenBudget = Math.min(4096, 500 + players.length * 80);
+        const streamTokenBudget = Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
         try {
           const res = await fetch("/api/chat/stream", {
             method: "POST",
@@ -1156,42 +1196,19 @@ ${rulesText || "No specific rules defined."}`.trim();
           const { message: splitMessage, directives } = splitHostOutput(acc);
           // Process all directives (NEXT_SPEAKER, ASSIGN_ROLE, BOARD, SECTION, AUTO_CHANNEL, etc.)
           const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(directives);
-          applyHostActionsAndClean(directivesClean);
-          applyHostRoleAssignments(directivesClean);
-          // Determine the final public display
-          const displayContent = splitMessage || (() => {
-            // Fallback: derive display from directives clean content (old behavior)
-            const afterActions = applyHostActionsAndClean(directivesClean);
-            return applyHostRoleAssignments(afterActions);
-          })();
+          const afterActions = applyHostActionsAndClean(directivesClean);
+          const afterRoles = applyHostRoleAssignments(afterActions);
+          // Determine the final public display: prefer the split public message;
+          // fall back to the cleaned directive content (old format without --- separator).
+          const displayContent = splitMessage || afterRoles;
           updateStreamingMessage(messageId, displayContent || " ", true);
           return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal };
         } catch (e) {
           console.error("Host stream error:", e);
+          toast.error("Game Master stream interrupted");
           updateStreamingMessage(messageId, "…", true);
           return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
         }
-      };
-
-      const callHost = async (userContent: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-          body: JSON.stringify({
-            messages: [
-              { role: "system", content: hostSystemPrompt },
-              { role: "user", content: userContent },
-            ],
-            preferredModel: getPreferredModel(),
-          }),
-        });
-        if (!res.ok) return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
-        const data = await res.json();
-        let hostContent = (data.message || "").trim();
-        const parsed = parseHostResult(hostContent);
-        const afterActions = applyHostActionsAndClean(parsed.hostContent);
-        hostContent = applyHostRoleAssignments(afterActions);
-        return { ...parsed, hostContent, imageUrl: data.imageUrl };
       };
 
       const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>, channelGoal?: string | null): Promise<string | null> => {
@@ -1456,7 +1473,6 @@ ${rulesText || "No specific rules defined."}`.trim();
       // If it ends WITHOUT the human (e.g. pure AI night-phase sequence), auto-advance
       // the game by calling the host again — up to MAX_AUTO_ADVANCES times — so the
       // game never gets stuck waiting for a villager who has no night action.
-      const MAX_AUTO_ADVANCES = 6;
       let currentQueue = speakerQueue;
       let humanReached = await runSpeakerQueue(currentQueue);
 
@@ -1493,10 +1509,10 @@ ${rulesText || "No specific rules defined."}`.trim();
 
   const handleRetryLastMessage = useCallback(() => {
     if (lastFailedSendContent) {
-      handleSendMessage(lastFailedSendContent);
+      handleSendMessageRef.current?.(lastFailedSendContent);
       setLastFailedSendContent(null);
     }
-  }, [lastFailedSendContent, handleSendMessage]);
+  }, [lastFailedSendContent]);
 
   // ─── Owner: auto-trigger AI when a guest message arrives via Realtime ────────
   // Track the last processed message ID so we only respond to NEW guest messages.
@@ -2000,7 +2016,7 @@ ${rulesText || "No specific rules defined."}`.trim();
           <div className="flex-shrink-0 px-4 py-1.5 bg-emerald-950/30 border-b border-emerald-800/20 flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
             <span className="text-xs text-emerald-300">
-              {onlineGuestPresences.length + 1} players in room:{" "}
+              {onlineGuestPresences.length + (isOwnerOnline !== false ? 1 : 0)} players in room:{" "}
               {onlineGuestPresences.map((m) => m.nickname).join(", ")}
             </span>
           </div>
@@ -2088,17 +2104,6 @@ ${rulesText || "No specific rules defined."}`.trim();
       </ErrorBoundary>
 
       {/* 玩家面板 + My Board（仅自己可见，仅 AI Host 可编辑）：桌面显示，移动端在右侧 Sheet */}
-      {(() => {
-        const humanPlayer = players.find((p) => p.id === userId);
-        const playerBoardData: PlayerBoardData = {
-          characterName: humanGameIdentity?.name ?? humanPlayer?.name ?? "You",
-          avatar: humanPlayer?.avatar ?? "#6366f1",
-          attributes: [],
-          items: [],
-          statusEffects: [],
-        };
-        return (
-          <>
             <div className="hidden md:block flex-shrink-0 w-80">
               <PlayerPanelWithBoard
                 players={playersForChannel}
@@ -2106,12 +2111,8 @@ ${rulesText || "No specific rules defined."}`.trim();
                 humanGameIdentity={humanGameIdentity}
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
-                playerBoardData={playerBoardData}
-                myBoardContentFromHost={
-                  isGuestPlayer
-                    ? (guestPlayerBinding ? myBoardContent[guestPlayerBinding] ?? "" : "")
-                    : (myBoardContent[userId] ?? "")
-                }
+                playerBoardData={playerBoardDataMemo}
+                myBoardContentFromHost={boardContentForViewer}
                 currentUserId={userId}
                 activeTab={rightPanelTab}
                 onTabChange={setRightPanelTab}
@@ -2130,12 +2131,8 @@ ${rulesText || "No specific rules defined."}`.trim();
                   humanGameIdentity={humanGameIdentity}
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
-                  playerBoardData={playerBoardData}
-                  myBoardContentFromHost={
-                    isGuestPlayer
-                      ? (guestPlayerBinding ? myBoardContent[guestPlayerBinding] ?? "" : "")
-                      : (myBoardContent[userId] ?? "")
-                  }
+                  playerBoardData={playerBoardDataMemo}
+                  myBoardContentFromHost={boardContentForViewer}
                   currentUserId={userId}
                   activeTab={rightPanelTab}
                   onTabChange={setRightPanelTab}
@@ -2146,9 +2143,6 @@ ${rulesText || "No specific rules defined."}`.trim();
                 />
               </SheetContent>
             </Sheet>
-          </>
-        );
-      })()}
       </div>
 
       <Toaster

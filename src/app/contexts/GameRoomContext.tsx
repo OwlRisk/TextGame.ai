@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, ReactNode } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { getGameRoomState, saveGameRoomState } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
@@ -140,6 +140,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   }
 
   const isMountedRef = useRef(true);
+  const playersRef = useRef(players);
+  useEffect(() => { playersRef.current = players; }, [players]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -431,7 +433,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         .catch(() => {/* non-critical */});
     };
 
-    const interval = setInterval(poll, 3000);
+    const GUEST_POLL_INTERVAL_MS = 3000;
+    const interval = setInterval(poll, GUEST_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [gameId, isHydrated, user?.id, mergeRemoteState]);
 
@@ -544,7 +547,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         const isYou = playerNameOrId.trim().toLowerCase() === "you";
         const playerId = isYou
           ? userId
-          : players.find((p) => p.id === playerNameOrId || p.name === playerNameOrId)?.id ??
+          : playersRef.current.find((p) => p.id === playerNameOrId || p.name === playerNameOrId)?.id ??
             playerNameOrId;
         const list = prev[playerId] ?? [];
         return {
@@ -561,7 +564,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         };
       });
     },
-    [userId, players]
+    [userId]
   );
 
   const updatePlayer = useCallback((playerId: string, updates: Partial<Player>) => {
@@ -575,6 +578,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setPlayers([]);
     setGamePhase("waiting");
     setGamePhaseState(DEFAULT_GAME_PHASE);
+    setSelectedChannelId("game-room");
     setCurrentSpeakerId(null);
     setTypingUsers([]);
     setPrivateMessages({});
@@ -588,58 +592,66 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setAvatarImageUrls({});
   }, []);
 
+  const contextValue = useMemo(() => ({
+    messages,
+    players,
+    gamePhase,
+    gamePhaseState,
+    selectedChannelId,
+    currentSpeakerId,
+    typingUsers,
+    privateMessages,
+    gameProgress,
+    myBoardContent,
+    playerNotes,
+    sections,
+    sectionsLoading,
+    gameEvents,
+    gameEnded,
+    gameResult,
+    aiSuggestedPrompts,
+    humanGameIdentity,
+    avatarImageUrls,
+    isRoomLoading: !isHydrated,
+    onAvatarUrlLoaded,
+    addMessage,
+    addStreamingMessage,
+    updateStreamingMessage,
+    addEventNotification,
+    addPrivateMessage,
+    setMessages,
+    setPlayers,
+    updatePlayer,
+    setGamePhase,
+    setGamePhaseState,
+    setSelectedChannelId,
+    setCurrentSpeakerId,
+    setTypingUsers,
+    setGameProgress,
+    setMyBoardContent,
+    setPlayerNotes,
+    setSections,
+    setSectionsLoading,
+    setGameEvents,
+    setGameEnded,
+    setGameResult,
+    setAiSuggestedPrompts,
+    setHumanGameIdentity,
+    resetGame,
+    saveNow,
+    userId,
+  }), [
+    messages, players, gamePhase, gamePhaseState, selectedChannelId,
+    currentSpeakerId, typingUsers, privateMessages, gameProgress,
+    myBoardContent, playerNotes, sections, sectionsLoading, gameEvents,
+    gameEnded, gameResult, aiSuggestedPrompts, humanGameIdentity,
+    avatarImageUrls, isHydrated, onAvatarUrlLoaded, addMessage,
+    addStreamingMessage, updateStreamingMessage, addEventNotification,
+    addPrivateMessage, updatePlayer, resetGame, saveNow, userId,
+  ]);
+
   return (
-    <GameRoomContext.Provider
-      value={{
-        messages,
-        players,
-        gamePhase,
-        gamePhaseState,
-        selectedChannelId,
-        currentSpeakerId,
-        typingUsers,
-        privateMessages,
-        gameProgress,
-        myBoardContent,
-        playerNotes,
-        sections,
-        sectionsLoading,
-        gameEvents,
-        gameEnded,
-        gameResult,
-        aiSuggestedPrompts,
-        humanGameIdentity,
-        avatarImageUrls,
-        isRoomLoading: !isHydrated,
-        onAvatarUrlLoaded,
-        addMessage,
-        addStreamingMessage,
-        updateStreamingMessage,
-        addEventNotification,
-        addPrivateMessage,
-        setMessages,
-        setPlayers,
-        updatePlayer,
-        setGamePhase,
-        setGamePhaseState,
-        setSelectedChannelId,
-        setCurrentSpeakerId,
-        setTypingUsers,
-        setGameProgress,
-        setMyBoardContent,
-        setPlayerNotes,
-        setSections,
-        setSectionsLoading,
-        setGameEvents,
-        setGameEnded,
-        setGameResult,
-        setAiSuggestedPrompts,
-        setHumanGameIdentity,
-        resetGame,
-        saveNow,
-        userId,
-      }}
-    >
+    <GameRoomContext.Provider value={contextValue}>
       {children}
     </GameRoomContext.Provider>
   );

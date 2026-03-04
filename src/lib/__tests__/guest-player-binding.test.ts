@@ -118,7 +118,7 @@ describe('enrichedGuestMembers — Presence × roomMembers join', () => {
     ];
     const result = enrichGuestMembers(presences, members, players);
     expect(result[0].playerId).toBeUndefined();
-    expect(result[0].memberid).toBeUndefined; // memberId is still set
+    expect(result[0].playerName).toBeUndefined();
     expect(result[0].memberId).toBe('member-1');
   });
 
