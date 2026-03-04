@@ -792,7 +792,7 @@ WIN CONDITIONS:
   },
 ];
 
-const EXTRA_GAMES: GameTemplate[] = [
+export const EXTRA_GAMES: GameTemplate[] = [
   {
     id: "vampire-court",
     name: "Vampire Court",
@@ -899,7 +899,7 @@ WIN CONDITIONS:
   },
 ];
 
-const ALL_PRESETS: GameTemplate[] = [
+export const ALL_PRESETS: GameTemplate[] = [
   FEATURED_TEMPLATE,
   ...CORE_TEMPLATES,
   ...SOCIAL_DEDUCTION,
@@ -932,7 +932,7 @@ const CATEGORIES = [
   { id: "brain",     label: "Brain Games",      icon: Lightbulb },
 ] as const;
 
-const CATEGORY_MAP: Record<string, GameTemplate[]> = {
+export const CATEGORY_MAP: Record<string, GameTemplate[]> = {
   deduction: [...CORE_TEMPLATES.filter(t => t.category === "Social Deduction"), ...SOCIAL_DEDUCTION, ...EXTRA_GAMES.filter(t => t.category === "Social Deduction")],
   party:     [...PARTY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Party")],
   mystery:   [...MYSTERY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Mystery")],
