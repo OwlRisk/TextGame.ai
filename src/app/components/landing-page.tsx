@@ -509,19 +509,19 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             {/* Core features – 3 simple rows */}
             <div className="mb-10 space-y-3">
               <div className="flex items-center gap-3 text-zinc-300">
-                <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-lg">
+                <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
                   <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
                 <span className="text-base">Smart AI characters that adapt to your game</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
-                <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-lg">
+                <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
                   <MessageCircle className="h-4 w-4 text-fuchsia-400" />
                 </div>
                 <span className="text-base">Fully customizable rules and gameplay</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-lg">
+                <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
                   <Zap className="h-4 w-4 text-blue-400" />
                 </div>
                 <span className="text-base">Create and start playing in 2 minutes</span>
@@ -534,7 +534,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
               <Button
                 onClick={onSignIn}
                 size="lg"
-                className="relative w-full bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-6 !rounded-[10px] shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl"
+                className="relative w-full bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-6 !rounded-[11px] shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl"
               >
                 <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -552,7 +552,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 asChild
                 variant="outline"
                 size="lg"
-                className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 !rounded-[10px] transition-all"
+                className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 !rounded-[11px] transition-all"
               >
                 <Link href="/discover">
                   <Compass className="h-5 w-5 mr-2" />
@@ -802,7 +802,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 <Button
                   onClick={onSignIn}
                   size="lg"
-                  className="relative bg-white hover:bg-zinc-100 text-violet-600 font-bold text-xl px-12 py-8 !rounded-[10px] shadow-2xl transition-all hover:scale-105"
+                  className="relative bg-white hover:bg-zinc-100 text-violet-600 font-bold text-xl px-12 py-8 !rounded-[11px] shadow-2xl transition-all hover:scale-105"
                 >
                   <svg className="h-7 w-7 mr-3" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
