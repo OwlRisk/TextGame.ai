@@ -2049,7 +2049,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 <Button
                   onClick={() => { setMobileRulesOpen(false); handleStartGame(); }}
                   disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
-                  className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isStartingGame ? (
                     <span className="flex items-center gap-2">
@@ -2141,7 +2141,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     size="sm"
                     onClick={handleStartGame}
                     disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
-                    className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    className="h-9 px-3 rounded-[11px] bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                   >
                     {isStartingGame ? (
                       <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
@@ -2397,7 +2397,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       <Button
                         onClick={handleStartGame}
                         disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
-                        className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isStartingGame ? (
                           <span className="flex items-center gap-2">
