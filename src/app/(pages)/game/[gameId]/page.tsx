@@ -349,32 +349,39 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   }, [gameId, gamesLoading, isOwner, session?.user?.id]);
 
   // ─── All participants: load + refresh member list ─────────────────────────
-  // Owner refreshes every 15 s; guests also load on mount so Players Online
-  // appears immediately without waiting for the first poll tick.
+  // Polls every 15 s. Stops polling after 3 consecutive failures to avoid
+  // spamming the server when auth is broken or network is down.
   useEffect(() => {
     if (!gameId) return;
+    let consecutiveErrors = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const load = () => {
-      // C-1: Members API now requires auth. Pass Bearer token for authenticated
-      // users; pass guestId query param for guests.
-      const currentGuestId = guestId ?? (typeof window !== "undefined" ? localStorage.getItem(`guestId_${gameId}`) : null);
-      const url = currentGuestId
-        ? `/api/games/${gameId}/members?guestId=${encodeURIComponent(currentGuestId)}`
-        : `/api/games/${gameId}/members`;
-      const headers: Record<string, string> = {};
-      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
-      fetch(url, { headers })
-        .then((r) => r.ok ? r.json() : null)
-        .then((data: { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null; guest_id: string | null }> } | null) => {
-          if (data?.members) setRoomMembers(data.members);
-        })
-        .catch(() => {/* non-critical */});
+    const schedule = () => {
+      timer = setTimeout(() => { load(); }, 15_000);
     };
 
-    load(); // immediate first fetch for everyone
-    const interval = setInterval(load, 15_000);
-    return () => clearInterval(interval);
-  }, [gameId, guestId, session?.access_token]);
+    const load = () => {
+      const url = `/api/games/${gameId}/members`;
+      fetch(url)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data: { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null; guest_id: string | null }> } | null) => {
+          if (data?.members) {
+            setRoomMembers(data.members);
+            consecutiveErrors = 0;
+          } else {
+            consecutiveErrors++;
+          }
+          if (consecutiveErrors < 3) schedule();
+        })
+        .catch(() => {
+          consecutiveErrors++;
+          if (consecutiveErrors < 3) schedule();
+        });
+    };
+
+    load();
+    return () => { if (timer) clearTimeout(timer); };
+  }, [gameId]);
 
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
@@ -1846,9 +1853,7 @@ ${rulesText || "No specific rules defined."}`.trim();
       }
       // Refresh member list to reflect new binding
       const url = `/api/games/${gameId}/members`;
-      const data = await fetch(url, {
-        headers: { "Authorization": `Bearer ${session.access_token}` },
-      }).then((r) => r.ok ? r.json() : null);
+      const data = await fetch(url).then((r) => r.ok ? r.json() : null);
       if (data?.members) setRoomMembers(data.members);
     } catch {
       toast.error(playerId ? "Failed to assign guest" : "Failed to unassign guest");
