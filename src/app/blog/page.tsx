@@ -32,6 +32,33 @@ interface BlogPost {
 
 const posts: BlogPost[] = [
   {
+    slug: "chai-ai-alternatives",
+    title: "7 Best Chai AI Alternatives for AI Chat & Roleplay (2026)",
+    excerpt:
+      "Chai AI is popular for 1-on-1 chat, but lacks multiplayer games. Compare 7 alternatives — from textgame.ai's multiplayer AI games to Character.AI, Talkie, and more.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Comparison", "AI Chat"],
+  },
+  {
+    slug: "textgame-vs-novel-ai",
+    title: "textgame.ai vs Novel AI — AI Gaming vs AI Writing (2026)",
+    excerpt:
+      "Comparing textgame.ai and Novel AI: multiplayer AI games vs premium AI writing. Find out which platform fits your creative needs.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Comparison", "AI Games"],
+  },
+  {
+    slug: "ai-changing-board-games",
+    title: "How AI is Changing Board Games and Tabletop RPGs (2026)",
+    excerpt:
+      "From AI Game Masters to dynamic NPCs — how artificial intelligence is transforming board games, tabletop RPGs, and the way we play together.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Editorial", "AI Games", "Tabletop"],
+  },
+  {
     slug: "polybuzz-ai-alternatives",
     title: "7 Best PolyBuzz Alternatives for AI Chat & Roleplay (2026)",
     excerpt:
