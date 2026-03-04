@@ -603,16 +603,14 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
               </Button>
             </div>
 
-            {/* Browse Templates – gradient-border secondary CTA, same height as Google button */}
-            <div className="mb-6 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 p-[1.5px] shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl">
-              <Link
-                href="/discover"
-                className="w-full flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 text-zinc-200 hover:text-white font-bold text-lg py-6 rounded-[10px] transition-colors cursor-pointer"
-              >
-                <LayoutGrid className="h-6 w-6 mr-3 shrink-0 text-violet-400" />
-                Browse Templates
-              </Link>
-            </div>
+            {/* Browse Templates – subtle secondary CTA */}
+            <Link
+              href="/discover"
+              className="mb-6 w-full flex items-center justify-center rounded-xl border border-zinc-700 bg-transparent text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 font-medium text-lg py-[1.35rem] transition-colors cursor-pointer"
+            >
+              <LayoutGrid className="h-5 w-5 mr-2.5 shrink-0" />
+              Browse Templates
+            </Link>
 
             {/* Quick-start 2×2 grid */}
             <div className="space-y-4">
