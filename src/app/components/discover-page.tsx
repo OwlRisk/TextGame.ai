@@ -1028,11 +1028,13 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     );
   };
 
-  // Filtered game list for non-"all" tabs
+  const showFeatured = activeCategory === "all" && !searchQuery;
+
   const filteredGames = (() => {
-    const pool = activeCategory === "all"
-      ? [...CORE_TEMPLATES, ...SOCIAL_DEDUCTION, ...PARTY_GAMES, ...MYSTERY_GAMES, ...ROLEPLAY_GAMES, ...EDUCATIONAL_GAMES, ...EXTRA_GAMES]
+    let pool = activeCategory === "all"
+      ? ALL_PRESETS
       : (CATEGORY_MAP[activeCategory] ?? []);
+    if (showFeatured) pool = pool.filter((t) => t.id !== FEATURED_TEMPLATE.id);
     if (!searchQuery.trim()) return pool;
     const q = searchQuery.toLowerCase();
     return pool.filter(
@@ -1067,7 +1069,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         </div>
 
         {/* Featured Template — only show on "all" tab with no search */}
-        {activeCategory === "all" && !searchQuery && (
+        {showFeatured && (
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <Crown className="h-5 w-5 text-yellow-500" />
@@ -1168,7 +1170,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               type="text"
               placeholder="Search games..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value.trim()) setActiveCategory("all"); }}
               className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"
             />
           </div>
