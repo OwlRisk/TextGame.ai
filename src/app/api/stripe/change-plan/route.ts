@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { pool } from '@/lib/pg-pool';
-import { getStripePriceIdForTier, getTierFromStripePriceId, type SubscriptionTier } from '@/lib/subscription';
+import { getStripePriceIdForTier, getTierFromStripePriceId, TIER_ORDER, type SubscriptionTier } from '@/lib/subscription';
 import { grantMonthlyAllowance } from '@/lib/tokens';
 import { invalidateBalanceCache } from '@/lib/balance-cache';
 
@@ -77,12 +77,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reset billing cycle to upgrade day so next renewal = upgrade date + 1 month
-    const updated = await stripe.subscriptions.update(subscriptionId, {
-      items: [{ id: itemId, price: priceId }],
-      billing_cycle_anchor: 'now',
-      proration_behavior: 'create_prorations',
-    });
+    const isUpgrade = (TIER_ORDER[tier] ?? 0) > (TIER_ORDER[(currentTier ?? 'free') as SubscriptionTier] ?? 0);
+
+    const updated = isUpgrade
+      ? await stripe.subscriptions.update(subscriptionId, {
+          items: [{ id: itemId, price: priceId }],
+          billing_cycle_anchor: 'now',
+          proration_behavior: 'create_prorations',
+        })
+      : await stripe.subscriptions.update(subscriptionId, {
+          items: [{ id: itemId, price: priceId }],
+          proration_behavior: 'create_prorations',
+        });
+
     const periodEnd = updated.current_period_end
       ? new Date(updated.current_period_end * 1000)
       : null;
@@ -92,15 +99,17 @@ export async function POST(request: NextRequest) {
       [tier, periodEnd, user.id]
     );
 
-    if (PAID_TIERS.includes(tier)) {
+    if (isUpgrade && PAID_TIERS.includes(tier)) {
       await grantMonthlyAllowance(user.id, tier);
     }
     invalidateBalanceCache(user.id);
 
+    const action = isUpgrade ? 'Upgraded' : 'Downgraded';
     return NextResponse.json({
       ok: true,
       tier,
-      message: `Plan changed to ${tier}. Proration applied by Stripe.`,
+      isUpgrade,
+      message: `${action} to ${tier}. Proration applied by Stripe.`,
     });
   } catch (error) {
     console.error('[change-plan]', error);

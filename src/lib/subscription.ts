@@ -24,6 +24,12 @@ export function isPaidTier(tier: string): tier is 'pro' | 'plus' | 'ultra' {
   return tier === 'pro' || tier === 'plus' || tier === 'ultra';
 }
 
+export const TIER_ORDER: Record<SubscriptionTier, number> = { free: 0, pro: 1, plus: 2, ultra: 3 };
+
+export function capitalizeTier(tier: string): string {
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+}
+
 /**
  * Stripe 月付订阅 Price ID。
  * 优先使用 STRIPE_PRO_PRICE_ID（与 .env.example 一致），

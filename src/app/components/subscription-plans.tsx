@@ -4,27 +4,53 @@ import { useState } from 'react';
 import { Check, Star, ArrowRight } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { SubscriptionBadge } from '@/app/components/subscription-badge';
+import {
+  SUBSCRIPTION_TIERS,
+  capitalizeTier,
+  type SubscriptionTier,
+} from '@/lib/subscription';
 
-const PRO_CONTEXT_CACHE = '128K context & memory cache';
+const PLAN_FEATURES: Record<'pro' | 'plus' | 'ultra', string[]> = {
+  pro: [
+    `${SUBSCRIPTION_TIERS.pro.creditsPerMonth.toLocaleString()} credits / month`,
+    '100+ AI voices · 16 languages',
+    'Latest GPT models, selectable',
+    'Image generation',
+    'Voice emotion expressions',
+  ],
+  plus: [
+    `${SUBSCRIPTION_TIERS.plus.creditsPerMonth.toLocaleString()} credits / month`,
+    '100+ AI voices · 16 languages',
+    'Latest GPT models, selectable',
+    'Image generation',
+    'Voice emotion expressions',
+  ],
+  ultra: [
+    `${SUBSCRIPTION_TIERS.ultra.creditsPerMonth.toLocaleString()} credits / month`,
+    '100+ AI voices · 16 languages',
+    'Latest GPT models, selectable',
+    'Image generation',
+    'Voice emotion expressions',
+    'Early access to new features',
+    'Priority AI processing',
+    'Priority support',
+  ],
+};
 
-const PRO_FEATURES = [
-  'Unlimited GPT-4o-mini',
-  'GPT-5.2 powered by Credits (20/month)',
-  PRO_CONTEXT_CACHE,
-  'Priority support',
-];
-
-interface ProPlanBlockProps {
+interface PlanBlockProps {
+  tier: 'pro' | 'plus' | 'ultra';
   isCurrent: boolean;
-  onSelectPlan?: (tier: 'pro') => void;
+  onSelectPlan?: (tier: SubscriptionTier) => void;
 }
 
-export function ProPlanBlock({ isCurrent, onSelectPlan }: ProPlanBlockProps) {
+export function PlanBlock({ tier, isCurrent, onSelectPlan }: PlanBlockProps) {
   const [loading, setLoading] = useState(false);
+  const info = SUBSCRIPTION_TIERS[tier];
+  const features = PLAN_FEATURES[tier];
 
   const handleSubscribe = async () => {
     if (onSelectPlan) {
-      onSelectPlan('pro');
+      onSelectPlan(tier);
       return;
     }
     setLoading(true);
@@ -32,7 +58,7 @@ export function ProPlanBlock({ isCurrent, onSelectPlan }: ProPlanBlockProps) {
       const res = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscriptionTier: 'pro' }),
+        body: JSON.stringify({ subscriptionTier: tier }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -58,16 +84,18 @@ export function ProPlanBlock({ isCurrent, onSelectPlan }: ProPlanBlockProps) {
           <Star className="size-6 text-violet-300" />
         </div>
         <div>
-          <SubscriptionBadge tier="pro" size="lg" className="mb-0.5" />
-          <p className="text-zinc-500 text-sm">$20/month · 2,000 credits</p>
+          <SubscriptionBadge tier={tier} size="lg" className="mb-0.5" />
+          <p className="text-zinc-500 text-sm">
+            ${info.priceMonthly}/month · {info.creditsPerMonth.toLocaleString()} credits
+          </p>
         </div>
       </div>
       <div className="flex items-baseline gap-1 mb-5">
-        <span className="text-3xl font-bold text-white">$20</span>
+        <span className="text-3xl font-bold text-white">${info.priceMonthly}</span>
         <span className="text-zinc-500 text-sm">/ month</span>
       </div>
       <ul className="space-y-3 mb-6">
-        {PRO_FEATURES.map((text, idx) => (
+        {features.map((text, idx) => (
           <li key={idx} className="flex items-center gap-2.5">
             <span className="size-4 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
               <Check className="size-2.5 text-emerald-400" />
@@ -91,7 +119,7 @@ export function ProPlanBlock({ isCurrent, onSelectPlan }: ProPlanBlockProps) {
         >
           {loading ? 'Processing…' : (
             <>
-              Subscribe to Pro
+              Subscribe to {capitalizeTier(tier)}
               <ArrowRight className="size-4 ml-1.5" />
             </>
           )}
@@ -100,3 +128,8 @@ export function ProPlanBlock({ isCurrent, onSelectPlan }: ProPlanBlockProps) {
     </div>
   );
 }
+
+/** @deprecated Use PlanBlock instead */
+export const ProPlanBlock = ({ isCurrent, onSelectPlan }: { isCurrent: boolean; onSelectPlan?: (tier: 'pro') => void }) => (
+  <PlanBlock tier="pro" isCurrent={isCurrent} onSelectPlan={onSelectPlan ? () => onSelectPlan('pro') : undefined} />
+);

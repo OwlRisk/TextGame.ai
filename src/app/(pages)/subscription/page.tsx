@@ -12,12 +12,18 @@ import {
   Star,
   Zap,
   TrendingDown,
+  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Button } from '@/app/components/ui/button';
 import { Toaster } from '@/app/components/ui/sonner';
-import type { SubscriptionTier } from '@/lib/subscription';
+import {
+  SUBSCRIPTION_TIERS,
+  TIER_ORDER,
+  capitalizeTier,
+  type SubscriptionTier,
+} from '@/lib/subscription';
 
 interface SubscriptionDetails {
   tier: 'free' | 'pro' | 'plus' | 'ultra';
@@ -35,22 +41,12 @@ function formatDate(dateText: string | null): string {
   if (!dateText) return '—';
   const d = new Date(dateText);
   if (Number.isNaN(d.getTime())) return '—';
-  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(d);
+  return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(d);
 }
 
-
-/** Free：3 种 AI 语音 + 图片生成 */
 const FREE_FEATURES = ['Full feature access', 'No monthly credit refill', 'Buy credits as needed'] as const;
 
-/** Pro / Plus / Ultra 共用权益（仅 credits 数量不同） */
 const PAID_FEATURES = [
-  '100+ AI voices · 16 languages',
-  'Image generation',
-  'Latest GPT models (selectable in Settings)',
-] as const;
-
-
-const BASE_PAID_FEATURES = [
   '100+ AI voices · 16 languages',
   'Latest GPT models, selectable',
   'Image generation',
@@ -63,15 +59,32 @@ const ULTRA_EXCLUSIVE_FEATURES = [
   { text: 'Priority support', highlight: true },
 ] as const;
 
-const PLAN_PRICING: Record<string, { price: string; priceNum: string; credits: string; creditsNum: number; badge?: string; accentFrom: string; accentTo: string; borderColor: string; badgeGradient?: string }> = {
-  pro:   { price: '$20 / month', priceNum: '$20',  credits: '2,000 credits / month',  creditsNum: 2000,  badge: 'Best value', accentFrom: 'from-violet-500', accentTo: 'to-violet-600', borderColor: 'border-violet-500/50', badgeGradient: 'from-violet-500 to-violet-600' },
-  plus:  { price: '$60 / month', priceNum: '$60',  credits: '6,000 credits / month',  creditsNum: 6000,  badge: 'Popular',    accentFrom: 'from-fuchsia-500', accentTo: 'to-purple-600', borderColor: 'border-fuchsia-500/60', badgeGradient: 'from-fuchsia-500 to-purple-600' },
-  ultra: { price: '$200 / month', priceNum: '$200', credits: '40,000 credits / month', creditsNum: 40000, accentFrom: 'from-amber-500', accentTo: 'to-orange-500', borderColor: 'border-amber-500/40' },
+type PaidTier = 'pro' | 'plus' | 'ultra';
+
+interface PlanStyle {
+  badge?: string;
+  accentFrom: string;
+  accentTo: string;
+  borderColor: string;
+  badgeGradient?: string;
+}
+
+const PLAN_STYLES: Record<PaidTier, PlanStyle> = {
+  pro:   { badge: 'Best value', accentFrom: 'from-violet-500', accentTo: 'to-violet-600', borderColor: 'border-violet-500/50', badgeGradient: 'from-violet-500 to-violet-600' },
+  plus:  { badge: 'Popular',    accentFrom: 'from-fuchsia-500', accentTo: 'to-purple-600', borderColor: 'border-fuchsia-500/60', badgeGradient: 'from-fuchsia-500 to-purple-600' },
+  ultra: {                       accentFrom: 'from-amber-500', accentTo: 'to-orange-500', borderColor: 'border-amber-500/40' },
 };
 
-function getPlanFeatures(tier: string): string[] {
-  const credits = PLAN_PRICING[tier]?.credits ?? '';
-  return [credits, ...PAID_FEATURES];
+function getPlanPrice(tier: PaidTier): string {
+  return `$${SUBSCRIPTION_TIERS[tier].priceMonthly}`;
+}
+
+function getPlanCreditsLabel(tier: PaidTier): string {
+  return `${SUBSCRIPTION_TIERS[tier].creditsPerMonth.toLocaleString()} credits / month`;
+}
+
+function getPlanFeatures(tier: PaidTier): string[] {
+  return [getPlanCreditsLabel(tier), ...PAID_FEATURES];
 }
 
 
@@ -122,26 +135,47 @@ function SubscriptionPageContent() {
     }
   }, [session?.access_token]);
 
+  const handleSyncPlan = useCallback(async () => {
+    if (!session?.access_token) return;
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/stripe/sync-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: session.access_token }),
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Sync failed');
+      }
+      await Promise.all([refreshTier(), refreshDetails()]);
+      toast.success('Subscription synced successfully.');
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Could not sync. Please try again.');
+    } finally {
+      setSyncing(false);
+    }
+  }, [session?.access_token, refreshTier, refreshDetails]);
+
   useEffect(() => {
     if (!session?.access_token) {
       setInitialLoading(false);
       return;
     }
-    // Reset to true so the skeleton shows while data loads (prevents free-plan flash
-    // when session resolves after the first render cycle).
     setInitialLoading(true);
     Promise.all([refreshTier(), refreshDetails()]).finally(() => {
       setInitialLoading(false);
     });
   }, [refreshTier, refreshDetails, session?.access_token]);
 
-  // After Stripe redirect: fulfill subscription (retry when session loads late)
   useEffect(() => {
     const success = searchParams.get('success');
     const sessionId = searchParams.get('session_id');
     if (success !== 'true' || !sessionId || fulfillDoneRef.current) return;
 
-    setSyncing(true); // show "Confirming…" while waiting or fulfilling
+    setSyncing(true);
 
     const doFulfill = async () => {
       if (!session?.access_token) return false;
@@ -154,15 +188,15 @@ function SubscriptionPageContent() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const errMsg = data.error || `Sync failed (${res.status}). Try "Sync my plan" below.`;
+          const errMsg = data.error || `Sync failed (${res.status}). Click "Sync my plan" to retry.`;
           const hint = data.hint ? ` ${data.hint}` : '';
           toast.error(errMsg + hint);
           return false;
         }
         await Promise.all([refreshTier(), refreshDetails()]);
         return true;
-      } catch (e) {
-        toast.error('Could not confirm payment. Try "Sync my plan" below.');
+      } catch {
+        toast.error('Could not confirm payment. Click "Sync my plan" to retry.');
         return false;
       } finally {
         setSyncing(false);
@@ -177,7 +211,6 @@ function SubscriptionPageContent() {
       return;
     }
 
-    // Session not ready yet (common after redirect): retry every 2s up to 5 times
     let attempts = 0;
     const id = setInterval(() => {
       attempts++;
@@ -192,7 +225,7 @@ function SubscriptionPageContent() {
       if (attempts >= 5) {
         clearInterval(id);
         setSyncing(false);
-        toast.info('Still seeing Free? Click "Sync my plan" below to refresh from Stripe.');
+        toast.info('Still seeing Free? Click "Sync my plan" to refresh from Stripe.');
       }
     }, 2000);
     return () => clearInterval(id);
@@ -230,7 +263,6 @@ function SubscriptionPageContent() {
     }
   };
 
-
   const handleChangePlan = async (targetTier: SubscriptionTier) => {
     if (!session?.access_token || targetTier === currentTier) return;
     setChangingTier(targetTier);
@@ -243,7 +275,7 @@ function SubscriptionPageContent() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to change plan');
-      toast.success(`Plan updated to ${targetTier.charAt(0).toUpperCase() + targetTier.slice(1)}. Proration applied.`);
+      toast.success(`Plan updated to ${capitalizeTier(targetTier)}. Proration applied.`);
       await Promise.all([refreshTier(), refreshDetails()]);
     } catch (e) {
       console.error(e);
@@ -276,6 +308,7 @@ function SubscriptionPageContent() {
 
   const isCancelled = !!details?.cancelAtPeriodEnd;
   const renewalLabel = isCancelled ? 'Access until' : 'Next renewal';
+  const paidTier = currentTier as PaidTier;
 
   return (
     <div className="flex-1 min-h-0 overflow-auto bg-[#0a0a0a] flex flex-col">
@@ -344,7 +377,7 @@ function SubscriptionPageContent() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h1 className="text-xl font-bold text-white">{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} plan</h1>
+                      <h1 className="text-xl font-bold text-white">{capitalizeTier(currentTier)} plan</h1>
                       {syncing ? (
                         <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
                           <RefreshCw className="size-3 animate-spin" /> Syncing…
@@ -356,7 +389,7 @@ function SubscriptionPageContent() {
                         </span>
                       )}
                     </div>
-                    <p className="text-zinc-500 text-sm mt-0.5">{PLAN_PRICING[currentTier]?.price ?? ''} · {PLAN_PRICING[currentTier]?.credits ?? ''}</p>
+                    <p className="text-zinc-500 text-sm mt-0.5">{getPlanPrice(paidTier)} / month · {getPlanCreditsLabel(paidTier)}</p>
                   </div>
                 </div>
               </div>
@@ -394,7 +427,7 @@ function SubscriptionPageContent() {
                           <CreditCard className="size-4 shrink-0" />
                           Amount
                         </div>
-                        <span className="text-sm font-medium text-zinc-200">{PLAN_PRICING[currentTier]?.price ?? ''}</span>
+                        <span className="text-sm font-medium text-zinc-200">{getPlanPrice(paidTier)} / month</span>
                       </div>
                       <div className="flex items-center justify-between px-5 py-4">
                         <div className="flex items-center gap-3 text-zinc-400 text-sm">
@@ -406,38 +439,61 @@ function SubscriptionPageContent() {
                         </span>
                       </div>
                     </div>
-                    <Button
-                      onClick={handleManageBilling}
-                      disabled={openingPortal || syncing || !details?.canManageBilling}
-                      className="w-full h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white text-sm font-medium"
-                    >
-                      {openingPortal ? (
-                        <>Opening…</>
-                      ) : (
-                        <>
-                          <CreditCard className="size-4 mr-2" />
-                          Manage subscription
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleManageBilling}
+                        disabled={openingPortal || syncing || !details?.canManageBilling}
+                        className="flex-1 h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white text-sm font-medium"
+                      >
+                        {openingPortal ? (
+                          <>Opening…</>
+                        ) : (
+                          <>
+                            <CreditCard className="size-4 mr-2" />
+                            Manage subscription
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={handleSyncPlan}
+                        disabled={syncing}
+                        variant="outline"
+                        className="h-10 rounded-xl border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 text-sm"
+                        title="Sync subscription status from Stripe"
+                      >
+                        <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
                     <p className="text-xs text-zinc-500 text-center -mt-2">
-                      Update payment, change plan, or cancel in Stripe.
+                      Update payment, change plan, or cancel via Manage subscription.
                     </p>
                   </div>
 
                   {/* features */}
                   <div className="flex flex-col gap-4">
-                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Included in {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</h2>
+                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Included in {capitalizeTier(currentTier)}</h2>
                     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 divide-y divide-zinc-800">
-                      {getPlanFeatures(currentTier).map((f) => (
+                      {getPlanFeatures(paidTier).map((f) => (
                         <div key={f} className="flex items-center gap-3 px-5 py-4">
                           <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
                           <span className="text-sm text-zinc-300">{f}</span>
                         </div>
                       ))}
-                      <div className="flex items-center gap-3 px-5 py-4">
-                        <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
-                        <span className="text-sm text-zinc-300">Voice emotion expressions &amp; sounds</span>
+                      {currentTier === 'ultra' && ULTRA_EXCLUSIVE_FEATURES.map((f) => (
+                        <div key={f.text} className="flex items-center gap-3 px-5 py-4">
+                          <Star className="size-4 text-amber-400 shrink-0 fill-amber-400/30" />
+                          <span className="text-sm text-amber-300/90">{f.text}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Credits usage reference */}
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-4 py-3">
+                      <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide mb-2">Approximate credit usage</h3>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-zinc-400">
+                        <span>AI message</span><span className="text-right text-zinc-300">~1 credit</span>
+                        <span>Image generation</span><span className="text-right text-zinc-300">~10 credits</span>
+                        <span>AI voice line</span><span className="text-right text-zinc-300">~3 credits</span>
                       </div>
                     </div>
                   </div>
@@ -447,13 +503,11 @@ function SubscriptionPageContent() {
                 <div>
                   <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-4">Change plan</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
-                    {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
-                      const p = PLAN_PRICING[tier];
-                      if (!p) return null;
+                    {(['pro', 'plus', 'ultra'] as PaidTier[]).map((tier) => {
+                      const info = SUBSCRIPTION_TIERS[tier];
                       const isCurrent = tier === currentTier;
-                      const tierOrder: Record<string, number> = { free: 0, pro: 1, plus: 2, ultra: 3 };
-                      const isUpgrade = (tierOrder[tier] ?? 0) > (tierOrder[currentTier] ?? 0);
-                      const isDowngrade = (tierOrder[tier] ?? 0) < (tierOrder[currentTier] ?? 0);
+                      const isUpgrade = (TIER_ORDER[tier] ?? 0) > (TIER_ORDER[currentTier] ?? 0);
+                      const isDowngrade = (TIER_ORDER[tier] ?? 0) < (TIER_ORDER[currentTier] ?? 0);
                       const isChanging = changingTier === tier;
                       return (
                         <div
@@ -463,10 +517,10 @@ function SubscriptionPageContent() {
                           }`}
                         >
                           <div className="flex items-baseline justify-between">
-                            <span className="text-lg font-bold text-white">{tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
-                            <span className="text-sm text-zinc-400">{p.priceNum}/mo</span>
+                            <span className="text-lg font-bold text-white">{capitalizeTier(tier)}</span>
+                            <span className="text-sm text-zinc-400">${info.priceMonthly}/mo</span>
                           </div>
-                          <p className="text-xs text-zinc-500">{p.credits}</p>
+                          <p className="text-xs text-zinc-500">{info.creditsPerMonth.toLocaleString()} credits / month</p>
                           {isCurrent ? (
                             <div className="w-full h-9 rounded-lg flex items-center justify-center text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                               Current plan
@@ -490,12 +544,12 @@ function SubscriptionPageContent() {
                               ) : isUpgrade ? (
                                 <>
                                   <ArrowRight className="size-3.5 mr-1" />
-                                  Upgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                                  Upgrade to {capitalizeTier(tier)}
                                 </>
                               ) : isDowngrade ? (
                                 <>
                                   <TrendingDown className="size-3.5 mr-1" />
-                                  Downgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                                  Downgrade to {capitalizeTier(tier)}
                                 </>
                               ) : null}
                             </Button>
@@ -505,25 +559,33 @@ function SubscriptionPageContent() {
                     })}
                   </div>
 
+                  {/* Cancel subscription shortcut */}
+                  <div className="mt-4 max-w-4xl">
+                    <button
+                      onClick={handleManageBilling}
+                      disabled={openingPortal || !details?.canManageBilling}
+                      className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
+                    >
+                      <XCircle className="size-3.5" />
+                      Cancel subscription
+                    </button>
+                  </div>
+
                   {/* How plan changes work */}
                   <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-4 max-w-4xl">
                     <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">How plan changes work</h3>
                     <ul className="space-y-2 text-sm text-zinc-300">
                       <li className="flex gap-2">
-                        <span className="text-emerald-400 shrink-0 font-medium">Credits:</span>
-                        <span>Your existing balance is kept. When upgrading, you immediately receive the new plan&apos;s full monthly credit allocation on top of your current balance.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-emerald-400 shrink-0 font-medium">Billing date:</span>
-                        <span>Your existing billing cycle and renewal date stay the same — plan changes take effect immediately but do not reset your billing date.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-emerald-400 shrink-0 font-medium">Proration:</span>
-                        <span>Unused days on your current plan are credited against the new plan&apos;s charge. You pay only the prorated difference — no separate refund is issued to your card.</span>
+                        <span className="text-emerald-400 shrink-0 font-medium">Upgrade:</span>
+                        <span>Takes effect immediately. Your billing cycle resets, and you receive the new plan&apos;s full monthly credits on top of your existing balance. Unused days on the old plan are prorated as a credit.</span>
                       </li>
                       <li className="flex gap-2">
                         <span className="text-amber-400 shrink-0 font-medium">Downgrade:</span>
-                        <span>Downgrades take effect at the end of the current billing period. You keep your current plan&apos;s access until then.</span>
+                        <span>Takes effect immediately. Your billing cycle stays the same, and unused time on the higher plan is prorated as a credit toward the new plan. No new credits are granted — your existing balance is kept.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-emerald-400 shrink-0 font-medium">Proration:</span>
+                        <span>Stripe calculates the prorated difference automatically — you only pay (or receive credit for) the remaining days in your billing period.</span>
                       </li>
                     </ul>
                   </div>
@@ -532,23 +594,23 @@ function SubscriptionPageContent() {
             </div>
           )}
 
-          {/* ───── FREE STATE：三档选一 ───── */}
+          {/* ───── FREE STATE ───── */}
           {!initialLoading && currentTier === 'free' && (
             <div className="flex flex-col">
               {/* Header */}
               <div className="px-6 md:px-10 pt-8 pb-6 border-b border-zinc-800/80">
                 <div className="max-w-5xl">
                   <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">Choose your plan</h1>
-                    <p className="text-zinc-500 text-sm">Unlock the full experience — AI voices, powerful models, and monthly credits. Cancel anytime.</p>
+                  <p className="text-zinc-500 text-sm">Unlock the full experience — AI voices, powerful models, and monthly credits. Cancel anytime.</p>
                 </div>
               </div>
 
               {/* Pricing cards */}
               <div className="px-6 md:px-10 py-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
 
                   {/* Free */}
-                  <div className="flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden opacity-75">
+                  <div className="flex flex-col rounded-2xl border-2 border-zinc-700/50 bg-zinc-900/50 overflow-hidden">
                     <div className="p-6">
                       <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Free</div>
                       <div className="flex items-baseline gap-1 mb-1">
@@ -557,52 +619,52 @@ function SubscriptionPageContent() {
                       </div>
                       <p className="text-zinc-600 text-xs mt-2">Start free · buy credits as you go</p>
                     </div>
-                    <div className="px-6 pb-3">
+                    <div className="px-6 pb-5 flex-1 flex flex-col">
                       <div className="h-px bg-zinc-800 mb-4" />
-                      <ul className="space-y-2.5 mb-5">
+                      <ul className="space-y-2.5 flex-1 mb-5">
                         {FREE_FEATURES.map((f) => (
                           <li key={f} className="flex items-center gap-2 text-xs text-zinc-500">
                             <CheckCircle2 className="size-3.5 text-zinc-600 shrink-0" />{f}
                           </li>
                         ))}
                       </ul>
-                      <div className="w-full h-10 rounded-xl flex items-center justify-center text-xs font-semibold bg-zinc-800/80 text-zinc-500 border border-zinc-700/50">
+                      <div className="w-full h-11 rounded-xl flex items-center justify-center text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
                         Current plan
                       </div>
                     </div>
                   </div>
 
                   {/* Pro / Plus / Ultra */}
-                  {(['pro', 'plus', 'ultra'] as SubscriptionTier[]).map((tier) => {
-                    const p = PLAN_PRICING[tier];
-                    if (!p) return null;
-                    const hasBadge = !!p.badge;
+                  {(['pro', 'plus', 'ultra'] as PaidTier[]).map((tier) => {
+                    const info = SUBSCRIPTION_TIERS[tier];
+                    const style = PLAN_STYLES[tier];
+                    const hasBadge = !!style.badge;
                     return (
                       <div
                         key={tier}
-                        className={`relative flex flex-col rounded-2xl border-2 overflow-hidden transition-all duration-200 ${p.borderColor} bg-zinc-900 ${hasBadge ? 'shadow-xl shadow-fuchsia-500/10 scale-[1.02]' : 'hover:scale-[1.01]'}`}
+                        className={`relative flex flex-col rounded-2xl border-2 overflow-hidden transition-all duration-200 ${style.borderColor} bg-zinc-900 ${hasBadge ? 'shadow-xl shadow-fuchsia-500/10 scale-[1.02]' : 'hover:scale-[1.01]'}`}
                       >
                         {/* Badge */}
-                        {p.badge && (
-                          <div className={`absolute top-0 inset-x-0 flex justify-center`}>
-                            <div className={`bg-gradient-to-r ${p.badgeGradient} text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1 rounded-b-lg`}>
-                              {p.badge}
+                        {style.badge && (
+                          <div className="absolute top-0 inset-x-0 flex justify-center">
+                            <div className={`bg-gradient-to-r ${style.badgeGradient} text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1 rounded-b-lg`}>
+                              {style.badge}
                             </div>
                           </div>
                         )}
 
-                        <div className={`p-6 ${p.badge ? 'pt-8' : ''}`}>
+                        <div className={`p-6 ${hasBadge ? 'pt-8' : ''}`}>
                           <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">
                             {tier}
                           </div>
                           <div className="flex items-baseline gap-1 mb-3">
-                            <span className="text-4xl font-black text-white">{p.priceNum}</span>
+                            <span className="text-4xl font-black text-white">${info.priceMonthly}</span>
                             <span className="text-zinc-500 text-sm">/ mo</span>
                           </div>
                           {/* Credits highlight */}
-                          <div className={`rounded-xl bg-gradient-to-r ${p.accentFrom} ${p.accentTo} p-px`}>
+                          <div className={`rounded-xl bg-gradient-to-r ${style.accentFrom} ${style.accentTo} p-px`}>
                             <div className="rounded-[11px] bg-zinc-900 px-3 py-2">
-                              <div className="text-sm font-bold text-white tabular-nums">{p.credits.replace(' / month', '')}</div>
+                              <div className="text-sm font-bold text-white tabular-nums">{info.creditsPerMonth.toLocaleString()} credits</div>
                               <div className="text-[11px] text-zinc-400 mt-0.5">renews monthly</div>
                             </div>
                           </div>
@@ -611,7 +673,7 @@ function SubscriptionPageContent() {
                         <div className="px-6 pb-5 flex-1 flex flex-col">
                           <div className="h-px bg-zinc-800 mb-4" />
                           <ul className="space-y-2.5 flex-1 mb-5">
-                            {BASE_PAID_FEATURES.map((f) => (
+                            {PAID_FEATURES.map((f) => (
                               <li key={f} className="flex items-center gap-2 text-xs text-zinc-300">
                                 <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0" />{f}
                               </li>
@@ -634,12 +696,12 @@ function SubscriptionPageContent() {
                           <Button
                             onClick={() => handleUpgrade(tier)}
                             disabled={loading || syncing}
-                            className={`w-full h-11 rounded-xl text-sm font-bold bg-gradient-to-r ${p.accentFrom} ${p.accentTo} hover:opacity-90 text-white shadow-lg border-0`}
+                            className={`w-full h-11 rounded-xl text-sm font-bold bg-gradient-to-r ${style.accentFrom} ${style.accentTo} hover:opacity-90 text-white shadow-lg border-0`}
                           >
                             {syncing ? 'Syncing…' : loadingTier === tier ? (
                               <><RefreshCw className="size-4 mr-1.5 animate-spin" />Processing…</>
                             ) : (
-                              <>Get {tier.charAt(0).toUpperCase() + tier.slice(1)}<ArrowRight className="size-4 ml-1.5" /></>
+                              <>Get {capitalizeTier(tier)}<ArrowRight className="size-4 ml-1.5" /></>
                             )}
                           </Button>
                           <p className="text-center text-[10px] text-zinc-600 mt-2.5">Secured by Stripe</p>
@@ -649,8 +711,32 @@ function SubscriptionPageContent() {
                   })}
                 </div>
 
+                {/* Credits usage reference */}
+                <div className="mt-6 max-w-md mx-auto rounded-xl border border-zinc-800 bg-zinc-900/30 px-5 py-4">
+                  <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide mb-2.5 text-center">Approximate credit usage</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-zinc-400">
+                    <span>AI message</span><span className="text-right text-zinc-300">~1 credit</span>
+                    <span>Image generation</span><span className="text-right text-zinc-300">~10 credits</span>
+                    <span>AI voice line</span><span className="text-right text-zinc-300">~3 credits</span>
+                  </div>
+                </div>
+
+                {/* Sync button for edge cases */}
+                {session?.access_token && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={handleSyncPlan}
+                      disabled={syncing}
+                      className="inline-flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw className={`size-3 ${syncing ? 'animate-spin' : ''}`} />
+                      Sync my plan
+                    </button>
+                  </div>
+                )}
+
                 {/* Footer note */}
-                <p className="text-center text-xs text-zinc-600 mt-6 max-w-xl mx-auto">
+                <p className="text-center text-xs text-zinc-600 mt-4 max-w-xl mx-auto">
                   Cancel anytime · Unused credits carry over · Prorated billing when upgrading
                 </p>
               </div>
