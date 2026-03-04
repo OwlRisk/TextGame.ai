@@ -32,6 +32,177 @@ interface BlogPost {
 
 const posts: BlogPost[] = [
   {
+    slug: "text-based-games-comeback",
+    title: "Text-Based Games Are Back — Why AI Makes Them Better Than Ever",
+    excerpt:
+      "From Zork to AI-powered narratives — how LLMs are reviving text adventures with unlimited stories, multiplayer, and accessibility for everyone.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Editorial", "AI Games"],
+  },
+  {
+    slug: "ai-npc-explained",
+    title: "AI NPCs Explained: How AI Characters Make Games Better",
+    excerpt:
+      "What are AI NPCs, how do they differ from scripted characters, and why are they transforming gaming? Explore the tech behind AI game characters.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Guide", "AI Characters"],
+  },
+  {
+    slug: "textgame-vs-janitor-ai",
+    title: "textgame.ai vs Janitor AI — Which AI Roleplay Platform is Better?",
+    excerpt:
+      "Comparing textgame.ai and Janitor AI: multiplayer games vs character chat, structured rules vs freeform roleplay. Find which platform fits your needs.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Comparison", "AI Roleplay"],
+  },
+  {
+    slug: "among-us-alternatives",
+    title: "10 Best Among Us Alternatives — Social Deduction Games Online (2026)",
+    excerpt:
+      "Love Among Us? Try these 10 social deduction games online — Werewolf, Mafia, Secret Hitler, Avalon, Spyfall, and more. Many with AI players.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Listicle", "Social Deduction"],
+  },
+  {
+    slug: "ai-trivia-games",
+    title: "Best AI Trivia Games Online — Play Free with Friends (2026)",
+    excerpt:
+      "Discover AI-powered trivia games with unlimited questions, adaptive difficulty, and multiplayer. Compare with Kahoot, Trivia Crack, and more.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Trivia", "Listicle"],
+  },
+  {
+    slug: "ai-tarot-reading",
+    title: "AI Tarot Reading — Get a Free Online Tarot Card Reading",
+    excerpt:
+      "Get a free AI tarot card reading online. Learn how AI interprets tarot cards, explore major arcana meanings, reading types, and try an interactive AI tarot experience.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Tarot", "Guide"],
+  },
+  {
+    slug: "host-game-night-online",
+    title: "How to Host a Virtual Game Night — Complete Guide (2026)",
+    excerpt:
+      "Everything you need to host an amazing virtual game night — choosing games, inviting friends, tech setup, icebreakers, and how AI simplifies hosting for any group size.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Guide", "Game Night"],
+  },
+  {
+    slug: "ai-dungeon-alternatives",
+    title: "7 Best AI Dungeon Alternatives in 2026 — Free & Multiplayer",
+    excerpt:
+      "Comparing the best AI Dungeon alternatives in 2026 — from multiplayer AI games to open-source text adventures. Find free options with better stories and multiplayer support.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Comparison", "AI Games"],
+  },
+  {
+    slug: "resistance-vs-avalon",
+    title: "The Resistance vs Avalon — Rules, Differences & How to Play Online",
+    excerpt:
+      "Compare The Resistance and Avalon: rules, roles like Merlin, key differences, which to choose for your group, and how to play both online for free with AI.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Comparison", "Social Deduction"],
+  },
+  {
+    slug: "free-online-games-with-friends",
+    title: "20 Best Free Online Games to Play with Friends — No Download (2026)",
+    excerpt:
+      "The ultimate list of free online multiplayer games — social deduction, word games, trivia, escape rooms, storytelling, and more. No download needed.",
+    date: "March 4, 2026",
+    readTime: "10 min read",
+    tags: ["Listicle", "Multiplayer", "Free Games"],
+  },
+  {
+    slug: "ai-murder-mystery-games",
+    title: "AI Murder Mystery Games — Host a Virtual Whodunit Online",
+    excerpt:
+      "Host an AI-powered murder mystery game online. No prep, no moderator — the AI runs the clues, suspects, and reveals. Perfect for parties and team events.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Murder Mystery", "Guide"],
+  },
+  {
+    slug: "ai-text-adventure-games",
+    title: "Best AI Text Adventure Games in 2026 — Play Free Online",
+    excerpt:
+      "The best AI-powered text adventure games you can play right now — from AI Dungeon to multiplayer story games. Compare platforms and find your next adventure.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Listicle", "Text Adventure"],
+  },
+  {
+    slug: "play-dnd-with-ai",
+    title: "How to Play D&D with AI — Solo or Multiplayer (2026 Guide)",
+    excerpt:
+      "Use AI as your Dungeon Master for D&D-style RPGs. Play solo or with friends — create characters, run campaigns, and explore worlds with an AI DM.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Guide", "D&D", "RPG"],
+  },
+  {
+    slug: "play-avalon-online",
+    title: "Play Avalon Online with AI — Rules, Roles & Strategy Guide",
+    excerpt:
+      "Learn the rules of Avalon, every role explained (Merlin, Assassin, Percival, Morgana), quest mechanics, strategy tips, and how to play online with AI.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Avalon", "How to Play"],
+  },
+  {
+    slug: "play-codenames-online",
+    title: "Play Codenames Online with AI — Rules, Tips & Free Game",
+    excerpt:
+      "Learn the rules of Codenames, Spymaster vs Operative strategy, how to give and guess clues, and play online for free with an AI partner.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Codenames", "How to Play"],
+  },
+  {
+    slug: "play-spyfall-online",
+    title: "Play Spyfall Online Free — Rules, Tips & AI-Hosted Game",
+    excerpt:
+      "Learn the rules of Spyfall, how locations work, spy vs regular player dynamics, question strategy, and play online with an AI host for free.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Spyfall", "How to Play"],
+  },
+  {
+    slug: "play-clue-online",
+    title: "Play Clue (Cluedo) Online with AI — Rules, Characters & Free Game",
+    excerpt:
+      "Learn the rules of Clue/Cluedo, all characters and weapons, deduction strategy, and play online for free with an AI Game Master.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Clue", "How to Play"],
+  },
+  {
+    slug: "play-undercover-online",
+    title: "Play Who's the Spy (Undercover) Online — Rules & Strategy",
+    excerpt:
+      "Learn the rules of Who's the Spy (Undercover / 谁是卧底), role strategy for Civilian, Undercover, and Mr. White, and play online with AI.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Undercover", "How to Play"],
+  },
+  {
+    slug: "play-escape-room-online",
+    title: "Play Escape Room Games Online — Free AI-Powered Puzzles",
+    excerpt:
+      "Play virtual escape rooms powered by AI — solve puzzles, crack codes, and escape before time runs out. Free, no download, with an AI host.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Escape Room", "Guide"],
+  },
+  {
     slug: "play-mafia-online",
     title: "Play Mafia Online: Free AI-Powered Game for 3-15 Players",
     excerpt:
