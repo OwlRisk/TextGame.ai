@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import DiscoverView from "./discover-view";
 
 export const metadata: Metadata = {
-  title: "Discover Games",
+  title: "Discover AI Text Games — Werewolf, Mafia, Mystery & More",
   description:
-    "Browse AI-powered text games created by the community. Find werewolf, mystery, adventure and more — play instantly with an AI host.",
+    "Browse 20+ AI-powered multiplayer text game templates. Play Werewolf, Mafia, Secret Hitler, Who's the Spy, Murder Mystery, Trivia and more — or create your own custom game in minutes.",
   alternates: { canonical: "/discover" },
   openGraph: {
-    title: "Discover Games · textgame.ai",
+    title: "Discover AI Text Games · textgame.ai",
     description:
-      "Browse AI-powered text games created by the community. Find werewolf, mystery, adventure and more.",
+      "20+ multiplayer text game templates powered by AI. Werewolf, Mafia, Mystery, Trivia — pick a template and play in seconds.",
     type: "website",
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover Games · textgame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover AI Text Games · textgame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Discover Games · textgame.ai",
-    description: "Browse AI-powered text games created by the community. Find werewolf, mystery, adventure and more.",
+    title: "Discover AI Text Games · textgame.ai",
+    description: "20+ multiplayer text game templates powered by AI. Werewolf, Mafia, Mystery, Trivia — pick a template and play in seconds.",
     images: ["/hero.webp"],
   },
 };

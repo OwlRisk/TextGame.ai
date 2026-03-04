@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Users, Clock, Play, Lightbulb, Crown, Flame, Swords, Drama, MessageCircle, Search } from "lucide-react";
+import Link from "next/link";
+import { Users, Clock, Play, Lightbulb, Crown, Flame, Swords, Drama, MessageCircle, Search, Sparkles } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 
@@ -932,11 +933,11 @@ const CATEGORIES = [
 ] as const;
 
 const CATEGORY_MAP: Record<string, GameTemplate[]> = {
-  deduction: [...CORE_TEMPLATES.filter(t => t.category === "Social Deduction"), ...SOCIAL_DEDUCTION],
-  party:     PARTY_GAMES,
-  mystery:   MYSTERY_GAMES,
-  creative:  ROLEPLAY_GAMES,
-  brain:     EDUCATIONAL_GAMES,
+  deduction: [...CORE_TEMPLATES.filter(t => t.category === "Social Deduction"), ...SOCIAL_DEDUCTION, ...EXTRA_GAMES.filter(t => t.category === "Social Deduction")],
+  party:     [...PARTY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Party")],
+  mystery:   [...MYSTERY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Mystery")],
+  creative:  [...ROLEPLAY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Creative")],
+  brain:     [...EDUCATIONAL_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Knowledge" || t.category === "Educational" || t.category === "Puzzle")],
 };
 
 export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
@@ -969,65 +970,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     onCreateGame({ ...preset, rules: preset.rules?.trim() || buildFallbackRules(preset.name) });
   };
 
-  const renderGameCard = (template: GameTemplate, size: "small" | "medium" = "small") => {
-    if (size === "medium") {
-      return (
-        <div
-          key={template.id}
-          className="group relative bg-zinc-900/60 border border-zinc-800 hover:border-violet-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer"
-          onClick={() => handleSelect(template)}
-        >
-          {/* Cover image */}
-          <div className="relative h-36 overflow-hidden">
-            {template.cover ? (
-              <Image
-                src={template.cover}
-                alt={template.name}
-                fill
-                sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            ) : (
-              <div className={`w-full h-full bg-gradient-to-br ${template.color} flex items-center justify-center text-5xl`}>
-                {template.icon}
-              </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
-            {template.badge && (
-              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-zinc-950/70 backdrop-blur-sm border border-zinc-700 text-xs font-bold text-white">
-                {template.badge}
-              </div>
-            )}
-          </div>
-
-          <div className="p-5">
-            <h3 className="text-base font-black text-white mb-1.5 group-hover:text-violet-300 transition-colors">
-              {template.name}
-            </h3>
-
-            <p className="text-sm text-zinc-400 mb-4 leading-relaxed line-clamp-2">{template.description}</p>
-
-            <div className="flex items-center gap-3 text-xs text-zinc-500 mb-4">
-              <div className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                <span>{template.players}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                <span>{template.duration}</span>
-              </div>
-              <Badge className={`${getStyleColor(template.style)} border text-xs`}>{template.style}</Badge>
-            </div>
-
-            <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold">
-              <Play className="h-3.5 w-3.5 mr-2" />
-              Use Template
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
+  const renderGameCard = (template: GameTemplate) => {
     return (
       <div
         key={template.id}
@@ -1069,6 +1012,12 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               <span className="text-zinc-700">·</span>
               <Clock className="h-3 w-3" />
               <span>{template.duration}</span>
+              {parseInt(template.players) > 1 && (
+                <>
+                  <span className="text-zinc-700">·</span>
+                  <span className="text-emerald-500 font-semibold">Multiplayer</span>
+                </>
+              )}
             </div>
             <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
               Play →
@@ -1082,7 +1031,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
   // Filtered game list for non-"all" tabs
   const filteredGames = (() => {
     const pool = activeCategory === "all"
-      ? [...CORE_TEMPLATES, ...SOCIAL_DEDUCTION, ...PARTY_GAMES, ...MYSTERY_GAMES, ...ROLEPLAY_GAMES, ...EDUCATIONAL_GAMES]
+      ? [...CORE_TEMPLATES, ...SOCIAL_DEDUCTION, ...PARTY_GAMES, ...MYSTERY_GAMES, ...ROLEPLAY_GAMES, ...EDUCATIONAL_GAMES, ...EXTRA_GAMES]
       : (CATEGORY_MAP[activeCategory] ?? []);
     if (!searchQuery.trim()) return pool;
     const q = searchQuery.toLowerCase();
@@ -1104,11 +1053,17 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
-            Choose Your <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Adventure</span>
+            Discover <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Games</span>
           </h1>
-          <p className="text-lg text-zinc-400 max-w-xl mx-auto">
-            Conversation-based games powered by AI. Pick a template and start playing in seconds.
+          <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
+            20+ AI-powered templates — or describe your own. Pick one and start playing in seconds.
           </p>
+          <Link href="/create">
+            <Button variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white font-bold">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Create Custom Game
+            </Button>
+          </Link>
         </div>
 
         {/* Featured Template — only show on "all" tab with no search */}
@@ -1116,7 +1071,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <Crown className="h-5 w-5 text-yellow-500" />
-              <h2 className="text-lg font-black text-white">Featured This Week</h2>
+              <h2 className="text-lg font-black text-white">Featured</h2>
             </div>
 
             <div
@@ -1222,7 +1177,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {/* Game Grid */}
         {filteredGames.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredGames.map((template) => renderGameCard(template, "small"))}
+            {filteredGames.map((template) => renderGameCard(template))}
           </div>
         ) : (
           <div className="text-center py-20 text-zinc-500">
