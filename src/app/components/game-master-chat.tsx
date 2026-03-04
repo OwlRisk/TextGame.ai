@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -173,7 +173,7 @@ function cleanGMMessageContentForDisplay(content: string): string {
 // Format message content with markdown-like syntax
 function formatMessage(content: string) {
   const lines = content.split('\n');
-  const elements: JSX.Element[] = [];
+  const elements: React.JSX.Element[] = [];
   
   lines.forEach((line, index) => {
     const trimmedLine = line.trim();

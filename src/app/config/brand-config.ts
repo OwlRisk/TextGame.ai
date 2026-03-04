@@ -9,7 +9,7 @@ export const BRAND_CONFIG = {
   logo: {
     square: "/logo.svg",
     horizontal: "/logo-horizontal.svg",
-    favicon: "/favicon.svg",
+    favicon: "/favicon.ico",
   },
 
   colors: {

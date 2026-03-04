@@ -1192,16 +1192,24 @@ function FAQSection() {
           >
             <button
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
+              aria-expanded={openIndex === index}
+              aria-controls={`faq-panel-${index}`}
               className="w-full px-6 py-5 flex items-center justify-between gap-4 text-left group"
             >
               <span className="font-bold text-white group-hover:text-violet-400 transition-colors">
                 {faq.question}
               </span>
               <ChevronDown
+                aria-hidden="true"
                 className={`h-5 w-5 text-zinc-400 flex-shrink-0 transition-transform duration-300 ${openIndex === index ? "rotate-180 text-violet-400" : ""}`}
               />
             </button>
-            <div className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-80" : "max-h-0"}`}>
+            <div
+              id={`faq-panel-${index}`}
+              role="region"
+              aria-labelledby={`faq-btn-${index}`}
+              className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-80" : "max-h-0"}`}
+            >
               <div className="px-6 pb-5 text-sm text-zinc-400 leading-relaxed">
                 {faq.answer}
               </div>

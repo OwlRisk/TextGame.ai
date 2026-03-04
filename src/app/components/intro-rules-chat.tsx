@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -31,10 +31,10 @@ const WELCOME_MESSAGE: ChatMessage = {
   content: WELCOME_CONTENT,
 };
 
-function parseInlineFormatting(text: string): (string | JSX.Element)[] {
+function parseInlineFormatting(text: string): (string | React.JSX.Element)[] {
   return parseInlineFormattingShared(text, {
     boldClassName: "font-semibold text-zinc-100",
-  }) as (string | JSX.Element)[];
+  }) as (string | React.JSX.Element)[];
 }
 
 function formatMessageContent(content: string): React.ReactNode {

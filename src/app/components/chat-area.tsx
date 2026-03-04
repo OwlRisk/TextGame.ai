@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX, ArrowDown, Trophy, RotateCcw, Timer, Vote } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
@@ -19,9 +19,9 @@ import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
 import { formatMessageTime, stripEmotionTags } from "@/lib/chat-utils";
 
-function formatMessage(content: string): JSX.Element {
+function formatMessage(content: string): React.JSX.Element {
   const lines = content.split('\n');
-  const elements: JSX.Element[] = [];
+  const elements: React.JSX.Element[] = [];
   
   lines.forEach((line, index) => {
     const trimmedLine = line.trim();
@@ -772,7 +772,7 @@ export function ChatArea({
     return () => window.removeEventListener('focusGameInput', handleFocusInput);
   }, [isRecording]);
 
-  const handleSendRef = useRef<(override?: string) => void>();
+  const handleSendRef = useRef<(override?: string) => void>(undefined);
   const sendingLockRef = useRef(false);
   handleSendRef.current = (override?: string) => {
     if (sendingLockRef.current) return;

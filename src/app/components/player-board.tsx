@@ -1,3 +1,4 @@
+import React from "react";
 import { X, User, Heart, Zap, Shield, Sword, Package, Sparkles, Plus, Minus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -56,7 +57,7 @@ const rarityColors = {
   legendary: "bg-amber-600 text-amber-100",
 };
 
-const attributeIcons: Record<string, JSX.Element> = {
+const attributeIcons: Record<string, React.JSX.Element> = {
   health: <Heart className="h-4 w-4" />,
   mana: <Zap className="h-4 w-4" />,
   defense: <Shield className="h-4 w-4" />,
