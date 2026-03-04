@@ -1,76 +1,37 @@
 /**
- * Game phase and state for Host-driven flow.
- * Tracks round, phase (night/day/voting/etc.), and eliminated players.
+ * Universal game phase state — driven by the AI Game Master via directives.
+ * No game-specific logic here; the GM decides phases, moods, votes, and timers.
  */
 
-export type GamePhaseKind =
-  | "intro"
-  | "night"
-  | "day"
-  | "discussion"
-  | "voting"
-  | "elimination"
-  | "game-over";
+export type GamePhaseKind = "waiting" | "active" | "ended";
+
+export type GameMood = "neutral" | "dark" | "light";
+
+export interface ActiveVote {
+  question: string;
+  /** Explicit options (e.g. ["Approve","Reject"]), or "players" to auto-use alive non-GM players */
+  options: string[] | "players";
+}
 
 export interface GamePhaseState {
-  round: number;
   phase: GamePhaseKind;
-  eliminatedPlayerIds: string[];
-  /** For werewolf: who was eliminated last night (to announce at day start) */
-  lastNightVictimId: string | null;
-  /** For voting: who was just eliminated (to reveal role) */
-  lastVotedOutId: string | null;
+  /** GM-set label shown in the channel header (e.g. "Night · Round 2", "Puzzle 3") */
+  phaseLabel: string;
+  /** Visual mood for the chat area background */
+  mood: GameMood;
+  /** Structured vote initiated by GM */
+  activeVote: ActiveVote | null;
+  /** Countdown timer end timestamp (Date.now() based), null = no timer */
+  timerEndsAt: number | null;
+  /** Summary text from GAME_OVER directive */
+  gameOverSummary: string;
 }
 
 export const DEFAULT_GAME_PHASE: GamePhaseState = {
-  round: 1,
-  phase: "intro",
-  eliminatedPlayerIds: [],
-  lastNightVictimId: null,
-  lastVotedOutId: null,
+  phase: "waiting",
+  phaseLabel: "",
+  mood: "neutral",
+  activeVote: null,
+  timerEndsAt: null,
+  gameOverSummary: "",
 };
-
-export function nextPhaseForWerewolf(
-  current: GamePhaseState
-): GamePhaseKind | null {
-  switch (current.phase) {
-    case "intro":
-      return "night";
-    case "night":
-      return "day";
-    case "day":
-      return "discussion";
-    case "discussion":
-      return "voting";
-    case "voting":
-      return "elimination";
-    case "elimination":
-      return "night"; // next round
-    case "game-over":
-      return null;
-    default:
-      return "night";
-  }
-}
-
-export function phaseLabel(phase: GamePhaseKind, round: number): string {
-  const r = `Round ${round}`;
-  switch (phase) {
-    case "intro":
-      return "Intro";
-    case "night":
-      return `${r} · Night`;
-    case "day":
-      return `${r} · Day`;
-    case "discussion":
-      return `${r} · Discussion`;
-    case "voting":
-      return `${r} · Voting`;
-    case "elimination":
-      return `${r} · Elimination`;
-    case "game-over":
-      return "Game Over";
-    default:
-      return r;
-  }
-}

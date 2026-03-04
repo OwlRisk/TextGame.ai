@@ -11,6 +11,13 @@ import { ChatArea } from "@/app/components/chat-area";
 import { PlayerPanelWithBoard } from "@/app/components/player-panel-with-board";
 import type { PlayerBoardData } from "@/app/components/player-board";
 import { parseHostActions, resolvePlayerRefToId } from "@/lib/host-actions";
+import { isPlayerEliminated } from "@/lib/player-badges";
+import {
+  resolveChannelByName as resolveChannelByNameUtil,
+  getStreamingDisplay as getStreamingDisplayUtil,
+  splitHostOutput as splitHostOutputUtil,
+  sectionId as sectionIdUtil,
+} from "@/lib/game-host-utils";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
@@ -131,6 +138,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameEvents,
     setGameEvents,
     saveNow,
+    phaseLabel,
+    setPhaseLabel,
+    mood,
+    setMood,
+    activeVote,
+    setActiveVote,
+    timerEndsAt,
+    setTimerEndsAt,
+    gameOverSummary,
+    setGameOverSummary,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -416,6 +433,36 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return () => { if (timer) clearTimeout(timer); };
   }, [gameId]);
 
+  // ─── Timer expiry: send system event when countdown reaches zero ─────────
+  useEffect(() => {
+    if (!timerEndsAt) return;
+    const remaining = timerEndsAt - Date.now();
+    if (remaining <= 0) {
+      addMessage({
+        senderId: "system",
+        senderName: "System",
+        senderAvatar: "#6366f1",
+        content: "[System: timer expired]",
+        isAI: false,
+        isSystemMessage: true,
+      });
+      setTimerEndsAt(null);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      addMessage({
+        senderId: "system",
+        senderName: "System",
+        senderAvatar: "#6366f1",
+        content: "[System: timer expired]",
+        isAI: false,
+        isSystemMessage: true,
+      });
+      setTimerEndsAt(null);
+    }, remaining);
+    return () => clearTimeout(timeout);
+  }, [timerEndsAt, addMessage, setTimerEndsAt]);
+
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
 
@@ -639,9 +686,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       defaultChannelId
     );
 
-    // No speaker assigned yet: anyone can speak until host assigns with NEXT_SPEAKER in their reply
     setCurrentSpeakerId(null);
-    setGamePhase("intro");
+    setGamePhase("active");
 
     // Let a few AI players reply to the host so the room feels active from the start
     seedInitialPlayerReplies({
@@ -886,8 +932,32 @@ Reusing the same title updates it in place. Good for: vote logs, phase results, 
 <CAPTION>optional caption</CAPTION>
 Size guide: square (general), portrait (character/card), landscape (scene/map). After these tags you may still add NEXT_SPEAKER.
 
+**Phase label** (update whenever the game phase changes):
+PHASE: <label>
+Examples: "Night · Round 2", "Round 3 of 10", "Chapter 3", "Puzzle 2 — The Library"
+
+**Announcement banner** (visual divider in chat at phase transitions):
+ANNOUNCE: <text>
+Examples: "Night Falls — Close Your Eyes", "Voting Time", "Round 3 Begins"
+
+**Mood/atmosphere** (shift chat background, optional):
+MOOD: dark | light | neutral
+Use "dark" for night/tense phases, "light" for day/calm phases. Default is neutral.
+
+**Structured voting** (when the game requires a vote):
+START_VOTE: <question>
+START_VOTE: <question> | option1, option2, ...
+Omit the | and options to auto-use alive non-GM players as vote candidates.
+END_VOTE
+Close voting when results are in or a new phase begins.
+
+**Countdown timer** (optional, for timed phases):
+TIMER: <seconds>
+TIMER: stop
+When timer reaches 0, a "[System: timer expired]" message is sent automatically.
+
 ## CURRENT GAME STATE
-Phase: ${gamePhase || "intro"}
+Phase: ${gamePhase || "waiting"}${phaseLabel ? ` (${phaseLabel})` : ""}
 
 Players:
 ${playerRoster}
@@ -920,9 +990,10 @@ ${rulesText || "No specific rules defined."}`.trim();
           const recordEventMatch = line.match(recordEventRegex);
           const eliminateMatch = line.match(eliminateRegex);
           if (gameOverMatch) {
-            // GAME_OVER: <winner description> — ends the game
             setGamePhase("ended");
-            newEvents.push(`GAME OVER — ${gameOverMatch[1].trim()}`);
+            const summary = gameOverMatch[1].trim();
+            setGameOverSummary(summary || "Game over!");
+            newEvents.push(`GAME OVER — ${summary}`);
           } else if (recordEventMatch) {
             newEvents.push(recordEventMatch[1].trim());
           } else if (eliminateMatch) {
@@ -1000,19 +1071,8 @@ ${rulesText || "No specific rules defined."}`.trim();
         | { type: "everyone" }
         | { type: "ai"; player: typeof players[0] };
 
-      // Fuzzy channel name resolver: exact match first, then partial containment.
-      // Prevents AUTO_CHANNEL / ACCESS directives from silently failing when the
-      // HOST slightly misspells a room name (e.g. "Werewolf only" vs "Werewolves only").
-      const resolveChannelByName = (name: string): string | null => {
-        const n = name.toLowerCase().trim();
-        const exact = gameRoomEntries.find((c) => c.name.toLowerCase() === n);
-        if (exact) return exact.id;
-        // Partial: query contains entry name, or entry name contains query
-        const partial = gameRoomEntries.find(
-          (c) => c.name.toLowerCase().includes(n) || n.includes(c.name.toLowerCase())
-        );
-        return partial?.id ?? null;
-      };
+      const resolveChannelByName = (name: string): string | null =>
+        resolveChannelByNameUtil(name, gameRoomEntries);
 
       const parseHostResult = (raw: string): { hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null } => {
         let hostContent = raw.trim();
@@ -1089,7 +1149,7 @@ ${rulesText || "No specific rules defined."}`.trim();
               }
             }
           } else if (a.type === "section") {
-            const id = "section-" + a.title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+            const id = sectionIdUtil(a.title);
             setSections((prev) => {
               const idx = prev.findIndex((s) => s.id === id);
               if (idx >= 0) {
@@ -1101,44 +1161,38 @@ ${rulesText || "No specific rules defined."}`.trim();
             });
           } else if (a.type === "game_over") {
             updateGame(gameId, { isActive: false });
-            toast.success(a.summary || "Game over!", {
-              duration: 8000,
-              description: "This game has been marked as completed.",
+            setGameOverSummary(a.summary || "Game over!");
+            setGamePhase("ended");
+          } else if (a.type === "phase") {
+            setPhaseLabel(a.label);
+          } else if (a.type === "announce") {
+            addMessage({
+              senderId: "system",
+              senderName: "Announcement",
+              senderAvatar: "#8b5cf6",
+              content: a.text,
+              isAI: false,
+              isAnnouncement: true,
             });
+          } else if (a.type === "mood") {
+            setMood(a.value);
+          } else if (a.type === "start_vote") {
+            setActiveVote({ question: a.question, options: a.options });
+          } else if (a.type === "end_vote") {
+            setActiveVote(null);
+          } else if (a.type === "timer") {
+            if (a.seconds === "stop") {
+              setTimerEndsAt(null);
+            } else {
+              setTimerEndsAt(Date.now() + a.seconds * 1000);
+            }
           }
         }
         return cleanContent;
       };
 
-      /**
-       * Extract the public message portion from the accumulated stream.
-       * With the new --- separator format: everything before --- is the public message.
-       * Fallback (no --- yet): strip any partial/complete [BOARD:...] blocks to avoid
-       * leaking private role info while the stream is still in progress.
-       */
-      const getStreamingDisplay = (raw: string): string => {
-        const sepIdx = raw.search(/\n---\s*(\n|$)/);
-        if (sepIdx >= 0) return raw.slice(0, sepIdx).trim();
-        // No separator yet — redact BOARD blocks as a safety fallback
-        let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
-        cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
-        return cleaned.replace(/\n{2,}/g, "\n\n").trim();
-      };
-
-      /**
-       * Split host output at --- into (message, directives).
-       * If no separator is found, treat the entire content as directives (fallback).
-       */
-      const splitHostOutput = (raw: string): { message: string; directives: string } => {
-        const sepIdx = raw.search(/\n---\s*(\n|$)/);
-        if (sepIdx >= 0) {
-          const message = raw.slice(0, sepIdx).trim();
-          const directives = raw.slice(raw.indexOf("\n", sepIdx + 1) + 1).trim();
-          return { message, directives };
-        }
-        // Fallback: old format — entire content goes through directive parsers and clean
-        return { message: "", directives: raw };
-      };
+      const getStreamingDisplay = getStreamingDisplayUtil;
+      const splitHostOutput = splitHostOutputUtil;
 
       /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
@@ -2098,6 +2152,27 @@ ${rulesText || "No specific rules defined."}`.trim();
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
             isOwner={isGuestPlayer ? false : (isOwner ? true : undefined)}
+            gamePhaseLabel={phaseLabel || undefined}
+            gameOverSummary={gameOverSummary || undefined}
+            onPlayAgain={gameOverSummary ? () => {
+              const preset = currentGame?.config?.template;
+              router.push(preset ? `/create?preset=${preset}` : "/create");
+            } : undefined}
+            onNewGame={gameOverSummary ? () => router.push("/create") : undefined}
+            isEliminated={(() => {
+              if (isGuestPlayer) return false;
+              const me = players.find(p => p.id === userId || p.name === humanGameIdentity?.name);
+              return me ? isPlayerEliminated(me) : false;
+            })()}
+            mood={mood}
+            activeVote={activeVote}
+            onVote={activeVote ? (choice: string) => {
+              const fn = isGuestPlayer ? handleGuestSendMessage : handleSendMessage;
+              fn(`I vote for ${choice}`);
+              setActiveVote(null);
+            } : undefined}
+            timerEndsAt={timerEndsAt}
+            alivePlayers={players.filter(p => !isPlayerEliminated(p))}
           />
         ) : null)}
       </div>

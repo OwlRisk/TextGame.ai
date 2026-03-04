@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
-import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX } from "lucide-react";
+import { Send, AlertCircle, User, Mic, MicOff, X, Check, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX, ArrowDown, Trophy, RotateCcw, Timer, Vote } from "lucide-react";
+import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -15,48 +16,8 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
 import { Player } from "@/app/components/player-panel";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
-import { parseInlineFormatting, EMOTION_EMOJI } from "@/lib/format-message";
-
-/**
- * Returns a human-readable timestamp for a chat message.
- * - Today      → "07:29 PM"
- * - Yesterday  → "Yesterday 07:29 PM"
- * - Older      → "Mar 1, 07:29 PM"
- */
-function formatMessageTime(date: Date): string {
-  const now = new Date();
-  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const isToday =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-  if (isToday) return timeStr;
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const isYesterday =
-    date.getFullYear() === yesterday.getFullYear() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getDate() === yesterday.getDate();
-  if (isYesterday) return `Yesterday ${timeStr}`;
-  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${timeStr}`;
-}
-
-// Format message content with markdown-like syntax
-
-/** Replace Inworld emotion/sound tags with their corresponding emoji in display text.
- *  Handles both underscore-form [clear_throat] and space-form [clears throat].
- *  Unknown tags (no matching emoji) are stripped entirely. */
-function stripEmotionTags(text: string): string {
-  return text
-    // Match [word], [word_word], and [word word] — but not markdown links [text](url)
-    .replace(/\[([a-z][a-z _]*)\](?!\()/gi, (_, tag: string) => {
-      const key = tag.toLowerCase();
-      const emoji = EMOTION_EMOJI[key] ?? EMOTION_EMOJI[key.replace(/ /g, '_')];
-      return emoji ?? '';
-    })
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-}
+import { parseInlineFormatting } from "@/lib/format-message";
+import { formatMessageTime, stripEmotionTags } from "@/lib/chat-utils";
 
 function formatMessage(content: string): JSX.Element {
   const lines = content.split('\n');
@@ -173,31 +134,7 @@ function PrivateMessagesSection({ messages, label = "Private from Host" }: { mes
  * this keeps voice output short even if the AI generates a long reply.
  */
 
-/** Max characters TTS will read for the Host narrator (~2-3 sentences, ~20-30s). */
-const MAX_TTS_CHARS_HOST = 300;
-/** Max characters TTS will read for AI players (~1 sentence, ~10s). */
-const MAX_TTS_CHARS_PLAYER = 150;
-
-function extractTTSSentences(
-  text: string,
-  fromChar: number,
-  maxChars: number = MAX_TTS_CHARS_HOST
-): { sentences: string[]; newOffset: number } {
-  // Hard cap: never read beyond maxChars into the message
-  const cappedText = text.slice(0, maxChars);
-  const slice = cappedText.slice(fromChar);
-  const sentences: string[] = [];
-  // Match anything up to and including . ! ? (greedy per sentence)
-  const re = /[^.!?]*[.!?]+(?:\s+|$)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(slice)) !== null) {
-    const s = match[0].trim();
-    if (s.length >= 8) sentences.push(s);
-    lastIndex = match.index + match[0].length;
-  }
-  return { sentences, newOffset: fromChar + lastIndex };
-}
+import { extractTTSSentences, MAX_TTS_CHARS_HOST, MAX_TTS_CHARS_PLAYER } from "@/lib/chat-utils";
 
 export interface Message {
   id: string;
@@ -217,6 +154,8 @@ export interface Message {
   /** True for messages sent by a non-owner guest (via /api/games/[gameId]/message). Used to prevent
    *  name-based player matching from accidentally assigning an AI avatar to a guest message. */
   isGuestMessage?: boolean;
+  /** True for announcement banners injected by ANNOUNCE directive */
+  isAnnouncement?: boolean;
 }
 
 interface ChatAreaProps {
@@ -240,7 +179,6 @@ interface ChatAreaProps {
   isUserHost?: boolean;
   gamePhaseLabel?: string;
   alivePlayers?: Player[];
-  lastVotedOutId?: string | null;
   /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
   quickReplies?: string[];
   /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
@@ -272,6 +210,22 @@ interface ChatAreaProps {
    * When undefined (single-player / unknown): each client calls the API directly.
    */
   isOwner?: boolean;
+  /** Game Over summary text from GAME_OVER directive */
+  gameOverSummary?: string;
+  /** Navigate to play again (same template) */
+  onPlayAgain?: () => void;
+  /** Navigate to new game */
+  onNewGame?: () => void;
+  /** True when this player has been eliminated (spectator mode) */
+  isEliminated?: boolean;
+  /** Chat area background mood driven by GM */
+  mood?: GameMood;
+  /** Structured vote from GM via START_VOTE */
+  activeVote?: ActiveVote | null;
+  /** Called when the user casts a vote */
+  onVote?: (choice: string) => void;
+  /** Countdown timer end timestamp */
+  timerEndsAt?: number | null;
 }
 
 export function ChatArea({ 
@@ -294,7 +248,6 @@ export function ChatArea({
   isUserHost = false,
   gamePhaseLabel,
   alivePlayers = [],
-  lastVotedOutId,
   quickReplies = [],
   introYourTurnHint,
   introYourTurnReply,
@@ -308,12 +261,24 @@ export function ChatArea({
   avatarImageUrls = {},
   onAvatarUrlLoaded,
   isOwner,
+  gameOverSummary,
+  onPlayAgain,
+  onNewGame,
+  isEliminated = false,
+  mood = "neutral",
+  activeVote,
+  onVote,
+  timerEndsAt,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [timerDisplay, setTimerDisplay] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
   // ─── TTS Broadcast: setup manager when gameId + isOwner are known ─────────
   // isOwner===undefined → single-player (no broadcast). isOwner===true → owner
@@ -842,11 +807,58 @@ export function ChatArea({
     handleSendRef.current?.(override);
   }, [onSendMessage]);
 
+  // ─── Scroll-to-bottom detection via IntersectionObserver ─────────────────
+  useEffect(() => {
+    const sentinel = bottomSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting;
+        setIsAtBottom(visible);
+        if (visible) setUnreadCount(0);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isAtBottom && messages.length > 0) {
+      setUnreadCount((c) => c + 1);
+    }
+  }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const scrollToBottom = useCallback(() => {
+    bottomSentinelRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  // ─── Countdown timer ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!timerEndsAt) { setTimerDisplay(""); return; }
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000));
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      setTimerDisplay(`${mins}:${secs.toString().padStart(2, "0")}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [timerEndsAt]);
+
   const canSend = !isGameActive || !currentSpeakerId || currentSpeakerId === userId;
-  const sendDisabled = !canSend || isSending || isRoundInProgress;
+  const inputDisabled = isEliminated || isSending || isRoundInProgress;
+  const sendDisabled = !canSend || inputDisabled;
+
+  const moodBg = mood === "dark"
+    ? "bg-gradient-to-b from-blue-950/30 via-[#0a0618]/95 to-zinc-900/90"
+    : mood === "light"
+      ? "bg-gradient-to-b from-amber-900/10 via-[#1a1008]/95 to-zinc-900/90"
+      : "bg-gradient-to-b from-zinc-900/90 via-[#0f0818]/95 to-zinc-900/90";
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-b from-zinc-900/90 via-[#0f0818]/95 to-zinc-900/90 min-w-0 h-full overflow-hidden backdrop-blur-sm">
+    <div className={`flex-1 flex flex-col min-w-0 h-full overflow-hidden backdrop-blur-sm transition-colors duration-1000 ${moodBg}`}>
       {/* Channel Header */}
       <div className="h-14 px-6 flex items-center justify-between border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md shadow-sm">
         <div className="flex items-center gap-2.5">
@@ -855,6 +867,16 @@ export function ChatArea({
           {gamePhaseLabel && (
             <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
               {gamePhaseLabel}
+            </span>
+          )}
+          {timerDisplay && (
+            <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${
+              timerEndsAt && timerEndsAt - Date.now() <= 10000
+                ? "bg-red-500/20 text-red-400 border-red-500/40 animate-pulse"
+                : "bg-zinc-700/50 text-zinc-300 border-zinc-600/40"
+            }`}>
+              <Timer className="inline h-3 w-3 mr-1 -mt-0.5" />
+              {timerDisplay}
             </span>
           )}
         </div>
@@ -891,8 +913,33 @@ export function ChatArea({
         </div>
       </div>
 
+      {/* Game Over Banner */}
+      {gameOverSummary && (
+        <div className="mx-4 mt-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-orange-500/10 px-5 py-4 backdrop-blur-sm">
+          <div className="flex items-start gap-3">
+            <Trophy className="h-6 w-6 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-bold text-amber-200 mb-1">Game Over</h3>
+              <p className="text-sm text-amber-100/80 leading-relaxed whitespace-pre-line">{gameOverSummary}</p>
+              <div className="flex gap-2 mt-3">
+                {onPlayAgain && (
+                  <Button size="sm" variant="outline" className="border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white gap-1.5" onClick={onPlayAgain}>
+                    <RotateCcw className="h-3.5 w-3.5" /> Play Again
+                  </Button>
+                )}
+                {onNewGame && (
+                  <Button size="sm" variant="outline" className="border-zinc-600 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white gap-1.5" onClick={onNewGame}>
+                    <Plus className="h-3.5 w-3.5" /> New Game
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages - min-h-0 allows flex child to shrink so scroll works; only render last visibleCount, load more on scroll up */}
-      <ScrollArea className="flex-1 min-h-0 px-6">
+      <ScrollArea className="flex-1 min-h-0 px-6 relative">
         <div className="py-6 space-y-5">
           {hasMoreOlder && (
             <div ref={loadMoreSentinelRef} className="flex justify-center py-3" aria-hidden>
@@ -926,6 +973,20 @@ export function ChatArea({
                 : rawContent;
             // revealTick is read here only to ensure re-renders propagate (value unused directly).
             void revealTick;
+
+            if (message.isAnnouncement) {
+              return (
+                <div key={message.id} className="my-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent" />
+                    <span className="text-sm font-bold text-violet-300 uppercase tracking-wider px-3 whitespace-nowrap">
+                      {message.content}
+                    </span>
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent" />
+                  </div>
+                </div>
+              );
+            }
 
             if (message.isSystemMessage) {
               return (
@@ -1167,18 +1228,63 @@ export function ChatArea({
           )}
           
           <div ref={scrollRef} />
+          <div ref={bottomSentinelRef} className="h-1" />
         </div>
+
+        {/* Scroll to bottom button */}
+        {!isAtBottom && (
+          <button
+            type="button"
+            onClick={scrollToBottom}
+            className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 rounded-full bg-zinc-800/90 border border-zinc-600/60 px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700 shadow-lg backdrop-blur-sm transition-all"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+            {unreadCount > 0 && <span className="font-semibold text-amber-400">{unreadCount}</span>}
+          </button>
+        )}
       </ScrollArea>
 
       {/* Input */}
       <div className="p-5 border-t border-violet-900/20 bg-zinc-900/50 backdrop-blur-md">
-        {canSend && isGameActive && currentSpeakerId === userId && (
+        {/* Eliminated spectator banner */}
+        {isEliminated && (
+          <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800/80 border border-zinc-600/40 text-zinc-400">
+            <span className="text-lg">👁️</span>
+            <span className="text-sm font-medium">You&apos;ve been eliminated — watching as spectator</span>
+          </div>
+        )}
+        {/* Vote panel */}
+        {activeVote && onVote && !isEliminated && (
+          <div className="mb-3 rounded-xl border border-violet-500/30 bg-violet-950/30 px-4 py-3 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-2.5">
+              <Vote className="h-4 w-4 text-violet-400" />
+              <span className="text-sm font-semibold text-violet-200">{activeVote.question}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(activeVote.options === "players"
+                ? alivePlayers.filter(p => !p.isGameMaster).map(p => p.name)
+                : activeVote.options
+              ).map((option) => (
+                <Button
+                  key={option}
+                  size="sm"
+                  variant="outline"
+                  className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/25 text-violet-300 hover:text-white"
+                  onClick={() => onVote(option)}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+        {canSend && !isEliminated && isGameActive && currentSpeakerId === userId && (
           <div className="mb-3 text-sm font-medium text-emerald-300 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             It's your turn to speak
           </div>
         )}
-        {!canSend && isGameActive && !isRecording && (
+        {!canSend && !isEliminated && isGameActive && !isRecording && (
           <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5" />
             Wait for your turn to speak
@@ -1272,14 +1378,7 @@ export function ChatArea({
                       type="button"
                       title={text}
                       disabled={sendDisabled}
-                      onClick={() => {
-                        setInput(text);
-                        setTimeout(() => {
-                          const ta = document.querySelector<HTMLTextAreaElement>("textarea[placeholder]");
-                          ta?.focus();
-                          ta?.setSelectionRange(ta.value.length, ta.value.length);
-                        }, 0);
-                      }}
+                      onClick={() => handleSend(text)}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <span className="text-amber-500/60 text-[10px]">⚡</span>

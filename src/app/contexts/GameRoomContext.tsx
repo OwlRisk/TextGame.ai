@@ -8,6 +8,8 @@ import { Message } from "@/app/components/chat-area";
 import { Player } from "@/app/components/player-panel";
 import {
   type GamePhaseState,
+  type GameMood,
+  type ActiveVote,
   DEFAULT_GAME_PHASE,
 } from "@/app/config/game-phase";
 
@@ -46,6 +48,18 @@ interface GameRoomContextType {
   /** True until room state has been loaded (from DB or localStorage). Use to show loading UI. */
   isRoomLoading: boolean;
 
+  // GM-driven universal UI state
+  /** GM-set phase label (e.g. "Night · Round 2", "Puzzle 3") */
+  phaseLabel: string;
+  /** Visual mood for the chat area background */
+  mood: GameMood;
+  /** Structured vote initiated by GM via START_VOTE */
+  activeVote: ActiveVote | null;
+  /** Countdown timer end timestamp (Date.now() based), null = no timer */
+  timerEndsAt: number | null;
+  /** Summary text from GAME_OVER directive */
+  gameOverSummary: string;
+
   // Actions - Messages
   addMessage: (msg: Omit<Message, "id" | "timestamp"> & { id?: string }, channelId?: string) => string | undefined;
   addStreamingMessage: (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string) => string;
@@ -76,6 +90,11 @@ interface GameRoomContextType {
   setHumanGameIdentity: React.Dispatch<React.SetStateAction<{ name: string } | null>>;
   /** Call when a generated avatar URL is first loaded so we persist it for this room (key = "name|type"). */
   onAvatarUrlLoaded: (key: string, url: string) => void;
+  setPhaseLabel: React.Dispatch<React.SetStateAction<string>>;
+  setMood: React.Dispatch<React.SetStateAction<GameMood>>;
+  setActiveVote: React.Dispatch<React.SetStateAction<ActiveVote | null>>;
+  setTimerEndsAt: React.Dispatch<React.SetStateAction<number | null>>;
+  setGameOverSummary: React.Dispatch<React.SetStateAction<string>>;
 
   // Utility
   resetGame: () => void;
@@ -114,6 +133,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [aiSuggestedPrompts, setAiSuggestedPrompts] = useState<string[]>([]);
   const [humanGameIdentity, setHumanGameIdentity] = useState<{ name: string } | null>(null);
   const [avatarImageUrls, setAvatarImageUrls] = useState<Record<string, string>>({});
+  const [phaseLabel, setPhaseLabel] = useState("");
+  const [mood, setMood] = useState<GameMood>("neutral");
+  const [activeVote, setActiveVote] = useState<ActiveVote | null>(null);
+  const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
+  const [gameOverSummary, setGameOverSummary] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveTrigger, setSaveTrigger] = useState(0);
 
@@ -191,6 +215,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.avatarImageUrls && typeof state.avatarImageUrls === "object") {
         setAvatarImageUrls(state.avatarImageUrls as Record<string, string>);
       }
+      if (typeof state.phaseLabel === "string") setPhaseLabel(state.phaseLabel);
+      if (state.mood === "dark" || state.mood === "light" || state.mood === "neutral") setMood(state.mood);
+      if (typeof state.gameOverSummary === "string") setGameOverSummary(state.gameOverSummary);
     }
 
     if (user?.id) {
@@ -307,6 +334,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       privateMessages: trimmedPrivateMessages,
       humanGameIdentity: humanGameIdentity || undefined,
       avatarImageUrls: Object.keys(trimmedAvatarImageUrls).length ? trimmedAvatarImageUrls : undefined,
+      phaseLabel: phaseLabel || undefined,
+      mood: mood !== "neutral" ? mood : undefined,
+      gameOverSummary: gameOverSummary || undefined,
       savedAt: new Date().toISOString(),
       // Per-session ID so Realtime subscribers can skip their own echoes
       clientId: clientIdRef.current as string,
@@ -412,6 +442,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         ...(remoteState.avatarImageUrls as Record<string, string>),
       }));
     }
+    if (typeof remoteState.phaseLabel === "string") setPhaseLabel(remoteState.phaseLabel);
+    if (remoteState.mood === "dark" || remoteState.mood === "light" || remoteState.mood === "neutral") setMood(remoteState.mood);
+    if (typeof remoteState.gameOverSummary === "string") setGameOverSummary(remoteState.gameOverSummary);
     // NOTE: humanGameIdentity is intentionally NOT synced from remote state.
     // It is a per-user concept — the owner's identity must not overwrite the
     // guest's identity (guestNickname) when Realtime/polling delivers state.
@@ -590,6 +623,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setAiSuggestedPrompts([]);
     setHumanGameIdentity(null);
     setAvatarImageUrls({});
+    setPhaseLabel("");
+    setMood("neutral");
+    setActiveVote(null);
+    setTimerEndsAt(null);
+    setGameOverSummary("");
   }, []);
 
   const contextValue = useMemo(() => ({
@@ -613,6 +651,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     humanGameIdentity,
     avatarImageUrls,
     isRoomLoading: !isHydrated,
+    phaseLabel,
+    mood,
+    activeVote,
+    timerEndsAt,
+    gameOverSummary,
     onAvatarUrlLoaded,
     addMessage,
     addStreamingMessage,
@@ -637,6 +680,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setGameResult,
     setAiSuggestedPrompts,
     setHumanGameIdentity,
+    setPhaseLabel,
+    setMood,
+    setActiveVote,
+    setTimerEndsAt,
+    setGameOverSummary,
     resetGame,
     saveNow,
     userId,
@@ -645,7 +693,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     currentSpeakerId, typingUsers, privateMessages, gameProgress,
     myBoardContent, playerNotes, sections, sectionsLoading, gameEvents,
     gameEnded, gameResult, aiSuggestedPrompts, humanGameIdentity,
-    avatarImageUrls, isHydrated, onAvatarUrlLoaded, addMessage,
+    avatarImageUrls, isHydrated, phaseLabel, mood, activeVote, timerEndsAt,
+    gameOverSummary, onAvatarUrlLoaded, addMessage,
     addStreamingMessage, updateStreamingMessage, addEventNotification,
     addPrivateMessage, updatePlayer, resetGame, saveNow, userId,
   ]);

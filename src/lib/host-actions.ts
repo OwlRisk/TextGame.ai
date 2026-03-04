@@ -25,6 +25,18 @@ export type HostAction =
    * content replaces the player's previous notes each turn.
    */
   | { type: "player_notes"; content: string }
+  /** GM-driven phase label (e.g. "Night · Round 2") */
+  | { type: "phase"; label: string }
+  /** Announcement banner injected into chat as a visual divider */
+  | { type: "announce"; text: string }
+  /** Background mood shift for the chat area */
+  | { type: "mood"; value: "dark" | "light" | "neutral" }
+  /** Start a structured vote */
+  | { type: "start_vote"; question: string; options: string[] | "players" }
+  /** End the current active vote */
+  | { type: "end_vote" }
+  /** Start or stop a countdown timer */
+  | { type: "timer"; seconds: number | "stop" }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -116,6 +128,60 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
 
     for (const { full, replacement } of replacements) {
       cleanContent = cleanContent.replace(full, replacement);
+    }
+  }
+
+  // ─── Inline single-line directives (GM-driven UI) ──────────────────────
+  const INLINE_DIRECTIVES: Array<{
+    regex: RegExp;
+    parse: (match: RegExpExecArray) => HostAction;
+  }> = [
+    {
+      regex: /^PHASE:\s*(.+)$/gim,
+      parse: (m) => ({ type: "phase", label: m[1].trim() }),
+    },
+    {
+      regex: /^ANNOUNCE:\s*(.+)$/gim,
+      parse: (m) => ({ type: "announce", text: m[1].trim() }),
+    },
+    {
+      regex: /^MOOD:\s*(dark|light|neutral)$/gim,
+      parse: (m) => ({ type: "mood", value: m[1].trim().toLowerCase() as "dark" | "light" | "neutral" }),
+    },
+    {
+      regex: /^START_VOTE:\s*(.+)$/gim,
+      parse: (m) => {
+        const raw = m[1].trim();
+        const pipeIdx = raw.indexOf("|");
+        if (pipeIdx === -1) return { type: "start_vote", question: raw, options: "players" };
+        const question = raw.slice(0, pipeIdx).trim();
+        const options = raw.slice(pipeIdx + 1).split(",").map(s => s.trim()).filter(Boolean);
+        return { type: "start_vote", question, options: options.length ? options : "players" };
+      },
+    },
+    {
+      regex: /^END_VOTE\s*$/gim,
+      parse: () => ({ type: "end_vote" }),
+    },
+    {
+      regex: /^TIMER:\s*(\d+|stop)$/gim,
+      parse: (m) => {
+        const val = m[1].trim().toLowerCase();
+        return { type: "timer", seconds: val === "stop" ? "stop" : parseInt(val, 10) };
+      },
+    },
+  ];
+
+  for (const dir of INLINE_DIRECTIVES) {
+    const re = new RegExp(dir.regex.source, dir.regex.flags);
+    let match: RegExpExecArray | null;
+    const toRemove: string[] = [];
+    while ((match = re.exec(cleanContent)) !== null) {
+      actions.push(dir.parse(match));
+      toRemove.push(match[0]);
+    }
+    for (const full of toRemove) {
+      cleanContent = cleanContent.replace(full, "");
     }
   }
 
