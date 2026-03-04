@@ -3,7 +3,7 @@ import { SITE_NAME } from "@/lib/site";
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200 flex flex-col">
+    <div className="h-full overflow-y-auto bg-zinc-950 text-zinc-200 flex flex-col">
       <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/" className="text-lg font-bold text-white hover:text-violet-400 transition-colors">
