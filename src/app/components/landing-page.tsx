@@ -601,16 +601,17 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                 </svg>
                 Sign in with Google
               </Button>
-              <Link href="/discover">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full mt-3 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-lg py-6 transition-all hover:scale-[1.02]"
-                >
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="w-full mt-3 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-lg py-6 transition-all hover:scale-[1.02]"
+              >
+                <Link href="/discover">
                   <LayoutGrid className="h-5 w-5 mr-3 shrink-0" />
                   Browse Templates
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
 
             {/* Quick-start 2×2 grid */}
