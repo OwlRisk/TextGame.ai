@@ -2281,21 +2281,20 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               ) : (
                 <>
                   {displayChips.length > 0 && !isGMTyping && !isStreaming && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                      <span className="text-xs text-zinc-500 self-center mr-1 hidden sm:inline">Quick reply:</span>
-                      {displayChips.map((chip) => (
-                        <Button
-                          key={chip.value}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          title={chip.fullLabel ?? chip.label}
-                          className="h-auto min-h-[2rem] max-w-[calc(100%-4px)] sm:max-w-[320px] px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-left whitespace-normal border-white/20 bg-white/5 hover:bg-white/10 text-zinc-200 hover:text-white leading-snug"
-                          onClick={() => handleSend(chip.value)}
-                        >
-                          {chip.label}
-                        </Button>
-                      ))}
+                    <div className="mb-2 sm:mb-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {displayChips.map((chip) => (
+                          <button
+                            key={chip.value}
+                            type="button"
+                            title={chip.fullLabel ?? chip.label}
+                            className="text-left px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-violet-500/30 text-zinc-400 hover:text-zinc-200 text-[13px] leading-snug transition-colors duration-150 line-clamp-2"
+                            onClick={() => handleSend(chip.value)}
+                          >
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                   <div className="flex gap-2 sm:gap-3 items-end">

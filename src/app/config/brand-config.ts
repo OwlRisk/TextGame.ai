@@ -1,6 +1,6 @@
 // Brand configuration (landing, meta, etc.)
 export const BRAND_CONFIG = {
-  name: "textgame.ai",
+  name: "TextGame.ai",
   shortName: "TextGame",
   tagline: "Any game you can describe, you can play",
   description:

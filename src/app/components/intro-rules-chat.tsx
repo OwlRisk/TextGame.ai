@@ -224,19 +224,16 @@ export function IntroRulesChat() {
 
       <div className="p-3 border-t border-white/[0.06] bg-white/[0.02] space-y-2">
         {showChips && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs text-zinc-500 self-center mr-1">Quick reply:</span>
+          <div className="flex flex-wrap gap-1.5">
             {QUICK_CHIPS.map((chip) => (
-              <Button
+              <button
                 key={chip.value}
                 type="button"
-                variant="outline"
-                size="sm"
-                className="h-auto min-h-8 px-3 py-1.5 text-sm text-left whitespace-normal border-white/20 bg-white/5 hover:bg-white/10 text-zinc-200 hover:text-white"
+                className="px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-violet-500/30 text-zinc-400 hover:text-zinc-200 text-sm transition-colors duration-150"
                 onClick={() => send(chip.value)}
               >
                 {chip.label}
-              </Button>
+              </button>
             ))}
           </div>
         )}
