@@ -32,6 +32,78 @@ interface BlogPost {
 
 const posts: BlogPost[] = [
   {
+    slug: "polybuzz-ai-alternatives",
+    title: "7 Best PolyBuzz Alternatives for AI Chat & Roleplay (2026)",
+    excerpt:
+      "Looking for PolyBuzz alternatives? Compare 7 AI chat platforms for roleplay and multiplayer games — including options with voice, game mechanics, and free tiers.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Comparison", "AI Chat"],
+  },
+  {
+    slug: "talkie-ai-alternatives",
+    title: "7 Best Talkie AI Alternatives — AI Chat & Character Apps (2026)",
+    excerpt:
+      "Explore the best Talkie AI alternatives for AI character chat, roleplay, and multiplayer games. Compare features, voice, pricing, and find your fit.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Comparison", "AI Chat"],
+  },
+  {
+    slug: "best-ai-chat-sites",
+    title: "10 Best AI Chat Sites for Roleplay & Games (2026)",
+    excerpt:
+      "The ultimate guide to AI chat platforms — Character.AI, PolyBuzz, Talkie AI, Janitor AI, and more. Compare features, pricing, and find the best AI chat site.",
+    date: "March 4, 2026",
+    readTime: "10 min read",
+    tags: ["Listicle", "AI Chat"],
+  },
+  {
+    slug: "perchance-ai-alternatives",
+    title: "5 Best Perchance AI Alternatives for Chat & Roleplay (2026)",
+    excerpt:
+      "Looking for Perchance alternatives? Compare 5 AI roleplay platforms with better multiplayer, voice, and game features.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Comparison", "AI Roleplay"],
+  },
+  {
+    slug: "chat-with-ai-characters",
+    title: "Chat with AI Characters — Free, No Sign Up Required",
+    excerpt:
+      "Chat with AI characters for free — no sign up, no download. Discover the best platforms for AI character conversations, roleplay, and multiplayer games.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Guide", "AI Characters"],
+  },
+  {
+    slug: "talk-to-ai-characters",
+    title: "Talk to AI Characters Online — Free AI Companions & Game Partners",
+    excerpt:
+      "Talk to AI characters with voice and text — play games, roleplay, or just chat. Discover the best free platforms for AI companions and game partners.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Guide", "AI Characters"],
+  },
+  {
+    slug: "ourdream-ai-alternatives",
+    title: "5 Best OurDream AI Alternatives for AI Chat & Roleplay (2026)",
+    excerpt:
+      "Looking for OurDream AI alternatives? Compare 5 AI chat platforms for character roleplay, multiplayer games, and voice interactions.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Comparison", "AI Chat"],
+  },
+  {
+    slug: "wsup-ai-alternatives",
+    title: "5 Best Wsup AI Alternatives for AI Chat & Characters (2026)",
+    excerpt:
+      "Explore the best Wsup AI alternatives for AI character chat and roleplay. Compare platforms with multiplayer, voice, and game features.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    tags: ["Comparison", "AI Chat"],
+  },
+  {
     slug: "text-based-games-comeback",
     title: "Text-Based Games Are Back — Why AI Makes Them Better Than Ever",
     excerpt:

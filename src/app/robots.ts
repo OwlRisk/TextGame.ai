@@ -13,6 +13,8 @@ export default function robots(): MetadataRoute.Robots {
         allow: PUBLIC_ALLOW,
         disallow: PRIVATE_DISALLOW,
       },
+      // Bing
+      { userAgent: "bingbot",       allow: PUBLIC_ALLOW, disallow: PRIVATE_DISALLOW },
       // AI search crawlers — explicitly welcome on public content
       { userAgent: "GPTBot",        allow: PUBLIC_ALLOW, disallow: PRIVATE_DISALLOW },
       { userAgent: "ClaudeBot",     allow: PUBLIC_ALLOW, disallow: PRIVATE_DISALLOW },
