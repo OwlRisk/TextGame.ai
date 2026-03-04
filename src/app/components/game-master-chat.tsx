@@ -489,7 +489,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   }, [messages]);
 
   /** Max number of quick-reply chips to show */
-  const MAX_DISPLAY_CHIPS = 4;
+  const MAX_DISPLAY_CHIPS = 3;
+  const MAX_CHIP_DISPLAY_LEN = 38;
 
   /** Chips to show: LLM suggestions when available, else parsed/default chips so they don't flash away. */
   const displayChips = useMemo(() => {
@@ -497,16 +498,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       return llmQuickReplies.slice(0, MAX_DISPLAY_CHIPS).map((text) => {
         const clean = stripChipLabel(text);
         return {
-          label: clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean,
+          label: clean.length > MAX_CHIP_DISPLAY_LEN ? clean.slice(0, MAX_CHIP_DISPLAY_LEN - 1).trim() + "…" : clean,
           value: clean,
-          fullLabel: clean.length > 52 ? clean : undefined,
+          fullLabel: clean.length > MAX_CHIP_DISPLAY_LEN ? clean : undefined,
         };
       });
     }
     return suggestionChips.slice(0, MAX_DISPLAY_CHIPS).map((c) => ({
-      label: c.label,
+      label: c.label.length > MAX_CHIP_DISPLAY_LEN ? c.label.slice(0, MAX_CHIP_DISPLAY_LEN - 1).trim() + "…" : c.label,
       value: c.value,
-      fullLabel: c.fullLabel,
+      fullLabel: c.fullLabel ?? (c.label.length > MAX_CHIP_DISPLAY_LEN ? c.label : undefined),
     }));
   }, [llmQuickReplies, suggestionChips]);
 
@@ -2281,16 +2282,20 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               ) : (
                 <>
                   {displayChips.length > 0 && !isGMTyping && !isStreaming && (
-                    <div className="mb-2 sm:mb-2.5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    <div className="mb-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {displayChips.map((chip) => (
                           <button
                             key={chip.value}
                             type="button"
                             title={chip.fullLabel ?? chip.label}
-                            className="text-left px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-violet-500/30 text-zinc-400 hover:text-zinc-200 text-[13px] leading-snug transition-colors duration-150 line-clamp-2"
-                            onClick={() => handleSend(chip.value)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none transition-all"
+                            onClick={() => {
+                              setInput(chip.value);
+                              inputRef.current?.focus();
+                            }}
                           >
+                            <span className="text-violet-400/60 text-[10px]">⚡</span>
                             {chip.label}
                           </button>
                         ))}
