@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Volume2, VolumeX, User, Package, Info, UserPlus, UserMinus } from "lucide-react";
+import { safeMarked } from "@/lib/safe-marked";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
@@ -190,9 +191,10 @@ export function PlayerPanelWithBoard({
                   <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wide">{playerBoardLabel}</h4>
                 </div>
                 {myBoardContentFromHost.trim() ? (
-                  <p className="mt-3 text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed">
-                    {myBoardContentFromHost.trim()}
-                  </p>
+                  <div
+                    className="mt-3 prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-100 prose-li:text-zinc-100 prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: safeMarked(myBoardContentFromHost.trim()) }}
+                  />
                 ) : (
                   <p className="mt-3 text-xs text-zinc-500 italic">
                     Nothing here yet. The Game Master will update your board as the game progresses.
