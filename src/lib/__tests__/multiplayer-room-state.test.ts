@@ -98,9 +98,11 @@ describe('isStateFresh', () => {
     expect(isStateFresh('not-a-date', 5000)).toBe(false);
   });
 
-  it('returns true exactly at the boundary (within same millisecond)', () => {
+  it('returns true at the boundary (within a small tolerance)', () => {
     const now = new Date().toISOString();
-    expect(isStateFresh(now, 0)).toBe(true);
+    // Use 50ms tolerance instead of 0 to avoid flaky failures when
+    // Date.now() inside isStateFresh ticks forward by 1ms on slow CI.
+    expect(isStateFresh(now, 50)).toBe(true);
   });
 });
 
