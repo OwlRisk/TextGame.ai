@@ -28,7 +28,7 @@ interface PendingEntry {
  * Avoids the collision bug where two sentences sharing the same 48-character
  * prefix would incorrectly hit the same cache entry.
  */
-function djb2Hash(str: string): string {
+export function djb2Hash(str: string): string {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
@@ -37,7 +37,7 @@ function djb2Hash(str: string): string {
   return (hash >>> 0).toString(36); // unsigned hex-like string
 }
 
-function makeKey(text: string, voiceId: string): string {
+export function makeKey(text: string, voiceId: string): string {
   return `${djb2Hash(text)}||${voiceId}`;
 }
 

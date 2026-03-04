@@ -603,13 +603,13 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
               </Button>
             </div>
 
-            {/* Browse Templates – same prominent style as Google button */}
-            <div className="mb-6">
+            {/* Browse Templates – gradient-border secondary CTA */}
+            <div className="mb-6 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 p-[1.5px] transition-all hover:scale-[1.02]">
               <Link
                 href="/discover"
-                className="relative w-full flex items-center justify-center bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-lg py-4 rounded-md shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl cursor-pointer"
+                className="w-full flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 text-zinc-200 hover:text-white font-bold text-lg py-[18px] rounded-[10px] transition-colors cursor-pointer"
               >
-                <LayoutGrid className="h-6 w-6 mr-3 shrink-0" />
+                <LayoutGrid className="h-5 w-5 mr-2.5 shrink-0 text-violet-400" />
                 Browse Templates
               </Link>
             </div>

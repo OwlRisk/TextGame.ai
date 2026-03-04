@@ -170,7 +170,7 @@ export const INWORLD_VOICE_META: VoiceMeta[] = [
   { voiceId: 'Omar',      gender: 'male',   langCode: 'AR_SA', keywords: ['bright', 'confident'] },
 ];
 
-function normalizeGender(g?: string | null): 'male' | 'female' | undefined {
+export function normalizeGender(g?: string | null): 'male' | 'female' | undefined {
   if (!g || typeof g !== 'string') return undefined;
   const s = g.trim().toLowerCase();
   if (s === 'male') return 'male';
@@ -179,7 +179,7 @@ function normalizeGender(g?: string | null): 'male' | 'female' | undefined {
 }
 
 /** Tokenize text for keyword overlap (lowercase, split on non-alpha) */
-function tokenize(text: string): Set<string> {
+export function tokenize(text: string): Set<string> {
   const out = new Set<string>();
   const lower = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
   for (const w of lower.split(/\s+/)) {
