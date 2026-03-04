@@ -185,7 +185,7 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
                               className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg overflow-hidden"
                               style={{ background: game.color }}
                             >
-                              {game.icon.startsWith('data:image') ? (
+                              {(game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
                                 <img 
                                   src={game.icon} 
                                   alt={game.name}
@@ -278,7 +278,7 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
                             className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl overflow-hidden"
                             style={{ background: game.color }}
                           >
-                            {game.icon.startsWith('data:image') ? (
+                            {(game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
                               <img 
                                 src={game.icon} 
                                 alt={game.name}
