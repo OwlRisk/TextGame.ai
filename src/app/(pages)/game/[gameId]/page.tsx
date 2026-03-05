@@ -31,9 +31,52 @@ import { getPreferredModel } from "@/lib/model-prefs";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
 import { supabase } from "@/lib/supabase";
 import { safeMarked } from "@/lib/safe-marked";
-/** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
-const HOST_PACE_MS = 2200;
-const hostPace = () => new Promise<void>((r) => setTimeout(r, HOST_PACE_MS));
+/** Base delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
+const HOST_PACE_BASE_MS = 1000;
+/** Extra delay per 50 characters of message content */
+const HOST_PACE_PER_50_CHARS_MS = 800;
+/** Maximum gap between messages */
+const HOST_PACE_MAX_MS = 4000;
+
+function dynamicPace(textLength: number): Promise<void> {
+  const ms = Math.min(
+    HOST_PACE_BASE_MS + Math.floor(textLength / 50) * HOST_PACE_PER_50_CHARS_MS,
+    HOST_PACE_MAX_MS,
+  );
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
+const hostPace = () => dynamicPace(0);
+
+/** Typewriter speed: characters revealed per frame tick (~16ms each) */
+const TYPEWRITER_CHARS_PER_TICK = 3;
+
+/**
+ * Display text with a typewriter animation via addStreamingMessage + updateStreamingMessage.
+ * Returns a promise that resolves when the full text is shown.
+ */
+type StreamMsgMeta = { senderId: string; senderName: string; senderAvatar: string; isAI: boolean };
+
+function typewriterReveal(
+  text: string,
+  addStreamFn: (msg: StreamMsgMeta, channelId?: string) => string,
+  updateStreamFn: (messageId: string, content: string, isComplete?: boolean) => void,
+  msgMeta: StreamMsgMeta,
+  channelId?: string,
+): Promise<string> {
+  return new Promise((resolve) => {
+    const messageId = addStreamFn(msgMeta, channelId);
+    if (!messageId) { resolve(""); return; }
+    let idx = 0;
+    const step = () => {
+      idx = Math.min(idx + TYPEWRITER_CHARS_PER_TICK, text.length);
+      const done = idx >= text.length;
+      updateStreamFn(messageId, text.slice(0, idx), done);
+      if (done) { resolve(messageId); return; }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
 
 /** Number of AI players to reply right after the host's initial greeting */
 const INITIAL_PLAYER_REPLIES = 3;
@@ -67,19 +110,21 @@ async function seedInitialPlayerReplies(
     aiPlayers: Array<{ id: string; name: string; avatar?: string; role?: string; personality?: string; background?: string }>;
     gameName: string;
     rules?: string;
-    addMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; content: string; isAI: boolean }, channelId: string) => void;
+    addStreamingMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; isAI: boolean }, channelId?: string) => string;
+    updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
+    setTypingUsers?: (users: { name: string; avatar: string }[]) => void;
     sessionToken: string | undefined;
-    /** Return true to abort (e.g. gameId changed, component unmounted). */
     isCancelled?: () => boolean;
   }
 ) {
-  const { channelId, hostName, hostContent, aiPlayers, gameName, rules, addMessage, sessionToken, isCancelled } = opts;
+  const { channelId, hostName, hostContent, aiPlayers, gameName, rules, addStreamingMessage: addStream, updateStreamingMessage: updateStream, setTypingUsers, sessionToken, isCancelled } = opts;
   if (!sessionToken || aiPlayers.length === 0) return;
   const toReply = aiPlayers.slice(0, INITIAL_PLAYER_REPLIES);
   const recent = [{ senderName: hostName, content: hostContent }];
   for (const player of toReply) {
     if (isCancelled?.()) return;
     try {
+      setTypingUsers?.([{ name: player.name, avatar: player.avatar ?? "#8b5cf6" }]);
       const res = await fetch("/api/chat/player-speak", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
@@ -91,18 +136,17 @@ async function seedInitialPlayerReplies(
           preferredModel: getPreferredModel(),
         }),
       });
+      setTypingUsers?.([]);
       if (!res.ok || isCancelled?.()) continue;
       const data = (await res.json()) as { message?: string };
       const text = (data.message ?? "").trim();
       if (text && !isCancelled?.()) {
-        addMessage(
-          { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", content: text, isAI: true },
-          channelId
-        );
+        await typewriterReveal(text, addStream, updateStream, { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true }, channelId);
         recent.push({ senderName: player.name, content: text });
-        await hostPace();
+        await dynamicPace(text.length);
       }
     } catch (e) {
+      setTypingUsers?.([]);
       console.warn("[seedInitialReplies]", e);
     }
   }
@@ -129,6 +173,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     userId,
     currentSpeakerId,
     setCurrentSpeakerId,
+    setTypingUsers,
     humanGameIdentity,
     setHumanGameIdentity,
     avatarImageUrls,
@@ -800,7 +845,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       aiPlayers,
       gameName: currentGame.name,
       rules: config.rules,
-      addMessage,
+      addStreamingMessage,
+      updateStreamingMessage,
+      setTypingUsers,
       sessionToken: session?.access_token,
       isCancelled: () => seedCancelledRef.current,
     }).catch((e) => console.warn("Initial player replies failed", e));
@@ -1544,13 +1591,12 @@ ${rulesText || "No specific rules defined."}`.trim();
             const status = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
             if (status === "eliminated" || status === "dead") continue;
             setCurrentSpeakerId(freshPlayer.id);
+            setTypingUsers([{ name: freshPlayer.name, avatar: freshPlayer.avatar ?? "#8b5cf6" }]);
             const txt = await runPlayerSpeak(freshPlayer, recentContext, goal);
+            setTypingUsers([]);
             if (txt) {
-              addMessage(
-                { senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true },
-                targetChannelId
-              );
-              await hostPace();
+              await typewriterReveal(txt, addStreamingMessage, updateStreamingMessage, { senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", isAI: true }, targetChannelId);
+              await dynamicPace(txt.length);
               recentContext = [...recentContext, { senderName: freshPlayer.name, content: txt }];
             }
           }
@@ -1643,12 +1689,13 @@ ${rulesText || "No specific rules defined."}`.trim();
             // Have one random AI chime in for "open discussion"
             if (aiOnly.length > 0) {
               const pick = aiOnly[Math.floor(Math.random() * aiOnly.length)];
-              // Refresh player data so any role/stat changes from setPlayers are visible.
               const freshPick = playersRef.current.find((p) => p.id === pick.id) ?? pick;
+              setTypingUsers([{ name: freshPick.name, avatar: freshPick.avatar ?? "#8b5cf6" }]);
               const txt = await runPlayerSpeak(freshPick, recentForNext);
+              setTypingUsers([]);
               if (txt) {
-                addMessage({ senderId: freshPick.id, senderName: freshPick.name, senderAvatar: freshPick.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
-                await hostPace();
+                await typewriterReveal(txt, addStreamingMessage, updateStreamingMessage, { senderId: freshPick.id, senderName: freshPick.name, senderAvatar: freshPick.avatar ?? "#8b5cf6", isAI: true }, channelId);
+                await dynamicPace(txt.length);
                 recentForNext = [...recentForNext, { senderName: freshPick.name, content: txt }];
               }
             }
@@ -1658,10 +1705,12 @@ ${rulesText || "No specific rules defined."}`.trim();
           const freshPlayer = playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
           const itemStatus = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
           if (itemStatus === "eliminated" || itemStatus === "dead") continue;
+          setTypingUsers([{ name: freshPlayer.name, avatar: freshPlayer.avatar ?? "#8b5cf6" }]);
           const txt = await runPlayerSpeak(freshPlayer, recentForNext);
+          setTypingUsers([]);
           if (txt) {
-            addMessage({ senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", content: txt, isAI: true }, channelId);
-            await hostPace();
+            await typewriterReveal(txt, addStreamingMessage, updateStreamingMessage, { senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", isAI: true }, channelId);
+            await dynamicPace(txt.length);
             recentForNext = [...recentForNext, { senderName: freshPlayer.name, content: txt }];
             // Update current speaker to whoever is next in the queue (or null when done)
             const nextIdx = queue.indexOf(item) + 1;

@@ -1040,8 +1040,8 @@ export function ChatArea({
               </div>
             );
           })}
-          {/* Typing Indicator - only show for current user ("You"); hide for other players to avoid dots when they speak */}
-          {typingUsers && typingUsers.length > 0 && typingUsers[0].name === "You" && !messages.some(m => 
+          {/* Typing Indicator — shown for any player (human or AI) while generating a reply */}
+          {typingUsers && typingUsers.length > 0 && !messages.some(m => 
             m.senderName === typingUsers[0].name && m.isStreaming
           ) && (
             <div className="flex gap-3 mt-4">
