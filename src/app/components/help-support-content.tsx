@@ -241,10 +241,11 @@ export function HelpSupportContent() {
                     onDrop={onDrop}
                     onDragOver={onDragOver}
                     onDragLeave={onDragLeave}
-                    className={`border-2 border-dashed rounded-xl p-5 transition-colors ${
+                    onClick={() => images.length < MAX_IMAGES && fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-5 transition-colors cursor-pointer ${
                       isDragging
                         ? 'border-violet-500/60 bg-violet-500/10'
-                        : 'border-zinc-700 bg-zinc-800/30 hover:border-zinc-600'
+                        : 'border-zinc-700 bg-zinc-800/30 hover:border-zinc-500 hover:bg-zinc-800/50'
                     }`}
                   >
                     {images.length > 0 ? (
@@ -257,7 +258,7 @@ export function HelpSupportContent() {
                               )}
                               <button
                                 type="button"
-                                onClick={() => removeImage(i)}
+                                onClick={(e) => { e.stopPropagation(); removeImage(i); }}
                                 className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
                                 aria-label="Remove image"
                               >
@@ -270,35 +271,15 @@ export function HelpSupportContent() {
                               </span>
                             </div>
                           ))}
-                          {images.length < MAX_IMAGES && (
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              className="w-20 h-20 rounded-lg border-2 border-dashed border-zinc-700 hover:border-zinc-500 flex flex-col items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors"
-                            >
-                              <ImagePlus className="h-5 w-5" />
-                              <span className="text-[10px] mt-0.5">Add</span>
-                            </button>
-                          )}
                         </div>
-                        <p className="text-[11px] text-zinc-500 text-center">Drop images here or click + to add more (up to {MAX_IMAGES})</p>
+                        {images.length < MAX_IMAGES && (
+                          <p className="text-[11px] text-zinc-500 text-center">Click anywhere to add more, or drop images here (up to {MAX_IMAGES})</p>
+                        )}
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-3 py-2">
+                      <div className="flex flex-col items-center gap-2 py-3">
                         <ImagePlus className="h-8 w-8 text-zinc-500" />
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white"
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <ImagePlus className="h-4 w-4 mr-1.5" />
-                            Choose Images
-                          </Button>
-                          <span className="text-sm text-zinc-500">or drop files here</span>
-                        </div>
+                        <p className="text-sm text-zinc-400">Click to choose images, or drag and drop</p>
                         <span className="text-xs text-zinc-500">JPEG / PNG / GIF / WebP · max {MAX_IMAGE_MB} MB each · up to {MAX_IMAGES}</span>
                       </div>
                     )}
