@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Crown, Volume2, VolumeX, User, Package, RefreshCw } from "lucide-react";
+import { Crown, Volume2, VolumeX, User, Package } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
@@ -279,18 +279,6 @@ function PlayerCard({
           )}
         </div>
         <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-          {onRegenerateAvatar && (player.isAI || useGameAvatarForHuman) && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 hover:bg-zinc-600/50"
-              onClick={handleRegenerate}
-              disabled={regenerating}
-              title="Regenerate avatar (DALL-E 3)"
-            >
-              <RefreshCw className={`h-3 w-3 text-zinc-400 hover:text-white ${regenerating ? "animate-spin" : ""}`} />
-            </Button>
-          )}
           {isUserGameMaster && !player.isGameMaster && (
             <Button
               variant="ghost"
