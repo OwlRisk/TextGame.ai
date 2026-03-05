@@ -1075,6 +1075,7 @@ Example E — silent turn (player states strategy, no GM action needed):
 NEXT_SPEAKER: ${humanName}
 
 Always output "---" even when there are no directives. When in doubt, prefer Example C/D/E (silent) over speaking.
+IMPORTANT: Even on silent turns you MUST always include a NEXT_SPEAKER directive so the conversation keeps flowing. Pick the most relevant AI player(s) to react, or "Everyone" for open discussion, or "${humanName}" to return control to the human.
 
 ## PACING & NARRATION
 When the user says "Continue", "Ready", or "What's next?", advance the plot: announce the next phase briefly and assign the next speaker. Keep the game moving — never dwell on the same beat twice.
@@ -1758,6 +1759,8 @@ ${rulesText || "No specific rules defined."}`.trim();
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       const isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
+        // GM stayed silent and didn't assign a next speaker — return control to human
+        setCurrentSpeakerId(userId);
         setIsRoundInProgress(false);
         return;
       }
