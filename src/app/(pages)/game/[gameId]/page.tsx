@@ -2326,7 +2326,7 @@ ${rulesText || "No specific rules defined."}`.trim();
             </div>
 
             <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
-              <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700">
+              <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700 [&>button:last-child]:hidden">
                 <PlayerPanelWithBoard
                   players={playersForChannel}
                   gameId={gameId}
