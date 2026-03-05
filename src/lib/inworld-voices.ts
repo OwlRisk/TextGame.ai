@@ -188,18 +188,30 @@ export function tokenize(text: string): Set<string> {
   return out;
 }
 
+/** Score a single voice candidate against personality/voiceStyle tokens */
+function scoreVoice(voice: VoiceMeta, tokens: Set<string>): number {
+  let score = 0;
+  for (const kw of voice.keywords) {
+    if (tokens.has(kw)) score += 2;
+  }
+  return score;
+}
+
 /**
  * Pick the best Inworld voice for a speaker by gender, language and personality/voiceStyle.
  * - Filters by langCode first (defaults to EN_US).
  * - Then filters by gender if provided.
+ * - When gender is "other"/unknown, scores male and female pools separately and
+ *   picks the best overall match, ensuring the voice gender aligns with personality
+ *   rather than accidentally crossing genders due to a single keyword hit.
  * - Scores remaining candidates by keyword overlap with personality/voiceStyle.
  */
 export function pickVoiceForSpeaker(
   gender?: string | null,
   personalityOrVoiceStyle?: string | null,
-  langCode?: string
+  langCode?: string,
+  speakerName?: string | null,
 ): string {
-  // If not explicitly passed, read from user's language preference (client-side only)
   if (!langCode) {
     langCode = (typeof window !== 'undefined' ? localStorage.getItem('voice_lang') : null) ?? 'EN_US';
   }
@@ -207,27 +219,53 @@ export function pickVoiceForSpeaker(
   const text = (personalityOrVoiceStyle || '').trim();
   const tokens = text ? tokenize(text) : new Set<string>();
 
-  // Filter by language; fall back to EN_US pool if no match
   let pool = INWORLD_VOICE_META.filter((v) => v.langCode === langCode);
   if (pool.length === 0) pool = INWORLD_VOICE_META.filter((v) => v.langCode === 'EN_US');
 
-  // Filter by gender
-  const candidates = g ? pool.filter((v) => v.gender === g) : pool;
-  const finalCandidates = candidates.length > 0 ? candidates : pool;
-
-  let best = finalCandidates[0];
-  let bestScore = -1;
-
-  for (const v of finalCandidates) {
-    let score = 0;
-    for (const kw of v.keywords) {
-      if (tokens.has(kw)) score += 2;
+  if (g) {
+    // Explicit gender: filter then score
+    const candidates = pool.filter((v) => v.gender === g);
+    const finalCandidates = candidates.length > 0 ? candidates : pool;
+    let best = finalCandidates[0];
+    let bestScore = -1;
+    for (const v of finalCandidates) {
+      const s = scoreVoice(v, tokens);
+      if (s > bestScore) { bestScore = s; best = v; }
     }
-    if (score > bestScore) {
-      bestScore = score;
-      best = v;
-    }
+    return best.voiceId;
   }
 
-  return best.voiceId;
+  // Gender unknown ("other" / undefined): score male and female pools separately,
+  // then pick the gender whose best candidate has the higher score. This prevents
+  // a single keyword hit in one gender from dominating when the character has no
+  // explicit gender set (e.g. host generated as "other").
+  const males = pool.filter((v) => v.gender === 'male');
+  const females = pool.filter((v) => v.gender === 'female');
+
+  let bestMale = males[0]; let bestMaleScore = -1;
+  for (const v of males) {
+    const s = scoreVoice(v, tokens);
+    if (s > bestMaleScore) { bestMaleScore = s; bestMale = v; }
+  }
+  let bestFemale = females[0]; let bestFemaleScore = -1;
+  for (const v of females) {
+    const s = scoreVoice(v, tokens);
+    if (s > bestFemaleScore) { bestFemaleScore = s; bestFemale = v; }
+  }
+
+  // If scores are tied, use a name-based tiebreaker for consistency
+  if (bestMaleScore === bestFemaleScore && speakerName) {
+    let h = 0;
+    for (let i = 0; i < speakerName.length; i++) {
+      h = ((h << 5) - h + speakerName.charCodeAt(i)) | 0;
+    }
+    return Math.abs(h) % 2 === 0 ? bestMale.voiceId : bestFemale.voiceId;
+  }
+
+  // If scores are tied with no name, default to male for neutral-sounding hosts
+  if (bestMaleScore === bestFemaleScore) {
+    return bestMale.voiceId;
+  }
+
+  return bestMaleScore > bestFemaleScore ? bestMale.voiceId : bestFemale.voiceId;
 }
