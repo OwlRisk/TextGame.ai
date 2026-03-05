@@ -46,23 +46,27 @@ export async function POST(request: NextRequest) {
 
       if (files.length > 0 && supabaseAdmin) {
         for (const file of files) {
-          const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
-          const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'png';
-          const id = crypto.randomBytes(8).toString('hex');
-          const path = `${FEEDBACK_PREFIX}/${id}.${safeExt}`;
-          const buffer = Buffer.from(await file.arrayBuffer());
+          try {
+            const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+            const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'png';
+            const id = crypto.randomBytes(8).toString('hex');
+            const path = `${FEEDBACK_PREFIX}/${id}.${safeExt}`;
+            const buffer = Buffer.from(await file.arrayBuffer());
 
-          const { error: uploadError } = await supabaseAdmin.storage
-            .from(FEEDBACK_BUCKET)
-            .upload(path, buffer, { contentType: file.type, upsert: true });
+            const { error: uploadError } = await supabaseAdmin.storage
+              .from(FEEDBACK_BUCKET)
+              .upload(path, buffer, { contentType: file.type, upsert: true });
 
-          if (uploadError) {
-            console.error('[contact] Storage upload error:', uploadError);
-            return NextResponse.json({ error: 'Failed to upload image. Please try again.' }, { status: 500 });
+            if (uploadError) {
+              console.error('[contact] Storage upload error:', uploadError);
+              continue;
+            }
+
+            const { data: urlData } = supabaseAdmin.storage.from(FEEDBACK_BUCKET).getPublicUrl(path);
+            attachmentUrls.push(urlData.publicUrl);
+          } catch (uploadErr) {
+            console.error('[contact] Storage upload exception:', uploadErr);
           }
-
-          const { data: urlData } = supabaseAdmin.storage.from(FEEDBACK_BUCKET).getPublicUrl(path);
-          attachmentUrls.push(urlData.publicUrl);
         }
       }
     } else {
