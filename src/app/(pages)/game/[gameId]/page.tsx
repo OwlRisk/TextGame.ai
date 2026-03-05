@@ -125,7 +125,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setGamePhase,
     selectedChannelId,
     setSelectedChannelId,
-    gameProgress,
     userId,
     currentSpeakerId,
     setCurrentSpeakerId,
@@ -557,10 +556,14 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       .finally(() => setSharedLoadPending(false));
   }, [gamesLoading, currentGame, gameId, guestId, addGame]);
 
-  // When game has GM-defined channels and context still has legacy "game-room", switch to first channel
+  // When game has GM-defined channels and context still has legacy "game-room", switch to first channel.
+  // Also migrate away from removed "rules"/"progress" channels.
   useEffect(() => {
-    if (selectedChannelId === "game-room" && currentGame?.config?.channels?.length && currentGame.config.channels[0].id !== "game-room") {
-      setSelectedChannelId(currentGame.config.channels[0].id);
+    const needsMigrate = selectedChannelId === "rules" || selectedChannelId === "progress" ||
+      (selectedChannelId === "game-room" && currentGame?.config?.channels?.length && currentGame.config.channels[0].id !== "game-room");
+    if (needsMigrate) {
+      const firstChannel = currentGame?.config?.channels?.[0]?.id ?? "game-room";
+      setSelectedChannelId(firstChannel);
     }
   }, [currentGame?.config?.channels, selectedChannelId, setSelectedChannelId]);
 
@@ -1775,13 +1778,14 @@ ${rulesText || "No specific rules defined."}`.trim();
 
   const gameChannels = useMemo(
     () => [
-      { id: "rules", name: "Rules", type: "text" as const },
-      { id: "progress", name: "Progress", type: "text" as const },
       ...sections.map((s) => ({ id: s.id, name: s.name, type: "text" as const })),
       ...visibleGameRoomEntries,
     ],
     [sections, visibleGameRoomEntries]
   );
+
+  // Rules sheet overlay state
+  const [rulesSheetOpen, setRulesSheetOpen] = useState(false);
 
   const gameRoomIds = useMemo(
     () => new Set(gameRoomEntries.map((c) => c.id)),
@@ -2075,9 +2079,6 @@ ${rulesText || "No specific rules defined."}`.trim();
     selectedChannelId,
     onInvite: gamePhase !== "lobby" && isOwner && session?.access_token ? handleInvite : undefined,
     inviteJustCopied: inviteCopied,
-    // Players Online section removed — right panel (enrichedGuestMembers) shows
-    // real-time Presence data more accurately; left sidebar used stale DB poll.
-    textSectionLabel: "Sections",
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || guestNickname || null,
@@ -2087,11 +2088,8 @@ ${rulesText || "No specific rules defined."}`.trim();
     channelPermissions,
     allPlayers: players,
     unreadCounts,
+    onOpenRules: () => setRulesSheetOpen(true),
     onDeleteChannel: (id: string | undefined) => {
-      if (id === "rules" || id === "progress") {
-        toast.info("Sections cannot be removed");
-        return;
-      }
       if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
     },
   };
@@ -2196,39 +2194,6 @@ ${rulesText || "No specific rules defined."}`.trim();
             inviteJustCopied={inviteCopied}
             maxPlayers={currentGame?.config?.playerCount || 12}
           />
-        ) : selectedChannelId === "rules" ? (
-          <ScrollArea className="flex-1 p-6">
-            <div className="space-y-6 max-w-2xl">
-              {(currentGame?.config?.rules ?? "").trim() ? (
-                <div
-                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
-                  dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
-                  <p className="text-sm font-medium">No rules defined for this game.</p>
-                  <p className="text-xs mt-1">The Game Master can add rules when creating the game.</p>
-                </div>
-              )}
-
-            </div>
-          </ScrollArea>
-        ) : selectedChannelId === "progress" ? (
-          <ScrollArea className="flex-1 p-6">
-            <div className="max-w-2xl">
-              {(gameProgress ?? "").trim() ? (
-                <div
-                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
-                  dangerouslySetInnerHTML={{ __html: safeMarked(gameProgress) }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
-                  <p className="text-sm font-medium">No progress yet.</p>
-                  <p className="text-xs mt-1">Game progress will appear here as the host runs the game.</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
         ) : (() => {
           const activeSection = sections.find((s) => s.id === selectedChannelId);
           if (activeSection) return (
@@ -2398,6 +2363,30 @@ ${rulesText || "No specific rules defined."}`.trim();
           });
         }}
       />
+
+      {/* Rules overlay sheet */}
+      <Sheet open={rulesSheetOpen} onOpenChange={setRulesSheetOpen}>
+        <SheetContent side="left" title="Rules" className="w-[28rem] max-w-[90vw] p-0 bg-zinc-900 border-r border-zinc-700">
+          <div className="h-14 px-5 flex items-center border-b border-zinc-800">
+            <h2 className="text-base font-semibold text-white">Rules</h2>
+          </div>
+          <ScrollArea className="h-[calc(100%-3.5rem)] p-5">
+            <div className="max-w-2xl">
+              {(currentGame?.config?.rules ?? "").trim() ? (
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                  dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
+                  <p className="text-sm font-medium">No rules defined for this game.</p>
+                  <p className="text-xs mt-1">The Game Master can add rules when creating the game.</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
       <Toaster
         position="top-right"

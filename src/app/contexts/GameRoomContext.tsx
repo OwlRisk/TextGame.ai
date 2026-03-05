@@ -30,7 +30,6 @@ interface GameRoomContextType {
   currentSpeakerId: string | null;
   typingUsers: { name: string; avatar: string }[];
   privateMessages: Record<string, PrivateMessage[]>;
-  gameProgress: string;
   myBoardContent: Record<string, string>; // playerId -> board content
   /** AI player's own private notes written via [MY_NOTES] — persisted per-game. */
   playerNotes: Record<string, string>; // playerId -> notes
@@ -78,7 +77,6 @@ interface GameRoomContextType {
   setSelectedChannelId: React.Dispatch<React.SetStateAction<string | null>>;
   setCurrentSpeakerId: React.Dispatch<React.SetStateAction<string | null>>;
   setTypingUsers: React.Dispatch<React.SetStateAction<{ name: string; avatar: string }[]>>;
-  setGameProgress: React.Dispatch<React.SetStateAction<string>>;
   setMyBoardContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   setPlayerNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   setSections: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string; content: string }>>>;
@@ -122,7 +120,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [currentSpeakerId, setCurrentSpeakerId] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<{ name: string; avatar: string }[]>([]);
   const [privateMessages, setPrivateMessages] = useState<Record<string, PrivateMessage[]>>({});
-  const [gameProgress, setGameProgress] = useState<string>("");
   const [myBoardContent, setMyBoardContent] = useState<Record<string, string>>({});
   const [playerNotes, setPlayerNotes] = useState<Record<string, string>>({});
   const [sections, setSections] = useState<Array<{ id: string; name: string; content: string }>>([]);
@@ -189,7 +186,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.gamePhase) setGamePhase(state.gamePhase as string);
       if (state.gamePhaseState) setGamePhaseState(state.gamePhaseState as GamePhaseState);
       if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId as string | null);
-      if (state.gameProgress) setGameProgress((state.gameProgress as string) ?? "");
       if (state.myBoardContent) setMyBoardContent((state.myBoardContent as Record<string, string>) ?? {});
       if (state.playerNotes && typeof state.playerNotes === "object") {
         setPlayerNotes(state.playerNotes as Record<string, string>);
@@ -272,7 +268,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const gamePhaseRef = useRef(gamePhase);
   const gamePhaseStateRef = useRef(gamePhaseState);
   const selectedChannelIdRef = useRef(selectedChannelId);
-  const gameProgressRef = useRef(gameProgress);
   const myBoardContentRef = useRef(myBoardContent);
   const playerNotesRef = useRef(playerNotes);
   const sectionsRef = useRef(sections);
@@ -287,7 +282,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
   useEffect(() => { gamePhaseStateRef.current = gamePhaseState; }, [gamePhaseState]);
   useEffect(() => { selectedChannelIdRef.current = selectedChannelId; }, [selectedChannelId]);
-  useEffect(() => { gameProgressRef.current = gameProgress; }, [gameProgress]);
   useEffect(() => { myBoardContentRef.current = myBoardContent; }, [myBoardContent]);
   useEffect(() => { playerNotesRef.current = playerNotes; }, [playerNotes]);
   useEffect(() => { sectionsRef.current = sections; }, [sections]);
@@ -313,7 +307,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           gamePhase: gamePhaseRef.current,
           gamePhaseState: gamePhaseStateRef.current,
           selectedChannelId: selectedChannelIdRef.current,
-          gameProgress: gameProgressRef.current,
           myBoardContent: myBoardContentRef.current,
           playerNotes: Object.keys(playerNotesRef.current).length ? playerNotesRef.current : undefined,
           sections: sectionsRef.current,
@@ -353,7 +346,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     gamePhase,
     gamePhaseState,
     selectedChannelId,
-    gameProgress,
     myBoardContent,
     playerNotes,
     sections,
@@ -400,7 +392,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       gamePhase,
       gamePhaseState,
       selectedChannelId,
-      gameProgress,
       myBoardContent,
       playerNotes: Object.keys(playerNotes).length ? playerNotes : undefined,
       sections,
@@ -500,9 +491,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     }
     if (remoteState.gamePhaseState && typeof remoteState.gamePhaseState === "object") {
       setGamePhaseState(remoteState.gamePhaseState as GamePhaseState);
-    }
-    if (typeof remoteState.gameProgress === "string") {
-      setGameProgress(remoteState.gameProgress);
     }
     if (remoteState.myBoardContent && typeof remoteState.myBoardContent === "object") {
       setMyBoardContent(remoteState.myBoardContent as Record<string, string>);
@@ -689,7 +677,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setCurrentSpeakerId(null);
     setTypingUsers([]);
     setPrivateMessages({});
-    setGameProgress("");
     setMyBoardContent({});
     setGameEvents([]);
     setGameEnded(false);
@@ -713,7 +700,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     currentSpeakerId,
     typingUsers,
     privateMessages,
-    gameProgress,
     myBoardContent,
     playerNotes,
     sections,
@@ -744,7 +730,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setSelectedChannelId,
     setCurrentSpeakerId,
     setTypingUsers,
-    setGameProgress,
     setMyBoardContent,
     setPlayerNotes,
     setSections,
@@ -764,7 +749,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     userId,
   }), [
     messages, players, gamePhase, gamePhaseState, selectedChannelId,
-    currentSpeakerId, typingUsers, privateMessages, gameProgress,
+    currentSpeakerId, typingUsers, privateMessages,
     myBoardContent, playerNotes, sections, sectionsLoading, gameEvents,
     gameEnded, gameResult, aiSuggestedPrompts, humanGameIdentity,
     avatarImageUrls, isHydrated, phaseLabel, mood, activeVote, timerEndsAt,

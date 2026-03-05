@@ -1,4 +1,4 @@
-import { Hash, Users, Lock, Trash2, Link2, Check, UserPlus } from "lucide-react";
+import { Hash, Users, Lock, Trash2, Link2, Check, UserPlus, BookOpen, FileText } from "lucide-react";
 import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -43,8 +43,6 @@ interface ChannelListProps {
   selectedChannelId: string | null;
   onSelectChannel: (channelId: string) => void;
   onDeleteChannel?: (channelId: string) => void;
-  /** Label for the text sections (intro, rules, progress). Default: "Sections" */
-  textSectionLabel?: string;
   /** Label for game rooms. Default: "Game Rooms" */
   gameSectionLabel?: string;
   /** Current user display name (e.g. from auth). When provided, shown instead of "Player". */
@@ -70,6 +68,8 @@ interface ChannelListProps {
   roomMembers?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>;
   /** The current viewer's member ID — used to show "You" on their own entry. */
   viewerMemberId?: string;
+  /** Callback to open the rules panel/sheet. When provided, shows a "Rules" button at the top. */
+  onOpenRules?: () => void;
 }
 
 export function ChannelList({ 
@@ -78,7 +78,6 @@ export function ChannelList({
   selectedChannelId, 
   onSelectChannel,
   onDeleteChannel,
-  textSectionLabel = "Sections",
   gameSectionLabel = "Game Rooms",
   userDisplayName,
   gameUserDisplayName,
@@ -92,6 +91,7 @@ export function ChannelList({
   inviteJustCopied = false,
   roomMembers,
   viewerMemberId,
+  onOpenRules,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -130,44 +130,60 @@ export function ChannelList({
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3">
-          {/* Text sections (intro, rules, progress) */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between px-3 mb-2">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{textSectionLabel}</span>
+          {/* Rules button + dynamic sections from AI Host */}
+          {(onOpenRules || channels.some(c => c.type === "text")) && (
+            <div className="mb-5">
+              {onOpenRules && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start px-3 h-9 mb-1 rounded-lg text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
+                  onClick={onOpenRules}
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Rules</span>
+                </Button>
+              )}
+              {channels.filter(c => c.type === "text").length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between px-3 mb-2">
+                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sections</span>
+                  </div>
+                  {channels.filter(c => c.type === "text").map((channel) => (
+                    <ContextMenu key={channel.id}>
+                      <ContextMenuTrigger>
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start px-3 h-9 mb-1 rounded-lg focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
+                            selectedChannelId === channel.id
+                              ? "bg-zinc-700/50 text-white"
+                              : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
+                          }`}
+                          onClick={() => onSelectChannel(channel.id)}
+                        >
+                          <FileText className="h-4 w-4 mr-2 text-amber-400/60" />
+                          <span className="text-sm">{channel.name}</span>
+                        </Button>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                        <ContextMenuItem 
+                          className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                          onClick={() => {
+                            setChannelToDelete(channel);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Section
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  ))}
+                </div>
+              )}
             </div>
-            {channels.filter(c => c.type === "text").map((channel) => (
-              <ContextMenu key={channel.id}>
-                <ContextMenuTrigger>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start px-3 h-9 mb-1 rounded-lg focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
-                      selectedChannelId === channel.id
-                        ? "bg-zinc-700/50 text-white"
-                        : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
-                    }`}
-                    onClick={() => onSelectChannel(channel.id)}
-                  >
-                    <Hash className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{channel.name}</span>
-                  </Button>
-                </ContextMenuTrigger>
-                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
-                  <ContextMenuItem 
-                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
-                    onClick={() => {
-                      setChannelToDelete(channel);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Section
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
-          </div>
+          )}
 
-          <Separator className="my-3 bg-zinc-700/50" />
+          {(onOpenRules || channels.some(c => c.type === "text")) && <Separator className="my-3 bg-zinc-700/50" />}
 
           {/* Game Rooms */}
           <div>
