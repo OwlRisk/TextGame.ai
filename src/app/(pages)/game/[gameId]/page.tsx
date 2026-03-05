@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Menu, Hash, Users } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
+import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
 import { supabase } from "@/lib/supabase";
 import { safeMarked } from "@/lib/safe-marked";
 /** Delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
@@ -713,6 +714,20 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     };
 
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
+
+    // Batch-fetch avatars: 1 random AI player gets a freshly generated avatar
+    // (saved to pool + ai_characters DB), the rest get free pool avatars.
+    const roomPlayers: RoomPlayerInfo[] = [
+      { name: gameMaster.name, type: 'host', gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background },
+      ...aiPlayers.map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
+        name: p.name, type: 'player' as const, gender: p.gender, personality: p.personality, background: p.background,
+      })),
+    ];
+    fetchAvatarsForRoom(roomPlayers, gameId).then((urlMap) => {
+      for (const [key, url] of Object.entries(urlMap)) {
+        onAvatarUrlLoaded(key, url);
+      }
+    }).catch(() => {});
 
     const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
     const lobbyGreeting = config.template === "tarot"

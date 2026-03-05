@@ -37,9 +37,32 @@ export async function GET() {
 
 const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 128;
+const POOL_OUTPUT_SIZE = 256;
 
-/** Number of pre-generated avatars per gender in the pool */
-export const POOL_SIZE = 30;
+/** Minimum pool size (initial seed); actual size is fetched dynamically. */
+const MIN_POOL_SIZE = 30;
+
+/** In-memory cache of actual pool sizes per gender (refreshed every 5 min). */
+const poolSizeCache: Record<string, { count: number; fetchedAt: number }> = {};
+const POOL_SIZE_TTL_MS = 5 * 60 * 1000;
+
+async function getActualPoolSize(gender: 'male' | 'female'): Promise<number> {
+  const cached = poolSizeCache[gender];
+  if (cached && Date.now() - cached.fetchedAt < POOL_SIZE_TTL_MS) return cached.count;
+  if (!supabaseAdmin) return MIN_POOL_SIZE;
+  try {
+    const { data } = await supabaseAdmin.storage.from(AVATAR_BUCKET).list(`pool/${gender}`, { limit: 1000 });
+    const count = data?.filter(f => f.name.endsWith('.png')).length ?? MIN_POOL_SIZE;
+    const size = Math.max(count, MIN_POOL_SIZE);
+    poolSizeCache[gender] = { count: size, fetchedAt: Date.now() };
+    return size;
+  } catch {
+    return poolSizeCache[gender]?.count ?? MIN_POOL_SIZE;
+  }
+}
+
+/** Exported for tests — returns MIN_POOL_SIZE synchronously; runtime uses dynamic value. */
+export const POOL_SIZE = MIN_POOL_SIZE;
 
 /** Resize a base64 data-URL image to AVATAR_OUTPUT_SIZE and return as data-URL */
 async function resizeAvatarTo64(dataUrl: string): Promise<string> {
@@ -62,19 +85,85 @@ async function resizeAvatarToBuffer(dataUrl: string): Promise<Buffer> {
     .toBuffer();
 }
 
+/** Resize for pool storage (higher res than individual avatars). */
+async function resizeForPool(dataUrl: string): Promise<Buffer> {
+  const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64, 'base64');
+  return sharp(buffer)
+    .resize(POOL_OUTPUT_SIZE, POOL_OUTPUT_SIZE)
+    .png({ compressionLevel: 9, palette: true })
+    .toBuffer();
+}
+
 /**
  * Construct a deterministic pool avatar URL based on name, type, and gender.
- * Returns null if Supabase URL is not configured.
+ * Uses dynamic pool size so newly added avatars are also reachable.
  */
 export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string): string | null {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) return null;
   const key = `${name}|${type}`;
   const hash = crypto.createHash('sha256').update(key).digest('hex');
-  const index = (parseInt(hash.slice(0, 8), 16) % POOL_SIZE) + 1;
-  const padded = String(index).padStart(3, '0');
   const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
+  const poolSize = poolSizeCache[g]?.count ?? MIN_POOL_SIZE;
+  const index = (parseInt(hash.slice(0, 8), 16) % poolSize) + 1;
+  const padded = String(index).padStart(3, '0');
   return `${supabaseUrl}/storage/v1/object/public/${AVATAR_BUCKET}/pool/${g}/${padded}.png`;
+}
+
+/** Async version that fetches actual pool size first. */
+async function getPoolAvatarUrlAsync(name: string, type: AvatarType, gender?: string): Promise<string | null> {
+  const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
+  await getActualPoolSize(g);
+  return getPoolAvatarUrl(name, type, gender);
+}
+
+/** Get next available pool index for a gender, then upload the avatar there. */
+async function uploadToPool(buffer: Buffer, gender: 'male' | 'female'): Promise<string | null> {
+  if (!supabaseAdmin) return null;
+  const currentSize = await getActualPoolSize(gender);
+  const newIndex = currentSize + 1;
+  const padded = String(newIndex).padStart(3, '0');
+  const storagePath = `pool/${gender}/${padded}.png`;
+
+  const { error } = await supabaseAdmin.storage
+    .from(AVATAR_BUCKET)
+    .upload(storagePath, buffer, { contentType: 'image/png', upsert: true });
+  if (error) {
+    logger.warn('[Avatar] Pool upload failed:', error.message);
+    return null;
+  }
+
+  // Invalidate cache so next request sees updated pool size
+  delete poolSizeCache[gender];
+
+  const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(storagePath);
+  logger.log(`[Avatar] New avatar added to pool: ${storagePath} (pool size now ~${newIndex})`);
+  return urlData.publicUrl;
+}
+
+/** Save a generated character to the ai_characters table for future community use. */
+async function saveCharacterToDb(opts: {
+  name: string; gender?: string; personality?: string; background?: string;
+  avatarUrl?: string; gameId?: string;
+}): Promise<void> {
+  if (!supabaseAdmin) return;
+  try {
+    const { error } = await supabaseAdmin.from('ai_characters').insert({
+      user_id: 'system',
+      name: opts.name,
+      gender: opts.gender || 'other',
+      personality: opts.personality || null,
+      background: opts.background || null,
+      avatar_url: opts.avatarUrl || null,
+      is_system: true,
+      source_game_id: opts.gameId || null,
+    });
+    if (error) logger.warn('[Avatar] Failed to save character to DB:', error.message);
+    else logger.log(`[Avatar] Character saved to ai_characters: ${opts.name}`);
+  } catch (err) {
+    logger.warn('[Avatar] DB save error:', err);
+  }
 }
 
 const openai = new OpenAI({
@@ -360,6 +449,7 @@ export async function POST(request: NextRequest) {
       personality,
       gender,
       forceRegenerate,
+      generateAndPool,
     } = body as {
       name?: string;
       type?: AvatarType;
@@ -369,6 +459,7 @@ export async function POST(request: NextRequest) {
       personality?: string;
       gender?: string;
       forceRegenerate?: boolean;
+      generateAndPool?: boolean;
     };
 
     if (!name || typeof name !== 'string') {
@@ -457,14 +548,78 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ image: image64 });
     }
 
-    // --- 3. Default: return pool avatar URL (no generation, no cost) ---
-    const poolUrl = getPoolAvatarUrl(name, avatarType, typeof gender === 'string' ? gender : undefined);
+    // --- 3. Generate and add to pool: DALL-E 3 + save to pool + persist to ai_characters ---
+    if (generateAndPool) {
+      if (!hasOpenAI) {
+        return NextResponse.json(
+          { error: 'Avatar service unavailable', details: 'OPENAI_API_KEY is not configured' },
+          { status: 503 }
+        );
+      }
+
+      if (isDatabaseConfigured()) {
+        try {
+          const hasBalance = await deductTokens(
+            user.id,
+            imageGenCostToCoins('dall-e-3'),
+            'image_generation',
+            `Pool avatar for ${name} (${avatarType}) [dall-e-3]`
+          );
+          if (!hasBalance) {
+            return NextResponse.json(
+              {
+                error: 'Insufficient tokens',
+                message: 'You need more tokens to generate avatars. Please purchase tokens or upgrade to Pro.',
+                code: 'INSUFFICIENT_TOKENS',
+              },
+              { status: 402 }
+            );
+          }
+        } catch (tokenErr) {
+          logger.warn('[Avatar API] Token deduction failed, generating anyway:', tokenErr);
+        }
+      }
+
+      const genderStr = typeof gender === 'string' ? gender : undefined;
+      const prompt = buildPrompt(name, avatarType, {
+        background: typeof background === 'string' ? background : undefined,
+        personality: typeof personality === 'string' ? personality : undefined,
+        gender: genderStr,
+      });
+
+      logger.log(`[Avatar] generateAndPool for: ${name}, gender: ${genderStr}, prompt length: ${prompt.length}`);
+
+      const imageDataUrl = await generateWithDalle3(prompt);
+      const g: 'male' | 'female' = (genderStr?.trim().toLowerCase() === 'female') ? 'female' : 'male';
+
+      const poolBuffer = await resizeForPool(imageDataUrl);
+      const newPoolUrl = await uploadToPool(poolBuffer, g);
+
+      await saveCharacterToDb({
+        name,
+        gender: genderStr,
+        personality: typeof personality === 'string' ? personality : undefined,
+        background: typeof background === 'string' ? background : undefined,
+        avatarUrl: newPoolUrl || undefined,
+        gameId: typeof gameId === 'string' ? gameId : undefined,
+      });
+
+      if (newPoolUrl) {
+        return NextResponse.json({ image: newPoolUrl, pool: true, generated: true });
+      }
+
+      const image64 = await resizeAvatarTo64(imageDataUrl);
+      return NextResponse.json({ image: image64, generated: true });
+    }
+
+    // --- 4. Default: return pool avatar URL (no generation, no cost) ---
+    const poolUrl = await getPoolAvatarUrlAsync(name, avatarType, typeof gender === 'string' ? gender : undefined);
     if (poolUrl) {
       logger.log('[Avatar API] returning pool avatar:', poolUrl);
       return NextResponse.json({ image: poolUrl, pool: true });
     }
 
-    // --- 4. Fallback: pool URL unavailable (no Supabase URL), generate with Replicate/DALL-E 3 ---
+    // --- 5. Fallback: pool URL unavailable (no Supabase URL), generate with Replicate/DALL-E 3 ---
     logger.warn('[Avatar API] No pool URL available, falling back to generation');
     if (isDatabaseConfigured()) {
       try {

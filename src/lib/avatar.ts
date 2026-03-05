@@ -160,6 +160,100 @@ export async function fetchGeneratedAvatar(
   return promise;
 }
 
+export interface RoomPlayerInfo {
+  name: string;
+  type?: AvatarType;
+  gender?: string;
+  personality?: string;
+  background?: string;
+  role?: string;
+}
+
+/**
+ * Fetch avatars for an entire room in one batch.
+ * Randomly picks 1 AI player to get a freshly generated DALL-E 3 avatar
+ * (generateAndPool — costs coins, avatar saved to pool + ai_characters DB).
+ * All others get free pool avatars.
+ * Returns a map of "name|type" -> avatar URL.
+ */
+export async function fetchAvatarsForRoom(
+  players: RoomPlayerInfo[],
+  gameId?: string,
+): Promise<Record<string, string>> {
+  if (players.length === 0) return {};
+
+  const aiPlayers = players.filter(p => (p.type ?? 'player') === 'player');
+
+  // Pick 1 random AI player for generateAndPool
+  const generateIndex = aiPlayers.length > 0 ? Math.floor(Math.random() * aiPlayers.length) : -1;
+
+  const results: Record<string, string> = {};
+
+  const promises = players.map(async (player) => {
+    const pType: AvatarType = (player.type ?? 'player') as AvatarType;
+    const key = identityCacheKey(player.name, pType);
+
+    // Check cache first
+    const cached = cache.get(key);
+    if (cached) { results[key] = cached; return; }
+    const stored = loadFromStorage(key);
+    if (stored) { cache.set(key, stored); results[key] = stored; return; }
+
+    const isGenerateTarget = aiPlayers.indexOf(player) === generateIndex;
+
+    try {
+      const res = await fetch('/api/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: player.name,
+          type: pType,
+          gameId: gameId || undefined,
+          role: player.role || undefined,
+          background: player.background || undefined,
+          personality: player.personality || undefined,
+          gender: player.gender || undefined,
+          generateAndPool: isGenerateTarget || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        // If generateAndPool failed (e.g. insufficient tokens), retry as pool
+        if (isGenerateTarget && res.status === 402) {
+          const fallbackRes = await fetch('/api/avatar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              name: player.name, type: pType,
+              gender: player.gender || undefined,
+            }),
+          });
+          if (fallbackRes.ok) {
+            const data = await fallbackRes.json() as { image: string };
+            cache.set(key, data.image);
+            saveToStorage(key, data.image);
+            results[key] = data.image;
+            return;
+          }
+        }
+        return;
+      }
+
+      const data = (await res.json()) as { image: string };
+      cache.set(key, data.image);
+      saveToStorage(key, data.image);
+      results[key] = data.image;
+    } catch {
+      // Silently skip failed avatars
+    }
+  });
+
+  await Promise.allSettled(promises);
+  return results;
+}
+
 export interface UseGeneratedAvatarOptions {
   type?: AvatarType;
   gameId?: string;

@@ -118,7 +118,7 @@ async function generateOne(openai, prompt) {
   const b64 = resp.data?.[0]?.b64_json;
   if (!b64) throw new Error('No image data returned');
   const buffer = Buffer.from(b64, 'base64');
-  return sharp(buffer).resize(OUTPUT_SIZE, OUTPUT_SIZE).png().toBuffer();
+  return sharp(buffer).resize(OUTPUT_SIZE, OUTPUT_SIZE).png({ compressionLevel: 9, palette: true }).toBuffer();
 }
 
 async function main() {
