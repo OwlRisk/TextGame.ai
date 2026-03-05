@@ -24,7 +24,7 @@ async function sendFeedbackEmail(message: string, userEmail: string | null, imag
   if (!transporter) return;
 
   const imagesHtml = imageUrls.length > 0
-    ? `<p><strong>Attachments:</strong></p>${imageUrls.map((u) => `<p><a href="${u}">${u}</a></p>`).join('')}`
+    ? `<p><strong>Screenshots (${imageUrls.length}):</strong></p>${imageUrls.map((u) => `<p><a href="${u}"><img src="${u}" style="max-width:480px;max-height:320px;border-radius:8px;border:1px solid #ddd" /></a></p>`).join('')}`
     : '';
 
   await transporter.sendMail({
