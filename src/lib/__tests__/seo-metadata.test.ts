@@ -7,8 +7,8 @@ import sitemap from "@/app/sitemap";
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("site constants", () => {
-  it("SITE_NAME is textgame.ai", () => {
-    expect(SITE_NAME).toBe("textgame.ai");
+  it("SITE_NAME is TextGame.ai", () => {
+    expect(SITE_NAME).toBe("TextGame.ai");
   });
 
   it("SITE_DOMAIN starts with https", () => {
@@ -149,18 +149,18 @@ describe("root layout metadata exports", () => {
       },
       {
         "@type": "Question",
-        name: "What is textgame.ai?",
+        name: "What is TextGame.ai?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "textgame.ai is an AI-powered platform for creating and playing multiplayer text-based games. An AI Game Master hosts every session — assigning roles, managing phases, and narrating the story. AI characters fill every seat so you can play solo or with friends.",
+          text: "TextGame.ai is an AI-powered platform for creating and playing multiplayer text-based games. An AI Game Master hosts every session — assigning roles, managing phases, and narrating the story. AI characters fill every seat so you can play solo or with friends.",
         },
       },
       {
         "@type": "Question",
-        name: "Is textgame.ai a Character.AI alternative?",
+        name: "Is TextGame.ai a Character.AI alternative?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — textgame.ai offers AI characters with unique personalities, voices, and strategies in a game context. Unlike Character.AI, it focuses on multiplayer social deduction and RPG games with structured rules, an AI host, and real-time interaction between multiple AI and human players.",
+          text: "Yes — TextGame.ai offers AI characters with unique personalities, voices, and strategies in a game context. Unlike Character.AI, it focuses on multiplayer social deduction and RPG games with structured rules, an AI host, and real-time interaction between multiple AI and human players.",
         },
       },
       {
@@ -168,7 +168,7 @@ describe("root layout metadata exports", () => {
         name: "Can I play Werewolf online with AI?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Absolutely! textgame.ai has a ready-to-play Werewolf template. The AI Game Master runs day/night phases, assigns roles like Seer and Doctor, and AI players make strategic decisions. Play solo against AI or invite friends to join.",
+          text: "Absolutely! TextGame.ai has a ready-to-play Werewolf template. The AI Game Master runs day/night phases, assigns roles like Seer and Doctor, and AI players make strategic decisions. Play solo against AI or invite friends to join.",
         },
       },
       {
@@ -289,7 +289,7 @@ describe("SEO keyword coverage", () => {
   ];
 
   const LAYOUT_KEYWORDS = [
-    "textgame.ai",
+    "TextGame.ai",
     "AI text game",
     "text-based game",
     "AI game host",

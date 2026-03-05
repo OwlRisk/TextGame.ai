@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
-const TITLE = "AI Dungeon vs textgame.ai — Which AI Game Platform is Right for You?";
+const TITLE = "AI Dungeon vs TextGame.ai — Which AI Game Platform is Right for You?";
 const DESCRIPTION =
-  "Compare AI Dungeon and textgame.ai: open-ended solo adventures vs multiplayer games with an AI Game Master. Find out which platform fits your play style.";
+  "Compare AI Dungeon and TextGame.ai: open-ended solo adventures vs multiplayer games with an AI Game Master. Find out which platform fits your play style.";
 const CANONICAL = "/blog/ai-dungeon-vs-textgame";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 const MODIFIED = "2026-03-04T00:00:00Z";
@@ -95,7 +95,7 @@ export default function AiDungeonVsTextgamePage() {
             Blog
           </Link>
           <span>/</span>
-          <span className="text-zinc-400">AI Dungeon vs textgame.ai</span>
+          <span className="text-zinc-400">AI Dungeon vs TextGame.ai</span>
         </nav>
 
         {/* Header */}
@@ -114,7 +114,7 @@ export default function AiDungeonVsTextgamePage() {
           </h1>
 
           <p className="text-lg text-zinc-400 leading-relaxed mb-5">
-            Both AI Dungeon and textgame.ai use AI to power text-based experiences — but they&apos;re built
+            Both AI Dungeon and TextGame.ai use AI to power text-based experiences — but they&apos;re built
             for completely different play styles. One excels at solo, open-ended storytelling; the other
             at multiplayer games with rules and structure. Here&apos;s how they compare.
           </p>
@@ -134,10 +134,10 @@ export default function AiDungeonVsTextgamePage() {
           <ol className="space-y-1.5">
             {[
               { id: "what-is-ai-dungeon", label: "What is AI Dungeon?" },
-              { id: "what-is-textgame", label: "What is textgame.ai?" },
+              { id: "what-is-textgame", label: "What is TextGame.ai?" },
               { id: "key-differences", label: "Key Differences" },
               { id: "when-ai-dungeon", label: "When to Choose AI Dungeon" },
-              { id: "when-textgame", label: "When to Choose textgame.ai" },
+              { id: "when-textgame", label: "When to Choose TextGame.ai" },
               { id: "use-both", label: "Can You Use Both?" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
@@ -171,8 +171,8 @@ export default function AiDungeonVsTextgamePage() {
           responds to your imagination.
         </P>
 
-        {/* ── What is textgame.ai ───────────────────────────────────── */}
-        <H2 id="what-is-textgame">What is textgame.ai?</H2>
+        {/* ── What is TextGame.ai ───────────────────────────────────── */}
+        <H2 id="what-is-textgame">What is TextGame.ai?</H2>
 
         <P>
           <Link href="/" className="text-violet-400 hover:underline font-semibold">
@@ -280,8 +280,8 @@ export default function AiDungeonVsTextgamePage() {
           freeform experience.
         </P>
 
-        {/* ── When to Choose textgame.ai ─────────────────────────────── */}
-        <H2 id="when-textgame">When to Choose textgame.ai</H2>
+        {/* ── When to Choose TextGame.ai ─────────────────────────────── */}
+        <H2 id="when-textgame">When to Choose TextGame.ai</H2>
 
         <P>
           {SITE_NAME} is the right choice when you want{" "}
@@ -323,9 +323,9 @@ export default function AiDungeonVsTextgamePage() {
         <H2 id="use-both">Can You Use Both?</H2>
 
         <P>
-          Yes. AI Dungeon and textgame.ai serve different needs. If you enjoy both solo creative
+          Yes. AI Dungeon and TextGame.ai serve different needs. If you enjoy both solo creative
           writing and multiplayer games, there&apos;s no reason to pick one. Use AI Dungeon when you want
-          to escape into an open-ended adventure alone, and textgame.ai when you want to play
+          to escape into an open-ended adventure alone, and TextGame.ai when you want to play
           structured games with friends or AI characters.
         </P>
 
@@ -350,9 +350,9 @@ export default function AiDungeonVsTextgamePage() {
             </P>
           </div>
           <div>
-            <H3>Can textgame.ai do open-ended storytelling like AI Dungeon?</H3>
+            <H3>Can TextGame.ai do open-ended storytelling like AI Dungeon?</H3>
             <P>
-              textgame.ai is built for structured games with rules and roles. You can create custom
+              TextGame.ai is built for structured games with rules and roles. You can create custom
               games by describing your rules, but the experience is game-focused rather than
               freeform narrative. For open-ended solo adventures, AI Dungeon is the better fit.
             </P>
@@ -361,7 +361,7 @@ export default function AiDungeonVsTextgamePage() {
             <H3>Which has a better free tier?</H3>
             <P>
               Both offer free access with limits. AI Dungeon&apos;s free tier is quite restricted; premium
-              is $10/month. textgame.ai gives new users starting credits and allows guest play for
+              is $10/month. TextGame.ai gives new users starting credits and allows guest play for
               friends. Try both to see which fits your usage.
             </P>
           </div>
@@ -372,7 +372,7 @@ export default function AiDungeonVsTextgamePage() {
               management. You could try to prompt it to run Werewolf, but it won&apos;t enforce rules
               consistently. For social deduction games,{" "}
               <Link href="/games/werewolf" className="text-violet-400 hover:underline">
-                textgame.ai
+                TextGame.ai
               </Link>{" "}
               has dedicated templates with a full rules engine.
             </P>

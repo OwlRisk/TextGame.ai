@@ -70,7 +70,7 @@ function TableOfContents() {
   const items = [
     { id: "why-alternatives", label: "Why Look Beyond PolyBuzz?" },
     { id: "comparison", label: "Quick Comparison Table" },
-    { id: "textgame-ai", label: "#1 textgame.ai" },
+    { id: "textgame-ai", label: "#1 TextGame.ai" },
     { id: "character-ai", label: "#2 Character.AI" },
     { id: "janitor-ai", label: "#3 Janitor AI" },
     { id: "talkie-ai", label: "#4 Talkie AI" },
@@ -162,7 +162,7 @@ export default function PolyBuzzAlternativesPage() {
             </thead>
             <tbody className="text-zinc-300">
               <tr className="border-b border-zinc-800/60">
-                <td className="py-3 pr-4 font-semibold text-violet-400">textgame.ai</td>
+                <td className="py-3 pr-4 font-semibold text-violet-400">TextGame.ai</td>
                 <td className="py-3 pr-4">✓ Real-time</td>
                 <td className="py-3 pr-4">✓ Per-character TTS</td>
                 <td className="py-3 pr-4">✓ 20+ templates</td>
@@ -214,10 +214,10 @@ export default function PolyBuzzAlternativesPage() {
           </table>
         </div>
 
-        {/* ── #1 textgame.ai ───────────────────────────────────────── */}
-        <H2 id="textgame-ai">#1 textgame.ai — Best for Multiplayer AI Games</H2>
+        {/* ── #1 TextGame.ai ───────────────────────────────────────── */}
+        <H2 id="textgame-ai">#1 TextGame.ai — Best for Multiplayer AI Games</H2>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> isn&apos;t just another chat app — it&apos;s a full game platform powered by an AI Game Master. Where PolyBuzz gives you a single character to talk to, textgame.ai gives you a room full of AI players running Werewolf, Mafia, murder mysteries, or any custom game you describe.
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> isn&apos;t just another chat app — it&apos;s a full game platform powered by an AI Game Master. Where PolyBuzz gives you a single character to talk to, TextGame.ai gives you a room full of AI players running Werewolf, Mafia, murder mysteries, or any custom game you describe.
         </P>
         <P>
           Invite friends with a link, mix human and AI players, and let the Game Master handle roles, turns, and narration. Every AI character has its own personality, voice, and strategy — they bluff, ally, and betray just like human players. It&apos;s the only PolyBuzz alternative with real game structure <em>and</em> multiplayer.
@@ -286,25 +286,25 @@ export default function PolyBuzzAlternativesPage() {
           <div>
             <H3>Is PolyBuzz still worth using in 2026?</H3>
             <P>
-              PolyBuzz is a solid option for quick AI character chats. However, it hasn&apos;t added multiplayer or game features, so users looking for structured play or group sessions should consider alternatives like textgame.ai.
+              PolyBuzz is a solid option for quick AI character chats. However, it hasn&apos;t added multiplayer or game features, so users looking for structured play or group sessions should consider alternatives like TextGame.ai.
             </P>
           </div>
           <div>
             <H3>Which PolyBuzz alternative has multiplayer?</H3>
             <P>
-              <Link href="/" className="text-violet-400 hover:underline">textgame.ai</Link> is the only platform on this list with real-time multiplayer. You can invite friends via a link and play alongside AI characters in the same game session.
+              <Link href="/" className="text-violet-400 hover:underline">TextGame.ai</Link> is the only platform on this list with real-time multiplayer. You can invite friends via a link and play alongside AI characters in the same game session.
             </P>
           </div>
           <div>
             <H3>What&apos;s the best free alternative to PolyBuzz?</H3>
             <P>
-              Perchance is completely free with no account required. For games, textgame.ai offers free starting credits. Janitor AI is free if you provide your own API key.
+              Perchance is completely free with no account required. For games, TextGame.ai offers free starting credits. Janitor AI is free if you provide your own API key.
             </P>
           </div>
           <div>
             <H3>Can I play social deduction games with AI instead of just chatting?</H3>
             <P>
-              Yes — textgame.ai supports Werewolf, Mafia, Secret Hitler, and 20+ other game templates. An AI Game Master runs every session with full rules, voting phases, and dynamic narration.
+              Yes — TextGame.ai supports Werewolf, Mafia, Secret Hitler, and 20+ other game templates. An AI Game Master runs every session with full rules, voting phases, and dynamic narration.
             </P>
           </div>
         </div>

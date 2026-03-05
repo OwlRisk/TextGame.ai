@@ -61,7 +61,7 @@ async function sendFeedbackEmail(
         <blockquote style="border-left:3px solid #7c3aed;padding-left:12px;color:#333;white-space:pre-wrap">${message}</blockquote>
         ${imagesHtml}
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
-        <p style="color:#999;font-size:12px">Sent from textgame.ai feedback form</p>
+        <p style="color:#999;font-size:12px">Sent from TextGame.ai feedback form</p>
       </div>
     `,
   });

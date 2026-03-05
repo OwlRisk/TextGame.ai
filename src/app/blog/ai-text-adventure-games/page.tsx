@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "Best AI Text Adventure Games in 2026 — Play Free Online";
 const DESCRIPTION =
-  "Discover the best AI text adventure games you can play free online in 2026. Compare AI Dungeon, textgame.ai, Novel AI, and more — plus what makes AI-powered interactive fiction special.";
+  "Discover the best AI text adventure games you can play free online in 2026. Compare AI Dungeon, TextGame.ai, Novel AI, and more — plus what makes AI-powered interactive fiction special.";
 const CANONICAL = "/blog/ai-text-adventure-games";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -137,7 +137,7 @@ export default function AiTextAdventureGamesPage() {
         {/* ── Best AI Text Adventure Games ────────────────────────────── */}
         <H2 id="best-games">Best AI Text Adventure Games in 2026</H2>
 
-        <H3>1. textgame.ai</H3>
+        <H3>1. TextGame.ai</H3>
         <P>
           <Link href="/" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> is
           the only AI text adventure platform built for <strong className="text-white">multiplayer from

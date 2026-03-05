@@ -18,14 +18,14 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/games" },
   openGraph: {
-    title: "AI Game Library · textgame.ai",
+    title: "AI Game Library · TextGame.ai",
     description: "Browse 15+ text games with an AI game master. Free to play, no setup needed.",
     type: "website",
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "AI Game Library · textgame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "AI Game Library · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Game Library · textgame.ai",
+    title: "AI Game Library · TextGame.ai",
     description: "Browse 15+ text games with an AI game master. Free to play, no setup needed.",
     images: ["/hero.webp"],
   },
@@ -57,7 +57,7 @@ export default function GamesPage() {
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-zinc-950/80 border-b border-zinc-800/50">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="text-sm font-semibold text-white">
-            textgame.ai
+            TextGame.ai
           </Link>
           <Link
             href="/discover"
@@ -201,7 +201,7 @@ export default function GamesPage() {
 
       <footer className="border-t border-zinc-800/50 mt-10">
         <div className="max-w-4xl mx-auto px-4 py-6 flex flex-wrap gap-4 items-center justify-between text-xs text-zinc-600">
-          <span>© 2026 textgame.ai</span>
+          <span>© 2026 TextGame.ai</span>
           <div className="flex gap-4">
             <Link href="/terms" className="hover:text-zinc-400 transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-zinc-400 transition-colors">Privacy</Link>

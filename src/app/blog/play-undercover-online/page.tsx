@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "Play Who's the Spy (Undercover) Online — Rules & Strategy";
 const DESCRIPTION =
-  "Learn the rules of Who's the Spy (Undercover / 谁是卧底), understand every role, master blending-in strategy, and play online for free with AI on textgame.ai.";
+  "Learn the rules of Who's the Spy (Undercover / 谁是卧底), understand every role, master blending-in strategy, and play online for free with AI on TextGame.ai.";
 const CANONICAL = "/blog/play-undercover-online";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -117,7 +117,7 @@ export default function PlayUndercoverOnlinePage() {
               { id: "roles", label: "Roles — Civilian, Undercover & Mr. White" },
               { id: "rules", label: "How to Play — Rules" },
               { id: "description-strategy", label: "Description Strategy" },
-              { id: "online", label: "Play Undercover Online on textgame.ai" },
+              { id: "online", label: "Play Undercover Online on TextGame.ai" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
               <li key={item.id}>

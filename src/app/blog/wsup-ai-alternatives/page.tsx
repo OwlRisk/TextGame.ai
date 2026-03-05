@@ -67,7 +67,7 @@ function P({ children }: { children: React.ReactNode }) {
 function TOC() {
   const items = [
     { id: "what-is-wsup", label: "What Is Wsup AI?" },
-    { id: "textgame-ai", label: "#1 textgame.ai" },
+    { id: "textgame-ai", label: "#1 TextGame.ai" },
     { id: "character-ai", label: "#2 Character.AI" },
     { id: "polybuzz", label: "#3 PolyBuzz" },
     { id: "talkie-ai", label: "#4 Talkie AI" },
@@ -128,14 +128,14 @@ export default function WsupAiAlternativesPage() {
           Wsup AI is an AI character chat platform designed for natural, realistic conversations. Users can browse a library of characters or create their own, then engage in text-based chats. It&apos;s known for its conversational depth and character realism. However, users often seek alternatives for broader features — multiplayer support, game mechanics, voice interactions, or more generous free access.
         </P>
 
-        <H2 id="textgame-ai">#1 textgame.ai — Best for AI Games &amp; Multiplayer</H2>
+        <H2 id="textgame-ai">#1 TextGame.ai — Best for AI Games &amp; Multiplayer</H2>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> goes beyond character
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> goes beyond character
           chat by turning AI characters into <strong className="text-white">game players</strong>. An AI Game Master hosts every
           session, assigning roles, enforcing rules, and narrating the story while AI characters bluff, strategize, and interact alongside human players.
         </P>
         <P>
-          Where Wsup AI focuses on one-on-one conversation, textgame.ai lets you play Werewolf, Mafia, Murder Mystery, and 20+ other games with a mix of friends and AI. Each AI character has a unique personality and TTS voice. You can also create entirely custom games by describing your rules in plain English.
+          Where Wsup AI focuses on one-on-one conversation, TextGame.ai lets you play Werewolf, Mafia, Murder Mystery, and 20+ other games with a mix of friends and AI. Each AI character has a unique personality and TTS voice. You can also create entirely custom games by describing your rules in plain English.
         </P>
         <ul className="list-disc list-inside space-y-2 text-zinc-300 text-sm mb-6 ml-2">
           <li><strong className="text-white">Multiplayer</strong> — invite friends via link, AI fills empty seats</li>
@@ -183,7 +183,7 @@ export default function WsupAiAlternativesPage() {
             <span className="text-lg">🎮</span>
             <p className="text-zinc-300">
               <strong className="text-white">&ldquo;I want to play games with AI, not just chat&rdquo;</strong>{" "}→{" "}
-              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> — structured games with multiplayer and an AI Game Master.
+              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> — structured games with multiplayer and an AI Game Master.
             </p>
           </div>
           <div className="flex items-start gap-3">
@@ -201,7 +201,7 @@ export default function WsupAiAlternativesPage() {
           <div className="flex items-start gap-3">
             <span className="text-lg">🆓</span>
             <p className="text-zinc-300">
-              <strong className="text-white">&ldquo;I want something completely free&rdquo;</strong>{" "}→ Perchance is 100% free with no sign-up, or textgame.ai for free starting credits.
+              <strong className="text-white">&ldquo;I want something completely free&rdquo;</strong>{" "}→ Perchance is 100% free with no sign-up, or TextGame.ai for free starting credits.
             </p>
           </div>
         </div>
@@ -211,25 +211,25 @@ export default function WsupAiAlternativesPage() {
           <div>
             <H3>Is Wsup AI free?</H3>
             <P>
-              Wsup AI offers limited free access with premium tiers for heavier use. Alternatives like Perchance are completely free, and textgame.ai provides free starting credits with no credit card required.
+              Wsup AI offers limited free access with premium tiers for heavier use. Alternatives like Perchance are completely free, and TextGame.ai provides free starting credits with no credit card required.
             </P>
           </div>
           <div>
             <H3>Can I play multiplayer games with AI characters?</H3>
             <P>
-              Yes — <Link href="/discover" className="text-violet-400 hover:underline">textgame.ai</Link> supports real-time multiplayer where human players and AI characters play together. An AI Game Master runs the session with full game rules. No other chat platform on this list offers this.
+              Yes — <Link href="/discover" className="text-violet-400 hover:underline">TextGame.ai</Link> supports real-time multiplayer where human players and AI characters play together. An AI Game Master runs the session with full game rules. No other chat platform on this list offers this.
             </P>
           </div>
           <div>
             <H3>Which Wsup AI alternative has the best conversation quality?</H3>
             <P>
-              Character.AI and Talkie AI are both strong for one-on-one conversation depth. textgame.ai excels at multi-character interactions where AI characters talk to each other and to you within game scenarios.
+              Character.AI and Talkie AI are both strong for one-on-one conversation depth. TextGame.ai excels at multi-character interactions where AI characters talk to each other and to you within game scenarios.
             </P>
           </div>
           <div>
             <H3>Are there AI chat platforms with voice support?</H3>
             <P>
-              Talkie AI offers full voice conversations. textgame.ai provides text-to-speech voices for each AI character during game sessions, giving every character a distinct sound.
+              Talkie AI offers full voice conversations. TextGame.ai provides text-to-speech voices for each AI character during game sessions, giving every character a distinct sound.
             </P>
           </div>
         </div>

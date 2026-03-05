@@ -158,7 +158,7 @@ export default function ChaiAiAlternativesPage() {
 
         <AltCard
           rank={1}
-          name={`${SITE_NAME} (textgame.ai)`}
+          name={`${SITE_NAME} (TextGame.ai)`}
           tagline="Multiplayer AI games with rules, roles & structure"
           pros={["Multiplayer with friends + AI players", "Structured games (Werewolf, Avalon, RPGs)", "AI Game Master runs everything", "Create custom games with natural language"]}
           cons={["Not 1-on-1 chat like Chai", "Newer platform, smaller community"]}
@@ -245,7 +245,7 @@ export default function ChaiAiAlternativesPage() {
         <H2 id="play-online">Play AI Games Online Now</H2>
         <P>
           If you&apos;re tired of 1-on-1 chat and want to <strong className="text-white">actually play games</strong> with
-          friends and AI — {SITE_NAME} is built for exactly that. Unlike Chai, which is chat-only, textgame.ai
+          friends and AI — {SITE_NAME} is built for exactly that. Unlike Chai, which is chat-only, TextGame.ai
           offers multiplayer AI games with structure: pick a template, invite friends, and the AI Game Master
           handles rules, roles, narration, and characters. It&apos;s a different kind of AI experience.
         </P>
@@ -266,7 +266,7 @@ export default function ChaiAiAlternativesPage() {
             <P>
               {SITE_NAME} is the only platform that offers real multiplayer AI games. Chai, Character.AI,
               Talkie, and the rest are all 1-on-1 chat. If you want to play Werewolf, Avalon, or custom RPGs
-              with friends and AI, textgame.ai is the answer.
+              with friends and AI, TextGame.ai is the answer.
             </P>
           </div>
           <div>

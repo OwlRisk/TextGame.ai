@@ -287,7 +287,7 @@ export default function BestSinglePlayerAiGamesPage() {
               games (Werewolf, Murder Mystery, etc.) with defined roles and win conditions. For
               more, see our{" "}
               <Link href="/blog/ai-dungeon-vs-textgame" className="text-violet-400 hover:underline">
-                AI Dungeon vs textgame.ai comparison
+                AI Dungeon vs TextGame.ai comparison
               </Link>
               .
             </P>

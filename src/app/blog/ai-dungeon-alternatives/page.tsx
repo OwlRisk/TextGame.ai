@@ -157,7 +157,7 @@ export default function AiDungeonAlternativesPage() {
 
         <AltCard
           rank={1}
-          name={`${SITE_NAME} (textgame.ai)`}
+          name={`${SITE_NAME} (TextGame.ai)`}
           tagline="Multiplayer AI games with rules, roles & structure"
           pros={["Multiplayer with friends + AI players", "Structured games (Werewolf, Avalon, RPGs)", "AI Game Master runs everything", "Create custom games with natural language"]}
           cons={["Not freeform open-world like AI Dungeon", "Newer platform, smaller community"]}

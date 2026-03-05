@@ -101,7 +101,7 @@ export default function AiTarotReadingPage() {
               { id: "how-ai-reads", label: "How AI Interprets Tarot Cards" },
               { id: "major-arcana", label: "Major Arcana — Key Cards Explained" },
               { id: "reading-types", label: "Types of Tarot Readings" },
-              { id: "try-it", label: "Try AI Tarot on textgame.ai" },
+              { id: "try-it", label: "Try AI Tarot on TextGame.ai" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
               <li key={item.id}>

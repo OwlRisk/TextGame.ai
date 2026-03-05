@@ -188,12 +188,12 @@ export default function AiStorytellingGamesPage() {
           predefined plot. The AI follows your lead and improvises. Best for solo creative writing
           and exploratory play. See our{" "}
           <Link href="/blog/ai-dungeon-vs-textgame" className="text-violet-400 hover:underline">
-            AI Dungeon vs textgame.ai comparison
+            AI Dungeon vs TextGame.ai comparison
           </Link>{" "}
           for more.
         </P>
 
-        <H3>Structured (textgame.ai with rules)</H3>
+        <H3>Structured (TextGame.ai with rules)</H3>
         <P>
           Games with defined rules, roles, phases, and victory conditions. An AI Game Master runs the
           session — assigning roles, managing turns, narrating events — while you and other players

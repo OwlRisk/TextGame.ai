@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "Play Escape Room Games Online — Free AI-Powered Puzzles";
 const DESCRIPTION =
-  "Discover AI-powered virtual escape rooms: what they are, how they work, puzzle types, tips for solving, and how to play online for free on textgame.ai.";
+  "Discover AI-powered virtual escape rooms: what they are, how they work, puzzle types, tips for solving, and how to play online for free on TextGame.ai.";
 const CANONICAL = "/blog/play-escape-room-online";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -98,7 +98,7 @@ export default function PlayEscapeRoomOnlinePage() {
               { id: "ai-host", label: "How AI Hosts the Experience" },
               { id: "tips", label: "Tips for Solving Escape Rooms" },
               { id: "vs-physical", label: "Virtual vs Physical Escape Rooms" },
-              { id: "online", label: "Play on textgame.ai" },
+              { id: "online", label: "Play on TextGame.ai" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
               <li key={item.id}>
@@ -221,7 +221,7 @@ export default function PlayEscapeRoomOnlinePage() {
           cost, and infinite replayability. For many players, a blend of both is ideal.
         </P>
 
-        {/* ── Play on textgame.ai ───────────────────────────────────── */}
+        {/* ── Play on TextGame.ai ───────────────────────────────────── */}
         <H2 id="online">Play on {SITE_NAME}</H2>
         <P>
           On <Link href="/games/escape-room" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,

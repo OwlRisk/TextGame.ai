@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "ai characters",
     "social deduction ai",
     "ai dungeon alternative",
-    "textgame.ai",
+    "TextGame.ai",
     "ai game master",
     "play werewolf online ai",
   ],
@@ -170,7 +170,7 @@ function TableOfContents() {
   const items = [
     { id: "why-alternatives", label: "Why Look for Character.AI Alternatives?" },
     { id: "comparison", label: "Quick Comparison Table" },
-    { id: "textgame-ai", label: "#1 textgame.ai" },
+    { id: "textgame-ai", label: "#1 TextGame.ai" },
     { id: "ai-dungeon", label: "#2 AI Dungeon" },
     { id: "chai-ai", label: "#3 Chai AI" },
     { id: "janitor-ai", label: "#4 Janitor AI" },
@@ -286,7 +286,7 @@ export default function CharacterAiAlternativesPage() {
             </thead>
             <tbody className="text-zinc-300">
               <tr className="border-b border-zinc-800/60">
-                <td className="py-3 pr-4 font-semibold text-violet-400">textgame.ai</td>
+                <td className="py-3 pr-4 font-semibold text-violet-400">TextGame.ai</td>
                 <td className="py-3 pr-4">✓ Real-time</td>
                 <td className="py-3 pr-4">✓ Full rules engine</td>
                 <td className="py-3 pr-4">✓ Dedicated GM</td>
@@ -329,12 +329,12 @@ export default function CharacterAiAlternativesPage() {
           </table>
         </div>
 
-        {/* ── #1 textgame.ai ───────────────────────────────────────── */}
-        <Heading2 id="textgame-ai">#1 textgame.ai — Best for Multiplayer Game Sessions</Heading2>
+        {/* ── #1 TextGame.ai ───────────────────────────────────────── */}
+        <Heading2 id="textgame-ai">#1 TextGame.ai — Best for Multiplayer Game Sessions</Heading2>
 
         <ToolCard
           rank={1}
-          name="textgame.ai"
+          name="TextGame.ai"
           tagline="AI-powered multiplayer text games with a dedicated Game Master"
           url="https://textgame.ai"
           bestFor="Multiplayer social deduction, RPGs, and custom games"
@@ -354,7 +354,7 @@ export default function CharacterAiAlternativesPage() {
           ]}
         >
           <Para>
-            <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> is
+            <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> is
             built specifically for the gap Character.AI leaves: <strong className="text-white">structured
             multiplayer games with AI</strong>. Instead of chatting with one character, you get a full game
             room where an AI Game Master hosts the session and multiple AI characters play alongside you.
@@ -525,7 +525,7 @@ export default function CharacterAiAlternativesPage() {
             <p className="text-zinc-300">
               <strong className="text-white">&ldquo;I want to play Werewolf / Mafia / social deduction with AI&rdquo;</strong>
               {" "}→{" "}
-              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link>.
+              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link>.
               It&apos;s the only platform with a real game engine, AI host, and multiplayer.
             </p>
           </div>
@@ -567,7 +567,7 @@ export default function CharacterAiAlternativesPage() {
           <div>
             <Heading3>Can I play Werewolf or Mafia with AI characters?</Heading3>
             <Para>
-              Yes — <Link href="/games/werewolf" className="text-violet-400 hover:underline">textgame.ai</Link> has
+              Yes — <Link href="/games/werewolf" className="text-violet-400 hover:underline">TextGame.ai</Link> has
               ready-to-play Werewolf, Mafia, and 20+ other templates with full game rules. An AI Game Master
               runs the phases and AI characters make strategic decisions. You can play solo or invite friends.
             </Para>
@@ -575,7 +575,7 @@ export default function CharacterAiAlternativesPage() {
           <div>
             <Heading3>What is the best free Character.AI alternative?</Heading3>
             <Para>
-              For games: textgame.ai offers free starting credits and guest access for friends. For chat:
+              For games: TextGame.ai offers free starting credits and guest access for friends. For chat:
               Janitor AI is free if you bring your own API key. SillyTavern is fully free and open source
               but requires self-hosting.
             </Para>
@@ -583,7 +583,7 @@ export default function CharacterAiAlternativesPage() {
           <div>
             <Heading3>Can I create my own AI game with custom rules?</Heading3>
             <Para>
-              On textgame.ai, yes — describe any game idea in plain English and the AI builds the rules, roles,
+              On TextGame.ai, yes — describe any game idea in plain English and the AI builds the rules, roles,
               and victory conditions for you.{" "}
               <Link href="/signin" className="text-violet-400 hover:underline">Try it free</Link>.
             </Para>

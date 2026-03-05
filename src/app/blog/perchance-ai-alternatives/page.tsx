@@ -67,7 +67,7 @@ function P({ children }: { children: React.ReactNode }) {
 function TableOfContents() {
   const items = [
     { id: "why-alternatives", label: "Why Look Beyond Perchance?" },
-    { id: "textgame-ai", label: "#1 textgame.ai" },
+    { id: "textgame-ai", label: "#1 TextGame.ai" },
     { id: "character-ai", label: "#2 Character.AI" },
     { id: "polybuzz", label: "#3 PolyBuzz" },
     { id: "janitor-ai", label: "#4 Janitor AI" },
@@ -144,10 +144,10 @@ export default function PerchanceAlternativesPage() {
           If you want a more polished UI, actual game mechanics, multiplayer with friends, or voice-enabled characters, these five alternatives are worth exploring.
         </P>
 
-        {/* ── #1 textgame.ai ───────────────────────────────────────── */}
-        <H2 id="textgame-ai">#1 textgame.ai — Best for Multiplayer AI Games &amp; Roleplay</H2>
+        {/* ── #1 TextGame.ai ───────────────────────────────────────── */}
+        <H2 id="textgame-ai">#1 TextGame.ai — Best for Multiplayer AI Games &amp; Roleplay</H2>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> takes what Perchance does — AI-driven text experiences — and adds everything it&apos;s missing: multiplayer, game rules, an AI Game Master, and character voices.
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> takes what Perchance does — AI-driven text experiences — and adds everything it&apos;s missing: multiplayer, game rules, an AI Game Master, and character voices.
         </P>
         <P>
           Instead of interacting with a static generator, you enter a dynamic game room. The AI Game Master assigns roles, manages turns and phases, and narrates the story. Multiple AI characters play alongside you with distinct personalities and strategies. You can invite friends to join via a link — any mix of human and AI players.
@@ -156,7 +156,7 @@ export default function PerchanceAlternativesPage() {
           Choose from 20+ game templates (Werewolf, Mafia, murder mystery, trivia, RPG quests) or describe your own game idea in plain English. The AI builds the rules, victory conditions, and character dynamics automatically. Each AI character speaks with a unique voice via TTS.
         </P>
         <P>
-          For Perchance users who want structured, replayable experiences instead of one-off text generation, textgame.ai is the biggest upgrade. Free tier includes starting credits — no credit card, no API keys.
+          For Perchance users who want structured, replayable experiences instead of one-off text generation, TextGame.ai is the biggest upgrade. Free tier includes starting credits — no credit card, no API keys.
         </P>
 
         {/* ── #2 Character.AI ──────────────────────────────────────── */}
@@ -203,7 +203,7 @@ export default function PerchanceAlternativesPage() {
             <span className="text-lg">🎮</span>
             <p className="text-zinc-300">
               <strong className="text-white">&ldquo;I want multiplayer games, not solo generators&rdquo;</strong>{" "}→{" "}
-              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link>. Real-time multiplayer with an AI Game Master — the only option with structured gameplay.
+              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link>. Real-time multiplayer with an AI Game Master — the only option with structured gameplay.
             </p>
           </div>
           <div className="flex items-start gap-3">
@@ -232,19 +232,19 @@ export default function PerchanceAlternativesPage() {
           <div>
             <H3>Is Perchance still good for AI roleplay in 2026?</H3>
             <P>
-              Perchance remains a great free option for casual AI roleplay and text generation. Its biggest strengths — zero cost and no sign-up — are hard to beat. But for multiplayer, voice, or game mechanics, you&apos;ll want a dedicated platform like textgame.ai.
+              Perchance remains a great free option for casual AI roleplay and text generation. Its biggest strengths — zero cost and no sign-up — are hard to beat. But for multiplayer, voice, or game mechanics, you&apos;ll want a dedicated platform like TextGame.ai.
             </P>
           </div>
           <div>
             <H3>Which Perchance alternative is best for multiplayer?</H3>
             <P>
-              <Link href="/" className="text-violet-400 hover:underline">textgame.ai</Link> is the only alternative on this list with real-time multiplayer. Share a link, invite friends, and play alongside AI characters in structured game sessions.
+              <Link href="/" className="text-violet-400 hover:underline">TextGame.ai</Link> is the only alternative on this list with real-time multiplayer. Share a link, invite friends, and play alongside AI characters in structured game sessions.
             </P>
           </div>
           <div>
             <H3>What&apos;s the best free alternative to Perchance?</H3>
             <P>
-              KoboldAI is fully free and open source (but requires local setup). textgame.ai offers free starting credits. Character.AI has a generous free tier for chat.
+              KoboldAI is fully free and open source (but requires local setup). TextGame.ai offers free starting credits. Character.AI has a generous free tier for chat.
             </P>
           </div>
         </div>

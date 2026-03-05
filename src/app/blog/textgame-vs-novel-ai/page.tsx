@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
-const TITLE = "textgame.ai vs Novel AI — AI Gaming vs AI Writing (2026)";
+const TITLE = "TextGame.ai vs Novel AI — AI Gaming vs AI Writing (2026)";
 const DESCRIPTION =
-  "Compare textgame.ai and Novel AI: multiplayer AI games with an AI Game Master vs creative writing and image generation. Find the best novel ai alternative for games or prose.";
+  "Compare TextGame.ai and Novel AI: multiplayer AI games with an AI Game Master vs creative writing and image generation. Find the best novel ai alternative for games or prose.";
 const CANONICAL = "/blog/textgame-vs-novel-ai";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -73,7 +73,7 @@ export default function TextgameVsNovelAiPage() {
           <span>/</span>
           <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
           <span>/</span>
-          <span className="text-zinc-400">textgame.ai vs Novel AI</span>
+          <span className="text-zinc-400">TextGame.ai vs Novel AI</span>
         </nav>
 
         <header className="mb-10">
@@ -99,7 +99,7 @@ export default function TextgameVsNovelAiPage() {
             {[
               { id: "overview", label: "Overview of Both Platforms" },
               { id: "key-differences", label: "Key Differences" },
-              { id: "when-textgame", label: "When to Choose textgame.ai" },
+              { id: "when-textgame", label: "When to Choose TextGame.ai" },
               { id: "when-novel", label: "When to Choose Novel AI" },
               { id: "use-both", label: "Can You Use Both?" },
               { id: "feature-table", label: "Feature Comparison Table" },
@@ -187,8 +187,8 @@ export default function TextgameVsNovelAiPage() {
           </table>
         </div>
 
-        {/* ── When to Choose textgame.ai ────────────────────────────── */}
-        <H2 id="when-textgame">When to Choose textgame.ai</H2>
+        {/* ── When to Choose TextGame.ai ────────────────────────────── */}
+        <H2 id="when-textgame">When to Choose TextGame.ai</H2>
         <P>
           Choose {SITE_NAME} when you want <strong className="text-white">structured multiplayer games</strong>.
           It&apos;s the best novelai alternative for games if you&apos;re looking for:
@@ -285,7 +285,7 @@ export default function TextgameVsNovelAiPage() {
         <H2 id="faq">Frequently Asked Questions</H2>
         <div className="space-y-6 mb-12">
           <div>
-            <H3>Is textgame.ai a Novel AI alternative?</H3>
+            <H3>Is TextGame.ai a Novel AI alternative?</H3>
             <P>
               For <strong className="text-white">games</strong>, yes. If you want an ai writing game that
               plays like Werewolf or Mafia with rules and multiplayer, {SITE_NAME} is the novel ai alternative

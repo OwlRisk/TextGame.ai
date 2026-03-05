@@ -20,15 +20,15 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/discover" },
   openGraph: {
-    title: "Discover AI Text Games · textgame.ai",
+    title: "Discover AI Text Games · TextGame.ai",
     description:
       "20+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
     type: "website",
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover AI Text Games · textgame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover AI Text Games · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Discover AI Text Games · textgame.ai",
+    title: "Discover AI Text Games · TextGame.ai",
     description: "20+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
     images: ["/hero.webp"],
   },

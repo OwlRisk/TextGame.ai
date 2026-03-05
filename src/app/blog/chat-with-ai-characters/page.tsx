@@ -140,15 +140,15 @@ export default function ChatWithAiCharactersPage() {
           Unlike generic chatbots that answer questions as a helpful assistant, AI characters roleplay. You might chat with a pirate captain, a sci-fi android, a medieval knight, or a fictional detective — and the AI maintains the illusion throughout the conversation.
         </P>
         <P>
-          Some platforms go further: on <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link>, AI characters don&apos;t just chat — they <em>play games</em> with you. They strategize, bluff, form alliances, and compete under enforced rules, turning AI chat into an interactive experience.
+          Some platforms go further: on <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link>, AI characters don&apos;t just chat — they <em>play games</em> with you. They strategize, bluff, form alliances, and compete under enforced rules, turning AI chat into an interactive experience.
         </P>
 
         {/* ── Free Platforms ──────────────────────────────────────────── */}
         <H2 id="free-platforms">Best Free Platforms (No Sign-Up)</H2>
 
-        <H3>textgame.ai — Guests Join Games Instantly</H3>
+        <H3>TextGame.ai — Guests Join Games Instantly</H3>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> lets guests join multiplayer game sessions via a shared link — no account required. The host creates a game (Werewolf, Mafia, RPG, etc.) and shares the room link. Guests click and play alongside AI characters immediately. Each AI character has a unique personality and voice.
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> lets guests join multiplayer game sessions via a shared link — no account required. The host creates a game (Werewolf, Mafia, RPG, etc.) and shares the room link. Guests click and play alongside AI characters immediately. Each AI character has a unique personality and voice.
         </P>
 
         <H3>Perchance — Zero-Friction Anonymous Chat</H3>
@@ -176,7 +176,7 @@ export default function ChatWithAiCharactersPage() {
 
         <H3>Structured Games</H3>
         <P>
-          On platforms like <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link>, AI characters participate in rule-based games. In a Werewolf game, AI characters have hidden roles, make accusations, defend themselves, and vote — just like human players. An AI Game Master enforces phases and narrates events.
+          On platforms like <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link>, AI characters participate in rule-based games. In a Werewolf game, AI characters have hidden roles, make accusations, defend themselves, and vote — just like human players. An AI Game Master enforces phases and narrates events.
         </P>
 
         <H3>Companionship & Conversation</H3>
@@ -195,7 +195,7 @@ export default function ChatWithAiCharactersPage() {
           <ol className="space-y-4 text-sm text-zinc-300">
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 font-bold text-xs flex items-center justify-center">1</span>
-              <p><strong className="text-white">Pick a platform</strong> — for games, go to <Link href="/discover" className="text-violet-400 hover:underline">textgame.ai/discover</Link>. For 1-on-1 chat, try Perchance or Character.AI.</p>
+              <p><strong className="text-white">Pick a platform</strong> — for games, go to <Link href="/discover" className="text-violet-400 hover:underline">TextGame.ai/discover</Link>. For 1-on-1 chat, try Perchance or Character.AI.</p>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 font-bold text-xs flex items-center justify-center">2</span>
@@ -203,11 +203,11 @@ export default function ChatWithAiCharactersPage() {
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 font-bold text-xs flex items-center justify-center">3</span>
-              <p><strong className="text-white">Start chatting</strong> — type your message and the AI responds in character. On textgame.ai, AI characters also play alongside you with their own strategies.</p>
+              <p><strong className="text-white">Start chatting</strong> — type your message and the AI responds in character. On TextGame.ai, AI characters also play alongside you with their own strategies.</p>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 font-bold text-xs flex items-center justify-center">4</span>
-              <p><strong className="text-white">Invite friends (optional)</strong> — on textgame.ai, share your room link and friends join as guests instantly.</p>
+              <p><strong className="text-white">Invite friends (optional)</strong> — on TextGame.ai, share your room link and friends join as guests instantly.</p>
             </li>
           </ol>
         </div>
@@ -218,7 +218,7 @@ export default function ChatWithAiCharactersPage() {
           <li><strong className="text-white">Set the scene</strong> — give context about where you are, what&apos;s happening, and what you want from the interaction.</li>
           <li><strong className="text-white">Stay in character</strong> — the more you commit to your role, the better the AI responds in kind.</li>
           <li><strong className="text-white">Use descriptive actions</strong> — instead of &ldquo;I attack,&rdquo; try &ldquo;I draw my sword and lunge toward the shadow in the doorway.&rdquo;</li>
-          <li><strong className="text-white">Try different platforms</strong> — each has a different feel. Games on textgame.ai feel very different from 1-on-1 chat on Character.AI.</li>
+          <li><strong className="text-white">Try different platforms</strong> — each has a different feel. Games on TextGame.ai feel very different from 1-on-1 chat on Character.AI.</li>
           <li><strong className="text-white">Experiment with custom characters</strong> — most platforms let you create your own AI persona with a custom backstory and personality.</li>
         </ul>
 
@@ -227,15 +227,15 @@ export default function ChatWithAiCharactersPage() {
         <div className="space-y-6 mb-12">
           <div>
             <H3>Can I chat with AI characters without signing up?</H3>
-            <P>Yes. Perchance requires no account at all. On textgame.ai, guests can join multiplayer game rooms via a shared link without creating an account. Character.AI requires a free account but no payment.</P>
+            <P>Yes. Perchance requires no account at all. On TextGame.ai, guests can join multiplayer game rooms via a shared link without creating an account. Character.AI requires a free account but no payment.</P>
           </div>
           <div>
             <H3>Is AI character chat free?</H3>
-            <P>Most platforms offer a free tier. Character.AI and Perchance are fully free. textgame.ai gives you free starting credits. Chai and Talkie AI have daily message limits on free plans.</P>
+            <P>Most platforms offer a free tier. Character.AI and Perchance are fully free. TextGame.ai gives you free starting credits. Chai and Talkie AI have daily message limits on free plans.</P>
           </div>
           <div>
             <H3>What&apos;s the difference between AI chat and AI games?</H3>
-            <P>AI chat is open-ended conversation with an AI character. AI games add structure — rules, turns, roles, and win conditions. On <Link href="/" className="text-violet-400 hover:underline">textgame.ai</Link>, an AI Game Master runs the game while AI characters play strategically alongside you.</P>
+            <P>AI chat is open-ended conversation with an AI character. AI games add structure — rules, turns, roles, and win conditions. On <Link href="/" className="text-violet-400 hover:underline">TextGame.ai</Link>, an AI Game Master runs the game while AI characters play strategically alongside you.</P>
           </div>
           <div>
             <H3>Are AI character chats private?</H3>

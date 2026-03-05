@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   manifest: "/site.webmanifest",
   keywords: [
-    "textgame.ai",
+    "TextGame.ai",
     "AI text game",
     "text-based game",
     "AI game host",

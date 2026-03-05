@@ -67,7 +67,7 @@ function P({ children }: { children: React.ReactNode }) {
 function TOC() {
   const items = [
     { id: "what-is-ourdream", label: "What Is OurDream AI?" },
-    { id: "textgame-ai", label: "#1 textgame.ai" },
+    { id: "textgame-ai", label: "#1 TextGame.ai" },
     { id: "character-ai", label: "#2 Character.AI" },
     { id: "polybuzz", label: "#3 PolyBuzz" },
     { id: "talkie-ai", label: "#4 Talkie AI" },
@@ -130,14 +130,14 @@ export default function OurDreamAiAlternativesPage() {
           It gained popularity for its creative community and flexible persona system. However, many users look for alternatives because of limited multiplayer support, no structured game mechanics, and restrictive content policies on some scenarios.
         </P>
 
-        <H2 id="textgame-ai">#1 textgame.ai — Best for Multiplayer AI Games</H2>
+        <H2 id="textgame-ai">#1 TextGame.ai — Best for Multiplayer AI Games</H2>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> takes AI characters
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> takes AI characters
           beyond chat and puts them into <strong className="text-white">structured multiplayer games</strong>. An AI Game Master
           runs every session — assigning roles, managing turns, and narrating the story — while AI characters play alongside human players with unique personalities and strategies.
         </P>
         <P>
-          Unlike OurDream AI&apos;s freeform chat, textgame.ai offers 20+ game templates like Werewolf, Mafia, Murder Mystery, and custom RPGs.
+          Unlike OurDream AI&apos;s freeform chat, TextGame.ai offers 20+ game templates like Werewolf, Mafia, Murder Mystery, and custom RPGs.
           You can invite friends via a link, and AI players fill any empty seats. Every character has a distinct voice through text-to-speech, making sessions feel alive.
         </P>
         <ul className="list-disc list-inside space-y-2 text-zinc-300 text-sm mb-6 ml-2">
@@ -187,13 +187,13 @@ export default function OurDreamAiAlternativesPage() {
             <span className="text-lg">🎮</span>
             <p className="text-zinc-300">
               <strong className="text-white">&ldquo;I want multiplayer games with AI characters&rdquo;</strong>{" "}→{" "}
-              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> — the only option with a real game engine and AI Game Master.
+              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> — the only option with a real game engine and AI Game Master.
             </p>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-lg">🗣️</span>
             <p className="text-zinc-300">
-              <strong className="text-white">&ldquo;I want voice chat with characters&rdquo;</strong>{" "}→ Talkie AI for voice-first interaction, or textgame.ai for TTS voices in games.
+              <strong className="text-white">&ldquo;I want voice chat with characters&rdquo;</strong>{" "}→ Talkie AI for voice-first interaction, or TextGame.ai for TTS voices in games.
             </p>
           </div>
           <div className="flex items-start gap-3">
@@ -216,26 +216,26 @@ export default function OurDreamAiAlternativesPage() {
             <H3>Is OurDream AI free to use?</H3>
             <P>
               OurDream AI offers a free tier with limited messages. For heavier usage you&apos;ll need a subscription.
-              Alternatives like textgame.ai also offer free starting credits, and Janitor AI is free if you bring your own API key.
+              Alternatives like TextGame.ai also offer free starting credits, and Janitor AI is free if you bring your own API key.
             </P>
           </div>
           <div>
             <H3>Can I play games with AI characters instead of just chatting?</H3>
             <P>
-              Yes — <Link href="/discover" className="text-violet-400 hover:underline">textgame.ai</Link> is built specifically for this.
+              Yes — <Link href="/discover" className="text-violet-400 hover:underline">TextGame.ai</Link> is built specifically for this.
               It has 20+ game templates with an AI Game Master that manages roles, turns, and win conditions. Other chat platforms like OurDream AI and Character.AI don&apos;t support structured games.
             </P>
           </div>
           <div>
             <H3>Which OurDream AI alternative has the best voice features?</H3>
             <P>
-              Talkie AI leads with full voice-in and voice-out conversations. textgame.ai offers per-character TTS voices inside game sessions, adding personality to each AI player.
+              Talkie AI leads with full voice-in and voice-out conversations. TextGame.ai offers per-character TTS voices inside game sessions, adding personality to each AI player.
             </P>
           </div>
           <div>
             <H3>What&apos;s the best OurDream AI alternative for multiplayer?</H3>
             <P>
-              textgame.ai is the only platform on this list with real-time multiplayer. You can invite friends via a link and play alongside AI characters in the same game session.
+              TextGame.ai is the only platform on this list with real-time multiplayer. You can invite friends via a link and play alongside AI characters in the same game session.
             </P>
           </div>
         </div>

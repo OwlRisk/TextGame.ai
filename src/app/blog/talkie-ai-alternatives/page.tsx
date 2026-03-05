@@ -68,7 +68,7 @@ function P({ children }: { children: React.ReactNode }) {
 function TableOfContents() {
   const items = [
     { id: "why-alternatives", label: "Why Look Beyond Talkie AI?" },
-    { id: "textgame-ai", label: "#1 textgame.ai" },
+    { id: "textgame-ai", label: "#1 TextGame.ai" },
     { id: "character-ai", label: "#2 Character.AI" },
     { id: "polybuzz", label: "#3 PolyBuzz" },
     { id: "janitor-ai", label: "#4 Janitor AI" },
@@ -147,10 +147,10 @@ export default function TalkieAiAlternativesPage() {
           If you want AI characters that do more than talk — characters that play games, follow rules, and interact with multiple players — these alternatives deliver.
         </P>
 
-        {/* ── #1 textgame.ai ───────────────────────────────────────── */}
-        <H2 id="textgame-ai">#1 textgame.ai — Best for Multiplayer AI Games</H2>
+        {/* ── #1 TextGame.ai ───────────────────────────────────────── */}
+        <H2 id="textgame-ai">#1 TextGame.ai — Best for Multiplayer AI Games</H2>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> turns AI characters into actual game players. Instead of chatting with one character, you get a full game room: an AI Game Master hosts the session, assigns roles, runs voting phases, and narrates the story while multiple AI characters play strategically alongside you.
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> turns AI characters into actual game players. Instead of chatting with one character, you get a full game room: an AI Game Master hosts the session, assigns roles, runs voting phases, and narrates the story while multiple AI characters play strategically alongside you.
         </P>
         <P>
           The multiplayer angle is what sets it apart from every Talkie AI alternative on this list. Share a link and friends join instantly — any mix of human and AI players works. Templates include Werewolf, Mafia, Secret Hitler, murder mysteries, and 20+ more. You can also describe a completely custom game and the AI builds it.
@@ -221,7 +221,7 @@ export default function TalkieAiAlternativesPage() {
             <span className="text-lg">🎮</span>
             <p className="text-zinc-300">
               <strong className="text-white">&ldquo;I want games, not just chat&rdquo;</strong>{" "}→{" "}
-              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link>. Multiplayer games with an AI Game Master — the only platform here with real game mechanics.
+              <Link href="/discover" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link>. Multiplayer games with an AI Game Master — the only platform here with real game mechanics.
             </p>
           </div>
           <div className="flex items-start gap-3">
@@ -250,25 +250,25 @@ export default function TalkieAiAlternativesPage() {
           <div>
             <H3>Is Talkie AI still worth using in 2026?</H3>
             <P>
-              Talkie AI remains a solid choice for casual voice-powered character chats. But it hasn&apos;t added multiplayer or game features, so users wanting structured play or group sessions should explore alternatives like textgame.ai.
+              Talkie AI remains a solid choice for casual voice-powered character chats. But it hasn&apos;t added multiplayer or game features, so users wanting structured play or group sessions should explore alternatives like TextGame.ai.
             </P>
           </div>
           <div>
             <H3>Which Talkie AI alternative supports multiplayer?</H3>
             <P>
-              <Link href="/" className="text-violet-400 hover:underline">textgame.ai</Link> is the only platform on this list with real-time multiplayer. Invite friends via a link and play alongside AI characters in games like Werewolf, Mafia, and more.
+              <Link href="/" className="text-violet-400 hover:underline">TextGame.ai</Link> is the only platform on this list with real-time multiplayer. Invite friends via a link and play alongside AI characters in games like Werewolf, Mafia, and more.
             </P>
           </div>
           <div>
             <H3>What&apos;s the best free Talkie AI alternative?</H3>
             <P>
-              Perchance is completely free with no sign-up. textgame.ai offers free starting credits for games. Chai has a free tier with daily message limits.
+              Perchance is completely free with no sign-up. TextGame.ai offers free starting credits for games. Chai has a free tier with daily message limits.
             </P>
           </div>
           <div>
             <H3>Can AI characters play actual games, not just chat?</H3>
             <P>
-              Yes — on textgame.ai, AI characters follow game rules, take turns, vote, bluff, and strategize. An AI Game Master enforces the rules and narrates every session. It&apos;s structured gameplay, not open-ended chat.
+              Yes — on TextGame.ai, AI characters follow game rules, take turns, vote, bluff, and strategize. An AI Game Master enforces the rules and narrates every session. It&apos;s structured gameplay, not open-ended chat.
             </P>
           </div>
         </div>

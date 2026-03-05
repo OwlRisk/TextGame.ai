@@ -257,7 +257,7 @@ export function WelcomePage({
 
               {/* Footer */}
               <footer className="pt-8 sm:pt-10 border-t border-white/[0.06] flex flex-wrap items-center justify-center sm:justify-between gap-4 text-xs text-zinc-500">
-                <span><span className="font-semibold text-zinc-400">textgame.ai</span> · Free to start · Sign in to save your games</span>
+                <span><span className="font-semibold text-zinc-400">TextGame.ai</span> · Free to start · Sign in to save your games</span>
                 <div className="flex items-center gap-6">
                   <button
                     type="button"

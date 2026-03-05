@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "Play Clue (Cluedo) Online with AI — Rules, Characters & Free Game";
 const DESCRIPTION =
-  "Master the rules of Clue (Cluedo), learn every character and weapon, sharpen your deduction strategy, and play online for free with an AI Game Master on textgame.ai.";
+  "Master the rules of Clue (Cluedo), learn every character and weapon, sharpen your deduction strategy, and play online for free with an AI Game Master on TextGame.ai.";
 const CANONICAL = "/blog/play-clue-online";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -110,7 +110,7 @@ export default function PlayClueOnlinePage() {
               { id: "weapons-rooms", label: "Weapons & Rooms" },
               { id: "rules", label: "How to Play — Rules & Deduction" },
               { id: "strategy", label: "Strategy Tips" },
-              { id: "online", label: "Play Clue Online on textgame.ai" },
+              { id: "online", label: "Play Clue Online on TextGame.ai" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
               <li key={item.id}>

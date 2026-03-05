@@ -35,16 +35,16 @@ const posts: BlogPost[] = [
     slug: "chai-ai-alternatives",
     title: "7 Best Chai AI Alternatives for AI Chat & Roleplay (2026)",
     excerpt:
-      "Chai AI is popular for 1-on-1 chat, but lacks multiplayer games. Compare 7 alternatives — from textgame.ai's multiplayer AI games to Character.AI, Talkie, and more.",
+      "Chai AI is popular for 1-on-1 chat, but lacks multiplayer games. Compare 7 alternatives — from TextGame.ai's multiplayer AI games to Character.AI, Talkie, and more.",
     date: "March 4, 2026",
     readTime: "8 min read",
     tags: ["Comparison", "AI Chat"],
   },
   {
     slug: "textgame-vs-novel-ai",
-    title: "textgame.ai vs Novel AI — AI Gaming vs AI Writing (2026)",
+    title: "TextGame.ai vs Novel AI — AI Gaming vs AI Writing (2026)",
     excerpt:
-      "Comparing textgame.ai and Novel AI: multiplayer AI games vs premium AI writing. Find out which platform fits your creative needs.",
+      "Comparing TextGame.ai and Novel AI: multiplayer AI games vs premium AI writing. Find out which platform fits your creative needs.",
     date: "March 4, 2026",
     readTime: "7 min read",
     tags: ["Comparison", "AI Games"],
@@ -150,9 +150,9 @@ const posts: BlogPost[] = [
   },
   {
     slug: "textgame-vs-janitor-ai",
-    title: "textgame.ai vs Janitor AI — Which AI Roleplay Platform is Better?",
+    title: "TextGame.ai vs Janitor AI — Which AI Roleplay Platform is Better?",
     excerpt:
-      "Comparing textgame.ai and Janitor AI: multiplayer games vs character chat, structured rules vs freeform roleplay. Find which platform fits your needs.",
+      "Comparing TextGame.ai and Janitor AI: multiplayer games vs character chat, structured rules vs freeform roleplay. Find which platform fits your needs.",
     date: "March 4, 2026",
     readTime: "7 min read",
     tags: ["Comparison", "AI Roleplay"],
@@ -321,9 +321,9 @@ const posts: BlogPost[] = [
   },
   {
     slug: "ai-dungeon-vs-textgame",
-    title: "AI Dungeon vs textgame.ai — Which AI Game Platform is Right for You?",
+    title: "AI Dungeon vs TextGame.ai — Which AI Game Platform is Right for You?",
     excerpt:
-      "Comparing AI Dungeon and textgame.ai: solo adventures vs multiplayer games, freeform vs structured rules. Find out which platform fits your play style.",
+      "Comparing AI Dungeon and TextGame.ai: solo adventures vs multiplayer games, freeform vs structured rules. Find out which platform fits your play style.",
     date: "March 4, 2026",
     readTime: "6 min read",
     tags: ["Comparison", "AI Games"],

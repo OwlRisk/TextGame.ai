@@ -139,7 +139,7 @@ export default function AIGamesForStudentsPage() {
               { id: "why-ai-games", label: "Why AI Games Work in Education" },
               { id: "best-types", label: "Best Types of AI Games for Students" },
               { id: "classroom-tips", label: "How to Use AI Games in the Classroom" },
-              { id: "textgame-platform", label: "textgame.ai: The Best Platform for Student AI Games" },
+              { id: "textgame-platform", label: "TextGame.ai: The Best Platform for Student AI Games" },
               { id: "getting-started", label: "Getting Started" },
             ].map((item, i) => (
               <li key={item.id}>
@@ -351,7 +351,7 @@ export default function AIGamesForStudentsPage() {
           free to observe, participate, and coach your students in real time.
         </P>
 
-        {/* ── textgame.ai Platform ───────────────────────────────────────── */}
+        {/* ── TextGame.ai Platform ───────────────────────────────────────── */}
         <H2 id="textgame-platform">{SITE_NAME}: The Best Platform for Student AI Games</H2>
 
         <P>

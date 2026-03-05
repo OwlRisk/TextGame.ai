@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
-const TITLE = "textgame.ai vs Janitor AI — Which AI Roleplay Platform is Better?";
+const TITLE = "TextGame.ai vs Janitor AI — Which AI Roleplay Platform is Better?";
 const DESCRIPTION =
-  "A detailed comparison of textgame.ai and Janitor AI. We cover features, multiplayer, game rules, voice, pricing, and which platform is best for different use cases.";
+  "A detailed comparison of TextGame.ai and Janitor AI. We cover features, multiplayer, game rules, voice, pricing, and which platform is best for different use cases.";
 const CANONICAL = "/blog/textgame-vs-janitor-ai";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -69,7 +69,7 @@ export default function TextgameVsJanitorAiPage() {
           <span>/</span>
           <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
           <span>/</span>
-          <span className="text-zinc-400">textgame.ai vs Janitor AI</span>
+          <span className="text-zinc-400">TextGame.ai vs Janitor AI</span>
         </nav>
 
         <header className="mb-10">
@@ -94,7 +94,7 @@ export default function TextgameVsJanitorAiPage() {
           <ol className="space-y-1.5">
             {[
               { id: "what-is-janitor", label: "What is Janitor AI?" },
-              { id: "what-is-textgame", label: "What is textgame.ai?" },
+              { id: "what-is-textgame", label: "What is TextGame.ai?" },
               { id: "feature-comparison", label: "Feature-by-Feature Comparison" },
               { id: "use-cases", label: "Which Platform for Which Use Case?" },
               { id: "pricing", label: "Pricing Comparison" },
@@ -122,8 +122,8 @@ export default function TextgameVsJanitorAiPage() {
           the conversation. It&apos;s free-form roleplay with no rules, turns, or structure imposed.
         </P>
 
-        {/* ── What is textgame.ai ────────────────────────────────────── */}
-        <H2 id="what-is-textgame">What is textgame.ai?</H2>
+        {/* ── What is TextGame.ai ────────────────────────────────────── */}
+        <H2 id="what-is-textgame">What is TextGame.ai?</H2>
         <P>
           <Link href="/" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> is a{" "}
           <strong className="text-white">multiplayer game platform powered by AI</strong>. Instead of open-ended
@@ -275,7 +275,7 @@ export default function TextgameVsJanitorAiPage() {
             </P>
           </div>
           <div>
-            <H3>Is textgame.ai a Janitor AI alternative?</H3>
+            <H3>Is TextGame.ai a Janitor AI alternative?</H3>
             <P>
               They serve different purposes. If you want structured games with AI — social deduction, RPGs,
               murder mysteries — {SITE_NAME} is the better choice. If you want unrestricted one-on-one character
@@ -283,7 +283,7 @@ export default function TextgameVsJanitorAiPage() {
             </P>
           </div>
           <div>
-            <H3>Do I need an API key for textgame.ai?</H3>
+            <H3>Do I need an API key for TextGame.ai?</H3>
             <P>
               No. {SITE_NAME} handles all the AI infrastructure. You sign up, pick a game, and start playing.
               Janitor AI requires you to bring your own API key from OpenAI, Claude, or another provider.

@@ -117,7 +117,7 @@ export default function FreeOnlineGamesWithFriendsPage() {
           is secretly working against you — figure out who before it&apos;s too late.
         </P>
 
-        <H3>1. Werewolf (on textgame.ai)</H3>
+        <H3>1. Werewolf (on TextGame.ai)</H3>
         <P>
           The classic hidden-role game where villagers try to identify werewolves before they&apos;re
           all eliminated.{" "}
@@ -125,14 +125,14 @@ export default function FreeOnlineGamesWithFriendsPage() {
           with an AI Game Master that assigns roles, runs night/day phases, and controls AI villagers. Works with 1–20 players.
         </P>
 
-        <H3>2. Mafia (on textgame.ai)</H3>
+        <H3>2. Mafia (on TextGame.ai)</H3>
         <P>
           Mafia follows similar rules to Werewolf with a crime-family theme. The AI moderator manages
           accusations, votes, and reveals.{" "}
           <Link href="/games/mafia" className="text-violet-400 hover:underline">Play Mafia online</Link> — free, no download.
         </P>
 
-        <H3>3. Secret Hitler (on textgame.ai)</H3>
+        <H3>3. Secret Hitler (on TextGame.ai)</H3>
         <P>
           A political deduction game where liberals and fascists clash over policy. Hidden roles,
           government elections, and escalating tension.{" "}
@@ -196,7 +196,7 @@ export default function FreeOnlineGamesWithFriendsPage() {
           answers.
         </P>
 
-        <H3>12. Quiz Party (on textgame.ai)</H3>
+        <H3>12. Quiz Party (on TextGame.ai)</H3>
         <P>
           AI-generated trivia on any topic you choose. The AI Game Master creates questions, tracks
           scores, and adapts difficulty.{" "}
@@ -218,7 +218,7 @@ export default function FreeOnlineGamesWithFriendsPage() {
           them with friends in real time. No account required.
         </P>
 
-        <H3>15. AI Mystery Rooms (on textgame.ai)</H3>
+        <H3>15. AI Mystery Rooms (on TextGame.ai)</H3>
         <P>
           Text-based escape rooms where the AI generates puzzles, clues, and red herrings. Work
           together to solve the mystery before time runs out.{" "}
@@ -234,7 +234,7 @@ export default function FreeOnlineGamesWithFriendsPage() {
         {/* ── AI Storytelling & RPG ──────────────────────────────────── */}
         <H2 id="ai-storytelling">AI Storytelling &amp; RPG Games</H2>
 
-        <H3>17. AI Text Adventures (on textgame.ai)</H3>
+        <H3>17. AI Text Adventures (on TextGame.ai)</H3>
         <P>
           Create or join AI-powered text adventures in any genre — fantasy, sci-fi, horror, romance.
           Play solo or with friends. The AI narrates, controls NPCs, and adapts to your choices.{" "}
@@ -242,7 +242,7 @@ export default function FreeOnlineGamesWithFriendsPage() {
           our full guide to AI text adventures</Link>.
         </P>
 
-        <H3>18. AI D&amp;D Campaigns (on textgame.ai)</H3>
+        <H3>18. AI D&amp;D Campaigns (on TextGame.ai)</H3>
         <P>
           Full D&amp;D-style RPG campaigns with an AI Dungeon Master. Create characters, explore
           worlds, fight monsters, and make choices that matter — all in your browser.{" "}
@@ -250,7 +250,7 @@ export default function FreeOnlineGamesWithFriendsPage() {
           to play D&amp;D with AI</Link>.
         </P>
 
-        <H3>19. Murder Mystery Games (on textgame.ai)</H3>
+        <H3>19. Murder Mystery Games (on TextGame.ai)</H3>
         <P>
           AI-hosted whodunit games where each player gets a character with secrets and motives.
           Investigate, interrogate, and deduce who the killer is.{" "}

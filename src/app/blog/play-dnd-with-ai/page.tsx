@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "How to Play D&D with AI — Solo or Multiplayer (2026 Guide)";
 const DESCRIPTION =
-  "Learn how to play Dungeons & Dragons with an AI Dungeon Master. This guide covers solo D&D, multiplayer AI campaigns, character creation, and how textgame.ai handles AI-powered tabletop RPGs.";
+  "Learn how to play Dungeons & Dragons with an AI Dungeon Master. This guide covers solo D&D, multiplayer AI campaigns, character creation, and how TextGame.ai handles AI-powered tabletop RPGs.";
 const CANONICAL = "/blog/play-dnd-with-ai";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -99,7 +99,7 @@ export default function PlayDndWithAiPage() {
               { id: "solo-vs-group", label: "Solo Play vs Group Play" },
               { id: "character-creation", label: "Character Creation with AI" },
               { id: "campaign-types", label: "Campaign Types You Can Run" },
-              { id: "textgame-approach", label: "How textgame.ai Handles It" },
+              { id: "textgame-approach", label: "How TextGame.ai Handles It" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
               <li key={item.id}>
@@ -193,8 +193,8 @@ export default function PlayDndWithAiPage() {
           adapts its narration style, encounter design, and NPC behavior to match the genre.
         </P>
 
-        {/* ── How textgame.ai Handles It ─────────────────────────────── */}
-        <H2 id="textgame-approach">How textgame.ai Handles It</H2>
+        {/* ── How TextGame.ai Handles It ─────────────────────────────── */}
+        <H2 id="textgame-approach">How TextGame.ai Handles It</H2>
         <P>
           {SITE_NAME} takes a different approach from most AI D&amp;D tools. Instead of dropping you
           into a generic fantasy world, you define the rules:

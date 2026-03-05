@@ -5,19 +5,19 @@ import { Button } from "@/app/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Read the terms of service for textgame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
+  description: "Read the terms of service for TextGame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
   alternates: { canonical: "/terms" },
   openGraph: {
-    title: "Terms of Service · textgame.ai",
-    description: "Read the terms of service for textgame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
+    title: "Terms of Service · TextGame.ai",
+    description: "Read the terms of service for TextGame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
     url: "https://textgame.ai/terms",
-    siteName: "textgame.ai",
+    siteName: "TextGame.ai",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Terms of Service — textgame.ai",
-    description: "Read the terms of service for textgame.ai — AI-powered text game platform.",
+    title: "Terms of Service — TextGame.ai",
+    description: "Read the terms of service for TextGame.ai — AI-powered text game platform.",
   },
 };
 
@@ -38,7 +38,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">1. Acceptance</h2>
             <p>
-              By accessing or using textgame.ai (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Service. If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization.
+              By accessing or using TextGame.ai (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Service. If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization.
             </p>
           </section>
 
@@ -52,7 +52,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">3. Service Description</h2>
             <p>
-              textgame.ai is an AI-powered platform where you design and play text-based games. An AI Game Master runs game sessions, managing narrative, roles, rules, and player interactions. You can play solo with AI characters or invite friends to join multiplayer sessions in real time. We may update, modify, or discontinue features at any time.
+              TextGame.ai is an AI-powered platform where you design and play text-based games. An AI Game Master runs game sessions, managing narrative, roles, rules, and player interactions. You can play solo with AI characters or invite friends to join multiplayer sessions in real time. We may update, modify, or discontinue features at any time.
             </p>
           </section>
 
@@ -86,7 +86,7 @@ export default function TermsPage() {
             </p>
             <ul className="mt-1 space-y-1 list-disc list-inside text-zinc-400">
               <li>AI-generated content may be inaccurate, unexpected, or fictional</li>
-              <li>AI outputs do not represent the views, opinions, or endorsements of textgame.ai</li>
+              <li>AI outputs do not represent the views, opinions, or endorsements of TextGame.ai</li>
               <li>You are responsible for how you use or share AI-generated content from the Service</li>
               <li>AI responses are not a substitute for professional advice of any kind</li>
             </ul>
@@ -117,7 +117,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">9. User Content &amp; Intellectual Property</h2>
             <p>
-              Game rules, descriptions, and custom configurations you create remain yours. By using the Service, you grant us a limited, non-exclusive license to store, process, and display your content as necessary to operate the Service. The interface, branding, design, and underlying technology of textgame.ai are owned by us or our licensors. You may not copy, modify, or redistribute them for commercial purposes without written permission.
+              Game rules, descriptions, and custom configurations you create remain yours. By using the Service, you grant us a limited, non-exclusive license to store, process, and display your content as necessary to operate the Service. The interface, branding, design, and underlying technology of TextGame.ai are owned by us or our licensors. You may not copy, modify, or redistribute them for commercial purposes without written permission.
             </p>
           </section>
 
@@ -131,14 +131,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">11. Limitation of Liability</h2>
             <p>
-              To the maximum extent permitted by law, textgame.ai and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, data, or goodwill arising from your use of the Service. Our total liability for any claim related to the Service shall not exceed the amount you paid us in the 12 months preceding the claim.
+              To the maximum extent permitted by law, TextGame.ai and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, data, or goodwill arising from your use of the Service. Our total liability for any claim related to the Service shall not exceed the amount you paid us in the 12 months preceding the claim.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">12. Indemnification</h2>
             <p>
-              You agree to indemnify and hold harmless textgame.ai and its operators from any claims, damages, or expenses (including reasonable legal fees) arising from your use of the Service, your violation of these terms, or your infringement of any third-party rights.
+              You agree to indemnify and hold harmless TextGame.ai and its operators from any claims, damages, or expenses (including reasonable legal fees) arising from your use of the Service, your violation of these terms, or your infringement of any third-party rights.
             </p>
           </section>
 

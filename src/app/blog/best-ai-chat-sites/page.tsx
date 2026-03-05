@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "10 Best AI Chat Sites for Roleplay & Games (2026)";
 const DESCRIPTION =
-  "The definitive list of the best AI chat sites for roleplay, games, and conversation. Compare Character.AI, PolyBuzz, textgame.ai, Talkie AI, Janitor AI, and more — with pros, cons, and pricing.";
+  "The definitive list of the best AI chat sites for roleplay, games, and conversation. Compare Character.AI, PolyBuzz, TextGame.ai, Talkie AI, Janitor AI, and more — with pros, cons, and pricing.";
 const CANONICAL = "/blog/best-ai-chat-sites";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 const MODIFIED = "2026-03-04T00:00:00Z";
@@ -153,7 +153,7 @@ export default function BestAiChatSitesPage() {
               </tr>
             </thead>
             <tbody className="text-zinc-300">
-              <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-violet-400">textgame.ai</td><td className="py-3 pr-4">Multiplayer AI games</td><td className="py-3 pr-4">✓ Free tier</td><td className="py-3 pr-4">✓ Real-time</td><td className="py-3">✓ Per-character</td></tr>
+              <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-violet-400">TextGame.ai</td><td className="py-3 pr-4">Multiplayer AI games</td><td className="py-3 pr-4">✓ Free tier</td><td className="py-3 pr-4">✓ Real-time</td><td className="py-3">✓ Per-character</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Character.AI</td><td className="py-3 pr-4">1-on-1 character chat</td><td className="py-3 pr-4">✓ Free</td><td className="py-3 pr-4">✗</td><td className="py-3">✗</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">PolyBuzz</td><td className="py-3 pr-4">NSFW roleplay</td><td className="py-3 pr-4">✓ Limited</td><td className="py-3 pr-4">✗</td><td className="py-3">✗</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Talkie AI</td><td className="py-3 pr-4">Mobile AI companions</td><td className="py-3 pr-4">✓ Free</td><td className="py-3 pr-4">✗</td><td className="py-3">✓ Voice call</td></tr>
@@ -188,9 +188,9 @@ export default function BestAiChatSitesPage() {
           <strong className="text-red-400">Cons:</strong> Smaller community, no multiplayer, limited free messages. <strong className="text-white">Pricing:</strong> Free tier; premium plans start around $12/month.
         </P>
 
-        <H3>3. textgame.ai — Best for Multiplayer AI Games</H3>
+        <H3>3. TextGame.ai — Best for Multiplayer AI Games</H3>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> is the only platform on this list where AI chat becomes a <em>game</em>. An AI Game Master hosts structured sessions — Werewolf, Mafia, Murder Mystery, RPGs, and custom games — with enforced rules, turns, and win conditions. AI characters play alongside humans with unique personalities, strategies, and voices.
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> is the only platform on this list where AI chat becomes a <em>game</em>. An AI Game Master hosts structured sessions — Werewolf, Mafia, Murder Mystery, RPGs, and custom games — with enforced rules, turns, and win conditions. AI characters play alongside humans with unique personalities, strategies, and voices.
         </P>
         <P>
           The multiplayer angle is what makes it unique: share a link and friends join instantly as guests. You get the depth of AI roleplay combined with the thrill of actual gameplay.
@@ -268,7 +268,7 @@ export default function BestAiChatSitesPage() {
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-8 space-y-4 text-sm">
           <div className="flex items-start gap-3">
             <span className="text-lg">🎮</span>
-            <p className="text-zinc-300"><strong className="text-white">&ldquo;I want to play games with AI&rdquo;</strong> → <Link href="/discover" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link>. The only platform with a game engine, AI host, and multiplayer.</p>
+            <p className="text-zinc-300"><strong className="text-white">&ldquo;I want to play games with AI&rdquo;</strong> → <Link href="/discover" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link>. The only platform with a game engine, AI host, and multiplayer.</p>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-lg">💬</span>
@@ -289,19 +289,19 @@ export default function BestAiChatSitesPage() {
         <div className="space-y-6 mb-12">
           <div>
             <H3>What is the best free AI chat site?</H3>
-            <P>For character chat, Character.AI and Perchance are completely free. For AI-powered games with friends, <Link href="/discover" className="text-violet-400 hover:underline">textgame.ai</Link> offers a generous free tier with starting credits.</P>
+            <P>For character chat, Character.AI and Perchance are completely free. For AI-powered games with friends, <Link href="/discover" className="text-violet-400 hover:underline">TextGame.ai</Link> offers a generous free tier with starting credits.</P>
           </div>
           <div>
             <H3>Are AI chat sites safe?</H3>
-            <P>Reputable platforms like Character.AI, Replika, and textgame.ai have safety measures in place. Always avoid sharing personal information. Open-source options like KoboldAI keep everything local on your machine.</P>
+            <P>Reputable platforms like Character.AI, Replika, and TextGame.ai have safety measures in place. Always avoid sharing personal information. Open-source options like KoboldAI keep everything local on your machine.</P>
           </div>
           <div>
             <H3>Can I use AI chat sites without signing up?</H3>
-            <P>Yes — Perchance requires no account at all. On textgame.ai, guests can join multiplayer games via a shared link without creating an account.</P>
+            <P>Yes — Perchance requires no account at all. On TextGame.ai, guests can join multiplayer games via a shared link without creating an account.</P>
           </div>
           <div>
             <H3>Which AI chat site supports multiplayer?</H3>
-            <P>textgame.ai is currently the only major AI chat platform with real-time multiplayer. You can play structured games with friends and AI characters in the same session.</P>
+            <P>TextGame.ai is currently the only major AI chat platform with real-time multiplayer. You can play structured games with friends and AI characters in the same session.</P>
           </div>
         </div>
 
@@ -309,7 +309,7 @@ export default function BestAiChatSitesPage() {
         <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">Ready to Try AI Chat That&apos;s Actually a Game?</h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            textgame.ai turns AI chat into multiplayer games with an AI Game Master. Pick a template or create your own rules — free to start.
+            TextGame.ai turns AI chat into multiplayer games with an AI Game Master. Pick a template or create your own rules — free to start.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/discover" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">

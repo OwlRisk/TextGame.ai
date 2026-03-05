@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "Character AI Text Adventure — Play Interactive Stories with AI Characters";
 const DESCRIPTION =
-  "Play text adventures with AI characters that remember context, adapt to your choices, and create unique stories every time. Compare Character.AI, AI Dungeon, and textgame.ai for the best text adventure experience.";
+  "Play text adventures with AI characters that remember context, adapt to your choices, and create unique stories every time. Compare Character.AI, AI Dungeon, and TextGame.ai for the best text adventure experience.";
 const CANONICAL = "/blog/character-ai-text-adventure";
 const PUBLISHED = "2026-03-05T00:00:00Z";
 const MODIFIED = "2026-03-05T00:00:00Z";
@@ -197,11 +197,11 @@ export default function CharacterAiTextAdventurePage() {
           sandbox, not a structured game.
         </Para>
 
-        {/* textgame.ai */}
-        <Heading3>textgame.ai — Structured Games with AI Characters &amp; Multiplayer</Heading3>
+        {/* TextGame.ai */}
+        <Heading3>TextGame.ai — Structured Games with AI Characters &amp; Multiplayer</Heading3>
 
         <Para>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> takes a
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> takes a
           fundamentally different approach. Instead of open-ended chat or solo storytelling, it provides{" "}
           <strong className="text-white">structured games with rules, roles, and an AI Game Master</strong> that
           manages every session. AI characters don&apos;t just talk — they play the game strategically, forming
@@ -235,12 +235,12 @@ export default function CharacterAiTextAdventurePage() {
           makes it a premium option.
         </Para>
 
-        {/* ── Why textgame.ai Stands Out ──────────────────────────────── */}
-        <Heading2 id="why-textgame">Why textgame.ai Stands Out for Text Adventures</Heading2>
+        {/* ── Why TextGame.ai Stands Out ──────────────────────────────── */}
+        <Heading2 id="why-textgame">Why TextGame.ai Stands Out for Text Adventures</Heading2>
 
         <Para>
           Most AI text adventure platforms fall into one of two camps: character chat (Character.AI, Chai) or
-          solo storytelling (AI Dungeon, Novel AI). textgame.ai occupies a unique space by combining AI characters
+          solo storytelling (AI Dungeon, Novel AI). TextGame.ai occupies a unique space by combining AI characters
           with actual game design.
         </Para>
 
@@ -275,7 +275,7 @@ export default function CharacterAiTextAdventurePage() {
           <Link href="/blog/character-ai-alternatives" className="text-violet-400 hover:underline">Character.AI</Link>{" "}
           for roleplay and wished it had actual game mechanics, or if you love{" "}
           <Link href="/blog/ai-dungeon-alternatives" className="text-violet-400 hover:underline">AI Dungeon</Link>{" "}
-          but want to play with friends, textgame.ai is built for exactly that.
+          but want to play with friends, TextGame.ai is built for exactly that.
         </Para>
 
         {/* ── Types of AI Text Adventures ─────────────────────────────── */}
@@ -345,7 +345,7 @@ export default function CharacterAiTextAdventurePage() {
               <p className="text-white font-semibold mb-1">Pick a platform</p>
               <p className="text-sm text-zinc-300">
                 Choose based on what you want: solo storytelling (AI Dungeon), character chat (Character.AI),
-                or structured games with friends (<Link href="/discover" className="text-violet-400 hover:underline">textgame.ai</Link>).
+                or structured games with friends (<Link href="/discover" className="text-violet-400 hover:underline">TextGame.ai</Link>).
               </p>
             </div>
           </li>
@@ -356,7 +356,7 @@ export default function CharacterAiTextAdventurePage() {
             <div>
               <p className="text-white font-semibold mb-1">Choose a game or scenario</p>
               <p className="text-sm text-zinc-300">
-                Browse templates or pre-made scenarios. On textgame.ai, you can pick from 50+ games like
+                Browse templates or pre-made scenarios. On TextGame.ai, you can pick from 50+ games like
                 detective mysteries, escape rooms, RPG quests, and social deduction — or describe your own idea.
               </p>
             </div>

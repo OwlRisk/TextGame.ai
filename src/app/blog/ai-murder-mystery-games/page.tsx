@@ -4,7 +4,7 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 
 const TITLE = "AI Murder Mystery Games — Host a Virtual Whodunit Online";
 const DESCRIPTION =
-  "Discover how AI murder mystery games work, how to host a virtual whodunit online, and how textgame.ai's detective mystery template lets you play free with friends or AI characters.";
+  "Discover how AI murder mystery games work, how to host a virtual whodunit online, and how TextGame.ai's detective mystery template lets you play free with friends or AI characters.";
 const CANONICAL = "/blog/ai-murder-mystery-games";
 const PUBLISHED = "2026-03-04T00:00:00Z";
 
@@ -97,7 +97,7 @@ export default function AiMurderMysteryGamesPage() {
               { id: "how-ai-hosts", label: "How the AI Hosts the Mystery" },
               { id: "formats", label: "Types of Murder Mystery Formats" },
               { id: "hosting-tips", label: "Tips for Hosting a Great Game" },
-              { id: "textgame-template", label: "The Detective Mystery on textgame.ai" },
+              { id: "textgame-template", label: "The Detective Mystery on TextGame.ai" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
               <li key={item.id}>
@@ -195,8 +195,8 @@ export default function AiMurderMysteryGamesPage() {
           ))}
         </ol>
 
-        {/* ── textgame.ai Template ───────────────────────────────────── */}
-        <H2 id="textgame-template">The Detective Mystery on textgame.ai</H2>
+        {/* ── TextGame.ai Template ───────────────────────────────────── */}
+        <H2 id="textgame-template">The Detective Mystery on TextGame.ai</H2>
         <P>
           {SITE_NAME} offers a dedicated{" "}
           <Link href="/games/detective-mystery" className="text-violet-400 hover:underline font-semibold">

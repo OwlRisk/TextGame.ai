@@ -22,8 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const game = await getGameByInvite(inviteCode);
 
   const gameName = game?.name ?? "Game";
-  const title = `Join "${gameName}" on textgame.ai`;
-  const description = `You've been invited to play ${gameName} — a live AI text game on textgame.ai. No account needed, jump right in!`;
+  const title = `Join "${gameName}" on TextGame.ai`;
+  const description = `You've been invited to play ${gameName} — a live AI text game on TextGame.ai. No account needed, jump right in!`;
   const url = `${SITE_DOMAIN}/join/${inviteCode}`;
 
   return {
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       type: "website",
       url,
-      siteName: "textgame.ai",
+      siteName: "TextGame.ai",
       images: [{ url: "/hero.webp", width: 1200, height: 630, alt: `Join ${gameName}` }],
     },
     twitter: {

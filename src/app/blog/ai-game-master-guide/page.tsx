@@ -100,7 +100,7 @@ export default function AiGameMasterGuidePage() {
               { id: "what-can-do", label: "What Can an AI Game Master Do?" },
               { id: "ai-vs-human", label: "AI Game Master vs Human Game Master" },
               { id: "ai-gm-vs-dm", label: "AI Game Master vs AI Dungeon Master" },
-              { id: "how-works", label: "How It Works on textgame.ai" },
+              { id: "how-works", label: "How It Works on TextGame.ai" },
               { id: "faq", label: "FAQ" },
             ].map((item, i) => (
               <li key={item.id}>
@@ -236,8 +236,8 @@ export default function AiGameMasterGuidePage() {
           for more on the different types.
         </P>
 
-        {/* ── How It Works on textgame.ai ────────────────────────────── */}
-        <H2 id="how-works">How It Works on textgame.ai</H2>
+        {/* ── How It Works on TextGame.ai ────────────────────────────── */}
+        <H2 id="how-works">How It Works on TextGame.ai</H2>
         <P>
           On {SITE_NAME}, the AI Game Master powers every game. Here&apos;s the flow:
         </P>
@@ -300,7 +300,7 @@ export default function AiGameMasterGuidePage() {
               An AI Game Master hosts structured multiplayer games with rules, roles, and victory conditions.
               {SITE_NAME} supports both: structured games (Werewolf, Mafia, custom) and open-ended RPG-style
               play. <Link href="/blog/ai-dungeon-vs-textgame" className="text-violet-400 hover:underline">Compare
-              AI Dungeon vs textgame.ai</Link> for details.
+              AI Dungeon vs TextGame.ai</Link> for details.
             </P>
           </div>
         </div>

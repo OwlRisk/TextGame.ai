@@ -145,7 +145,7 @@ export default function TalkToAiCharactersPage() {
 
         <H3>Voice-Enabled AI Conversations</H3>
         <P>
-          Some platforms now give AI characters distinct voices via text-to-speech. On <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link>, every AI character speaks with a unique voice — so when you&apos;re playing Werewolf, you can <em>hear</em> each character make their accusations and defenses. Replika and Talkie AI also offer voice calls where you speak naturally and the AI responds verbally.
+          Some platforms now give AI characters distinct voices via text-to-speech. On <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link>, every AI character speaks with a unique voice — so when you&apos;re playing Werewolf, you can <em>hear</em> each character make their accusations and defenses. Replika and Talkie AI also offer voice calls where you speak naturally and the AI responds verbally.
         </P>
         <P>
           Voice adds immersion and emotional connection. Hearing an AI character&apos;s tone, pacing, and personality through audio makes the experience feel remarkably more real than reading text alone.
@@ -159,12 +159,12 @@ export default function TalkToAiCharactersPage() {
 
         <H3>Social Deduction Games</H3>
         <P>
-          Games like Werewolf, Mafia, and Secret Hitler require players to lie, deduce, and persuade. AI characters on <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> are built for exactly this: they have hidden roles, form alliances, make accusations, and bluff convincingly. An AI Game Master runs the phases, so you get a complete game experience even if you&apos;re playing solo.
+          Games like Werewolf, Mafia, and Secret Hitler require players to lie, deduce, and persuade. AI characters on <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> are built for exactly this: they have hidden roles, form alliances, make accusations, and bluff convincingly. An AI Game Master runs the phases, so you get a complete game experience even if you&apos;re playing solo.
         </P>
 
         <H3>RPGs & Text Adventures</H3>
         <P>
-          AI characters can serve as party members in RPG adventures, each with their own skills, motivations, and dialogue. On textgame.ai, you can run a D&amp;D-style campaign where AI characters play alongside you as the Game Master narrates the story and enforces game mechanics.
+          AI characters can serve as party members in RPG adventures, each with their own skills, motivations, and dialogue. On TextGame.ai, you can run a D&amp;D-style campaign where AI characters play alongside you as the Game Master narrates the story and enforces game mechanics.
         </P>
 
         <H3>Party Games & Ice Breakers</H3>
@@ -188,9 +188,9 @@ export default function TalkToAiCharactersPage() {
           Talkie AI offers a lighter companion experience with a focus on voice interactions. It&apos;s more about quick, fun conversations with varied AI characters than building a deep long-term bond. The mobile app is polished and the voice quality is solid.
         </P>
 
-        <H3>textgame.ai — AI Friends Who Actually Play With You</H3>
+        <H3>TextGame.ai — AI Friends Who Actually Play With You</H3>
         <P>
-          <Link href="/" className="text-violet-400 hover:underline font-semibold">textgame.ai</Link> takes a different approach: instead of just talking <em>to</em> AI characters, you play <em>with</em> them. Each AI has a distinct personality and voice, and they interact with you through shared game experiences — lying in Werewolf, solving puzzles together, or competing in trivia. It&apos;s companionship through play.
+          <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> takes a different approach: instead of just talking <em>to</em> AI characters, you play <em>with</em> them. Each AI has a distinct personality and voice, and they interact with you through shared game experiences — lying in Werewolf, solving puzzles together, or competing in trivia. It&apos;s companionship through play.
         </P>
 
         {/* ── Best Platforms ──────────────────────────────────────────── */}
@@ -207,7 +207,7 @@ export default function TalkToAiCharactersPage() {
               </tr>
             </thead>
             <tbody className="text-zinc-300">
-              <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-violet-400">textgame.ai</td><td className="py-3 pr-4">✓ Per-character voices</td><td className="py-3 pr-4">✓ 20+ templates</td><td className="py-3 pr-4">✓ Real-time</td><td className="py-3">✓</td></tr>
+              <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-violet-400">TextGame.ai</td><td className="py-3 pr-4">✓ Per-character voices</td><td className="py-3 pr-4">✓ 20+ templates</td><td className="py-3 pr-4">✓ Real-time</td><td className="py-3">✓</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Replika</td><td className="py-3 pr-4">✓ Voice calls</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3">✓ Limited</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Talkie AI</td><td className="py-3 pr-4">✓ Voice calls</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3">✓</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Character.AI</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3">✓</td></tr>
@@ -226,7 +226,7 @@ export default function TalkToAiCharactersPage() {
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 font-bold text-xs flex items-center justify-center">2</span>
-              <p><strong className="text-white">Pick a platform</strong> — for games with voice, try <Link href="/discover" className="text-violet-400 hover:underline">textgame.ai</Link>. For voice companionship, try Replika or Talkie AI. For text roleplay, try Character.AI or Perchance.</p>
+              <p><strong className="text-white">Pick a platform</strong> — for games with voice, try <Link href="/discover" className="text-violet-400 hover:underline">TextGame.ai</Link>. For voice companionship, try Replika or Talkie AI. For text roleplay, try Character.AI or Perchance.</p>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 font-bold text-xs flex items-center justify-center">3</span>
@@ -234,7 +234,7 @@ export default function TalkToAiCharactersPage() {
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 font-bold text-xs flex items-center justify-center">4</span>
-              <p><strong className="text-white">Start talking</strong> — type or speak. On textgame.ai, toggle AI voice to hear characters speak during games. Invite friends to join multiplayer sessions via a link.</p>
+              <p><strong className="text-white">Start talking</strong> — type or speak. On TextGame.ai, toggle AI voice to hear characters speak during games. Invite friends to join multiplayer sessions via a link.</p>
             </li>
           </ol>
         </div>
@@ -244,19 +244,19 @@ export default function TalkToAiCharactersPage() {
         <div className="space-y-6 mb-12">
           <div>
             <H3>Can I actually hear AI characters talk?</H3>
-            <P>Yes. On textgame.ai, every AI character has a unique text-to-speech voice — you hear them speak during games. Replika and Talkie AI offer voice call features where you can have spoken conversations with your AI companion.</P>
+            <P>Yes. On TextGame.ai, every AI character has a unique text-to-speech voice — you hear them speak during games. Replika and Talkie AI offer voice call features where you can have spoken conversations with your AI companion.</P>
           </div>
           <div>
             <H3>Is talking to AI characters free?</H3>
-            <P>Most platforms offer free access. textgame.ai includes free starting credits, Character.AI and Perchance are free, and Replika has a free basic tier. Voice features are sometimes locked behind premium plans.</P>
+            <P>Most platforms offer free access. TextGame.ai includes free starting credits, Character.AI and Perchance are free, and Replika has a free basic tier. Voice features are sometimes locked behind premium plans.</P>
           </div>
           <div>
             <H3>Can AI characters play games with me?</H3>
-            <P>On <Link href="/" className="text-violet-400 hover:underline">textgame.ai</Link>, yes — AI characters play structured games like Werewolf, Mafia, murder mysteries, and RPGs. They have hidden roles, make strategic decisions, and interact with human players under enforced rules.</P>
+            <P>On <Link href="/" className="text-violet-400 hover:underline">TextGame.ai</Link>, yes — AI characters play structured games like Werewolf, Mafia, murder mysteries, and RPGs. They have hidden roles, make strategic decisions, and interact with human players under enforced rules.</P>
           </div>
           <div>
             <H3>What&apos;s the best AI talking app for mobile?</H3>
-            <P>For voice companionship, Talkie AI and Replika have the best mobile apps. For multiplayer AI games on mobile, textgame.ai works in any mobile browser — no app download needed.</P>
+            <P>For voice companionship, Talkie AI and Replika have the best mobile apps. For multiplayer AI games on mobile, TextGame.ai works in any mobile browser — no app download needed.</P>
           </div>
         </div>
 
@@ -264,7 +264,7 @@ export default function TalkToAiCharactersPage() {
         <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">Talk to AI Characters Who Actually Play Back</h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            On textgame.ai, AI characters don&apos;t just chat — they strategize, bluff, and compete in multiplayer games. Hear their voices, play together, and invite friends.
+            On TextGame.ai, AI characters don&apos;t just chat — they strategize, bluff, and compete in multiplayer games. Hear their voices, play together, and invite friends.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/discover" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
