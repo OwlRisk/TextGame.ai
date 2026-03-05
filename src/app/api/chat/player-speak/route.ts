@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { buildSystemPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '@/lib/player-speak-prompt';
 import { deductTokens, estimatedTokensToCoins } from '@/lib/tokens';
+import { sanitizeModel } from '@/lib/model-prefs';
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -113,7 +114,9 @@ export async function POST(request: NextRequest) {
 
     const userContent = lines.join('\n');
 
-    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
+    const chatModel = sanitizeModel(preferredModel);
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 30_000);
     const completion = await openai.chat.completions.create({
       model: chatModel,
       messages: [
@@ -122,7 +125,8 @@ export async function POST(request: NextRequest) {
       ],
       max_completion_tokens: PLAYER_SPEAK_HARD_LIMIT_TOKENS,
       temperature: 0.85,
-    });
+    }, { signal: ac.signal });
+    clearTimeout(timer);
 
     const message = (completion.choices[0]?.message?.content || '').trim();
 

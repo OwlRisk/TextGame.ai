@@ -104,6 +104,7 @@ function typewriterReveal(
   msgMeta: StreamMsgMeta,
   channelId?: string,
   charsPerTick: number = TYPEWRITER_CHARS_PER_TICK,
+  cancelled?: () => boolean,
 ): Promise<string> {
   return new Promise((resolve) => {
     let idx = Math.min(charsPerTick, text.length);
@@ -111,14 +112,18 @@ function typewriterReveal(
     const messageId = addStreamFn(msgMeta, channelId, text.slice(0, idx));
     if (!messageId) { resolve(""); return; }
     if (done) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
+    let rafId: number;
     const step = () => {
+      if (cancelled?.()) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
       idx = Math.min(idx + charsPerTick, text.length);
       const finished = idx >= text.length;
       updateStreamFn(messageId, text.slice(0, idx), finished);
       if (finished) { resolve(messageId); return; }
-      requestAnimationFrame(step);
+      rafId = requestAnimationFrame(step);
     };
-    requestAnimationFrame(step);
+    rafId = requestAnimationFrame(step);
+    // Allow external cleanup via the cancelled callback
+    void rafId;
   });
 }
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
+import { sanitizeModel } from "@/lib/model-prefs";
+import { deductTokens, estimatedTokensToCoins } from "@/lib/tokens";
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -65,15 +67,25 @@ Rules:
       .join("\n");
     const userPrompt = `${rulesContext ? rulesContext + "\n\n" : ""}Recent conversation:\n${convSnippet}\n\nDecide whether to show quick replies; if yes, output that many lines, one per line (0 lines is valid):`;
 
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 15_000);
     const completion = await openai.chat.completions.create({
-      model: preferredModel || process.env.OPENAI_CHAT_MODEL || "gpt-5.2",
+      model: sanitizeModel(preferredModel),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       max_completion_tokens: 280,
       temperature: 0.6,
-    });
+    }, { signal: ac.signal });
+    clearTimeout(timer);
+
+    const totalTokens = completion.usage?.total_tokens;
+    if (totalTokens && totalTokens > 0) {
+      const coins = estimatedTokensToCoins(totalTokens, sanitizeModel(preferredModel));
+      deductTokens(user.id, Math.max(1, coins), "suggest_gm_replies", `GM replies ${totalTokens} tokens`)
+        .catch((e) => console.error("[suggest-gm-replies] deduct error:", e));
+    }
 
     const text = completion.choices?.[0]?.message?.content?.trim() || "";
     const suggestions = text

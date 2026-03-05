@@ -46,8 +46,6 @@ interface PlayerPanelProps {
   avatarImageUrls?: Record<string, string>;
   /** Call when an avatar URL is loaded so the room can persist it. */
   onAvatarUrlLoaded?: (key: string, url: string) => void;
-  /** Force-regenerate a player avatar with DALL-E 3 (costs tokens). */
-  onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
 }
 
 export function PlayerPanel({ 
@@ -60,7 +58,6 @@ export function PlayerPanel({
   humanGameIdentity,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
-  onRegenerateAvatar,
 }: PlayerPanelProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -108,7 +105,6 @@ export function PlayerPanel({
                 onOpenProfile={openProfile}
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
-                onRegenerateAvatar={onRegenerateAvatar}
               />
               <Separator className="mt-3 bg-zinc-700/50" />
             </div>
@@ -118,7 +114,9 @@ export function PlayerPanel({
           <div>
             <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 tracking-wide">Players</div>
             <div className="space-y-1.5">
-              {players.filter(p => !p.isGameMaster).map((player) => (
+              {players.filter(p => !p.isGameMaster).length === 0 ? (
+                <p className="text-xs text-zinc-500 py-2">No players yet</p>
+              ) : players.filter(p => !p.isGameMaster).map((player) => (
                 <PlayerCard
                   key={player.id}
                   player={player}
@@ -131,7 +129,6 @@ export function PlayerPanel({
                   onOpenProfile={openProfile}
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
-                  onRegenerateAvatar={onRegenerateAvatar}
                 />
               ))}
             </div>
@@ -153,7 +150,6 @@ function PlayerCard({
   onOpenProfile,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
-  onRegenerateAvatar,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -165,35 +161,13 @@ function PlayerCard({
   onOpenProfile?: (player: Player) => void;
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
-  onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
 }) {
-  const [regenerating, setRegenerating] = useState(false);
   const useGameAvatarForHuman = !player.isAI && !!gameId;
   const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
   const isClickable = !!onOpenProfile;
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
-  const handleRegenerate = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!onRegenerateAvatar || regenerating) return;
-    setRegenerating(true);
-    try {
-      const avatarProps = player.isAI ? getAvatarPropsForPlayer(player) : null;
-      const avatarName = player.isAI
-        ? (avatarProps?.name ?? player.name)
-        : (useGameAvatarForHuman ? humanAvatarName : player.name);
-      const avatarType = (player.isGameMaster ? 'host' : 'player') as 'host' | 'player';
-      await onRegenerateAvatar(avatarName, avatarType, {
-        gender: avatarProps?.gender ?? player.gender,
-        background: avatarProps?.background,
-        personality: avatarProps?.personality,
-        role: avatarProps?.role ?? player.role,
-      });
-    } finally {
-      setRegenerating(false);
-    }
-  };
   return (
     <div
       role={isClickable ? "button" : undefined}

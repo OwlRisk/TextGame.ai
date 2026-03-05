@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     const VALID_MODELS = ['inworld-tts-1.5-max', 'inworld-tts-1.5-mini', 'inworld-tts-1-max', 'inworld-tts-1'];
     const modelId = VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-max';
 
-    // Check and deduct coins before calling upstream
+    // Check balance before calling upstream (deduct AFTER success)
     const coinsRequired = ttsCostToCoins(text.length, modelId);
     const balance = await getUserBalance(user.id);
     if (balance.tokens < coinsRequired) {
@@ -67,12 +67,6 @@ export async function POST(request: NextRequest) {
         { status: 402 }
       );
     }
-    await deductTokens(
-      user.id,
-      coinsRequired,
-      'tts',
-      `Inworld TTS ${modelId} — ${text.length} chars`
-    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TTS_REQUEST_TIMEOUT_MS);
@@ -113,6 +107,14 @@ export async function POST(request: NextRequest) {
         { status: 502 }
       );
     }
+
+    // Deduct only after upstream success
+    await deductTokens(
+      user.id,
+      coinsRequired,
+      'tts',
+      `Inworld TTS ${modelId} — ${text.length} chars`
+    );
 
     return NextResponse.json({
       audioBase64,

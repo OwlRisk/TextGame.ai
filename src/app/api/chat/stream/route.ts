@@ -9,6 +9,7 @@ import {
   estimateChatTokens,
 } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
+import { sanitizeModel } from '@/lib/model-prefs';
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -67,6 +68,12 @@ export async function POST(request: NextRequest) {
     if (!messages || !Array.isArray(messages)) {
       return new Response(
         JSON.stringify({ error: 'Messages array is required' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    if (messages.length > 60) {
+      return new Response(
+        JSON.stringify({ error: 'Too many messages (max 60)' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -261,7 +268,7 @@ export async function POST(request: NextRequest) {
       0
     );
     const totalEstimate = estimateChatTokens(systemTokens, messagesTokens, maxTokens);
-    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
+    const chatModel = sanitizeModel(preferredModel);
     const estimatedCoins = estimatedTokensToCoins(totalEstimate, chatModel);
     if (!(await hasTokens(user.id, estimatedCoins))) {
       return new Response(
@@ -284,6 +291,8 @@ export async function POST(request: NextRequest) {
     ];
 
     // Create streaming response — stream_options.include_usage gives us real token counts
+    const streamAc = new AbortController();
+    const streamTimer = setTimeout(() => streamAc.abort(), 120_000);
     const stream = await openai.chat.completions.create({
       model: chatModel,
       messages: formattedMessages,
@@ -291,7 +300,7 @@ export async function POST(request: NextRequest) {
       max_completion_tokens: maxTokens,
       stream: true,
       stream_options: { include_usage: true },
-    });
+    }, { signal: streamAc.signal });
 
     const userId = user.id;
     // Create a readable stream; deduct tokens AFTER successful completion
@@ -309,6 +318,7 @@ export async function POST(request: NextRequest) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
             }
           }
+          clearTimeout(streamTimer);
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
           // Deduct based on real usage when available, else fall back to estimate

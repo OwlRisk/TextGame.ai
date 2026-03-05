@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { AlertCircle, User, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX, ArrowDown, Trophy, RotateCcw, Timer, Heart } from "lucide-react";
+import { AlertCircle, User, ChevronDown, Plus, Lock, Volume2, VolumeX, ArrowDown, Trophy, RotateCcw, Timer, Heart } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -105,38 +105,6 @@ function formatMessageUncached(content: string): React.JSX.Element {
   });
 
   return <div className="space-y-0.5">{elements}</div>;
-}
-
-function PrivateMessagesSection({ messages, label = "Private from Host" }: { messages: Array<{ id: string; from: string; content: string; timestamp: Date }>; label?: string }) {
-  const [open, setOpen] = useState(true);
-  return (
-    <div className="mb-3 rounded-lg border border-violet-500/40 bg-gradient-to-br from-violet-950/40 via-[#1a0820]/40 to-violet-900/30 overflow-hidden backdrop-blur-sm">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-sm font-medium text-violet-200 hover:bg-violet-500/10"
-      >
-        <span className="flex items-center gap-2">
-          <Mail className="h-4 w-4" />
-          {label} ({messages.length})
-        </span>
-        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </button>
-      {open && (
-        <div className="px-3 pb-3 space-y-2 max-h-40 overflow-y-auto">
-          {messages.map((pm) => (
-            <div key={pm.id} className="rounded-md bg-zinc-800/80 px-2.5 py-2 text-sm">
-              <div className="flex items-center gap-2 text-xs text-violet-400 mb-1">
-                <span>{pm.from}</span>
-                <span>{pm.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-              </div>
-              <p className="text-zinc-200 break-words">{pm.content}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 /**
@@ -818,7 +786,7 @@ export function ChatArea({
       <ScrollArea className="flex-1 min-h-0 px-6 relative">
         <div className="py-6 space-y-5">
           {hasMoreOlder && (
-            <div ref={loadMoreSentinelRef} className="flex justify-center py-3" aria-hidden>
+            <div ref={loadMoreSentinelRef} className="flex justify-center py-3" role="status" aria-label="Loading older messages">
               <span className="text-xs text-zinc-500">Pull up for older messages</span>
             </div>
           )}
@@ -1112,6 +1080,7 @@ export function ChatArea({
           <button
             type="button"
             onClick={scrollToBottom}
+            aria-label="Scroll to latest messages"
             className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 rounded-full bg-zinc-800/90 border border-zinc-600/60 px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700 shadow-lg backdrop-blur-sm transition-all"
           >
             <ArrowDown className="h-3.5 w-3.5" />
