@@ -1421,7 +1421,12 @@ ${rulesText || "No specific rules defined."}`.trim();
           // Determine the final public display: prefer the split public message;
           // fall back to the cleaned directive content (old format without --- separator).
           const displayContent = splitMessage || afterRoles;
-          updateStreamingMessage(messageId, displayContent || " ", true);
+          if (displayContent) {
+            updateStreamingMessage(messageId, displayContent, true);
+          } else {
+            // Silent turn: remove the GM message bubble entirely
+            setMessages((prev) => prev.filter((m) => m.id !== messageId));
+          }
           return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal };
         } catch (e) {
           console.error("Host stream error:", e);

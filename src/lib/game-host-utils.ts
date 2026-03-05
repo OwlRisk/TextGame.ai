@@ -23,11 +23,16 @@ export function resolveChannelByName(
 /**
  * Extract the public message portion from the accumulated stream.
  * With the --- separator format: everything before --- is the public message.
+ * Handles both mid-text separators (\n---) and start-of-string separators
+ * (silent turns where the GM outputs only directives).
  * Fallback (no --- yet): strip any partial/complete [BOARD:...] blocks.
  */
 export function getStreamingDisplay(raw: string): string {
-  const sepIdx = raw.search(/\n---\s*(\n|$)/);
-  if (sepIdx >= 0) return raw.slice(0, sepIdx).trim();
+  // Match --- at start of string (optional leading whitespace/newline) or after a newline
+  const sepMatch = raw.match(/(^|\n)---\s*(\n|$)/);
+  if (sepMatch && sepMatch.index != null) {
+    return raw.slice(0, sepMatch.index).trim();
+  }
   let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
   cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
   return cleaned.replace(/\n{2,}/g, "\n\n").trim();
@@ -35,13 +40,16 @@ export function getStreamingDisplay(raw: string): string {
 
 /**
  * Split host output at --- into (message, directives).
- * If no separator is found, treat the entire content as directives (fallback).
+ * Handles --- at the very start of the string (silent turns) as well as
+ * mid-text separators. If no separator is found, treat the entire content
+ * as directives (fallback).
  */
 export function splitHostOutput(raw: string): { message: string; directives: string } {
-  const sepIdx = raw.search(/\n---\s*(\n|$)/);
-  if (sepIdx >= 0) {
-    const message = raw.slice(0, sepIdx).trim();
-    const directives = raw.slice(raw.indexOf("\n", sepIdx + 1) + 1).trim();
+  const sepMatch = raw.match(/(^|\n)---\s*(\n|$)/);
+  if (sepMatch && sepMatch.index != null) {
+    const message = raw.slice(0, sepMatch.index).trim();
+    const afterSep = sepMatch.index + sepMatch[0].length;
+    const directives = raw.slice(afterSep).trim();
     return { message, directives };
   }
   return { message: "", directives: raw };
