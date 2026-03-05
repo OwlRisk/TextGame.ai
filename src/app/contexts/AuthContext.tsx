@@ -56,14 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const doSignOut = useCallback(async () => {
     setAuthCookie(null);
+    window.location.href = '/';
     try {
       await supabase.auth.signOut();
     } catch {
-      // ignore
+      // ignore — page is already navigating away
     }
-    setUser(null);
-    setSession(null);
-    window.location.replace('/');
   }, []);
 
   const isInvalidRefreshToken = useCallback((err: unknown) => {
@@ -259,20 +257,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setAuthCookie(null);
+    // Hard-navigate to home BEFORE clearing React state so that
+    // ProtectedRoute doesn't race and redirect to /signin.
+    window.location.href = '/';
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Sign out error:", error);
-        throw error;
-      }
-      setUser(null);
-      setSession(null);
-      // Hard redirect after Supabase has cleared the localStorage token,
-      // so the root page always starts fresh with no stale auth state.
-      window.location.replace('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
+      await supabase.auth.signOut();
+    } catch {
+      // ignore — page is already navigating away
     }
   };
 
