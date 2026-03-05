@@ -38,7 +38,10 @@ export async function GET() {
 const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 128;
 
-/** DALL-E 2 minimum is 256x256; we resize to 64 to save bandwidth and storage */
+/** Number of pre-generated avatars per gender in the pool */
+export const POOL_SIZE = 30;
+
+/** Resize a base64 data-URL image to AVATAR_OUTPUT_SIZE and return as data-URL */
 async function resizeAvatarTo64(dataUrl: string): Promise<string> {
   const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
   const buffer = Buffer.from(base64, 'base64');
@@ -49,7 +52,7 @@ async function resizeAvatarTo64(dataUrl: string): Promise<string> {
   return `data:image/png;base64,${resized.toString('base64')}`;
 }
 
-/** Resize to buffer for Supabase Storage upload */
+/** Resize a base64 data-URL image to buffer for Supabase Storage upload */
 async function resizeAvatarToBuffer(dataUrl: string): Promise<Buffer> {
   const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
   const buffer = Buffer.from(base64, 'base64');
@@ -57,6 +60,21 @@ async function resizeAvatarToBuffer(dataUrl: string): Promise<Buffer> {
     .resize(AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE)
     .png()
     .toBuffer();
+}
+
+/**
+ * Construct a deterministic pool avatar URL based on name, type, and gender.
+ * Returns null if Supabase URL is not configured.
+ */
+export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string): string | null {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return null;
+  const key = `${name}|${type}`;
+  const hash = crypto.createHash('sha256').update(key).digest('hex');
+  const index = (parseInt(hash.slice(0, 8), 16) % POOL_SIZE) + 1;
+  const padded = String(index).padStart(3, '0');
+  const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
+  return `${supabaseUrl}/storage/v1/object/public/${AVATAR_BUCKET}/pool/${g}/${padded}.png`;
 }
 
 const openai = new OpenAI({
@@ -225,25 +243,23 @@ function buildPrompt(
     : result;
 }
 
-/** Retry once on 5xx (transient server error); delay in ms */
+/** Generate avatar with actual DALL-E 3 (1024x1024, high quality). Retry once on 5xx. */
 async function generateWithDalle3(prompt: string, retried = false): Promise<string> {
-  // Use DALL-E 2 with 256x256 for lowest cost and fastest generation
-  // Prompt already includes strong single-person emphasis from buildPrompt
-
-  const finalPrompt = prompt.length > 1000 ? prompt.substring(0, 1000) : prompt;
+  const finalPrompt = prompt.length > 4000 ? prompt.substring(0, 4000) : prompt;
 
   try {
     const resp = await openai.images.generate({
-      model: 'dall-e-2',
+      model: 'dall-e-3',
       prompt: finalPrompt,
-      size: '256x256',
+      size: '1024x1024',
       response_format: 'b64_json',
       n: 1,
+      quality: 'standard',
     });
 
     const b64 = resp.data?.[0]?.b64_json;
     if (!b64) {
-      throw new Error('No image data returned from DALL-E');
+      throw new Error('No image data returned from DALL-E 3');
     }
 
     return `data:image/png;base64,${b64}`;
@@ -251,12 +267,12 @@ async function generateWithDalle3(prompt: string, retried = false): Promise<stri
     const status = error?.status ?? error?.code;
     const is5xx = typeof status === 'number' && status >= 500 && status < 600;
     if (is5xx && !retried) {
-      logger.warn('[DALL-E] Server error (5xx), retrying once after 2s...', status, error?.message);
+      logger.warn('[DALL-E 3] Server error (5xx), retrying once after 2s...', status, error?.message);
       await new Promise((r) => setTimeout(r, 2000));
       return generateWithDalle3(prompt, true);
     }
-    logger.error('[DALL-E] API Error:', error?.message || error);
-    const err = new Error(error?.message ? `DALL-E API error: ${error.message}` : 'DALL-E API error') as Error & { status?: number };
+    logger.error('[DALL-E 3] API Error:', error?.message || error);
+    const err = new Error(error?.message ? `DALL-E 3 API error: ${error.message}` : 'DALL-E 3 API error') as Error & { status?: number };
     err.status = 503;
     throw err;
   }
@@ -343,6 +359,7 @@ export async function POST(request: NextRequest) {
       background,
       personality,
       gender,
+      forceRegenerate,
     } = body as {
       name?: string;
       type?: AvatarType;
@@ -351,6 +368,7 @@ export async function POST(request: NextRequest) {
       background?: string;
       personality?: string;
       gender?: string;
+      forceRegenerate?: boolean;
     };
 
     if (!name || typeof name !== 'string') {
@@ -362,34 +380,101 @@ export async function POST(request: NextRequest) {
     }
 
     const avatarType: AvatarType = type === 'host' ? 'host' : 'player';
-    const path = avatarStoragePath(name, avatarType);
-    logger.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', path);
+    const customPath = avatarStoragePath(name, avatarType);
+    logger.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', customPath, 'forceRegenerate:', !!forceRegenerate);
 
-    // Check existence via server-side Supabase API to avoid duplicate generation from public HEAD failure
-    // If cached, no tokens needed
-    if (supabaseAdmin) {
+    // --- 1. Check for existing custom avatar (skip when force-regenerating) ---
+    if (!forceRegenerate && supabaseAdmin) {
       const { data: blob, error: downloadError } = await supabaseAdmin.storage
         .from(AVATAR_BUCKET)
-        .download(path);
+        .download(customPath);
       if (!downloadError && blob && blob.size > 0) {
-        logger.log('[Avatar API] cache hit Supabase:', path);
-        const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+        logger.log('[Avatar API] cache hit (custom):', customPath);
+        const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(customPath);
         return NextResponse.json({ image: urlData.publicUrl });
       }
     }
-    // Check and deduct tokens only when the database is configured.
-    // If DATABASE_URL is not set, or if the token tables haven't been migrated yet,
-    // skip token tracking and allow generation so the app works regardless.
+
+    // --- 2. Force regenerate: generate with DALL-E 3, deduct tokens ---
+    if (forceRegenerate) {
+      if (!hasOpenAI) {
+        return NextResponse.json(
+          { error: 'Avatar service unavailable', details: 'OPENAI_API_KEY is not configured' },
+          { status: 503 }
+        );
+      }
+
+      if (isDatabaseConfigured()) {
+        try {
+          const hasBalance = await deductTokens(
+            user.id,
+            imageGenCostToCoins('dall-e-3'),
+            'image_generation',
+            `Custom avatar for ${name} (${avatarType}) [dall-e-3]`
+          );
+          if (!hasBalance) {
+            return NextResponse.json(
+              {
+                error: 'Insufficient tokens',
+                message: 'You need more tokens to generate custom avatars. Please purchase tokens or upgrade to Pro.',
+                code: 'INSUFFICIENT_TOKENS',
+              },
+              { status: 402 }
+            );
+          }
+        } catch (tokenErr) {
+          logger.warn('[Avatar API] Token deduction failed, generating anyway:', tokenErr);
+        }
+      }
+
+      const prompt = buildPrompt(name, avatarType, {
+        background: typeof background === 'string' ? background : undefined,
+        personality: typeof personality === 'string' ? personality : undefined,
+        gender: typeof gender === 'string' ? gender : undefined,
+      });
+
+      logger.log(`[Avatar] Force-regenerating with DALL-E 3 for: ${name}, prompt length: ${prompt.length}`);
+
+      const imageDataUrl = await generateWithDalle3(prompt);
+      const image64 = await resizeAvatarTo64(imageDataUrl);
+
+      if (supabaseAdmin) {
+        try {
+          const buffer = await resizeAvatarToBuffer(imageDataUrl);
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from(AVATAR_BUCKET)
+            .upload(customPath, buffer, { contentType: 'image/png', upsert: true });
+          if (!uploadError) {
+            const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(customPath);
+            return NextResponse.json({ image: urlData.publicUrl });
+          }
+          logger.warn('[Avatar] Storage upload failed:', uploadError.message);
+        } catch (supabaseErr) {
+          logger.warn('[Avatar] Storage save failed:', supabaseErr);
+        }
+      }
+
+      return NextResponse.json({ image: image64 });
+    }
+
+    // --- 3. Default: return pool avatar URL (no generation, no cost) ---
+    const poolUrl = getPoolAvatarUrl(name, avatarType, typeof gender === 'string' ? gender : undefined);
+    if (poolUrl) {
+      logger.log('[Avatar API] returning pool avatar:', poolUrl);
+      return NextResponse.json({ image: poolUrl, pool: true });
+    }
+
+    // --- 4. Fallback: pool URL unavailable (no Supabase URL), generate with Replicate/DALL-E 3 ---
+    logger.warn('[Avatar API] No pool URL available, falling back to generation');
     if (isDatabaseConfigured()) {
       try {
-        const hasTokens = await deductTokens(
+        const hasBalance = await deductTokens(
           user.id,
           imageGenCostToCoins(model),
           'image_generation',
           `Generate avatar for ${name} (${avatarType}) [${model}]`
         );
-
-        if (!hasTokens) {
+        if (!hasBalance) {
           return NextResponse.json(
             {
               error: 'Insufficient tokens',
@@ -400,56 +485,28 @@ export async function POST(request: NextRequest) {
           );
         }
       } catch (tokenErr) {
-        // Token table may not exist yet (migrations not run) — log and proceed.
-        logger.warn('[Avatar API] Token deduction failed (DB schema not ready?), generating anyway:', tokenErr);
+        logger.warn('[Avatar API] Token deduction failed, generating anyway:', tokenErr);
       }
-    } else {
-      logger.warn('[Avatar API] DATABASE_URL not configured — skipping token check, generating anyway.');
     }
 
-    
-    const prompt = buildPrompt(name, avatarType, {
+    const fallbackPrompt = buildPrompt(name, avatarType, {
       background: typeof background === 'string' ? background : undefined,
       personality: typeof personality === 'string' ? personality : undefined,
       gender: typeof gender === 'string' ? gender : undefined,
     });
 
-    logger.log(`[Avatar] Generating for: ${name}, type: ${type}, gameId: ${gameId || 'none'}, prompt length: ${prompt.length}`);
-
     let imageDataUrl: string;
-
-    // Validate prompt length before generation
-    if (prompt.length > 1000) {
-      logger.error(`Prompt too long: ${prompt.length} characters`);
-      return NextResponse.json(
-        { error: `Prompt exceeds 1000 character limit: ${prompt.length} characters` },
-        { status: 400 }
-      );
-    }
-
     try {
-      logger.log('[Avatar API] generating with', model);
-      if (model === 'dalle-3') {
-        if (!hasOpenAI) {
-          logger.error('[Avatar API] OPENAI_API_KEY not set but model is dalle-3');
-          return NextResponse.json(
-            { error: 'Avatar service unavailable', details: 'OPENAI_API_KEY is not configured' },
-            { status: 503 }
-          );
-        }
-        imageDataUrl = await generateWithDalle3(prompt);
-      } else if (model === 'flux' || model === 'stable-diffusion') {
-        imageDataUrl = await generateWithReplicate(prompt, model);
+      if (model === 'flux' || model === 'stable-diffusion') {
+        imageDataUrl = await generateWithReplicate(fallbackPrompt, model);
       } else {
-        throw new Error(`Unsupported model: ${model}`);
+        imageDataUrl = await generateWithDalle3(fallbackPrompt);
       }
     } catch (error: unknown) {
       logger.error(`Error generating with ${model}:`, error);
-      // Fallback to DALL-E 3 if other models fail
       if (model !== 'dalle-3') {
-        logger.log('Falling back to DALL-E 3...');
         try {
-          imageDataUrl = await generateWithDalle3(prompt);
+          imageDataUrl = await generateWithDalle3(fallbackPrompt);
         } catch (fallbackError: unknown) {
           const msg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
           throw new Error(`Primary model (${model}) and fallback (dalle-3) both failed: ${msg}`);
@@ -461,24 +518,22 @@ export async function POST(request: NextRequest) {
 
     const image64 = await resizeAvatarTo64(imageDataUrl);
 
-    // Store in Supabase Storage only (no DB table)
     if (supabaseAdmin) {
       try {
         const buffer = await resizeAvatarToBuffer(imageDataUrl);
         const { error: uploadError } = await supabaseAdmin.storage
           .from(AVATAR_BUCKET)
-          .upload(path, buffer, { contentType: 'image/png', upsert: true });
+          .upload(customPath, buffer, { contentType: 'image/png', upsert: true });
         if (!uploadError) {
-          const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+          const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(customPath);
           return NextResponse.json({ image: urlData.publicUrl });
         }
-        logger.warn('[Avatar] Supabase Storage upload failed:', uploadError.message);
+        logger.warn('[Avatar] Storage upload failed:', uploadError.message);
       } catch (supabaseErr) {
-        logger.warn('[Avatar] Supabase Storage save failed:', supabaseErr);
+        logger.warn('[Avatar] Storage save failed:', supabaseErr);
       }
     }
 
-    logger.log('[Avatar API] success, returning base64 image');
     return NextResponse.json({ image: image64 });
   } catch (e: unknown) {
     logger.error('[Avatar API] error:', e);

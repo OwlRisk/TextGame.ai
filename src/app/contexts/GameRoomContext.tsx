@@ -12,6 +12,7 @@ import {
   type ActiveVote,
   DEFAULT_GAME_PHASE,
 } from "@/app/config/game-phase";
+import { fetchGeneratedAvatar, invalidateAvatarCache } from "@/lib/avatar";
 
 interface PrivateMessage {
   id: string;
@@ -88,6 +89,8 @@ interface GameRoomContextType {
   setHumanGameIdentity: React.Dispatch<React.SetStateAction<{ name: string } | null>>;
   /** Call when a generated avatar URL is first loaded so we persist it for this room (key = "name|type"). */
   onAvatarUrlLoaded: (key: string, url: string) => void;
+  /** Force-regenerate a player/host avatar with DALL-E 3 (costs tokens). Returns the new URL. */
+  regenerateAvatar: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
   setPhaseLabel: React.Dispatch<React.SetStateAction<string>>;
   setMood: React.Dispatch<React.SetStateAction<GameMood>>;
   setActiveVote: React.Dispatch<React.SetStateAction<ActiveVote | null>>;
@@ -142,6 +145,29 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (!key || !url || !url.startsWith("http")) return;
     setAvatarImageUrls((prev) => (prev[key] === url ? prev : { ...prev, [key]: url }));
   }, []);
+
+  const regenerateAvatar = useCallback(async (
+    playerName: string,
+    type: 'host' | 'player',
+    opts?: { gender?: string; background?: string; personality?: string; role?: string },
+  ): Promise<string | null> => {
+    try {
+      invalidateAvatarCache(playerName, type);
+      const newUrl = await fetchGeneratedAvatar(
+        playerName, type, gameId,
+        opts?.role, opts?.background, opts?.personality, opts?.gender,
+        true,
+      );
+      if (newUrl) {
+        const key = `${playerName}|${type}`;
+        setAvatarImageUrls((prev) => ({ ...prev, [key]: newUrl }));
+      }
+      return newUrl;
+    } catch (err) {
+      console.error('[regenerateAvatar] failed:', err);
+      return null;
+    }
+  }, [gameId]);
 
   // Stable per-session ID to filter out our own Realtime echo
   const clientIdRef = useRef<string>("");
@@ -717,6 +743,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     timerEndsAt,
     gameOverSummary,
     onAvatarUrlLoaded,
+    regenerateAvatar,
     addMessage,
     addStreamingMessage,
     updateStreamingMessage,
@@ -753,7 +780,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     myBoardContent, playerNotes, sections, sectionsLoading, gameEvents,
     gameEnded, gameResult, aiSuggestedPrompts, humanGameIdentity,
     avatarImageUrls, isHydrated, phaseLabel, mood, activeVote, timerEndsAt,
-    gameOverSummary, onAvatarUrlLoaded, addMessage,
+    gameOverSummary, onAvatarUrlLoaded, regenerateAvatar, addMessage,
     addStreamingMessage, updateStreamingMessage, addEventNotification,
     addPrivateMessage, updatePlayer, resetGame, saveNow, userId,
   ]);

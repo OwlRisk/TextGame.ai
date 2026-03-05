@@ -132,6 +132,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setHumanGameIdentity,
     avatarImageUrls,
     onAvatarUrlLoaded,
+    regenerateAvatar,
     isRoomLoading,
     myBoardContent,
     setMyBoardContent,
@@ -2295,6 +2296,7 @@ ${rulesText || "No specific rules defined."}`.trim();
                 humanGameIdentity={humanGameIdentity}
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
+                onRegenerateAvatar={regenerateAvatar}
                 playerBoardData={playerBoardDataMemo}
                 myBoardContentFromHost={boardContentForViewer}
                 currentUserId={userId}
@@ -2315,6 +2317,7 @@ ${rulesText || "No specific rules defined."}`.trim();
                   humanGameIdentity={humanGameIdentity}
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
+                  onRegenerateAvatar={regenerateAvatar}
                   playerBoardData={playerBoardDataMemo}
                   myBoardContentFromHost={boardContentForViewer}
                   currentUserId={userId}

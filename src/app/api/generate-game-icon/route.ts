@@ -8,15 +8,20 @@ import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
 import { isDatabaseConfigured } from '@/lib/db-ready';
 
 const GAME_ICON_BUCKET = 'avatars';
-const GAME_ICON_SIZE = 64;
+const GAME_ICON_SIZE = 128;
 
-/** Storage path: by gameId if provided, else by hash of name+template+rules (create flow) */
+/**
+ * Storage path: by gameId if provided, else a unique path per request.
+ * When no gameId (creation flow), a timestamp nonce ensures each new game
+ * gets a distinct icon even if name/template/rules are identical.
+ */
 function gameIconPath(gameId: string | undefined, gameName: string, gameTemplate?: string, rules?: string): string {
   if (gameId) return `game-icons/${gameId}.png`;
   const payload = JSON.stringify({
     n: String(gameName).slice(0, 200),
     t: gameTemplate || '',
     r: (rules || '').trim().slice(0, 300),
+    _nonce: Date.now(),
   });
   const hash = crypto.createHash('sha256').update(payload).digest('hex').slice(0, 16);
   return `game-icons/${hash}.png`;
@@ -102,14 +107,15 @@ export async function POST(request: NextRequest) {
 
     async function generateWithPrompt(iconPrompt: string): Promise<string> {
       const response = await openai.images.generate({
-        model: 'dall-e-2',
+        model: 'dall-e-3',
         prompt: iconPrompt,
-        size: '256x256',
+        size: '1024x1024',
         response_format: 'b64_json',
         n: 1,
+        quality: 'standard',
       });
       const b64 = response.data?.[0]?.b64_json;
-      if (!b64) throw new Error('No image data returned from DALL-E');
+      if (!b64) throw new Error('No image data returned from DALL-E 3');
       return `data:image/png;base64,${b64}`;
     }
 
@@ -127,7 +133,7 @@ export async function POST(request: NextRequest) {
       try {
         const hasTokens = await deductTokens(
           user.id,
-          imageGenCostToCoins('dall-e-2'),
+          imageGenCostToCoins('dall-e-3'),
           'image_generation',
           `Generate game icon for "${String(gameName).slice(0, 60)}"`
         );

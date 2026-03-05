@@ -67,6 +67,19 @@ function saveToStorage(key: string, dataUrl: string): void {
   }
 }
 
+/**
+ * Clear memory + localStorage cache for a specific avatar key so the next
+ * fetch will hit the API again (e.g. after force-regeneration).
+ */
+export function invalidateAvatarCache(name: string, type: AvatarType): void {
+  const key = identityCacheKey(name, type);
+  cache.delete(key);
+  inFlight.delete(key);
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(PERSIST_PREFIX + key); } catch (_) {}
+  }
+}
+
 export async function fetchGeneratedAvatar(
   name: string,
   type: AvatarType = 'player',
@@ -74,20 +87,26 @@ export async function fetchGeneratedAvatar(
   role?: string,
   background?: string,
   personality?: string,
-  gender?: string
+  gender?: string,
+  forceRegenerate?: boolean
 ): Promise<string> {
   const key = identityCacheKey(name, type);
-  const cached = cache.get(key);
-  if (cached) return cached;
 
-  const stored = loadFromStorage(key);
-  if (stored) {
-    cache.set(key, stored);
-    return stored;
+  if (!forceRegenerate) {
+    const cached = cache.get(key);
+    if (cached) return cached;
+
+    const stored = loadFromStorage(key);
+    if (stored) {
+      cache.set(key, stored);
+      return stored;
+    }
+
+    const existing = inFlight.get(key);
+    if (existing) return existing;
+  } else {
+    invalidateAvatarCache(name, type);
   }
-
-  const existing = inFlight.get(key);
-  if (existing) return existing;
 
   const promise = (async () => {
     try {
@@ -103,6 +122,7 @@ export async function fetchGeneratedAvatar(
           background: background || undefined,
           personality: personality || undefined,
           gender: gender || undefined,
+          forceRegenerate: forceRegenerate || undefined,
         }),
       });
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Crown, Volume2, VolumeX, User, Package } from "lucide-react";
+import { Crown, Volume2, VolumeX, User, Package, RefreshCw } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
@@ -46,6 +46,8 @@ interface PlayerPanelProps {
   avatarImageUrls?: Record<string, string>;
   /** Call when an avatar URL is loaded so the room can persist it. */
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  /** Force-regenerate a player avatar with DALL-E 3 (costs tokens). */
+  onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
 }
 
 export function PlayerPanel({ 
@@ -58,6 +60,7 @@ export function PlayerPanel({
   humanGameIdentity,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  onRegenerateAvatar,
 }: PlayerPanelProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -105,6 +108,7 @@ export function PlayerPanel({
                 onOpenProfile={openProfile}
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
+                onRegenerateAvatar={onRegenerateAvatar}
               />
               <Separator className="mt-3 bg-zinc-700/50" />
             </div>
@@ -127,6 +131,7 @@ export function PlayerPanel({
                   onOpenProfile={openProfile}
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
+                  onRegenerateAvatar={onRegenerateAvatar}
                 />
               ))}
             </div>
@@ -148,6 +153,7 @@ function PlayerCard({
   onOpenProfile,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  onRegenerateAvatar,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -159,13 +165,35 @@ function PlayerCard({
   onOpenProfile?: (player: Player) => void;
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
 }) {
-  // Unified style: human players also use generated avatars (anime), not Google profile photos
+  const [regenerating, setRegenerating] = useState(false);
   const useGameAvatarForHuman = !player.isAI && !!gameId;
   const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
   const isClickable = !!onOpenProfile;
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+
+  const handleRegenerate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onRegenerateAvatar || regenerating) return;
+    setRegenerating(true);
+    try {
+      const avatarProps = player.isAI ? getAvatarPropsForPlayer(player) : null;
+      const avatarName = player.isAI
+        ? (avatarProps?.name ?? player.name)
+        : (useGameAvatarForHuman ? humanAvatarName : player.name);
+      const avatarType = (player.isGameMaster ? 'host' : 'player') as 'host' | 'player';
+      await onRegenerateAvatar(avatarName, avatarType, {
+        gender: avatarProps?.gender ?? player.gender,
+        background: avatarProps?.background,
+        personality: avatarProps?.personality,
+        role: avatarProps?.role ?? player.role,
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  };
   return (
     <div
       role={isClickable ? "button" : undefined}
@@ -250,8 +278,20 @@ function PlayerCard({
             </div>
           )}
         </div>
-        {isUserGameMaster && !player.isGameMaster && (
-          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+          {onRegenerateAvatar && (player.isAI || useGameAvatarForHuman) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 hover:bg-zinc-600/50"
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              title="Regenerate avatar (DALL-E 3)"
+            >
+              <RefreshCw className={`h-3 w-3 text-zinc-400 hover:text-white ${regenerating ? "animate-spin" : ""}`} />
+            </Button>
+          )}
+          {isUserGameMaster && !player.isGameMaster && (
             <Button
               variant="ghost"
               size="icon"
@@ -264,8 +304,8 @@ function PlayerCard({
                 <Volume2 className="h-3 w-3 text-zinc-400 hover:text-white" />
               )}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import { Volume2, VolumeX, User, Package, Info, UserPlus, UserMinus } from "lucide-react";
+import { Volume2, VolumeX, User, Package, Info, UserPlus, UserMinus, RefreshCw } from "lucide-react";
 import { safeMarked } from "@/lib/safe-marked";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
@@ -63,6 +63,8 @@ interface PlayerPanelWithBoardProps {
    * memberId = game_members.id, playerId = Player.id (null to unassign).
    */
   onAssignGuest?: (memberId: string, playerId: string | null) => void;
+  /** Force-regenerate a player avatar with DALL-E 3 (costs tokens). */
+  onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
 }
 
 export function PlayerPanelWithBoard({ 
@@ -85,6 +87,7 @@ export function PlayerPanelWithBoard({
   viewerIsGuest = false,
   guestMembers = [],
   onAssignGuest,
+  onRegenerateAvatar,
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -168,6 +171,7 @@ export function PlayerPanelWithBoard({
                     viewerIsGuest={viewerIsGuest}
                     guestMembers={guestMembers}
                     onAssignGuest={onAssignGuest}
+                    onRegenerateAvatar={onRegenerateAvatar}
                   />
                 ))}
                 {/* Guest participants joined via invite link */}
@@ -224,6 +228,7 @@ const PlayerCard = memo(function PlayerCard({
   viewerIsGuest = false,
   guestMembers = [],
   onAssignGuest,
+  onRegenerateAvatar,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -239,7 +244,9 @@ const PlayerCard = memo(function PlayerCard({
   viewerIsGuest?: boolean;
   guestMembers?: GuestEntry[];
   onAssignGuest?: (memberId: string, playerId: string | null) => void;
+  onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
 }) {
+  const [regenerating, setRegenerating] = useState(false);
   const canViewProfile = !!onViewProfile;
   const handleRowClick = () => {
     if (canViewProfile) onViewProfile?.(player);
@@ -354,9 +361,32 @@ const PlayerCard = memo(function PlayerCard({
               : null
           )}
         </div>
-        {isUserGameMaster && !player.isGameMaster && (
-          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            {/* Assign / unassign guest to this AI slot */}
+        <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+          {onRegenerateAvatar && player.isAI && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 hover:bg-zinc-600/50"
+              disabled={regenerating}
+              title="Regenerate avatar (DALL-E 3)"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (regenerating || !onRegenerateAvatar) return;
+                setRegenerating(true);
+                const ap = getAvatarPropsForPlayer(player);
+                onRegenerateAvatar(ap.name ?? player.name, ap.type as 'host' | 'player', {
+                  gender: ap.gender ?? player.gender,
+                  background: ap.background,
+                  personality: ap.personality,
+                  role: ap.role ?? player.role,
+                }).finally(() => setRegenerating(false));
+              }}
+            >
+              <RefreshCw className={`h-3 w-3 text-zinc-400 hover:text-white ${regenerating ? "animate-spin" : ""}`} />
+            </Button>
+          )}
+          {isUserGameMaster && !player.isGameMaster && (
+          <>
             {canAssign && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -431,8 +461,9 @@ const PlayerCard = memo(function PlayerCard({
                 <Volume2 className="h-3 w-3 text-zinc-400 hover:text-white" />
               )}
             </Button>
-          </div>
-        )}
+          </>
+          )}
+        </div>
       </div>
     </div>
   );
