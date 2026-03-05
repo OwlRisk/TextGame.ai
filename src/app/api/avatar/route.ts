@@ -175,31 +175,35 @@ function sanitizeScaryDescription(text: string): string {
 function buildPrompt(
   _name: string,
   type: AvatarType,
-  opts: { background?: string; gender?: string }
+  opts: { background?: string; personality?: string; gender?: string }
 ): string {
-  const { background, gender } = opts;
+  const { background, personality, gender } = opts;
   const genderPrefix = genderPhrase(gender);
 
-  // DALL-E 2 has a 1000 character limit for prompts
   const MAX_PROMPT_LENGTH = 1000;
 
-  // Upper-body single-person framing using only positive descriptors (negative words trigger safety filters)
   const singleStart = 'Anime character portrait. ';
   const singleEnd = ' Solo individual, centered composition.';
 
-  // 统一画风：Host 与 Player 使用完全相同的 prompt 结构，仅 background 不同，保证头像风格一致（不额外加 Host 角色词）
   const basePrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;
 
-  if (!background || !background.trim()) {
+  // Merge personality and background into a single description so the avatar
+  // reflects both the character's traits and their story context.
+  const parts: string[] = [];
+  if (personality?.trim()) parts.push(personality.trim());
+  if (background?.trim()) parts.push(background.trim());
+  const combined = parts.join('. ');
+
+  if (!combined || combined.length < 2) {
     return basePrompt.length > MAX_PROMPT_LENGTH
       ? basePrompt.substring(0, MAX_PROMPT_LENGTH)
       : basePrompt;
   }
 
-  const trimmedBackground = sanitizeScaryDescription(
-    sanitizeSinglePersonDescription(background.trim())
+  const trimmedDesc = sanitizeScaryDescription(
+    sanitizeSinglePersonDescription(combined)
   );
-  if (!trimmedBackground || trimmedBackground.length < 2) {
+  if (!trimmedDesc || trimmedDesc.length < 2) {
     return basePrompt.length > MAX_PROMPT_LENGTH ? basePrompt.substring(0, MAX_PROMPT_LENGTH) : basePrompt;
   }
 
@@ -211,11 +215,11 @@ function buildPrompt(
     return `${genderPrefix}${SHARED_CORE_STYLE}`;
   }
 
-  const truncatedBackground = trimmedBackground.length > availableLength
-    ? trimmedBackground.substring(0, availableLength - 3) + '...'
-    : trimmedBackground;
+  const truncatedDesc = trimmedDesc.length > availableLength
+    ? trimmedDesc.substring(0, availableLength - 3) + '...'
+    : trimmedDesc;
 
-  const result = prefix + truncatedBackground + suffix;
+  const result = prefix + truncatedDesc + suffix;
   return result.length > MAX_PROMPT_LENGTH
     ? result.substring(0, MAX_PROMPT_LENGTH)
     : result;
@@ -406,6 +410,7 @@ export async function POST(request: NextRequest) {
     
     const prompt = buildPrompt(name, avatarType, {
       background: typeof background === 'string' ? background : undefined,
+      personality: typeof personality === 'string' ? personality : undefined,
       gender: typeof gender === 'string' ? gender : undefined,
     });
 

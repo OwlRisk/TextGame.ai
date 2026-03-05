@@ -373,7 +373,8 @@ export function ChatArea({
       const player = players.find(
         (p) => p.id === m.senderId || (p.name || '').trim() === (m.senderName || '').trim()
       );
-      return pickVoiceForSpeaker(player?.gender, player?.personality, undefined, player?.name || m.senderName);
+      const voiceHint = [player?.personality, player?.background].filter(Boolean).join('. ') || undefined;
+      return pickVoiceForSpeaker(player?.gender, voiceHint, undefined, player?.name || m.senderName);
     },
     [players]
   );

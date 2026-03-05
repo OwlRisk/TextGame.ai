@@ -50,6 +50,7 @@ export interface GameConfig {
     systemPrompt: string;
     icon: string;
     color: string;
+    gender?: 'male' | 'female' | 'other';
   };
   /** GM-defined game rooms (e.g. General, Mafia only, Werewolves only). Each room has its own chat. */
   channels?: {

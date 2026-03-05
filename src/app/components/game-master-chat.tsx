@@ -85,7 +85,8 @@ export interface GameSession {
     systemPrompt: string;
     icon: string;
     color: string;
-  }; // Dynamically generated host configuration
+    gender?: 'male' | 'female' | 'other';
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -1753,7 +1754,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           toast.warning("⚠️ Player generation error. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
         }
       }
-      type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string };
+      type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: 'male' | 'female' | 'other' };
       let generatedHostData: GeneratedHost | null = null;
       toast.loading("Generating host...", { id: startToastId });
       try {

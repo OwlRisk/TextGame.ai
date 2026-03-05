@@ -102,7 +102,6 @@ export function HostSelector({ selectedHostId, onSelectHost, compact, templateId
           systemPrompt: host.systemPrompt,
           isGenerated: true,
           ...(host.gender && { gender: host.gender as 'male' | 'female' | 'other' }),
-          ...(host.ttsVoice && { ttsVoice: host.ttsVoice }),
         };
         setGeneratedHosts(prev => {
           const updated = [...prev, newHost];

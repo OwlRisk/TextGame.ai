@@ -27,10 +27,8 @@ export interface Player {
   personality?: string;
   /** AI-only: backstory / context (e.g. "Former debate champion") */
   background?: string;
-  /** Player gender (male, female, other) - can be configured by GM */
+  /** Player gender (male, female, other) - used for avatar generation and TTS voice matching */
   gender?: string;
-  /** OpenAI TTS voice id for this player (e.g. alloy, nova) */
-  ttsVoice?: string;
   /** Whether this player's role has been publicly revealed by the Host (via REVEAL_ROLE directive). */
   roleRevealed?: boolean;
 }

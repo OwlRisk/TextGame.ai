@@ -38,8 +38,8 @@ Based on the game's theme and rules, decide:
 - What personality would enhance the experience
 - How they should speak and interact with players
 - What emoji and color represent them
-- The host's gender (male/female/other) so voice and avatar match
-- Which TTS voice fits best: pick ONE from exactly: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar (e.g. female host → shimmer/coral/fable/nova/ballad/marin; male → echo/onyx/sage/cedar/alloy/ash/verse)
+- The host's gender (male/female) so voice and avatar match — pick male or female, avoid "other"
+- A voiceStyle description (5-15 words) that captures how they sound — this is used to match a TTS voice by keyword similarity
 
 Be creative and adaptive. For abstract games use simple names; for themed games use atmospheric names/titles that match the setting.
 
@@ -47,12 +47,11 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
 {
   "name": "Host name or title that fits the game",
   "personality": "Brief personality description (20-40 words)",
-  "voiceStyle": "How they sound (5-15 words)",
+  "voiceStyle": "How they sound (5-15 words, e.g. 'calm authoritative british' or 'warm playful energetic')",
   "systemPrompt": "How they behave and speak (50-150 words)",
   "icon": "Single emoji",
   "color": "Hex color code",
-  "gender": "male or female or other",
-  "ttsVoice": "exactly one of: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar"
+  "gender": "male or female"
 }`;
 
     const seed = Math.random().toString(36).substring(2, 10);
@@ -131,10 +130,7 @@ Randomness seed: ${seed}`;
         );
       }
     }
-    const validVoices = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"];
-    if (hostConfig.ttsVoice && !validVoices.includes(String(hostConfig.ttsVoice).toLowerCase())) {
-      delete hostConfig.ttsVoice; // fallback to gender-based selection
-    }
+    if (hostConfig.ttsVoice) delete hostConfig.ttsVoice;
     if (hostConfig.gender && !["male", "female", "other"].includes(String(hostConfig.gender).toLowerCase())) {
       delete hostConfig.gender;
     }
