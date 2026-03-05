@@ -62,7 +62,7 @@ interface GameRoomContextType {
 
   // Actions - Messages
   addMessage: (msg: Omit<Message, "id" | "timestamp"> & { id?: string }, channelId?: string) => string | undefined;
-  addStreamingMessage: (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string) => string;
+  addStreamingMessage: (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string, initialContent?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
   addEventNotification: (content: string) => void;
   addPrivateMessage: (playerNameOrId: string, content: string, fromName: string) => void;
@@ -615,13 +615,13 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   );
 
   const addStreamingMessage = useCallback(
-    (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string): string => {
+    (msg: Omit<Message, "id" | "timestamp" | "content" | "isStreaming">, channelId?: string, initialContent?: string): string => {
       if (!isMountedRef.current) return "";
       const messageId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       const newMessage: Message = {
         ...msg,
         id: messageId,
-        content: "",
+        content: initialContent ?? "",
         timestamp: new Date(),
         isStreaming: true,
         ...(channelId != null && { channelId }),

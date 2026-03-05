@@ -58,20 +58,24 @@ type StreamMsgMeta = { senderId: string; senderName: string; senderAvatar: strin
 
 function typewriterReveal(
   text: string,
-  addStreamFn: (msg: StreamMsgMeta, channelId?: string) => string,
+  addStreamFn: (msg: StreamMsgMeta, channelId?: string, initialContent?: string) => string,
   updateStreamFn: (messageId: string, content: string, isComplete?: boolean) => void,
   msgMeta: StreamMsgMeta,
   channelId?: string,
 ): Promise<string> {
   return new Promise((resolve) => {
-    const messageId = addStreamFn(msgMeta, channelId);
+    // Include the first batch of characters when creating the message so the
+    // bubble never appears empty (no "avatar without text" flash).
+    let idx = Math.min(TYPEWRITER_CHARS_PER_TICK, text.length);
+    const done = idx >= text.length;
+    const messageId = addStreamFn(msgMeta, channelId, text.slice(0, idx));
     if (!messageId) { resolve(""); return; }
-    let idx = 0;
+    if (done) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
     const step = () => {
       idx = Math.min(idx + TYPEWRITER_CHARS_PER_TICK, text.length);
-      const done = idx >= text.length;
-      updateStreamFn(messageId, text.slice(0, idx), done);
-      if (done) { resolve(messageId); return; }
+      const finished = idx >= text.length;
+      updateStreamFn(messageId, text.slice(0, idx), finished);
+      if (finished) { resolve(messageId); return; }
       requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
