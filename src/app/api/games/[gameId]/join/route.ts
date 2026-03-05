@@ -41,6 +41,21 @@ export async function POST(
     return NextResponse.json({ error: "Invalid invite code" }, { status: 403 });
   }
 
+  // Block joining after game has started (only lobby/waiting phases allow new players)
+  const { data: roomState } = await supabaseAdmin
+    .from("game_room_state")
+    .select("state")
+    .eq("game_id", gameId)
+    .maybeSingle();
+
+  const gamePhase = (roomState?.state as Record<string, unknown>)?.gamePhase as string | undefined;
+  if (gamePhase === "active" || gamePhase === "ended") {
+    return NextResponse.json(
+      { error: "Game has already started. New players cannot join." },
+      { status: 403 }
+    );
+  }
+
   // Check if authenticated user
   const user = await getAuthUserFromRequest(request).catch(() => null);
 

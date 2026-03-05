@@ -1971,7 +1971,7 @@ ${rulesText || "No specific rules defined."}`.trim();
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    onInvite: isOwner && session?.access_token ? handleInvite : undefined,
+    onInvite: gamePhase !== "lobby" && isOwner && session?.access_token ? handleInvite : undefined,
     inviteJustCopied: inviteCopied,
     // Players Online section removed — right panel (enrichedGuestMembers) shows
     // real-time Presence data more accurately; left sidebar used stale DB poll.
