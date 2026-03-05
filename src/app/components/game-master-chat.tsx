@@ -641,6 +641,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     (gameDocEditorRef as React.MutableRefObject<ReturnType<typeof useEditor> | null>).current = gameDocEditor;
   }, [gameDocEditor]);
 
+  // Lock the editor while the GM is streaming rule edits
+  useEffect(() => {
+    if (!gameDocEditor) return;
+    gameDocEditor.setEditable(!isRulesBeingEdited);
+  }, [gameDocEditor, isRulesBeingEdited]);
+
   // Simple HTML → Markdown (Tiptap: <h1> → # xxx, <ul><li> → - xxx, <strong> → **xxx**)
   const htmlToMarkdown = (html: string): string => {
     let md = html;
@@ -2044,7 +2050,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               </div>
             )}
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+          <div className={`flex-1 min-h-0 overflow-y-auto px-4 py-4 transition-opacity ${isRulesBeingEdited ? "opacity-70 pointer-events-none" : ""}`}>
             <EditorContent editor={gameDocEditor} />
           </div>
           {(() => {
@@ -2422,7 +2428,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
-            <div className="flex-1 overflow-auto min-h-0 px-4 py-4">
+            <div className={`flex-1 overflow-auto min-h-0 px-4 py-4 transition-opacity ${isRulesBeingEdited ? "opacity-70 pointer-events-none" : ""}`}>
               <EditorContent editor={gameDocEditor} />
             </div>
           </div>
