@@ -35,6 +35,8 @@ export function getStreamingDisplay(raw: string): string {
   }
   let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
   cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
+  // Strip directive lines that may leak when --- hasn't arrived yet
+  cleaned = cleaned.replace(/^(NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_GOAL|IMAGE_PROMPT|MY_NOTES|GAME_PHASE|SECTION|START_VOTE|END_VOTE):.*$/gm, "");
   return cleaned.replace(/\n{2,}/g, "\n\n").trim();
 }
 
