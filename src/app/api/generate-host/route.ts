@@ -55,12 +55,15 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
   "ttsVoice": "exactly one of: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar"
 }`;
 
+    const seed = Math.random().toString(36).substring(2, 10);
     const userPrompt = `Game: ${gameName || "Custom Game"}
 
 Rules:
 ${gameRules}
 
-Create a host that perfectly fits this game's theme and atmosphere.`;
+Create a host that perfectly fits this game's theme and atmosphere.
+IMPORTANT: Be creative with the name — avoid reusing common/obvious choices. Each game deserves a fresh, unique host identity.
+Randomness seed: ${seed}`;
 
     const estimatedTokens = estimateTokensFromText(systemPrompt) + estimateTokensFromText(userPrompt) + 500;
     const estimatedCoins = estimatedTokensToCoins(estimatedTokens, 'gpt-5.2');
