@@ -624,16 +624,21 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const sharedLoadTriedRef = useRef(false);
   useEffect(() => {
     if (gamesLoading || currentGame || !gameId || sharedLoadTriedRef.current) return;
-    sharedLoadTriedRef.current = true;
-    setSharedLoadPending(true);
 
     // Prefer guest-view endpoint when a guestId is available.
-    // Read directly from URL params to avoid race with the guestId state setter.
     const urlGuestId = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("guestId")
       : null;
-    // C-6: Use game-scoped key for localStorage lookup
     const guestIdForLoad = urlGuestId ?? guestId ?? (typeof window !== "undefined" ? localStorage.getItem(`guestId_${gameId}`) : null);
+
+    // Authenticated users who own the game don't need the public/guest endpoint.
+    // Their game will arrive via the GameProvider's own fetch. Only proceed for
+    // actual guests (have a guestId) or truly unauthenticated visitors.
+    if (!guestIdForLoad && session?.user?.id) return;
+
+    sharedLoadTriedRef.current = true;
+    setSharedLoadPending(true);
+
     const url = guestIdForLoad
       ? `/api/games/${gameId}/guest-view?guestId=${encodeURIComponent(guestIdForLoad)}`
       : `/api/games/${gameId}/public`;
@@ -658,7 +663,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         toast.error("Could not load game data");
       })
       .finally(() => setSharedLoadPending(false));
-  }, [gamesLoading, currentGame, gameId, guestId, addGame]);
+  }, [gamesLoading, currentGame, gameId, guestId, session?.user?.id, addGame]);
 
   // When game has GM-defined channels and context still has legacy "game-room", switch to first channel.
   // Also migrate away from removed "rules"/"progress" channels.
