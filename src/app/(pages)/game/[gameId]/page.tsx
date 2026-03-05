@@ -2094,8 +2094,8 @@ ${rulesText || "No specific rules defined."}`.trim();
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    onInvite: gamePhase !== "lobby" && isOwner && session?.access_token ? handleInvite : undefined,
-    inviteJustCopied: inviteCopied,
+    onInvite: undefined,
+    inviteJustCopied: false,
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || guestNickname || null,
@@ -2207,8 +2207,8 @@ ${rulesText || "No specific rules defined."}`.trim();
             onRemovePlayer={(playerId) => {
               setPlayers((prev) => prev.filter((p) => p.id !== playerId));
             }}
-            onInvite={isOwner && session?.access_token ? handleInvite : undefined}
-            inviteJustCopied={inviteCopied}
+            onInvite={undefined}
+            inviteJustCopied={false}
             maxPlayers={currentGame?.config?.playerCount || 12}
           />
         ) : (() => {
