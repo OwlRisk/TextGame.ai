@@ -805,18 +805,34 @@ export function ChatArea({
               </div>
             </div>
           )}
+          {/* revealTick dependency triggers re-renders when TTS progress updates */}
+          {void revealTick}
           {visibleMessages.map((message, index) => {
-            const showAvatar = index === 0 || visibleMessages[index - 1].senderId !== message.senderId;
-
             // When voice is on, AI messages are revealed sentence-by-sentence as TTS plays.
             // Human messages and non-TTS modes always show full content immediately.
             const rawContent = message.content ?? '';
-            const syncedContent =
-              voiceEnabled && inworldTTSSupported && message.isAI && !message.isSystemMessage && !message.isPrivate
+            const isTTSSynced = voiceEnabled && inworldTTSSupported && message.isAI && !message.isSystemMessage && !message.isPrivate;
+            const syncedContent = isTTSSynced
                 ? (displayedContentRef.current.get(message.id) ?? '')
                 : rawContent;
-            // revealTick is read here only to ensure re-renders propagate (value unused directly).
-            void revealTick;
+
+            // Hide the entire message row when TTS hasn't started revealing content yet.
+            if (isTTSSynced && rawContent !== '' && !syncedContent) {
+              return null;
+            }
+
+            // Determine showAvatar by looking at the previous *rendered* message
+            // (skip over any TTS-pending hidden messages)
+            let showAvatar = true;
+            for (let pi = index - 1; pi >= 0; pi--) {
+              const prev = visibleMessages[pi];
+              const prevRaw = prev.content ?? '';
+              const prevIsTTS = voiceEnabled && inworldTTSSupported && prev.isAI && !prev.isSystemMessage && !prev.isPrivate;
+              const prevSynced = prevIsTTS ? (displayedContentRef.current.get(prev.id) ?? '') : prevRaw;
+              if (prevIsTTS && prevRaw !== '' && !prevSynced) continue;
+              showAvatar = prev.senderId !== message.senderId;
+              break;
+            }
 
             if (message.isAnnouncement) {
               return (
