@@ -2364,8 +2364,8 @@ ${rulesText || "No specific rules defined."}`.trim();
             onRemovePlayer={(playerId) => {
               setPlayers((prev) => prev.filter((p) => p.id !== playerId));
             }}
-            onInvite={undefined}
-            inviteJustCopied={false}
+            onInvite={isOwner ? handleInvite : undefined}
+            inviteJustCopied={inviteCopied}
             maxPlayers={currentGame?.config?.playerCount || 12}
           />
         ) : (() => {
