@@ -62,6 +62,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_DOMAIN}/blog/chai-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_DOMAIN}/blog/textgame-vs-novel-ai`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_DOMAIN}/blog/ai-changing-board-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_DOMAIN}/blog/ai-games-for-students`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_DOMAIN}/blog/character-ai-text-adventure`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_DOMAIN}/subscription`,       lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_DOMAIN}/signin`,             lastModified: now, changeFrequency: "yearly",  priority: 0.5 },
     { url: `${SITE_DOMAIN}/help`,               lastModified: now, changeFrequency: "monthly", priority: 0.5 },

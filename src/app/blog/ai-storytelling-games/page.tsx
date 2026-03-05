@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     "interactive fiction ai",
     "ai adventure game",
     "ai storytelling games",
+    "ai interactive story game",
+    "ai story generator game",
+    "ai interactive fiction online",
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {

@@ -17,6 +17,8 @@ export const metadata: Metadata = {
     "character ai alternatives",
     "character.ai alternative",
     "best character ai alternative",
+    "character ai text adventure",
+    "character ai interactive story",
     "roleplay ai",
     "ai roleplay games",
     "ai multiplayer games",

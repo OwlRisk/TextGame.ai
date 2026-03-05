@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     "best text based games",
     "interactive fiction ai",
     "text rpg online",
+    "text game ai online",
+    "text game ai free",
+    "multiplayer text adventure",
+    "text based rpg online free",
+    "ai text adventure free",
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {
