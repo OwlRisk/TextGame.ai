@@ -1,7 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
+
+const NOTIFY_TO = process.env.CONTACT_EMAIL || 'info@cvnio.com';
+
+function getMailTransporter() {
+  const host = process.env.EMAIL_HOST;
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASSWORD;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({
+    host,
+    port: Number(process.env.EMAIL_PORT) || 587,
+    secure: process.env.EMAIL_SECURE === 'true',
+    auth: { user, pass },
+  });
+}
+
+async function sendFeedbackEmail(message: string, userEmail: string | null, imageUrls: string[]) {
+  const transporter = getMailTransporter();
+  if (!transporter) return;
+
+  const imagesHtml = imageUrls.length > 0
+    ? `<p><strong>Attachments:</strong></p>${imageUrls.map((u) => `<p><a href="${u}">${u}</a></p>`).join('')}`
+    : '';
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    to: NOTIFY_TO,
+    subject: `[Feedback] ${userEmail || 'Anonymous'} — ${message.slice(0, 60)}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px">
+        <h2 style="color:#7c3aed">New Feedback</h2>
+        <p><strong>From:</strong> ${userEmail || 'Anonymous (not signed in)'}</p>
+        <p><strong>Message:</strong></p>
+        <blockquote style="border-left:3px solid #7c3aed;padding-left:12px;color:#333;white-space:pre-wrap">${message}</blockquote>
+        ${imagesHtml}
+        <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+        <p style="color:#999;font-size:12px">Sent from textgame.ai feedback form</p>
+      </div>
+    `,
+  });
+}
 
 const FEEDBACK_BUCKET = 'avatars';
 const FEEDBACK_PREFIX = 'feedback';
@@ -96,6 +138,10 @@ export async function POST(request: NextRequest) {
       console.error('[contact] Supabase insert error:', error);
       return NextResponse.json({ error: 'Failed to save feedback.' }, { status: 500 });
     }
+
+    sendFeedbackEmail(message, email, attachmentUrls).catch((err) =>
+      console.error('[contact] Email send error:', err),
+    );
 
     return NextResponse.json({ ok: true });
   } catch (err) {
