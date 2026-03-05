@@ -3,7 +3,7 @@
  * No game-specific logic here; the GM decides phases, moods, votes, and timers.
  */
 
-export type GamePhaseKind = "waiting" | "active" | "ended";
+export type GamePhaseKind = "waiting" | "lobby" | "active" | "ended";
 
 export type GameMood = "neutral" | "dark" | "light";
 

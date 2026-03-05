@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { AlertCircle, User, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX, ArrowDown, Trophy, RotateCcw, Timer } from "lucide-react";
+import { AlertCircle, User, Mail, ChevronDown, ChevronUp, Plus, Lock, Volume2, VolumeX, ArrowDown, Trophy, RotateCcw, Timer, Heart } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -229,6 +229,8 @@ interface ChatAreaProps {
   onPlayAgain?: () => void;
   /** Navigate to new game */
   onNewGame?: () => void;
+  /** Save AI characters from this game to user's collection */
+  onSaveCharacters?: () => void;
   /** True when this player has been eliminated (spectator mode) */
   isEliminated?: boolean;
   /** Chat area background mood driven by GM */
@@ -277,6 +279,7 @@ export function ChatArea({
   gameOverSummary,
   onPlayAgain,
   onNewGame,
+  onSaveCharacters,
   isEliminated = false,
   mood = "neutral",
   activeVote,
@@ -797,6 +800,11 @@ export function ChatArea({
                 {onNewGame && (
                   <Button size="sm" variant="outline" className="border-zinc-600 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white gap-1.5" onClick={onNewGame}>
                     <Plus className="h-3.5 w-3.5" /> New Game
+                  </Button>
+                )}
+                {onSaveCharacters && (
+                  <Button size="sm" variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white gap-1.5" onClick={onSaveCharacters}>
+                    <Heart className="h-3.5 w-3.5" /> Save Characters
                   </Button>
                 )}
               </div>

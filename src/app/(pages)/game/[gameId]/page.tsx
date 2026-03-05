@@ -8,6 +8,8 @@ import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { ChannelList } from "@/app/components/channel-list";
 import { ChatArea } from "@/app/components/chat-area";
+import { LobbyView } from "@/app/components/lobby-view";
+import { CharacterBrowser } from "@/app/components/character-browser";
 import { PlayerPanelWithBoard } from "@/app/components/player-panel-with-board";
 import type { PlayerBoardData } from "@/app/components/player-board";
 import { parseHostActions, resolvePlayerRefToId } from "@/lib/host-actions";
@@ -151,6 +153,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showCharacterBrowser, setShowCharacterBrowser] = useState(false);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const [quickRepliesLoading, setQuickRepliesLoading] = useState(false);
   // Tracks the last message key for which suggest-quick-replies failed.
@@ -548,10 +551,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     // Only initialize if no saved state and no players loaded yet
     if (!isInitialized && currentGame && players.length === 0 && !hasSavedState) {
       try {
-        initializeGame();
+        initializeLobby();
         setIsInitialized(true);
       } catch (err) {
-        console.error("initializeGame failed — will retry on next effect run:", err);
+        console.error("initializeLobby failed — will retry on next effect run:", err);
       }
     } else if (!isInitialized && players.length > 0) {
       // Players came from saved state (DB or localStorage) — mark initialized, don't re-init
@@ -595,16 +598,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setPlayers((prev) => prev.map((p) => (p.id === userId ? { ...p, name } : p)));
   }, [humanGameIdentity?.name, session?.user, players.length, userId, setPlayers]);
 
-  const initializeGame = () => {
-    if (!currentGame || !currentGame.config) return;
+  const AI_COLORS = [
+    "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
+    "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7"
+  ];
 
-    const config = currentGame.config;
-    const AI_COLORS = [
-      "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", 
-      "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7"
-    ];
-
-    // Host: use AI-generated name, avatar (same pipeline as AI players), and color/personality/gender from generate-host
+  const buildHostPlayer = useCallback((config: any) => {
     const hostColor = config.generatedHost?.color || (config.template === "werewolf"
       ? "#7c3aed"
       : config.template === "undercover"
@@ -614,50 +613,50 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       : "#ec4899");
     const hostName = (config.generatedHost?.name || "Game Master").trim() || "Game Master";
     const hostPersonality = config.generatedHost?.personality || "A mysterious game master";
-
-    const gameMaster = {
-      id: "gm-1",
-      name: hostName,
-      avatar: hostColor,
-      role: "Host",
-      status: config.generatedHost?.voiceStyle || "Host",
-      isGameMaster: true,
-      isAI: true,
-      isMuted: false,
-      background: hostPersonality,
-      personality: config.generatedHost?.voiceStyle || config.generatedHost?.personality,
-      gender: (config.generatedHost as any)?.gender as "male" | "female" | "other" | undefined,
-    };
-
-    // Create AI players from configured players
-    const aiPlayers = (config.configuredPlayers || []).map((configPlayer: any, i: number) => {
-      const role = configPlayer.role || undefined;
-      const stats: Record<string, string | number> = {};
-      
-      if (role && (config.template === "werewolf" || config.template === "mafia")) {
-        stats.Status = "Alive";
-      }
-      if (configPlayer.word && config.template === "undercover") {
-        stats.Word = configPlayer.word;
-      }
-
-      return {
-        id: `ai-${i + 1}`,
-        name: configPlayer.name,
-        avatar: AI_COLORS[i % AI_COLORS.length],
-        role: role || undefined,
-        stats,
+    return {
+      player: {
+        id: "gm-1",
+        name: hostName,
+        avatar: hostColor,
+        role: "Host",
+        status: config.generatedHost?.voiceStyle || "Host",
+        isGameMaster: true,
         isAI: true,
         isMuted: false,
-        personality: configPlayer.personality || "Friendly and observant",
-        background: configPlayer.background || "A game enthusiast",
-        gender: configPlayer.gender as "male" | "female" | "other" | undefined,
-        status: "online" as const,
-      };
-    });
+        background: hostPersonality,
+        personality: config.generatedHost?.voiceStyle || config.generatedHost?.personality,
+        gender: (config.generatedHost as any)?.gender as "male" | "female" | "other" | undefined,
+      },
+      hostName,
+      hostColor,
+    };
+  }, []);
+
+  const buildAiPlayers = useCallback((configuredPlayers: any[], _template?: string) => {
+    return (configuredPlayers || []).map((configPlayer: any, i: number) => ({
+      id: `ai-${i + 1}`,
+      name: configPlayer.name,
+      avatar: AI_COLORS[i % AI_COLORS.length],
+      role: undefined as string | undefined,
+      stats: {} as Record<string, string | number>,
+      isAI: true,
+      isMuted: false,
+      personality: configPlayer.personality || "Friendly and observant",
+      background: configPlayer.background || "A game enthusiast",
+      gender: configPlayer.gender as "male" | "female" | "other" | undefined,
+      status: "online" as const,
+    }));
+  }, []);
+
+  /** Phase 1: set up the lobby — create players without roles, GM sends a lobby greeting. */
+  const initializeLobby = () => {
+    if (!currentGame || !currentGame.config) return;
+    const config = currentGame.config;
+
+    const { player: gameMaster, hostName, hostColor } = buildHostPlayer(config);
+    const aiPlayers = buildAiPlayers(config.configuredPlayers || [], config.template);
 
     const userName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "You";
-    // Create user player (use userId so host-assigned "NEXT_SPEAKER: You" enables this player). Role is left unset; Host assigns it via ASSIGN_ROLE in a message.
     const userPlayer = {
       id: userId,
       name: userName,
@@ -672,24 +671,62 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
     const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
-    const hostGreeting = config.template === "tarot"
-      ? `Welcome. I'm ${hostName}, your reader today. Take a moment, then share a question or an area of your life you'd like insight on—or say you'd like a general reading. The cards are ready when you are.`
-      : `Hey everyone, ${hostName} here. Rules are in the Rules section—ready when you are, let's go!`;
+    const lobbyGreeting = config.template === "tarot"
+      ? `Welcome. I'm ${hostName}, your reader today. When you're ready, hit **Start Game** and we'll begin your reading.`
+      : `Hey everyone, ${hostName} here! Take your time setting up — add or remove players, invite friends. When everyone's here, hit **Start Game** to begin!`;
+
     addMessage(
-      {
-        senderId: "gm-1",
-        senderName: hostName,
-        senderAvatar: hostColor,
-        content: hostGreeting,
-        isAI: true,
-      },
+      { senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: lobbyGreeting, isAI: true },
       defaultChannelId
     );
 
     setCurrentSpeakerId(null);
+    setGamePhase("lobby");
+  };
+
+  /** Phase 2: owner starts the game — assign roles via Host API, kick off AI replies. */
+  const startGame = useCallback(async () => {
+    if (!currentGame || !currentGame.config) return;
+    const config = currentGame.config;
+    const { hostName, hostColor } = buildHostPlayer(config);
+
+    const currentPlayers = playersRef.current;
+    const aiPlayers = currentPlayers.filter((p) => p.isAI && !p.isGameMaster);
+
+    // Assign roles from config if available (werewolf/mafia/undercover)
+    const configuredPlayers = config.configuredPlayers || [];
+    if (configuredPlayers.length > 0) {
+      setPlayers((prev) =>
+        prev.map((p) => {
+          if (p.isGameMaster) return p;
+          const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1]) - 1 : -1;
+          const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
+          if (!cp) return p;
+          const role = cp.role || undefined;
+          const stats = { ...p.stats };
+          if (role && (config.template === "werewolf" || config.template === "mafia")) {
+            stats.Status = "Alive";
+          }
+          if ((cp as any).word && config.template === "undercover") {
+            stats.Word = (cp as any).word;
+          }
+          return { ...p, role, stats };
+        })
+      );
+    }
+
     setGamePhase("active");
 
-    // Let a few AI players reply to the host so the room feels active from the start
+    const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
+    const hostGreeting = config.template === "tarot"
+      ? `The cards are ready. Share a question or an area of your life you'd like insight on — or say you'd like a general reading.`
+      : `Alright, the game is on! Let's get started. Check the Rules section if you need a refresher.`;
+
+    addMessage(
+      { senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: hostGreeting, isAI: true },
+      defaultChannelId
+    );
+
     seedInitialPlayerReplies({
       channelId: defaultChannelId,
       hostName,
@@ -701,7 +738,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       sessionToken: session?.access_token,
       isCancelled: () => seedCancelledRef.current,
     }).catch((e) => console.warn("Initial player replies failed", e));
-  };
+  }, [currentGame, session?.access_token, buildHostPlayer, addMessage, setPlayers, setGamePhase]);
 
   const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
@@ -730,6 +767,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         channelId
       );
     }
+
+    // In lobby phase, just add the message — don't trigger Host game logic
+    if (gamePhase === "lobby") return;
 
     // Get AI response (host reply in same channel)
     setLastFailedSendContent(null);
@@ -2036,7 +2076,25 @@ ${rulesText || "No specific rules defined."}`.trim();
             </span>
           </div>
         )}
-        {selectedChannelId === "rules" ? (
+        {gamePhase === "lobby" ? (
+          <LobbyView
+            gameName={currentGame?.name ?? "Game"}
+            gameTemplate={currentGame?.config?.template}
+            players={players}
+            isOwner={isOwner}
+            gameId={gameId}
+            avatarImageUrls={avatarImageUrls}
+            onAvatarUrlLoaded={onAvatarUrlLoaded}
+            onStartGame={startGame}
+            onAddCharacter={() => setShowCharacterBrowser(true)}
+            onRemovePlayer={(playerId) => {
+              setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+            }}
+            onInvite={isOwner && session?.access_token ? handleInvite : undefined}
+            inviteJustCopied={inviteCopied}
+            maxPlayers={currentGame?.config?.playerCount || 12}
+          />
+        ) : selectedChannelId === "rules" ? (
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-6 max-w-2xl">
               {(currentGame?.config?.rules ?? "").trim() ? (
@@ -2120,6 +2178,29 @@ ${rulesText || "No specific rules defined."}`.trim();
               router.push(preset ? `/create?preset=${preset}` : "/create");
             } : undefined}
             onNewGame={gameOverSummary ? () => router.push("/create") : undefined}
+            onSaveCharacters={gameOverSummary && isOwner && session?.access_token ? async () => {
+              const aiPlayers = players.filter((p) => p.isAI && !p.isGameMaster);
+              if (aiPlayers.length === 0) { toast.info("No AI characters to save"); return; }
+              let saved = 0;
+              for (const p of aiPlayers) {
+                try {
+                  const res = await fetch("/api/characters", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session!.access_token}` },
+                    body: JSON.stringify({
+                      name: p.name,
+                      gender: p.gender || "other",
+                      personality: p.personality || null,
+                      background: p.background || null,
+                      avatar_color: p.avatar || "#8b5cf6",
+                      source_game_id: gameId,
+                    }),
+                  });
+                  if (res.ok) saved++;
+                } catch {}
+              }
+              toast.success(`Saved ${saved} character${saved !== 1 ? "s" : ""} to your collection`);
+            } : undefined}
             isEliminated={(() => {
               if (isGuestPlayer) return false;
               const me = players.find(p => p.id === userId || p.name === humanGameIdentity?.name);
@@ -2180,6 +2261,41 @@ ${rulesText || "No specific rules defined."}`.trim();
               </SheetContent>
             </Sheet>
       </div>
+
+      <CharacterBrowser
+        open={showCharacterBrowser}
+        onClose={() => setShowCharacterBrowser(false)}
+        gameId={gameId}
+        onSelectCharacter={(char) => {
+          const existingAiIds = players.filter((p) => p.isAI && !p.isGameMaster).map((p) => {
+            const n = parseInt(p.id.split("-")[1]);
+            return isNaN(n) ? 0 : n;
+          });
+          const nextIndex = existingAiIds.length > 0 ? Math.max(...existingAiIds) + 1 : 1;
+          const newPlayer = {
+            id: `ai-${nextIndex}`,
+            name: char.name,
+            avatar: AI_COLORS[(nextIndex - 1) % AI_COLORS.length],
+            role: undefined as string | undefined,
+            stats: {} as Record<string, string | number>,
+            isAI: true,
+            isMuted: false,
+            personality: char.personality,
+            background: char.background,
+            gender: char.gender as "male" | "female" | "other" | undefined,
+            status: "online" as const,
+          };
+          setPlayers((prev) => {
+            const humanIdx = prev.findIndex((p) => !p.isAI && !p.isGameMaster);
+            if (humanIdx >= 0) {
+              const updated = [...prev];
+              updated.splice(humanIdx, 0, newPlayer);
+              return updated;
+            }
+            return [...prev, newPlayer];
+          });
+        }}
+      />
 
       <Toaster
         position="top-right"
