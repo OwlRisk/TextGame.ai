@@ -139,9 +139,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save feedback.' }, { status: 500 });
     }
 
-    sendFeedbackEmail(message, email, attachmentUrls).catch((err) =>
-      console.error('[contact] Email send error:', err),
-    );
+    try {
+      await sendFeedbackEmail(message, email, attachmentUrls);
+    } catch (emailErr) {
+      console.error('[contact] Email send error:', emailErr);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
