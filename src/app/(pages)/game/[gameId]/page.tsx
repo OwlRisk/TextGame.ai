@@ -975,6 +975,10 @@ Every reply MUST be split into exactly two sections by a line containing only "-
 1. PUBLIC MESSAGE (before ---): What all players see in chat and hear via TTS. 1–2 sentences maximum. Never include directives, role info, or private content here.
 2. DIRECTIVES (after ---): Hidden machine commands. Never shown to players.
 
+**SILENT TURNS:** If the player's message is casual conversation, a simple reply to another player, or anything that does NOT require GM narration/arbitration, leave the PUBLIC MESSAGE section EMPTY (nothing before ---) and output only directives. This lets players talk naturally without the GM interrupting every exchange.
+Use silent turns when: agreeing/disagreeing with other players, social chat, asking another player a question, expressing emotions, idle banter.
+Always speak when: a game action needs resolution, a phase transition occurs, rules need enforcement, a player is confused, story narration is needed.
+
 Example A — with role assignment:
 The roles are set. The game begins.
 ---
@@ -988,6 +992,10 @@ Example B — no roles:
 The ancient door swings open. What do you do?
 ---
 NEXT_SPEAKER: ${humanName}
+
+Example C — silent turn (player just chatting with others):
+---
+NEXT_SPEAKER: Juno, Edda
 
 Always output "---" even when there are no directives.
 
@@ -1652,7 +1660,8 @@ ${rulesText || "No specific rules defined."}`.trim();
 
       const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
-      if (!hostContent && !firstImageUrl) {
+      const isSilentTurn = !hostContent && !firstImageUrl;
+      if (isSilentTurn && speakerQueue.length === 0) {
         setIsRoundInProgress(false);
         return;
       }
@@ -1668,11 +1677,11 @@ ${rulesText || "No specific rules defined."}`.trim();
         if (whoLower === "you" || (humanName && whoLower === humanName.toLowerCase())) setCurrentSpeakerId(userId);
       }
 
-      await hostPace();
+      if (!isSilentTurn) await hostPace();
       let recentForNext = [
         ...channelMessagesForRecent.slice(-18).map((m) => ({ senderName: m.senderName, content: m.content })),
         { senderName: humanName, content },
-        { senderName: gmName, content: hostContent },
+        ...(hostContent ? [{ senderName: gmName, content: hostContent }] : []),
       ] as Array<{ senderName: string; content: string }>;
 
       // Execute the ordered speaker queue produced by Host's NEXT_SPEAKER directive.
@@ -1747,11 +1756,13 @@ ${rulesText || "No specific rules defined."}`.trim();
           "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]",
           channelId
         );
-        if (!advanced.hostContent) break;
-        recentForNext = [
-          ...recentForNext,
-          { senderName: gmName, content: advanced.hostContent },
-        ];
+        if (!advanced.hostContent && advanced.speakerQueue.length === 0) break;
+        if (advanced.hostContent) {
+          recentForNext = [
+            ...recentForNext,
+            { senderName: gmName, content: advanced.hostContent },
+          ];
+        }
         currentQueue = advanced.speakerQueue;
         humanReached = await runSpeakerQueue(currentQueue);
       }
