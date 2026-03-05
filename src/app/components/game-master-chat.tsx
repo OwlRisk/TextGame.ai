@@ -1904,7 +1904,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           </Button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hidden">
           <div className="p-2 space-y-1 w-full">
             {sessions.map((session) => (
               <ContextMenu key={session.id}>
@@ -1989,7 +1989,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               New Session
             </Button>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hidden">
             <div className="p-2 space-y-1 w-full">
               {sessions.map((session) => (
                 <div
