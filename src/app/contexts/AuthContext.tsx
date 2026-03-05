@@ -264,15 +264,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setAuthCookie(null);
-    setUser(null);
-    setSession(null);
+    // Do NOT clear React state (setUser/setSession) here — doing so
+    // triggers ProtectedRoute's redirect to /signin before the hard
+    // navigation below has a chance to fire, causing a visible
+    // /signin → / flash.  The full page reload makes React state moot.
     try {
       await supabase.auth.signOut();
     } catch {
       // Best-effort: session may already be gone server-side
     }
-    // Manually nuke Supabase localStorage keys so getLocalCachedSession()
-    // never resurrects a stale session on the next page load.
     try {
       Object.keys(localStorage)
         .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
