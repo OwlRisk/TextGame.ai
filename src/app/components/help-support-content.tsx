@@ -135,8 +135,6 @@ export function HelpSupportContent() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to send');
       }
-      const result = await res.json().catch(() => ({}));
-      if (result.emailStatus) console.log('[feedback] email status:', result.emailStatus);
       setSubmitted(true);
       setImages([]);
     } catch (err) {
