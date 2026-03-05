@@ -184,6 +184,7 @@ async function seedInitialPlayerReplies(
           player: { name: player.name, role: player.role, personality: player.personality, background: player.background },
           recentMessages: recent,
           preferredModel: getPreferredModel(),
+          isSeedGreeting: true,
         }),
       });
       setTypingUsers?.([]);

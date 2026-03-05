@@ -32,12 +32,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, preferredModel, channelGoal, playerNotes } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, preferredModel, channelGoal, playerNotes, isSeedGreeting } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
       gamePhase?: string;
       preferredModel?: string;
+      isSeedGreeting?: boolean;
       /** Optional task injected when the player is in a private "decision" channel. */
       channelGoal?: string;
       /** Player's own private notes from previous turns (written via [MY_NOTES] tags). */
@@ -103,7 +104,12 @@ export async function POST(request: NextRequest) {
     lines.push('');
     lines.push(`Recent conversation:\n${recentText || '(No messages yet)'}`);
     lines.push('');
-    lines.push(`Your turn. Reply as ${player.name}.`);
+
+    if (isSeedGreeting) {
+      lines.push(`The game just started. Say something brief and in-character as ${player.name}—a casual greeting, a comment, or a reaction. IMPORTANT: Do NOT repeat what others already said. Be unique: if someone asked a question, don't ask the same thing. Show YOUR personality. Keep it short (1-2 sentences).`);
+    } else {
+      lines.push(`Your turn. Reply as ${player.name}.`);
+    }
 
     const userContent = lines.join('\n');
 
