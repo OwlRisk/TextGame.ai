@@ -716,12 +716,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
     // Batch-fetch avatars: 1 random AI player gets a freshly generated avatar
-    // (saved to pool + ai_characters DB), the rest get free pool avatars.
+    // (saved to pool + ai_characters DB), the rest (including human) get free pool avatars.
     const roomPlayers: RoomPlayerInfo[] = [
       { name: gameMaster.name, type: 'host', gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background },
       ...aiPlayers.map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
         name: p.name, type: 'player' as const, gender: p.gender, personality: p.personality, background: p.background,
       })),
+      { name: userName, type: 'player' as const, isHuman: true },
     ];
     fetchAvatarsForRoom(roomPlayers, gameId).then((urlMap) => {
       for (const [key, url] of Object.entries(urlMap)) {

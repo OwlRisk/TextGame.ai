@@ -167,6 +167,8 @@ export interface RoomPlayerInfo {
   personality?: string;
   background?: string;
   role?: string;
+  /** Mark as true for human players — they get pool avatars but are never chosen for generateAndPool. */
+  isHuman?: boolean;
 }
 
 /**
@@ -182,7 +184,7 @@ export async function fetchAvatarsForRoom(
 ): Promise<Record<string, string>> {
   if (players.length === 0) return {};
 
-  const aiPlayers = players.filter(p => (p.type ?? 'player') === 'player');
+  const aiPlayers = players.filter(p => (p.type ?? 'player') === 'player' && !p.isHuman);
 
   // Pick 1 random AI player for generateAndPool
   const generateIndex = aiPlayers.length > 0 ? Math.floor(Math.random() * aiPlayers.length) : -1;
