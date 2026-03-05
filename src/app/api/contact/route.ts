@@ -139,13 +139,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save feedback.' }, { status: 500 });
     }
 
+    let emailStatus = 'skipped';
     try {
       await sendFeedbackEmail(message, email, attachmentUrls);
-    } catch (emailErr) {
+      emailStatus = 'sent';
+    } catch (emailErr: any) {
       console.error('[contact] Email send error:', emailErr);
+      emailStatus = `failed: ${emailErr?.message || emailErr}`;
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, emailStatus });
   } catch (err) {
     console.error('[contact] error:', err);
     return NextResponse.json({ error: 'Failed to send message. Please try again.' }, { status: 500 });
