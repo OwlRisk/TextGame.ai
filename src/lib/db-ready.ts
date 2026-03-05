@@ -1,13 +1,13 @@
 /**
- * 部署环境检查：数据库是否已配置且可用。
- * 用于 API 在返回 500 前给出可操作的 503 提示。
+ * Deployment environment check: whether the database is configured and available.
+ * Used by APIs to return an actionable 503 hint before falling through to 500.
  */
 
 export function isDatabaseConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL || process.env.DIRECT_URL);
 }
 
-/** 判断错误是否来自数据库连接/查询失败（含表不存在、迁移未跑、SSL、权限等） */
+/** Determine if the error originates from a database connection/query failure (including missing table, migration not run, SSL, permissions, etc.) */
 export function isDatabaseError(e: unknown): boolean {
   if (!e || typeof e !== 'object') return false;
   const msg = (e as Error).message?.toLowerCase() ?? '';

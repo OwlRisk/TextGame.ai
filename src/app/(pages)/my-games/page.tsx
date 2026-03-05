@@ -15,7 +15,7 @@ export default function MyGamesPageRoute() {
   const { games, selectGame, gamesLoading, isHydrated } = useGameContext();
   const { user, loading, signInWithGoogle } = useAuth();
 
-  // 进入 My Games 页时同步侧边栏高亮为 "my-games"
+  // Sync sidebar highlight to "my-games" when entering My Games page
   useEffect(() => {
     selectGame("my-games");
   }, [selectGame]);
@@ -24,7 +24,7 @@ export default function MyGamesPageRoute() {
     try {
       await signInWithGoogle("/my-games");
     } catch {
-      toast.error("登录失败，请重试");
+      toast.error("Sign-in failed. Please try again.");
     }
   };
 

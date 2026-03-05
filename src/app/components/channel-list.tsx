@@ -97,7 +97,7 @@ export function ChannelList({
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = (gameUserDisplayName && gameUserDisplayName.trim()) || (userDisplayName && userDisplayName.trim()) ? (gameUserDisplayName || userDisplayName || "Player").trim() : "Player";
   const shortLabel = (displayName !== "Player") ? "You" : "#0001";
-  // 统一风格：在游戏内用户也使用与 AI 相同的生成头像
+  // Unified style: human players also use AI-style generated avatars in-game
   const useGameAvatar = !!gameId;
   const avatarName = (gameUserDisplayName && gameUserDisplayName.trim() && gameUserDisplayName !== "You") ? gameUserDisplayName : "Player";
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -275,7 +275,7 @@ export function ChannelList({
         )}
       </ScrollArea>
 
-      {/* User Section：固定在底部 */}
+      {/* User section: pinned to bottom */}
       <div className="mt-auto flex-shrink-0 h-16 bg-zinc-900/50 px-3 flex items-center gap-3 border-t border-zinc-900/50">
         {useGameAvatar ? (
           <GeneratedAvatar

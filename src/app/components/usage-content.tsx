@@ -188,7 +188,7 @@ export function UsageContent() {
 
   return (
     <div className="flex-1 flex flex-col bg-[#0a0a0a] min-h-0 overflow-y-auto">
-      {/* Header - 与参考一致 */}
+      {/* Header */}
       <div className="bg-zinc-900/50 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
         <div className="flex items-center gap-4">
             <Button
@@ -206,7 +206,7 @@ export function UsageContent() {
         </div>
       </div>
 
-      {/* Stats Overview - 与参考一致 */}
+      {/* Stats Overview */}
       <div className="bg-zinc-900/30 border-b border-zinc-800 px-6 py-6 flex-shrink-0">
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 mb-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
@@ -346,7 +346,7 @@ export function UsageContent() {
         </div>
       )}
 
-      {/* Transaction List - 与参考一致样式 */}
+      {/* Transaction List */}
       <div className="flex-1 px-6 py-4 min-h-0">
         {loadingTx ? (
           <div className="flex items-center justify-center gap-2 py-12 text-zinc-400">

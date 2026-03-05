@@ -1,6 +1,6 @@
 /**
- * 环境变量集中引用与说明。
- * 各 API 在用时自行校验必填项（如 OPENAI_API_KEY）；此处仅作单点查阅与类型提示。
+ * Centralized environment variable references and descriptions.
+ * Each API validates required keys at use time (e.g. OPENAI_API_KEY); this module serves as a single lookup point with type hints.
  */
 
 export const env = {
@@ -22,7 +22,7 @@ export const env = {
   get DATABASE_URL(): string | undefined {
     return process.env.DATABASE_URL;
   },
-  /** 设为 '0' 时关闭 DB TLS 证书校验（仅开发/自签名用，生产勿设） */
+  /** Set to '0' to disable DB TLS certificate verification (dev/self-signed only; do not set in production) */
   get DATABASE_SSL_REJECT_UNAUTHORIZED(): string | undefined {
     return process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
   },

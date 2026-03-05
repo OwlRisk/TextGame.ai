@@ -330,7 +330,7 @@ export function ChatArea({
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const humanPlayer = players.find((p) => p.id === userId);
-  // 统一风格：在游戏房间内用户玩家也使用与 AI Host/玩家相同的生成头像（动漫风）
+  // Unified style: human players also use generated avatars (anime style) like AI Host/players
   const useGeneratedAvatarForUser = !!(gameId && humanPlayer);
   const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
 

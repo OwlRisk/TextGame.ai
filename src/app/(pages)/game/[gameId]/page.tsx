@@ -263,10 +263,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // context on the player's next message turn. Reset after each HOST call that consumes them.
   const pendingDecisionSummariesRef = useRef<string[]>([]);
 
-  /** 移动端左侧抽屉：'app' 应用导航 | 'channels' 频道列表 */
+  /** Mobile left drawer: 'app' nav | 'channels' channel list */
   const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
   const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
-  /** 右侧玩家面板当前 Tab：Players | My Board（仅自己可见、仅 Host 可编辑） */
+  /** Right panel active tab: Players | My Board (private to you, editable by Host only) */
   const [rightPanelTab, setRightPanelTab] = useState<"players" | "board">("players");
 
   useEffect(() => {
@@ -1280,7 +1280,7 @@ ${rulesText || "No specific rules defined."}`.trim();
       const getStreamingDisplay = getStreamingDisplayUtil;
       const splitHostOutput = splitHostOutputUtil;
 
-      /** 主持人流式回复：先打出一条空消息再边收边更新，最后解析 NEXT_SPEAKER */
+      /** Host streaming reply: insert empty message, update incrementally, then parse NEXT_SPEAKER */
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
         const messageId = addStreamingMessage(
           { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
@@ -2098,33 +2098,33 @@ ${rulesText || "No specific rules defined."}`.trim();
 
   return (
     <div className="h-[100dvh] flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
-      {/* 移动端顶栏：仅小屏显示 */}
+      {/* Mobile top bar: small screens only */}
       <header className="md:hidden flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95">
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "app" ? null : "app"))} aria-label="打开菜单">
+        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "app" ? null : "app"))} aria-label="Open menu">
           <Menu className="size-5 text-zinc-300" />
         </Button>
         <span className="text-sm font-medium text-zinc-300 truncate max-w-[40%]">{currentGame?.name ?? "Game"}</span>
         <div className="flex items-center gap-1.5">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "channels" ? null : "channels"))} aria-label="频道与规则">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileLeftDrawer((v) => (v === "channels" ? null : "channels"))} aria-label="Channels & rules">
             <Hash className="size-5 text-zinc-300" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileRightDrawer((v) => !v)} aria-label="玩家列表">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => setMobileRightDrawer((v) => !v)} aria-label="Player list">
             <Users className="size-5 text-zinc-300" />
           </Button>
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden min-h-0">
-      {/* 应用侧栏由 (pages) layout 统一提供，此处不再重复渲染，避免点击游戏后侧栏/头像闪烁 */}
+      {/* App sidebar is provided by the (pages) layout */}
 
-      {/* 移动端左侧抽屉：应用导航（仅移动端，桌面端使用 layout 侧栏） */}
+      {/* Mobile left drawer: app nav (mobile only; desktop uses layout sidebar) */}
       <Sheet open={mobileLeftDrawer === "app"} onOpenChange={(open) => !open && setMobileLeftDrawer(null)}>
         <SheetContent side="left" title="Menu" className="w-[5rem] max-w-[5rem] p-0 border-r border-violet-900/20 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950">
           <GameSidebar {...sidebarCommon} onNavigate={() => setMobileLeftDrawer(null)} />
         </SheetContent>
       </Sheet>
 
-      {/* 移动端左侧抽屉：频道与规则 */}
+      {/* Mobile left drawer: channels & rules */}
       <Sheet open={mobileLeftDrawer === "channels"} onOpenChange={(open) => !open && setMobileLeftDrawer(null)}>
         <SheetContent side="left" title="Channels and rules" className="w-64 max-w-[85vw] p-0 bg-zinc-800 border-r border-zinc-700">
           <ChannelList
@@ -2135,7 +2135,7 @@ ${rulesText || "No specific rules defined."}`.trim();
         </SheetContent>
       </Sheet>
 
-      {/* Game sidebar: 桌面显示，移动端在 Sheet 中 */}
+      {/* Game sidebar: visible on desktop, shown in Sheet on mobile */}
       <div className="hidden md:block flex-shrink-0">
         <ChannelList
           {...channelListCommon}
@@ -2322,7 +2322,7 @@ ${rulesText || "No specific rules defined."}`.trim();
       </div>
       </ErrorBoundary>
 
-      {/* 玩家面板 + My Board（仅自己可见，仅 AI Host 可编辑）：桌面显示，移动端在右侧 Sheet */}
+      {/* Player panel + My Board (private, Host-editable): desktop visible, right Sheet on mobile */}
             <div className="hidden md:block flex-shrink-0 w-80">
               <PlayerPanelWithBoard
                 players={playersForChannel}

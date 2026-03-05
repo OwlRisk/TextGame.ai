@@ -4,7 +4,7 @@ import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server'
 import { getCustomerId, setCustomerId, getTokenPackages, rechargeCoinsFromPayment } from '@/lib/tokens';
 import { getStripePriceIdForTier } from '@/lib/subscription';
 
-/** 套餐展示用；实际到账 coins 由 rechargeCoinsFromPayment(price_cents) 公式计算 */
+/** Display-only package info; actual coins credited are calculated by rechargeCoinsFromPayment(price_cents) */
 const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number }> = {
   starter: { name: 'Starter', price_cents: 500 },
   popular: { name: 'Popular', price_cents: 1000 },

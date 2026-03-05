@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 
 /**
- * 开发环境下屏蔽 [Fast Refresh] rebuilding / done 等 HMR 日志，避免控制台刷屏。
- * 仅在 process.env.NODE_ENV === 'development' 时生效。
+ * Suppress [Fast Refresh] rebuilding / done and other HMR logs in development to reduce console noise.
+ * Only active when process.env.NODE_ENV === 'development'.
  */
 export function SuppressFastRefreshLogs() {
   useEffect(() => {

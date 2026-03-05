@@ -1088,7 +1088,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   // Ref to avoid requesting welcome twice for the same session
   const welcomeRequestedForSessionRef = useRef<string | null>(null);
   const welcomeScheduledForSessionRef = useRef<string | null>(null);
-  // 从历史列表点进某会话时不要自动发欢迎消息，只对「新建会话」发欢迎
+  // Don't auto-send welcome message when opening from history; only for new sessions
   const didLoadSessionRef = useRef(false);
 
   // When an empty session is shown (e.g. loaded from old data), add static welcome once

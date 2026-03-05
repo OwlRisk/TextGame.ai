@@ -13,7 +13,7 @@ export default function DiscoverView() {
   const { selectGame } = useGameContext();
   const { user, loading } = useAuth();
 
-  // 进入 Discover 页时同步侧边栏高亮为 "discover"
+  // Sync sidebar highlight to "discover" when entering Discover page
   useEffect(() => {
     selectGame("discover");
   }, [selectGame]);

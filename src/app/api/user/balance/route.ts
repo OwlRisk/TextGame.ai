@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST 支持 body.accessToken，与 create-checkout 一致，确保能拿到用户余额 */
+/** POST accepts body.accessToken (consistent with create-checkout) to ensure balance retrieval */
 export async function POST(request: NextRequest) {
   try {
     if (!isDatabaseConfigured()) {

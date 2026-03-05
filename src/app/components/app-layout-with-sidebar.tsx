@@ -15,9 +15,9 @@ interface Game {
 }
 
 interface AppLayoutWithSidebarProps {
-  /** 移动端顶栏标题 */
+  /** Mobile top bar title */
   mobileTitle?: string;
-  /** 当子页面有自己的移动端顶栏时（如游戏房间），隐藏此处的顶栏避免重复 */
+  /** When child page has its own mobile top bar (e.g. game room), hide this one to avoid duplication */
   hideMobileHeader?: boolean;
   games: Game[];
   selectedGameId: string | null;
@@ -58,7 +58,7 @@ export function AppLayoutWithSidebar({
           size="icon"
           className="h-9 w-9 rounded-lg min-w-[44px] min-h-[44px]"
           onClick={() => setMobileMenuOpen(true)}
-          aria-label="打开菜单"
+          aria-label="Open menu"
         >
           <Menu className="size-5 text-zinc-300" />
         </Button>

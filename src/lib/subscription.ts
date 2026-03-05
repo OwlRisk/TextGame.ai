@@ -1,6 +1,6 @@
 /**
- * 订阅档位：Free / Pro / Plus / Ultra
- * Pro $20/月 2000 credits，Plus $60/月 6000 credits，Ultra $200/月 40000 credits
+ * Subscription tiers: Free / Pro / Plus / Ultra
+ * Pro $20/mo 2000 credits, Plus $60/mo 6000 credits, Ultra $200/mo 40000 credits
  */
 export type SubscriptionTier = 'free' | 'pro' | 'plus' | 'ultra';
 
@@ -31,9 +31,9 @@ export function capitalizeTier(tier: string): string {
 }
 
 /**
- * Stripe 月付订阅 Price ID。
- * 优先使用 STRIPE_PRO_PRICE_ID（与 .env.example 一致），
- * 同时兼容历史变量名 STRIPE_PRICE_PRO。
+ * Stripe monthly subscription Price ID.
+ * Prefers STRIPE_PRO_PRICE_ID (consistent with .env.example),
+ * with fallback to the legacy variable name STRIPE_PRICE_PRO.
  */
 export function getStripePriceIdForTier(tier: 'pro' | 'plus' | 'ultra'): string | null {
   if (tier === 'pro') {

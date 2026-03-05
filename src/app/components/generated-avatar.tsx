@@ -97,7 +97,7 @@ export function GeneratedAvatar({
   const showImage = displaySrc && !displayLoading;
   const showFallback = !showImage;
 
-  // 用户、玩家、主持人头像统一：同一圆形容器，无区分装饰，仅通过名字/角色标签区分
+  // Unified avatar style: same circular container for user/player/host, differentiated only by name/role label
   return (
     <Avatar
       className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}

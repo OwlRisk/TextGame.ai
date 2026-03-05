@@ -117,7 +117,7 @@ export function WelcomePage({
                   <p className="mt-4 text-xs text-zinc-500">
                     Free to start · No credit card required
                   </p>
-                  {/* 登录后你可以 */}
+                  {/* After signing in you can */}
                   <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-500">
                     <span className="inline-flex items-center gap-1.5">
                       <Save className="h-3.5 w-3.5 text-amber-500/80" />

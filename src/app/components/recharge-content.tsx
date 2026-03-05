@@ -135,7 +135,7 @@ export function RechargeContent() {
     fetchBalance();
   }, [fetchBalance]);
 
-  // 页面重新可见时刷新余额（从 Stripe 或其它标签页返回时）
+  // Refresh balance when page becomes visible (e.g. returning from Stripe or other tab)
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible') fetchBalance();
@@ -144,7 +144,7 @@ export function RechargeContent() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [fetchBalance]);
 
-  // 从 Stripe 返回成功时兑现加币（本地开发 webhook 不触发时依赖此逻辑）
+  // Fulfill coin credit when returning from Stripe success (fallback when webhook doesn't fire in local dev)
   useEffect(() => {
     const success = searchParams.get('success');
     const sessionId = searchParams.get('session_id');
@@ -170,7 +170,7 @@ export function RechargeContent() {
       .then((balance) => {
         if (balance != null) setCurrentCoins(balance.tokens ?? 0);
         window.history.replaceState({}, '', '/recharge');
-        // 延迟再拉一次，防止 fulfill 与读库有时序差
+        // Delay another fetch to avoid timing gap between fulfill and DB read
         setTimeout(() => fetchBalance(), 2000);
       })
       .catch(() => {
@@ -188,7 +188,7 @@ export function RechargeContent() {
       redirectToSignIn();
       return;
     }
-    // 请求前拉取最新 session 并写入 cookie，避免扩展/环境导致 Header 丢失
+    // Fetch fresh session and write to cookie before request to avoid Header loss from extensions/environment
     let freshSession: { access_token?: string } | null = null;
     try {
       const { data } = await supabase.auth.getSession();
@@ -198,7 +198,7 @@ export function RechargeContent() {
     }
     const accessToken = freshSession?.access_token ?? session?.access_token;
     if (!accessToken) {
-      alert('登录已过期，请重新登录');
+      alert('Your session has expired. Please sign in again.');
       redirectToSignIn();
       return;
     }
@@ -210,7 +210,7 @@ export function RechargeContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           packageId: selectedPackage.id,
-          accessToken, // 请求体传 token，避免 Header/Cookie 被扩展剥离
+          accessToken, // Pass token in body to avoid Header/Cookie being stripped by extensions
         }),
         credentials: 'include',
       });
@@ -258,7 +258,7 @@ export function RechargeContent() {
               <div className="text-xl font-bold text-white">
                 {balanceStatus === 'ok' && currentCoins.toLocaleString()}
                 {balanceStatus === 'error' && (
-                  <span className="text-amber-400 font-normal text-sm">加载失败</span>
+                  <span className="text-amber-400 font-normal text-sm">Failed to load</span>
                 )}
                 {balanceStatus !== 'ok' && balanceStatus !== 'error' && '\u00A0'}
               </div>

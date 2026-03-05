@@ -50,7 +50,7 @@ interface GameSidebarProps {
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
   onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
-  /** 移动端抽屉内使用时，导航后关闭抽屉 */
+  /** When used inside mobile drawer, close drawer after navigation */
   onNavigate?: () => void;
 }
 
@@ -231,7 +231,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
 
         <div className="w-8 h-0.5 bg-zinc-700 rounded-full my-1" />
 
-        {/* Game List - Only show when user is logged in; min-h-0 让 flex 子项可收缩，避免把底部用户区挤掉 */}
+        {/* Game List - Only show when user is logged in; min-h-0 allows flex children to shrink so the bottom user section isn't pushed off */}
         {user && (
           <ScrollArea className="flex-1 min-h-0 w-full">
             <div className="flex flex-col items-center gap-2 px-3">
@@ -308,7 +308,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           </ScrollArea>
         )}
 
-        {/* User Profile - Bottom，固定不参与收缩，避免被游戏列表挤掉 */}
+        {/* User Profile - Bottom, fixed (does not shrink), prevents being pushed off by game list */}
         <div className="mt-auto flex-shrink-0">
           {loading ? (
             <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -332,8 +332,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 className="w-80 bg-zinc-900 border-zinc-800 text-white p-0 ml-2 rounded-xl overflow-hidden"
               >
                 <div className="p-4 space-y-4">
-                  {/* User Avatar & Info（与参考一致：头像 + 名称，下边框） */}
-                  {/* User Avatar & Info（与参考一致：仅头像 + 名称，无余额卡片） */}
+                  {/* User Avatar & Info: avatar + name, bottom border */}
                   <div className="flex items-center gap-3 pb-3 border-b border-zinc-800">
                     <Avatar className="h-16 w-16 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-zinc-700/80">
                       <AvatarImage src={userAvatar} alt={username} />
@@ -347,7 +346,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     </div>
                   </div>
 
-                  {/* 菜单项：顺序与图标与参考一致 */}
+                  {/* Menu items: order and icons */}
                   <div className="space-y-1">
                     <Button 
                       variant="ghost" 

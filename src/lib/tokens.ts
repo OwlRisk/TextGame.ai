@@ -1,14 +1,14 @@
 import { PoolClient } from 'pg';
 import { pool } from '@/lib/pg-pool';
 
-// PostgreSQL SET LOCAL 不支持预编译参数 $1，只能用字面量；仅允许 UUID 格式防注入
+// PostgreSQL SET LOCAL does not support prepared parameter $1; only literal values allowed. UUID format enforced to prevent injection.
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 function safeSetUserId(userId: string): string {
   if (!UUID_RE.test(userId)) throw new Error('Invalid userId for app.user_id');
   return userId.replace(/'/g, "''");
 }
 
-/** RLS 要求 current_setting('app.user_id', true) = user_id，在同一连接上先 SET 再查/写 */
+/** RLS requires current_setting('app.user_id', true) = user_id; SET before read/write on the same connection */
 async function withUserContext<T>(userId: string, fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   try {
@@ -24,28 +24,28 @@ async function withUserContext<T>(userId: string, fn: (client: PoolClient) => Pr
   }
 }
 
-// ========== 充值 / 扣费公式 ==========
-// 约定：1 coin 面值 = $0.01，但实际只对应 1/PLATFORM_MARKUP 的 API 成本。
-// 例：用户充值 $10 → GPT_BUDGET_RATIO=0.5 → $5 等价 API 额度 → 500 coins
-// 每次 API 调用按 PLATFORM_MARKUP 倍扣费，保证平台利润。
+// ========== Recharge / Deduction Formula ==========
+// Convention: 1 coin face value = $0.01, but only corresponds to 1/PLATFORM_MARKUP of actual API cost.
+// Example: user pays $10 → GPT_BUDGET_RATIO=0.5 → $5 equivalent API budget → 500 coins
+// Each API call deducts at PLATFORM_MARKUP multiplier to ensure platform profit.
 
-/** 1 coin 的面值（美元），用于充值换算 */
+/** Face value of 1 coin (USD), used for recharge conversion */
 export const COIN_VALUE_USD = 0.01;
 
-/** 充值金额中用于 API 的比例（0.5 = 50%），决定充值 coins 数量 */
+/** Ratio of payment allocated to API budget (0.5 = 50%), determines number of coins credited */
 export const GPT_BUDGET_RATIO = 0.5;
 
 /**
- * 平台加价倍率：实际 API 成本扣费时乘以此倍数。
- * 设为 3 表示用户每花 1 coin（$0.01 面值）只享有 $0.01/3 ≈ $0.0033 的真实 API 额度。
- * 各套餐利润率：Pro/Plus ≈ 67%，Ultra（折扣券）≈ 33%。
+ * Platform markup multiplier: actual API cost is multiplied by this factor when deducting.
+ * Set to 3 means each 1 coin ($0.01 face value) only covers $0.01/3 ≈ $0.0033 of real API cost.
+ * Profit margins per tier: Pro/Plus ≈ 67%, Ultra (with coupon) ≈ 33%.
  */
 export const PLATFORM_MARKUP = 3;
 
 /**
- * 根据实际支付金额（美分）计算应到账的 coins
- * 公式：coins = (amount_cents / 100) * GPT_BUDGET_RATIO / COIN_VALUE_USD
- * 例：$10 = 1000 美分 → 1000/100 * 0.5 / 0.01 = 500 coins
+ * Calculate coins to credit based on actual payment amount (cents).
+ * Formula: coins = (amount_cents / 100) * GPT_BUDGET_RATIO / COIN_VALUE_USD
+ * Example: $10 = 1000 cents → 1000/100 * 0.5 / 0.01 = 500 coins
  */
 export function rechargeCoinsFromPayment(amountCents: number): number {
   if (amountCents <= 0) return 0;
@@ -55,7 +55,7 @@ export function rechargeCoinsFromPayment(amountCents: number): number {
 }
 
 /**
- * GPT/TTS API 成本（美元）→ 扣减的 coins（含平台加价倍率）
+ * GPT/TTS API cost (USD) → coins to deduct (including platform markup multiplier)
  */
 export function usdToCoins(usd: number): number {
   if (usd <= 0) return 1;
@@ -63,12 +63,12 @@ export function usdToCoins(usd: number): number {
 }
 
 /**
- * OpenAI 模型定价：每 100 万 token 的 input / output 价格（美元）。
- * 以 OpenAI 官方 Standard 价格为准，可随官方调价更新。
- * 截至 2026-03: https://platform.openai.com/docs/pricing
+ * OpenAI model pricing: input / output price per 1M tokens (USD).
+ * Based on OpenAI official Standard pricing; update when official prices change.
+ * As of 2026-03: https://platform.openai.com/docs/pricing
  */
 const OPENAI_PRICE_PER_1M: Record<string, { input: number; output: number }> = {
-  // GPT-5 系列
+  // GPT-5 series
   'gpt-5.2':              { input: 1.75, output: 14.00 },
   'gpt-5.2-chat-latest':  { input: 1.75, output: 14.00 },
   'gpt-5.3-codex':        { input: 1.75, output: 14.00 },
@@ -84,11 +84,11 @@ const OPENAI_PRICE_PER_1M: Record<string, { input: number; output: number }> = {
   'gpt-5-pro':            { input: 15.00, output: 120.00 },
   'gpt-5-mini':           { input: 0.25, output: 2.00 },
   'gpt-5-nano':           { input: 0.05, output: 0.40 },
-  // GPT-4.1 系列
+  // GPT-4.1 series
   'gpt-4.1':              { input: 2.00, output: 8.00 },
   'gpt-4.1-mini':         { input: 0.40, output: 1.60 },
   'gpt-4.1-nano':         { input: 0.10, output: 0.40 },
-  // GPT-4o 系列
+  // GPT-4o series
   'gpt-4o':               { input: 2.50, output: 10.00 },
   'gpt-4o-2024-11-20':    { input: 2.50, output: 10.00 },
   'gpt-4o-mini':          { input: 0.15, output: 0.60 },
@@ -100,7 +100,7 @@ function getModelPrice(model: string): { input: number; output: number } {
 }
 
 /**
- * 根据模型与 usage 计算本次调用的 API 成本（美元），再换算为 coins
+ * Calculate API cost (USD) for this call based on model and usage, then convert to coins
  */
 export function gptUsageToCoins(
   model: string,
@@ -114,7 +114,7 @@ export function gptUsageToCoins(
 }
 
 /**
- * 仅知道总 token 数时的保守估算（用于 stream 等无 usage 场景），按偏贵模型估算
+ * Conservative estimate when only total token count is known (e.g. streaming with no usage data); estimates using a higher-priced model
  */
 export function estimatedTokensToCoins(totalTokens: number, model?: string): number {
   if (totalTokens <= 0) return 1;
@@ -125,8 +125,8 @@ export function estimatedTokensToCoins(totalTokens: number, model?: string): num
 }
 
 /**
- * Inworld TTS 定价：每 100 万字符的价格（美元）。
- * 截至 2026-03: https://platform.openai.com/docs/pricing (Inworld via OpenAI)
+ * Inworld TTS pricing: price per 1M characters (USD).
+ * As of 2026-03: https://platform.openai.com/docs/pricing (Inworld via OpenAI)
  */
 export const INWORLD_TTS_PRICE_PER_1M_CHARS: Record<string, number> = {
   'inworld-tts-1.5-max':  10.00,
@@ -136,8 +136,8 @@ export const INWORLD_TTS_PRICE_PER_1M_CHARS: Record<string, number> = {
 };
 
 /**
- * 根据 TTS 字符数和模型计算扣除的 coins（含 PLATFORM_MARKUP 加价）。
- * 公式：usdToCoins((chars / 1_000_000) × pricePerMillion)，最少 1 coin。
+ * Calculate coins to deduct based on TTS character count and model (including PLATFORM_MARKUP).
+ * Formula: usdToCoins((chars / 1_000_000) × pricePerMillion), minimum 1 coin.
  */
 export function ttsCostToCoins(chars: number, model: string): number {
   if (chars <= 0) return 0;
@@ -149,20 +149,20 @@ export function ttsCostToCoins(chars: number, model: string): number {
 }
 
 /**
- * 图片生成模型定价（每张图，美元）。
- * 截至 2026-03: https://platform.openai.com/docs/pricing
+ * Image generation model pricing (per image, USD).
+ * As of 2026-03: https://platform.openai.com/docs/pricing
  */
 export const IMAGE_GEN_PRICE_USD: Record<string, number> = {
   'dall-e-2':    0.016,  // 256×256 standard
   'dall-e-3':    0.040,  // 1024×1024 standard
   'dall-e-3-hd': 0.080,  // 1024×1024 HD
-  'flux':        0.050,  // Replicate flux-dev 估算
-  'stable-diffusion': 0.030, // Replicate SDXL 估算
+  'flux':        0.050,  // Replicate flux-dev estimate
+  'stable-diffusion': 0.030, // Replicate SDXL estimate
 };
 
 /**
- * 根据图片生成模型计算扣除的 coins（含 PLATFORM_MARKUP 加价）。
- * 未知模型 fallback 到 dall-e-3。
+ * Calculate coins to deduct based on image generation model (including PLATFORM_MARKUP).
+ * Unknown models fall back to dall-e-3.
  */
 export function imageGenCostToCoins(model: string): number {
   const price = IMAGE_GEN_PRICE_USD[model] ?? IMAGE_GEN_PRICE_USD['dall-e-3'];
@@ -177,8 +177,8 @@ export const TOKEN_COSTS = {
 } as const;
 
 /**
- * 粗略估算文本对应的 token 数（用于扣费前预检查）
- * 英文约 4 字符/token，中文约 1.5 字符/token，取 3 字符/token 作为保守估计
+ * Rough estimate of token count for text (used for pre-deduction balance check).
+ * English ≈ 4 chars/token, CJK ≈ 1.5 chars/token; use 3 chars/token as conservative estimate.
  */
 export function estimateTokensFromText(text: string): number {
   if (!text || typeof text !== 'string') return 0;
@@ -186,7 +186,7 @@ export function estimateTokensFromText(text: string): number {
 }
 
 /**
- * 估算一轮 chat 的 token 上限（system + messages 内容 + maxCompletionTokens）
+ * Estimate upper-bound token count for one chat round (system + messages content + maxCompletionTokens)
  */
 export function estimateChatTokens(
   systemLength: number,
@@ -419,11 +419,11 @@ export async function getTokenPackages() {
   return [...DEFAULT_COIN_PACKAGES];
 }
 
-/** 订阅状态（DB 可能仍有 plus/ultra 历史值，新写入仅 free | pro | cancelled） */
+/** Subscription status (DB may still contain legacy plus/ultra values; new writes are free | pro | cancelled only) */
 export type SubscriptionStatus = 'free' | 'pro' | 'plus' | 'ultra' | 'cancelled';
 
 /**
- * Update user's subscription status（仅支持 Pro，写入 free | pro | cancelled）
+ * Update user's subscription status (Pro only; writes free | pro | cancelled)
  */
 export async function updateSubscriptionStatus(
   userId: string,

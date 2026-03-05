@@ -127,7 +127,7 @@ function genderPhrase(gender?: string): string {
   return '';
 }
 
-/** 去掉易触发“多人/双脸”的措辞，避免模型画出两个人 */
+/** Strip wording that may trigger "multiple people / dual faces" in image generation */
 function sanitizeSinglePersonDescription(text: string): string {
   if (!text || !text.trim()) return text;
   let s = text.trim();
@@ -273,7 +273,7 @@ async function generateWithReplicate(
   let modelId: `${string}/${string}` | `${string}/${string}:${string}`;
   let input: Record<string, any>;
 
-  // Negative prompt: 禁止文字 + 禁止多人/双脸
+  // Negative prompt: no text + no multiple people / dual faces
   const negativePrompt =
     'text, letters, words, characters, writing, symbols, labels, name tags, captions, subtitles, speech bubbles, signs, banners, written content, ' +
     'two people, two faces, multiple people, multiple faces, group photo, crowd, duo, pair of people, second face, another person, reflection with face, mirror with face, double face, ' +
@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
     const path = avatarStoragePath(name, avatarType);
     logger.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', path);
 
-    // 用服务端 Supabase API 检查是否已存在，避免公网 HEAD 失败导致重复生成
+    // Check existence via server-side Supabase API to avoid duplicate generation from public HEAD failure
     // If cached, no tokens needed
     if (supabaseAdmin) {
       const { data: blob, error: downloadError } = await supabaseAdmin.storage
@@ -461,7 +461,7 @@ export async function POST(request: NextRequest) {
 
     const image64 = await resizeAvatarTo64(imageDataUrl);
 
-    // 只存 Supabase Storage，不再用表
+    // Store in Supabase Storage only (no DB table)
     if (supabaseAdmin) {
       try {
         const buffer = await resizeAvatarToBuffer(imageDataUrl);

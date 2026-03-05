@@ -7,7 +7,7 @@ import { getAuthUserFromRequest } from "@/lib/auth-server";
 const HERO_PROMPT =
   "A friendly fantasy game master character, warm and welcoming, standing beside a glowing tabletop game board with dice and cards, soft ambient lighting, cozy tavern atmosphere, digital illustration style, no text, suitable for a game creation app hero image.";
 
-/** 本地保存路径：项目根目录 public/hero.png，Next 会以 /hero.png 提供静态访问 */
+/** Local save path: public/hero.png in project root; Next.js serves it at /hero.png */
 const HERO_FILENAME = "hero.png";
 
 function getHeroPath(): string {
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const heroPath = getHeroPath();
     const publicUrl = getPublicUrl();
 
-    // 本地已有文件则直接返回 URL，不再调用 DALL-E
+    // Return URL directly if local file already exists; skip DALL-E call
     if (existsSync(heroPath)) {
       return NextResponse.json({ image: publicUrl });
     }

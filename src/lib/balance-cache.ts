@@ -1,4 +1,4 @@
-/** 短期余额缓存，减少重复请求；加币后需 invalidate */
+/** Short-lived balance cache to reduce redundant requests; invalidate after adding coins */
 
 const cache = new Map<
   string,

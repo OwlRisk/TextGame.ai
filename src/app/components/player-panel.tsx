@@ -160,7 +160,7 @@ function PlayerCard({
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
 }) {
-  // 统一风格：在游戏房间内用户玩家也使用与 AI 相同的生成头像（动漫风），不再用 Google 真人照片
+  // Unified style: human players also use generated avatars (anime), not Google profile photos
   const useGameAvatarForHuman = !player.isAI && !!gameId;
   const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
   const isClickable = !!onOpenProfile;

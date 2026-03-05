@@ -428,7 +428,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         localStorage.setItem(key, payload);
       } catch (e) {
         if (e instanceof DOMException && e.name === "QuotaExceededError") {
-          // 先删掉其它游戏的缓存，再重试一次
+          // Evict other games' caches first, then retry
           try {
             const keysToRemove: string[] = [];
             for (let i = 0; i < localStorage.length; i++) {
@@ -438,7 +438,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
             keysToRemove.forEach((k) => localStorage.removeItem(k));
             localStorage.setItem(key, payload);
           } catch (e2) {
-            // 仍超限则尝试不存头像（体积大），再试一次
+            // Still over quota — retry without avatar URLs (large payload)
             const stateSlim = { ...state, avatarImageUrls: undefined };
             try {
               localStorage.setItem(key, JSON.stringify(stateSlim));

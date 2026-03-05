@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
       systemMessage += `GAME BACKGROUND (merged into Rules):\n`;
     }
 
-    // 按 token 用量预检查余额
+    // Pre-check balance against estimated token usage
     const systemTokens = estimateTokensFromText(systemMessage);
     const messagesTokens = (messages as { content?: string }[]).reduce(
       (sum, m) => sum + estimateTokensFromText(m?.content ?? ''),
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
       stream: false,
     });
 
-    // 按实际 API 成本（模型 + usage）扣费
+    // Deduct based on actual API cost (model + usage)
     const usage = completion.usage;
     const promptTokens = usage?.prompt_tokens ?? 0;
     const completionTokens = usage?.completion_tokens ?? 0;

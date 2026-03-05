@@ -17,7 +17,7 @@ interface UsageDisplayProps {
   refreshKey?: number | string;
 }
 
-/** 展示 Usage 余额，点击跳转 /usage；不再使用 coins 文案 */
+/** Display usage balance; click to navigate to /usage */
 export function UsageDisplay({ compact = false, refreshKey }: UsageDisplayProps) {
   const [balance, setBalance] = useState<UsageBalance | null>(null);
   const [loading, setLoading] = useState(true);

@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const path = gameIconPath(gameId, gameName, gameTemplate, rules);
 
-    // 先查 Storage：若已有则直接返回公网 URL
+    // Check Storage first: return public URL if already exists
     if (supabaseAdmin) {
       const { data: urlData } = supabaseAdmin.storage.from(GAME_ICON_BUCKET).getPublicUrl(path);
       const publicUrl = urlData.publicUrl;
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ icon: publicUrl });
         }
       } catch (_) {
-        // 忽略，继续生成
+        // Ignore, continue generating
       }
     }
 
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
       imageUrl = await generateWithPrompt(abstractFallbackPrompt);
     }
 
-    // 存 Supabase Storage，返回公网 URL
+    // Save to Supabase Storage, return public URL
     if (supabaseAdmin) {
       try {
         const buffer = await dataUrlToIconBuffer(imageUrl);

@@ -14,9 +14,9 @@ export interface Balance {
 }
 
 interface TokenBalanceProps {
-  /** compact：仅显示图标+数量，可点击跳转充值，用于顶栏/用户菜单内 */
+  /** compact: icon + count only, clickable to navigate to recharge; used in top bar / user menu */
   compact?: boolean;
-  /** 用于从外部触发刷新（如充值页返回后） */
+  /** External refresh trigger (e.g. after returning from recharge page) */
   refreshKey?: number | string;
 }
 

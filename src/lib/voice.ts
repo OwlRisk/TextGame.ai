@@ -411,7 +411,7 @@ export function useInworldTTS() {
         audio.onended = () => {
           currentBlobUrlRef.current = null;
           URL.revokeObjectURL(blobUrl);
-          // Reveal text only after this sentence has finished playing (say多少显示多少)
+          // Reveal text only after this sentence has finished playing (progressive reveal)
           next.onPlay?.();
           resolve();
         };

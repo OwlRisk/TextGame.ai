@@ -11,7 +11,7 @@ export interface InlineFormattingOptions {
   emotionClassName?: string;
 }
 
-/** Inworld / 语气 tag → emoji，用于聊天中把 [angry] 等显示为 emoji */
+/** Inworld emotion/tone tag → emoji; renders [angry] etc. as emoji in chat */
 export const EMOTION_EMOJI: Record<string, string> = {
   angry: "😠",
   happy: "😊",

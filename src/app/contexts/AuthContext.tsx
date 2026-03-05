@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setAuthCookie } from '@/lib/auth-cookie';
 import { useRouter } from 'next/navigation';
 
-/** 登录状态不过期，由 Supabase 的 refresh token 持续刷新 */
+/** Auth state never expires; kept alive by Supabase refresh tokens */
 
 interface AuthContextType {
   user: User | null;

@@ -129,7 +129,7 @@ export default function PlayTokenPage({ params }: { params: Promise<{ token: str
                 onClick={() => router.push(`/game/${game.id}`)}
                 className="flex-1 bg-violet-600 hover:bg-violet-500 text-white h-11"
               >
-                在 TextGame.ai 中打开
+                Open in TextGame.ai
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Link href="/" className="flex-1 sm:flex-none">

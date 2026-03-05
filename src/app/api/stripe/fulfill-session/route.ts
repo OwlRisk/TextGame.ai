@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 按公式：充值金额 × GPT 比例 → coins（例如 $10 → 500 coins = $5 GPT 额度）
+    // Formula: payment amount × GPT ratio → coins (e.g. $10 → 500 coins = $5 GPT credit)
     const amountCents = session.amount_total ?? 0;
     const tokens = rechargeCoinsFromPayment(amountCents);
     if (tokens <= 0) {

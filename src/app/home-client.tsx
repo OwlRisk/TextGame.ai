@@ -45,7 +45,7 @@ export default function HomeClient() {
     try {
       await signInWithGoogle("/create");
     } catch {
-      toast.error("登录失败，请重试");
+      toast.error("Sign-in failed. Please try again.");
     }
   };
 
