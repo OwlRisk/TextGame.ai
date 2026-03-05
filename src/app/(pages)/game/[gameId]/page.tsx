@@ -1716,6 +1716,12 @@ ${rulesText || "No specific rules defined."}`.trim();
       pendingDecisionSummariesRef.current = [];
 
       const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
+
+      // Brief pause before GM responds so it doesn't feel instant
+      setTypingUsers([{ name: gmName, avatar: gmColor }]);
+      await new Promise<void>((r) => setTimeout(r, 800 + Math.random() * 1200));
+      setTypingUsers([]);
+
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       const isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
