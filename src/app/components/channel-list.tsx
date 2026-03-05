@@ -1,4 +1,4 @@
-import { Hash, Share2, Users, Lock, Trash2, Link2, Check } from "lucide-react";
+import { Hash, Users, Lock, Trash2, Link2, Check, UserPlus } from "lucide-react";
 import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -42,9 +42,6 @@ interface ChannelListProps {
   channels: Channel[];
   selectedChannelId: string | null;
   onSelectChannel: (channelId: string) => void;
-  onShare: () => void;
-  /** When true, show "Copied!" feedback on the share button for a short time */
-  shareJustCopied?: boolean;
   onDeleteChannel?: (channelId: string) => void;
   /** Label for the text sections (intro, rules, progress). Default: "Sections" */
   textSectionLabel?: string;
@@ -80,8 +77,6 @@ export function ChannelList({
   channels, 
   selectedChannelId, 
   onSelectChannel,
-  onShare,
-  shareJustCopied = false,
   onDeleteChannel,
   textSectionLabel = "Sections",
   gameSectionLabel = "Game Rooms",
@@ -127,24 +122,10 @@ export function ChannelList({
                 <Check className="h-3 w-3" />Copied
               </span>
             ) : (
-              <Link2 className="h-4 w-4 text-violet-400 hover:text-violet-300" />
+              <UserPlus className="h-4 w-4 text-violet-400 hover:text-violet-300" />
             )}
           </Button>
         )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className={`h-8 focus-visible:ring-2 focus-visible:ring-amber-500/50 ${shareJustCopied ? "min-w-[5rem]" : "w-8 px-0"}`}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShare(); }}
-          title={shareJustCopied ? "Copied!" : "Copy share link"}
-        >
-          {shareJustCopied ? (
-            <span className="text-xs font-medium text-emerald-400">Copied!</span>
-          ) : (
-            <Share2 className="h-4 w-4 text-zinc-400 hover:text-white" />
-          )}
-        </Button>
       </div>
 
       <ScrollArea className="flex-1 min-h-0">

@@ -157,7 +157,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // Prevents hammering the API with retries for the same message when other deps change.
   const quickRepliesFailKeyRef = useRef<string | null>(null);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
-  const [shareCopied, setShareCopied] = useState(false);
+  // shareCopied state removed — share button moved out of game room
   const [inviteCopied, setInviteCopied] = useState(false);
   const [roomMembers, setRoomMembers] = useState<Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null; guest_id: string | null }>>([]);
   // Guests currently online according to Supabase Presence (real-time, auto-cleared on disconnect)
@@ -1784,43 +1784,6 @@ ${rulesText || "No specific rules defined."}`.trim();
     }
   };
 
-  const handleShare = useCallback(async () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const directUrl = `${origin}/game/${gameId}`;
-    const showCopied = () => {
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
-    };
-
-    if (!session?.access_token) {
-      const ok = await copyToClipboard(directUrl);
-      toast.success(ok ? "Link copied (sign in to create a share link others can open)" : "Copy link: " + directUrl);
-      showCopied();
-      return;
-    }
-    try {
-      const res = await fetch(`/api/games/${gameId}/share`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-      });
-      if (!res.ok) {
-        const ok = await copyToClipboard(directUrl);
-        toast.info(ok ? "Game not found in cloud; direct link copied. Save the game first if you need a share link." : "Game not in cloud. Save first. Link: " + directUrl);
-        showCopied();
-        return;
-      }
-      const data = (await res.json()) as { shareUrl: string };
-      const ok = await copyToClipboard(data.shareUrl ?? directUrl);
-      toast.success(ok ? "Share link copied! Anyone with the link can view this game." : "Share link: " + (data.shareUrl ?? directUrl));
-      showCopied();
-    } catch (e) {
-      console.error("Share failed", e);
-      const ok = await copyToClipboard(directUrl);
-      toast.error(ok ? "Link copied to clipboard" : "Share failed. Link: " + directUrl);
-      showCopied();
-    }
-  }, [gameId, session?.access_token]);
-
   /** Generate invite link and copy to clipboard. Owner only. */
   const handleInvite = useCallback(async () => {
     if (!session?.access_token || !gameId) return;
@@ -1968,8 +1931,6 @@ ${rulesText || "No specific rules defined."}`.trim();
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    onShare: handleShare,
-    shareJustCopied: shareCopied,
     onInvite: isOwner && session?.access_token ? handleInvite : undefined,
     inviteJustCopied: inviteCopied,
     // Players Online section removed — right panel (enrichedGuestMembers) shows
