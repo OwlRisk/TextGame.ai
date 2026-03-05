@@ -61,6 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Best-effort
     }
+    // Manually nuke Supabase localStorage keys so getLocalCachedSession()
+    // never resurrects a stale session on the next page load.
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch { /* storage access may fail */ }
     window.location.href = '/';
   }, []);
 
@@ -257,13 +264,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setAuthCookie(null);
+    setUser(null);
+    setSession(null);
     try {
       await supabase.auth.signOut();
     } catch {
-      // Best-effort: localStorage session may already be gone
+      // Best-effort: session may already be gone server-side
     }
-    // Navigate after Supabase clears its localStorage session so the
-    // landing page doesn't see a stale user and redirect to /create.
+    // Manually nuke Supabase localStorage keys so getLocalCachedSession()
+    // never resurrects a stale session on the next page load.
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch { /* storage access may fail */ }
     window.location.href = '/';
   };
 
