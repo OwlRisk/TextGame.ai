@@ -19,18 +19,40 @@ function getMailTransporter() {
   });
 }
 
-async function sendFeedbackEmail(message: string, userEmail: string | null, imageUrls: string[]) {
+interface FeedbackAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
+async function sendFeedbackEmail(
+  message: string,
+  userEmail: string | null,
+  imageUrls: string[],
+  attachments: FeedbackAttachment[] = [],
+) {
   const transporter = getMailTransporter();
   if (!transporter) return;
 
-  const imagesHtml = imageUrls.length > 0
-    ? `<p><strong>Screenshots (${imageUrls.length}):</strong></p>${imageUrls.map((u) => `<p><a href="${u}"><img src="${u}" style="max-width:480px;max-height:320px;border-radius:8px;border:1px solid #ddd" /></a></p>`).join('')}`
-    : '';
+  const inlineAttachments = attachments.map((att, i) => ({
+    filename: att.filename,
+    content: att.content,
+    contentType: att.contentType,
+    cid: `img${i}@feedback`,
+  }));
+
+  let imagesHtml = '';
+  if (inlineAttachments.length > 0) {
+    imagesHtml = `<p><strong>Screenshots (${inlineAttachments.length}):</strong></p>${inlineAttachments.map((a) => `<p><img src="cid:${a.cid}" style="max-width:480px;max-height:320px;border-radius:8px;border:1px solid #ddd" /></p>`).join('')}`;
+  } else if (imageUrls.length > 0) {
+    imagesHtml = `<p><strong>Screenshots (${imageUrls.length}):</strong></p>${imageUrls.map((u) => `<p><a href="${u}"><img src="${u}" style="max-width:480px;max-height:320px;border-radius:8px;border:1px solid #ddd" /></a></p>`).join('')}`;
+  }
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to: NOTIFY_TO,
     subject: `[Feedback] ${userEmail || 'Anonymous'} — ${message.slice(0, 60)}`,
+    attachments: inlineAttachments,
     html: `
       <div style="font-family:sans-serif;max-width:600px">
         <h2 style="color:#7c3aed">New Feedback</h2>
@@ -56,6 +78,7 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type') ?? '';
     let message: string;
     let attachmentUrls: string[] = [];
+    let emailAttachments: FeedbackAttachment[] = [];
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -86,26 +109,34 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (files.length > 0 && supabaseAdmin) {
+      if (files.length > 0) {
         for (const file of files) {
           try {
             const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
             const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'png';
             const id = crypto.randomBytes(8).toString('hex');
-            const path = `${FEEDBACK_PREFIX}/${id}.${safeExt}`;
             const buffer = Buffer.from(await file.arrayBuffer());
 
-            const { error: uploadError } = await supabaseAdmin.storage
-              .from(FEEDBACK_BUCKET)
-              .upload(path, buffer, { contentType: file.type, upsert: true });
+            emailAttachments.push({
+              filename: `${id}.${safeExt}`,
+              content: buffer,
+              contentType: file.type,
+            });
 
-            if (uploadError) {
-              console.error('[contact] Storage upload error:', uploadError);
-              continue;
+            if (supabaseAdmin) {
+              const path = `${FEEDBACK_PREFIX}/${id}.${safeExt}`;
+              const { error: uploadError } = await supabaseAdmin.storage
+                .from(FEEDBACK_BUCKET)
+                .upload(path, buffer, { contentType: file.type, upsert: true });
+
+              if (uploadError) {
+                console.error('[contact] Storage upload error:', uploadError);
+                continue;
+              }
+
+              const { data: urlData } = supabaseAdmin.storage.from(FEEDBACK_BUCKET).getPublicUrl(path);
+              attachmentUrls.push(urlData.publicUrl);
             }
-
-            const { data: urlData } = supabaseAdmin.storage.from(FEEDBACK_BUCKET).getPublicUrl(path);
-            attachmentUrls.push(urlData.publicUrl);
           } catch (uploadErr) {
             console.error('[contact] Storage upload exception:', uploadErr);
           }
@@ -141,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     let emailStatus = 'skipped';
     try {
-      await sendFeedbackEmail(message, email, attachmentUrls);
+      await sendFeedbackEmail(message, email, attachmentUrls, emailAttachments);
       emailStatus = 'sent';
     } catch (emailErr: any) {
       console.error('[contact] Email send error:', emailErr);
