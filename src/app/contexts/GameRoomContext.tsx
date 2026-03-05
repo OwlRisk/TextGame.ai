@@ -267,6 +267,80 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (isHydrated) setSaveTrigger((s) => s + 1);
   }, [isHydrated]);
 
+  // Keep refs of key state for synchronous beforeunload save
+  const messagesRef = useRef(messages);
+  const gamePhaseRef = useRef(gamePhase);
+  const gamePhaseStateRef = useRef(gamePhaseState);
+  const selectedChannelIdRef = useRef(selectedChannelId);
+  const gameProgressRef = useRef(gameProgress);
+  const myBoardContentRef = useRef(myBoardContent);
+  const playerNotesRef = useRef(playerNotes);
+  const sectionsRef = useRef(sections);
+  const gameEventsRef = useRef(gameEvents);
+  const privateMessagesRef = useRef(privateMessages);
+  const humanGameIdentityRef = useRef(humanGameIdentity);
+  const avatarImageUrlsRef = useRef(avatarImageUrls);
+  const phaseLabelRef = useRef(phaseLabel);
+  const moodRef = useRef(mood);
+  const gameOverSummaryRef = useRef(gameOverSummary);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
+  useEffect(() => { gamePhaseStateRef.current = gamePhaseState; }, [gamePhaseState]);
+  useEffect(() => { selectedChannelIdRef.current = selectedChannelId; }, [selectedChannelId]);
+  useEffect(() => { gameProgressRef.current = gameProgress; }, [gameProgress]);
+  useEffect(() => { myBoardContentRef.current = myBoardContent; }, [myBoardContent]);
+  useEffect(() => { playerNotesRef.current = playerNotes; }, [playerNotes]);
+  useEffect(() => { sectionsRef.current = sections; }, [sections]);
+  useEffect(() => { gameEventsRef.current = gameEvents; }, [gameEvents]);
+  useEffect(() => { privateMessagesRef.current = privateMessages; }, [privateMessages]);
+  useEffect(() => { humanGameIdentityRef.current = humanGameIdentity; }, [humanGameIdentity]);
+  useEffect(() => { avatarImageUrlsRef.current = avatarImageUrls; }, [avatarImageUrls]);
+  useEffect(() => { phaseLabelRef.current = phaseLabel; }, [phaseLabel]);
+  useEffect(() => { moodRef.current = mood; }, [mood]);
+  useEffect(() => { gameOverSummaryRef.current = gameOverSummary; }, [gameOverSummary]);
+
+  // Synchronously save to localStorage on page close to prevent state loss
+  useEffect(() => {
+    if (!isHydrated) return;
+    const handleBeforeUnload = () => {
+      try {
+        const state = {
+          messages: messagesRef.current.slice(-60).map((m) => ({
+            ...m,
+            timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp,
+          })),
+          players: playersRef.current,
+          gamePhase: gamePhaseRef.current,
+          gamePhaseState: gamePhaseStateRef.current,
+          selectedChannelId: selectedChannelIdRef.current,
+          gameProgress: gameProgressRef.current,
+          myBoardContent: myBoardContentRef.current,
+          playerNotes: Object.keys(playerNotesRef.current).length ? playerNotesRef.current : undefined,
+          sections: sectionsRef.current,
+          gameEvents: gameEventsRef.current,
+          privateMessages: Object.fromEntries(
+            Object.entries(privateMessagesRef.current)
+              .map(([pid, list]) => [pid, (list || []).slice(-20).map((m) => ({
+                ...m,
+                timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : new Date(m.timestamp).toISOString(),
+              }))])
+              .filter(([, arr]) => (arr as unknown[]).length > 0)
+          ),
+          humanGameIdentity: humanGameIdentityRef.current || undefined,
+          avatarImageUrls: Object.keys(avatarImageUrlsRef.current).length ? avatarImageUrlsRef.current : undefined,
+          phaseLabel: phaseLabelRef.current || undefined,
+          mood: moodRef.current !== "neutral" ? moodRef.current : undefined,
+          gameOverSummary: gameOverSummaryRef.current || undefined,
+          savedAt: new Date().toISOString(),
+          clientId: clientIdRef.current,
+        };
+        localStorage.setItem(`gameRoom_${gameId}`, JSON.stringify(state));
+      } catch { /* best effort */ }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [gameId, isHydrated]);
+
   // Bump saveTrigger when state changes (debounced) so save effect runs with fixed deps
   useEffect(() => {
     if (!isHydrated) return;

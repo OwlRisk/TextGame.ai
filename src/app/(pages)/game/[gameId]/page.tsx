@@ -42,7 +42,10 @@ const MEMBERS_POLL_INTERVAL_MS = 15_000;
 const MEMBERS_MAX_ERRORS = 3;
 
 /** Maximum autonomous Host→AI advance loops before waiting for human input */
-const MAX_AUTO_ADVANCES = 6;
+const MAX_AUTO_ADVANCES = 8;
+
+/** Game inactivity timeout (ms). If no message is added for this long, auto-end the game. */
+const GAME_INACTIVITY_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 /** Number of recent messages to include in the Host context window */
 const HOST_CONTEXT_WINDOW = 35;
@@ -466,6 +469,43 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return () => clearTimeout(timeout);
   }, [timerEndsAt, addMessage, setTimerEndsAt]);
 
+  // ─── Inactivity auto-end: if no new message for 2 hours, end the game ────
+  const lastActivityRef = useRef(Date.now());
+  useEffect(() => { lastActivityRef.current = Date.now(); }, [messages.length]);
+  useEffect(() => {
+    if (gamePhase !== "active") return;
+    const check = () => {
+      if (Date.now() - lastActivityRef.current >= GAME_INACTIVITY_TIMEOUT_MS) {
+        setGameOverSummary("Game ended due to inactivity (2 hours with no messages).");
+        setGamePhase("ended");
+        if (currentGame) updateGame(gameId, { isActive: false });
+      }
+    };
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gamePhase, gameId]);
+
+  // ─── Owner-leave auto-end: if owner is offline for 5 min during active game, end it ──
+  const ownerLeftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (gamePhase !== "active" || isOwner) {
+      if (ownerLeftTimerRef.current) { clearTimeout(ownerLeftTimerRef.current); ownerLeftTimerRef.current = null; }
+      return;
+    }
+    if (isOwnerOnline === false) {
+      if (!ownerLeftTimerRef.current) {
+        ownerLeftTimerRef.current = setTimeout(() => {
+          setGameOverSummary("The host has left the game. Game ended.");
+          setGamePhase("ended");
+        }, 5 * 60 * 1000);
+      }
+    } else {
+      if (ownerLeftTimerRef.current) { clearTimeout(ownerLeftTimerRef.current); ownerLeftTimerRef.current = null; }
+    }
+    return () => { if (ownerLeftTimerRef.current) { clearTimeout(ownerLeftTimerRef.current); ownerLeftTimerRef.current = null; } };
+  }, [gamePhase, isOwner, isOwnerOnline]);
+
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
 
@@ -692,6 +732,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     const currentPlayers = playersRef.current;
     const aiPlayers = currentPlayers.filter((p) => p.isAI && !p.isGameMaster);
+
+    const hasHumanPlayers = currentPlayers.some((p) => !p.isAI && !p.isGameMaster);
+    if (aiPlayers.length === 0 && !hasHumanPlayers) {
+      toast.error("At least one player is required to start the game. Please add AI players or invite friends.");
+      return;
+    }
 
     // Assign roles from config if available (werewolf/mafia/undercover)
     const configuredPlayers = config.configuredPlayers || [];
@@ -1257,6 +1303,11 @@ ${rulesText || "No specific rules defined."}`.trim();
             }),
           });
           if (!res.ok || !res.body) {
+            if (res.status === 402) {
+              updateStreamingMessage(messageId, " ", true);
+              toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
+              return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
+            }
             updateStreamingMessage(messageId, "…", true);
             return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
           }
@@ -1299,9 +1350,56 @@ ${rulesText || "No specific rules defined."}`.trim();
           return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal };
         } catch (e) {
           console.error("Host stream error:", e);
-          toast.error("Game Master stream interrupted");
+          toast.error("Game Master stream interrupted — retrying…");
           updateStreamingMessage(messageId, "…", true);
-          return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
+          // Single retry on network/stream failure
+          try {
+            const retryRes = await fetch("/api/chat/stream", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+              body: JSON.stringify({
+                systemPrompt: hostSystemPrompt,
+                messages: [{ role: "user", content: userContent }],
+                maxCompletionTokens: streamTokenBudget,
+                preferredModel: getPreferredModel(),
+              }),
+            });
+            if (!retryRes.ok || !retryRes.body) throw new Error("retry failed");
+            const retryReader = retryRes.body.getReader();
+            const retryDecoder = new TextDecoder();
+            let retryAcc = "";
+            const retryMsgId = addStreamingMessage(
+              { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
+              chId
+            );
+            while (true) {
+              const { done, value } = await retryReader.read();
+              if (done) break;
+              const chunk = retryDecoder.decode(value, { stream: true });
+              for (const line of chunk.split(/\n/)) {
+                if (line.startsWith("data: ")) {
+                  const payload = line.slice(6);
+                  if (payload === "[DONE]") continue;
+                  try {
+                    const data = JSON.parse(payload) as { content?: string };
+                    if (typeof data.content === "string") {
+                      retryAcc += data.content;
+                      updateStreamingMessage(retryMsgId, getStreamingDisplay(retryAcc), false);
+                    }
+                  } catch { /* ignore */ }
+                }
+              }
+            }
+            const { message: retryMsg, directives: retryDir } = splitHostOutput(retryAcc);
+            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDir);
+            const retryAfterActions = applyHostActionsAndClean(retryClean);
+            const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
+            const retryDisplay = retryMsg || retryAfterRoles;
+            updateStreamingMessage(retryMsgId, retryDisplay || " ", true);
+            return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal };
+          } catch {
+            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
+          }
         }
       };
 
@@ -1564,11 +1662,15 @@ ${rulesText || "No specific rules defined."}`.trim();
       }
 
       // Run the first queue from the host's response.
+      // If the Host didn't emit NEXT_SPEAKER at all (empty queue), default to human turn
+      // so the game doesn't get stuck in an auto-advance loop.
       // If it ends WITHOUT the human (e.g. pure AI night-phase sequence), auto-advance
       // the game by calling the host again — up to MAX_AUTO_ADVANCES times — so the
       // game never gets stuck waiting for a villager who has no night action.
       let currentQueue = speakerQueue;
-      let humanReached = await runSpeakerQueue(currentQueue);
+      let humanReached = currentQueue.length === 0
+        ? (() => { setCurrentSpeakerId(userId); return true; })()
+        : await runSpeakerQueue(currentQueue);
 
       for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
         await hostPace();

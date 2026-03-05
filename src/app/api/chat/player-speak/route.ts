@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { buildSystemPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '@/lib/player-speak-prompt';
+import { deductTokens, estimatedTokensToCoins } from '@/lib/tokens';
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -118,6 +119,15 @@ export async function POST(request: NextRequest) {
     });
 
     const message = (completion.choices[0]?.message?.content || '').trim();
+
+    // Deduct tokens after successful generation
+    const totalTokens = completion.usage?.total_tokens;
+    if (totalTokens && totalTokens > 0) {
+      const coins = estimatedTokensToCoins(totalTokens, chatModel);
+      deductTokens(user.id, Math.max(1, coins), 'ai_player_speak', `Player speak ${totalTokens} tokens`)
+        .catch((e) => console.error('[player-speak] deduct error:', e));
+    }
+
     return NextResponse.json({ message: message || '...' });
   } catch (e) {
     console.error('[player-speak]', e);

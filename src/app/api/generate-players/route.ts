@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { deductTokens, estimatedTokensToCoins, hasTokens } from '@/lib/tokens';
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -36,12 +37,22 @@ export async function POST(request: NextRequest) {
       playerCount = 0;
     }
 
+    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.2';
+    const minCoinsNeeded = estimatedTokensToCoins(1500, chatModel);
+    if (!(await hasTokens(user.id, minCoinsNeeded))) {
+      return NextResponse.json(
+        { error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' },
+        { status: 402 }
+      );
+    }
+
     const openai = getOpenAI();
     const randomSeed = Math.random().toString(36).substring(7);
 
     const needsRoles = gameTemplate === 'werewolf' || gameTemplate === 'mafia';
     const needsWords = gameTemplate === 'undercover';
 
+    let decideCompletion: OpenAI.Chat.Completions.ChatCompletion | null = null;
     if (playerCount === 0) {
       const minAI = typeof minPlayers === 'number' && minPlayers >= 1 ? minPlayers - 1 : 1;
       const maxAI = typeof maxPlayers === 'number' && maxPlayers >= 2 ? maxPlayers - 1 : 19;
@@ -55,7 +66,7 @@ ${rules || 'No specific rules provided.'}
 
 Consider: game balance, role distribution, pacing. Output ONLY a single number between ${minAI} and ${maxAI}, nothing else.`;
 
-      const decideCompletion = await openai.chat.completions.create({
+      decideCompletion = await openai.chat.completions.create({
         model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
         messages: [
           { role: 'system', content: 'You decide optimal player count for games. Output only a number.' },
@@ -179,6 +190,14 @@ Top-level structure: { "players": [ ... ] }`}`;
           p.role = isUndercover ? 'Undercover' : 'Civilian';
           p.word = isUndercover ? parsed.undercoverWord : parsed.civilianWord;
         });
+      }
+
+      // Deduct tokens for both API calls (count decision + player generation)
+      const totalTokens = (decideCompletion?.usage?.total_tokens ?? 0) + (completion.usage?.total_tokens ?? 0);
+      if (totalTokens > 0) {
+        const coins = estimatedTokensToCoins(totalTokens, chatModel);
+        deductTokens(user.id, Math.max(1, coins), 'generate_players', `Generate ${validPlayers.length} players, ${totalTokens} tokens`)
+          .catch((e) => console.error('[generate-players] deduct error:', e));
       }
 
       return NextResponse.json(result);

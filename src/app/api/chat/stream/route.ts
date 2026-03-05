@@ -273,12 +273,6 @@ export async function POST(request: NextRequest) {
         { status: 402, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    await deductTokens(
-      user.id,
-      estimatedCoins,
-      'ai_chat_stream',
-      `Chat stream ~${totalEstimate} tokens (estimate)`
-    );
 
     // Format messages for OpenAI
     const formattedMessages = [
@@ -289,28 +283,42 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
-    // Create streaming response
+    // Create streaming response — stream_options.include_usage gives us real token counts
     const stream = await openai.chat.completions.create({
       model: chatModel,
       messages: formattedMessages,
       temperature: 0.8,
       max_completion_tokens: maxTokens,
       stream: true,
+      stream_options: { include_usage: true },
     });
 
-    // Create a readable stream
+    const userId = user.id;
+    // Create a readable stream; deduct tokens AFTER successful completion
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
+        let outputChars = 0;
         try {
+          let usageData: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null = null;
           for await (const chunk of stream) {
+            if (chunk.usage) usageData = chunk.usage;
             const content = chunk.choices[0]?.delta?.content || '';
             if (content) {
+              outputChars += content.length;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
+          // Deduct based on real usage when available, else fall back to estimate
+          const actualCoins = usageData?.total_tokens
+            ? estimatedTokensToCoins(usageData.total_tokens, chatModel)
+            : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(outputChars / 3), chatModel);
+          const coinsToDeduct = Math.max(1, actualCoins);
+          deductTokens(userId, coinsToDeduct, 'ai_chat_stream',
+            usageData ? `Chat stream ${usageData.total_tokens} tokens (actual)` : `Chat stream ~${systemTokens + messagesTokens + Math.ceil(outputChars / 3)} tokens (estimate)`)
+            .catch((e) => console.error('[stream] post-deduct error:', e));
         } catch (error) {
           controller.error(error);
         }
