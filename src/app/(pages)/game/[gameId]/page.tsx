@@ -1407,17 +1407,10 @@ ${rulesText || "No specific rules defined."}`.trim();
       const getStreamingDisplay = getStreamingDisplayUtil;
       const splitHostOutput = splitHostOutputUtil;
 
-      /** Host streaming reply: insert empty message, update incrementally, then parse NEXT_SPEAKER */
+      /** Host streaming reply: lazily create message bubble only when there is visible content. */
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
-        const messageId = addStreamingMessage(
-          { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
-          chId
-        );
-        // Give the host enough room for all structural output (BOARD blocks, ASSIGN_ROLE lines,
-        // SECTION blocks, etc.). The AI is already instructed to be concise in its narrative,
-        // so a generous budget doesn't make replies verbose — it just prevents truncation.
-        // Server-side cap is 4096; we leave headroom for complex games and large player counts.
         const streamTokenBudget = Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
+        let messageId: string | null = null;
         try {
           const res = await fetch("/api/chat/stream", {
             method: "POST",
@@ -1431,11 +1424,9 @@ ${rulesText || "No specific rules defined."}`.trim();
           });
           if (!res.ok || !res.body) {
             if (res.status === 402) {
-              updateStreamingMessage(messageId, " ", true);
               toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
               return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
             }
-            updateStreamingMessage(messageId, "…", true);
             return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
           }
           const reader = res.body.getReader();
@@ -1454,9 +1445,16 @@ ${rulesText || "No specific rules defined."}`.trim();
                   const data = JSON.parse(payload) as { content?: string };
                   if (typeof data.content === "string") {
                     acc += data.content;
-                    // Only show the public message portion (before ---).
-                    // If --- hasn't arrived yet, fall back to redacting BOARD blocks.
-                    updateStreamingMessage(messageId, getStreamingDisplay(acc), false);
+                    const visible = getStreamingDisplay(acc);
+                    if (visible && !messageId) {
+                      messageId = addStreamingMessage(
+                        { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
+                        chId,
+                        visible,
+                      );
+                    } else if (visible && messageId) {
+                      updateStreamingMessage(messageId, visible, false);
+                    }
                   }
                 } catch {
                   // ignore parse
@@ -1466,24 +1464,27 @@ ${rulesText || "No specific rules defined."}`.trim();
           }
           // Split into public message and directive section
           const { message: splitMessage, directives } = splitHostOutput(acc);
-          // Process all directives (NEXT_SPEAKER, ASSIGN_ROLE, BOARD, SECTION, AUTO_CHANNEL, etc.)
           const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(directives);
           const afterActions = applyHostActionsAndClean(directivesClean);
           const afterRoles = applyHostRoleAssignments(afterActions);
-          // Determine the final public display: prefer the split public message;
-          // fall back to the cleaned directive content (old format without --- separator).
           const displayContent = splitMessage || afterRoles;
-          if (displayContent) {
+          if (displayContent && messageId) {
             updateStreamingMessage(messageId, displayContent, true);
-          } else {
-            // Silent turn: remove the GM message bubble entirely
+          } else if (displayContent && !messageId) {
+            messageId = addStreamingMessage(
+              { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
+              chId,
+              displayContent,
+            );
+            updateStreamingMessage(messageId, displayContent, true);
+          } else if (messageId) {
             setMessages((prev) => prev.filter((m) => m.id !== messageId));
           }
           return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal };
         } catch (e) {
           console.error("Host stream error:", e);
           toast.error("Game Master stream interrupted — retrying…");
-          updateStreamingMessage(messageId, "…", true);
+          if (messageId) updateStreamingMessage(messageId, "…", true);
           // Single retry on network/stream failure
           try {
             const retryRes = await fetch("/api/chat/stream", {
@@ -1500,10 +1501,7 @@ ${rulesText || "No specific rules defined."}`.trim();
             const retryReader = retryRes.body.getReader();
             const retryDecoder = new TextDecoder();
             let retryAcc = "";
-            const retryMsgId = addStreamingMessage(
-              { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
-              chId
-            );
+            let retryMsgId: string | null = null;
             while (true) {
               const { done, value } = await retryReader.read();
               if (done) break;
@@ -1516,7 +1514,16 @@ ${rulesText || "No specific rules defined."}`.trim();
                     const data = JSON.parse(payload) as { content?: string };
                     if (typeof data.content === "string") {
                       retryAcc += data.content;
-                      updateStreamingMessage(retryMsgId, getStreamingDisplay(retryAcc), false);
+                      const visible = getStreamingDisplay(retryAcc);
+                      if (visible && !retryMsgId) {
+                        retryMsgId = addStreamingMessage(
+                          { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
+                          chId,
+                          visible,
+                        );
+                      } else if (visible && retryMsgId) {
+                        updateStreamingMessage(retryMsgId, visible, false);
+                      }
                     }
                   } catch { /* ignore */ }
                 }
@@ -1527,7 +1534,14 @@ ${rulesText || "No specific rules defined."}`.trim();
             const retryAfterActions = applyHostActionsAndClean(retryClean);
             const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
             const retryDisplay = retryMsg || retryAfterRoles;
-            updateStreamingMessage(retryMsgId, retryDisplay || " ", true);
+            if (retryDisplay && retryMsgId) {
+              updateStreamingMessage(retryMsgId, retryDisplay, true);
+            } else if (retryDisplay && !retryMsgId) {
+              retryMsgId = addStreamingMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true }, chId, retryDisplay);
+              updateStreamingMessage(retryMsgId, retryDisplay, true);
+            } else if (retryMsgId) {
+              setMessages((prev) => prev.filter((m) => m.id !== retryMsgId));
+            }
             return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal };
           } catch {
             return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
@@ -1716,12 +1730,6 @@ ${rulesText || "No specific rules defined."}`.trim();
       pendingDecisionSummariesRef.current = [];
 
       const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-
-      // Brief pause before GM responds so it doesn't feel instant
-      setTypingUsers([{ name: gmName, avatar: gmColor }]);
-      await new Promise<void>((r) => setTimeout(r, 800 + Math.random() * 1200));
-      setTypingUsers([]);
-
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       const isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
