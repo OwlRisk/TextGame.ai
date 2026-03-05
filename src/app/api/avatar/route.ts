@@ -474,8 +474,8 @@ export async function POST(request: NextRequest) {
     const customPath = avatarStoragePath(name, avatarType);
     logger.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', customPath, 'forceRegenerate:', !!forceRegenerate);
 
-    // --- 1. Check for existing custom avatar (skip when force-regenerating) ---
-    if (!forceRegenerate && supabaseAdmin) {
+    // --- 1. Check for existing custom avatar (skip when force-regenerating or generateAndPool) ---
+    if (!forceRegenerate && !generateAndPool && supabaseAdmin) {
       const { data: blob, error: downloadError } = await supabaseAdmin.storage
         .from(AVATAR_BUCKET)
         .download(customPath);

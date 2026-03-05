@@ -192,14 +192,16 @@ export async function fetchAvatarsForRoom(
   const promises = players.map(async (player) => {
     const pType: AvatarType = (player.type ?? 'player') as AvatarType;
     const key = identityCacheKey(player.name, pType);
-
-    // Check cache first
-    const cached = cache.get(key);
-    if (cached) { results[key] = cached; return; }
-    const stored = loadFromStorage(key);
-    if (stored) { cache.set(key, stored); results[key] = stored; return; }
-
     const isGenerateTarget = aiPlayers.indexOf(player) === generateIndex;
+
+    // For the generateAndPool target, always call the API so the pool grows
+    // and a new ai_characters record is created — skip cache for this player.
+    if (!isGenerateTarget) {
+      const cached = cache.get(key);
+      if (cached) { results[key] = cached; return; }
+      const stored = loadFromStorage(key);
+      if (stored) { cache.set(key, stored); results[key] = stored; return; }
+    }
 
     try {
       const res = await fetch('/api/avatar', {
