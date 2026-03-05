@@ -427,6 +427,24 @@ const posts: BlogPost[] = [
     readTime: "8 min read",
     tags: ["Comparison", "AI Characters", "Multiplayer"],
   },
+  {
+    slug: "ai-games-for-students",
+    title: "Best AI Games for Students — Educational Text Games for the Classroom",
+    excerpt:
+      "Discover the best AI-powered text games for students — from collaborative storytelling to social deduction. Engage critical thinking in the classroom.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    tags: ["Education", "Students", "AI Games"],
+  },
+  {
+    slug: "character-ai-text-adventure",
+    title: "Character AI Text Adventure — Play Interactive Stories with AI Characters",
+    excerpt:
+      "Explore AI-powered text adventures with unique AI characters. Create your own stories, solve mysteries, and play social deduction games with character AI.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    tags: ["Text Adventure", "AI Characters", "Interactive Fiction"],
+  },
 ];
 
 const jsonLd = {
