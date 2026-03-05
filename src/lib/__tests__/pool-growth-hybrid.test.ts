@@ -148,8 +148,8 @@ describe("Pool Growth: batch allocation logic", () => {
   });
 
   it("with 0 AI players, no generation target is selected", () => {
-    const players = [
-      { name: "Echo", type: "host" as const, gender: "male" },
+    const players: Array<{ name: string; type: "host" | "player"; gender: string }> = [
+      { name: "Echo", type: "host", gender: "male" },
     ];
     const aiPlayers = players.filter(p => (p.type ?? "player") === "player");
     const generateIndex = aiPlayers.length > 0 ? Math.floor(Math.random() * aiPlayers.length) : -1;
