@@ -47,9 +47,13 @@ export const EMOTION_TAGS_SECTION = `EMOTION & SOUND TAGS (optional, use sparing
 export function buildSystemPrompt(
   playerName: string,
   gameTemplate: string | undefined,
-  gameName: string
+  gameName: string,
+  personality?: string,
+  background?: string,
 ): string {
-  const base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...".`;
+  let base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...".`;
+  if (personality) base += ` Your personality: ${personality}.`;
+  if (background) base += ` ${background}`;
   switch (gameTemplate) {
     case 'werewolf':
     case 'mafia': {

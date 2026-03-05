@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
-    const system = buildSystemPrompt(player.name, gameTemplate, gameName || 'the game');
+    const system = buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background);
 
     // Build user content: game context + private knowledge + recent chat
     const lines: string[] = [];
