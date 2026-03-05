@@ -471,11 +471,15 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setLlmQuickReplies([]); // New GM message: clear old suggestions; displayChips will show suggestionChips until API returns
 
     const lang = /[\u4e00-\u9fff]/.test(content) ? "zh" : "en";
+    const currentRulesSnippet = (customRules || selectedTemplate?.defaultRules || "").slice(0, 800);
     fetch("/api/suggest-gm-replies", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+        gameName: gameName || selectedTemplate?.name || "",
+        rulesSnippet: currentRulesSnippet,
+        playerCount: playerCount,
         language: lang,
         preferredModel: getPreferredModel(),
       }),
