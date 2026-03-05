@@ -25,12 +25,16 @@ export async function POST(request: NextRequest) {
       rules = '',
       recentMessages = [],
       gamePhase = '',
+      playerName = 'Player',
+      playerRole = '',
       preferredModel,
     } = body as {
       gameName?: string;
       rules?: string;
       recentMessages?: Array<{ senderName: string; content: string }>;
       gamePhase?: string;
+      playerName?: string;
+      playerRole?: string;
       preferredModel?: string;
     };
 
@@ -41,18 +45,27 @@ export async function POST(request: NextRequest) {
       .join('\n');
     const rulesSnippet = (rules || '').slice(0, 1200);
 
-    const systemPrompt = `You are a game room assistant. Given the game rules and the recent conversation in the room, suggest 1 to 3 short "quick reply" options that the human player could tap to send. 
-- Decide how many options make sense (1, 2, or 3). Fewer is fine when one obvious reply is enough.
-- Each option must be one short sentence, natural and relevant to the current situation (e.g. "Continue.", "I'm ready.", "Let's move on.", "I agree with that.").
-- Match the tone and genre of the game. Output only the suggestions, one per line. No numbering, no quotes, no extra text. Use English.`;
+    const playerContext = playerRole
+      ? `The human player is "${playerName}" (role: ${playerRole}).`
+      : `The human player is "${playerName}".`;
+
+    const systemPrompt = `You are a quick-reply assistant for a multiplayer game. Given the game state, suggest 1-3 short messages the human player could send NEXT.
+
+RULES:
+- You are writing replies for the human player "${playerName}". ${playerContext}
+- Suggest actions or statements that ONLY the human player can or should do based on their role and the game state — never parrot what AI players already said.
+- If AI players already asked a question or made a request, do NOT suggest the same request. Instead suggest a different angle, a decision, or a game action.
+- Each option: one short sentence (max 60 chars), natural tone matching the game genre.
+- Output 1-3 suggestions, one per line. No numbering, no quotes, no extra text.`;
 
     const userPrompt = `Game: ${gameName}${gamePhase ? `\nPhase: ${gamePhase}` : ''}
+${playerContext}
 
-Recent messages in this room:
+Recent messages:
 ${recentText || '(No messages yet)'}
 
 ${rulesSnippet ? `Rules (excerpt):\n${rulesSnippet}\n` : ''}
-Generate 1 to 3 quick-reply options (one per line), or fewer if only one makes sense:`;
+Suggest 1-3 quick replies for "${playerName}" to send next:`;
 
     const completion = await openai.chat.completions.create({
       model: preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',

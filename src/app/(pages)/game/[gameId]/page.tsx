@@ -1951,6 +1951,9 @@ ${rulesText || "No specific rules defined."}`.trim();
     const recent = messagesForChannel.slice(-8).map((m) => ({ senderName: m.senderName, content: m.content }));
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+    const humanPlayer = players.find((p) => p.id === userId);
+    const humanName = humanGameIdentity?.name || humanPlayer?.name || "You";
+    const humanRole = humanPlayer?.role ?? undefined;
     fetch("/api/suggest-quick-replies", {
       method: "POST",
       headers,
@@ -1960,6 +1963,8 @@ ${rulesText || "No specific rules defined."}`.trim();
         rules: currentGame.config.rules,
         recentMessages: recent,
         gamePhase,
+        playerName: humanName,
+        playerRole: humanRole,
         preferredModel: getPreferredModel(),
       }),
     })
