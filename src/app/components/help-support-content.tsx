@@ -1,13 +1,17 @@
 'use client';
 
-import { ArrowLeft, Send, Mail, CheckCircle2, ChevronDown, Zap, CreditCard, RefreshCw, Bug } from 'lucide-react';
+import { ArrowLeft, Send, Mail, CheckCircle2, ChevronDown, Zap, CreditCard, RefreshCw, Bug, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 const MAX_CHARS = 2000;
+const MAX_IMAGES = 5;
+const MAX_IMAGE_MB = 10;
+const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 const FAQ_ITEMS = [
   {
@@ -36,35 +40,109 @@ export function HelpSupportContent() {
   const router = useRouter();
 
   const [message, setMessage] = useState('');
+  const [images, setImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const urls = images.map((f) => URL.createObjectURL(f));
+    setPreviewUrls((prev) => {
+      prev.forEach(URL.revokeObjectURL);
+      return urls;
+    });
+    return () => urls.forEach(URL.revokeObjectURL);
+  }, [images]);
+
+  const addFiles = useCallback((fileList: FileList | File[] | null) => {
+    if (!fileList) return;
+    const incoming = Array.from(fileList);
+    const errors: string[] = [];
+
+    for (const file of incoming) {
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        errors.push(`"${file.name}" is not a supported format. Use JPEG, PNG, GIF, or WebP.`);
+      } else if (file.size > MAX_IMAGE_BYTES) {
+        errors.push(`"${file.name}" exceeds ${MAX_IMAGE_MB} MB.`);
+      }
+    }
+    if (errors.length) {
+      toast.error(errors[0]);
+      return;
+    }
+
+    setImages((prev) => {
+      const total = prev.length + incoming.length;
+      if (total > MAX_IMAGES) {
+        toast.error(`You can upload up to ${MAX_IMAGES} images.`);
+        return prev;
+      }
+      return [...prev, ...incoming];
+    });
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    addFiles(e.dataTransfer.files);
+  }, [addFiles]);
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setSubmitted(false);
+    setMessage('');
+    setImages([]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) {
-      toast.error('Please write a message before submitting');
+      toast.error('Please write a message before submitting.');
       return;
     }
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message.trim() }),
-      });
+      let res: Response;
+      if (images.length > 0) {
+        const formData = new FormData();
+        formData.set('message', message.trim());
+        images.forEach((file) => formData.append('images', file));
+        res = await fetch('/api/contact', { method: 'POST', body: formData });
+      } else {
+        res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message.trim() }),
+        });
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to send');
       }
       setSubmitted(true);
+      setImages([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to send. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <div className="flex-1 flex flex-col bg-[#0a0a0a] h-full overflow-y-auto">
@@ -117,7 +195,7 @@ export function HelpSupportContent() {
                 <Button
                   variant="outline"
                   size="sm"
-                   onClick={() => { setSubmitted(false); setMessage(''); }}
+                  onClick={resetForm}
                   className="mt-2 border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs"
                 >
                   Send another message
@@ -141,6 +219,90 @@ export function HelpSupportContent() {
                     className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 min-h-[130px] resize-none text-sm"
                     required
                   />
+                </div>
+
+                {/* Image upload: button + drag-and-drop, max 5 images, each ≤10MB */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-zinc-300">Screenshots (optional)</label>
+                    <span className="text-xs text-zinc-600">{images.length}/{MAX_IMAGES}</span>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ALLOWED_IMAGE_TYPES.join(',')}
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
+                  />
+
+                  <div
+                    onDrop={onDrop}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    className={`border-2 border-dashed rounded-xl p-5 transition-colors ${
+                      isDragging
+                        ? 'border-violet-500/60 bg-violet-500/10'
+                        : 'border-zinc-700 bg-zinc-800/30 hover:border-zinc-600'
+                    }`}
+                  >
+                    {images.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          {images.map((file, i) => (
+                            <div key={`${file.name}-${file.size}-${i}`} className="relative group rounded-lg overflow-hidden border border-zinc-700 bg-zinc-800/60 w-20 h-20">
+                              {previewUrls[i] && (
+                                <img src={previewUrls[i]} alt="" className="w-full h-full object-cover" />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeImage(i)}
+                                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                                aria-label="Remove image"
+                              >
+                                <X className="h-5 w-5" />
+                              </button>
+                              <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] text-zinc-300 truncate px-1 py-0.5 text-center">
+                                {file.size < 1024 * 1024
+                                  ? `${(file.size / 1024).toFixed(0)} KB`
+                                  : `${(file.size / 1024 / 1024).toFixed(1)} MB`}
+                              </span>
+                            </div>
+                          ))}
+                          {images.length < MAX_IMAGES && (
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-20 h-20 rounded-lg border-2 border-dashed border-zinc-700 hover:border-zinc-500 flex flex-col items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors"
+                            >
+                              <ImagePlus className="h-5 w-5" />
+                              <span className="text-[10px] mt-0.5">Add</span>
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-zinc-500 text-center">Drop images here or click + to add more (up to {MAX_IMAGES})</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 py-2">
+                        <ImagePlus className="h-8 w-8 text-zinc-500" />
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <ImagePlus className="h-4 w-4 mr-1.5" />
+                            Choose Images
+                          </Button>
+                          <span className="text-sm text-zinc-500">or drop files here</span>
+                        </div>
+                        <span className="text-xs text-zinc-500">JPEG / PNG / GIF / WebP · max {MAX_IMAGE_MB} MB each · up to {MAX_IMAGES}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <Button
