@@ -1,0 +1,130 @@
+import { describe, it, expect } from "vitest";
+
+/**
+ * Tests for the isSeedGreeting prompt logic in player-speak route.
+ * We replicate the prompt-building logic here for unit testing.
+ */
+
+function buildUserContent(opts: {
+  gameName: string;
+  gameTemplate?: string;
+  playerName: string;
+  personality?: string;
+  background?: string;
+  recentMessages: Array<{ senderName: string; content: string }>;
+  isSeedGreeting?: boolean;
+}): string {
+  const { gameName, gameTemplate, playerName, personality, background, recentMessages, isSeedGreeting } = opts;
+  const lines: string[] = [];
+  lines.push(`Game: ${gameName}`);
+  if (gameTemplate) lines.push(`Type: ${gameTemplate}`);
+  lines.push("");
+  if (personality) lines.push(`Your personality: ${personality}`);
+  if (background) lines.push(`Your background: ${background}`);
+  lines.push("");
+  const recentText = recentMessages.map((m) => `${m.senderName}: ${m.content}`).join("\n");
+  lines.push(`Recent conversation:\n${recentText || "(No messages yet)"}`);
+  lines.push("");
+  if (isSeedGreeting) {
+    lines.push(`The game just started. Say something brief and in-character as ${playerName}—a casual greeting, a comment, or a reaction. IMPORTANT: Do NOT repeat what others already said. Be unique: if someone asked a question, don't ask the same thing. Show YOUR personality. Keep it short (1-2 sentences).`);
+  } else {
+    lines.push(`Your turn. Reply as ${playerName}.`);
+  }
+  return lines.join("\n");
+}
+
+describe("seed greeting prompt", () => {
+  it("includes diversity instruction when isSeedGreeting is true", () => {
+    const content = buildUserContent({
+      gameName: "Codenames",
+      playerName: "Maya",
+      isSeedGreeting: true,
+      recentMessages: [{ senderName: "GM", content: "Welcome!" }],
+    });
+    expect(content).toContain("Do NOT repeat what others already said");
+    expect(content).toContain("Be unique");
+    expect(content).toContain("Show YOUR personality");
+    expect(content).toContain("1-2 sentences");
+    expect(content).not.toContain("Your turn. Reply as");
+  });
+
+  it("uses standard prompt when isSeedGreeting is false", () => {
+    const content = buildUserContent({
+      gameName: "Codenames",
+      playerName: "Maya",
+      isSeedGreeting: false,
+      recentMessages: [{ senderName: "GM", content: "Welcome!" }],
+    });
+    expect(content).toContain("Your turn. Reply as Maya.");
+    expect(content).not.toContain("Do NOT repeat");
+  });
+
+  it("uses standard prompt when isSeedGreeting is undefined", () => {
+    const content = buildUserContent({
+      gameName: "Mafia",
+      playerName: "Jack",
+      recentMessages: [],
+    });
+    expect(content).toContain("Your turn. Reply as Jack.");
+  });
+
+  it("includes recent messages so later speakers see what was already said", () => {
+    const content = buildUserContent({
+      gameName: "Werewolf",
+      playerName: "Inez",
+      isSeedGreeting: true,
+      recentMessages: [
+        { senderName: "GM", content: "Welcome everyone!" },
+        { senderName: "Maya", content: "Hey, excited to play!" },
+        { senderName: "Jae", content: "Let's get started!" },
+      ],
+    });
+    expect(content).toContain("Maya: Hey, excited to play!");
+    expect(content).toContain("Jae: Let's get started!");
+    expect(content).toContain("Do NOT repeat");
+  });
+
+  it("includes personality and background in seed greeting", () => {
+    const content = buildUserContent({
+      gameName: "RPG",
+      gameTemplate: "roleplay",
+      playerName: "Warrior",
+      personality: "Bold and fearless",
+      background: "Former gladiator champion",
+      isSeedGreeting: true,
+      recentMessages: [{ senderName: "GM", content: "The adventure begins!" }],
+    });
+    expect(content).toContain("Your personality: Bold and fearless");
+    expect(content).toContain("Your background: Former gladiator champion");
+    expect(content).toContain("Type: roleplay");
+  });
+});
+
+describe("seed greeting — prompt structure", () => {
+  it("game name and template come first", () => {
+    const content = buildUserContent({
+      gameName: "Blood Moon",
+      gameTemplate: "werewolf",
+      playerName: "Alice",
+      isSeedGreeting: true,
+      recentMessages: [],
+    });
+    const gameIdx = content.indexOf("Game: Blood Moon");
+    const typeIdx = content.indexOf("Type: werewolf");
+    const seedIdx = content.indexOf("The game just started");
+    expect(gameIdx).toBeLessThan(typeIdx);
+    expect(typeIdx).toBeLessThan(seedIdx);
+  });
+
+  it("recent conversation appears before seed instruction", () => {
+    const content = buildUserContent({
+      gameName: "Game",
+      playerName: "Bob",
+      isSeedGreeting: true,
+      recentMessages: [{ senderName: "GM", content: "Hello" }],
+    });
+    const recentIdx = content.indexOf("Recent conversation:");
+    const seedIdx = content.indexOf("The game just started");
+    expect(recentIdx).toBeLessThan(seedIdx);
+  });
+});
