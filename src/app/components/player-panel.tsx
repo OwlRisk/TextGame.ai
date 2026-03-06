@@ -31,6 +31,8 @@ export interface Player {
   gender?: string;
   /** Whether this player's role has been publicly revealed by the Host (via REVEAL_ROLE directive). */
   roleRevealed?: boolean;
+  /** Persistent TTS voice ID (Inworld). Assigned at player creation so each character keeps a stable voice. */
+  voiceId?: string;
 }
 
 interface PlayerPanelProps {

@@ -269,3 +269,65 @@ export function pickVoiceForSpeaker(
 
   return bestMaleScore > bestFemaleScore ? bestMale.voiceId : bestFemale.voiceId;
 }
+
+/**
+ * Ranked voice candidates for a speaker: returns voiceIds sorted by best match first.
+ * Used by assignVoicesForRoom to pick unique voices per player.
+ */
+function rankedVoicesForSpeaker(
+  gender?: string | null,
+  personalityOrVoiceStyle?: string | null,
+  langCode?: string,
+): string[] {
+  if (!langCode) {
+    langCode = (typeof window !== 'undefined' ? localStorage.getItem('voice_lang') : null) ?? 'EN_US';
+  }
+  const g = normalizeGender(gender);
+  const text = (personalityOrVoiceStyle || '').trim();
+  const tokens = text ? tokenize(text) : new Set<string>();
+
+  let pool = INWORLD_VOICE_META.filter((v) => v.langCode === langCode);
+  if (pool.length === 0) pool = INWORLD_VOICE_META.filter((v) => v.langCode === 'EN_US');
+
+  if (g) {
+    const candidates = pool.filter((v) => v.gender === g);
+    const finalCandidates = candidates.length > 0 ? candidates : pool;
+    return finalCandidates
+      .map((v) => ({ voiceId: v.voiceId, score: scoreVoice(v, tokens) }))
+      .sort((a, b) => b.score - a.score)
+      .map((v) => v.voiceId);
+  }
+
+  return pool
+    .map((v) => ({ voiceId: v.voiceId, score: scoreVoice(v, tokens) }))
+    .sort((a, b) => b.score - a.score)
+    .map((v) => v.voiceId);
+}
+
+export interface RoomSpeaker {
+  name: string;
+  gender?: string;
+  personality?: string;
+  background?: string;
+}
+
+/**
+ * Assign unique Inworld voices to all speakers in a room.
+ * Each speaker gets their best-match voice that hasn't been taken by a higher-priority speaker.
+ * Returns a map of speaker name → voiceId.
+ */
+export function assignVoicesForRoom(speakers: RoomSpeaker[]): Record<string, string> {
+  const usedVoices = new Set<string>();
+  const result: Record<string, string> = {};
+
+  for (const speaker of speakers) {
+    const hint = [speaker.personality, speaker.background].filter(Boolean).join('. ') || undefined;
+    const ranked = rankedVoicesForSpeaker(speaker.gender, hint);
+
+    const chosen = ranked.find((v) => !usedVoices.has(v)) ?? ranked[0];
+    usedVoices.add(chosen);
+    result[speaker.name] = chosen;
+  }
+
+  return result;
+}

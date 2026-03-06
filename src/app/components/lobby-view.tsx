@@ -85,7 +85,7 @@ export function LobbyView({
       }
 
       const voiceHint = [player.personality, player.background].filter(Boolean).join('. ') || undefined;
-      const voiceId = pickVoiceForSpeaker(player.gender, voiceHint, undefined, player.name);
+      const voiceId = player.voiceId || pickVoiceForSpeaker(player.gender, voiceHint, undefined, player.name);
       const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-max';
       const res = await fetch('/api/inworld-tts', {
         method: 'POST',

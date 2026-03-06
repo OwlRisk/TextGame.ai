@@ -69,6 +69,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
       const player = players.find(
         (p) => p.id === m.senderId || (p.name || '').trim() === (m.senderName || '').trim()
       );
+      if (player?.voiceId) return player.voiceId;
       const voiceHint = [player?.personality, player?.background].filter(Boolean).join('. ') || undefined;
       return pickVoiceForSpeaker(player?.gender, voiceHint, undefined, player?.name || m.senderName);
     },

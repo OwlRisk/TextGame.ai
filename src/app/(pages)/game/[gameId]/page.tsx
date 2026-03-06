@@ -31,6 +31,7 @@ import { Menu, Hash, Users, BookOpen } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
+import { assignVoicesForRoom, pickVoiceForSpeaker } from "@/lib/inworld-voices";
 import { safeMarked } from "@/lib/safe-marked";
 import {
   MAX_AUTO_ADVANCES,
@@ -456,6 +457,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         background: hostPersonality,
         personality: config.generatedHost?.voiceStyle || config.generatedHost?.personality,
         gender: config.generatedHost?.gender,
+        voiceId: undefined as string | undefined,
       },
       hostName,
       hostColor,
@@ -475,6 +477,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       background: configPlayer.background || "A game enthusiast",
       gender: configPlayer.gender as "male" | "female" | "other" | undefined,
       status: "online" as const,
+      voiceId: undefined as string | undefined,
     }));
   }, []);
 
@@ -497,6 +500,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       isMuted: false,
       status: "online" as const,
     };
+
+    // Assign stable TTS voices so each character keeps the same voice across sessions
+    const voiceMap = assignVoicesForRoom([
+      { name: gameMaster.name, gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background },
+      ...aiPlayers.map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
+        name: p.name, gender: p.gender, personality: p.personality, background: p.background,
+      })),
+    ]);
+    gameMaster.voiceId = voiceMap[gameMaster.name];
+    for (const p of aiPlayers) {
+      p.voiceId = voiceMap[p.name];
+    }
 
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
@@ -1599,6 +1614,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             return isNaN(n) ? 0 : n;
           });
           const nextIndex = existingAiIds.length > 0 ? Math.max(...existingAiIds) + 1 : 1;
+          const voiceHint = [char.personality, char.background].filter(Boolean).join('. ') || undefined;
           const newPlayer = {
             id: `ai-${nextIndex}`,
             name: char.name,
@@ -1611,6 +1627,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             background: char.background,
             gender: char.gender as "male" | "female" | "other" | undefined,
             status: "online" as const,
+            voiceId: pickVoiceForSpeaker(char.gender, voiceHint, undefined, char.name),
           };
           setPlayers((prev) => {
             const humanIdx = prev.findIndex((p) => !p.isAI && !p.isGameMaster);
