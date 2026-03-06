@@ -127,6 +127,53 @@ const softwareAppJsonLd = {
   },
 };
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is TextGame.ai free to play?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes, TextGame.ai is free to play. You can create games, invite friends, and play with an AI Game Master at no cost. Optional paid plans offer more credits and premium features.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What games can I play on TextGame.ai?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "TextGame.ai offers 20+ game templates including Werewolf, Mafia, Spyfall, Avalon, Escape Room, Murder Mystery, RPG adventures, and more. You can also create fully custom games with your own rules.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do I need to download anything?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "No download or installation is needed. TextGame.ai runs entirely in your browser on any device — desktop, tablet, or phone.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does the AI Game Master work?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "The AI Game Master hosts your game automatically — it assigns roles, manages turns, enforces rules, and narrates the story. Choose from multiple AI host personalities, each with a unique voice and style.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I play with friends online?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Create a game room and share the invite link with friends. They can join instantly from any browser — no account required for guests.",
+      },
+    },
+  ],
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -162,6 +209,10 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
         {/* Static crawlable content for search engines (hidden from sighted users) */}
         <noscript>
