@@ -195,6 +195,7 @@ function SubscriptionPageContent() {
           return false;
         }
         await Promise.all([refreshTier(), refreshDetails()]);
+        trackEvent("purchase", { checkout_type: "subscription" });
         return true;
       } catch {
         toast.error('Could not confirm payment. Click "Sync my plan" to retry.');

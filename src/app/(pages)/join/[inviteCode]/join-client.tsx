@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Users } from "lucide-react";
@@ -135,7 +136,8 @@ export default function JoinClient({ params }: { params: Promise<{ inviteCode: s
         localStorage.setItem(`nickname_${gameId}`, nickname.trim());
       }
 
-      // Navigate to game room with guest params
+      trackEvent("game_joined", { is_guest: !user, game_name: gameInfo?.name || "" });
+
       const url = data.guestId
         ? `/game/${gameId}?guestId=${data.guestId}&memberId=${data.memberId}`
         : `/game/${gameId}`;

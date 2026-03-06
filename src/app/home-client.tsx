@@ -8,6 +8,7 @@ import { LandingPage } from "@/app/components/landing-page";
 import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 
 export default function HomeClient() {
   const router = useRouter();
@@ -36,10 +37,12 @@ export default function HomeClient() {
   };
 
   const handleExploreGames = () => {
+    trackEvent("cta_click", { label: "explore_games", source: "landing" });
     router.push("/discover");
   };
 
   const handleSignIn = async () => {
+    trackEvent("cta_click", { label: "sign_in", source: "landing" });
     try {
       await signInWithGoogle("/create");
     } catch {

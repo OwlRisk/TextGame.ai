@@ -160,6 +160,7 @@ export function RechargeContent() {
       .then((res) => res.json())
       .then((data) => {
         if (data.credited || data.tokens) {
+          trackEvent("purchase", { checkout_type: "recharge" });
           return fetch('/api/user/balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

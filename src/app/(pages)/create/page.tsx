@@ -49,10 +49,10 @@ function CreateGamePageContent() {
   const presetId = searchParams.get("preset");
   const initialPreset = presetId ? getPresetById(presetId) : null;
 
-  // When on /create (Game Master chat), highlight "Home" in sidebar
   useEffect(() => {
     selectGame("home");
-  }, [selectGame]);
+    trackEvent("gm_chat_started", { preset: presetId || "none" });
+  }, [selectGame, presetId]);
 
   const handleCreateGame = async (config: GameConfig) => {
     const toastId = "create-game";

@@ -205,12 +205,26 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [channelPermissions, setChannelPermissions] = useState<Record<string, string[]>>({});
   const pathname = usePathname();
 
-  // Cancels seedInitialPlayerReplies when gameId changes or component unmounts
   const seedCancelledRef = useRef(false);
+  const msgCountRef = useRef(0);
   useEffect(() => {
     seedCancelledRef.current = false;
     return () => { seedCancelledRef.current = true; };
   }, [gameId]);
+
+  const gameEnteredAtRef = useRef(Date.now());
+  useEffect(() => {
+    gameEnteredAtRef.current = Date.now();
+    trackEvent("game_room_entered", { template: currentGame?.config?.template || "unknown" });
+    const handleVisChange = () => {
+      if (document.visibilityState === "hidden") {
+        const durationSec = Math.round((Date.now() - gameEnteredAtRef.current) / 1000);
+        trackEvent("game_session_end", { duration_seconds: durationSec, messages_sent: msgCountRef.current });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisChange);
+    return () => document.removeEventListener("visibilitychange", handleVisChange);
+  }, [gameId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Always reflects the latest players so async closures (handleSendMessage, runSpeakerQueue)
   // don't operate on stale role/stat data after setPlayers() takes effect between awaits.
@@ -626,7 +640,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
   }, [currentGame, gamePhase, session?.access_token, buildHostPlayer, addMessage, setPlayers, setGamePhase, gameId]);
 
-  const msgCountRef = useRef(0);
   const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
     if (isRoundInProgress) return;
