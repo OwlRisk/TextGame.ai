@@ -107,10 +107,10 @@ export async function POST(request: NextRequest) {
 
     systemMessage += `\n\nKeep your responses concise, engaging, and helpful. Guide the user through the game setup process step by step. Users are human—keep replies short (a few sentences); don't write long paragraphs. Talk like a real person—whether you use emojis (or not) is entirely up to your character.`;
 
-    systemMessage += `\n\nContext: This chat is for game setup. The actual game (phases, roles, etc.) runs on a separate screen after the user clicks "Create Game". Use your judgment to guide appropriately.`;
+    systemMessage += `\n\nContext: This chat is for game setup. The actual game (phases, roles, etc.) runs on a separate screen after the user clicks "Create Room". Use your judgment to guide appropriately.`;
     
     if (gameContext?.conversationState === "confirmation") {
-      systemMessage += `\n\nYou are in the confirmation state. Configuration is complete. A "Create Game" button will appear when the user is ready to proceed—use your judgment to help them get there.`;
+      systemMessage += `\n\nYou are in the confirmation state. Configuration is complete. A "Create Room" button will appear when the user is ready to proceed—use your judgment to help them get there.`;
     }
 
     // Only allow rule editing during setup. During gameplay (intro, night, day, etc.), rules are LOCKED.
