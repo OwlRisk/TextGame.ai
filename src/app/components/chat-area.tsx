@@ -188,7 +188,8 @@ export function ChatArea({
   // Follow scroll when new content appears: new messages, last message content/streaming, TTS reveal,
   // or quick replies expanding (which grow the input area and hide the last message).
   const scrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const lastScrollStateRef = useRef<{ count: number; lastContentLength: number; revealTick: number }>({ count: 0, lastContentLength: 0, revealTick: 0 });
+  const lastScrollStateRef = useRef<{ count: number; lastContentLength: number; revealTick: number; typingCount: number }>({ count: 0, lastContentLength: 0, revealTick: 0, typingCount: 0 });
+  const typingCount = typingUsers?.length ?? 0;
   useEffect(() => {
     if (!scrollRef.current) return;
     const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
@@ -201,13 +202,14 @@ export function ChatArea({
       const countChanged = messages.length !== prev.count;
       const contentGrew = messages.length > 0 && lastContentLength !== prev.lastContentLength;
       const ttsRevealChanged = revealTick !== prev.revealTick;
-      if (scrollRef.current && (countChanged || contentGrew || ttsRevealChanged)) {
-        lastScrollStateRef.current = { count: messages.length, lastContentLength, revealTick };
+      const typingChanged = typingCount !== prev.typingCount;
+      if (scrollRef.current && (countChanged || contentGrew || ttsRevealChanged || typingChanged)) {
+        lastScrollStateRef.current = { count: messages.length, lastContentLength, revealTick, typingCount };
         scrollRef.current.scrollIntoView({ behavior: lastFromUser ? "auto" : "smooth", block: "end" });
       }
     }, lastFromUser ? 50 : 150);
     return () => { if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current); };
-  }, [messages, typingUsers, userId, revealTick]);
+  }, [messages, typingUsers, userId, revealTick, typingCount]);
 
   // When input area height changes (quick replies, hints, etc.), scroll to keep last message visible.
   const inputAreaRef = useRef<HTMLDivElement>(null);

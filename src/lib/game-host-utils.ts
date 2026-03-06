@@ -33,8 +33,9 @@ export function getStreamingDisplay(raw: string): string {
   if (sepMatch && sepMatch.index != null) {
     return raw.slice(0, sepMatch.index).trim();
   }
-  let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
-  cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
+  let cleaned = raw.replace(/\[(BOARD|SECTION|ACCESS):[^\]]*\][\s\S]*?\[\/\1\]/gi, "");
+  cleaned = cleaned.replace(/\[GAME_OVER\][\s\S]*?\[\/GAME_OVER\]/gi, "");
+  cleaned = cleaned.replace(/\[(BOARD|SECTION|ACCESS):[^\]]*\][\s\S]*$/gi, "");
   // Strip directive lines that may leak when --- hasn't arrived yet.
   // Also strip lines that are just a directive prefix without ':' (token still streaming).
   const DIR_PREFIXES = "NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_GOAL|IMAGE_PROMPT|MY_NOTES|GAME_PHASE|SECTION|START_VOTE|END_VOTE|ELIMINATE|REVEAL_ROLE|GAME_OVER|RECORD_EVENT|ANNOUNCE|MOOD";
@@ -68,7 +69,11 @@ const DIRECTIVE_PREFIXES_RE = /^(NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_G
  * that leaked through streaming or DB persistence race conditions.
  */
 export function stripDirectiveLines(content: string): string {
-  return content.replace(DIRECTIVE_PREFIXES_RE, "").replace(/\n{2,}/g, "\n\n").trim();
+  let cleaned = content;
+  cleaned = cleaned.replace(/\[(BOARD|SECTION|ACCESS):[^\]]*\][\s\S]*?\[\/\1\]/gi, "");
+  cleaned = cleaned.replace(/\[GAME_OVER\][\s\S]*?\[\/GAME_OVER\]/gi, "");
+  cleaned = cleaned.replace(DIRECTIVE_PREFIXES_RE, "");
+  return cleaned.replace(/\n{2,}/g, "\n\n").trim();
 }
 
 /**

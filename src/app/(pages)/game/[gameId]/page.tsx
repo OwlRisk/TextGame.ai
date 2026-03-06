@@ -1077,7 +1077,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             }
           }
           // Split into public message and directive section
-          const { message: splitMessage, directives } = splitHostOutput(acc);
+          const { message: rawSplitMessage, directives } = splitHostOutput(acc);
+          const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
           const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(directives);
           const afterActions = applyHostActionsAndClean(directivesClean);
           const afterRoles = applyHostRoleAssignments(afterActions);
@@ -1143,7 +1144,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 }
               }
             }
-            const { message: retryMsg, directives: retryDir } = splitHostOutput(retryAcc);
+            const { message: rawRetryMsg, directives: retryDir } = splitHostOutput(retryAcc);
+            const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
             const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDir);
             const retryAfterActions = applyHostActionsAndClean(retryClean);
             const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
