@@ -18,6 +18,14 @@ export const metadata: Metadata = {
     title: `Blog · ${SITE_NAME}`,
     description: "Guides, comparisons, and tips on AI-powered text games and multiplayer gaming with AI characters.",
     type: "website",
+    url: `${SITE_DOMAIN}/blog`,
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: `Blog · ${SITE_NAME}` }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Blog · ${SITE_NAME}`,
+    description: "Guides, comparisons, and tips on AI-powered text games and multiplayer gaming with AI characters.",
+    images: ["/hero.webp"],
   },
 };
 

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Privacy Policy · TextGame.ai",
     description: "Learn how TextGame.ai collects, uses, and protects your personal information. Covers GDPR, CCPA, guest data, AI-generated content, and multiplayer privacy.",
-    url: "https://textgame.ai/privacy",
+    url: "/privacy",
     siteName: "TextGame.ai",
     type: "website",
   },

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Terms of Service · TextGame.ai",
     description: "Read the terms of service for TextGame.ai — AI-powered text game platform. Covers AI content, multiplayer conduct, credits, and user responsibilities.",
-    url: "https://textgame.ai/terms",
+    url: "/terms",
     siteName: "TextGame.ai",
     type: "website",
   },

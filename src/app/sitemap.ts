@@ -1,6 +1,16 @@
 import type { MetadataRoute } from "next";
+import { readdirSync, statSync } from "fs";
+import { join } from "path";
 import { SITE_DOMAIN } from "@/lib/site";
 import { ALL_GAME_SLUGS } from "@/lib/game-seo-data";
+
+function getBlogSlugs(): string[] {
+  const blogDir = join(process.cwd(), "src/app/blog");
+  return readdirSync(blogDir).filter((name) => {
+    const full = join(blogDir, name);
+    return statSync(full).isDirectory();
+  });
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -12,58 +22,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
+  const blogPages: MetadataRoute.Sitemap = getBlogSlugs().map((slug) => ({
+    url: `${SITE_DOMAIN}/blog/${slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
   return [
     { url: SITE_DOMAIN,                        lastModified: now, changeFrequency: "weekly",  priority: 1   },
     { url: `${SITE_DOMAIN}/discover`,           lastModified: now, changeFrequency: "daily",   priority: 0.9 },
     { url: `${SITE_DOMAIN}/games`,              lastModified: now, changeFrequency: "weekly",  priority: 0.9 },
     ...gamePages,
-    { url: `${SITE_DOMAIN}/blog`,                lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
-    { url: `${SITE_DOMAIN}/blog/character-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/roleplay-ai-guide`,        lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-werewolf-online`,     lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-dungeon-vs-textgame`,    lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/create-game-with-ai`,       lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-mafia-online`,         lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-secret-hitler-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/best-social-deduction-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/best-online-party-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-game-master-guide`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-storytelling-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/virtual-team-building-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/best-single-player-ai-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-board-games-online-ai`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-avalon-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-codenames-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-spyfall-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-clue-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-undercover-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-escape-room-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-text-adventure-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/play-dnd-with-ai`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/free-online-games-with-friends`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-murder-mystery-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/resistance-vs-avalon`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-dungeon-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/host-game-night-online`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-tarot-reading`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-trivia-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/among-us-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-npc-explained`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/textgame-vs-janitor-ai`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/text-based-games-comeback`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/polybuzz-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/talkie-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/perchance-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ourdream-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/wsup-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/best-ai-chat-sites`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/chat-with-ai-characters`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/talk-to-ai-characters`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/chai-ai-alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/textgame-vs-novel-ai`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-changing-board-games`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/ai-games-for-students`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_DOMAIN}/blog/character-ai-text-adventure`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_DOMAIN}/blog`,               lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
+    ...blogPages,
     { url: `${SITE_DOMAIN}/subscription`,       lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_DOMAIN}/signin`,             lastModified: now, changeFrequency: "yearly",  priority: 0.5 },
     { url: `${SITE_DOMAIN}/help`,               lastModified: now, changeFrequency: "monthly", priority: 0.5 },
