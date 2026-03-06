@@ -63,7 +63,33 @@ export function useQuickReplies<
       (m) => m.senderId === userId,
     );
     if (!userHasSpoken) {
-      setQuickReplies([]);
+      const humanName = humanGameIdentity?.name || players.find((p) => p.id === userId)?.name || "Player";
+      const template = currentGameConfig.template;
+      const starters =
+        template === "werewolf" || template === "mafia"
+          ? [
+              `Hi everyone, I'm ${humanName}. Let's figure this out together.`,
+              "Does anyone have any leads? I'm watching closely.",
+              "I trust no one yet. Let's hear what everyone has to say.",
+            ]
+          : template === "undercover"
+            ? [
+                `Hey, I'm ${humanName}. Let me describe my word first.`,
+                "Interesting... Let me think about how to describe mine.",
+                "I'll go — my word reminds me of something everyday.",
+              ]
+            : template === "tarot"
+              ? [
+                  "I'd like a general reading, please.",
+                  "Can you read my career prospects?",
+                  "I have a question about my relationships.",
+                ]
+              : [
+                  `Hi everyone, I'm ${humanName}. Excited to play!`,
+                  "What should we do first?",
+                  "I'm ready — let's get started!",
+                ];
+      setQuickReplies(starters);
       setQuickRepliesLoading(false);
       return;
     }
