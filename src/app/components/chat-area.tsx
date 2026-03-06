@@ -8,6 +8,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Player } from "@/app/components/player-panel";
 import { useChatTTS } from "@/hooks/use-chat-tts";
+import { trackEvent } from "@/lib/analytics";
 import { ChatInputArea } from "@/app/components/chat-input-area";
 import { GameOverBanner } from "@/app/components/game-over-banner";
 import { TypingIndicator } from "@/app/components/typing-indicator";
@@ -341,6 +342,7 @@ export function ChatArea({
                 const next = !voiceEnabled;
                 setVoiceEnabled(next);
                 localStorage.setItem('voice_enabled', String(next));
+                trackEvent("tts_toggle", { enabled: next });
                 if (!next) stopInworldTTS();
               }}
               className={voiceEnabled ? "hover:bg-zinc-700 text-violet-400 hover:text-violet-300" : "hover:bg-zinc-700 text-zinc-400 hover:text-white"}
