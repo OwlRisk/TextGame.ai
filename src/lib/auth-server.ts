@@ -19,18 +19,28 @@ function parseTokenFromCookie(raw: string | undefined): string | null {
  * Returns null if no token, invalid token, or missing Supabase config.
  */
 export async function getAuthUserFromRequest(request: NextRequest): Promise<User | null> {
-  let token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() || null;
-  if (!token) {
-    const rawFromRequest = request.cookies?.get?.(AUTH_COOKIE_NAME)?.value;
-    token = parseTokenFromCookie(rawFromRequest ?? undefined);
+  const headerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() || null;
+
+  // Collect candidate tokens: header first, then cookies as fallback.
+  const rawFromRequest = request.cookies?.get?.(AUTH_COOKIE_NAME)?.value;
+  const cookieToken1 = parseTokenFromCookie(rawFromRequest ?? undefined);
+  const cookieStore = await cookies();
+  const rawFromHeaders = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+  const cookieToken2 = parseTokenFromCookie(rawFromHeaders);
+
+  // Try each token source in priority order.  If the header token is expired
+  // but a fresher cookie token exists (e.g. auto-refreshed by the Supabase
+  // client), we fall through instead of returning null immediately.
+  const candidates = [headerToken, cookieToken1, cookieToken2].filter(Boolean) as string[];
+  // Deduplicate so we don't verify the same JWT twice.
+  const seen = new Set<string>();
+  for (const t of candidates) {
+    if (seen.has(t)) continue;
+    seen.add(t);
+    const user = await getAuthUserFromToken(t);
+    if (user) return user;
   }
-  if (!token) {
-    const cookieStore = await cookies();
-    const rawFromHeaders = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-    token = parseTokenFromCookie(rawFromHeaders);
-  }
-  if (!token) return null;
-  return getAuthUserFromToken(token);
+  return null;
 }
 
 /**

@@ -62,6 +62,7 @@ import {
 } from "@/lib/speaker-queue";
 
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
+import { supabase } from "@/lib/supabase";
 
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
@@ -1190,11 +1191,21 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   /** Generate invite link and copy to clipboard. Owner only. */
   const handleInvite = useCallback(async () => {
-    if (!session?.access_token || !gameId) return;
+    if (!gameId) return;
     try {
+      // Always grab the freshest token from Supabase to avoid stale-closure / expired-JWT 401s.
+      let token = session?.access_token;
+      try {
+        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+        if (refreshed?.access_token) token = refreshed.access_token;
+      } catch {
+        // fall through to whatever token we already have
+      }
+      if (!token) return;
+
       const res = await fetch(`/api/games/${gameId}/invite`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { toast.error("Failed to generate invite link"); return; }
       const data = (await res.json()) as { inviteUrl: string };
