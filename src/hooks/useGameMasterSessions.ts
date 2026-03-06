@@ -206,7 +206,18 @@ export function useGameMasterSessions({
 
       if (fromHistoryClick) didLoadSessionRef.current = true;
       setCurrentSessionId(session.id);
-      setMessages(session.messages);
+      const migratedMessages = session.messages.map((m) => {
+        if (m.role !== "gm" || !m.content) return m;
+        let c = m.content;
+        c = c.replace(/rules panel(?:\s+directly)?\s+on the right/gi, "Game Document directly");
+        c = c.replace(/rules on the right/gi, "rules in the Game Document");
+        c = c.replace(/the rules panel on the right/gi, "the Game Document");
+        c = c.replace(/Say\s+["']create game["']/gi, 'Click **Create Room**');
+        c = c.replace(/Templates button above/gi, "Templates button");
+        if (c === m.content) return m;
+        return { ...m, content: c };
+      });
+      setMessages(migratedMessages);
       setConversationState(session.conversationState);
       setSelectedTemplate(session.selectedTemplate);
       setPlayerCount(session.playerCount);
