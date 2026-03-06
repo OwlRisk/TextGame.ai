@@ -15,15 +15,16 @@ interface Message {
   isGuestMessage?: boolean;
 }
 
-/** Mirror of GameRoomContext.mergeRemoteState message-merge logic. */
+/** Mirror of GameRoomContext.mergeRemoteState message-merge logic.
+ *  New behavior: append-only — existing message order is preserved,
+ *  new messages are sorted among themselves then appended. */
 function mergeMessages(local: Message[], remote: Message[]): Message[] {
   const localIds = new Set(local.map((m) => m.id));
   const newMsgs = remote.filter((m) => !localIds.has(m.id) && !m.isStreaming);
   if (newMsgs.length === 0) return local;
-  const merged = [...local, ...newMsgs].sort(
-    (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-  );
-  return merged.slice(-100);
+  newMsgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  const merged = [...local, ...newMsgs];
+  return merged.length > 100 ? merged.slice(-100) : merged;
 }
 
 function makeMsg(id: string, tsMs: number, extra: Partial<Message> = {}): Message {
@@ -98,20 +99,28 @@ describe('mergeMessages – streaming messages', () => {
   });
 });
 
-describe('mergeMessages – ordering', () => {
-  it('sorts merged result by timestamp ascending', () => {
+describe('mergeMessages – ordering (append-only)', () => {
+  it('appends new remote messages after existing local messages', () => {
     const local = [makeMsg('new', 5000)]; // newer local message
     const remote = [makeMsg('old', 1000), makeMsg('mid', 3000)];
     const result = mergeMessages(local, remote);
-    const times = result.map((m) => m.timestamp.getTime());
-    expect(times).toEqual([...times].sort((a, b) => a - b));
+    // Local message stays first; remote appended in their own sorted order
+    expect(result.map((m) => m.id)).toEqual(['new', 'old', 'mid']);
   });
 
-  it('preserves chronological order when remote messages interleave with local', () => {
+  it('does NOT interleave remote messages into existing local order', () => {
     const local = [makeMsg('a', 1000), makeMsg('c', 3000)];
     const remote = [makeMsg('b', 2000)];
     const result = mergeMessages(local, remote);
-    expect(result.map((m) => m.id)).toEqual(['a', 'b', 'c']);
+    // 'b' appended at end, not inserted between 'a' and 'c'
+    expect(result.map((m) => m.id)).toEqual(['a', 'c', 'b']);
+  });
+
+  it('sorts multiple new remote messages among themselves before appending', () => {
+    const local = [makeMsg('a', 1000)];
+    const remote = [makeMsg('d', 4000), makeMsg('b', 2000), makeMsg('c', 3000)];
+    const result = mergeMessages(local, remote);
+    expect(result.map((m) => m.id)).toEqual(['a', 'b', 'c', 'd']);
   });
 });
 

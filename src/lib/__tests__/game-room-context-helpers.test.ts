@@ -135,10 +135,9 @@ function mergeRemoteMessages(
   const localIds = new Set(local.map((m) => m.id));
   const newMsgs = remoteMessages.filter((m) => !localIds.has(m.id));
   if (newMsgs.length === 0) return local;
-  const merged = [...local, ...newMsgs].sort(
-    (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-  );
-  return merged.slice(-100);
+  newMsgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  const merged = [...local, ...newMsgs];
+  return merged.length > 100 ? merged.slice(-100) : merged;
 }
 
 describe("mergeRemoteState - message dedup", () => {
@@ -170,14 +169,15 @@ describe("mergeRemoteState - message dedup", () => {
     expect(result).toBe(local);
   });
 
-  it("sorts merged messages by timestamp", () => {
+  it("appends new remote messages after local, sorted among themselves", () => {
     const local = [localMsg("m3", "2026-01-01T00:03:00Z")];
     const remote = [
       { id: "m1", timestamp: "2026-01-01T00:01:00Z" },
       { id: "m2", timestamp: "2026-01-01T00:02:00Z" },
     ];
     const result = mergeRemoteMessages(local, remote);
-    expect(result.map((m) => m.id)).toEqual(["m1", "m2", "m3"]);
+    // Local stays first; remote appended in their own chronological order
+    expect(result.map((m) => m.id)).toEqual(["m3", "m1", "m2"]);
   });
 
   it("trims to 100 messages after merge", () => {

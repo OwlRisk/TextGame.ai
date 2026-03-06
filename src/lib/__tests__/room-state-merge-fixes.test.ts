@@ -23,7 +23,7 @@ interface Player {
   status?: string;
 }
 
-// Mirror mergeRemoteState message-merge logic
+// Mirror mergeRemoteState message-merge logic (append-only — preserves local order)
 function mergeMessages(local: Message[], remoteRaw: unknown[]): Message[] {
   const remote = remoteRaw.map((m: unknown) => ({
     ...(m as object),
@@ -33,10 +33,9 @@ function mergeMessages(local: Message[], remoteRaw: unknown[]): Message[] {
   const localIds = new Set(local.map((m) => m.id));
   const newMsgs = remote.filter((m) => !localIds.has(m.id));
   if (newMsgs.length === 0) return local;
-  const merged = [...local, ...newMsgs].sort(
-    (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-  );
-  return merged.slice(-100);
+  newMsgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  const merged = [...local, ...newMsgs];
+  return merged.length > 100 ? merged.slice(-100) : merged;
 }
 
 // Mirror I-3 guard: skip non-message state for guest_write
@@ -278,7 +277,7 @@ describe('mergeMessages – Realtime merge behavior', () => {
     expect(mergeMessages(local, remote)).toHaveLength(1);
   });
 
-  it('sorts merged messages by timestamp', () => {
+  it('appends new remote messages after local, sorted among themselves', () => {
     const local: Message[] = [{
       id: 'l1', senderId: 'a', senderName: 'A', content: 'early',
       timestamp: new Date(1000000), isAI: false,
@@ -288,6 +287,7 @@ describe('mergeMessages – Realtime merge behavior', () => {
       { id: 'r2', senderId: 'c', senderName: 'C', content: 'middle', timestamp: t(2000), isAI: false },
     ];
     const result = mergeMessages(local, remote);
+    // Local stays first; remote sorted among themselves then appended
     expect(result.map((m) => m.id)).toEqual(['l1', 'r2', 'r1']);
   });
 
