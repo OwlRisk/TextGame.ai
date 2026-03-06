@@ -868,6 +868,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
         const streamTokenBudget = Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
         let messageId: string | null = null;
+        setTypingUsers([{ name: gmName, avatar: gmColor }]);
         try {
           const res = await fetch("/api/chat/stream", {
             method: "POST",
@@ -880,6 +881,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             }),
           });
           if (!res.ok || !res.body) {
+            setTypingUsers([]);
             if (res.status === 402) {
               toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
               return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
@@ -904,6 +906,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                     acc += data.content;
                     const visible = getStreamingDisplay(acc);
                     if (visible && !messageId) {
+                      setTypingUsers([]);
                       messageId = addStreamingMessage(
                         { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
                         chId,
@@ -929,6 +932,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           if (displayContent && messageId) {
             updateStreamingMessage(messageId, displayContent, true);
           } else if (displayContent && !messageId) {
+            setTypingUsers([]);
             messageId = addStreamingMessage(
               { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
               chId,
@@ -938,8 +942,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           } else if (messageId) {
             setMessages((prev) => prev.filter((m) => m.id !== messageId));
           }
+          setTypingUsers([]);
           return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal };
         } catch (e) {
+          setTypingUsers([]);
           console.error("Host stream error:", e);
           toast.error("Game Master stream interrupted — retrying…");
           if (messageId) updateStreamingMessage(messageId, "…", true);
