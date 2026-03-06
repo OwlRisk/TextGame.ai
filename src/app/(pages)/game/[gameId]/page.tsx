@@ -1416,25 +1416,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             </span>
           </div>
         )}
-        {gamePhase === "lobby" ? (
-          <LobbyView
-            gameName={currentGame?.name ?? "Game"}
-            gameTemplate={currentGame?.config?.template}
-            players={players}
-            isOwner={isOwner}
-            gameId={gameId}
-            avatarImageUrls={avatarImageUrls}
-            onAvatarUrlLoaded={onAvatarUrlLoaded}
-            onStartGame={startGame}
-            onAddCharacter={() => setShowCharacterBrowser(true)}
-            onRemovePlayer={(playerId) => {
-              setPlayers((prev) => prev.filter((p) => p.id !== playerId));
-            }}
-            onInvite={isOwner ? handleInvite : undefined}
-            inviteJustCopied={inviteCopied}
-            maxPlayers={currentGame?.config?.playerCount || 12}
-          />
-        ) : selectedChannelId === RULES_CHANNEL_ID ? (
+        {selectedChannelId === RULES_CHANNEL_ID ? (
           <ScrollArea className="flex-1 p-6">
             <div className="max-w-2xl">
               <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-zinc-700/50">
@@ -1454,6 +1436,24 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               )}
             </div>
           </ScrollArea>
+        ) : gamePhase === "lobby" ? (
+          <LobbyView
+            gameName={currentGame?.name ?? "Game"}
+            gameTemplate={currentGame?.config?.template}
+            players={players}
+            isOwner={isOwner}
+            gameId={gameId}
+            avatarImageUrls={avatarImageUrls}
+            onAvatarUrlLoaded={onAvatarUrlLoaded}
+            onStartGame={startGame}
+            onAddCharacter={() => setShowCharacterBrowser(true)}
+            onRemovePlayer={(playerId) => {
+              setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+            }}
+            onInvite={isOwner ? handleInvite : undefined}
+            inviteJustCopied={inviteCopied}
+            maxPlayers={currentGame?.config?.playerCount || 12}
+          />
         ) : (() => {
           const activeSection = sections.find((s) => s.id === selectedChannelId);
           if (activeSection) return (
