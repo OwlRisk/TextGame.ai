@@ -1025,67 +1025,71 @@ export function ChatArea({
             );
           })}
           {/* Typing Indicator — shown for any player (human or AI) while generating a reply */}
-          {typingUsers && typingUsers.length > 0 && !messages.some(m => 
-            m.senderName === typingUsers[0].name && m.isStreaming
-          ) && (
-            <div className="flex gap-3 mt-4">
-              {typingUsers[0].name === "You" ? (
-                useGeneratedAvatarForUser && humanPlayer ? (
-                  <GeneratedAvatar
-                    name={userAvatarName}
-                    type="player"
-                    gameId={gameId}
-                    enabled={true}
-                    initialUrl={avatarImageUrls[avatarCacheKey(userAvatarName, "player")]}
-                    onAvatarLoaded={onAvatarUrlLoaded}
-                    className="h-10 w-10 flex-shrink-0"
-                    fallbackColor={typingUsers[0].avatar || humanPlayer.avatar}
-                  />
-                ) : (
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarFallback
-                      className="text-sm font-semibold text-white"
-                      style={{ backgroundColor: typingUsers[0].avatar }}
-                    >
-                      {typingUsers[0].name.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                )
-              ) : (
-                (() => {
-                  // Find the player by name to get background and avatar
-                  const player = players.find(p => p.name === typingUsers[0].name);
-                  // Use player.avatar if available, otherwise fall back to typingUsers avatar
-                  const avatarColor = player?.avatar || typingUsers[0].avatar;
-                  const avatarProps = getAvatarPropsForPlayer(player);
-                  return (
-                    <GeneratedAvatar
-                      {...avatarProps}
-                      name={avatarProps.name || typingUsers[0].name}
-                      gameId={gameId}
-                      enabled={true}
-                      initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || typingUsers[0].name, avatarProps.type)]}
-                      onAvatarLoaded={onAvatarUrlLoaded}
-                      className="h-10 w-10 flex-shrink-0"
-                      fallbackColor={avatarColor}
-                    />
-                  );
-                })()
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-white">{typingUsers[0].name}</span>
+          {typingUsers && typingUsers.length > 0 && (() => {
+            const visible = typingUsers.filter(u => !messages.some(m => m.senderName === u.name && m.isStreaming));
+            if (visible.length === 0) return null;
+            const displayLimit = Math.min(visible.length, 3);
+            const shown = visible.slice(0, displayLimit);
+            const extra = visible.length - displayLimit;
+            return (
+              <div className="flex items-center gap-3 mt-4">
+                <div className="flex -space-x-2 flex-shrink-0">
+                  {shown.map((typingUser) => {
+                    if (typingUser.name === "You") {
+                      return useGeneratedAvatarForUser && humanPlayer ? (
+                        <GeneratedAvatar
+                          key="you"
+                          name={userAvatarName}
+                          type="player"
+                          gameId={gameId}
+                          enabled={true}
+                          initialUrl={avatarImageUrls[avatarCacheKey(userAvatarName, "player")]}
+                          onAvatarLoaded={onAvatarUrlLoaded}
+                          className="h-8 w-8 ring-2 ring-zinc-900"
+                          fallbackColor={typingUser.avatar || humanPlayer.avatar}
+                        />
+                      ) : (
+                        <Avatar key="you" className="h-8 w-8 ring-2 ring-zinc-900">
+                          <AvatarFallback
+                            className="text-xs font-semibold text-white"
+                            style={{ backgroundColor: typingUser.avatar }}
+                          >
+                            {typingUser.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      );
+                    }
+                    const player = players.find(p => p.name === typingUser.name);
+                    const avatarColor = player?.avatar || typingUser.avatar;
+                    const avatarProps = getAvatarPropsForPlayer(player);
+                    return (
+                      <GeneratedAvatar
+                        key={typingUser.name}
+                        {...avatarProps}
+                        name={avatarProps.name || typingUser.name}
+                        gameId={gameId}
+                        enabled={true}
+                        initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || typingUser.name, avatarProps.type)]}
+                        onAvatarLoaded={onAvatarUrlLoaded}
+                        className="h-8 w-8 ring-2 ring-zinc-900"
+                        fallbackColor={avatarColor}
+                      />
+                    );
+                  })}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm text-zinc-400 truncate">
+                    {shown.map(u => u.name).join(", ")}{extra > 0 ? ` +${extra}` : ""}
+                  </span>
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
           
           <div ref={scrollRef} />
           <div ref={bottomSentinelRef} className="h-1" />

@@ -495,10 +495,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         const localIds = new Set(prev.map((m) => m.id));
         const newMsgs = remoteMessages.filter((m) => !localIds.has(m.id));
         if (newMsgs.length === 0) return prev;
-        const merged = [...prev, ...newMsgs].sort(
-          (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-        );
-        return merged.slice(-100);
+        // Sort only the incoming batch among themselves; append after existing
+        // messages so that already-displayed order is never disrupted.
+        newMsgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        const merged = [...prev, ...newMsgs];
+        return merged.length > 100 ? merged.slice(-100) : merged;
       });
     }
 

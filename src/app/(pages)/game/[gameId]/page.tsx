@@ -168,18 +168,28 @@ async function seedInitialPlayerReplies(
 ) {
   const { channelId, hostName, hostContent, aiPlayers, gameName, rules, addStreamingMessage: addStream, updateStreamingMessage: updateStream, setTypingUsers, sessionToken, isCancelled } = opts;
   if (!sessionToken || aiPlayers.length === 0) return;
-  // Randomize which AI players greet first and how many (2-4)
   const shuffled = [...aiPlayers].sort(() => Math.random() - 0.5);
   const count = Math.min(shuffled.length, 2 + Math.floor(Math.random() * 3));
   const toReply = shuffled.slice(0, count);
   const recent = [{ senderName: hostName, content: hostContent }];
+
+  const toTypingEntry = (p: typeof toReply[number]) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
+
+  // Show upcoming typers so the room feels alive while waiting for AI
+  const upcomingTypers = toReply.slice(0, Math.min(3, toReply.length)).map(toTypingEntry);
+  setTypingUsers?.(upcomingTypers);
+
   for (let i = 0; i < toReply.length; i++) {
     const player = toReply[i];
     if (isCancelled?.()) return;
     try {
       await thinkingDelay(i, "freeform");
       if (isCancelled?.()) return;
-      setTypingUsers?.([{ name: player.name, avatar: player.avatar ?? "#8b5cf6" }]);
+
+      // Current player + remaining upcoming players
+      const remaining = toReply.slice(i).slice(0, 3).map(toTypingEntry);
+      setTypingUsers?.(remaining);
+
       const res = await fetch("/api/chat/player-speak", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
@@ -192,11 +202,19 @@ async function seedInitialPlayerReplies(
           isSeedGreeting: true,
         }),
       });
-      setTypingUsers?.([]);
-      if (!res.ok || isCancelled?.()) continue;
+
+      if (!res.ok || isCancelled?.()) {
+        // Remove current player from typing, keep the rest
+        const after = toReply.slice(i + 1).slice(0, 3).map(toTypingEntry);
+        setTypingUsers?.(after);
+        continue;
+      }
       const data = (await res.json()) as { message?: string };
       const text = (data.message ?? "").trim();
       if (text && !isCancelled?.()) {
+        // While typewriter runs, show remaining upcoming typers
+        const after = toReply.slice(i + 1).slice(0, 3).map(toTypingEntry);
+        setTypingUsers?.(after);
         const speed = getTypewriterSpeed(player.personality);
         await typewriterReveal(text, addStream, updateStream, { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true }, channelId, speed);
         recent.push({ senderName: player.name, content: text });
@@ -207,6 +225,7 @@ async function seedInitialPlayerReplies(
       console.warn("[seedInitialReplies]", e);
     }
   }
+  setTypingUsers?.([]);
 }
 
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
@@ -1699,16 +1718,20 @@ ${rulesText || "No specific rules defined."}`.trim();
 
         let earlyDecisionSummary: string | null = null;
 
+        const toTyp = (p: typeof channelAiPlayers[0]) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
         for (let round = 0; round < maxRounds && !earlyDecisionSummary; round++) {
-          for (const player of channelAiPlayers) {
+          for (let pi = 0; pi < channelAiPlayers.length; pi++) {
             if (earlyDecisionSummary) break;
+            const player = channelAiPlayers[pi];
             const freshPlayer = playersRef.current.find((p) => p.id === player.id) ?? player;
             const status = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
             if (status === "eliminated" || status === "dead") continue;
             setCurrentSpeakerId(freshPlayer.id);
-            setTypingUsers([{ name: freshPlayer.name, avatar: freshPlayer.avatar ?? "#8b5cf6" }]);
+            const upcoming = channelAiPlayers.slice(pi + 1).slice(0, 2)
+              .map(p => playersRef.current.find(pp => pp.id === p.id) ?? p);
+            setTypingUsers([toTyp(freshPlayer), ...upcoming.map(toTyp)]);
             const txt = await runPlayerSpeak(freshPlayer, recentContext, goal);
-            setTypingUsers([]);
+            setTypingUsers(upcoming.map(toTyp));
             if (txt) {
               await typewriterReveal(txt, addStreamingMessage, updateStreamingMessage, { senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", isAI: true }, targetChannelId);
               await dynamicPace(txt.length);
@@ -1798,29 +1821,31 @@ ${rulesText || "No specific rules defined."}`.trim();
       // false if the queue exhausted without a human (auto-advance may be triggered).
       const convMode = getConversationMode(currentGame?.config?.template);
 
+      const toTyping = (p: typeof players[0]) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
+
       const speakAndReveal = async (
         player: typeof players[0],
         queueIdx: number,
-        nextPlayer?: typeof players[0],
+        upcomingPlayers: Array<typeof players[0]>,
       ) => {
         await thinkingDelay(queueIdx, convMode);
-        setTypingUsers([{ name: player.name, avatar: player.avatar ?? "#8b5cf6" }]);
+        setTypingUsers([toTyping(player), ...upcomingPlayers.slice(0, 2).map(toTyping)]);
         const txt = await runPlayerSpeak(player, recentForNext);
-        setTypingUsers([]);
+        // Remove current player from typing, keep upcoming
+        const remaining = upcomingPlayers.slice(0, 3).map(toTyping);
+        setTypingUsers(remaining);
         if (txt) {
           const speed = getTypewriterSpeed(player.personality);
           await typewriterReveal(txt, addStreamingMessage, updateStreamingMessage, { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true }, channelId, speed);
-          // Pre-typing overlap: show next player's typing indicator during tail end of pace
           const totalPace = Math.min(
             HOST_PACE_BASE_MS + Math.floor(txt.length / 50) * HOST_PACE_PER_50_CHARS_MS,
             HOST_PACE_MAX_MS,
           ) * getPersonalityPaceFactor(player.personality);
-          if (nextPlayer) {
+          if (upcomingPlayers.length > 0) {
             const preTypingAt = Math.floor(totalPace * 0.6);
             await new Promise<void>((r) => setTimeout(r, preTypingAt));
-            setTypingUsers([{ name: nextPlayer.name, avatar: nextPlayer.avatar ?? "#8b5cf6" }]);
+            setTypingUsers(upcomingPlayers.slice(0, 3).map(toTyping));
             await new Promise<void>((r) => setTimeout(r, Math.max(200, totalPace - preTypingAt)));
-            setTypingUsers([]);
           } else {
             await dynamicPace(txt.length, player.personality, convMode);
           }
@@ -1839,7 +1864,6 @@ ${rulesText || "No specific rules defined."}`.trim();
           if (item.type === "everyone") {
             setCurrentSpeakerId(null);
             if (aiOnly.length > 0) {
-              // Freeform: 2-3 random AI chime in; structured: just 1
               const count = convMode === "freeform"
                 ? Math.min(aiOnly.length, 2 + Math.floor(Math.random() * 2))
                 : 1;
@@ -1847,27 +1871,28 @@ ${rulesText || "No specific rules defined."}`.trim();
               const picks = shuffled.slice(0, count);
               for (let pi = 0; pi < picks.length; pi++) {
                 const freshPick = playersRef.current.find((p) => p.id === picks[pi].id) ?? picks[pi];
-                const nextPick = pi < picks.length - 1 ? (playersRef.current.find((p) => p.id === picks[pi + 1].id) ?? picks[pi + 1]) : undefined;
-                await speakAndReveal(freshPick, pi, nextPick);
+                const upcoming = picks.slice(pi + 1).map(p => playersRef.current.find(pp => pp.id === p.id) ?? p);
+                await speakAndReveal(freshPick, pi, upcoming);
               }
             }
+            setTypingUsers([]);
             return true;
           }
           // type === "ai" — refresh player data, skip if eliminated
           const freshPlayer = playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
           const itemStatus = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
           if (itemStatus === "eliminated" || itemStatus === "dead") continue;
-          // Peek ahead to find next AI for pre-typing overlap
-          let nextAiPlayer: typeof players[0] | undefined;
+          // Collect upcoming AI players for multi-typing indicator
+          const upcomingAiPlayers: Array<typeof players[0]> = [];
           for (let ni = qi + 1; ni < queue.length; ni++) {
             const next = queue[ni];
             if (next.type === "ai") {
-              nextAiPlayer = playersRef.current.find((p) => p.id === next.player.id) ?? next.player;
-              break;
+              upcomingAiPlayers.push(playersRef.current.find((p) => p.id === next.player.id) ?? next.player);
+              if (upcomingAiPlayers.length >= 3) break;
             }
             if (next.type === "human" || next.type === "everyone") break;
           }
-          await speakAndReveal(freshPlayer, qi, nextAiPlayer);
+          await speakAndReveal(freshPlayer, qi, upcomingAiPlayers);
           // Update current speaker indicator
           const nextItem = queue[qi + 1];
           if (nextItem?.type === "human") setCurrentSpeakerId(userId);
