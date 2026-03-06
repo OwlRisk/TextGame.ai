@@ -1443,7 +1443,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 <h2 className="text-base font-semibold text-zinc-200 mb-4">{activeSection.name}</h2>
                 {activeSection.content.trim() ? (
                   <div
-                    className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-100 prose-p:text-zinc-100 prose-li:text-zinc-100 prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                    className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-p:text-white prose-li:text-white prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
                     dangerouslySetInnerHTML={{ __html: safeMarked(activeSection.content) }}
                   />
                 ) : (
@@ -1618,7 +1618,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             <div className="max-w-2xl">
               {(currentGame?.config?.rules ?? "").trim() ? (
                 <div
-                  className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-zinc-100 prose-p:leading-relaxed prose-li:text-zinc-100 prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
                   dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
                 />
               ) : (

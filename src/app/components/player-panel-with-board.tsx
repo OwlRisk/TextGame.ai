@@ -196,7 +196,7 @@ export function PlayerPanelWithBoard({
                 </div>
                 {myBoardContentFromHost.trim() ? (
                   <div
-                    className="mt-3 prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-100 prose-li:text-zinc-100 prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded leading-relaxed"
+                    className="mt-3 prose prose-invert prose-sm max-w-none prose-headings:text-white prose-p:text-white prose-li:text-white prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: safeMarked(myBoardContentFromHost.trim()) }}
                   />
                 ) : (
