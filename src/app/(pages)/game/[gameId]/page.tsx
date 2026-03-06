@@ -1404,7 +1404,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   }, [players, selectedChannelId, channelPermissions]);
 
   // Quick reply: only update when it's "user's turn" (round just ended, last message from Host/AI).
-  // Do not refetch when the user just sent a message — keep current suggestions until Host/AI reply again.
+  // Only fetch quick replies when it's definitively the human player's turn.
+  // Clear stale suggestions immediately when a round starts or it's not the player's turn.
+  const isHumanTurn = gamePhase === "ended" || !currentSpeakerId || currentSpeakerId === userId;
   useEffect(() => {
     if (!currentGame?.config || !isGameChannel) {
       setQuickRepliesLoading(false);
@@ -1416,16 +1418,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       setQuickRepliesLoading(false);
       return;
     }
-    // Don't show quick replies until the user has spoken at least once in this channel.
-    // This prevents "default" suggestions from appearing at the start of the game
-    // before the user has engaged.
-    const userHasSpoken = messagesForChannel.some((m) => m.senderId === userId);
-    if (!userHasSpoken) {
+    // Clear quick replies while AI/host is active — avoids stale suggestions
+    // flashing between speakers.
+    if (isRoundInProgress || !isHumanTurn) {
       setQuickReplies([]);
       setQuickRepliesLoading(false);
       return;
     }
-    if (isRoundInProgress) {
+    // Don't show quick replies until the user has spoken at least once in this channel.
+    const userHasSpoken = messagesForChannel.some((m) => m.senderId === userId);
+    if (!userHasSpoken) {
+      setQuickReplies([]);
       setQuickRepliesLoading(false);
       return;
     }
@@ -1481,6 +1484,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     currentGame?.id ?? null,
     gamePhase,
     isRoundInProgress,
+    isHumanTurn,
     userId,
     messagesForChannel.length,
     session?.access_token ?? null,
