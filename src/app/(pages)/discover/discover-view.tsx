@@ -7,6 +7,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 export default function DiscoverView() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function DiscoverView() {
       toast.info("Sign in to create this game");
       return;
     }
+    trackEvent("template_selected", { template: preset.id, source: "discover" });
     router.push(`/create?preset=${preset.id}`);
   };
 

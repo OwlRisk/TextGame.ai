@@ -8,6 +8,7 @@ import { motion } from 'motion/react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { setAuthCookie } from '@/lib/auth-cookie';
 import { supabase } from '@/lib/supabase';
+import { trackEvent } from '@/lib/analytics';
 
 interface CoinPackage {
   id: string;
@@ -204,6 +205,11 @@ export function RechargeContent() {
     }
     setAuthCookie(accessToken);
     setIsProcessing(true);
+    trackEvent("begin_checkout", {
+      item_name: selectedPackage.name,
+      checkout_type: "recharge",
+      value: selectedPackage.price,
+    });
     try {
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',

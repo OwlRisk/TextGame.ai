@@ -191,6 +191,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_UP") {
+        import("@/lib/analytics").then(({ trackEvent }) => {
+          trackEvent(event === "SIGNED_UP" ? "sign_up" : "login", {
+            method: "google",
+          });
+        });
+      }
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {

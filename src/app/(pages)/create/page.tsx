@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { GameConfig } from "@/app/components/game-setup-dialog";
+import { trackEvent } from "@/lib/analytics";
 
 const GameMasterChat = dynamic(
   () => import("@/app/components/game-master-chat").then((m) => ({ default: m.GameMasterChat })),
@@ -135,6 +136,11 @@ function CreateGamePageContent() {
 
       addGame(newGame);
       selectGame(newGame.id);
+      trackEvent("game_created", {
+        template: config.template || "custom",
+        player_count: finalConfig.playerCount || 0,
+        game_name: config.name,
+      });
       toast.success(`"${config.name}" is ready!`, { id: toastId });
 
       // Navigate to the game room

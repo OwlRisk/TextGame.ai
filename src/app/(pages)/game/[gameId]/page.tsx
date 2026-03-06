@@ -63,6 +63,7 @@ import {
 
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { supabase } from "@/lib/supabase";
+import { trackEvent } from "@/lib/analytics";
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -587,6 +588,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       seedCancelledRef.current = false;
 
       setGamePhase("active");
+      trackEvent("game_started", {
+        template: config.template || "custom",
+        player_count: currentPlayers.filter((p) => !p.isGameMaster).length,
+        game_name: currentGame.name,
+      });
 
       const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
       const hostGreeting = config.template === "tarot"
@@ -620,12 +626,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
   }, [currentGame, gamePhase, session?.access_token, buildHostPlayer, addMessage, setPlayers, setGamePhase, gameId]);
 
+  const msgCountRef = useRef(0);
   const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
-    // Prevent concurrent rounds: second message while AI is still replying would cause parallel Host calls
     if (isRoundInProgress) return;
 
-    // Move this game to the top of the sidebar (only triggered when player speaks)
+    msgCountRef.current += 1;
+    if (msgCountRef.current === 1) {
+      trackEvent("first_message_sent", { template: currentGame?.config?.template || "custom" });
+    }
+    trackEvent("message_sent", { message_number: msgCountRef.current });
+
     if (gameId) touchGame(gameId);
 
     const cfgChannels = currentGame?.config?.channels;
@@ -833,6 +844,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             updateGame(gameId, { isActive: false });
             setGameOverSummary(a.summary || "Game over!");
             setGamePhase("ended");
+            trackEvent("game_completed", {
+              template: currentGame?.config?.template || "custom",
+              messages_sent: msgCountRef.current,
+            });
           } else if (a.type === "phase") {
             setPhaseLabel(a.label);
           } else if (a.type === "announce") {
@@ -1228,6 +1243,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       if (!res.ok) { toast.error("Failed to generate invite link"); return; }
       const data = (await res.json()) as { inviteUrl: string };
       const ok = await copyToClipboard(data.inviteUrl);
+      trackEvent("invite_shared", { template: currentGame?.config?.template || "custom" });
       toast.success(ok ? "Invite link copied! Share it with players." : `Invite: ${data.inviteUrl}`);
       setInviteCopied(true);
       setTimeout(() => setInviteCopied(false), 2500);

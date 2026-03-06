@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/app/components/ui/button';
 import { Toaster } from '@/app/components/ui/sonner';
 import {
@@ -239,6 +240,7 @@ function SubscriptionPageContent() {
     }
     setLoadingTier(tier);
     setLoading(true);
+    trackEvent("begin_checkout", { item_name: tier, checkout_type: "subscription" });
     try {
       const res = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
