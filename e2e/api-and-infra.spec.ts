@@ -193,11 +193,12 @@ test.describe("Error resilience", () => {
     await page.waitForLoadState("networkidle");
 
     // Should not show a blank page — either redirects or shows error
+    const bodyText = await page.locator("body").textContent();
     const hasContent =
       page.url().includes("/signin") ||
       page.url().includes("/discover") ||
       page.url() === "http://localhost:3000/" ||
-      (await page.locator("body").textContent()).then((t) => t!.trim().length > 0);
+      (bodyText ?? "").trim().length > 0;
     expect(hasContent).toBeTruthy();
   });
 });
