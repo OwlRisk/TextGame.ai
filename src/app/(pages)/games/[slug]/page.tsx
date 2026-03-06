@@ -98,18 +98,22 @@ const GAME_BLOG_MAP: Record<string, { title: string; href: string }[]> = {
     { title: "Best Social Deduction Games to Play Online", href: "/blog/best-social-deduction-games" },
   ],
   "kingdom-intrigue": [
+    { title: "Play Kingdom Intrigue Online — Medieval Court Deduction", href: "/blog/play-kingdom-intrigue-online" },
     { title: "Best Social Deduction Games to Play Online", href: "/blog/best-social-deduction-games" },
   ],
   "vampire-court": [
+    { title: "Play Vampire Court Online — Gothic Social Deduction", href: "/blog/play-vampire-court-online" },
     { title: "Best Social Deduction Games to Play Online", href: "/blog/best-social-deduction-games" },
   ],
   "space-mutiny": [
+    { title: "Play Space Mutiny Online — Sci-Fi Traitor Game", href: "/blog/play-space-mutiny-online" },
     { title: "Among Us Alternatives – Best Games Like Among Us", href: "/blog/among-us-alternatives" },
   ],
   storyteller: [
     { title: "AI Storytelling Games – A Complete Guide", href: "/blog/ai-storytelling-games" },
   ],
   "improv-comedy": [
+    { title: "AI Improv Comedy Game Online — Play Free", href: "/blog/play-improv-comedy-online" },
     { title: "Best Online Party Games with Friends", href: "/blog/best-online-party-games" },
     { title: "How to Host Game Night Online", href: "/blog/host-game-night-online" },
   ],
@@ -128,6 +132,7 @@ const GAME_BLOG_MAP: Record<string, { title: string; href: string }[]> = {
     { title: "Virtual Team Building Games", href: "/blog/virtual-team-building-games" },
   ],
   "two-rooms": [
+    { title: "Play Two Rooms and a Boom Online — Rules & Strategy", href: "/blog/play-two-rooms-online" },
     { title: "Best Social Deduction Games to Play Online", href: "/blog/best-social-deduction-games" },
   ],
 };
