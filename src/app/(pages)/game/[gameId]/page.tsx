@@ -1344,12 +1344,12 @@ ${rulesText || "No specific rules defined."}`.trim();
 
       const parseHostResult = (raw: string): { hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null } => {
         let hostContent = raw.trim();
-        const nextSpeakerMatch = hostContent.match(/\nNEXT_SPEAKER:\s*(.+?)\s*$/im);
+        const nextSpeakerMatch = hostContent.match(/(?:^|\n)NEXT_SPEAKER:\s*(.+?)\s*$/im);
         let who: string | null = null;
         const speakerQueue: SpeakerQueueItem[] = [];
         if (nextSpeakerMatch) {
           who = nextSpeakerMatch[1].trim();
-          hostContent = hostContent.replace(/\nNEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
+          hostContent = hostContent.replace(/(?:^|\n)NEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
           // Parse comma-separated ordered list of speakers (e.g. "Juno, Edda, You")
           const names = who.split(",").map((n) => n.trim()).filter(Boolean);
           for (const name of names) {
@@ -1371,7 +1371,7 @@ ${rulesText || "No specific rules defined."}`.trim();
         }
         // AUTO_CHANNEL: triggers an autonomous AI conversation in a private channel.
         // Supports optional goal via pipe: AUTO_CHANNEL: Room Name | Pick tonight's target
-        const autoChannelMatch = hostContent.match(/\nAUTO_CHANNEL:\s*(.+?)\s*$/im);
+        const autoChannelMatch = hostContent.match(/(?:^|\n)AUTO_CHANNEL:\s*(.+?)\s*$/im);
         let autoChannelId: string | null = null;
         let autoChannelGoal: string | null = null;
         if (autoChannelMatch) {
@@ -1380,7 +1380,7 @@ ${rulesText || "No specific rules defined."}`.trim();
           const channelName = pipeIdx >= 0 ? raw.slice(0, pipeIdx).trim() : raw;
           autoChannelGoal = pipeIdx >= 0 ? raw.slice(pipeIdx + 1).trim() : null;
           autoChannelId = resolveChannelByName(channelName);
-          hostContent = hostContent.replace(/\nAUTO_CHANNEL:\s*.+?\s*$/im, "").trim();
+          hostContent = hostContent.replace(/(?:^|\n)AUTO_CHANNEL:\s*.+?\s*$/im, "").trim();
         }
         return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal };
       };
