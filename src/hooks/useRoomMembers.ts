@@ -20,18 +20,21 @@ export function useRoomMembers(gameId: string) {
 
   useEffect(() => {
     if (!gameId) return;
+    let cancelled = false;
     let consecutiveErrors = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const schedule = () => {
+      if (cancelled) return;
       timer = setTimeout(() => { load(); }, MEMBERS_POLL_INTERVAL_MS);
     };
 
     const load = () => {
-      const url = `/api/games/${gameId}/members`;
-      fetch(url)
+      if (cancelled) return;
+      fetch(`/api/games/${gameId}/members`)
         .then((r) => r.ok ? r.json() : null)
         .then((data: { members?: RoomMember[] } | null) => {
+          if (cancelled) return;
           if (data?.members) {
             setRoomMembers(data.members);
             consecutiveErrors = 0;
@@ -41,13 +44,14 @@ export function useRoomMembers(gameId: string) {
           if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
         })
         .catch(() => {
+          if (cancelled) return;
           consecutiveErrors++;
           if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
         });
     };
 
     load();
-    return () => { if (timer) clearTimeout(timer); };
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
   }, [gameId]);
 
   const refreshMembers = useCallback(async () => {

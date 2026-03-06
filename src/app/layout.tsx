@@ -207,7 +207,7 @@ export default async function RootLayout({
         <AuthProvider>
           <GameProvider><main id="main-content" className="h-full">{children}</main></GameProvider>
         </AuthProvider>
-        <Analytics />
+        {process.env.NEXT_PUBLIC_VERCEL_ANALYTICS === "1" && <Analytics />}
         <GoogleAnalyticsWrapper gaId={gaId} inEEA={inEEA && gaConsent !== "granted"} />
         <CookieConsent inEEA={inEEA && gaConsent !== "granted" && gaConsent !== "denied"} />
       </body>

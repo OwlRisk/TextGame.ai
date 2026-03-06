@@ -147,12 +147,14 @@ export function ChannelList({
                   <span className="text-sm">Rules</span>
                 </Button>
               )}
-              {channels.filter(c => c.type === "text").length > 0 && (
+              {(() => {
+                const textChannels = channels.filter(c => c.type === "text");
+                return textChannels.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between px-3 mb-2">
                     <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sections</span>
                   </div>
-                  {channels.filter(c => c.type === "text").map((channel) => (
+                  {textChannels.map((channel) => (
                     <ContextMenu key={channel.id}>
                       <ContextMenuTrigger>
                         <Button
@@ -183,7 +185,8 @@ export function ChannelList({
                     </ContextMenu>
                   ))}
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
 

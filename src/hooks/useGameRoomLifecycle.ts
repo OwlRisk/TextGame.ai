@@ -37,6 +37,12 @@ export function useGameRoomLifecycle({
   setGamePhase,
   updateGame,
 }: UseGameRoomLifecycleParams) {
+  // Keep stable refs so interval/timeout callbacks always see the latest values
+  const callbacksRef = useRef({ setGameOverSummary, setGamePhase, updateGame, currentGameExists });
+  useEffect(() => {
+    callbacksRef.current = { setGameOverSummary, setGamePhase, updateGame, currentGameExists };
+  });
+
   // Timer expiry
   useEffect(() => {
     if (!timerEndsAt) return;
@@ -69,16 +75,16 @@ export function useGameRoomLifecycle({
     if (gamePhase !== "active") return;
     const check = () => {
       if (Date.now() - lastActivityRef.current >= GAME_INACTIVITY_TIMEOUT_MS) {
-        setGameOverSummary(
+        const cbs = callbacksRef.current;
+        cbs.setGameOverSummary(
           "Game ended due to inactivity (2 hours with no messages).",
         );
-        setGamePhase("ended");
-        if (currentGameExists) updateGame(gameId, { isActive: false });
+        cbs.setGamePhase("ended");
+        if (cbs.currentGameExists) cbs.updateGame(gameId, { isActive: false });
       }
     };
     const id = setInterval(check, 60_000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamePhase, gameId]);
 
   // Owner-leave auto-end (5 min offline)

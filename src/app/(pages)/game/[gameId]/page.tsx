@@ -64,6 +64,11 @@ import {
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { supabase } from "@/lib/supabase";
 
+const AI_COLOR_PALETTE = [
+  "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
+  "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7",
+] as const;
+
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   // Extract gameId at the top so it's available for all state/effect hooks below
@@ -430,10 +435,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setPlayers((prev) => prev.map((p) => (p.id === userId ? { ...p, name } : p)));
   }, [humanGameIdentity?.name, session?.user, players.length, userId, setPlayers]);
 
-  const AI_COLORS = [
-    "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
-    "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7"
-  ];
+  const AI_COLORS = AI_COLOR_PALETTE;
 
   const buildHostPlayer = useCallback((config: any) => {
     const hostColor = config.generatedHost?.color || (config.template === "werewolf"
@@ -537,7 +539,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       : `Hey everyone, ${hostName} here! Take your time setting up — add or remove players, invite friends. When everyone's here, hit **Start Game** to begin!`;
 
     addMessage(
-      { senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: lobbyGreeting, isAI: true },
+      { id: `lobby-greeting-${gameId}`, senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: lobbyGreeting, isAI: true },
       defaultChannelId
     );
 
@@ -546,68 +548,87 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   };
 
   /** Phase 2: owner starts the game — assign roles via Host API, kick off AI replies. */
+  const gameStartingRef = useRef(false);
   const startGame = useCallback(async () => {
     if (!currentGame || !currentGame.config) return;
-    const config = currentGame.config;
-    const { hostName, hostColor } = buildHostPlayer(config);
+    if (gamePhase !== "lobby") return;
+    if (gameStartingRef.current) return;
+    gameStartingRef.current = true;
 
-    const currentPlayers = playersRef.current;
-    const aiPlayers = currentPlayers.filter((p) => p.isAI && !p.isGameMaster);
+    try {
+      const config = currentGame.config;
+      const { hostName, hostColor } = buildHostPlayer(config);
 
-    const hasHumanPlayers = currentPlayers.some((p) => !p.isAI && !p.isGameMaster);
-    if (aiPlayers.length === 0 && !hasHumanPlayers) {
-      toast.error("At least one player is required to start the game. Please add AI players or invite friends.");
-      return;
-    }
+      const currentPlayers = playersRef.current;
+      const aiPlayers = currentPlayers.filter((p) => p.isAI && !p.isGameMaster);
 
-    // Assign roles from config if available (werewolf/mafia/undercover)
-    const configuredPlayers = config.configuredPlayers || [];
-    if (configuredPlayers.length > 0) {
-      setPlayers((prev) =>
-        prev.map((p) => {
-          if (p.isGameMaster) return p;
-          const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1]) - 1 : -1;
-          const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
-          if (!cp) return p;
-          const role = cp.role || undefined;
-          const stats = { ...p.stats };
-          if (role && (config.template === "werewolf" || config.template === "mafia")) {
-            stats.Status = "Alive";
-          }
-          if ((cp as any).word && config.template === "undercover") {
-            stats.Word = (cp as any).word;
-          }
-          return { ...p, role, stats };
-        })
+      const hasHumanPlayers = currentPlayers.some((p) => !p.isAI && !p.isGameMaster);
+      if (aiPlayers.length === 0 && !hasHumanPlayers) {
+        toast.error("At least one player is required to start the game. Please add AI players or invite friends.");
+        return;
+      }
+
+      // Assign roles from config if available (werewolf/mafia/undercover)
+      const configuredPlayers = config.configuredPlayers || [];
+      if (configuredPlayers.length > 0) {
+        setPlayers((prev) =>
+          prev.map((p) => {
+            if (p.isGameMaster) return p;
+            const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1]) - 1 : -1;
+            const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
+            if (!cp) return p;
+            const role = cp.role || undefined;
+            const stats = { ...p.stats };
+            if (role && (config.template === "werewolf" || config.template === "mafia")) {
+              stats.Status = "Alive";
+            }
+            if ((cp as any).word && config.template === "undercover") {
+              stats.Word = (cp as any).word;
+            }
+            return { ...p, role, stats };
+          })
+        );
+      }
+
+      // Cancel any in-flight seed from a prior (interrupted) start attempt
+      seedCancelledRef.current = true;
+      await new Promise((r) => setTimeout(r, 0));
+      seedCancelledRef.current = false;
+
+      // Remove the lobby greeting — it's no longer relevant once the game starts
+      const lobbyMsgId = `lobby-greeting-${gameId}`;
+      setMessages((prev) => prev.filter((m) => m.id !== lobbyMsgId));
+
+      setGamePhase("active");
+
+      const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
+      const hostGreeting = config.template === "tarot"
+        ? `The cards are ready. Share a question or an area of your life you'd like insight on — or say you'd like a general reading.`
+        : `Alright, the game is on! Let's get started. Check the Rules section if you need a refresher.`;
+
+      const greetingId = `start-greeting-${gameId}`;
+      addMessage(
+        { id: greetingId, senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: hostGreeting, isAI: true },
+        defaultChannelId
       );
+
+      seedInitialPlayerReplies({
+        channelId: defaultChannelId,
+        hostName,
+        hostContent: hostGreeting,
+        aiPlayers,
+        gameName: currentGame.name,
+        rules: config.rules,
+        addStreamingMessage,
+        updateStreamingMessage,
+        setTypingUsers,
+        sessionToken: session?.access_token,
+        isCancelled: () => seedCancelledRef.current,
+      }).catch((e) => console.warn("Initial player replies failed", e));
+    } finally {
+      gameStartingRef.current = false;
     }
-
-    setGamePhase("active");
-
-    const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
-    const hostGreeting = config.template === "tarot"
-      ? `The cards are ready. Share a question or an area of your life you'd like insight on — or say you'd like a general reading.`
-      : `Alright, the game is on! Let's get started. Check the Rules section if you need a refresher.`;
-
-    addMessage(
-      { senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: hostGreeting, isAI: true },
-      defaultChannelId
-    );
-
-    seedInitialPlayerReplies({
-      channelId: defaultChannelId,
-      hostName,
-      hostContent: hostGreeting,
-      aiPlayers,
-      gameName: currentGame.name,
-      rules: config.rules,
-      addStreamingMessage,
-      updateStreamingMessage,
-      setTypingUsers,
-      sessionToken: session?.access_token,
-      isCancelled: () => seedCancelledRef.current,
-    }).catch((e) => console.warn("Initial player replies failed", e));
-  }, [currentGame, session?.access_token, buildHostPlayer, addMessage, setPlayers, setGamePhase]);
+  }, [currentGame, gamePhase, session?.access_token, buildHostPlayer, addMessage, setPlayers, setGamePhase, gameId]);
 
   const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
@@ -663,7 +684,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       // Only include AI players who can access the current channel so "everyone"
       // replies don't accidentally pick an AI from a different faction's private room.
       const channelPermsForAiOnly = channelPermissions[channelId];
-      const aiOnly = players.filter(
+      const freshPlayers = playersRef.current;
+      const aiOnly = freshPlayers.filter(
         (p) =>
           p.isAI &&
           !p.isGameMaster &&
@@ -672,10 +694,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             channelPermsForAiOnly.includes(p.id))
       );
 
-      // Build player roster for host context
-      const humanPlayer = players.find((p) => p.id === userId);
+      // Build player roster for host context — always read from ref to avoid stale closure
+      const humanPlayer = freshPlayers.find((p) => p.id === userId);
       const humanName = humanGameIdentity?.name || humanPlayer?.name || "You";
-      const nonHostPlayers = players.filter((p) => !p.isGameMaster);
+      const nonHostPlayers = freshPlayers.filter((p) => !p.isGameMaster);
       const playerRoster = nonHostPlayers.map((p) => {
         const isHuman = p.id === userId;
         const name = isHuman ? humanName : p.name;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Play, UserPlus, Plus, X, Sparkles, Users, Crown, Bot, User, Volume2, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -42,6 +42,15 @@ export function LobbyView({
   const [startingGame, setStartingGame] = useState(false);
   const [testingVoice, setTestingVoice] = useState<string | null>(null);
   const testAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (testAudioRef.current) {
+        testAudioRef.current.pause();
+        testAudioRef.current = null;
+      }
+    };
+  }, []);
 
   const host = players.find((p) => p.isGameMaster);
   const nonHost = players.filter((p) => !p.isGameMaster);
