@@ -8,7 +8,7 @@ import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus, PanelLeft, FileText, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { GameConfig } from "@/app/components/game-setup-dialog";
-import type { DiscoverPreset } from "@/app/components/discover-page";
+import type { DiscoverPreset } from "@/data/discover-templates";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
@@ -28,30 +28,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
+import { HOST_PERSONALITIES, getDefaultHost, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 import { parseInlineFormatting } from "@/lib/format-message";
 import { OutOfCreditsModal } from "@/app/components/out-of-credits-modal";
-
-function formatMessageTime(date: Date): string {
-  const now = new Date();
-  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const isToday =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-  if (isToday) return timeStr;
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const isYesterday =
-    date.getFullYear() === yesterday.getFullYear() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getDate() === yesterday.getDate();
-  if (isYesterday) return `Yesterday ${timeStr}`;
-  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${timeStr}`;
-}
 import { HostSelector } from "@/app/components/host-selector";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { getGameSessions, createGameSession, updateGameSession, deleteGameSession } from "@/lib/db";
+import { useGameMasterSessions } from "@/hooks/useGameMasterSessions";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
@@ -60,116 +42,19 @@ import StarterKit from "@tiptap/starter-kit";
 import Typography from "@tiptap/extension-typography";
 import Placeholder from "@tiptap/extension-placeholder";
 import { marked } from "marked";
+import type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, ChannelRoomType } from "@/types/game-master";
+import {
+  formatMessageTime,
+  handleGameDocEnter,
+  cleanGMMessageContentForDisplay,
+  stripChipLabel,
+  htmlToMarkdown,
+  addContentToSection,
+  replaceContentInSection,
+} from "@/lib/game-master-utils";
+import { parseGMResponseTags, applyRulesUpdates, applyBackgroundToRules, clampPlayerCount } from "@/lib/gm-rules-parser";
 
-interface ChatMessage {
-  id: string;
-  role: "gm" | "user";
-  content: string;
-  timestamp: Date;
-}
-
-export interface GameSession {
-  id: string;
-  title: string;
-  messages: ChatMessage[];
-  conversationState: ConversationState;
-  selectedTemplate: GameTemplate | null;
-  playerCount: number;
-  customRules: string;
-  gameName: string;
-  selectedHostId: string;
-  generatedHost?: {
-    name: string;
-    personality: string;
-    voiceStyle: string;
-    systemPrompt: string;
-    icon: string;
-    color: string;
-    gender?: 'male' | 'female' | 'other';
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Notion-style: on Enter, turn current line starting with # / - into heading/list, then newline (works without space)
-function handleGameDocEnter(editor: unknown): boolean {
-  const ed = editor as { state: { selection: { $from: { depth: number; before: (d: number) => number; node: (d: number) => { type: { name: string }; textContent: string; nodeSize: number } } } }; commands: { insertContentAt: (pos: unknown, content: unknown, opts?: unknown) => boolean } } | null;
-  if (!ed) return false;
-  const { state, commands } = ed;
-  const $from = state.selection.$from;
-  const depth = $from.depth;
-  const node = $from.node(depth);
-  if (node.type.name !== "paragraph") return false;
-  const text = node.textContent;
-  const from = $from.before(depth);
-  const to = from + node.nodeSize;
-
-  let insert: { type: string; attrs?: Record<string, number>; content: unknown[] }[] | null = null;
-
-  const hMatch = text.match(/^(#{1,6})\s*(.*)$/);
-  if (hMatch) {
-    const level = Math.min(hMatch[1].length, 3);
-    const rest = (hMatch[2] ?? "").trim();
-    insert = [
-      { type: "heading", attrs: { level }, content: rest ? [{ type: "text", text: rest }] : [] },
-      { type: "paragraph", content: [] },
-    ];
-  } else if (/^[-*]\s*(.*)$/.test(text)) {
-    const rest = text.replace(/^[-*]\s*/, "").trim();
-    insert = [
-      {
-        type: "bulletList",
-        content: [
-          {
-            type: "listItem",
-            content: [{ type: "paragraph", content: rest ? [{ type: "text", text: rest }] : [] }],
-          },
-        ],
-      },
-      { type: "paragraph", content: [] },
-    ];
-  } else if (/^\d+\.\s*(.*)$/.test(text)) {
-    const rest = text.replace(/^\d+\.\s*/, "").trim();
-    insert = [
-      {
-        type: "orderedList",
-        content: [
-          {
-            type: "listItem",
-            content: [{ type: "paragraph", content: rest ? [{ type: "text", text: rest }] : [] }],
-          },
-        ],
-      },
-      { type: "paragraph", content: [] },
-    ];
-  }
-
-  if (!insert) return false;
-  commands.insertContentAt({ from, to }, insert, { updateSelection: true });
-  return true;
-}
-
-/** Strip GM control tags so they are never shown in the chat bubble. */
-function cleanGMMessageContentForDisplay(content: string): string {
-  if (!content?.trim()) return content;
-  return content
-    .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
-    .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
-    .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
-    .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
-    .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
-    .replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '')
-    .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
-    .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
-    .replace(/<EDIT_RULES>[\s\S]*$/i, '')
-    .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
-    .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
-    .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
-    .replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '')
-    .replace(/<SET_PLAYER_COUNT>\s*\d*\s*$/i, '')
-    .replace(/<UPDATE_GENERAL>[\s\S]*$/i, '')
-    .trim();
-}
+export type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, ChannelRoomType };
 
 // Format message content with markdown-like syntax
 function formatMessage(content: string) {
@@ -251,44 +136,14 @@ function formatMessage(content: string) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
-import { GameTemplate, GAME_TEMPLATES } from "@/lib/game-templates";
+import { GameTemplate } from "@/lib/game-templates";
 import { getPreferredModel } from "@/lib/model-prefs";
-
-type ConversationState = "greeting" | "game-type" | "player-count" | "rules-discussion" | "confirmation" | "completed";
-
-interface GameMasterChatProps {
-  onBack: () => void;
-  onCreateGame: (config: GameConfig) => void;
-  initialPreset?: DiscoverPreset | null;
-  onPresetApplied?: () => void;
-}
-
-// Helper function to generate session title
-function generateSessionTitle(template: GameTemplate | null, playerCount: number, gameName?: string): string {
-  const trimmedName = gameName?.trim();
-  const countStr = playerCount === 0 ? "GM decides" : `${playerCount + 1} Players`;
-  if (trimmedName) return `${trimmedName} - ${countStr}`;
-  if (!template) return "New Game Setup";
-  if (template.id === "custom") return "Custom Game Setup";
-  return `${template.name} - ${countStr}`;
-}
 
 export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
   const { session, user } = useAuth();
   const authToken = session?.access_token;
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
-  // When a preset is provided on mount, block the session-loader from auto-loading
-  // the user's last session — otherwise the async DB response arrives after the preset
-  // has been applied and overwrites it (race condition).
-  const skipAutoLoadRef = useRef(!!initialPreset);
-
-  // Session management
-  const [sessions, setSessions] = useState<GameSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string>("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [sessionToDelete, setSessionToDelete] = useState<GameSession | null>(null);
-  
   // Current conversation state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -346,11 +201,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     personality?: string;
     background?: string;
   }>>([]);
-  type ChannelRoomType = "public" | "private_ai" | "decision" | "broadcast";
-  const VALID_ROOM_TYPES = new Set<string>(["public", "private_ai", "decision", "broadcast"]);
-  const toRoomType = (v: unknown): ChannelRoomType | undefined =>
-    typeof v === "string" && VALID_ROOM_TYPES.has(v) ? (v as ChannelRoomType) : undefined;
-
   /** Channels (game rooms) decided by the GM via <CONFIG_CHANNELS>. null = use template default. */
   const [gmChannels, setGmChannels] = useState<{ id: string; name: string; roomType?: ChannelRoomType }[] | null>(null);
 
@@ -359,6 +209,27 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     const lastHostId = getLastSelectedHostId();
     if (lastHostId) return lastHostId;
     return getDefaultHost().id;
+  });
+
+  // Session management (CRUD, auto-save, load-on-mount, preset handling)
+  const {
+    sessions, setSessions, currentSessionId,
+    deleteDialogOpen, setDeleteDialogOpen,
+    sessionToDelete, setSessionToDelete,
+    saveCurrentSession, createNewSession, createSessionFromPreset,
+    loadSession, deleteSession,
+  } = useGameMasterSessions({
+    userId: user?.id,
+    initialPreset,
+    onPresetApplied,
+    messages, setMessages,
+    conversationState, setConversationState,
+    selectedTemplate, setSelectedTemplate,
+    playerCount, setPlayerCount,
+    customRules, setCustomRules,
+    gameName, setGameName,
+    selectedHostId, setSelectedHostId,
+    setIsGMTyping,
   });
 
   const getCombinedRules = useCallback((rulesOverride?: string): string => {
@@ -377,12 +248,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     setGmChannels(null);
   }, [selectedTemplate?.id]);
 
-  /** Static welcome message for new sessions (no LLM call) */
-  const STATIC_WELCOME_CONTENT =
-    "Hey, I'm your **Game Master**. Describe any game idea and I'll design the rules, roles, and setup for you.\n\n" +
-    "Or pick a **ready-made template** — hit the Templates button above to browse 20+ games.\n\n" +
-    "You can always **edit the rules panel** on the right directly, or just **tell me** what to change. When you're happy, hit **Create Room**!";
-
   /** No hardcoded chips — all quick replies are generated by the AI
    *  via /api/suggest-gm-replies so they match the conversation context. */
 
@@ -392,15 +257,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const voiceOutputEnabledRef = useRef(voiceOutputEnabled);
   voiceOutputEnabledRef.current = voiceOutputEnabled;
   const { speak: speakTTS, speakQueued, stop: stopTTS, supported: ttsSupported } = useVoiceOutput();
-
-  /** Strip markdown from quick-reply labels so "**Mini Werewolf**" shows as "Mini Werewolf" */
-  const stripChipLabel = (raw: string): string =>
-    (raw || "")
-      .replace(/\*\*(.*?)\*\*/g, "$1")
-      .replace(/\*(.*?)\*/g, "$1")
-      .replace(/`(.*?)`/g, "$1")
-      .replace(/\s+/g, " ")
-      .trim();
 
   const MAX_CHIP_LABEL = 52;
 
@@ -647,32 +503,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     gameDocEditor.setEditable(!isRulesBeingEdited);
   }, [gameDocEditor, isRulesBeingEdited]);
 
-  // Simple HTML → Markdown (Tiptap: <h1> → # xxx, <ul><li> → - xxx, <strong> → **xxx**)
-  const htmlToMarkdown = (html: string): string => {
-    let md = html;
-    // h1-h3
-    md = md.replace(/<h1>([\s\S]*?)<\/h1>/g, "# $1\n");
-    md = md.replace(/<h2>([\s\S]*?)<\/h2>/g, "## $1\n");
-    md = md.replace(/<h3>([\s\S]*?)<\/h3>/g, "### $1\n");
-    // Lists
-    md = md.replace(/<ul>([\s\S]*?)<\/ul>/g, (_match: string, content: string) => {
-      return content.replace(/<li>(.*?)<\/li>/g, "- $1\n");
-    });
-    md = md.replace(/<ol>([\s\S]*?)<\/ol>/g, (_match: string, content: string) => {
-      let i = 1;
-      return content.replace(/<li>(.*?)<\/li>/g, (_: string, item: string) => `${i++}. ${item}\n`);
-    });
-    // Bold, italic, code
-    md = md.replace(/<strong>(.*?)<\/strong>/g, "**$1**");
-    md = md.replace(/<em>(.*?)<\/em>/g, "*$1*");
-    md = md.replace(/<code>(.*?)<\/code>/g, "`$1`");
-    // Paragraphs
-    md = md.replace(/<p>(.*?)<\/p>/g, "$1\n\n");
-    // Trim extra blank lines and tags
-    md = md.replace(/<[^>]+>/g, "").trim();
-    return md;
-  };
-
   // When GM or external updates customRules, sync to editor (throttle: 500ms during stream, then once at end)
   const gameDocSyncThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevRulesBeingEditedRef = useRef(isRulesBeingEdited);
@@ -713,412 +543,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     return () => {};
   }, [customRules, selectedTemplate?.defaultRules, gameDocEditor, markdownToHtml, isRulesBeingEdited]);
 
-  // Map DB row to GameSession
-  const rowToSession = useCallback((row: { id: string; title: string; game_name: string; template_id: string; host_id: string; player_count: number; custom_rules: string | null; conversation_state: string; messages: any; created_at: string; updated_at: string }): GameSession => {
-    const msgs = (row.messages || []).map((m: any, msgIndex: number) => ({
-      ...m,
-      id: m.id || `msg-${row.id}-${msgIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      timestamp: new Date(m.timestamp)
-    }));
-    return {
-      id: row.id,
-      title: row.title,
-      messages: msgs,
-      conversationState: (row.conversation_state || "greeting") as GameSession["conversationState"],
-      selectedTemplate: GAME_TEMPLATES.find((t) => t.id === row.template_id) ?? null,
-      playerCount: row.player_count ?? 0,
-      customRules: row.custom_rules ?? "",
-      gameName: row.game_name ?? "",
-      selectedHostId: row.host_id ?? getDefaultHost().id,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
-    };
-  }, []);
-
   // Abort any in-flight Start Game requests when the component unmounts.
   useEffect(() => {
     return () => { startGameAbortRef.current?.abort(); };
   }, []);
-
-  // Load sessions: from DB when logged in, else localStorage
-  useEffect(() => {
-    if (user?.id) {
-      getGameSessions(user.id).then(({ data, error }) => {
-        if (error || !data?.length) {
-          setSessions([]);
-          // Don't create a blank session when a preset is about to be applied
-          if (!skipAutoLoadRef.current) createNewSession();
-          return;
-        }
-        const sessionsWithDates = data.map((row) => rowToSession(row));
-        setSessions(sessionsWithDates);
-        // Skip auto-loading last session when a preset was provided — the preset
-        // effect will create the right session via requestAnimationFrame, and we
-        // must not overwrite it with the async DB response.
-        if (!skipAutoLoadRef.current) loadSession(sessionsWithDates[0].id, sessionsWithDates);
-      });
-      return;
-    }
-    const savedSessions = localStorage.getItem("gameMasterSessions");
-    if (savedSessions) {
-      const parsed = JSON.parse(savedSessions);
-      const sessionsWithDates = parsed.map((s: any) => ({
-        ...s,
-        messages: (s.messages || []).map((m: any, msgIndex: number) => ({
-          ...m,
-          id: `msg-${s.id}-${msgIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-          timestamp: new Date(m.timestamp)
-        })),
-        createdAt: new Date(s.createdAt),
-        updatedAt: new Date(s.updatedAt)
-      }));
-      const MAX_SESSIONS = 30;
-      const sortedSessions = sessionsWithDates.sort((a: GameSession, b: GameSession) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
-      const sessionsToKeep = sortedSessions.slice(0, MAX_SESSIONS);
-      if (sessionsToKeep.length < sessionsWithDates.length) {
-        localStorage.setItem("gameMasterSessions", JSON.stringify(sessionsToKeep));
-      }
-      setSessions(sessionsToKeep);
-      if (sessionsToKeep.length > 0 && !skipAutoLoadRef.current) loadSession(sessionsToKeep[0].id, sessionsToKeep);
-      else if (!skipAutoLoadRef.current) createNewSession();
-    } else {
-      if (!skipAutoLoadRef.current) createNewSession();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  // Auto-save current session
-  useEffect(() => {
-    if (!currentSessionId) return;
-    
-    const timeoutId = setTimeout(() => {
-      saveCurrentSession();
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [messages, conversationState, selectedTemplate, playerCount, customRules, gameName, selectedHostId, currentSessionId]);
-
-  // Save current session to state, localStorage, and DB (when logged in)
-  const saveCurrentSession = useCallback(() => {
-    if (!currentSessionId) return;
-
-    const sessionTitle = generateSessionTitle(selectedTemplate, playerCount, gameName);
-
-    const existing = sessions.find((s) => s.id === currentSessionId);
-    // Only bump updatedAt (and move to top) when messages actually changed
-    const messagesChanged = existing
-      ? existing.messages.length !== messages.length ||
-        (messages.length > 0 &&
-          existing.messages[existing.messages.length - 1]?.id !== messages[messages.length - 1]?.id)
-      : true;
-
-    const updatedSession: GameSession = {
-      id: currentSessionId,
-      title: sessionTitle,
-      messages: messages,
-      conversationState: conversationState,
-      selectedTemplate: selectedTemplate,
-      playerCount: playerCount,
-      customRules: customRules,
-      gameName: gameName,
-      selectedHostId: selectedHostId,
-      createdAt: existing?.createdAt ?? new Date(),
-      updatedAt: messagesChanged ? new Date() : (existing?.updatedAt ?? new Date()),
-    };
-
-    // If messages changed, move session to top; otherwise update in-place to preserve order
-    setSessions((prev) => {
-      const updated = messagesChanged
-        ? [updatedSession, ...prev.filter((s) => s.id !== currentSessionId)]
-        : prev.map((s) => (s.id === currentSessionId ? updatedSession : s));
-      try {
-        localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
-      } catch (_) {}
-      return updated;
-    });
-
-    if (user?.id) {
-      const messagesForDb = messages.map((m) => ({
-        ...m,
-        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : (m.timestamp as unknown as string)
-      }));
-      updateGameSession(currentSessionId, {
-        title: sessionTitle,
-        game_name: gameName,
-        template_id: selectedTemplate?.id ?? "",
-        host_id: selectedHostId,
-        player_count: playerCount,
-        custom_rules: customRules || null,
-        conversation_state: conversationState,
-        messages: messagesForDb
-      }).then(({ error }) => {
-        if (error) console.error("[Game Master] Failed to save session to DB:", error);
-      });
-    }
-  }, [
-    currentSessionId,
-    messages,
-    conversationState,
-    selectedTemplate,
-    playerCount,
-    customRules,
-    gameName,
-    selectedHostId,
-    sessions,
-    user?.id
-  ]);
-
-  // Create new session (UUID when saving to DB, else client id for localStorage-only)
-  const createNewSession = useCallback(() => {
-    const newSessionId =
-      user?.id && typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-    const defaultHostId = getDefaultHostForTemplate(null).id;
-    const staticWelcomeMessage: ChatMessage = {
-      id: `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      role: "gm",
-      content: STATIC_WELCOME_CONTENT,
-      timestamp: new Date()
-    };
-    const newSession: GameSession = {
-      id: newSessionId,
-      title: "New Game Setup",
-      messages: [staticWelcomeMessage],
-      conversationState: "greeting",
-      selectedTemplate: null,
-      playerCount: 6,
-      customRules: "",
-      gameName: "",
-      selectedHostId: defaultHostId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    welcomeRequestedForSessionRef.current = newSessionId;
-    welcomeScheduledForSessionRef.current = newSessionId;
-    setCurrentSessionId(newSessionId);
-    setMessages([staticWelcomeMessage]);
-    setConversationState("greeting");
-    setIsGMTyping(false);
-    setSelectedTemplate(null);
-    setPlayerCount(6);
-    setCustomRules("");
-    setGameName("");
-    setSelectedHostId(defaultHostId);
-
-    if (user?.id) {
-      const messagesForDb = [staticWelcomeMessage].map((m) => ({
-        ...m,
-        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : (m.timestamp as unknown as string)
-      }));
-      createGameSession({
-        id: newSessionId,
-        user_id: user.id,
-        title: "New Game Setup",
-        game_name: "",
-        template_id: "",
-        host_id: defaultHostId,
-        player_count: 6,
-        custom_rules: "",
-        conversation_state: "greeting",
-        messages: messagesForDb
-      }).then(({ error }) => {
-        if (error) console.error("[Game Master] Failed to create session in DB:", error);
-      });
-    }
-    setSessions((prev) => {
-      const filtered = prev.filter((s) => s.id !== newSessionId);
-      const updated = [newSession, ...filtered];
-      try {
-        localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
-      } catch (_) {}
-      return updated;
-    });
-  }, [user?.id]);
-
-  const createSessionFromPreset = useCallback((preset: DiscoverPreset) => {
-    const resolvedTemplate = GAME_TEMPLATES.find((t) => t.id === (preset.templateId || "custom")) ?? null;
-    const nextPlayerCount = preset.playerCount ?? 0;
-    const nextRules = preset.rules?.trim() || resolvedTemplate?.defaultRules || "";
-    const nextGameName = preset.name?.trim() || "";
-    const recommendedHost = getDefaultHostForTemplate(resolvedTemplate?.id ?? null);
-
-    const templateName = resolvedTemplate?.name ?? preset.name ?? "this game";
-    const presetWelcomeContent =
-      `Great choice — **${templateName}**! I've loaded the rules on the right.\n\n` +
-      "You can **tell me** what you'd like to change (player count, roles, pacing…) and I'll update the rules for you. " +
-      "Or **edit the rules panel directly** on the right — either way works!\n\n" +
-      (nextPlayerCount > 0
-        ? `Currently set for **${nextPlayerCount + 1} players** (you + ${nextPlayerCount} AI), plus a Host who runs the game. Say **"create game"** when you're ready!`
-        : "How many players would you like? Say **\"create game\"** whenever you're ready!");
-    const presetWelcomeMessage: ChatMessage = {
-      id: `msg-preset-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      role: "gm",
-      content: presetWelcomeContent,
-      timestamp: new Date()
-    };
-
-    const newSessionId =
-      user?.id && typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-    const newSession: GameSession = {
-      id: newSessionId,
-      title: generateSessionTitle(resolvedTemplate, nextPlayerCount, nextGameName),
-      messages: [presetWelcomeMessage],
-      conversationState: "greeting",
-      selectedTemplate: resolvedTemplate,
-      playerCount: nextPlayerCount,
-      customRules: nextRules,
-      gameName: nextGameName,
-      selectedHostId: recommendedHost.id,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    welcomeRequestedForSessionRef.current = newSessionId;
-    welcomeScheduledForSessionRef.current = newSessionId;
-
-    setCurrentSessionId(newSessionId);
-    setMessages([presetWelcomeMessage]);
-    setConversationState("greeting");
-    setIsGMTyping(false);
-    setSelectedTemplate(resolvedTemplate);
-    setPlayerCount(nextPlayerCount);
-    setCustomRules(nextRules);
-    setGameName(nextGameName);
-    setSelectedHostId(recommendedHost.id);
-
-    if (user?.id) {
-      const messagesForDb = [presetWelcomeMessage].map((m) => ({
-        ...m,
-        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : (m.timestamp as unknown as string)
-      }));
-      createGameSession({
-        id: newSessionId,
-        user_id: user.id,
-        title: newSession.title,
-        game_name: nextGameName,
-        template_id: resolvedTemplate?.id ?? "",
-        host_id: recommendedHost.id,
-        player_count: nextPlayerCount,
-        custom_rules: nextRules,
-        conversation_state: "greeting",
-        messages: messagesForDb
-      }).then(({ error }) => {
-        if (error) console.error("[Game Master] Failed to create session in DB:", error);
-      });
-    }
-    setSessions((prev) => {
-      const filtered = prev.filter((s) => s.id !== newSessionId);
-      const updated = [newSession, ...filtered];
-      try {
-        localStorage.setItem("gameMasterSessions", JSON.stringify(updated));
-      } catch (_) {}
-      return updated;
-    });
-  }, [user?.id]);
-
-  // Track the last applied preset to avoid duplicate applications
-  const lastAppliedPresetRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!initialPreset) {
-      lastAppliedPresetRef.current = null;
-      return;
-    }
-    
-    // Create a unique key for this preset based on id, name, and rules hash
-    const rulesHash = initialPreset.rules?.substring(0, 100) || '';
-    const presetKey = `${initialPreset.id}-${initialPreset.name}-${rulesHash}`;
-    
-    // Only apply if this is a different preset
-    if (lastAppliedPresetRef.current !== presetKey) {
-      // Force update by clearing first, then applying
-      setCustomRules("");
-      setSelectedTemplate(null);
-      
-      // Use requestAnimationFrame to ensure state is cleared before applying new preset
-      requestAnimationFrame(() => {
-        createSessionFromPreset(initialPreset);
-        lastAppliedPresetRef.current = presetKey;
-        
-        if (onPresetApplied) {
-          // Use setTimeout to ensure state updates are complete
-          setTimeout(() => {
-            onPresetApplied();
-          }, 100);
-        }
-      });
-    }
-  }, [initialPreset, createSessionFromPreset, onPresetApplied]);
-
-  // Load a session. When fromHistoryClick is true, we skip auto-welcome for empty sessions.
-  const loadSession = (sessionId: string, sessionsList?: GameSession[], fromHistoryClick?: boolean) => {
-    const sessionsToSearch = sessionsList || sessions;
-    const session = sessionsToSearch.find(s => s.id === sessionId);
-    if (!session) return;
-
-    if (fromHistoryClick) didLoadSessionRef.current = true;
-    setCurrentSessionId(session.id);
-    setMessages(session.messages);
-    setConversationState(session.conversationState);
-    setSelectedTemplate(session.selectedTemplate);
-    setPlayerCount(session.playerCount);
-    setCustomRules(session.customRules);
-    setGameName(session.gameName);
-    setSelectedHostId(session.selectedHostId);
-    setIsGMTyping(session.messages.length === 0 && !fromHistoryClick);
-  };
-
-  // Delete a session
-  const deleteSession = (sessionId: string) => {
-    if (user?.id) {
-      deleteGameSession(sessionId, user.id).then(({ error }) => {
-        if (error) console.error("[Game Master] Failed to delete session from DB:", error);
-      });
-    }
-    setSessions((prev) => {
-      const filtered = prev.filter((s) => s.id !== sessionId);
-      try {
-        localStorage.setItem("gameMasterSessions", JSON.stringify(filtered));
-      } catch (_) {}
-      if (sessionId === currentSessionId) {
-        if (filtered.length > 0) loadSession(filtered[0].id, filtered);
-        else createNewSession();
-      }
-      return filtered;
-    });
-    toast.success("Session deleted");
-  };
-
-  // Ref to avoid requesting welcome twice for the same session
-  const welcomeRequestedForSessionRef = useRef<string | null>(null);
-  const welcomeScheduledForSessionRef = useRef<string | null>(null);
-  // Don't auto-send welcome message when opening from history; only for new sessions
-  const didLoadSessionRef = useRef(false);
-
-  // When an empty session is shown (e.g. loaded from old data), add static welcome once
-  useEffect(() => {
-    if (messages.length !== 0 || !currentSessionId) return;
-    if (didLoadSessionRef.current) {
-      didLoadSessionRef.current = false;
-      return;
-    }
-    if (welcomeRequestedForSessionRef.current === currentSessionId) return;
-    welcomeRequestedForSessionRef.current = currentSessionId;
-    welcomeScheduledForSessionRef.current = currentSessionId;
-    const staticMsg: ChatMessage = {
-      id: `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      role: "gm",
-      content: STATIC_WELCOME_CONTENT,
-      timestamp: new Date()
-    };
-    setMessages([staticMsg]);
-  }, [currentSessionId, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -1145,222 +573,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);
-  };
-
-  // Helper function to extract and update game rules from AI response (like a code editor agent)
-  const extractAndUpdateRules = (response: string): string => {
-    let cleanedResponse = response;
-    
-    // 1. Handle EDIT_RULES - Complete replacement (highest priority)
-    // Use a more robust regex that captures all content between tags, including newlines
-    const editRulesMatch = response.match(/<EDIT_RULES>([\s\S]*?)<\/EDIT_RULES>/i);
-    if (editRulesMatch && editRulesMatch[1]) {
-      const newRules = editRulesMatch[1].trim();
-      if (newRules) {
-        // Always update with the complete rules from the tag
-        setCustomRules(newRules);
-        // Remove the tag from the response (use global flag to remove all instances)
-        cleanedResponse = cleanedResponse.replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '').trim();
-        return cleanedResponse; // EDIT_RULES replaces everything, so return early
-      }
-    }
-    
-    // Also check for incomplete EDIT_RULES tags (in case closing tag is missing)
-    // This can happen if streaming was interrupted
-    const incompleteEditMatch = response.match(/<EDIT_RULES>([\s\S]+)$/i);
-    if (incompleteEditMatch && incompleteEditMatch[1]) {
-      const partialRules = incompleteEditMatch[1].trim();
-      if (partialRules.length > 50) {
-        // If we have substantial content even without closing tag, use it
-        setCustomRules(partialRules);
-        cleanedResponse = cleanedResponse.replace(/<EDIT_RULES>[\s\S]*$/i, '').trim();
-      }
-    }
-    
-    // 2. Handle ADD_TO_RULES - Add content to a specific section
-    const addToRulesMatches = Array.from(response.matchAll(/<ADD_TO_RULES\s+section="([^"]+)"[^>]*>([\s\S]*?)<\/ADD_TO_RULES>/gi));
-    if (addToRulesMatches.length > 0) {
-      setCustomRules(prevRules => {
-        let updatedRules = prevRules || selectedTemplate?.defaultRules || "";
-        for (const match of addToRulesMatches) {
-          const section = match[1].trim();
-          const contentToAdd = match[2].trim();
-          if (contentToAdd) {
-            updatedRules = addContentToSection(updatedRules, section, contentToAdd);
-          }
-        }
-        return updatedRules;
-      });
-      // Remove all ADD_TO_RULES tags from response
-      for (const match of addToRulesMatches) {
-        cleanedResponse = cleanedResponse.replace(match[0], '').trim();
-      }
-    }
-    
-    // 3. Handle REPLACE_IN_RULES - Replace specific content in a section
-    const replaceMatches = Array.from(response.matchAll(/<REPLACE_IN_RULES\s+section="([^"]+)"\s+old="([^"]+)"\s+new="([^"]+)"[^>]*>\s*<\/REPLACE_IN_RULES>/gi));
-    if (replaceMatches.length > 0) {
-      setCustomRules(prevRules => {
-        let updatedRules = prevRules || selectedTemplate?.defaultRules || "";
-        for (const match of replaceMatches) {
-          const section = match[1].trim();
-          const oldContent = match[2].trim();
-          const newContent = match[3].trim();
-          if (oldContent && newContent) {
-            updatedRules = replaceContentInSection(updatedRules, section, oldContent, newContent);
-          }
-        }
-        return updatedRules;
-      });
-      // Remove all REPLACE_IN_RULES tags from response
-      for (const match of replaceMatches) {
-        cleanedResponse = cleanedResponse.replace(match[0], '').trim();
-      }
-    }
-    
-    // Also handle old UPDATE_RULES format for backward compatibility
-    const updateRulesMatch = response.match(/<UPDATE_RULES>([\s\S]*?)<\/UPDATE_RULES>/i);
-    if (updateRulesMatch && updateRulesMatch[1] && !editRulesMatch) {
-      const extractedRules = updateRulesMatch[1].trim();
-      if (extractedRules) {
-        setCustomRules(extractedRules);
-        cleanedResponse = cleanedResponse.replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '').trim();
-      }
-    }
-
-    // 4. Handle SET_PLAYER_COUNT - GM decides number of AI players
-    const setPlayerCountMatch = response.match(/<SET_PLAYER_COUNT>\s*(\d+)\s*<\/SET_PLAYER_COUNT>/i);
-    if (setPlayerCountMatch && setPlayerCountMatch[1]) {
-      const n = parseInt(setPlayerCountMatch[1], 10);
-      if (!Number.isNaN(n)) {
-        const min = selectedTemplate ? selectedTemplate.minPlayers - 1 : 1;
-        const max = selectedTemplate ? selectedTemplate.maxPlayers - 1 : 19;
-        const clamped = Math.min(max, Math.max(min, n));
-        setPlayerCount(clamped);
-      }
-      cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '').trim();
-    }
-
-    // 5. Handle UPDATE_GENERAL - GM adds background to Rules (prepend to rules)
-    const updateGeneralMatch = response.match(/<UPDATE_GENERAL>([\s\S]*?)<\/UPDATE_GENERAL>/i);
-    if (updateGeneralMatch && updateGeneralMatch[1]) {
-      const background = updateGeneralMatch[1].trim();
-      if (background) {
-        setCustomRules((prevRules) => {
-          const existing = prevRules || selectedTemplate?.defaultRules || "";
-          // If rules already start with background-like content, replace it; otherwise prepend
-          const hasBackground = existing.match(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}/i);
-          if (hasBackground) {
-            return background + "\n\n" + existing.replace(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}\n\n/i, '');
-          }
-          return background + (existing ? "\n\n" + existing : "");
-        });
-      }
-      cleanedResponse = cleanedResponse.replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '').trim();
-    }
-
-    // 6. Handle CONFIG_CHANNELS - GM decides game rooms (e.g. General, Werewolves only)
-    const configChannelsMatch = response.match(/<CONFIG_CHANNELS>([\s\S]*?)<\/CONFIG_CHANNELS>/i);
-    if (configChannelsMatch && configChannelsMatch[1]) {
-      try {
-        const raw = configChannelsMatch[1].trim();
-        const arr = JSON.parse(raw) as Array<{ id: string; name: string; roomType?: unknown }>;
-        if (Array.isArray(arr) && arr.length > 0) {
-          const valid = arr
-            .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && typeof c.name === 'string')
-            .map((c) => ({ id: c.id, name: c.name, roomType: toRoomType(c.roomType) }));
-          if (valid.length > 0) setGmChannels(valid);
-        }
-      } catch {
-        /* ignore parse errors */
-      }
-      cleanedResponse = cleanedResponse.replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '').trim();
-    }
-    cleanedResponse = cleanedResponse.replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '').trim();
-
-    // 7. Remove CONFIG_PLAYERS from display (players aren't programmers; only show natural language)
-    cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '').trim();
-    cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '').trim();
-
-    return cleanedResponse;
-  };
-
-  const extractAndApplyPlayerConfig = (response: string): void => {
-    const configMatch = response.match(/<CONFIG_PLAYERS>([\s\S]*?)<\/CONFIG_PLAYERS>/i);
-    if (!configMatch || !configMatch[1]) return;
-    try {
-      const raw = configMatch[1].trim();
-      const arr = JSON.parse(raw) as Array<{ name: string; gender?: string; personality?: string; background?: string }>;
-      if (Array.isArray(arr) && arr.length > 0) {
-        const valid = arr.filter((p): p is { name: string; gender?: string; personality?: string; background?: string } =>
-          p && typeof p === 'object' && typeof p.name === 'string'
-        );
-        if (valid.length > 0) setConfiguredPlayers(valid);
-      }
-    } catch {
-      /* ignore parse errors */
-    }
-  };
-
-  // Helper function to add content to a specific section
-  // Now more flexible - can handle natural language sections
-  const addContentToSection = (rules: string, section: string, content: string): string => {
-    if (!rules) {
-      // If no rules exist, just add the content
-      return content;
-    }
-    
-    // Try to find the section using flexible matching
-    // First try exact section name match (uppercase, with colon)
-    const exactSectionRegex = new RegExp(`(${section}[\\s:]*)([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s]+:|$)`, 'i');
-    let match = rules.match(exactSectionRegex);
-    
-    if (match) {
-      // Section exists, append to it
-      const sectionHeader = match[1];
-      const sectionContent = match[2].trim();
-      const newSectionContent = sectionContent 
-        ? `${sectionContent}\n${content}`
-        : content;
-      return rules.replace(exactSectionRegex, `$1${newSectionContent}`);
-    }
-    
-    // If no exact match, try to find similar section names or just append at the end
-    // For natural language rules, just append the new content
-    // This is more flexible for LLM-readable rules
-    return `${rules}\n\n${content}`;
-  };
-
-  // Helper function to replace content in a specific section
-  // Now more flexible - can handle natural language rules
-  const replaceContentInSection = (rules: string, section: string, oldContent: string, newContent: string): string => {
-    if (!rules) return rules;
-    
-    // Escape special regex characters in oldContent
-    const escapedOld = oldContent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    
-    // First try to find and replace within a specific section
-    const sectionRegex = new RegExp(`(${section}[\\s:]*)([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s]+:|$)`, 'i');
-    const match = rules.match(sectionRegex);
-    
-    if (match) {
-      const sectionHeader = match[1];
-      let sectionContent = match[2];
-      
-      // Replace the old content with new content within the section
-      if (sectionContent.includes(oldContent)) {
-        sectionContent = sectionContent.replace(new RegExp(escapedOld, 'g'), newContent);
-        return rules.replace(sectionRegex, `$1${sectionContent}`);
-      }
-    }
-    
-    // If section not found or content not in section, try global replace
-    // This is more flexible for natural language rules where structure is less rigid
-    if (rules.includes(oldContent)) {
-      return rules.replace(new RegExp(escapedOld, 'g'), newContent);
-    }
-    
-    return rules;
   };
 
   const getGMResponse = async (userInput: string) => {
@@ -1535,10 +747,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 processedEditTags.add(tagKey);
                 const n = parseInt(match[1], 10);
                 if (!Number.isNaN(n)) {
-                  const min = selectedTemplate ? selectedTemplate.minPlayers - 1 : 1;
-                  const max = selectedTemplate ? selectedTemplate.maxPlayers - 1 : 19;
-                  const clamped = Math.min(max, Math.max(min, n));
-                  setPlayerCount(clamped);
+                  setPlayerCount(clampPlayerCount(n, selectedTemplate));
                 }
               }
             }
@@ -1555,31 +764,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             console.debug('Real-time editing error (non-critical):', e);
           }
           
-          // Clean response for display (remove all editing tags) - keep conversation and editing separate
-          const cleanForDisplay = (text: string): string => {
-            // Remove all editing tags and their content
-            let cleaned = text
-              .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
-              .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
-              .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
-              .replace(/<UPDATE_RULES>[\s\S]*?<\/UPDATE_RULES>/gi, '')
-              .replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '')
-              .replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '')
-              .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
-              .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
-              // Also remove incomplete tags
-              .replace(/<EDIT_RULES>[\s\S]*$/i, '')
-              .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
-              .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')
-              .replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '')
-              .replace(/<CONFIG_CHANNELS>[\s\S]*$/i, '')
-              .replace(/<SET_PLAYER_COUNT>\s*\d*\s*$/i, '')
-              .replace(/<UPDATE_GENERAL>[\s\S]*$/i, '')
-              .trim();
-            return cleaned;
-          };
-          
-          const displayContent = cleanForDisplay(fullResponse);
+          const displayContent = cleanGMMessageContentForDisplay(fullResponse);
 
           // Add temp message only when first chunk with content arrives
           setMessages(prev => {
@@ -1599,7 +784,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             } else {
               updated = prev;
             }
-            // Rules are updated in real-time via extractAndUpdateRules in onChunk
             return updated;
           });
           // Auto-scroll to bottom during streaming
@@ -1609,61 +793,52 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             }
           }, 50);
         },
-        // onComplete: Handle cleanup after streaming completes
         () => {
           setIsGMTyping(false);
           setIsStreaming(false);
-          
-          // Final pass: Extract and update rules if present (handles any missed edits)
-          // This ensures we always have the complete, final version of rules
-          // Extract rules and player config
-          const cleanedResponse = extractAndUpdateRules(fullResponse);
-          extractAndApplyPlayerConfig(fullResponse);
-          
-          // Double-check: if we have EDIT_RULES in the final response, make sure it's applied
-          const finalEditMatch = fullResponse.match(/<EDIT_RULES>([\s\S]*?)<\/EDIT_RULES>/i);
-          if (finalEditMatch && finalEditMatch[1]) {
-            const finalRules = finalEditMatch[1].trim();
-            if (finalRules) {
-              flushSync(() => setCustomRules(finalRules));
-              rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            }
+
+          const parsed = parseGMResponseTags(fullResponse);
+
+          // Apply rules — EDIT_RULES has highest priority and skips other rule modifications
+          if (parsed.configPlayers && parsed.configPlayers.length > 0) {
+            setConfiguredPlayers(parsed.configPlayers);
           }
-          const finalGeneralMatch = fullResponse.match(/<UPDATE_GENERAL>([\s\S]*?)<\/UPDATE_GENERAL>/i);
-          if (finalGeneralMatch && finalGeneralMatch[1]) {
-            const background = finalGeneralMatch[1].trim();
-            if (background) {
-              flushSync(() => {
-                setCustomRules((prevRules) => {
-                  const existing = prevRules || selectedTemplate?.defaultRules || "";
-                  const hasBackground = existing.match(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}/i);
-                  if (hasBackground) {
-                    return background + "\n\n" + existing.replace(/^(BACKGROUND|STORY|WORLD)[\s\S]{0,200}\n\n/i, '');
-                  }
-                  return background + (existing ? "\n\n" + existing : "");
-                });
-              });
-            }
+          if (parsed.configChannels) {
+            setGmChannels(parsed.configChannels);
           }
-          
-          setIsRulesBeingEdited(false); // Reset editing indicator after final update
-          
-          // Replace temp message with final message (ensure only one message)
-          // Use cleaned response which has all editing tags removed
+          if (parsed.setPlayerCount != null) {
+            setPlayerCount(clampPlayerCount(parsed.setPlayerCount, selectedTemplate));
+          }
+
+          const hasRulesChange = parsed.editRules || parsed.addToRules.length > 0 || parsed.replaceInRules.length > 0 || parsed.updateRules;
+          if (hasRulesChange) {
+            flushSync(() => {
+              setCustomRules(prevRules =>
+                applyRulesUpdates(prevRules, parsed, selectedTemplate?.defaultRules)
+              );
+            });
+            rulesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+          if (parsed.updateGeneral) {
+            flushSync(() => {
+              setCustomRules(prevRules =>
+                applyBackgroundToRules(prevRules, parsed.updateGeneral!, selectedTemplate?.defaultRules)
+              );
+            });
+          }
+
+          setIsRulesBeingEdited(false);
+
+          const cleanedResponse = parsed.cleanedResponse;
           setMessages(prev => {
-            // If no content was received after cleaning, remove the temp message
             if (!cleanedResponse.trim()) {
               return prev.filter(msg => msg.id !== tempMessageId);
             }
-            // Replace temp message ID with final message ID and use cleaned response
-            // This ensures conversation content is completely separate from editing tags
-            const updated = prev.map(msg =>
+            return prev.map(msg =>
               msg.id === tempMessageId
                 ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, content: cleanedResponse }
                 : msg
             );
-            // Rules are already updated via extractAndUpdateRules
-            return updated;
           });
         },
         // onError: Handle errors

@@ -4,7 +4,7 @@ import {
   CATEGORY_MAP,
   EXTRA_GAMES,
   getPresetById,
-} from "@/app/components/discover-page";
+} from "@/data/discover-templates";
 
 describe("Discover page data integrity", () => {
   // ── ALL_PRESETS ──────────────────────────────────────────────────────────────

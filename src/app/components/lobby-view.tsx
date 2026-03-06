@@ -161,6 +161,7 @@ export function LobbyView({
                     : "text-zinc-500 hover:text-violet-300 hover:bg-violet-900/30"
                 )}
                 title="Test voice"
+                aria-label={`Test voice for ${host.name}`}
               >
                 {testingVoice === host.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -225,6 +226,7 @@ export function LobbyView({
                             : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700/50"
                         )}
                         title="Test voice"
+                        aria-label={`Test voice for ${player.name}`}
                       >
                         {testingVoice === player.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -238,6 +240,7 @@ export function LobbyView({
                         onClick={() => onRemovePlayer(player.id)}
                         className="p-1 rounded-md hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300"
                         title="Remove player"
+                        aria-label={`Remove ${player.name}`}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>

@@ -8,9 +8,11 @@ import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { ChannelList } from "@/app/components/channel-list";
 import { ChatArea } from "@/app/components/chat-area";
-import { LobbyView } from "@/app/components/lobby-view";
-import { CharacterBrowser } from "@/app/components/character-browser";
-import { PlayerPanelWithBoard } from "@/app/components/player-panel-with-board";
+import dynamic from "next/dynamic";
+
+const LobbyView = dynamic(() => import("@/app/components/lobby-view").then(m => m.LobbyView), { ssr: false });
+const CharacterBrowser = dynamic(() => import("@/app/components/character-browser").then(m => m.CharacterBrowser), { ssr: false });
+const PlayerPanelWithBoard = dynamic(() => import("@/app/components/player-panel-with-board").then(m => m.PlayerPanelWithBoard), { ssr: false });
 import type { PlayerBoardData } from "@/app/components/player-board";
 import { parseHostActions, resolvePlayerRefToId } from "@/lib/host-actions";
 import { isPlayerEliminated } from "@/lib/player-badges";
@@ -29,8 +31,17 @@ import { Menu, Hash, Users } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
-import { supabase } from "@/lib/supabase";
 import { safeMarked } from "@/lib/safe-marked";
+import {
+  MAX_AUTO_ADVANCES,
+  GAME_INACTIVITY_TIMEOUT_MS,
+  HOST_CONTEXT_WINDOW,
+  MAX_STREAM_TOKENS,
+  BASE_STREAM_TOKENS,
+  TOKENS_PER_PLAYER,
+} from "@/lib/game-room-constants";
+import { useGameRoomPresence } from "@/hooks/useGameRoomPresence";
+import { useRoomMembers } from "@/hooks/useRoomMembers";
 import {
   getConversationMode,
   hostPace,
@@ -46,29 +57,6 @@ import {
   runSpeakerQueue as runSpeakerQueueFn,
   runPrivateChannelConversation as runPrivateChannelConversationFn,
 } from "@/lib/speaker-queue";
-
-/** Number of AI players to reply right after the host's initial greeting */
-const INITIAL_PLAYER_REPLIES = 3;
-
-/** Members polling interval (ms) and max consecutive errors before giving up */
-const MEMBERS_POLL_INTERVAL_MS = 15_000;
-const MEMBERS_MAX_ERRORS = 3;
-
-/** Maximum autonomous Host→AI advance loops before waiting for human input */
-const MAX_AUTO_ADVANCES = 8;
-
-/** Game inactivity timeout (ms). If no message is added for this long, auto-end the game. */
-const GAME_INACTIVITY_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
-
-/** Number of recent messages to include in the Host context window */
-const HOST_CONTEXT_WINDOW = 35;
-
-/** Server-side max token cap for the streaming response */
-const MAX_STREAM_TOKENS = 4096;
-/** Base token budget before per-player scaling */
-const BASE_STREAM_TOKENS = 500;
-/** Additional tokens per player */
-const TOKENS_PER_PLAYER = 80;
 
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 
@@ -131,16 +119,20 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   // shareCopied state removed — share button moved out of game room
   const [inviteCopied, setInviteCopied] = useState(false);
-  const [roomMembers, setRoomMembers] = useState<Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null; guest_id: string | null }>>([]);
-  // Guests currently online according to Supabase Presence (real-time, auto-cleared on disconnect)
-  const [onlineGuestPresences, setOnlineGuestPresences] = useState<Array<{ id: string; nickname: string }>>([]);
+  const { roomMembers, refreshMembers } = useRoomMembers(gameId);
 
   // Guest player: arrived via /join/[inviteCode] with guestId URL param
   const [guestId, setGuestId] = useState<string | null>(null);
   const [guestMemberId, setGuestMemberId] = useState<string | null>(null);
   const [guestNickname, setGuestNickname] = useState<string | null>(null);
-  // Presence: is the room owner currently online?
-  const [isOwnerOnline, setIsOwnerOnline] = useState<boolean | null>(null); // null = unknown (loading)
+  // Presence: owner/guest online status via Supabase Presence
+  const { onlineGuestPresences, isOwnerOnline } = useGameRoomPresence({
+    gameId,
+    isOwner: !!games.find((g) => g.id === gameId) && !!session?.user?.id,
+    gamesLoading,
+    sessionUserId: session?.user?.id,
+    guestNickname,
+  });
 
   // ─── Multiplayer: owner / guest detection ───────────────────────────────────
   // GameContext only loads games belonging to the logged-in user; if this game
@@ -280,130 +272,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     if (storedNickname) setGuestNickname(storedNickname);
   }, [gameId, session?.user?.id]);
 
-  // ─── Presence: owner broadcasts online status; guests/others subscribe ────
-  useEffect(() => {
-    if (!gameId) return;
-    // All clients are ready to detect owner presence after games list is loaded
-    // (isOwner is reliable once gamesLoading is false)
-    if (gamesLoading) return;
-
-    // Read guestId/nickname directly from URL or localStorage instead of React state.
-    // This prevents a double-channel race condition: if we depend on `guestId` state,
-    // the effect runs first with guestId=null (key="anon"), then re-runs when state
-    // updates — creating two channels with the same name simultaneously, causing
-    // Supabase to reject the second subscription silently (guest never appears).
-    const directGuestId = !session?.user?.id
-      ? (new URLSearchParams(window.location.search).get("guestId")
-          ?? localStorage.getItem(`guestId_${gameId}`)
-          ?? null)
-      : null;
-    const directNickname = !session?.user?.id
-      ? (localStorage.getItem(`nickname_${gameId}`) ?? guestNickname ?? "Guest")
-      : null;
-
-    const channel = supabase.channel(`presence:${gameId}`, {
-      config: { presence: { key: session?.user?.id ?? directGuestId ?? "anon" } },
-    });
-
-    const syncGuestsFromState = (state: Record<string, Array<{ role?: string; nickname?: string }>>) => {
-      const guests = Object.entries(state).flatMap(([key, entries]) =>
-        entries
-          .filter((p) => p.role === "guest")
-          .map((p) => ({ id: key, nickname: p.nickname ?? "Guest" }))
-      );
-      setOnlineGuestPresences(guests);
-    };
-
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ role: string; nickname?: string }>();
-        const ownerPresent = Object.values(state)
-          .flat()
-          .some((p) => p.role === "owner");
-        setIsOwnerOnline(ownerPresent);
-        syncGuestsFromState(state);
-      })
-      .on("presence", { event: "join" }, ({ newPresences }) => {
-        if ((newPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
-          setIsOwnerOnline(true);
-        }
-        // Explicitly sync guests on join — don't rely on sync event firing
-        const state = channel.presenceState<{ role: string; nickname?: string }>();
-        syncGuestsFromState(state);
-      })
-      .on("presence", { event: "leave" }, ({ leftPresences }) => {
-        const state = channel.presenceState<{ role: string; nickname?: string }>();
-        if ((leftPresences as Array<{ role?: string }>).some((p) => p.role === "owner")) {
-          const ownerStillPresent = Object.values(state).flat().some((p) => p.role === "owner");
-          setIsOwnerOnline(ownerStillPresent);
-        }
-        // Explicitly sync guests on leave — don't rely on sync event firing
-        syncGuestsFromState(state);
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          if (isOwner) {
-            await channel.track({ role: "owner", userId: session?.user?.id });
-          } else {
-            await channel.track({ role: "guest", nickname: directNickname ?? "Guest" });
-          }
-        }
-      });
-
-    // When the browser tab is closed/refreshed, React's useEffect cleanup does NOT run.
-    // Calling channel.untrack() in beforeunload makes Supabase fire the leave event
-    // on other clients immediately instead of waiting ~30 s for heartbeat timeout.
-    const handleBeforeUnload = () => {
-      channel.untrack();
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      // removeChannel sends a phx_leave message synchronously, which fires the
-      // presence leave event on other clients immediately (no heartbeat wait).
-      supabase.removeChannel(channel);
-    };
-  // guestId/guestNickname intentionally excluded: we read them directly from
-  // URL/localStorage above so the channel is created with the correct key on the
-  // first run, preventing the double-channel race condition.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, gamesLoading, isOwner, session?.user?.id]);
-
-  // ─── All participants: load + refresh member list ─────────────────────────
-  // Polls every 15 s. Stops polling after 3 consecutive failures to avoid
-  // spamming the server when auth is broken or network is down.
-  useEffect(() => {
-    if (!gameId) return;
-    let consecutiveErrors = 0;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    const schedule = () => {
-      timer = setTimeout(() => { load(); }, MEMBERS_POLL_INTERVAL_MS);
-    };
-
-    const load = () => {
-      const url = `/api/games/${gameId}/members`;
-      fetch(url)
-        .then((r) => r.ok ? r.json() : null)
-        .then((data: { members?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null; guest_id: string | null }> } | null) => {
-          if (data?.members) {
-            setRoomMembers(data.members);
-            consecutiveErrors = 0;
-          } else {
-            consecutiveErrors++;
-          }
-          if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
-        })
-        .catch(() => {
-          consecutiveErrors++;
-          if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
-        });
-    };
-
-    load();
-    return () => { if (timer) clearTimeout(timer); };
-  }, [gameId]);
+  // Presence + member polling handled by extracted hooks above
 
   // ─── Timer expiry: send system event when countdown reaches zero ─────────
   useEffect(() => {
@@ -1600,14 +1469,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         toast.error(playerId ? "Failed to assign guest" : "Failed to unassign guest");
         return;
       }
-      // Refresh member list to reflect new binding
-      const url = `/api/games/${gameId}/members`;
-      const data = await fetch(url).then((r) => r.ok ? r.json() : null);
-      if (data?.members) setRoomMembers(data.members);
+      await refreshMembers();
     } catch {
       toast.error(playerId ? "Failed to assign guest" : "Failed to unassign guest");
     }
-  }, [gameId, session?.access_token]);
+  }, [gameId, session?.access_token, refreshMembers]);
 
   if (!currentGame) {
     return (

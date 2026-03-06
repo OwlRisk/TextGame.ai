@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers, cookies } from "next/headers";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "../styles/index.css";
 import { GameProvider } from "@/app/contexts/GameContext";
 import { AuthProvider } from "@/app/contexts/AuthContext";
@@ -137,7 +139,7 @@ export default async function RootLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 
   return (
-    <html lang="en" className="h-full overflow-hidden [-webkit-tap-highlight-color:transparent]">
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full overflow-hidden [-webkit-tap-highlight-color:transparent]`}>
       <head>
         <link rel="dns-prefetch" href="https://hazjbhhreltgjexxaazn.supabase.co" />
         {process.env.NEXT_PUBLIC_SEARCH_CONSOLE_ID && (
@@ -145,6 +147,9 @@ export default async function RootLayout({
         )}
       </head>
       <body className="antialiased h-full overflow-hidden safe-area-padding" suppressHydrationWarning>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[99999] focus:rounded-lg focus:bg-violet-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white">
+          Skip to main content
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
@@ -198,7 +203,7 @@ export default async function RootLayout({
         </noscript>
         <SuppressFastRefreshLogs />
         <AuthProvider>
-          <GameProvider>{children}</GameProvider>
+          <GameProvider><main id="main-content">{children}</main></GameProvider>
         </AuthProvider>
         <Analytics />
         <GoogleAnalyticsWrapper gaId={gaId} inEEA={inEEA && gaConsent !== "granted"} />

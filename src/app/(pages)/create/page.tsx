@@ -12,7 +12,7 @@ const GameMasterChat = dynamic(
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
-import { getPresetById } from "@/app/components/discover-page";
+import { getPresetById } from "@/data/discover-templates";
 import { ProtectedRoute } from "@/app/components/protected-route";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 

@@ -259,6 +259,7 @@ function PlayerCard({
               size="icon"
               className="h-6 w-6 hover:bg-zinc-600/50"
               onClick={() => onToggleMute?.(player.id)}
+              aria-label={player.isMuted ? `Unmute ${player.name}` : `Mute ${player.name}`}
             >
               {player.isMuted ? (
                 <VolumeX className="h-3 w-3 text-red-400" />

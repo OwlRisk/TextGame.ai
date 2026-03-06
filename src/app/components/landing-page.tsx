@@ -5,12 +5,7 @@ import {
   Sparkles,
   MessageCircle,
   Users,
-  Crown,
   Zap,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Gamepad2,
   Compass,
 } from "lucide-react";
 import NextImage from "next/image";
@@ -18,158 +13,20 @@ import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { BRAND_CONFIG } from "@/app/config/brand-config";
 import { GAME_MASTER_AVATAR } from "@/lib/game-master-avatar";
-
-/** Next.js Image with onError fallback via state */
-function SafeAvatar({
-  src,
-  fallback,
-  alt,
-  width,
-  height,
-  className,
-  loading,
-  priority,
-}: {
-  src: string;
-  fallback: string;
-  alt: string;
-  width: number;
-  height: number;
-  className?: string;
-  loading?: "lazy" | "eager";
-  priority?: boolean;
-}) {
-  const [imgSrc, setImgSrc] = useState(src);
-  return (
-    <NextImage
-      src={imgSrc}
-      alt={alt}
-      width={width}
-      height={height}
-      className={className}
-      loading={priority ? undefined : loading}
-      priority={priority}
-      onError={() => setImgSrc(fallback)}
-    />
-  );
-}
+import {
+  LANDING_AVATAR_MAP,
+  GAME_SCENARIOS,
+  FEATURES,
+  FEATURED_GAMES,
+  MARQUEE_CHARACTERS,
+} from "@/data/landing-content";
+import { SafeAvatar, PreviewAvatar, StreamingText } from "@/app/components/landing/shared";
+import { InsideGameSection } from "@/app/components/landing/InsideGameSection";
+import { FAQSection } from "@/app/components/landing/FAQSection";
 
 interface LandingPageProps {
   onSignIn: () => void;
   onCreateGame?: (presetId?: string) => void;
-}
-
-
-/** Static pre-generated avatar map for landing page characters */
-const LANDING_AVATAR_MAP: Record<string, string> = {
-  // Players
-  Alex:            "/avatars/preview/landing-avatar-alex.webp",
-  Casey:           "/avatars/preview/landing-avatar-casey.webp",
-  Drew:            "/avatars/preview/landing-avatar-drew.webp",
-  Lucia:           "/avatars/preview/landing-avatar-lucia.webp",
-  Marco:           "/avatars/preview/landing-avatar-marco.webp",
-  Jordan:          "/avatars/preview/landing-avatar-jordan.webp",
-  Riley:           "/avatars/preview/landing-avatar-riley.webp",
-  Morgan:          "/avatars/preview/landing-avatar-morgan.webp",
-  Taylor:          "/avatars/preview/landing-avatar-taylor.webp",
-  // Inside a Game steps – AI players
-  "Dr. Chen":       "/avatars/preview/landing-avatar-dr-chen.webp",
-  "Captain Rex":    "/avatars/preview/landing-avatar-captain-rex.webp",
-  "Engineer Nova":  "/avatars/preview/landing-avatar-engineer-nova.webp",
-  Gideon:           "/avatars/preview/landing-avatar-gideon.webp",
-  // In-game hosts (each game has its own named host character)
-  "Warden Lunaris":  "/avatars/preview/landing-avatar-warden-lunaris.webp",
-  "Don Ferrante":    "/avatars/preview/landing-avatar-don-ferrante.webp",
-  "Detective Kate":  "/avatars/preview/landing-avatar-detective-kate.webp",
-};
-
-/** Shared avatar renderer for landing page preview messages */
-function PreviewAvatar({ name, isHost }: {
-  name: string;
-  isHost?: boolean;
-  role?: string;
-  personality?: string;
-  gender?: string;
-}) {
-  const src = LANDING_AVATAR_MAP[name];
-
-  // Named in-game hosts (Warden Lunaris, Don Ferrante, etc.) have their own avatar.
-  // Only fall back to the generic GAME_MASTER_AVATAR for "Game Master".
-  if (isHost) {
-    const avatarSrc = src || GAME_MASTER_AVATAR;
-    return (
-      <SafeAvatar
-        src={avatarSrc}
-        fallback={GAME_MASTER_AVATAR}
-        alt={name}
-        width={36}
-        height={36}
-        className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
-      />
-    );
-  }
-
-  const initials = name.substring(0, 2).toUpperCase();
-  return (
-    <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
-      {src ? (
-        <SafeAvatar
-          src={src}
-          fallback={GAME_MASTER_AVATAR}
-          alt={name}
-          width={36}
-          height={36}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-white">
-          {initials}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Streaming text component ─────────────────────────────────────────────────
-function StreamingText({
-  text,
-  speed = 30,
-  onComplete,
-}: {
-  text: string;
-  speed?: number;
-  onComplete?: () => void;
-}) {
-  const [displayedText, setDisplayedText] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    setDisplayedText("");
-    setCurrentIndex(0);
-  }, [text]);
-
-  useEffect(() => {
-    if (currentIndex >= text.length) {
-      if (onComplete) {
-        setTimeout(() => onComplete(), 800);
-      }
-      return;
-    }
-    const timeout = setTimeout(() => {
-      setDisplayedText(text.slice(0, currentIndex + 1));
-      setCurrentIndex(currentIndex + 1);
-    }, speed);
-    return () => clearTimeout(timeout);
-  }, [currentIndex, text, speed, onComplete]);
-
-  return (
-    <span className="text-sm text-zinc-300 leading-relaxed">
-      {displayedText}
-      {currentIndex < text.length && (
-        <span aria-hidden="true" className="inline-block w-[2px] h-4 bg-violet-400 animate-pulse ml-0.5" />
-      )}
-    </span>
-  );
 }
 
 // ─── Sequential message list with streaming ───────────────────────────────────
@@ -220,234 +77,10 @@ function MessageList({
   );
 }
 
-// ─── Message list with badges (Inside a Game section) ─────────────────────────
-function InsideGameMessageList({
-  messages,
-  gameKey,
-}: {
-  messages: Array<{
-    isHost?: boolean;
-    name: string;
-    role?: string;
-    personality?: string;
-    gender?: string;
-    badge: string | null;
-    time: string;
-    text: string;
-  }>;
-  gameKey: string;
-}) {
-  const [visibleCount, setVisibleCount] = useState(1);
-
-  useEffect(() => {
-    setVisibleCount(1);
-  }, [gameKey]);
-
-  const handleMessageComplete = () => {
-    setVisibleCount((prev) => Math.min(prev + 1, messages.length));
-  };
-
-  return (
-    <>
-      {messages.slice(0, visibleCount).map((msg, index) => (
-        <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn">
-          <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} />
-          <div className="flex-1">
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="font-bold text-white text-sm">{msg.name}</span>
-              {msg.badge && (
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    msg.badge === "YOU"
-                      ? "bg-blue-500/20 text-blue-400"
-                      : msg.badge === "GM"
-                      ? "bg-fuchsia-500/20 text-fuchsia-400"
-                      : "bg-violet-500/20 text-violet-400"
-                  }`}
-                >
-                  {msg.badge}
-                </span>
-              )}
-              <span className="text-xs text-zinc-600">{msg.time}</span>
-            </div>
-            <StreamingText
-              text={msg.text}
-              speed={40}
-              onComplete={index === visibleCount - 1 ? handleMessageComplete : undefined}
-            />
-          </div>
-        </div>
-      ))}
-    </>
-  );
-}
-
-// ─── Inside a Game step data ──────────────────────────────────────────────────
-const INSIDE_GAME_STEPS = [
-  {
-    id: "design",
-    step: "01",
-    total: "04",
-    icon: "💬",
-    title: "Design with GM",
-    heading: "Tell the GM your game idea",
-    description:
-      "Just chat with the Game Master in plain English. Describe what you want — whether it's classic Werewolf or your wildest custom idea. The GM helps you design rules, roles, and victory conditions.",
-    messages: [
-      { name: "You", badge: "YOU", time: "2:30 PM", text: "I want to create a sci-fi mystery game set on a space station. Someone sabotaged the oxygen system!", role: "Player", personality: "Curious and strategic", gender: "other" },
-      { isHost: true, name: "Game Master", badge: null, time: "2:30 PM", text: "Great idea! Let's set up a 'Traitor on Mars Station' game. How many crew members? Should there be 1 or 2 traitors? And what special roles do you want — Engineer, Security Chief, Scientist?" },
-      { name: "You", badge: "YOU", time: "2:31 PM", text: "6 crew members total, 1 traitor. Add an Engineer who can inspect systems, and a Security Chief who can lock rooms.", role: "Player", personality: "Curious and strategic", gender: "other" },
-      { isHost: true, name: "Game Master", badge: null, time: "2:31 PM", text: "Perfect! I've set up your game. Ready to start? I'll assign roles secretly and begin the first round." },
-    ],
-  },
-  {
-    id: "host",
-    step: "02",
-    total: "04",
-    icon: "🔥",
-    title: "The Host",
-    heading: "AI Host runs the show",
-    description:
-      "The Host AI manages everything — assigns secret roles, announces game phases, tracks votes, reveals information at the right time, and keeps the story flowing. You just focus on playing.",
-    messages: [
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:15 PM", text: "🌙 Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:16 PM", text: "☀️ Morning arrives. The crew discovers the communication array is damaged! Engineer Nova, you may inspect one system." },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:17 PM", text: "⚠️ It's time to vote! Discuss who you think is the traitor. You have 3 minutes to decide, then vote to eliminate." },
-    ],
-  },
-  {
-    id: "ai-players",
-    step: "03",
-    total: "04",
-    icon: "🤖",
-    title: "AI players",
-    heading: "AI players think and react",
-    description:
-      "Each AI player has their own personality, role, and objectives. They observe what happens, form opinions, make strategic decisions, and respond naturally to your actions. They'll lie, defend themselves, or team up — just like real players.",
-    messages: [
-      { name: "Dr. Chen", badge: "AI", time: "4:20 PM", text: "I was in the medical bay all night. Anyone can confirm? I'm getting suspicious of whoever was near the comm array...", role: "Scientist", personality: "Methodical, defensive under pressure", gender: "female" },
-      { name: "Captain Rex", badge: "AI", time: "4:20 PM", text: "Dr. Chen is acting defensive. That's a red flag! I saw them leaving the engineering deck around the time of the sabotage.", role: "Security Chief", personality: "Assertive, blunt, leadership instinct", gender: "male" },
-      { name: "Engineer Nova", badge: "AI", time: "4:21 PM", text: "Wait! I used my ability to inspect the comm array. The damage pattern suggests someone with medical knowledge... 👀", role: "Engineer", personality: "Analytical, observant, cautious", gender: "female" },
-    ],
-  },
-  {
-    id: "you-play",
-    step: "04",
-    total: "04",
-    icon: "🎮",
-    title: "You play",
-    heading: "You play your role — the AI reacts",
-    description:
-      "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
-    messages: [
-      { name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain.", role: "Seer", personality: "Careful, observant", gender: "other" },
-      { name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies! The Seer wouldn't reveal themselves this early — you're panicking.", role: "Werewolf", personality: "Manipulative, aggressive deflection", gender: "male" },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "5:11 PM", text: "The village votes. Gideon Hale is eliminated. His role is revealed: Werewolf. 🐺 Villagers win!" },
-    ],
-  },
-];
-
-// ─── Game preview scenarios ───────────────────────────────────────────────────
-const GAME_SCENARIOS = {
-  werewolf: {
-    title: "🐺 Werewolf",
-    messages: [
-      { isHost: true, name: "Warden Lunaris", time: "Night 1", text: "Night falls. The village sleeps — but the wolves are awake. Werewolves, choose your target." },
-      { name: "Alex", time: "Day 2", text: "I think Blake is acting suspicious. They barely said anything last round.", role: "Villager", personality: "Outspoken and analytical", gender: "male" },
-      { name: "Casey", time: "Day 2", text: "I was watching Blake during the night phase. It can't be them!", role: "Doctor", personality: "Calm, protective instincts", gender: "female" },
-    ],
-  },
-  mafia: {
-    title: "🎭 Mafia",
-    messages: [
-      { isHost: true, name: "Don Ferrante", time: "Night 1", text: "The city sleeps. Mafia members — open your eyes and choose tonight's target." },
-      { name: "Lucia", time: "Day 2", text: "Marco was found outside the bakery at midnight. That's not a coincidence.", role: "Detective", personality: "Sharp, suspicious of everyone", gender: "female" },
-      { name: "Marco", time: "Day 2", text: "I was getting bread for my family! Ask anyone!", role: "Civilian", personality: "Nervous, eager to prove innocence", gender: "male" },
-    ],
-  },
-  spy: {
-    title: "🕵️ Who's the Spy",
-    messages: [
-      { isHost: true, name: "Game Master", time: "Round 1", text: "Your secret word has been sent to each of you. Describe it in one sentence — don't make it too obvious!" },
-      { name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning...", role: "Civilian", personality: "Clever, deliberately vague", gender: "other" },
-      { name: "Riley", time: "Round 1", text: "That's suspiciously vague, Jordan. I'm watching you.", role: "Spy", personality: "Paranoid, accuses to deflect", gender: "female" },
-    ],
-  },
-  mystery: {
-    title: "🔍 Murder Mystery",
-    messages: [
-      { isHost: true, name: "Detective Kate", time: "Scene 1", text: "A priceless diamond has vanished from the museum. Every person in this room is a suspect." },
-      { name: "Morgan", time: "Scene 1", text: "I saw someone near the display case around 9 PM...", role: "Witness", personality: "Nervous, detail-oriented", gender: "other" },
-      { name: "Taylor", time: "Scene 1", text: "That's impossible — the museum closes at 8!", role: "Suspect", personality: "Confrontational, quick to contradict", gender: "male" },
-    ],
-  },
-};
-
 export function LandingPage({ onSignIn }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  const features = [
-    {
-      icon: MessageCircle,
-      title: "Plain English creation",
-      description: "Describe your game idea in plain English — the AI builds the rules, roles, and world for you.",
-      gradient: "from-violet-500 to-purple-500",
-    },
-    {
-      icon: Crown,
-      title: "AI Game Master + players",
-      description: "A dedicated GM hosts every session — assigns roles, runs phases, and keeps the story flowing. AI fills every seat.",
-      gradient: "from-orange-500 to-pink-500",
-    },
-    {
-      icon: Users,
-      title: "Real-time multiplayer",
-      description: "Share a link and friends join instantly — no sign-up required. Play with any mix of humans and AI.",
-      gradient: "from-green-500 to-emerald-500",
-    },
-    {
-      icon: Sparkles,
-      title: "Voice & immersion",
-      description: "AI characters speak with unique voices. Every game has its own atmosphere and personality.",
-      gradient: "from-blue-500 to-cyan-500",
-    },
-  ];
-
-  const featuredGames = [
-    {
-      emoji: "🧛",
-      title: "Vampire Court",
-      players: "4–8",
-      tags: ["Deduction", "Social"],
-      description: "One vampire hides among nobles. Vote before the next feeding — or become the next victim.",
-      cover: "/games/game-cover-vampire-court.webp",
-      accent: "from-rose-500/20 to-purple-500/10",
-      border: "hover:border-rose-500/50",
-    },
-    {
-      emoji: "🚀",
-      title: "Space Mutiny",
-      players: "3–6",
-      tags: ["Sci-fi", "Hidden Role"],
-      description: "The crew is 3 days from Earth. One engineer has been compromised. Trust no one.",
-      cover: "/games/game-cover-space-mutiny.webp",
-      accent: "from-blue-500/20 to-cyan-500/10",
-      border: "hover:border-blue-500/50",
-    },
-    {
-      emoji: "🏰",
-      title: "Kingdom Intrigue",
-      players: "5–10",
-      tags: ["Strategy", "Roleplay"],
-      description: "Nobles scheme for the throne. Forge alliances, spread rumors, and claim the crown.",
-      cover: "/games/game-cover-kingdom-intrigue.webp",
-      accent: "from-amber-500/20 to-yellow-500/10",
-      border: "hover:border-amber-500/50",
-    },
-  ];
-
-  // Auto-rotate preview every 20 s (gives time for messages to stream)
   useEffect(() => {
     if (!isAutoPlaying) return;
     const games = Object.keys(GAME_SCENARIOS) as Array<keyof typeof GAME_SCENARIOS>;
@@ -628,27 +261,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none" />
 
             <div className="flex gap-4 animate-marquee" style={{ width: "max-content" }}>
-              {[
-                { name: "Alex",   role: "Villager",  personality: "Outspoken and analytical",          game: "🐺 Werewolf" },
-                { name: "Casey",  role: "Doctor",    personality: "Calm, protective instincts",        game: "🐺 Werewolf" },
-                { name: "Lucia",  role: "Detective", personality: "Sharp, suspicious of everyone",     game: "🎭 Mafia"    },
-                { name: "Marco",  role: "Civilian",  personality: "Nervous, eager to prove innocence", game: "🎭 Mafia"    },
-                { name: "Jordan", role: "Civilian",  personality: "Clever, deliberately vague",        game: "🕵️ Who's the Spy" },
-                { name: "Riley",  role: "Spy",       personality: "Paranoid, accuses to deflect",      game: "🕵️ Who's the Spy" },
-                { name: "Morgan", role: "Witness",   personality: "Nervous, detail-oriented",          game: "🔍 Mystery"  },
-                { name: "Taylor", role: "Suspect",   personality: "Confrontational, quick to contradict", game: "🔍 Mystery" },
-                { name: "Drew",   role: "Villager",  personality: "Quiet, watchful observer",          game: "🐺 Werewolf" },
-                // duplicate for seamless loop
-                { name: "Alex",   role: "Villager",  personality: "Outspoken and analytical",          game: "🐺 Werewolf" },
-                { name: "Casey",  role: "Doctor",    personality: "Calm, protective instincts",        game: "🐺 Werewolf" },
-                { name: "Lucia",  role: "Detective", personality: "Sharp, suspicious of everyone",     game: "🎭 Mafia"    },
-                { name: "Marco",  role: "Civilian",  personality: "Nervous, eager to prove innocence", game: "🎭 Mafia"    },
-                { name: "Jordan", role: "Civilian",  personality: "Clever, deliberately vague",        game: "🕵️ Who's the Spy" },
-                { name: "Riley",  role: "Spy",       personality: "Paranoid, accuses to deflect",      game: "🕵️ Who's the Spy" },
-                { name: "Morgan", role: "Witness",   personality: "Nervous, detail-oriented",          game: "🔍 Mystery"  },
-                { name: "Taylor", role: "Suspect",   personality: "Confrontational, quick to contradict", game: "🔍 Mystery" },
-                { name: "Drew",   role: "Villager",  personality: "Quiet, watchful observer",          game: "🐺 Werewolf" },
-              ].map((char, i) => (
+              {MARQUEE_CHARACTERS.map((char, i) => (
                 <div
                   key={i}
                   className="flex-shrink-0 w-44 bg-zinc-900/60 border border-zinc-700/60 rounded-2xl p-4 hover:border-violet-500/50 hover:bg-zinc-800/60 transition-all duration-300 group"
@@ -702,7 +315,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             <p className="text-lg text-zinc-400">Everything you need to bring any game to life</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => {
+            {FEATURES.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <div
@@ -731,7 +344,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             <p className="text-lg text-zinc-400">One-click start — or use them as inspiration for your own</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {featuredGames.map((game, index) => (
+            {FEATURED_GAMES.map((game, index) => (
               <button
                 key={index}
                 type="button"
@@ -828,221 +441,6 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
             </div>
           </div>
         </footer>
-      </div>
-    </div>
-  );
-}
-
-// ─── Inside a Game section ────────────────────────────────────────────────────
-function InsideGameSection() {
-  const [selectedStep, setSelectedStep] = useState(0);
-  const currentStep = INSIDE_GAME_STEPS[selectedStep];
-
-  const handlePrevious = () => {
-    setSelectedStep((prev) => (prev === 0 ? INSIDE_GAME_STEPS.length - 1 : prev - 1));
-  };
-  const handleNext = () => {
-    setSelectedStep((prev) => (prev === INSIDE_GAME_STEPS.length - 1 ? 0 : prev + 1));
-  };
-
-  return (
-    <div className="mb-32">
-      <div className="text-center mb-12">
-        <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-          <span className="text-sm font-bold text-violet-400">INSIDE A GAME</span>
-        </div>
-        <h3 className="text-4xl font-black text-white mb-4">What actually happens inside a game</h3>
-        <p className="text-lg text-zinc-400">Experience every stage of gameplay</p>
-      </div>
-
-      {/* Tab navigation */}
-      <div role="tablist" aria-label="Game stages" className="flex flex-wrap justify-center gap-3 mb-12">
-        {INSIDE_GAME_STEPS.map((step, index) => (
-          <button
-            key={step.id}
-            type="button"
-            role="tab"
-            aria-selected={selectedStep === index}
-            onClick={() => setSelectedStep(index)}
-            className={`group relative px-6 py-3 rounded-full border transition-all duration-300 ${
-              selectedStep === index
-                ? "border-fuchsia-500 bg-fuchsia-500/10 shadow-lg shadow-fuchsia-500/20"
-                : "border-zinc-800 bg-zinc-900/50 hover:border-fuchsia-500/50"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{step.icon}</span>
-              <span className={`text-sm font-bold transition-colors ${selectedStep === index ? "text-white" : "text-zinc-400 group-hover:text-white"}`}>
-                {step.title}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="relative bg-zinc-950/50 border border-zinc-800 rounded-3xl overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
-          {/* Left – description */}
-          <div className="relative p-12 flex flex-col justify-between bg-gradient-to-br from-zinc-900/80 to-zinc-950/80">
-            <div>
-              <div className="inline-flex items-center gap-2 mb-6">
-                <Gamepad2 className="h-5 w-5 text-fuchsia-400" />
-                <span className="text-sm font-bold text-fuchsia-400">
-                  STEP {currentStep.step} / {currentStep.total}
-                </span>
-              </div>
-              <h4 className="text-4xl font-black text-white mb-6 leading-tight">{currentStep.heading}</h4>
-              <p className="text-lg text-zinc-400 leading-relaxed">{currentStep.description}</p>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-12">
-              <div className="flex items-center gap-2">
-                {INSIDE_GAME_STEPS.map((step, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    aria-label={`Go to step: ${step.title}`}
-                    aria-current={selectedStep === index ? "step" : undefined}
-                    onClick={() => setSelectedStep(index)}
-                    className={`transition-all duration-300 rounded-full ${
-                      selectedStep === index
-                        ? "w-8 h-2 bg-fuchsia-500"
-                        : "w-2 h-2 bg-zinc-700 hover:bg-zinc-600"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Previous step"
-                  onClick={handlePrevious}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-fuchsia-500/50 transition-all"
-                >
-                  <ChevronLeft className="h-5 w-5 text-zinc-400" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next step"
-                  onClick={handleNext}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-fuchsia-500/50 transition-all"
-                >
-                  <ChevronRight className="h-5 w-5 text-zinc-400" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right – streaming chat example */}
-          <div className="relative bg-zinc-900/50 border-l border-zinc-800">
-            <div className="absolute top-6 right-6 z-10">
-              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-full px-3 py-1.5">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-xs font-bold text-red-400">LIVE EXAMPLE</span>
-              </div>
-            </div>
-            <div className="h-full flex flex-col">
-              <div className="flex-1 p-8 pt-20 space-y-4 overflow-y-auto">
-                <InsideGameMessageList
-                  messages={currentStep.messages}
-                  gameKey={currentStep.id}
-                />
-              </div>
-              <div className="p-4 border-t border-zinc-800">
-                <div className="bg-zinc-950/50 rounded-lg px-4 py-3 text-sm text-zinc-600 flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  <span>Type your message...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── FAQ section ──────────────────────────────────────────────────────────────
-function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const faqs = [
-    {
-      question: "How do I create a game?",
-      answer: "Sign in with Google, then go to Create. You can either chat with the Game Master to describe your idea in plain English, or pick a template from Discover (e.g. Werewolf, Who's the Spy, Mafia, Tarot). Set player count and optional rules — no coding or complex setup. Your game is ready in about 2 minutes.",
-    },
-    {
-      question: "What is the Game Master and how does it work?",
-      answer: "The Game Master is an AI host that runs your game: it explains rules, runs day/night or discussion phases, and keeps the flow. You can also add AI players so the room is filled even when playing alone. The host and players use natural dialogue so it feels like a real tabletop session.",
-    },
-    {
-      question: "Can I play with friends?",
-      answer: "Yes! Share an invite link from your game room — friends can join instantly in their browser without creating an account. They play as guests alongside your AI characters. You can have any mix of human and AI players in the same game.",
-    },
-    {
-      question: "What templates or game types are available?",
-      answer: "We include 20+ templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, Murder Mystery, Secret Hitler, and Tarot Reading. Browse them in Discover for one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
-    },
-    {
-      question: "Do I need to sign in? Is it free?",
-      answer: "Sign in with Google to create games — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Friends who join your game don't need an account at all.",
-    },
-    {
-      question: "Do AI characters have voices?",
-      answer: "Yes. Each AI character speaks with a unique voice powered by text-to-speech. You can toggle voice on or off for any game. It adds a layer of immersion that makes the game feel like a real tabletop session.",
-    },
-    {
-      question: "Can I create any type of game?",
-      answer: "Absolutely! While we offer 20+ templates for popular games, you have complete freedom to design custom games with unique rules, roles, and victory conditions. Just describe your idea to the Game Master in plain English.",
-    },
-    {
-      question: "How much does it cost?",
-      answer: "New accounts start with free credits. After that, you can purchase additional credits as needed — pricing is transparent and based on actual usage. No subscriptions or hidden fees.",
-    },
-  ];
-
-  return (
-    <div className="mb-24">
-      <div className="text-center mb-12">
-        <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-          <span className="text-sm font-bold text-violet-400">FAQ</span>
-        </div>
-        <h3 className="text-3xl font-black text-white mb-3">Common Questions</h3>
-        <p className="text-lg text-zinc-400">Everything you need to know</p>
-      </div>
-      <div className="max-w-3xl mx-auto space-y-3">
-        {faqs.map((faq, index) => (
-          <div
-            key={index}
-            className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-violet-500/30"
-          >
-            <button
-              onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              aria-expanded={openIndex === index}
-              aria-controls={`faq-panel-${index}`}
-              className="w-full px-6 py-5 flex items-center justify-between gap-4 text-left group"
-            >
-              <span className="font-bold text-white group-hover:text-violet-400 transition-colors">
-                {faq.question}
-              </span>
-              <ChevronDown
-                aria-hidden="true"
-                className={`h-5 w-5 text-zinc-400 flex-shrink-0 transition-transform duration-300 ${openIndex === index ? "rotate-180 text-violet-400" : ""}`}
-              />
-            </button>
-            <div
-              id={`faq-panel-${index}`}
-              role="region"
-              aria-labelledby={`faq-btn-${index}`}
-              className={`overflow-hidden transition-all duration-300 ${openIndex === index ? "max-h-80" : "max-h-0"}`}
-            >
-              <div className="px-6 pb-5 text-sm text-zinc-400 leading-relaxed">
-                {faq.answer}
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

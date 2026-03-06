@@ -369,6 +369,7 @@ const PlayerCard = memo(function PlayerCard({
               className="h-6 w-6 hover:bg-zinc-600/50"
               disabled={regenerating}
               title="Regenerate avatar (DALL-E 3)"
+              aria-label={`Regenerate avatar for ${player.name}`}
               onClick={(e) => {
                 e.stopPropagation();
                 if (regenerating || !onRegenerateAvatar) return;
@@ -395,6 +396,7 @@ const PlayerCard = memo(function PlayerCard({
                     size="icon"
                     className="h-6 w-6 hover:bg-zinc-600/50"
                     title={boundGuest ? `Unassign ${boundGuest.nickname}` : "Assign a guest"}
+                    aria-label={boundGuest ? `Unassign ${boundGuest.nickname} from ${player.name}` : `Assign a guest to ${player.name}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {boundGuest ? (
@@ -454,6 +456,7 @@ const PlayerCard = memo(function PlayerCard({
               size="icon"
               className="h-6 w-6 hover:bg-zinc-600/50"
               onClick={(e) => { e.stopPropagation(); onToggleMute?.(player.id); }}
+              aria-label={player.isMuted ? `Unmute ${player.name}` : `Mute ${player.name}`}
             >
               {player.isMuted ? (
                 <VolumeX className="h-3 w-3 text-red-400" />

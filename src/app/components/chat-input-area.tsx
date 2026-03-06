@@ -360,6 +360,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               onClick={voiceCancel}
               disabled={isTranscribing}
               title="Cancel"
+              aria-label="Cancel voice recording"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -377,6 +378,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               className="flex-shrink-0 h-10 w-10 rounded-full bg-white hover:bg-zinc-100 text-zinc-900 disabled:opacity-40 shadow-lg transition-all"
               disabled={isTranscribing}
               title="Finish and insert"
+              aria-label="Finish and insert voice recording"
               onClick={async () => {
                 const t = await voiceConfirm();
                 if (t) {
@@ -481,6 +483,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               disabled={sendDisabled}
               onClick={voiceStart}
               title="Voice input"
+              aria-label="Voice input"
             >
               <Mic className="h-4 w-4 text-zinc-300" />
             </Button>
@@ -491,6 +494,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
             size="icon"
             className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
             title={isRoundInProgress ? "Host & AI replying…" : isSending ? "Sending…" : "Send"}
+            aria-label={isRoundInProgress ? "Host and AI replying" : isSending ? "Sending" : "Send message"}
           >
             {isSending || isRoundInProgress ? (
               <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

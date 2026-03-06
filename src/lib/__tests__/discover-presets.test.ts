@@ -4,7 +4,7 @@ import {
   EXTRA_GAMES,
   getPresetById,
   CATEGORY_MAP,
-} from "@/app/components/discover-page";
+} from "@/data/discover-templates";
 import type { GameTemplate } from "@/lib/game-templates";
 
 // ═══════════════════════════════════════════════════════════════════════════════

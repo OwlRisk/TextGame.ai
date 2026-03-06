@@ -11,7 +11,7 @@ import {
   EXTRA_GAMES,
   CATEGORY_MAP,
   getPresetById,
-} from "@/app/components/discover-page";
+} from "@/data/discover-templates";
 
 // ─── getPresetById return shape ─────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { env } from '@/lib/env';
+import { getAuthUserFromRequest } from '@/lib/auth-server';
 
 function getOpenAI() {
   const apiKey = env.OPENAI_API_KEY;
@@ -10,6 +11,9 @@ function getOpenAI() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUserFromRequest(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { prompt } = (await request.json()) as { prompt?: string };
     if (!prompt) return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
 

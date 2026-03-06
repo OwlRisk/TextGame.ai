@@ -345,6 +345,7 @@ export function ChatArea({
               }}
               className={voiceEnabled ? "hover:bg-zinc-700 text-violet-400 hover:text-violet-300" : "hover:bg-zinc-700 text-zinc-400 hover:text-white"}
               title={voiceEnabled ? "Turn off dialogue voice" : "Turn on dialogue voice (Inworld TTS)"}
+              aria-label={voiceEnabled ? "Turn off dialogue voice" : "Turn on dialogue voice"}
             >
               {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               <span className="ml-1.5 hidden sm:inline">{voiceEnabled ? "Sound on" : "Sound off"}</span>
@@ -376,8 +377,8 @@ export function ChatArea({
       )}
 
       {/* Messages - min-h-0 allows flex child to shrink so scroll works; only render last visibleCount, load more on scroll up */}
-      <ScrollArea className="flex-1 min-h-0 px-6 relative">
-        <div className="py-6 space-y-5">
+      <ScrollArea className="flex-1 min-h-0 px-6 relative" role="log" aria-label="Chat messages">
+        <div className="py-6 space-y-5" aria-live="polite" aria-relevant="additions">
           {hasMoreOlder && (
             <div ref={loadMoreSentinelRef} className="flex justify-center py-3" role="status" aria-label="Loading older messages">
               <span className="text-xs text-zinc-500">Pull up for older messages</span>
