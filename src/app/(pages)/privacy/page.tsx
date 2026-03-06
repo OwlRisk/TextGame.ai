@@ -66,7 +66,7 @@ export default function PrivacyPage() {
               <li>User preferences (AI model, voice language)</li>
             </ul>
             <p className="mt-2">
-              We do not use tracking cookies, advertising cookies, or any third-party tracking pixels. Since all client-side storage is strictly necessary for the service to function, no cookie consent banner is required under current GDPR guidance.
+              We use Google Analytics 4 (GA4) to collect anonymous usage statistics such as page views, session duration, and general device/browser information. GA4 may set cookies on your device for this purpose. For visitors in the European Economic Area (EEA) and the United Kingdom, we display a cookie consent banner and only load GA4 after you explicitly grant consent. Visitors outside the EEA/UK are covered by GA4&apos;s standard data processing terms. You may decline analytics cookies at any time; declining does not affect your ability to use the service. We do not use advertising cookies or third-party tracking pixels.
             </p>
           </section>
 

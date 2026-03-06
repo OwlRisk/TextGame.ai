@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { headers, cookies } from "next/headers";
 import "../styles/index.css";
 import { GameProvider } from "@/app/contexts/GameContext";
 import { AuthProvider } from "@/app/contexts/AuthContext";
 import { SuppressFastRefreshLogs } from "@/app/components/suppress-fast-refresh-logs";
 import { SITE_NAME, SITE_DOMAIN, SITE_DESCRIPTION } from "@/lib/site";
 import { Analytics } from "@vercel/analytics/next";
+import { GoogleAnalyticsWrapper } from "@/app/components/google-analytics";
+import { CookieConsent } from "@/app/components/cookie-consent";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -122,15 +125,24 @@ const softwareAppJsonLd = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const hdrs = await headers();
+  const jar = await cookies();
+  const inEEA = hdrs.get("x-in-eea") === "1";
+  const gaConsent = jar.get("ga_consent")?.value;
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
+
   return (
     <html lang="en" className="h-full overflow-hidden [-webkit-tap-highlight-color:transparent]">
       <head>
         <link rel="dns-prefetch" href="https://hazjbhhreltgjexxaazn.supabase.co" />
+        {process.env.NEXT_PUBLIC_SEARCH_CONSOLE_ID && (
+          <meta name="google-site-verification" content={process.env.NEXT_PUBLIC_SEARCH_CONSOLE_ID} />
+        )}
       </head>
       <body className="antialiased h-full overflow-hidden safe-area-padding" suppressHydrationWarning>
         <script
@@ -189,6 +201,8 @@ export default function RootLayout({
           <GameProvider>{children}</GameProvider>
         </AuthProvider>
         <Analytics />
+        <GoogleAnalyticsWrapper gaId={gaId} inEEA={inEEA && gaConsent !== "granted"} />
+        <CookieConsent inEEA={inEEA && gaConsent !== "granted" && gaConsent !== "denied"} />
       </body>
     </html>
   );
