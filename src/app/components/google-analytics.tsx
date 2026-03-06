@@ -16,17 +16,20 @@ export function GoogleAnalyticsWrapper({
   gaId: string;
   inEEA: boolean;
 }) {
-  const [shouldLoad, setShouldLoad] = useState(!inEEA);
+  const [shouldLoad, setShouldLoad] = useState(false);
 
   useEffect(() => {
-    if (!inEEA) {
-      setShouldLoad(true);
-      return;
-    }
-    setShouldLoad(getCookie("ga_consent") === "granted");
-  }, [inEEA]);
+    if (!gaId) return;
+    const allowed = inEEA ? getCookie("ga_consent") === "granted" : true;
+    if (!allowed) return;
 
-  if (!gaId || !shouldLoad) return null;
+    // Delay GA to keep it off the critical rendering path.
+    // 3.5s is enough for LCP to complete on slow 4G.
+    const timer = setTimeout(() => setShouldLoad(true), 3500);
+    return () => clearTimeout(timer);
+  }, [gaId, inEEA]);
+
+  if (!shouldLoad) return null;
 
   return <GoogleAnalytics gaId={gaId} />;
 }

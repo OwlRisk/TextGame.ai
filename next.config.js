@@ -6,7 +6,7 @@ const nextConfig = {
     root: __dirname,
   },
   experimental: {
-    cssChunking: 'strict',
+    inlineCss: true,
     optimizePackageImports: [
       'lucide-react',
       '@radix-ui/react-dialog',
