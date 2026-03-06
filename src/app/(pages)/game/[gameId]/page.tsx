@@ -27,7 +27,7 @@ import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
-import { Menu, Hash, Users } from "lucide-react";
+import { Menu, Hash, Users, BookOpen } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
@@ -1609,15 +1609,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
       {/* Rules overlay sheet */}
       <Sheet open={rulesSheetOpen} onOpenChange={setRulesSheetOpen}>
-        <SheetContent side="left" title="Rules" className="w-[28rem] max-w-[90vw] p-0 bg-zinc-900 border-r border-zinc-700">
-          <div className="h-14 px-5 flex items-center border-b border-zinc-800">
+        <SheetContent side="left" title="Rules" className="w-[28rem] max-w-[90vw] p-0 bg-zinc-950 border-r border-zinc-800">
+          <div className="h-14 px-5 flex items-center gap-2.5 border-b border-violet-500/20 bg-gradient-to-r from-violet-950/40 to-zinc-950">
+            <BookOpen className="h-4.5 w-4.5 text-violet-400" />
             <h2 className="text-base font-semibold text-white">Rules</h2>
           </div>
           <ScrollArea className="h-[calc(100%-3.5rem)] p-5">
             <div className="max-w-2xl">
               {(currentGame?.config?.rules ?? "").trim() ? (
                 <div
-                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-100 prose-p:text-zinc-100 prose-li:text-zinc-100 prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-violet-300 prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-violet-500/20 prose-headings:pb-1 prose-p:text-zinc-300 prose-p:leading-relaxed prose-li:text-zinc-300 prose-li:marker:text-violet-500 prose-strong:text-violet-200 prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-800"
                   dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
                 />
               ) : (
