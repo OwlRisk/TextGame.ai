@@ -10,6 +10,9 @@ import {
 } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 import { sanitizeModel } from '@/lib/model-prefs';
+import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+
+const limiter = createRateLimiter('chat-stream', { limit: 30, windowSeconds: 60 });
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -26,6 +29,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
+
+    const rl = limiter.check(user.id);
+    if (!rl.success) return rateLimitResponse(rl);
 
     if (!isDatabaseConfigured()) {
       return new Response(

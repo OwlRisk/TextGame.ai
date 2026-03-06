@@ -8,6 +8,9 @@ import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 import { logger } from '@/lib/logger';
+import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+
+const limiter = createRateLimiter('avatar', { limit: 10, windowSeconds: 60 });
 
 export const maxDuration = 60;
 
@@ -433,6 +436,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const rl = limiter.check(user.id);
+    if (!rl.success) return rateLimitResponse(rl);
 
     let body: Record<string, unknown>;
     try {

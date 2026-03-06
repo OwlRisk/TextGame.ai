@@ -9,6 +9,9 @@ import {
   estimateTokensFromText,
   estimateChatTokens,
 } from '@/lib/tokens';
+import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+
+const limiter = createRateLimiter('chat', { limit: 30, windowSeconds: 60 });
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -25,6 +28,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const rl = limiter.check(user.id);
+    if (!rl.success) return rateLimitResponse(rl);
 
     // Check API key first
     if (!process.env.OPENAI_API_KEY) {

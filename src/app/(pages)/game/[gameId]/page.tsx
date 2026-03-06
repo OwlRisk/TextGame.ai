@@ -34,7 +34,6 @@ import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
 import { safeMarked } from "@/lib/safe-marked";
 import {
   MAX_AUTO_ADVANCES,
-  GAME_INACTIVITY_TIMEOUT_MS,
   HOST_CONTEXT_WINDOW,
   MAX_STREAM_TOKENS,
   BASE_STREAM_TOKENS,
@@ -42,6 +41,9 @@ import {
 } from "@/lib/game-room-constants";
 import { useGameRoomPresence } from "@/hooks/useGameRoomPresence";
 import { useRoomMembers } from "@/hooks/useRoomMembers";
+import { useGameChannels } from "@/hooks/useGameChannels";
+import { useGameRoomLifecycle } from "@/hooks/useGameRoomLifecycle";
+import { useQuickReplies } from "@/hooks/useQuickReplies";
 import {
   getConversationMode,
   hostPace,
@@ -111,11 +113,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [showCharacterBrowser, setShowCharacterBrowser] = useState(false);
-  const [quickReplies, setQuickReplies] = useState<string[]>([]);
-  const [quickRepliesLoading, setQuickRepliesLoading] = useState(false);
-  // Tracks the last message key for which suggest-quick-replies failed.
-  // Prevents hammering the API with retries for the same message when other deps change.
-  const quickRepliesFailKeyRef = useRef<string | null>(null);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   // shareCopied state removed — share button moved out of game room
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -274,75 +271,24 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Presence + member polling handled by extracted hooks above
 
-  // ─── Timer expiry: send system event when countdown reaches zero ─────────
-  useEffect(() => {
-    if (!timerEndsAt) return;
-    const remaining = timerEndsAt - Date.now();
-    if (remaining <= 0) {
-      addMessage({
-        senderId: "system",
-        senderName: "System",
-        senderAvatar: "#6366f1",
-        content: "[System: timer expired]",
-        isAI: false,
-        isSystemMessage: true,
-      });
-      setTimerEndsAt(null);
-      return;
-    }
-    const timeout = setTimeout(() => {
-      addMessage({
-        senderId: "system",
-        senderName: "System",
-        senderAvatar: "#6366f1",
-        content: "[System: timer expired]",
-        isAI: false,
-        isSystemMessage: true,
-      });
-      setTimerEndsAt(null);
-    }, remaining);
-    return () => clearTimeout(timeout);
-  }, [timerEndsAt, addMessage, setTimerEndsAt]);
-
-  // ─── Inactivity auto-end: if no new message for 2 hours, end the game ────
-  const lastActivityRef = useRef(Date.now());
-  useEffect(() => { lastActivityRef.current = Date.now(); }, [messages.length]);
-  useEffect(() => {
-    if (gamePhase !== "active") return;
-    const check = () => {
-      if (Date.now() - lastActivityRef.current >= GAME_INACTIVITY_TIMEOUT_MS) {
-        setGameOverSummary("Game ended due to inactivity (2 hours with no messages).");
-        setGamePhase("ended");
-        if (currentGame) updateGame(gameId, { isActive: false });
-      }
-    };
-    const id = setInterval(check, 60_000);
-    return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gamePhase, gameId]);
-
-  // ─── Owner-leave auto-end: if owner is offline for 5 min during active game, end it ──
-  const ownerLeftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (gamePhase !== "active" || isOwner) {
-      if (ownerLeftTimerRef.current) { clearTimeout(ownerLeftTimerRef.current); ownerLeftTimerRef.current = null; }
-      return;
-    }
-    if (isOwnerOnline === false) {
-      if (!ownerLeftTimerRef.current) {
-        ownerLeftTimerRef.current = setTimeout(() => {
-          setGameOverSummary("The host has left the game. Game ended.");
-          setGamePhase("ended");
-        }, 5 * 60 * 1000);
-      }
-    } else {
-      if (ownerLeftTimerRef.current) { clearTimeout(ownerLeftTimerRef.current); ownerLeftTimerRef.current = null; }
-    }
-    return () => { if (ownerLeftTimerRef.current) { clearTimeout(ownerLeftTimerRef.current); ownerLeftTimerRef.current = null; } };
-  }, [gamePhase, isOwner, isOwnerOnline]);
-
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
+
+  // Timer expiry, inactivity auto-end, owner-leave auto-end
+  useGameRoomLifecycle({
+    gamePhase,
+    isOwner,
+    isOwnerOnline,
+    gameId,
+    currentGameExists: !!currentGame,
+    messagesLength: messages.length,
+    timerEndsAt,
+    addMessage,
+    setTimerEndsAt,
+    setGameOverSummary,
+    setGamePhase,
+    updateGame,
+  });
 
   useEffect(() => {
     selectGame(gameId);
@@ -1180,184 +1126,43 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     });
   }, [messages, isOwner, isRoundInProgress]); // handleSendMessage intentionally omitted — use ref
 
-  // GM-defined game rooms (always compute so hook order is stable; safe when currentGame is null)
-  // Derive a stable cache key from channel IDs so useMemo doesn't recompute on every context update.
-  const channelsCacheKey = currentGame?.config?.channels?.map((c) => c.id).join(",") ?? "";
-  const gameRoomEntries = useMemo(() => {
-    const cfg = currentGame?.config?.channels;
-    return cfg?.length
-      ? cfg.map((c) => ({ id: c.id, name: c.name, type: "game" as const }))
-      : [{ id: "game-room", name: "game-room", type: "game" as const }];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channelsCacheKey]);
-
-  const defaultGameChannelId = gameRoomEntries[0].id;
-
-  // Filter game rooms based on AI-managed access control.
-  // Rules / Progress (text sections) are always visible.
-  const visibleGameRoomEntries = useMemo(
-    () =>
-      gameRoomEntries.filter((ch) => {
-        const perms = channelPermissions[ch.id];
-        if (!perms) return true;
-        if (perms.includes("*")) return true;
-        return perms.includes(userId);
-      }),
-    [gameRoomEntries, channelPermissions, userId]
-  );
-
-  const gameChannels = useMemo(
-    () => [
-      ...sections.map((s) => ({ id: s.id, name: s.name, type: "text" as const })),
-      ...visibleGameRoomEntries,
-    ],
-    [sections, visibleGameRoomEntries]
-  );
+  // Channel management: game room entries, visibility, message filtering, unread counts
+  const {
+    gameRoomEntries,
+    defaultGameChannelId,
+    gameChannels,
+    gameRoomIds,
+    isGameChannel,
+    messagesForChannel,
+    unreadCounts,
+    playersForChannel,
+  } = useGameChannels({
+    channelConfigs: currentGame?.config?.channels,
+    sections,
+    channelPermissions,
+    userId,
+    messages,
+    selectedChannelId,
+    players,
+  });
 
   // Rules sheet overlay state
   const [rulesSheetOpen, setRulesSheetOpen] = useState(false);
 
-  const gameRoomIds = useMemo(
-    () => new Set(gameRoomEntries.map((c) => c.id)),
-    [gameRoomEntries]
-  );
-
-  const isGameChannel = useMemo(
-    () => selectedChannelId != null && gameRoomIds.has(selectedChannelId),
-    [selectedChannelId, gameRoomIds]
-  );
-
-  const messagesForChannel = useMemo(
-    () =>
-      isGameChannel
-        ? messages.filter((m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId)
-        : messages,
-    [isGameChannel, messages, selectedChannelId, defaultGameChannelId]
-  );
-
-  // Unread message counts per game channel — tracked by recording the message count at the
-  // moment the user switches to a channel, then computing the delta as new messages arrive.
-  const [seenMessageCounts, setSeenMessageCounts] = useState<Record<string, number>>({});
-  useEffect(() => {
-    if (!selectedChannelId) return;
-    const currentCount = messages.filter(
-      (m) => (m.channelId ?? defaultGameChannelId) === selectedChannelId
-    ).length;
-    setSeenMessageCounts((prev) => ({ ...prev, [selectedChannelId]: currentCount }));
-    // Intentionally only re-runs on selectedChannelId change, not on every new message.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedChannelId]);
-
-  const unreadCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const channelId of gameRoomIds) {
-      if (channelId === selectedChannelId) continue;
-      const total = messages.filter(
-        (m) => (m.channelId ?? defaultGameChannelId) === channelId
-      ).length;
-      const seen = seenMessageCounts[channelId] ?? 0;
-      const delta = total - seen;
-      if (delta > 0) counts[channelId] = delta;
-    }
-    return counts;
-  }, [messages, seenMessageCounts, gameRoomIds, defaultGameChannelId, selectedChannelId]);
-
-  // Show only players who can access the currently selected channel.
-  // Uses channelPermissions directly — no hardcoding of channel types.
-  // If no permissions are defined (or the list contains "*"), all players are shown.
-  // The host (isGameMaster) is always shown regardless of restrictions.
-  const playersForChannel = useMemo(() => {
-    const perms = selectedChannelId ? channelPermissions[selectedChannelId] : undefined;
-    if (!perms || perms.includes("*")) return players;
-    return players.filter((p) => p.isGameMaster || perms.includes(p.id));
-  }, [players, selectedChannelId, channelPermissions]);
-
-  // Quick reply: only update when it's "user's turn" (round just ended, last message from Host/AI).
-  // Only fetch quick replies when it's definitively the human player's turn.
-  // Clear stale suggestions immediately when a round starts or it's not the player's turn.
-  const isHumanTurn = gamePhase === "ended" || !currentSpeakerId || currentSpeakerId === userId;
-  useEffect(() => {
-    if (!currentGame?.config || !isGameChannel) {
-      setQuickRepliesLoading(false);
-      setQuickReplies([]);
-      return;
-    }
-    if (messagesForChannel.length === 0) {
-      setQuickReplies([]);
-      setQuickRepliesLoading(false);
-      return;
-    }
-    // Clear quick replies while AI/host is active — avoids stale suggestions
-    // flashing between speakers.
-    if (isRoundInProgress || !isHumanTurn) {
-      setQuickReplies([]);
-      setQuickRepliesLoading(false);
-      return;
-    }
-    // Don't show quick replies until the user has spoken at least once in this channel.
-    const userHasSpoken = messagesForChannel.some((m) => m.senderId === userId);
-    if (!userHasSpoken) {
-      setQuickReplies([]);
-      setQuickRepliesLoading(false);
-      return;
-    }
-    const lastMessage = messagesForChannel[messagesForChannel.length - 1];
-    if (lastMessage?.senderId === userId) {
-      setQuickRepliesLoading(false);
-      return;
-    }
-    // Skip if we already tried (and failed) for this exact message — avoids hammering
-    // the API when other deps (gamePhase, isRoundInProgress) change for the same message.
-    const attemptKey = `${selectedChannelId ?? ''}:${lastMessage?.id ?? messagesForChannel.length}`;
-    if (quickRepliesFailKeyRef.current === attemptKey) {
-      setQuickRepliesLoading(false);
-      return;
-    }
-    const abort = new AbortController();
-    setQuickRepliesLoading(true);
-    const recent = messagesForChannel.slice(-8).map((m) => ({ senderName: m.senderName, content: m.content }));
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
-    const humanPlayer = players.find((p) => p.id === userId);
-    const humanName = humanGameIdentity?.name || humanPlayer?.name || "You";
-    const humanRole = humanPlayer?.role ?? undefined;
-    fetch("/api/suggest-quick-replies", {
-      method: "POST",
-      headers,
-      signal: abort.signal,
-      body: JSON.stringify({
-        gameName: currentGame.name,
-        rules: currentGame.config.rules,
-        recentMessages: recent,
-        gamePhase,
-        playerName: humanName,
-        playerRole: humanRole,
-        preferredModel: getPreferredModel(),
-      }),
-    })
-      .then((r) => r.ok ? r.json() : Promise.reject(new Error("Failed")))
-      .then((data: { suggestions?: string[] }) => {
-        quickRepliesFailKeyRef.current = null;
-        const list = Array.isArray(data.suggestions) ? data.suggestions.filter((s) => s && s.length <= 120).slice(0, 3) : [];
-        setQuickReplies(list.length > 0 ? list : []);
-      })
-      .catch(() => { quickRepliesFailKeyRef.current = attemptKey; setQuickReplies([]); })
-      .finally(() => setQuickRepliesLoading(false));
-    return () => {
-      abort.abort();
-      setQuickRepliesLoading(false);
-    };
-  }, [
+  // Quick reply suggestions (fetched when it's the human player's turn)
+  const { quickReplies, quickRepliesLoading, setQuickReplies } = useQuickReplies({
+    currentGameConfig: currentGame?.config ? { name: currentGame.name, rules: currentGame.config.rules, template: currentGame.config.template } : null,
     isGameChannel,
-    selectedChannelId ?? null,
-    currentGame?.id ?? null,
+    selectedChannelId,
+    messagesForChannel,
+    userId,
     gamePhase,
     isRoundInProgress,
-    isHumanTurn,
-    userId,
-    messagesForChannel.length,
-    session?.access_token ?? null,
-  ]);
+    currentSpeakerId,
+    humanGameIdentity,
+    players,
+    sessionAccessToken: session?.access_token ?? null,
+  });
 
   const copyToClipboard = async (text: string): Promise<boolean> => {
     if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return false;
@@ -1638,7 +1443,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 <h2 className="text-base font-semibold text-zinc-200 mb-4">{activeSection.name}</h2>
                 {activeSection.content.trim() ? (
                   <div
-                    className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                    className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-100 prose-p:text-zinc-100 prose-li:text-zinc-100 prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
                     dangerouslySetInnerHTML={{ __html: safeMarked(activeSection.content) }}
                   />
                 ) : (
@@ -1812,7 +1617,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             <div className="max-w-2xl">
               {(currentGame?.config?.rules ?? "").trim() ? (
                 <div
-                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-zinc-200 prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-100 prose-p:text-zinc-100 prose-li:text-zinc-100 prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded"
                   dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
                 />
               ) : (

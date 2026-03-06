@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { HOST_PERSONALITIES, getDefaultHost, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
-import { parseInlineFormatting } from "@/lib/format-message";
+
 import { OutOfCreditsModal } from "@/app/components/out-of-credits-modal";
 import { HostSelector } from "@/app/components/host-selector";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -53,91 +53,12 @@ import {
   replaceContentInSection,
 } from "@/lib/game-master-utils";
 import { parseGMResponseTags, applyRulesUpdates, applyBackgroundToRules, clampPlayerCount } from "@/lib/gm-rules-parser";
-
-export type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, ChannelRoomType };
-
-// Format message content with markdown-like syntax
-function formatMessage(content: string) {
-  const lines = content.split('\n');
-  const elements: React.JSX.Element[] = [];
-  
-  lines.forEach((line, index) => {
-    const trimmedLine = line.trim();
-    
-    if (!trimmedLine) {
-      elements.push(<div key={`br-${index}`} className="h-2" />);
-      return;
-    }
-
-    if (trimmedLine.startsWith('###')) {
-      const text = trimmedLine.replace(/^###+\s*/, '');
-      elements.push(
-        <h3 key={index} className="font-bold text-base text-violet-300 mt-4 mb-2 first:mt-0">
-          {parseInlineFormatting(text)}
-        </h3>
-      );
-      return;
-    }
-    if (trimmedLine.startsWith('##')) {
-      const text = trimmedLine.replace(/^##+\s*/, '');
-      elements.push(
-        <h2 key={index} className="font-bold text-lg text-violet-200 mt-4 mb-2 first:mt-0">
-          {parseInlineFormatting(text)}
-        </h2>
-      );
-      return;
-    }
-    if (trimmedLine.startsWith('#')) {
-      const text = trimmedLine.replace(/^#+\s*/, '');
-      elements.push(
-        <h1 key={index} className="font-bold text-xl text-violet-100 mt-4 mb-3 first:mt-0">
-          {parseInlineFormatting(text)}
-        </h1>
-      );
-      return;
-    }
-
-    const numberedListMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
-    if (numberedListMatch) {
-      const [, number, text] = numberedListMatch;
-      elements.push(
-        <div key={index} className="flex gap-2.5 mb-1.5">
-          <span className="text-violet-400 font-semibold flex-shrink-0 min-w-[20px]">{number}.</span>
-          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
-        </div>
-      );
-      return;
-    }
-    if (/^[•\-\*]\s+/.test(trimmedLine)) {
-      const text = trimmedLine.replace(/^[•\-\*]\s+/, '');
-      elements.push(
-        <div key={index} className="flex gap-2.5 mb-1.5">
-          <span className="text-violet-400 flex-shrink-0 mt-0.5">•</span>
-          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
-        </div>
-      );
-      return;
-    }
-    if (trimmedLine.endsWith(':') && (trimmedLine.length < 50 || trimmedLine === trimmedLine.toUpperCase())) {
-      elements.push(
-        <div key={index} className="font-semibold text-sm text-violet-300 mt-3 mb-1.5 first:mt-0">
-          {parseInlineFormatting(trimmedLine)}
-        </div>
-      );
-      return;
-    }
-    elements.push(
-      <div key={index} className="mb-1.5 leading-relaxed">
-        {parseInlineFormatting(trimmedLine)}
-      </div>
-    );
-  });
-
-  return <div className="space-y-0.5">{elements}</div>;
-}
-
+import { formatGMMessage as formatMessage } from "@/lib/gm-format-message";
+import { useSplitPanel } from "@/hooks/useSplitPanel";
 import { GameTemplate } from "@/lib/game-templates";
 import { getPreferredModel } from "@/lib/model-prefs";
+
+export type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, ChannelRoomType };
 
 export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
   const { session, user } = useAuth();
@@ -394,29 +315,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
   }, [input, isRecording, voiceTranscript, resizeInput]);
 
-  // Resizable preview panel width (px); drag the divider to resize
-  const [previewWidth, setPreviewWidth] = useState(420);
-  const [isDraggingSplit, setIsDraggingSplit] = useState(false);
-  const splitDragRef = useRef({ startX: 0, startW: 0 });
-  const PREVIEW_MIN = 280;
-  const PREVIEW_MAX = 900;
-  useEffect(() => {
-    if (!isDraggingSplit) return;
-    const onMove = (e: MouseEvent) => {
-      const delta = e.clientX - splitDragRef.current.startX;
-      setPreviewWidth((w) => {
-        const next = splitDragRef.current.startW - delta;
-        return Math.min(PREVIEW_MAX, Math.max(PREVIEW_MIN, next));
-      });
-    };
-    const onUp = () => setIsDraggingSplit(false);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isDraggingSplit]);
+  // Resizable preview panel
+  const { previewWidth, isDragging: isDraggingSplit, onDragStart: onSplitDragStart, minWidth: PREVIEW_MIN } = useSplitPanel();
   // Background merged into Rules - no separate tab needed
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
   const [isStartingGame, setIsStartingGame] = useState(false);
@@ -1550,8 +1450,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         aria-label="Resize rules preview"
         onMouseDown={(e) => {
           e.preventDefault();
-          setIsDraggingSplit(true);
-          splitDragRef.current = { startX: e.clientX, startW: previewWidth };
+          onSplitDragStart(e);
         }}
         className={`hidden lg:flex flex-shrink-0 w-1.5 h-full bg-white/5 hover:bg-violet-500/30 cursor-col-resize select-none transition-colors ${isDraggingSplit ? "bg-violet-500/40" : ""}`}
       />

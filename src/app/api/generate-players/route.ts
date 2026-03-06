@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, estimatedTokensToCoins, hasTokens } from '@/lib/tokens';
+import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+
+const limiter = createRateLimiter('generate-players', { limit: 10, windowSeconds: 60 });
 
 // Lazy initialization to avoid errors at module load time
 function getOpenAI() {
@@ -17,6 +20,9 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const rl = limiter.check(user.id);
+  if (!rl.success) return rateLimitResponse(rl);
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(

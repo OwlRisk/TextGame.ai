@@ -9,7 +9,7 @@ const EEA_COUNTRIES = new Set([
   "GB", // UK GDPR
 ]);
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const country = request.headers.get("x-vercel-ip-country") ?? "";
   response.headers.set("x-in-eea", EEA_COUNTRIES.has(country) ? "1" : "0");

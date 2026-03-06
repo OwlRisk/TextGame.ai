@@ -9,6 +9,9 @@ import {
   estimateTokensFromText,
 } from '@/lib/tokens';
 import { logger } from '@/lib/logger';
+import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+
+const limiter = createRateLimiter('generate-host', { limit: 10, windowSeconds: 60 });
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -21,6 +24,9 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const rl = limiter.check(user.id);
+    if (!rl.success) return rateLimitResponse(rl);
 
     const { gameRules, gameName } = await req.json();
 

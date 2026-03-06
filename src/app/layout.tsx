@@ -142,6 +142,7 @@ export default async function RootLayout({
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full overflow-hidden [-webkit-tap-highlight-color:transparent]`}>
       <head>
         <link rel="dns-prefetch" href="https://hazjbhhreltgjexxaazn.supabase.co" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         {process.env.NEXT_PUBLIC_SEARCH_CONSOLE_ID && (
           <meta name="google-site-verification" content={process.env.NEXT_PUBLIC_SEARCH_CONSOLE_ID} />
         )}

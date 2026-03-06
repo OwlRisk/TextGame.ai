@@ -4,6 +4,9 @@ import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { buildSystemPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '@/lib/player-speak-prompt';
 import { deductTokens, estimatedTokensToCoins } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
+import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+
+const limiter = createRateLimiter('player-speak', { limit: 40, windowSeconds: 60 });
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -25,6 +28,9 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUserFromRequest(request);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const rl = limiter.check(user.id);
+    if (!rl.success) return rateLimitResponse(rl);
 
     let body: Record<string, unknown>;
     try {

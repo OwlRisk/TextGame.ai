@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 
 /**
- * Unit tests for EEA country detection logic used by the middleware.
+ * Unit tests for EEA country detection logic used by the proxy.
  * We test the country set directly since NextRequest/NextResponse
- * require the Next.js runtime. The middleware logic is trivial:
+ * require the Next.js runtime. The proxy logic is trivial:
  * if country is in EEA_COUNTRIES → "1", else → "0".
  */
 
