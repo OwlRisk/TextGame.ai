@@ -1317,8 +1317,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    onInvite: isOwner ? handleInvite : undefined,
-    inviteJustCopied: inviteCopied,
+    onInvite: undefined,
+    inviteJustCopied: false,
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || guestNickname || null,
@@ -1555,7 +1555,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 humanGameIdentity={humanGameIdentity}
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
-                onRegenerateAvatar={regenerateAvatar}
                 playerBoardData={playerBoardDataMemo}
                 myBoardContentFromHost={boardContentForViewer}
                 currentUserId={userId}
@@ -1576,7 +1575,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   humanGameIdentity={humanGameIdentity}
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
-                  onRegenerateAvatar={regenerateAvatar}
                   playerBoardData={playerBoardDataMemo}
                   myBoardContentFromHost={boardContentForViewer}
                   currentUserId={userId}

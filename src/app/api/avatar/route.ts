@@ -102,23 +102,24 @@ async function resizeForPool(dataUrl: string): Promise<Buffer> {
  * Construct a deterministic pool avatar URL based on name, type, and gender.
  * Uses dynamic pool size so newly added avatars are also reachable.
  */
-export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string): string | null {
+export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string, offset = 0): string | null {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) return null;
   const key = `${name}|${type}`;
   const hash = crypto.createHash('sha256').update(key).digest('hex');
   const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
   const poolSize = poolSizeCache[g]?.count ?? MIN_POOL_SIZE;
-  const index = (parseInt(hash.slice(0, 8), 16) % poolSize) + 1;
+  const baseIndex = parseInt(hash.slice(0, 8), 16) % poolSize;
+  const index = ((baseIndex + offset) % poolSize) + 1;
   const padded = String(index).padStart(3, '0');
   return `${supabaseUrl}/storage/v1/object/public/${AVATAR_BUCKET}/pool/${g}/${padded}.png`;
 }
 
 /** Async version that fetches actual pool size first. */
-async function getPoolAvatarUrlAsync(name: string, type: AvatarType, gender?: string): Promise<string | null> {
+async function getPoolAvatarUrlAsync(name: string, type: AvatarType, gender?: string, offset = 0): Promise<string | null> {
   const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
   await getActualPoolSize(g);
-  return getPoolAvatarUrl(name, type, gender);
+  return getPoolAvatarUrl(name, type, gender, offset);
 }
 
 /** Get next available pool index for a gender, then upload the avatar there. */
@@ -206,14 +207,15 @@ function getModel(): AvatarModel {
 
 /** Solo character: exactly one person in frame, upper-body portrait */
 const SOLO_PORTRAIT =
-  'Solo character portrait. One person only. Upper body visible from head to chest. Single individual, centered in frame.';
+  'Solo character portrait. EXACTLY ONE person only — no second face, no reflections, no mirrors, no split images. ' +
+  'Upper body visible from head to chest. Single individual, centered in frame. Plain or simple background.';
 
 /** Clean visual output: image contains only the illustrated portrait */
-const CLEAN_PORTRAIT = 'Clean illustrated portrait. Pure visual artwork.';
+const CLEAN_PORTRAIT = 'Clean illustrated portrait. Pure visual artwork. No text, no labels, no watermarks.';
 
 /** Front-facing face: both eyes clearly visible */
 const BOTH_EYES_REQUIRED =
-  'Face visible, front-facing or slight three-quarter angle. Both eyes clearly shown.';
+  'Face visible, front-facing or slight three-quarter angle. Both eyes clearly shown. One face only.';
 
 /** Friendly, wholesome look — keeps avatars suitable for a casual game regardless of role name */
 const FRIENDLY_SAFE =
@@ -246,6 +248,9 @@ function sanitizeSinglePersonDescription(text: string): string {
     [/\b(multiple|several|many|two|three)\s+(people|persons|faces|characters)\b/gi, 'one character'],
     [/\b(group|team)\s*(photo|shot|portrait)?/gi, 'portrait'],
     [/,?\s*and\s+another\s+(person|character|face)/gi, ''],
+    [/\b(mirror|reflection|shadow|clone|twin|double|split|dual)\b/gi, ''],
+    [/\b(side\s*by\s*side|face\s*to\s*face|back\s*to\s*back)\b/gi, ''],
+    [/\b(couple|partners?|companions?)\b/gi, ''],
   ];
   for (const [from, to] of replace) {
     s = typeof from === 'string' ? s.replace(new RegExp(from, 'gi'), to) : s.replace(from, to);
@@ -456,6 +461,7 @@ export async function POST(request: NextRequest) {
       gender,
       forceRegenerate,
       generateAndPool,
+      avatarOffset,
     } = body as {
       name?: string;
       type?: AvatarType;
@@ -466,6 +472,7 @@ export async function POST(request: NextRequest) {
       gender?: string;
       forceRegenerate?: boolean;
       generateAndPool?: boolean;
+      avatarOffset?: number;
     };
 
     if (!name || typeof name !== 'string') {
@@ -619,7 +626,7 @@ export async function POST(request: NextRequest) {
     }
 
     // --- 4. Default: return pool avatar URL (no generation, no cost) ---
-    const poolUrl = await getPoolAvatarUrlAsync(name, avatarType, typeof gender === 'string' ? gender : undefined);
+    const poolUrl = await getPoolAvatarUrlAsync(name, avatarType, typeof gender === 'string' ? gender : undefined, avatarOffset || 0);
     if (poolUrl) {
       logger.log('[Avatar API] returning pool avatar:', poolUrl);
       return NextResponse.json({ image: poolUrl, pool: true });

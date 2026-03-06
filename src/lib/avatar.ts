@@ -176,6 +176,8 @@ export interface RoomPlayerInfo {
  * Randomly picks 1 AI player to get a freshly generated DALL-E 3 avatar
  * (generateAndPool — costs coins, avatar saved to pool + ai_characters DB).
  * All others get free pool avatars.
+ * After initial fetch, detects duplicate pool URLs and re-fetches colliding
+ * players with an offset so every player gets a unique avatar.
  * Returns a map of "name|type" -> avatar URL.
  */
 export async function fetchAvatarsForRoom(
@@ -191,14 +193,12 @@ export async function fetchAvatarsForRoom(
 
   const results: Record<string, string> = {};
 
-  const promises = players.map(async (player) => {
+  const fetchOne = async (player: RoomPlayerInfo, extraBody?: Record<string, unknown>) => {
     const pType: AvatarType = (player.type ?? 'player') as AvatarType;
     const key = identityCacheKey(player.name, pType);
-    const isGenerateTarget = aiPlayers.indexOf(player) === generateIndex;
+    const isGenerateTarget = !extraBody && aiPlayers.indexOf(player) === generateIndex;
 
-    // For the generateAndPool target, always call the API so the pool grows
-    // and a new ai_characters record is created — skip cache for this player.
-    if (!isGenerateTarget) {
+    if (!isGenerateTarget && !extraBody) {
       const cached = cache.get(key);
       if (cached) { results[key] = cached; return; }
       const stored = loadFromStorage(key);
@@ -219,11 +219,11 @@ export async function fetchAvatarsForRoom(
           personality: player.personality || undefined,
           gender: player.gender || undefined,
           generateAndPool: isGenerateTarget || undefined,
+          ...extraBody,
         }),
       });
 
       if (!res.ok) {
-        // If generateAndPool failed (e.g. insufficient tokens), retry as pool
         if (isGenerateTarget && res.status === 402) {
           const fallbackRes = await fetch('/api/avatar', {
             method: 'POST',
@@ -232,6 +232,7 @@ export async function fetchAvatarsForRoom(
             body: JSON.stringify({
               name: player.name, type: pType,
               gender: player.gender || undefined,
+              ...extraBody,
             }),
           });
           if (fallbackRes.ok) {
@@ -252,9 +253,37 @@ export async function fetchAvatarsForRoom(
     } catch {
       // Silently skip failed avatars
     }
-  });
+  };
 
-  await Promise.allSettled(promises);
+  // Pass 1: fetch all avatars in parallel
+  await Promise.allSettled(players.map(p => fetchOne(p)));
+
+  // Pass 2: resolve collisions — if two players got the same pool URL, re-fetch with offset
+  const urlToKeys = new Map<string, string[]>();
+  for (const [key, url] of Object.entries(results)) {
+    if (!url) continue;
+    const existing = urlToKeys.get(url) ?? [];
+    existing.push(key);
+    urlToKeys.set(url, existing);
+  }
+
+  const collisionFixes: Promise<void>[] = [];
+  for (const [, keys] of urlToKeys) {
+    if (keys.length <= 1) continue;
+    // Keep the first player's avatar, re-fetch the rest with increasing offsets
+    for (let i = 1; i < keys.length; i++) {
+      const collidingKey = keys[i];
+      const player = players.find(p => identityCacheKey(p.name, (p.type ?? 'player') as AvatarType) === collidingKey);
+      if (!player) continue;
+      // Clear cached collision so re-fetch actually hits the API
+      cache.delete(collidingKey);
+      collisionFixes.push(fetchOne(player, { avatarOffset: i }));
+    }
+  }
+  if (collisionFixes.length > 0) {
+    await Promise.allSettled(collisionFixes);
+  }
+
   return results;
 }
 
