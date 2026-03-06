@@ -74,6 +74,7 @@ module.exports = {
     },
   },
   plugins: [
+    require('@tailwindcss/typography'),
     function({ addUtilities }) {
       addUtilities({
         '.scrollbar-hide': {
