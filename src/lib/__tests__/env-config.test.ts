@@ -27,10 +27,10 @@ describe("env", () => {
   });
 
   it("returns NODE_ENV or default 'development'", () => {
-    process.env.NODE_ENV = "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     expect(env.NODE_ENV).toBe("production");
 
-    process.env.NODE_ENV = "test";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "test";
     expect(env.NODE_ENV).toBe("test");
   });
 
