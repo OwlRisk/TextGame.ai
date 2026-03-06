@@ -219,7 +219,7 @@ export async function fetchAvatarsForRoom(
           personality: player.personality || undefined,
           gender: player.gender || undefined,
           generateAndPool: isGenerateTarget || undefined,
-          ...extraBody,
+          ...(extraBody ?? {}),
         }),
       });
 
@@ -232,7 +232,7 @@ export async function fetchAvatarsForRoom(
             body: JSON.stringify({
               name: player.name, type: pType,
               gender: player.gender || undefined,
-              ...extraBody,
+              ...(extraBody ?? {}),
             }),
           });
           if (fallbackRes.ok) {
