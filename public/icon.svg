@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#5b21b6"/>
-      <stop offset="100%" stop-color="#c2410c"/>
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#a855f7"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="12" fill="url(#bg)"/>
-  <!-- 对话气泡：加粗描边，小尺寸更清晰 -->
-  <rect x="8" y="12" width="48" height="30" rx="8" stroke="white" stroke-width="6.5" fill="none"/>
-  <!-- 气泡尾巴：稍大一点 -->
-  <path d="M 28 42 L 22 52 L 34 42 Z" fill="white"/>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- T: horizontal bar + vertical stem -->
+  <path d="M 80 100 L 300 100 C 308 100 314 106 314 114 L 314 140 C 314 148 308 154 300 154 L 232 154 L 232 390 C 232 398 226 404 218 404 L 178 404 C 170 404 164 398 164 390 L 164 154 L 80 154 C 72 154 66 148 66 140 L 66 114 C 66 106 72 100 80 100 Z" fill="white"/>
+  <!-- G: open arc with horizontal bar -->
+  <path d="M 350 130 C 310 108 260 126 245 172 C 236 200 240 228 252 252 L 252 252 C 260 228 272 210 296 200 L 360 200 C 380 200 394 214 394 234 L 394 300 L 300 300 L 300 340 L 394 340 L 394 360 C 394 388 372 410 344 410 L 282 410 C 254 410 232 388 232 360 L 232 290 C 220 268 214 240 218 206 C 226 142 290 100 350 130 Z" fill="white"/>
 </svg>
