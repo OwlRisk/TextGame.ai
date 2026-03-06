@@ -105,7 +105,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const prevUserRef = { current: null as User | null };
     const applySession = (sessionToSet: Session | null, userToSet: User | null) => {
+      if (!prevUserRef.current && userToSet) {
+        const isNewUser = userToSet.created_at
+          && (Date.now() - new Date(userToSet.created_at).getTime()) < 60_000;
+        import("@/lib/analytics").then(({ trackEvent }) => {
+          trackEvent(isNewUser ? "sign_up" : "login", { method: "google" });
+        });
+      }
+      prevUserRef.current = userToSet;
       setAuthCookie(sessionToSet?.access_token ?? null);
       setSession(sessionToSet);
       setUser(userToSet);
@@ -191,13 +200,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_UP") {
-        import("@/lib/analytics").then(({ trackEvent }) => {
-          trackEvent(event === "SIGNED_UP" ? "sign_up" : "login", {
-            method: "google",
-          });
-        });
-      }
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
