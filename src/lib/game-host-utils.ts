@@ -35,8 +35,10 @@ export function getStreamingDisplay(raw: string): string {
   }
   let cleaned = raw.replace(/\[BOARD:[^\]]*\][\s\S]*?\[\/BOARD\]/gi, "");
   cleaned = cleaned.replace(/\[BOARD:[^\]]*\][\s\S]*$/gi, "");
-  // Strip directive lines that may leak when --- hasn't arrived yet
-  cleaned = cleaned.replace(/^(NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_GOAL|IMAGE_PROMPT|MY_NOTES|GAME_PHASE|SECTION|START_VOTE|END_VOTE):.*$/gm, "");
+  // Strip directive lines that may leak when --- hasn't arrived yet.
+  // Also strip lines that are just a directive prefix without ':' (token still streaming).
+  const DIR_PREFIXES = "NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_GOAL|IMAGE_PROMPT|MY_NOTES|GAME_PHASE|SECTION|START_VOTE|END_VOTE|ELIMINATE|REVEAL_ROLE|GAME_OVER|RECORD_EVENT|ANNOUNCE|MOOD";
+  cleaned = cleaned.replace(new RegExp(`^(${DIR_PREFIXES})(:.*)?$`, "gm"), "");
   return cleaned.replace(/\n{2,}/g, "\n\n").trim();
 }
 
@@ -55,6 +57,18 @@ export function splitHostOutput(raw: string): { message: string; directives: str
     return { message, directives };
   }
   return { message: "", directives: raw };
+}
+
+/** Known host directive prefixes — used to strip leaked directives from display. */
+const DIRECTIVE_PREFIXES_RE = /^(NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_GOAL|IMAGE_PROMPT|MY_NOTES|GAME_PHASE|SECTION|START_VOTE|END_VOTE|ELIMINATE|REVEAL_ROLE|GAME_OVER|RECORD_EVENT|ANNOUNCE|MOOD)(:.*)?$/gm;
+
+/**
+ * Strip any host directive lines from content. Safe to call on already-clean
+ * strings (no-op). Used as a rendering-layer safety net to catch directives
+ * that leaked through streaming or DB persistence race conditions.
+ */
+export function stripDirectiveLines(content: string): string {
+  return content.replace(DIRECTIVE_PREFIXES_RE, "").replace(/\n{2,}/g, "\n\n").trim();
 }
 
 /**

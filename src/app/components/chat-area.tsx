@@ -209,14 +209,22 @@ export function ChatArea({
     return () => { if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current); };
   }, [messages, typingUsers, userId, revealTick]);
 
-  // When quick replies expand/collapse, the input area height changes — scroll to keep last message visible.
+  // When input area height changes (quick replies, hints, etc.), scroll to keep last message visible.
+  const inputAreaRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!scrollRef.current) return;
-    const t = setTimeout(() => {
-      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, 50);
-    return () => clearTimeout(t);
-  }, [quickReplies.length]);
+    const el = inputAreaRef.current;
+    if (!el) return;
+    let prevHeight = el.offsetHeight;
+    const observer = new ResizeObserver(() => {
+      const newHeight = el.offsetHeight;
+      if (newHeight !== prevHeight) {
+        prevHeight = newHeight;
+        scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Load more when user scrolls up: IntersectionObserver on top sentinel
   useEffect(() => {
@@ -249,16 +257,19 @@ export function ChatArea({
   }, [visibleCount]);
 
   // ─── Scroll-to-bottom detection via IntersectionObserver ─────────────────
+  // Positive bottom rootMargin extends the detection zone so the button only
+  // appears after the user scrolls a meaningful distance (200px) from the bottom.
   useEffect(() => {
     const sentinel = bottomSentinelRef.current;
     if (!sentinel) return;
+    const scrollViewport = sentinel.closest('[data-slot="scroll-area-viewport"]') as HTMLElement | null;
     const observer = new IntersectionObserver(
       ([entry]) => {
         const visible = entry.isIntersecting;
         setIsAtBottom(visible);
         if (visible) setUnreadCount(0);
       },
-      { threshold: 0.1 }
+      { root: scrollViewport, rootMargin: "0px 0px 200px 0px", threshold: 0.1 }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -466,28 +477,30 @@ export function ChatArea({
       </ScrollArea>
 
       {/* Input — isolated in its own component so typing doesn't re-render the message list */}
-      <ChatInputArea
-        channelName={channelName}
-        onSendMessage={onSendMessage}
-        players={players}
-        userId={userId}
-        isGameActive={isGameActive}
-        currentSpeakerId={currentSpeakerId}
-        isEliminated={isEliminated}
-        isRoundInProgress={isRoundInProgress}
-        quickReplies={quickReplies}
-        quickRepliesLoading={quickRepliesLoading}
-        introYourTurnHint={introYourTurnHint}
-        introYourTurnReply={introYourTurnReply}
-        introEveryoneSpokenHint={introEveryoneSpokenHint}
-        aiSuggestedPrompts={aiSuggestedPrompts}
-        aiSuggestionsLabel={aiSuggestionsLabel}
-        lastFailedSendContent={lastFailedSendContent}
-        onRetryLastMessage={onRetryLastMessage}
-        activeVote={activeVote}
-        onVote={onVote}
-        alivePlayers={alivePlayers}
-      />
+      <div ref={inputAreaRef}>
+        <ChatInputArea
+          channelName={channelName}
+          onSendMessage={onSendMessage}
+          players={players}
+          userId={userId}
+          isGameActive={isGameActive}
+          currentSpeakerId={currentSpeakerId}
+          isEliminated={isEliminated}
+          isRoundInProgress={isRoundInProgress}
+          quickReplies={quickReplies}
+          quickRepliesLoading={quickRepliesLoading}
+          introYourTurnHint={introYourTurnHint}
+          introYourTurnReply={introYourTurnReply}
+          introEveryoneSpokenHint={introEveryoneSpokenHint}
+          aiSuggestedPrompts={aiSuggestedPrompts}
+          aiSuggestionsLabel={aiSuggestionsLabel}
+          lastFailedSendContent={lastFailedSendContent}
+          onRetryLastMessage={onRetryLastMessage}
+          activeVote={activeVote}
+          onVote={onVote}
+          alivePlayers={alivePlayers}
+        />
+      </div>
     </div>
   );
 }

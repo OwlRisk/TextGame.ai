@@ -322,7 +322,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
             </div>
           )}
           {quickReplies.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
               {quickReplies.slice(0, 3).map((text) => {
                 const label = text.length > 38 ? text.slice(0, 37) + "…" : text;
                 return (
@@ -335,7 +335,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                       setInput(text);
                       inputRef.current?.focus();
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none whitespace-nowrap shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <span className="text-amber-500/60 text-[10px]">⚡</span>
                     {label}

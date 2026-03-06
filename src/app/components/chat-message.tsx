@@ -7,6 +7,7 @@ import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avat
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { formatMessageTime, stripEmotionTags } from "@/lib/chat-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
+import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/app/components/player-panel";
 
 // ─── Formatting helpers (LRU-cached) ──────────────────────────────────────
@@ -99,9 +100,16 @@ function formatMessageUncached(content: string): React.JSX.Element {
 
 // ─── Message content resolver (handles TTS sync) ─────────────────────────
 function resolveContent(syncedContent: string, rawContent: string, voiceEnabled: boolean, inworldTTSSupported: boolean, isAI: boolean) {
-  if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
+  const clean = (s: string) => stripDirectiveLines(stripEmotionTags(s));
+  if (syncedContent.trim()) {
+    const c = clean(syncedContent);
+    return c ? formatMessage(c) : null;
+  }
   if (voiceEnabled && inworldTTSSupported && isAI && rawContent !== '' && syncedContent === '') return null;
-  if (rawContent.trim()) return formatMessage(stripEmotionTags(rawContent));
+  if (rawContent.trim()) {
+    const c = clean(rawContent);
+    return c ? formatMessage(c) : null;
+  }
   return null;
 }
 
