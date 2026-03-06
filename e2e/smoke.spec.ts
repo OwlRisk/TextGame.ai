@@ -22,7 +22,7 @@ test.describe("Discover page", () => {
   test("loads discover page with game templates", async ({ page }) => {
     await page.goto("/discover");
     await expect(page).toHaveTitle(/Discover|TextGame/i);
-    await expect(page.locator("[data-testid='game-card'], .game-card, a[href*='/games/']").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("[data-testid='game-card']").first()).toBeVisible({ timeout: 10000 });
   });
 });
 

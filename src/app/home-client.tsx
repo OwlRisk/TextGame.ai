@@ -14,19 +14,17 @@ export default function HomeClient() {
   const { selectGame, games, updateGame } = useGameContext();
   const { user, loading, signInWithGoogle } = useAuth();
 
-  // Only show the landing page after the client has confirmed the visitor is
-  // a guest. Initialising to false (not shown during SSR / hydration) prevents
-  // any 1-frame flash of the landing page that logged-in users could see.
-  const [showLanding, setShowLanding] = useState(false);
+  // Render the landing page immediately so the hero h2 is in the SSR HTML
+  // (critical for LCP). Logged-in users are redirected after hydration.
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
+      setHidden(true);
       router.replace("/create");
       return;
     }
     selectGame("home");
-    // Show the landing page only once we know for sure the user is not logged in.
-    setShowLanding(!loading && !user);
   }, [loading, user, router, selectGame]);
 
   const handleCreateGame = (presetId?: string) => {
@@ -59,12 +57,12 @@ export default function HomeClient() {
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      {showLanding ? (
+      {!hidden && (
         <LandingPage
           onSignIn={handleSignIn}
           onCreateGame={handleCreateGame}
         />
-      ) : null}
+      )}
 
       <Toaster
         position="top-right"

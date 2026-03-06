@@ -6,6 +6,7 @@ const nextConfig = {
     root: __dirname,
   },
   experimental: {
+    cssChunking: 'strict',
     optimizePackageImports: [
       'lucide-react',
       '@radix-ui/react-dialog',
@@ -65,10 +66,16 @@ const nextConfig = {
 const { withSentryConfig } = require('@sentry/nextjs');
 const withBundleAnalyzer = require('@next/bundle-analyzer')({ enabled: process.env.ANALYZE === 'true' });
 
+const hasSentryToken = !!process.env.SENTRY_AUTH_TOKEN;
+
 module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), {
   org: process.env.SENTRY_ORG ?? '',
   project: process.env.SENTRY_PROJECT ?? '',
-  silent: !process.env.CI,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: true,
+  telemetry: false,
+  sourcemaps: { disable: !hasSentryToken },
+  release: { create: hasSentryToken },
   widenClientFileUpload: true,
   webpack: {
     treeshake: { removeDebugLogging: true },

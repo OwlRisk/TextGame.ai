@@ -45,6 +45,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     return (
       <div
         key={template.id}
+        data-testid="game-card"
         className="group relative bg-zinc-900/40 border border-zinc-800 hover:border-violet-500/40 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer"
         onClick={() => handleSelect(template)}
       >

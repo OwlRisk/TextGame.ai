@@ -20,9 +20,10 @@ import {
   FEATURED_GAMES,
   MARQUEE_CHARACTERS,
 } from "@/data/landing-content";
+import dynamic from "next/dynamic";
 import { SafeAvatar, PreviewAvatar, StreamingText } from "@/app/components/landing/shared";
-import { InsideGameSection } from "@/app/components/landing/InsideGameSection";
-import { FAQSection } from "@/app/components/landing/FAQSection";
+const InsideGameSection = dynamic(() => import("@/app/components/landing/InsideGameSection").then(m => m.InsideGameSection), { ssr: false });
+const FAQSection = dynamic(() => import("@/app/components/landing/FAQSection").then(m => m.FAQSection), { ssr: false });
 
 interface LandingPageProps {
   onSignIn: () => void;
@@ -359,7 +360,7 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
                     alt={game.title}
                     width={400}
                     height={160}
-                    priority
+                    loading="lazy"
                     sizes="(min-width: 768px) 400px, 100vw"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
