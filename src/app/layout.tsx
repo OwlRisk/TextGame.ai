@@ -204,7 +204,7 @@ export default async function RootLayout({
         </noscript>
         <SuppressFastRefreshLogs />
         <AuthProvider>
-          <GameProvider><main id="main-content">{children}</main></GameProvider>
+          <GameProvider><main id="main-content" className="h-full">{children}</main></GameProvider>
         </AuthProvider>
         <Analytics />
         <GoogleAnalyticsWrapper gaId={gaId} inEEA={inEEA && gaConsent !== "granted"} />
