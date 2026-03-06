@@ -17,8 +17,8 @@ import { toast } from "sonner";
 
 const STATIC_WELCOME_CONTENT =
   "Hey, I'm your **Game Master**. Describe any game idea and I'll design the rules, roles, and setup for you.\n\n" +
-  "Or pick a **ready-made template** — hit the Templates button above to browse 20+ games.\n\n" +
-  "You can always **edit the rules panel** on the right directly, or just **tell me** what to change. When you're happy, hit **Create Room**!";
+  "Or pick a **ready-made template** — hit the Templates button to browse 20+ games.\n\n" +
+  "You can always **edit the Game Document** directly, or just **tell me** what to change. When you're happy, hit **Create Room**!";
 
 export interface UseGameMasterSessionsParams {
   userId?: string;
@@ -320,9 +320,9 @@ export function useGameMasterSessions({
 
       const templateName = resolvedTemplate?.name ?? preset.name ?? "this game";
       const presetWelcomeContent =
-        `Great choice — **${templateName}**! I've loaded the rules on the right.\n\n` +
+        `Great choice — **${templateName}**! I've loaded the rules in the Game Document.\n\n` +
         "You can **tell me** what you'd like to change (player count, roles, pacing…) and I'll update the rules for you. " +
-        "Or **edit the rules panel directly** on the right — either way works!\n\n" +
+        "Or **edit the Game Document directly** — either way works!\n\n" +
         (nextPlayerCount > 0
           ? `Currently set for **${nextPlayerCount + 1} players** (you + ${nextPlayerCount} AI), plus a Host who runs the game. Click **Create Room** when you're ready!`
           : 'How many players would you like? Click **Create Room** whenever you\'re ready!');

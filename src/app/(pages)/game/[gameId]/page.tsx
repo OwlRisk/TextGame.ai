@@ -91,6 +91,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     currentSpeakerId,
     setCurrentSpeakerId,
     setTypingUsers,
+    typingUsers,
     humanGameIdentity,
     setHumanGameIdentity,
     avatarImageUrls,
@@ -533,16 +534,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       }
     }).catch(() => {});
 
-    const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
-    const lobbyGreeting = config.template === "tarot"
-      ? `Welcome. I'm ${hostName}, your reader today. When you're ready, hit **Start Game** and we'll begin your reading.`
-      : `Hey everyone, ${hostName} here! Take your time setting up — add or remove players, invite friends. When everyone's here, hit **Start Game** to begin!`;
-
-    addMessage(
-      { id: `lobby-greeting-${gameId}`, senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: lobbyGreeting, isAI: true },
-      defaultChannelId
-    );
-
     setCurrentSpeakerId(null);
     setGamePhase("lobby");
   };
@@ -595,10 +586,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       await new Promise((r) => setTimeout(r, 0));
       seedCancelledRef.current = false;
 
-      // Remove the lobby greeting — it's no longer relevant once the game starts
-      const lobbyMsgId = `lobby-greeting-${gameId}`;
-      setMessages((prev) => prev.filter((m) => m.id !== lobbyMsgId));
-
       setGamePhase("active");
 
       const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
@@ -624,7 +611,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         setTypingUsers,
         sessionToken: session?.access_token,
         isCancelled: () => seedCancelledRef.current,
-      }).catch((e) => console.warn("Initial player replies failed", e));
+      }).catch((e) => {
+        console.warn("Initial player replies failed", e);
+        toast.error("Some AI players failed to respond. You can still play normally.");
+      });
     } finally {
       gameStartingRef.current = false;
     }
@@ -795,7 +785,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         resolveChannelByNameUtil(name, gameRoomEntries);
 
       const parseHostResult = (raw: string) =>
-        parseHostResultUtil(raw, players, humanName, gameRoomEntries);
+        parseHostResultUtil(raw, playersRef.current, humanName, gameRoomEntries);
 
       /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
@@ -1531,6 +1521,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             onSendMessage={isGuestPlayer ? handleGuestSendMessage : handleSendMessage}
             isGameActive={gamePhase !== "ended"}
             currentSpeakerId={currentSpeakerId}
+            typingUsers={typingUsers}
             userId={isGuestPlayer ? (guestId ?? userId) : userId}
             gameId={gameId}
             quickReplies={isGuestPlayer ? [] : quickReplies}

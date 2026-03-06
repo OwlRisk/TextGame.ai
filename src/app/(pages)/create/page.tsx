@@ -151,6 +151,9 @@ function CreateGamePageContent() {
         initialPreset={initialPreset}
         onCreateGame={handleCreateGame}
         onBack={() => router.back()}
+        onPresetApplied={() => {
+          if (presetId) router.replace("/create", { scroll: false });
+        }}
       />
       <Toaster
         position="top-right"

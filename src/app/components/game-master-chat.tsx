@@ -797,9 +797,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
   };
 
+  const checkRulesEmpty = (rules: string | undefined) =>
+    !rules?.trim() || rules.trim() === "Custom game rules will be defined through conversation";
+
   const handleStartGame = async () => {
-    const isRulesEmpty = !customRules || !customRules.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
-    if (isRulesEmpty) return;
+    if (checkRulesEmpty(customRules)) {
+      toast.info("Chat with the Game Master first to generate game rules.");
+      return;
+    }
     setIsStartingGame(true);
     const startToastId = "start-game";
     toast.loading("Preparing game...", { id: startToastId });
@@ -1129,12 +1134,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             <EditorContent editor={gameDocEditor} />
           </div>
           {(() => {
-            const isRulesEmpty = !customRules || !customRules.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
+            const rulesEmpty = checkRulesEmpty(customRules);
             return (
               <div className="px-4 py-3 border-t border-white/10 flex-shrink-0 flex flex-col gap-1.5">
                 <Button
                   onClick={() => { setMobileRulesOpen(false); handleStartGame(); }}
-                  disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
+                  disabled={isRulesBeingEdited || isStartingGame || rulesEmpty}
                   className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isStartingGame ? (
@@ -1144,7 +1149,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     </span>
                   ) : "Create Room"}
                 </Button>
-                {isRulesEmpty && (
+                {rulesEmpty && (
                   <p className="text-xs text-zinc-500 text-center">Chat with GM to generate rules first.</p>
                 )}
               </div>
@@ -1221,12 +1226,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 )}
               </Button>
               {(() => {
-                const isRulesEmpty = !customRules?.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
+                const rulesEmpty = checkRulesEmpty(customRules);
                 return (
                   <Button
                     size="sm"
                     onClick={handleStartGame}
-                    disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
+                    disabled={isRulesBeingEdited || isStartingGame || rulesEmpty}
                     className="h-9 px-3 rounded-[11px] bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                   >
                     {isStartingGame ? (
@@ -1377,8 +1382,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                             title={chip.fullLabel ?? chip.label}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none transition-all"
                             onClick={() => {
-                              setInput(chip.value);
-                              inputRef.current?.focus();
+                              handleSend(chip.fullLabel ?? chip.label);
                             }}
                           >
                             <span className="text-violet-400/60 text-[10px]">⚡</span>
@@ -1476,12 +1480,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   )}
                 </div>
                 {(() => {
-                  const isRulesEmpty = !customRules || !customRules.trim() || customRules.trim() === "Custom game rules will be defined through conversation";
+                  const rulesEmpty = checkRulesEmpty(customRules);
                   return (
                     <>
                       <Button
                         onClick={handleStartGame}
-                        disabled={isRulesBeingEdited || isStartingGame || isRulesEmpty}
+                        disabled={isRulesBeingEdited || isStartingGame || rulesEmpty}
                         className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isStartingGame ? (
@@ -1491,7 +1495,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           </span>
                         ) : "Create Room"}
                       </Button>
-                      {isRulesEmpty && (
+                      {rulesEmpty && (
                         <p className="w-full text-xs text-zinc-500 mt-1.5 text-right">Chat with GM to generate rules first.</p>
                       )}
                     </>
