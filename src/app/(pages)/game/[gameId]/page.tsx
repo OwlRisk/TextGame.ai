@@ -1146,8 +1146,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     players,
   });
 
-  // Rules sheet overlay state
-  const [rulesSheetOpen, setRulesSheetOpen] = useState(false);
+  const RULES_CHANNEL_ID = "__rules__";
 
   // Quick reply suggestions (fetched when it's the human player's turn)
   const { quickReplies, quickRepliesLoading, setQuickReplies } = useQuickReplies({
@@ -1318,8 +1317,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    onInvite: undefined,
-    inviteJustCopied: false,
+    onInvite: isOwner ? handleInvite : undefined,
+    inviteJustCopied: inviteCopied,
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || guestNickname || null,
@@ -1329,7 +1328,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     channelPermissions,
     allPlayers: players,
     unreadCounts,
-    onOpenRules: () => setRulesSheetOpen(true),
+    hasRules: !!(currentGame?.config?.rules ?? "").trim(),
     onDeleteChannel: (id: string | undefined) => {
       if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
     },
@@ -1435,6 +1434,26 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             inviteJustCopied={inviteCopied}
             maxPlayers={currentGame?.config?.playerCount || 12}
           />
+        ) : selectedChannelId === RULES_CHANNEL_ID ? (
+          <ScrollArea className="flex-1 p-6">
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-zinc-700/50">
+                <BookOpen className="h-5 w-5 text-violet-400" />
+                <h2 className="text-lg font-semibold text-white">Rules</h2>
+              </div>
+              {(currentGame?.config?.rules ?? "").trim() ? (
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
+                  dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
+                  <p className="text-sm font-medium">No rules defined for this game.</p>
+                  <p className="text-xs mt-1">The Game Master can add rules when creating the game.</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         ) : (() => {
           const activeSection = sections.find((s) => s.id === selectedChannelId);
           if (activeSection) return (
@@ -1606,31 +1625,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           });
         }}
       />
-
-      {/* Rules overlay sheet */}
-      <Sheet open={rulesSheetOpen} onOpenChange={setRulesSheetOpen}>
-        <SheetContent side="left" title="Rules" className="w-[28rem] max-w-[90vw] p-0 bg-zinc-950 border-r border-zinc-800">
-          <div className="h-14 px-5 flex items-center gap-2.5 border-b border-violet-500/20 bg-gradient-to-r from-violet-950/40 to-zinc-950">
-            <BookOpen className="h-4.5 w-4.5 text-violet-400" />
-            <h2 className="text-base font-semibold text-white">Rules</h2>
-          </div>
-          <ScrollArea className="h-[calc(100%-3.5rem)] p-5">
-            <div className="max-w-2xl">
-              {(currentGame?.config?.rules ?? "").trim() ? (
-                <div
-                  className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
-                  dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
-                  <p className="text-sm font-medium">No rules defined for this game.</p>
-                  <p className="text-xs mt-1">The Game Master can add rules when creating the game.</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
 
       <Toaster
         position="top-right"

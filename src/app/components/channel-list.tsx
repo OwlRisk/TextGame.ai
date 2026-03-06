@@ -68,8 +68,8 @@ interface ChannelListProps {
   roomMembers?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>;
   /** The current viewer's member ID — used to show "You" on their own entry. */
   viewerMemberId?: string;
-  /** Callback to open the rules panel/sheet. When provided, shows a "Rules" button at the top. */
-  onOpenRules?: () => void;
+  /** When true, shows a "Rules" entry at the top of the channel list that selects the special "__rules__" channel. */
+  hasRules?: boolean;
 }
 
 export function ChannelList({ 
@@ -91,7 +91,7 @@ export function ChannelList({
   inviteJustCopied = false,
   roomMembers,
   viewerMemberId,
-  onOpenRules,
+  hasRules,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -130,14 +130,18 @@ export function ChannelList({
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3">
-          {/* Rules button + dynamic sections from AI Host */}
-          {(onOpenRules || channels.some(c => c.type === "text")) && (
+          {/* Rules entry + dynamic sections from AI Host */}
+          {(hasRules || channels.some(c => c.type === "text")) && (
             <div className="mb-5">
-              {onOpenRules && (
+              {hasRules && (
                 <Button
                   variant="ghost"
-                  className="w-full justify-start px-3 h-9 mb-1 rounded-lg text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
-                  onClick={onOpenRules}
+                  className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
+                    selectedChannelId === "__rules__"
+                      ? "bg-zinc-700/50 text-white"
+                      : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
+                  }`}
+                  onClick={() => onSelectChannel("__rules__")}
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
                   <span className="text-sm">Rules</span>
@@ -183,7 +187,7 @@ export function ChannelList({
             </div>
           )}
 
-          {(onOpenRules || channels.some(c => c.type === "text")) && <Separator className="my-3 bg-zinc-700/50" />}
+          {(hasRules || channels.some(c => c.type === "text")) && <Separator className="my-3 bg-zinc-700/50" />}
 
           {/* Game Rooms */}
           <div>
