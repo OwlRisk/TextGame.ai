@@ -7,7 +7,7 @@ import { GameProvider } from "@/app/contexts/GameContext";
 import { AuthProvider } from "@/app/contexts/AuthContext";
 import { SuppressFastRefreshLogs } from "@/app/components/suppress-fast-refresh-logs";
 import { SITE_NAME, SITE_DOMAIN, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
-import { Analytics } from "@vercel/analytics/next";
+
 import { GoogleAnalyticsWrapper } from "@/app/components/google-analytics";
 import { CookieConsent } from "@/app/components/cookie-consent";
 
@@ -207,7 +207,6 @@ export default async function RootLayout({
         <AuthProvider>
           <GameProvider><main id="main-content" className="h-full">{children}</main></GameProvider>
         </AuthProvider>
-        <Analytics />
         <GoogleAnalyticsWrapper gaId={gaId} inEEA={inEEA && gaConsent !== "granted"} />
         <CookieConsent inEEA={inEEA && gaConsent !== "granted" && gaConsent !== "denied"} />
       </body>
