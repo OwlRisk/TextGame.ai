@@ -88,7 +88,7 @@ describe("Layout server-side prop computation", () => {
 
   it("computes correct props for EEA visitor who denied", () => {
     const inEEA = true;
-    const gaConsent: ConsentState = "denied";
+    const gaConsent = "denied" as ConsentState;
     const gaWrapperInEEA = inEEA && gaConsent !== "granted";
     const bannerInEEA = inEEA && gaConsent !== "granted" && gaConsent !== "denied";
     expect(gaWrapperInEEA).toBe(true);
