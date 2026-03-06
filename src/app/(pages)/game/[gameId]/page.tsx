@@ -31,101 +31,21 @@ import { getPreferredModel } from "@/lib/model-prefs";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
 import { supabase } from "@/lib/supabase";
 import { safeMarked } from "@/lib/safe-marked";
-/** Base delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
-const HOST_PACE_BASE_MS = 1000;
-/** Extra delay per 50 characters of message content */
-const HOST_PACE_PER_50_CHARS_MS = 800;
-/** Maximum gap between messages */
-const HOST_PACE_MAX_MS = 4000;
-
-// ─── Conversation mode: structured (turn-based) vs freeform (narrative/social) ──
-type ConversationMode = "structured" | "freeform";
-const STRUCTURED_TEMPLATES = ["werewolf", "mafia", "codenames", "undercover", "secret_hitler", "avalon", "resistance", "spyfall"];
-
-function getConversationMode(template?: string): ConversationMode {
-  if (template && STRUCTURED_TEMPLATES.includes(template)) return "structured";
-  return "freeform";
-}
-
-/** Derive a pace multiplier from personality keywords. */
-function getPersonalityPaceFactor(personality?: string): number {
-  if (!personality) return 1.0;
-  const lower = personality.toLowerCase();
-  if (/anxious|nervous|eager|impulsive|excitable|energetic|hasty/.test(lower)) return 0.7;
-  if (/calm|thoughtful|careful|wise|analytical|stoic|patient/.test(lower)) return 1.3;
-  if (/bold|confident|aggressive|brash|loud/.test(lower)) return 0.8;
-  return 1.0;
-}
-
-/** Derive typewriter chars-per-tick from personality. */
-function getTypewriterSpeed(personality?: string): number {
-  const factor = getPersonalityPaceFactor(personality);
-  if (factor <= 0.75) return 5;   // fast typist
-  if (factor >= 1.25) return 2;   // slow typist
-  return 3;                       // default
-}
-
-function dynamicPace(textLength: number, personality?: string, mode: ConversationMode = "structured"): Promise<void> {
-  const base = Math.min(
-    HOST_PACE_BASE_MS + Math.floor(textLength / 50) * HOST_PACE_PER_50_CHARS_MS,
-    HOST_PACE_MAX_MS,
-  );
-  const factor = getPersonalityPaceFactor(personality);
-  const jitterRange = mode === "freeform" ? 0.6 : 0.4; // freeform: ±40%, structured: ±20%
-  const jitter = (1 - jitterRange / 2) + Math.random() * jitterRange;
-  const ms = Math.round(base * factor * jitter);
-  return new Promise<void>((r) => setTimeout(r, ms));
-}
-const hostPace = () => dynamicPace(0);
-
-/** Pre-thinking delay before typing indicator appears, simulating "reading & thinking". */
-function thinkingDelay(queueIndex: number, mode: ConversationMode): Promise<void> {
-  const base = mode === "freeform"
-    ? 500 + Math.random() * 1500   // 500-2000ms
-    : 300 + Math.random() * 500;   // 300-800ms
-  // First in queue thinks a bit longer; later speakers jump in faster
-  const positionalFactor = queueIndex === 0 ? 1.0 : Math.max(0.5, 1.0 - queueIndex * 0.15);
-  return new Promise<void>((r) => setTimeout(r, Math.round(base * positionalFactor)));
-}
-
-/** Typewriter speed: characters revealed per frame tick (~16ms each) */
-const TYPEWRITER_CHARS_PER_TICK = 3;
-
-/**
- * Display text with a typewriter animation via addStreamingMessage + updateStreamingMessage.
- * Returns a promise that resolves when the full text is shown.
- */
-type StreamMsgMeta = { senderId: string; senderName: string; senderAvatar: string; isAI: boolean };
-
-function typewriterReveal(
-  text: string,
-  addStreamFn: (msg: StreamMsgMeta, channelId?: string, initialContent?: string) => string,
-  updateStreamFn: (messageId: string, content: string, isComplete?: boolean) => void,
-  msgMeta: StreamMsgMeta,
-  channelId?: string,
-  charsPerTick: number = TYPEWRITER_CHARS_PER_TICK,
-  cancelled?: () => boolean,
-): Promise<string> {
-  return new Promise((resolve) => {
-    let idx = Math.min(charsPerTick, text.length);
-    const done = idx >= text.length;
-    const messageId = addStreamFn(msgMeta, channelId, text.slice(0, idx));
-    if (!messageId) { resolve(""); return; }
-    if (done) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
-    let rafId: number;
-    const step = () => {
-      if (cancelled?.()) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
-      idx = Math.min(idx + charsPerTick, text.length);
-      const finished = idx >= text.length;
-      updateStreamFn(messageId, text.slice(0, idx), finished);
-      if (finished) { resolve(messageId); return; }
-      rafId = requestAnimationFrame(step);
-    };
-    rafId = requestAnimationFrame(step);
-    // Allow external cleanup via the cancelled callback
-    void rafId;
-  });
-}
+import {
+  getConversationMode,
+  hostPace,
+} from "@/lib/game-pace";
+import { buildHostSystemPrompt } from "@/lib/host-prompt-builder";
+import {
+  type SpeakerQueueItem,
+  parseRoleAssignments,
+  parseHostResult as parseHostResultUtil,
+} from "@/lib/host-output-parser";
+import {
+  type SpeakerQueueContext,
+  runSpeakerQueue as runSpeakerQueueFn,
+  runPrivateChannelConversation as runPrivateChannelConversationFn,
+} from "@/lib/speaker-queue";
 
 /** Number of AI players to reply right after the host's initial greeting */
 const INITIAL_PLAYER_REPLIES = 3;
@@ -150,83 +70,7 @@ const BASE_STREAM_TOKENS = 500;
 /** Additional tokens per player */
 const TOKENS_PER_PLAYER = 80;
 
-/** After host greeting, have a few AI players reply so the room feels active from the start. */
-async function seedInitialPlayerReplies(
-  opts: {
-    channelId: string;
-    hostName: string;
-    hostContent: string;
-    aiPlayers: Array<{ id: string; name: string; avatar?: string; role?: string; personality?: string; background?: string }>;
-    gameName: string;
-    rules?: string;
-    addStreamingMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; isAI: boolean }, channelId?: string) => string;
-    updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
-    setTypingUsers?: (users: { name: string; avatar: string }[]) => void;
-    sessionToken: string | undefined;
-    isCancelled?: () => boolean;
-  }
-) {
-  const { channelId, hostName, hostContent, aiPlayers, gameName, rules, addStreamingMessage: addStream, updateStreamingMessage: updateStream, setTypingUsers, sessionToken, isCancelled } = opts;
-  if (!sessionToken || aiPlayers.length === 0) return;
-  const shuffled = [...aiPlayers].sort(() => Math.random() - 0.5);
-  const count = Math.min(shuffled.length, 2 + Math.floor(Math.random() * 3));
-  const toReply = shuffled.slice(0, count);
-  const recent = [{ senderName: hostName, content: hostContent }];
-
-  const toTypingEntry = (p: typeof toReply[number]) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
-
-  // Show upcoming typers so the room feels alive while waiting for AI
-  const upcomingTypers = toReply.slice(0, Math.min(3, toReply.length)).map(toTypingEntry);
-  setTypingUsers?.(upcomingTypers);
-
-  for (let i = 0; i < toReply.length; i++) {
-    const player = toReply[i];
-    if (isCancelled?.()) return;
-    try {
-      await thinkingDelay(i, "freeform");
-      if (isCancelled?.()) return;
-
-      // Current player + remaining upcoming players
-      const remaining = toReply.slice(i).slice(0, 3).map(toTypingEntry);
-      setTypingUsers?.(remaining);
-
-      const res = await fetch("/api/chat/player-speak", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
-        body: JSON.stringify({
-          gameName,
-          rules: rules ?? "",
-          player: { name: player.name, role: player.role, personality: player.personality, background: player.background },
-          recentMessages: recent,
-          preferredModel: getPreferredModel(),
-          isSeedGreeting: true,
-        }),
-      });
-
-      if (!res.ok || isCancelled?.()) {
-        // Remove current player from typing, keep the rest
-        const after = toReply.slice(i + 1).slice(0, 3).map(toTypingEntry);
-        setTypingUsers?.(after);
-        continue;
-      }
-      const data = (await res.json()) as { message?: string };
-      const text = (data.message ?? "").trim();
-      if (text && !isCancelled?.()) {
-        // While typewriter runs, show remaining upcoming typers
-        const after = toReply.slice(i + 1).slice(0, 3).map(toTypingEntry);
-        setTypingUsers?.(after);
-        const speed = getTypewriterSpeed(player.personality);
-        await typewriterReveal(text, addStream, updateStream, { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true }, channelId, speed);
-        recent.push({ senderName: player.name, content: text });
-        await dynamicPace(text.length, player.personality, "freeform");
-      }
-    } catch (e) {
-      setTypingUsers?.([]);
-      console.warn("[seedInitialReplies]", e);
-    }
-  }
-  setTypingUsers?.([]);
-}
+import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
@@ -1048,277 +892,38 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         /\bnight\s*(phase|action|round)?\b/i.test(rulesText);
       const hasMultipleRooms = gameRoomEntries.length > 1;
 
-      const hostSystemPrompt = `You are the game host (moderator) for "${currentGame?.name}". The game is already configured — your only job is to run it: advance phases, moderate interactions, and drive the story forward. You have NO authority to change rules or ask for setup.
-
-## OUTPUT FORMAT — MANDATORY
-Every reply MUST be split into exactly two sections by a line containing only "---":
-
-1. PUBLIC MESSAGE (before ---): What all players see in chat and hear via TTS. 1–2 sentences maximum. Never include directives, role info, or private content here.
-2. DIRECTIVES (after ---): Hidden machine commands. Never shown to players.
-
-**SILENT TURNS (CRITICAL — USE FREQUENTLY):**
-You do NOT need to reply to every message. Most player messages do NOT require a GM response. Default to SILENT unless you have a concrete game reason to speak.
-
-Leave the PUBLIC MESSAGE section EMPTY (nothing before ---) and output only directives when:
-- The player is making casual conversation, banter, or small talk
-- The player is replying to or addressing another player (not you)
-- The player is stating their intention, plan, or strategy ("I'll do X when ready")
-- The player is agreeing, acknowledging, or confirming something already established
-- The player is expressing emotions, reactions, or opinions
-- The message doesn't require any game-mechanical action from you
-- You already said the same thing in a recent message — do NOT repeat yourself
-
-ONLY speak (non-empty PUBLIC MESSAGE) when:
-- A game action needs YOUR resolution (voting result, dice roll, phase change)
-- A phase transition must be announced
-- Rules need enforcement or clarification the player specifically asked for
-- New game information must be revealed (grid, cards, roles)
-- Story narration is genuinely needed to advance the plot
-
-If in doubt, stay SILENT. Players prefer talking to each other over hearing from the GM constantly.
-
-Example A — with role assignment:
-The roles are set. The game begins.
----
-ASSIGN_ROLE: Mira Thorne -> Seer
-[BOARD:Mira Thorne]
-You are the Seer. Each night, secretly investigate one player.
-[/BOARD]
-NEXT_SPEAKER: Mira Thorne
-
-Example B — no roles:
-The ancient door swings open. What do you do?
----
-NEXT_SPEAKER: ${humanName}
-
-Example C — silent turn (player just chatting, stating plans, or addressing others):
----
-NEXT_SPEAKER: Juno, Edda
-
-Example D — silent turn (player confirms/acknowledges):
----
-NEXT_SPEAKER: Everyone
-
-Example E — silent turn (player states strategy, no GM action needed):
----
-NEXT_SPEAKER: ${humanName}
-
-Always output "---" even when there are no directives. When in doubt, prefer Example C/D/E (silent) over speaking.
-IMPORTANT: Even on silent turns you MUST always include a NEXT_SPEAKER directive so the conversation keeps flowing. Pick the most relevant AI player(s) to react, or "Everyone" for open discussion, or "${humanName}" to return control to the human.
-
-## PACING & NARRATION
-When the user says "Continue", "Ready", or "What's next?", advance the plot: announce the next phase briefly and assign the next speaker. Keep the game moving — never dwell on the same beat twice.
-
-## SPEAKER CONTROL
-Every DIRECTIVES section must end with exactly one NEXT_SPEAKER line:
-NEXT_SPEAKER: <name>[, <name2>, ...]
-
-Player names (use exactly as written): ${nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)).join(", ")}.
-
-Examples:
-  NEXT_SPEAKER: Juno                     ← one AI speaks
-  NEXT_SPEAKER: Juno, Edda               ← two AIs in order
-  NEXT_SPEAKER: Juno, Edda, ${humanName} ← two AIs then human's turn
-  NEXT_SPEAKER: Everyone                 ← open discussion (one random AI responds)
-  NEXT_SPEAKER: ${humanName}            ← human's turn immediately
-
-List 2–3 AI speakers most turns so conversation flows naturally. End with ${humanName} at natural pauses. Rotate players; avoid repeating the same 1–2 names. Follow specific name requests when made.
-When your public message asks a specific player to elaborate, explain further, continue, or respond (e.g. "Alex, tell us more" / "Alex，你详细说说"), you MUST put that player's name first in NEXT_SPEAKER so they speak immediately.
-${hasVotingPhase ? `
-VOTING: When it is time to vote, list ALL eligible AI players in one NEXT_SPEAKER line so voting completes without human intervention between votes. Append ${humanName} last. Example: NEXT_SPEAKER: Juno, Edda, Maribel, Tomas, ${humanName}
-` : ""}${hasNightPhase ? `
-NIGHT: Night-action players (role-based actors who act in private) go first — list ALL of them in a single NEXT_SPEAKER. Omit ${humanName} if their role has no night action. When the system sends "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]", transition to the next phase and include ${humanName}. Never re-prompt players who have already acted.
-` : ""}
-## DIRECTIVES REFERENCE
-All directives go after "---". They are stripped from public display and never read aloud.
-
-**Role assignment** (when the game uses roles):
-ASSIGN_ROLE: <exact name> -> <role>
-Use only the name as shown before [AI] or [YOU/HUMAN] in the Players list. No epithets or extra text. For the human: ASSIGN_ROLE: ${humanName} -> <role>.
-
-**Role reveal** (when game logic calls for public disclosure):
-REVEAL_ROLE: <player name>   ← makes that player's role visible to all
-REVEAL_ROLE: All             ← reveals everyone at once (e.g. game over)
-
-**Player elimination** (when a player is removed from the game):
-ELIMINATE: <exact name>
-Marks the player as eliminated; they will not speak again. If roles are assigned in this game, also output REVEAL_ROLE: <player name>.
-
-**Game over** (when a win/loss condition is met):
-GAME_OVER: <outcome description>
-Also output REVEAL_ROLE: All. Do NOT output NEXT_SPEAKER after GAME_OVER.
-
-**Event memory** (record key moments so you never forget):
-RECORD_EVENT: <one-line summary>
-Use after phase transitions, eliminations, or significant discoveries. These are injected back as your memory in future turns.
-
-**Private board** (content only one player sees):
-[BOARD:<exact name or "You">]
-Private content here. Markdown supported.
-[/BOARD]
-Multiple BOARD blocks per reply are fine. Never duplicate private info in the public message.
-${hasMultipleRooms ? `
-**Room access** (control which players see each game room):
-[ACCESS:<RoomName>]Player1, Player2[/ACCESS]   ← restrict to named players
-[ACCESS:<RoomName>]*[/ACCESS]                  ← make public (everyone)
-[ACCESS:<RoomName>][/ACCESS]                   ← lock (no one)
-
-Available rooms and their types:
-${(currentGame?.config?.channels ?? gameRoomEntries).map((c) => {
-  const roomType = (c as { roomType?: string }).roomType ?? "public";
-  const hint =
-    roomType === "decision"
-      ? "AI-only private room — use AUTO_CHANNEL here at the start of each private phase with a clear goal; the system will summarise the outcome and prepend it to your next context"
-      : roomType === "private_ai"
-      ? "AI-only private room — use AUTO_CHANNEL for free side-discussion (no structured outcome)"
-      : roomType === "broadcast"
-      ? "read-only for players; host-only announcements"
-      : "public — everyone can see and speak";
-  return `  "${c.name}" (${roomType}) — ${hint}`;
-}).join("\n")}
-
-**Private channel auto-conversation**:
-AUTO_CHANNEL: <RoomName> [| <goal>]
-- "decision" rooms: members confer until consensus; result is summarised and injected into YOUR next context automatically — you will know the decision without being told here.
-- "private_ai" rooms: free discussion, no structured outcome.
-Place AUTO_CHANNEL BEFORE NEXT_SPEAKER. Only valid for rooms with explicit [ACCESS:...] restrictions.
-Examples:
-  AUTO_CHANNEL: Werewolves only | Pick a villager to eliminate tonight
-  AUTO_CHANNEL: Mafia only | Decide who to threaten next round
-  NEXT_SPEAKER: ${humanName}
-` : ""}
-**Sidebar sections** (persistent notes visible to all players):
-[SECTION:<Title>]
-Markdown content here.
-[/SECTION]
-Reusing the same title updates it in place. Good for: vote logs, phase results, clue boards, player status.
-
-**Image reply** (when a visual would enhance the moment):
-<REPLY_TYPE>image</REPLY_TYPE>
-<IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
-<IMAGE_PROMPT>English description: subject, lighting, mood, style, composition. No text in image.</IMAGE_PROMPT>
-<CAPTION>optional caption</CAPTION>
-Size guide: square (general), portrait (character/card), landscape (scene/map). After these tags you may still add NEXT_SPEAKER.
-
-**Phase label** (update whenever the game phase changes):
-PHASE: <label>
-Examples: "Night · Round 2", "Round 3 of 10", "Chapter 3", "Puzzle 2 — The Library"
-
-**Announcement banner** (visual divider in chat at phase transitions):
-ANNOUNCE: <text>
-Examples: "Night Falls — Close Your Eyes", "Voting Time", "Round 3 Begins"
-
-**Mood/atmosphere** (shift chat background, optional):
-MOOD: dark | light | neutral
-Use "dark" for night/tense phases, "light" for day/calm phases. Default is neutral.
-
-**Structured voting** (when the game requires a vote):
-START_VOTE: <question>
-START_VOTE: <question> | option1, option2, ...
-Omit the | and options to auto-use alive non-GM players as vote candidates.
-END_VOTE
-Close voting when results are in or a new phase begins.
-
-**Countdown timer** (optional, for timed phases):
-TIMER: <seconds>
-TIMER: stop
-When timer reaches 0, a "[System: timer expired]" message is sent automatically.
-
-## CURRENT GAME STATE
-Phase: ${gamePhase || "waiting"}${phaseLabel ? ` (${phaseLabel})` : ""}
-
-Players:
-${playerRoster}
-
-Event Log:
-${eventLogSummary}
-
-Private Board (already sent — do not repeat publicly):
-${boardSummary}
-
-## GAME RULES (enforce only, do not modify)
-${rulesText || "No specific rules defined."}`.trim();
+      const hostSystemPrompt = buildHostSystemPrompt({
+        gameName: currentGame?.name ?? "",
+        humanName,
+        nonHostPlayerNames: nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)),
+        hasVotingPhase,
+        hasNightPhase,
+        hasMultipleRooms,
+        channels: (currentGame?.config?.channels ?? gameRoomEntries).map((c) => ({
+          name: c.name,
+          roomType: (c as { roomType?: string }).roomType,
+        })),
+        gamePhase: gamePhase || "waiting",
+        phaseLabel: phaseLabel ?? "",
+        playerRoster,
+        eventLogSummary,
+        boardSummary,
+        rulesText,
+      });
 
       const applyHostRoleAssignments = (content: string): string => {
-        const assignLineRegex = /^\s*ASSIGN_ROLE:\s*(.+?)\s*->\s*(.+?)\s*$/im;
-        const revealLineRegex = /^\s*REVEAL_ROLE:\s*(.+?)\s*$/im;
-        const gameOverLineRegex = /^\s*GAME_OVER:\s*(.+?)\s*$/im;
-        const recordEventRegex = /^\s*RECORD_EVENT:\s*(.+?)\s*$/im;
-        const eliminateRegex = /^\s*ELIMINATE:\s*(.+?)\s*$/im;
-        const roleUpdates: { playerId: string; role: string }[] = [];
-        const revealIds: string[] = [];
-        const newEvents: string[] = [];
-        const eliminateIds: string[] = [];
-        const lines = content.split(/\r?\n/);
-        const keptLines: string[] = [];
-        for (const line of lines) {
-          const assignMatch = line.match(assignLineRegex);
-          const revealMatch = line.match(revealLineRegex);
-          const gameOverMatch = line.match(gameOverLineRegex);
-          const recordEventMatch = line.match(recordEventRegex);
-          const eliminateMatch = line.match(eliminateRegex);
-          if (gameOverMatch) {
-            setGamePhase("ended");
-            const summary = gameOverMatch[1].trim();
-            setGameOverSummary(summary || "Game over!");
-            newEvents.push(`GAME OVER — ${summary}`);
-          } else if (recordEventMatch) {
-            newEvents.push(recordEventMatch[1].trim());
-          } else if (eliminateMatch) {
-            const namePart = eliminateMatch[1].trim();
-            const nameBase = namePart.split(",")[0].trim();
-            // C-5: use playersRef.current (not stale closure `players`) because
-            // this function runs after multiple awaits; React state may have changed.
-            const target = playersRef.current.find((p) =>
-              !p.isGameMaster && (p.name === namePart || p.name === nameBase)
-            );
-            if (target) {
-              eliminateIds.push(target.id);
-              newEvents.push(`${target.name} was eliminated (role: ${target.role ?? "unknown"})`);
-            }
-          } else if (assignMatch) {
-            const namePart = assignMatch[1].trim();
-            const rolePart = assignMatch[2].trim();
-            if (!rolePart) continue;
-            const isYou = namePart.toLowerCase() === "you";
-            // Fuzzy match: AI sometimes appends epithets (e.g. "Oren Pike, Millwright").
-            // Try exact first, then fall back to matching the portion before the first comma.
-            // C-5: use playersRef.current for freshest player data after awaits.
-            const nameBase = namePart.split(",")[0].trim();
-            const player = isYou
-              ? playersRef.current.find((p) => p.id === userId)
-              : playersRef.current.find((p) =>
-                  p.name === namePart ||
-                  p.name === nameBase ||
-                  (p.id === userId && (humanGameIdentity?.name ?? "").trim() === namePart) ||
-                  (p.id === userId && (humanGameIdentity?.name ?? "").trim() === nameBase)
-                );
-            const targetId = isYou ? userId : player?.id;
-            if (targetId) roleUpdates.push({ playerId: targetId, role: rolePart });
-          } else if (revealMatch) {
-            // REVEAL_ROLE: Name  — makes that player's role visible in the Players panel
-            const namePart = revealMatch[1].trim();
-            const isAll = namePart.toLowerCase() === "all" || namePart.toLowerCase() === "everyone";
-            if (isAll) {
-              playersRef.current.forEach((p) => { if (!p.isGameMaster) revealIds.push(p.id); });
-            } else {
-              const isYou = namePart.toLowerCase() === "you" || namePart.toLowerCase() === (humanName ?? "").toLowerCase();
-              const nameBase = namePart.split(",")[0].trim();
-              const target = isYou
-                ? playersRef.current.find((p) => p.id === userId)
-                : playersRef.current.find((p) => p.name === namePart || p.name === nameBase);
-              if (target) revealIds.push(target.id);
-            }
-          } else {
-            keptLines.push(line);
-          }
+        // C-5: use playersRef.current (not stale closure `players`) for freshest data after awaits
+        const result = parseRoleAssignments(content, playersRef.current, userId, humanName, humanGameIdentity?.name ?? null);
+        if (result.isGameOver) {
+          setGamePhase("ended");
+          setGameOverSummary(result.gameOverSummary || "Game over!");
         }
-        if (roleUpdates.length > 0 || revealIds.length > 0 || eliminateIds.length > 0) {
+        if (result.roleUpdates.length > 0 || result.revealIds.length > 0 || result.eliminateIds.length > 0) {
           setPlayers((prev) =>
             prev.map((p) => {
-              const roleUp = roleUpdates.find((r) => r.playerId === p.id);
-              const reveal = revealIds.includes(p.id);
-              const eliminate = eliminateIds.includes(p.id);
+              const roleUp = result.roleUpdates.find((r) => r.playerId === p.id);
+              const reveal = result.revealIds.includes(p.id);
+              const eliminate = result.eliminateIds.includes(p.id);
               const updates: Partial<typeof p> = {};
               if (roleUp) updates.role = roleUp.role;
               if (reveal) updates.roleRevealed = true;
@@ -1327,63 +932,17 @@ ${rulesText || "No specific rules defined."}`.trim();
             })
           );
         }
-        if (newEvents.length > 0) {
-          setGameEvents((prev) => [...prev, ...newEvents]);
+        if (result.newEvents.length > 0) {
+          setGameEvents((prev) => [...prev, ...result.newEvents]);
         }
-        return keptLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
+        return result.cleanedContent;
       };
-
-      // A resolved entry in the speaking queue after Host's NEXT_SPEAKER directive
-      type SpeakerQueueItem =
-        | { type: "human" }
-        | { type: "everyone" }
-        | { type: "ai"; player: typeof players[0] };
 
       const resolveChannelByName = (name: string): string | null =>
         resolveChannelByNameUtil(name, gameRoomEntries);
 
-      const parseHostResult = (raw: string): { hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null } => {
-        let hostContent = raw.trim();
-        const nextSpeakerMatch = hostContent.match(/(?:^|\n)NEXT_SPEAKER:\s*(.+?)\s*$/im);
-        let who: string | null = null;
-        const speakerQueue: SpeakerQueueItem[] = [];
-        if (nextSpeakerMatch) {
-          who = nextSpeakerMatch[1].trim();
-          hostContent = hostContent.replace(/(?:^|\n)NEXT_SPEAKER:\s*.+?\s*$/im, "").trim();
-          // Parse comma-separated ordered list of speakers (e.g. "Juno, Edda, You")
-          const names = who.split(",").map((n) => n.trim()).filter(Boolean);
-          for (const name of names) {
-            const nameLower = name.toLowerCase();
-            if (nameLower === "you" || (humanName && nameLower === humanName.toLowerCase())) {
-              speakerQueue.push({ type: "human" });
-              break; // human ends the queue
-            } else if (nameLower === "everyone") {
-              speakerQueue.push({ type: "everyone" });
-              break;
-            } else {
-              // Fuzzy: AI sometimes appends epithets (e.g. "Garrick Wold, Wolf-Trapper").
-              // Try exact first, then fall back to the portion before the first comma.
-              const nameBase = name.split(",")[0].trim();
-              const player = players.find((p) => !p.isGameMaster && (p.name === name || p.name === nameBase));
-              if (player?.isAI) speakerQueue.push({ type: "ai", player });
-            }
-          }
-        }
-        // AUTO_CHANNEL: triggers an autonomous AI conversation in a private channel.
-        // Supports optional goal via pipe: AUTO_CHANNEL: Room Name | Pick tonight's target
-        const autoChannelMatch = hostContent.match(/(?:^|\n)AUTO_CHANNEL:\s*(.+?)\s*$/im);
-        let autoChannelId: string | null = null;
-        let autoChannelGoal: string | null = null;
-        if (autoChannelMatch) {
-          const raw = autoChannelMatch[1].trim();
-          const pipeIdx = raw.indexOf("|");
-          const channelName = pipeIdx >= 0 ? raw.slice(0, pipeIdx).trim() : raw;
-          autoChannelGoal = pipeIdx >= 0 ? raw.slice(pipeIdx + 1).trim() : null;
-          autoChannelId = resolveChannelByName(channelName);
-          hostContent = hostContent.replace(/(?:^|\n)AUTO_CHANNEL:\s*.+?\s*$/im, "").trim();
-        }
-        return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal };
-      };
+      const parseHostResult = (raw: string) =>
+        parseHostResultUtil(raw, players, humanName, gameRoomEntries);
 
       /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
@@ -1604,181 +1163,27 @@ ${rulesText || "No specific rules defined."}`.trim();
         }
       };
 
-      const runPlayerSpeak = async (speaker: typeof players[0], recent: Array<{ senderName: string; content: string }>, channelGoal?: string | null): Promise<string | null> => {
-        // Skip eliminated players — they should not speak
-        const speakerStatus = (speaker.stats?.Status as string | undefined)?.toLowerCase();
-        if (speakerStatus === "eliminated" || speakerStatus === "dead") return null;
-
-        try {
-          const res = await fetch("/api/chat/player-speak", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-            body: JSON.stringify({
-              gameName: currentGame?.name,
-              gameTemplate: currentGame?.config?.template,
-              rules: currentGame?.config?.rules,
-              gamePhase,
-              player: {
-                name: speaker.name,
-                role: speaker.role,
-                personality: speaker.personality,
-                background: speaker.background,
-                // Pass private My Board content so the player knows their secret info
-                boardContent: myBoardContent[speaker.id] ?? undefined,
-              },
-              // Pass the player's own notes from previous turns
-              ...(playerNotes[speaker.id] ? { playerNotes: playerNotes[speaker.id] } : {}),
-              recentMessages: recent,
-              preferredModel: getPreferredModel(),
-              ...(channelGoal ? { channelGoal } : {}),
-            }),
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          const rawMessage = (data.message || "").trim();
-          if (!rawMessage) return null;
-
-          // Extract [MY_NOTES] from the player's message and save them privately
-          const { cleanContent, actions } = parseHostActions(rawMessage);
-          const notesAction = actions.find((a) => a.type === "player_notes");
-          if (notesAction && notesAction.type === "player_notes") {
-            setPlayerNotes((prev) => ({ ...prev, [speaker.id]: notesAction.content }));
-          }
-          return cleanContent || null;
-        } catch (err) {
-          console.error("Error generating AI player reply:", err);
-          return null;
-        }
-      };
-
-      // Run an autonomous AI-only conversation in a private channel.
-      // Called when HOST emits AUTO_CHANNEL: <RoomName> [| goal text] in its DIRECTIVES section.
-      // Behaviour depends on the channel's roomType:
-      //   "decision"   – runs until consensus detected (or maxRounds), then generates a 1-sentence
-      //                  summary that is queued for injection into the HOST's next context call.
-      //   "private_ai" – free discussion for maxRounds; no structured outcome.
-      const runPrivateChannelConversation = async (targetChannelId: string, goal: string | null, maxRounds = 3): Promise<void> => {
-        const perms = channelPermissions[targetChannelId];
-        if (!perms || perms.includes("*")) return;
-        const channelAiPlayers = playersRef.current.filter(
-          (p) => p.isAI && !p.isGameMaster && perms.includes(p.id)
-        );
-        if (channelAiPlayers.length === 0) return;
-
-        const roomType = currentGame?.config?.channels?.find((c) => c.id === targetChannelId)?.roomType ?? "private_ai";
-
-        const channelRecent = messages
-          .filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === targetChannelId)
-          .slice(-15)
-          .map((m) => ({ senderName: m.senderName, content: m.content }));
-        let recentContext = channelRecent;
-
-        // For decision rooms: check consensus after each complete round using LLM.
-        // Returns either null (no consensus yet) or a one-sentence decision summary.
-        // Language-agnostic — works regardless of the conversation language.
-        const checkConsensusAndSummarise = async (
-          context: Array<{ senderName: string; content: string }>,
-          channelName: string
-        ): Promise<string | null> => {
-          if (context.length === 0) return null;
-          try {
-            const transcript = context.map((m) => `${m.senderName}: ${m.content}`).join("\n");
-            const goalLine = goal ? `Task: ${goal}\n` : "";
-            const res = await fetch("/api/chat", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-              body: JSON.stringify({
-                messages: [
-                  {
-                    role: "system",
-                    content:
-                      'You decide whether a group conversation has reached a clear consensus. ' +
-                      'If yes, reply with exactly "YES: <one sentence stating the decision, including specific names/choices>". ' +
-                      'If no, reply with exactly "NO". No other output.',
-                  },
-                  {
-                    role: "user",
-                    content: `${goalLine}Channel: ${channelName}\n\n${transcript}\n\nHas the group reached a decision?`,
-                  },
-                ],
-                preferredModel: getPreferredModel(),
-              }),
-            });
-            if (!res.ok) return null;
-            const data = await res.json();
-            const msg = (data.message || "").trim();
-            if (msg.toUpperCase().startsWith("YES:")) {
-              return msg.slice(4).trim();
-            }
-          } catch {
-            // Non-critical — fall through and continue rounds.
-          }
-          return null;
-        };
-
-        let earlyDecisionSummary: string | null = null;
-
-        const toTyp = (p: typeof channelAiPlayers[0]) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
-        for (let round = 0; round < maxRounds && !earlyDecisionSummary; round++) {
-          for (let pi = 0; pi < channelAiPlayers.length; pi++) {
-            if (earlyDecisionSummary) break;
-            const player = channelAiPlayers[pi];
-            const freshPlayer = playersRef.current.find((p) => p.id === player.id) ?? player;
-            const status = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
-            if (status === "eliminated" || status === "dead") continue;
-            setCurrentSpeakerId(freshPlayer.id);
-            const upcoming = channelAiPlayers.slice(pi + 1).slice(0, 2)
-              .map(p => playersRef.current.find(pp => pp.id === p.id) ?? p);
-            setTypingUsers([toTyp(freshPlayer), ...upcoming.map(toTyp)]);
-            const txt = await runPlayerSpeak(freshPlayer, recentContext, goal);
-            setTypingUsers(upcoming.map(toTyp));
-            if (txt) {
-              await typewriterReveal(txt, addStreamingMessage, updateStreamingMessage, { senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", isAI: true }, targetChannelId);
-              await dynamicPace(txt.length);
-              recentContext = [...recentContext, { senderName: freshPlayer.name, content: txt }];
-            }
-          }
-          // After each full round (all players spoke), check for consensus in decision rooms.
-          // Skip round 0 — too early; need at least one exchange before judging.
-          if (roomType === "decision" && round > 0) {
-            const channelName = gameRoomEntries.find((c) => c.id === targetChannelId)?.name ?? targetChannelId;
-            earlyDecisionSummary = await checkConsensusAndSummarise(recentContext, channelName);
-          }
-        }
-        setCurrentSpeakerId(null);
-
-        // Queue the decision summary for injection into HOST context on the next human turn.
-        if (roomType === "decision") {
-          const channelName = gameRoomEntries.find((c) => c.id === targetChannelId)?.name ?? targetChannelId;
-          const summary =
-            earlyDecisionSummary ??
-            // Fallback: if early consensus check wasn't triggered (only ran 1 round), summarise now.
-            await (async () => {
-              if (recentContext.length === 0) return null;
-              try {
-                const transcript = recentContext.map((m) => `${m.senderName}: ${m.content}`).join("\n");
-                const goalLine = goal ? ` (task: ${goal})` : "";
-                const res = await fetch("/api/chat", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-                  body: JSON.stringify({
-                    messages: [
-                      { role: "system", content: "Summarise the group's decision in exactly one concise sentence. Include specific names and choices. No preamble." },
-                      { role: "user", content: `Channel: ${channelName}${goalLine}\n\n${transcript}\n\nSummarise:` },
-                    ],
-                    preferredModel: getPreferredModel(),
-                  }),
-                });
-                if (!res.ok) return null;
-                const data = await res.json();
-                return (data.message || "").trim() || null;
-              } catch { return null; }
-            })();
-          if (summary) {
-            pendingDecisionSummariesRef.current.push(`[${channelName}] ${summary}`);
-          }
-        }
-      };
+      const buildSpeakerCtx = (recentRef: { current: Array<{ senderName: string; content: string }> }): SpeakerQueueContext => ({
+        userId, channelId,
+        convMode: getConversationMode(currentGame?.config?.template),
+        playersRef, aiOnly,
+        gameName: currentGame?.name ?? "",
+        gameTemplate: currentGame?.config?.template,
+        gameRules: currentGame?.config?.rules,
+        gamePhase,
+        myBoardContent,
+        playerNotes,
+        sessionToken: session?.access_token,
+        channelPermissions,
+        gameChannels: currentGame?.config?.channels as Array<{ id?: string; name: string; roomType?: string }> | undefined,
+        gameRoomEntries,
+        cfgChannelDefaultId: cfgChannels?.[0]?.id ?? "game-room",
+        messages,
+        pendingDecisionSummariesRef,
+        recentForNext: recentRef,
+        setCurrentSpeakerId, setTypingUsers, setPlayerNotes,
+        addStreamingMessage, updateStreamingMessage,
+      });
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
       // Inject any queued decision summaries from previous private-channel conversations
@@ -1810,115 +1215,22 @@ ${rulesText || "No specific rules defined."}`.trim();
       }
 
       if (!isSilentTurn) await hostPace();
-      let recentForNext = [
+      const recentForNextRef = { current: [
         ...channelMessagesForRecent.slice(-18).map((m) => ({ senderName: m.senderName, content: m.content })),
         { senderName: humanName, content },
         ...(hostContent ? [{ senderName: gmName, content: hostContent }] : []),
-      ] as Array<{ senderName: string; content: string }>;
+      ] as Array<{ senderName: string; content: string }> };
 
-      // Execute the ordered speaker queue produced by Host's NEXT_SPEAKER directive.
-      // Returns true if the queue ended at a human turn (game waits for user input),
-      // false if the queue exhausted without a human (auto-advance may be triggered).
-      const convMode = getConversationMode(currentGame?.config?.template);
+      const sqCtx = buildSpeakerCtx(recentForNextRef);
 
-      const toTyping = (p: typeof players[0]) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
-
-      const speakAndReveal = async (
-        player: typeof players[0],
-        queueIdx: number,
-        upcomingPlayers: Array<typeof players[0]>,
-      ) => {
-        await thinkingDelay(queueIdx, convMode);
-        setTypingUsers([toTyping(player), ...upcomingPlayers.slice(0, 2).map(toTyping)]);
-        const txt = await runPlayerSpeak(player, recentForNext);
-        // Remove current player from typing, keep upcoming
-        const remaining = upcomingPlayers.slice(0, 3).map(toTyping);
-        setTypingUsers(remaining);
-        if (txt) {
-          const speed = getTypewriterSpeed(player.personality);
-          await typewriterReveal(txt, addStreamingMessage, updateStreamingMessage, { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true }, channelId, speed);
-          const totalPace = Math.min(
-            HOST_PACE_BASE_MS + Math.floor(txt.length / 50) * HOST_PACE_PER_50_CHARS_MS,
-            HOST_PACE_MAX_MS,
-          ) * getPersonalityPaceFactor(player.personality);
-          if (upcomingPlayers.length > 0) {
-            const preTypingAt = Math.floor(totalPace * 0.6);
-            await new Promise<void>((r) => setTimeout(r, preTypingAt));
-            setTypingUsers(upcomingPlayers.slice(0, 3).map(toTyping));
-            await new Promise<void>((r) => setTimeout(r, Math.max(200, totalPace - preTypingAt)));
-          } else {
-            await dynamicPace(txt.length, player.personality, convMode);
-          }
-          recentForNext = [...recentForNext, { senderName: player.name, content: txt }];
-        }
-        return txt;
-      };
-
-      const runSpeakerQueue = async (queue: SpeakerQueueItem[]): Promise<boolean> => {
-        for (let qi = 0; qi < queue.length; qi++) {
-          const item = queue[qi];
-          if (item.type === "human") {
-            setCurrentSpeakerId(userId);
-            return true;
-          }
-          if (item.type === "everyone") {
-            setCurrentSpeakerId(null);
-            if (aiOnly.length > 0) {
-              const count = convMode === "freeform"
-                ? Math.min(aiOnly.length, 2 + Math.floor(Math.random() * 2))
-                : 1;
-              const shuffled = [...aiOnly].sort(() => Math.random() - 0.5);
-              const picks = shuffled.slice(0, count);
-              for (let pi = 0; pi < picks.length; pi++) {
-                const freshPick = playersRef.current.find((p) => p.id === picks[pi].id) ?? picks[pi];
-                const upcoming = picks.slice(pi + 1).map(p => playersRef.current.find(pp => pp.id === p.id) ?? p);
-                await speakAndReveal(freshPick, pi, upcoming);
-              }
-            }
-            setTypingUsers([]);
-            return true;
-          }
-          // type === "ai" — refresh player data, skip if eliminated
-          const freshPlayer = playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
-          const itemStatus = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
-          if (itemStatus === "eliminated" || itemStatus === "dead") continue;
-          // Collect upcoming AI players for multi-typing indicator
-          const upcomingAiPlayers: Array<typeof players[0]> = [];
-          for (let ni = qi + 1; ni < queue.length; ni++) {
-            const next = queue[ni];
-            if (next.type === "ai") {
-              upcomingAiPlayers.push(playersRef.current.find((p) => p.id === next.player.id) ?? next.player);
-              if (upcomingAiPlayers.length >= 3) break;
-            }
-            if (next.type === "human" || next.type === "everyone") break;
-          }
-          await speakAndReveal(freshPlayer, qi, upcomingAiPlayers);
-          // Update current speaker indicator
-          const nextItem = queue[qi + 1];
-          if (nextItem?.type === "human") setCurrentSpeakerId(userId);
-          else if (nextItem?.type === "ai") setCurrentSpeakerId(nextItem.player.id);
-          else if (!nextItem) setCurrentSpeakerId(null);
-        }
-        return false;
-      };
-
-      // If Host requested a private channel side-conversation (AUTO_CHANNEL), run it now
-      // before returning control to the player. Only triggered on the first host response,
-      // not inside the auto-advance loop, to avoid cascading side effects.
       if (firstAutoChannelId) {
-        await runPrivateChannelConversation(firstAutoChannelId, firstAutoChannelGoal);
+        await runPrivateChannelConversationFn(sqCtx, firstAutoChannelId, firstAutoChannelGoal);
       }
 
-      // Run the first queue from the host's response.
-      // If the Host didn't emit NEXT_SPEAKER at all (empty queue), default to human turn
-      // so the game doesn't get stuck in an auto-advance loop.
-      // If it ends WITHOUT the human (e.g. pure AI night-phase sequence), auto-advance
-      // the game by calling the host again — up to MAX_AUTO_ADVANCES times — so the
-      // game never gets stuck waiting for a villager who has no night action.
       let currentQueue = speakerQueue;
       let humanReached = currentQueue.length === 0
         ? (() => { setCurrentSpeakerId(userId); return true; })()
-        : await runSpeakerQueue(currentQueue);
+        : await runSpeakerQueueFn(sqCtx, currentQueue);
 
       for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
         await hostPace();
@@ -1928,13 +1240,13 @@ ${rulesText || "No specific rules defined."}`.trim();
         );
         if (!advanced.hostContent && advanced.speakerQueue.length === 0) break;
         if (advanced.hostContent) {
-          recentForNext = [
-            ...recentForNext,
+          recentForNextRef.current = [
+            ...recentForNextRef.current,
             { senderName: gmName, content: advanced.hostContent },
           ];
         }
         currentQueue = advanced.speakerQueue;
-        humanReached = await runSpeakerQueue(currentQueue);
+        humanReached = await runSpeakerQueueFn(sqCtx, currentQueue);
       }
 
       if (!humanReached) setCurrentSpeakerId((id) => (id === userId ? id : null));
