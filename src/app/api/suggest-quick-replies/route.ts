@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
       ? `The human player is "${playerName}" (role: ${playerRole}).`
       : `The human player is "${playerName}".`;
 
+    const humanHasSpoken = recentMessages.some((m) => m.senderName === playerName);
+
     const systemPrompt = `You are a quick-reply assistant for a multiplayer game. Given the game state, suggest 1-3 short messages the human player could send NEXT.
 
 RULES:
@@ -58,7 +60,11 @@ RULES:
 - Suggest actions or statements that ONLY the human player can or should do based on their role and the game state — never parrot what AI players already said.
 - If AI players already asked a question or made a request, do NOT suggest the same request. Instead suggest a different angle, a decision, or a game action.
 - Each option: one short sentence (max 60 chars), natural tone matching the game genre.
-- Output 1-3 suggestions, one per line. No numbering, no quotes, no extra text.`;
+- Output 1-3 suggestions, one per line. No numbering, no quotes, no extra text.${
+      !humanHasSpoken
+        ? `\n- IMPORTANT: The human player has NOT spoken yet. This is their FIRST message in the game. Suggest ice-breaker or opening lines — a greeting, a roleplay-flavored introduction, or a natural first move for this game. Make them feel confident about jumping in.`
+        : ''
+    }`;
 
     const userPrompt = `Game: ${gameName}${gamePhase ? `\nPhase: ${gamePhase}` : ''}
 ${playerContext}
