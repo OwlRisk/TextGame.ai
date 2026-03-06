@@ -40,14 +40,6 @@ const faqJsonLd = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "How do I create an AI text game?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `Sign in with Google, then describe your game idea in plain English to the AI Game Master — or pick a template like Werewolf, Mafia, or Who's the Spy. Set player count and optional rules. Your game is ready in about 2 minutes, no coding needed.`,
-      },
-    },
-    {
-      "@type": "Question",
       name: `What is ${SITE_NAME}?`,
       acceptedAnswer: {
         "@type": "Answer",
@@ -56,10 +48,42 @@ const faqJsonLd = {
     },
     {
       "@type": "Question",
-      name: `Is ${SITE_NAME} a Character.AI alternative?`,
+      name: `Is ${SITE_NAME} free to play?`,
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Yes — ${SITE_NAME} offers AI characters with unique personalities, voices, and strategies in a game context. Unlike Character.AI, it focuses on multiplayer social deduction and RPG games with structured rules, an AI host, and real-time interaction between multiple AI and human players.`,
+        text: `Yes, ${SITE_NAME} is free to play. You can create games, invite friends, and play with an AI Game Master at no cost. Optional paid plans offer more credits and premium features.`,
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How do I create an AI text game?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Sign in with Google, then describe your game idea in plain English to the AI Game Master — or pick a template like Werewolf, Mafia, or Who's the Spy. Set player count and optional rules. Your game is ready in about 2 minutes, no coding needed.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What games can I play?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: `${SITE_NAME} offers 20+ game templates including Werewolf, Mafia, Spyfall, Avalon, Escape Room, Murder Mystery, RPG adventures, and more. You can also create fully custom games with your own rules. The AI Game Master adapts to whatever you describe.`,
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do I need to download anything?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: `No download or installation is needed. ${SITE_NAME} runs entirely in your browser on any device — desktop, tablet, or phone.`,
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I play with friends online?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Create a game room and share the invite link with friends. They can join instantly from any browser — no account required for guests.",
       },
     },
     {
@@ -72,10 +96,10 @@ const faqJsonLd = {
     },
     {
       "@type": "Question",
-      name: "What games can I create with AI?",
+      name: `Is ${SITE_NAME} a Character.AI alternative?`,
       acceptedAnswer: {
         "@type": "Answer",
-        text: "You can create any text-based game — social deduction (Werewolf, Mafia, Secret Hitler), RPGs, murder mysteries, trivia, escape rooms, and fully custom games with your own rules. The AI Game Master adapts to whatever you describe.",
+        text: `Yes — ${SITE_NAME} offers AI characters with unique personalities, voices, and strategies in a game context. Unlike Character.AI, it focuses on multiplayer social deduction and RPG games with structured rules, an AI host, and real-time interaction between multiple AI and human players.`,
       },
     },
   ],
