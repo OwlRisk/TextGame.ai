@@ -25,7 +25,7 @@ test.describe("Invite code lookup API", () => {
 test.describe("Join page – invalid invite", () => {
   test("shows error UI for an invalid invite code", async ({ page }) => {
     await page.goto("/join/invalid-code-xyz");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Should display a "not found" or error message
     const errorVisible = await page
@@ -38,7 +38,7 @@ test.describe("Join page – invalid invite", () => {
 
   test("provides a Go Home button on invalid invite", async ({ page }) => {
     await page.goto("/join/does-not-exist");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const homeBtn = page.locator("button:has-text('Go Home'), a:has-text('Go Home')").first();
     const visible = await homeBtn.isVisible({ timeout: 8000 }).catch(() => false);

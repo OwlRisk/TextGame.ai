@@ -191,7 +191,7 @@ test.describe("Error resilience", () => {
 
   test("game page with malformed UUID handles gracefully", async ({ page }) => {
     await page.goto("/game/not-a-valid-uuid");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Should not show a blank page — either redirects or shows error
     const bodyText = await page.locator("body").textContent();

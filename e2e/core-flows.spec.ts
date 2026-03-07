@@ -2,8 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 test.describe("Discover → Game Template Selection", () => {
   test("can browse game templates on discover page", async ({ page }) => {
-    await page.goto("/discover");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     const cards = page.locator("[data-testid='game-card']");
     await expect(cards.first()).toBeVisible({ timeout: 10000 });
@@ -11,8 +10,7 @@ test.describe("Discover → Game Template Selection", () => {
   });
 
   test("can click a game template to view details", async ({ page }) => {
-    await page.goto("/discover");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     const firstCard = page.locator("[data-testid='game-card']").first();
     if (await firstCard.isVisible({ timeout: 10000 }).catch(() => false)) {
@@ -22,8 +20,7 @@ test.describe("Discover → Game Template Selection", () => {
   });
 
   test("discover page has search or filter functionality", async ({ page }) => {
-    await page.goto("/discover");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     const searchOrFilter = page.locator(
       'input[type="search"], input[placeholder*="Search"], input[placeholder*="search"], [role="tablist"], button:has-text("All")'
@@ -64,8 +61,7 @@ test.describe("Responsive Layout", () => {
 
   test("discover page is responsive on tablet viewport", async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto("/discover");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     await expect(page.locator("h1, h2").first()).toBeVisible();
   });
@@ -109,7 +105,7 @@ test.describe("Error handling", () => {
 
   test("non-existent game shows appropriate error or redirect", async ({ page }) => {
     await page.goto("/game/non-existent-game-id-99999");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const hasErrorOrRedirect =
       page.url().includes("/signin") ||

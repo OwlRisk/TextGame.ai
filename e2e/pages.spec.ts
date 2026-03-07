@@ -53,7 +53,7 @@ test.describe("Blog", () => {
 
   test("blog post has back-to-blog navigation", async ({ page }) => {
     await page.goto("/blog/jackbox-alternatives");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const backLink = page.locator("a[href='/blog'], a[href*='/blog']:has-text('Blog'), a:has-text('Back')").first();
     const visible = await backLink.isVisible({ timeout: 5000 }).catch(() => false);
@@ -67,7 +67,7 @@ test.describe("Blog", () => {
 test.describe("Subscription page", () => {
   test("loads and shows pricing plans for unauthenticated users", async ({ page }) => {
     await page.goto("/subscription");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Should show "Choose your plan" or plan cards
     const hasPlans = await page
@@ -80,7 +80,7 @@ test.describe("Subscription page", () => {
 
   test("displays all three paid tiers", async ({ page }) => {
     await page.goto("/subscription");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     for (const tier of ["Pro", "Plus", "Ultra"]) {
       const tierEl = page.locator(`text=${tier}`).first();
@@ -90,7 +90,7 @@ test.describe("Subscription page", () => {
 
   test("shows correct pricing for each tier", async ({ page }) => {
     await page.goto("/subscription");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator("text=$20").first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator("text=$60").first()).toBeVisible({ timeout: 8000 });
@@ -99,7 +99,7 @@ test.describe("Subscription page", () => {
 
   test("shows credit amounts for each tier", async ({ page }) => {
     await page.goto("/subscription");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator("text=/2,000.*credits/i").first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator("text=/6,000.*credits/i").first()).toBeVisible({ timeout: 8000 });
@@ -108,7 +108,7 @@ test.describe("Subscription page", () => {
 
   test("has a back button", async ({ page }) => {
     await page.goto("/subscription");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const backBtn = page.locator("text=/Back/i").first();
     await expect(backBtn).toBeVisible({ timeout: 5000 });
@@ -146,7 +146,7 @@ test.describe("Auth-protected routes redirect to sign-in", () => {
   for (const route of protectedRoutes) {
     test(`${route} redirects or prompts sign-in when unauthenticated`, async ({ page }) => {
       await page.goto(route);
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("domcontentloaded");
 
       const redirectedToSignIn = page.url().includes("/signin");
       const hasSignInPrompt = await page
@@ -171,7 +171,7 @@ test.describe("Auth-protected routes redirect to sign-in", () => {
 test.describe("Recharge page", () => {
   test("loads without crashing", async ({ page }) => {
     await page.goto("/recharge");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Should show some content — either recharge UI or auth prompt
     const hasContent =
@@ -185,8 +185,7 @@ test.describe("Recharge page", () => {
 
 test.describe("Discover page – template details", () => {
   test("game cards have visible titles and icons", async ({ page }) => {
-    await page.goto("/discover");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     const firstCard = page.locator("[data-testid='game-card']").first();
     await expect(firstCard).toBeVisible({ timeout: 10000 });
@@ -197,8 +196,7 @@ test.describe("Discover page – template details", () => {
   });
 
   test("multiple game categories or tags are shown", async ({ page }) => {
-    await page.goto("/discover");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     const cards = page.locator("[data-testid='game-card']");
     expect(await cards.count()).toBeGreaterThanOrEqual(3);
