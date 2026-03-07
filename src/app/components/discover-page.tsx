@@ -56,7 +56,8 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               src={template.cover}
               alt={template.name}
               fill
-              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 100vw"
+              quality={90}
+              sizes="(min-width: 1280px) 22vw, (min-width: 1024px) 28vw, (min-width: 768px) 45vw, 90vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
@@ -159,6 +160,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                     alt={FEATURED_TEMPLATE.name}
                     fill
                     priority
+                    quality={90}
                     fetchPriority="high"
                     sizes="(min-width: 1024px) 900px, 100vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
