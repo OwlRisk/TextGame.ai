@@ -10,6 +10,7 @@ import { SITE_NAME, SITE_DOMAIN, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site
 
 import { GoogleAnalyticsWrapper } from "@/app/components/google-analytics";
 import { CookieConsent } from "@/app/components/cookie-consent";
+import { Analytics } from "@vercel/analytics/next";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -209,6 +210,7 @@ export default async function RootLayout({
         </AuthProvider>
         <GoogleAnalyticsWrapper gaId={gaId} inEEA={inEEA && gaConsent !== "granted"} />
         <CookieConsent inEEA={inEEA && gaConsent !== "granted" && gaConsent !== "denied"} />
+        <Analytics />
       </body>
     </html>
   );
