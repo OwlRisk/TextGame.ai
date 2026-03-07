@@ -179,8 +179,8 @@ export const ChatInputArea = React.memo(function ChatInputArea({
     [onSendMessage],
   );
 
-  const canSend = !isGameActive || !currentSpeakerId || currentSpeakerId === userId;
-  const inputDisabled = isEliminated || isSending || isRoundInProgress;
+  const canSend = isGameActive && (!currentSpeakerId || currentSpeakerId === userId);
+  const inputDisabled = !isGameActive || isEliminated || isSending || isRoundInProgress;
   const sendDisabled = !canSend || inputDisabled;
 
   return (

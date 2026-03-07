@@ -643,6 +643,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
     if (isRoundInProgress) return;
+    if (gamePhase === "ended") return;
 
     msgCountRef.current += 1;
     if (msgCountRef.current === 1) {
