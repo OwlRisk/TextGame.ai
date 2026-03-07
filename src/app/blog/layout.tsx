@@ -17,20 +17,6 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="text-lg font-bold text-white hover:text-violet-400 transition-colors">
             {SITE_NAME}
           </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/blog" className="text-zinc-400 hover:text-white transition-colors">
-              Blog
-            </Link>
-            <Link href="/discover" className="text-zinc-400 hover:text-white transition-colors">
-              Discover
-            </Link>
-            <Link
-              href="/signin"
-              className="bg-violet-600 hover:bg-violet-500 text-white font-medium px-4 py-1.5 rounded-lg transition-colors"
-            >
-              Try Free
-            </Link>
-          </nav>
         </div>
       </header>
 
