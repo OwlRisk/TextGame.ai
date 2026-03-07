@@ -60,10 +60,10 @@ export function SettingsContent() {
     { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Reliable & quick' },
   ];
   const paidModels = [
+    { value: 'gpt-5.4', label: 'GPT-5.4', description: 'Frontier · Highest reasoning' },
     { value: 'gpt-5.2', label: 'GPT-5.2', description: 'Default model' },
-    { value: 'gpt-4o', label: 'GPT-4o', description: 'Most capable' },
+    { value: 'gpt-4o', label: 'GPT-4o', description: 'Fast & capable' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast & efficient' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Advanced reasoning' },
   ];
   const availableModels = isPaid ? paidModels : freeModels;
 

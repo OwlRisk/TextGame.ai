@@ -5,6 +5,7 @@
 export const DEFAULT_AI_MODEL = 'gpt-5.2';
 
 export const ALLOWED_MODELS = [
+  'gpt-5.4',
   'gpt-5.2', 'gpt-5.2-mini', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano',
   'gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o4-mini',
 ];

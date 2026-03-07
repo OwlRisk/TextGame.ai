@@ -69,6 +69,7 @@ export function usdToCoins(usd: number): number {
  */
 const OPENAI_PRICE_PER_1M: Record<string, { input: number; output: number }> = {
   // GPT-5 series
+  'gpt-5.4':              { input: 2.50, output: 15.00 },
   'gpt-5.2':              { input: 1.75, output: 14.00 },
   'gpt-5.2-chat-latest':  { input: 1.75, output: 14.00 },
   'gpt-5.3-codex':        { input: 1.75, output: 14.00 },
