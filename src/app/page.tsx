@@ -3,9 +3,9 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import HomeClient from "./home-client";
 
 export const metadata: Metadata = {
-  title: "TextGame.ai — AI-Powered Text Games with a Live Game Master",
+  title: "TextGame.ai — AI Game Master for Werewolf, Mafia & Social Games",
   description:
-    "Design and play text-based games in a conversation. An AI game master runs every phase — roles, rules, night actions, and votes. No setup, no moderator needed. Free to play.",
+    "Play Werewolf, Mafia, Murder Mystery and more with an AI Game Master. No moderator needed — AI assigns roles, runs every phase, and fills empty seats with voiced characters. Free to play.",
   keywords: [
     "AI game master",
     "text-based games online",
@@ -18,18 +18,18 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "TextGame.ai — AI-Powered Text Games with a Live Game Master",
+    title: "TextGame.ai — AI Game Master for Werewolf, Mafia & Social Games",
     description:
-      "Design and play text-based games in a conversation. An AI host runs every phase automatically — no moderator needed.",
+      "Play Werewolf, Mafia, Murder Mystery and more with an AI Game Master. No moderator needed — AI runs every phase automatically.",
     type: "website",
     url: SITE_DOMAIN,
     images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TextGame.ai — AI-Powered Text Games with a Live Game Master",
+    title: "TextGame.ai — AI Game Master for Werewolf, Mafia & Social Games",
     description:
-      "Design and play text-based games in a conversation. An AI host runs every phase automatically.",
+      "Play Werewolf, Mafia, Murder Mystery and more with an AI Game Master. No moderator needed.",
     images: ["/hero.webp"],
   },
 };
@@ -120,9 +120,9 @@ export default function HomePage() {
       <HomeClient
         heroHeadline={
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-            Play multiplayer games with{" "}
+            Play Werewolf, Mafia & more —{" "}
             <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-              AI characters
+              AI does the hosting
             </span>
           </h2>
         }

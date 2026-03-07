@@ -79,7 +79,7 @@ function MessageList({
   );
 }
 
-export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
+export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -130,17 +130,17 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
             {/* Headline — server-rendered slot for LCP (heroHeadline comes from page.tsx server component) */}
             {heroHeadline ?? (
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-                Play multiplayer games with{" "}
+                Play Werewolf, Mafia & more —{" "}
                 <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                  AI characters
+                  AI does the hosting
                 </span>
               </h2>
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
-              Create custom game rules or play classic games like Werewolf and Undercover.
+              No moderator needed. AI assigns roles, runs every phase, and fills empty seats with voiced characters.
               <br className="hidden sm:block" />
-              Your AI gaming playground starts here.
+              Start with a template — or just describe your idea.
             </p>
 
             {/* Core features – 3 simple rows */}
@@ -149,19 +149,19 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
                 <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
                   <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
-                <span className="text-base">Smart AI characters that adapt to your game</span>
+                <span className="text-base">AI characters with unique voices and personalities</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
                   <MessageCircle className="h-4 w-4 text-fuchsia-400" />
                 </div>
-                <span className="text-base">Fully customizable rules and gameplay</span>
+                <span className="text-base">20+ templates — or design your own game</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
                   <Zap className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-base">Create and start playing in 2 minutes</span>
+                <span className="text-base">Room ready in 2 minutes — friends join instantly</span>
               </div>
             </div>
 
@@ -179,7 +179,7 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Get Started with Google
+                Play Free with Google
               </Button>
             </div>
 
@@ -193,7 +193,7 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
               >
                 <Link href="/discover">
                   <Compass className="h-5 w-5 mr-2" />
-                  Explore Games First
+                  Browse 20+ Games
                 </Link>
               </Button>
             </div>
@@ -315,8 +315,8 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
-            <h3 className="text-4xl font-black text-white mb-4">Why You'll Love It</h3>
-            <p className="text-lg text-zinc-400">Everything you need to bring any game to life</p>
+            <h3 className="text-4xl font-black text-white mb-4">Why It&apos;s Different</h3>
+            <p className="text-lg text-zinc-400">No moderator, no setup — AI handles everything</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map((feature, index) => {
@@ -342,17 +342,17 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
         <div className="mb-32">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
+              <span className="text-sm font-bold text-violet-400">CLASSIC BOARD GAMES</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">Featured Templates</h3>
-            <p className="text-lg text-zinc-400">One-click start — or use them as inspiration for your own</p>
+            <h3 className="text-3xl font-black text-white mb-3">Your favourite games, hosted by AI</h3>
+            <p className="text-lg text-zinc-400">No moderator needed — pick a game and start playing in minutes</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {FEATURED_GAMES.map((game, index) => (
               <button
                 key={index}
                 type="button"
-                onClick={onSignIn}
+                onClick={() => onCreateGame?.(game.presetId)}
                 aria-label={`Play ${game.title}`}
                 className={`group relative bg-zinc-900/60 border border-zinc-800 ${game.border} rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer overflow-hidden text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500`}
               >
@@ -390,7 +390,7 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
                     <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Try this template →
+                      Play with AI host →
                     </span>
                   </div>
                 </div>
@@ -409,10 +409,10 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
-                Ready to Create Your Game?
+                Start Your First Game — Free
               </h3>
               <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Start creating your AI multiplayer games today
+                Sign in to create a room. Friends join instantly — no account needed.
               </p>
               <div className="relative inline-block">
                 <div className="absolute inset-0 bg-gradient-to-r from-white/50 to-white/50 rounded-xl blur-xl opacity-40 animate-pulse" style={{ animationDuration: '3s' }} />
@@ -427,7 +427,7 @@ export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  Sign in with Google
+                  Play Free with Google
                 </Button>
               </div>
             </div>

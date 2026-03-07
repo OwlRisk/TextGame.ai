@@ -8,6 +8,12 @@ export interface GameFAQ {
   answer: string;
 }
 
+export interface ChatPreviewMessage {
+  name: string;
+  text: string;
+  isHost?: boolean;
+}
+
 export interface GameSEOData {
   slug: string;
   /** templateId used in /create?preset= */
@@ -34,6 +40,8 @@ export interface GameSEOData {
   faq: GameFAQ[];
   /** Related game slugs */
   related: string[];
+  /** Sample in-game chat messages shown on the template page */
+  chatPreview?: ChatPreviewMessage[];
 }
 
 export const GAME_SEO_DATA: GameSEOData[] = [
@@ -95,6 +103,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       { question: "How is this different from Wolvesville?", answer: "Wolvesville is a mobile app focused on ranked competitive play against strangers. TextGame.ai is designed for private games with friends — join via a link, play in minutes, and the AI game master handles all the moderation so you can focus on the fun." },
     ],
     related: ["mafia", "avalon", "undercover"],
+    chatPreview: [
+      { name: "🎭 Game Master", text: "Night falls over the village. Werewolves, silently choose your victim...", isHost: true },
+      { name: "🎭 Game Master", text: "Dawn breaks. Emma has been found eliminated. The village gathers to discuss.", isHost: true },
+      { name: "Alex", text: "I'm suspicious of Marcus — he was way too quiet during the vote last round." },
+      { name: "Jordan", text: "That's rich coming from you, Alex. Where were you during the night phase?" },
+      { name: "🎭 Game Master", text: "The village has voted. Marcus is eliminated. His role was... Villager. The hunt continues.", isHost: true },
+    ],
   },
   {
     slug: "mafia",
@@ -149,6 +164,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       { question: "How is this different from Town of Salem?", answer: "Town of Salem puts you in public lobbies with strangers and has a slower, queue-based experience. TextGame.ai is built for private games with your own group — create a room in seconds, share a link, and the AI handles all moderation with no human host required." },
     ],
     related: ["werewolf", "avalon", "resistance"],
+    chatPreview: [
+      { name: "🎭 Game Master", text: "The city sleeps. Mafia, open your eyes. Choose who to eliminate tonight.", isHost: true },
+      { name: "🎭 Game Master", text: "Morning. The body of Sam has been found. Citizens, you have 3 minutes to discuss.", isHost: true },
+      { name: "Riley", text: "Sam was onto something yesterday. Whoever silenced her knows we're getting close." },
+      { name: "Casey", text: "Or maybe Sam was the mafia and someone else got there first. Don't be so sure." },
+      { name: "🎭 Game Master", text: "Voting closes. Casey has been eliminated. Casey was... a Citizen. The mafia gains strength.", isHost: true },
+    ],
   },
   {
     slug: "undercover",
@@ -199,6 +221,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       { question: "How long does a round of Undercover take?", answer: "A typical round lasts 15–20 minutes, making it perfect for a quick group activity." },
     ],
     related: ["werewolf", "spyfall", "two-truths-lie"],
+    chatPreview: [
+      { name: "🎭 Game Master", text: "Everyone receives their secret word. Remember: one player has a different word entirely.", isHost: true },
+      { name: "Morgan", text: "Mine is... something you'd find in a kitchen. Small, essential, used every day." },
+      { name: "Taylor", text: "I think of mine when it gets cold outside. Very comforting." },
+      { name: "Sam", text: "Mine has a strong smell. It can be sharp or mild depending on the variety." },
+      { name: "🎭 Game Master", text: "Time to vote. Who is the Undercover? Remember — a wrong vote could eliminate a teammate.", isHost: true },
+    ],
   },
   {
     slug: "avalon",
@@ -252,6 +281,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       { question: "Can the AI play as characters in Avalon?", answer: "Yes. The AI game master fills any empty seats with AI characters that behave consistently with their assigned role." },
     ],
     related: ["werewolf", "resistance", "mafia"],
+    chatPreview: [
+      { name: "🎭 Game Master", text: "Merlin and the servants of Evil know the truth. The quest for Excalibur begins.", isHost: true },
+      { name: "Percival", text: "I propose we send Morgan, Jamie, and myself on the first quest. I trust them." },
+      { name: "Morgana", text: "Bold move, Percival. Perhaps too bold. What exactly do you know about Jamie?" },
+      { name: "🎭 Game Master", text: "Quest 1 result: 2 success cards, 1 fail card. The quest has FAILED. Evil advances.", isHost: true },
+      { name: "Arthur", text: "Someone at this table betrayed us. That fail didn't come from nowhere." },
+    ],
   },
   {
     slug: "detective-mystery",
@@ -309,6 +345,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       { question: "How is Detective Mystery different from AI Dungeon?", answer: "AI Dungeon is an open-ended solo adventure. Detective Mystery is a structured multiplayer game with a fixed case, real suspects, and a definitive solution — you win by solving it correctly, making it more like a game than a story." },
     ],
     related: ["clue", "spyfall", "escape-room"],
+    chatPreview: [
+      { name: "🎭 Game Master", text: "A body has been found in the manor library. The suspect list: Colonel Hayes, Lady Voss, Dr. Crane.", isHost: true },
+      { name: "Detective", text: "The candlestick was moved. Someone tried to clean it but missed a fingerprint on the base." },
+      { name: "🎭 Game Master", text: "You question Lady Voss. She claims she was in the garden at 9pm. The gardener hasn't been found.", isHost: true },
+      { name: "Detective", text: "Check the gardener's records. And find out who had access to the library after 8pm." },
+      { name: "🎭 Game Master", text: "New lead: a torn letter behind the bookshelf. It mentions a debt — and a threat.", isHost: true },
+    ],
   },
   {
     slug: "escape-room",
@@ -506,6 +549,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       { question: "How is Codenames different from Jackbox Games?", answer: "Jackbox requires one player to own and stream the game. Codenames on TextGame.ai is free, runs entirely in the browser, and everyone joins with just a link — no purchase, no streaming setup needed." },
     ],
     related: ["undercover", "two-truths-lie", "trivia"],
+    chatPreview: [
+      { name: "🎭 Game Master", text: "Blue team, your Spymaster gives a clue: 'COLD — 3'. Three of your words connect to this.", isHost: true },
+      { name: "Blue Operative", text: "Ice, Freezer... what's the third? Could be Winter?" },
+      { name: "Red Spymaster", text: "*watching quietly*" },
+      { name: "Blue Operative", text: "We'll go with Ice, Freezer, and Arctic. Final answer." },
+      { name: "🎭 Game Master", text: "Ice ✅ Freezer ✅ Arctic ❌ — Arctic belongs to Red team. Red team's turn.", isHost: true },
+    ],
   },
 
   // ── Additional Games ──────────────────────────────────────────────────────
@@ -705,6 +755,13 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       { question: "Is Secret Hitler appropriate for all ages?", answer: "Secret Hitler is designed for players 13 and up. It uses historical political themes in a game context." },
     ],
     related: ["resistance", "avalon", "mafia"],
+    chatPreview: [
+      { name: "🎭 Game Master", text: "The liberal government is fragile. Fascists, you know who your Chancellor is. Keep it secret.", isHost: true },
+      { name: "Jamie", text: "I'll nominate Alex as Chancellor. We need someone decisive right now." },
+      { name: "Sam", text: "I'm not comfortable with that. Alex has been very quiet about their policy cards." },
+      { name: "Alex", text: "Quiet? I've been the most transparent player here. Someone's deflecting." },
+      { name: "🎭 Game Master", text: "Vote result: 4 Ja, 3 Nein. The government is elected. Policies are being drawn...", isHost: true },
+    ],
   },
   {
     slug: "who-most-likely",

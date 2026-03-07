@@ -49,6 +49,7 @@ export interface FeaturedGame {
   cover: string;
   accent: string;
   border: string;
+  presetId: string;
 }
 
 export interface FAQItem {
@@ -189,61 +190,64 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
 
 export const FEATURES: Feature[] = [
   {
-    icon: MessageCircle,
-    title: "Plain English creation",
-    description: "Describe your game idea in plain English — the AI builds the rules, roles, and world for you.",
+    icon: Crown,
+    title: "No moderator needed",
+    description: "AI runs every phase — assigns roles, announces night results, and keeps the game moving. You just play.",
     gradient: "from-violet-500 to-purple-500",
   },
   {
-    icon: Crown,
-    title: "AI Game Master + players",
-    description: "A dedicated GM hosts every session — assigns roles, runs phases, and keeps the story flowing. AI fills every seat.",
+    icon: Users,
+    title: "AI fills empty seats",
+    description: "Can't get enough players? AI characters join your game with unique personalities and strategies. Play anytime.",
     gradient: "from-orange-500 to-pink-500",
   },
   {
-    icon: Users,
-    title: "Real-time multiplayer",
-    description: "Share a link and friends join instantly — no sign-up required. Play with any mix of humans and AI.",
+    icon: MessageCircle,
+    title: "Friends join in seconds",
+    description: "Share a link — friends join instantly from their browser. No account, no download, no setup.",
     gradient: "from-green-500 to-emerald-500",
   },
   {
     icon: Sparkles,
-    title: "Voice & immersion",
-    description: "AI characters speak with unique voices. Every game has its own atmosphere and personality.",
+    title: "Voice & atmosphere",
+    description: "Every AI character has their own voice and personality. Each game feels like a real tabletop session.",
     gradient: "from-blue-500 to-cyan-500",
   },
 ];
 
 export const FEATURED_GAMES: FeaturedGame[] = [
   {
-    emoji: "🧛",
-    title: "Vampire Court",
-    players: "4–8",
-    tags: ["Deduction", "Social"],
-    description: "One vampire hides among nobles. Vote before the next feeding — or become the next victim.",
-    cover: "/games/game-cover-vampire-court.webp",
-    accent: "from-rose-500/20 to-purple-500/10",
-    border: "hover:border-rose-500/50",
+    emoji: "🐺",
+    title: "Werewolf",
+    players: "4+",
+    tags: ["Social Deduction", "Classic"],
+    description: "Villagers vs. hidden werewolves. Debate, vote, and eliminate before the wolves take over.",
+    cover: "/games/game-cover-werewolf.webp",
+    accent: "from-violet-500/20 to-purple-500/10",
+    border: "hover:border-violet-500/50",
+    presetId: "werewolf-classic",
   },
   {
-    emoji: "🚀",
-    title: "Space Mutiny",
-    players: "3–6",
-    tags: ["Sci-fi", "Hidden Role"],
-    description: "The crew is 3 days from Earth. One engineer has been compromised. Trust no one.",
-    cover: "/games/game-cover-space-mutiny.webp",
-    accent: "from-blue-500/20 to-cyan-500/10",
-    border: "hover:border-blue-500/50",
+    emoji: "🔫",
+    title: "Mafia",
+    players: "4+",
+    tags: ["Social Deduction", "Classic"],
+    description: "The mafia hides in plain sight. Citizens must find and eliminate them before it's too late.",
+    cover: "/games/game-cover-mafia.webp",
+    accent: "from-red-500/20 to-orange-500/10",
+    border: "hover:border-red-500/50",
+    presetId: "mafia-classic",
   },
   {
-    emoji: "🏰",
-    title: "Kingdom Intrigue",
-    players: "5–10",
-    tags: ["Strategy", "Roleplay"],
-    description: "Nobles scheme for the throne. Forge alliances, spread rumors, and claim the crown.",
-    cover: "/games/game-cover-kingdom-intrigue.webp",
-    accent: "from-amber-500/20 to-yellow-500/10",
-    border: "hover:border-amber-500/50",
+    emoji: "🕵️",
+    title: "Who's the Spy",
+    players: "3+",
+    tags: ["Word Game", "Party"],
+    description: "Everyone shares a secret word — except the spy. Can the spy bluff their way through?",
+    cover: "/games/game-cover-undercover.webp",
+    accent: "from-emerald-500/20 to-teal-500/10",
+    border: "hover:border-emerald-500/50",
+    presetId: "undercover",
   },
 ];
 

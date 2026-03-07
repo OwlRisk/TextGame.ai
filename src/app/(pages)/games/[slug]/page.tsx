@@ -309,6 +309,38 @@ export default async function GameLandingPage({ params }: Props) {
           </div>
         </section>
 
+        {/* Live Chat Preview */}
+        {game.chatPreview && game.chatPreview.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold text-white">See it in action</h2>
+            <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden">
+              <div className="bg-zinc-800/60 px-4 py-2.5 border-b border-zinc-700/60 flex items-center gap-2.5">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-500/80" />
+                  <div className="w-2 h-2 rounded-full bg-amber-400/80" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-500/80" />
+                </div>
+                <span className="text-xs font-semibold text-zinc-400"># {game.name.toLowerCase()}-game-room</span>
+              </div>
+              <div className="p-4 space-y-3">
+                {game.chatPreview.map((msg, i) => (
+                  <div key={i} className={`flex gap-3 ${msg.isHost ? "opacity-90" : ""}`}>
+                    <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${msg.isHost ? "bg-violet-500/20 text-violet-300" : "bg-zinc-700 text-zinc-300"}`}>
+                      {msg.isHost ? "GM" : msg.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-xs font-semibold mr-2 ${msg.isHost ? "text-violet-400" : "text-zinc-300"}`}>
+                        {msg.name}
+                      </span>
+                      <span className="text-sm text-zinc-400 leading-relaxed">{msg.text}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Features */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-white">Features</h2>

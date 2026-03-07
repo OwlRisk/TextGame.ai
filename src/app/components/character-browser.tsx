@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Plus, Sparkles, Trash2, User, Loader2 } from "lucide-react";
+import { Plus, Sparkles, Trash2, User, Loader2, Volume2, Square } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { cn } from "@/app/components/ui/utils";
+import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 
 export interface AiCharacter {
   id: string;
@@ -51,7 +52,15 @@ export function CharacterBrowser({ open, onClose, onSelectCharacter, gameId }: C
       });
       if (res.ok) {
         const data = await res.json();
-        setCharacters(data.characters || []);
+        // Deduplicate by name (keep the most recent — API returns newest first)
+        const seen = new Set<string>();
+        const unique = (data.characters || []).filter((c: AiCharacter) => {
+          const key = c.name.toLowerCase().trim();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setCharacters(unique);
       }
     } catch (e) {
       console.warn("[character-browser] fetch error:", e);
@@ -267,6 +276,61 @@ function CharacterCard({
   onDelete?: () => void;
   onSave?: () => void;
 }) {
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voicePlaying, setVoicePlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleVoicePreview = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Stop if already playing
+    if (voicePlaying && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setVoicePlaying(false);
+      return;
+    }
+
+    setVoiceLoading(true);
+    try {
+      const voiceId = pickVoiceForSpeaker(gender, personality);
+      const sampleText = `Hi, I'm ${name}. ${personality ? personality.split(",")[0] + "." : "Ready to play."}`;
+      const modelId = (typeof window !== "undefined" ? localStorage.getItem("tts_model") : null) ?? "inworld-tts-1.5-max";
+
+      const res = await fetch("/api/inworld-tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: sampleText, voiceId, modelId }),
+      });
+      if (!res.ok) return;
+
+      const data = await res.json() as { audioBase64?: string };
+      if (!data.audioBase64) return;
+
+      const bytes = Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "audio/mpeg" });
+      const blobUrl = URL.createObjectURL(blob);
+      const audio = new Audio(blobUrl);
+      audioRef.current = audio;
+      setVoicePlaying(true);
+      audio.onended = () => {
+        URL.revokeObjectURL(blobUrl);
+        audioRef.current = null;
+        setVoicePlaying(false);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(blobUrl);
+        audioRef.current = null;
+        setVoicePlaying(false);
+      };
+      await audio.play();
+    } catch (e) {
+      console.warn("[character-browser] voice preview error:", e);
+    } finally {
+      setVoiceLoading(false);
+    }
+  }, [gender, personality, name, voicePlaying]);
+
   return (
     <div className="group flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 hover:border-zinc-600 transition-colors">
       <div className="h-9 w-9 rounded-full bg-violet-900/40 flex items-center justify-center flex-shrink-0">
@@ -280,6 +344,26 @@ function CharacterCard({
         {personality && <p className="text-xs text-zinc-400 truncate mt-0.5">{personality}</p>}
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Voice preview */}
+        <button
+          onClick={handleVoicePreview}
+          disabled={voiceLoading}
+          className={cn(
+            "p-1.5 rounded-md transition-colors",
+            voicePlaying
+              ? "text-violet-400 hover:text-red-400 hover:bg-zinc-700/50"
+              : "text-zinc-500 hover:text-violet-400 hover:bg-zinc-700/50 opacity-0 group-hover:opacity-100"
+          )}
+          title={voicePlaying ? "Stop preview" : "Preview voice"}
+        >
+          {voiceLoading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : voicePlaying ? (
+            <Square className="h-3.5 w-3.5 fill-current" />
+          ) : (
+            <Volume2 className="h-3.5 w-3.5" />
+          )}
+        </button>
         {onSave && (
           <button
             onClick={(e) => { e.stopPropagation(); onSave(); }}
