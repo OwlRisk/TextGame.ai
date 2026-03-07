@@ -23,7 +23,7 @@ import {
 import dynamic from "next/dynamic";
 import { SafeAvatar, PreviewAvatar, StreamingText } from "@/app/components/landing/shared";
 const InsideGameSection = dynamic(() => import("@/app/components/landing/InsideGameSection").then(m => m.InsideGameSection), { ssr: false });
-const FAQSection = dynamic(() => import("@/app/components/landing/FAQSection").then(m => m.FAQSection), { ssr: false });
+const FAQSection = dynamic(() => import("@/app/components/landing/FAQSection").then(m => m.FAQSection));
 
 interface LandingPageProps {
   onSignIn: () => void;

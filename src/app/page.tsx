@@ -34,72 +34,73 @@ export const metadata: Metadata = {
   },
 };
 
+// FAQ items must exactly match what's rendered in FAQSection on the landing page
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
     {
       "@type": "Question",
-      name: `What is ${SITE_NAME}?`,
+      name: "How do I create a game?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `${SITE_NAME} is an AI-powered platform for creating and playing multiplayer text-based games. An AI Game Master hosts every session — assigning roles, managing phases, and narrating the story. AI characters fill every seat so you can play solo or with friends.`,
+        text: "Sign in with Google, then go to Create. You can either chat with the Game Master to describe your idea in plain English, or pick a template from Discover (e.g. Werewolf, Who's the Spy, Mafia, Tarot). Set player count and optional rules — no coding or complex setup. Your game is ready in about 2 minutes.",
       },
     },
     {
       "@type": "Question",
-      name: `Is ${SITE_NAME} free to play?`,
+      name: "What is the Game Master and how does it work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Yes, ${SITE_NAME} is free to play. You can create games, invite friends, and play with an AI Game Master at no cost. Optional paid plans offer more credits and premium features.`,
+        text: "The Game Master is an AI host that runs your game: it explains rules, runs day/night or discussion phases, and keeps the flow. You can also add AI players so the room is filled even when playing alone. The host and players use natural dialogue so it feels like a real tabletop session.",
       },
     },
     {
       "@type": "Question",
-      name: "How do I create an AI text game?",
+      name: "Can I play with friends?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Sign in with Google, then describe your game idea in plain English to the AI Game Master — or pick a template like Werewolf, Mafia, or Who's the Spy. Set player count and optional rules. Your game is ready in about 2 minutes, no coding needed.",
+        text: "Yes! Share an invite link from your game room — friends can join instantly in their browser without creating an account. They play as guests alongside your AI characters. You can have any mix of human and AI players in the same game.",
       },
     },
     {
       "@type": "Question",
-      name: "What games can I play?",
+      name: "What templates or game types are available?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `${SITE_NAME} offers 20+ game templates including Werewolf, Mafia, Spyfall, Avalon, Escape Room, Murder Mystery, RPG adventures, and more. You can also create fully custom games with your own rules. The AI Game Master adapts to whatever you describe.`,
+        text: "We include 20+ templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, Murder Mystery, Secret Hitler, and Tarot Reading. Browse them in Discover for one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
       },
     },
     {
       "@type": "Question",
-      name: "Do I need to download anything?",
+      name: "Do I need to sign in? Is it free?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `No download or installation is needed. ${SITE_NAME} runs entirely in your browser on any device — desktop, tablet, or phone.`,
+        text: "Sign in with Google to create games — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Friends who join your game don't need an account at all.",
       },
     },
     {
       "@type": "Question",
-      name: "Can I play with friends online?",
+      name: "Do AI characters have voices?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Create a game room and share the invite link with friends. They can join instantly from any browser — no account required for guests.",
+        text: "Yes. Each AI character speaks with a unique voice powered by text-to-speech. You can toggle voice on or off for any game. It adds a layer of immersion that makes the game feel like a real tabletop session.",
       },
     },
     {
       "@type": "Question",
-      name: "Can I play Werewolf online with AI?",
+      name: "Can I create any type of game?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Absolutely! ${SITE_NAME} has a ready-to-play Werewolf template. The AI Game Master runs day/night phases, assigns roles like Seer and Doctor, and AI players make strategic decisions. Play solo against AI or invite friends to join.`,
+        text: "Absolutely! While we offer 20+ templates for popular games, you have complete freedom to design custom games with unique rules, roles, and victory conditions. Just describe your idea to the Game Master in plain English.",
       },
     },
     {
       "@type": "Question",
-      name: `Is ${SITE_NAME} a Character.AI alternative?`,
+      name: "How much does it cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Yes — ${SITE_NAME} offers AI characters with unique personalities, voices, and strategies in a game context. Unlike Character.AI, it focuses on multiplayer social deduction and RPG games with structured rules, an AI host, and real-time interaction between multiple AI and human players.`,
+        text: "New accounts start with free credits. After that, you can purchase additional credits as needed — pricing is transparent and based on actual usage. No subscriptions or hidden fees.",
       },
     },
   ],
