@@ -376,7 +376,7 @@ export default function AIGamesForStudentsPage() {
             { emoji: "💰", name: "Free Tier Available", desc: "Start playing without a subscription. The free tier is generous enough for regular classroom use." },
             { emoji: "🤖", name: "AI Hosts the Game", desc: "No teacher has to moderate. The AI assigns roles, enforces rules, keeps score, and narrates — so everyone can play." },
             { emoji: "🛠️", name: "Custom Rules for Any Subject", desc: "Describe your game in plain English. The AI builds it. Align games to your curriculum in minutes." },
-            { emoji: "👥", name: "Multiplayer for Groups", desc: "Built for groups of 3–15 players. AI fills empty seats if needed, so small classes still get a full experience." },
+            { emoji: "👥", name: "Multiplayer for Groups", desc: "Built for groups of any size — 3 players or 30+. AI fills empty seats if needed, so small classes still get a full experience." },
             { emoji: "📱", name: "Works on Any Device", desc: "Browser-based — no downloads, no installs. Works on school Chromebooks, tablets, and phones." },
           ].map((item) => (
             <div key={item.name} className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">

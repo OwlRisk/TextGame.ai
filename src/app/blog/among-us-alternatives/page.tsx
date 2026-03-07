@@ -195,7 +195,7 @@ export default function AmongUsAlternativesPage() {
           description="Everyone receives a secret word except the spy, who gets a similar but different word. Describe your word vaguely enough to not reveal it, but specifically enough to identify the odd one out."
           link={<><strong className="text-white">Play free:</strong> <Link href="/games/undercover" className="text-violet-400 hover:underline">Undercover on {SITE_NAME}</Link></>}
         />
-        <GameCard rank={10} emoji="🤖" name={`${SITE_NAME} (AI Social Deduction)`} players="1–15" platform="Browser"
+        <GameCard rank={10} emoji="🤖" name={`${SITE_NAME} (AI Social Deduction)`} players="1+" platform="Browser"
           description={`Play any social deduction game with an AI Game Master and AI characters. Werewolf, Mafia, Avalon, Spyfall, and more — all in one platform. AI fills empty seats so you never need to wait for enough players.`}
           link={<><strong className="text-white">Try it:</strong> <Link href="/discover" className="text-violet-400 hover:underline">Browse all games on {SITE_NAME}</Link></>}
         />

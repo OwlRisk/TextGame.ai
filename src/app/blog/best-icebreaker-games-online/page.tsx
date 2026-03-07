@@ -329,7 +329,7 @@ export default function BestIcebreakerGamesOnlinePage() {
           <div>
             <H3>How many people can play?</H3>
             <P>
-              Most games on {SITE_NAME} support 3–15 players. For larger groups, split into
+              Most games on {SITE_NAME} support 3 or more players with no upper limit. For larger groups, split into
               breakout rooms and run parallel games. The AI host manages each room independently.
             </P>
           </div>

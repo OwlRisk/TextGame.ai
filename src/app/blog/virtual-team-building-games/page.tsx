@@ -312,7 +312,7 @@ export default function VirtualTeamBuildingGamesPage() {
           <div>
             <H3>How many people do we need for virtual team building games?</H3>
             <P>
-              Most games work with 3–15 players. AI fills empty seats, so even a small team of 3–4
+              Most games work with 3 or more players — there's no upper limit. AI fills empty seats, so even a small team of 3–4
               can play Werewolf or Murder Mystery. For larger teams, split into multiple games or
               rotate who plays.
             </P>

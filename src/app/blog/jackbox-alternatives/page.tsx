@@ -379,7 +379,7 @@ export default function JackboxAlternativesPage() {
             </thead>
             <tbody className="text-zinc-300">
               {[
-                [SITE_NAME, "AI party games", "1–15", "✓", "✓"],
+                [SITE_NAME, "AI party games", "1+", "✓", "✓"],
                 ["Gartic Phone", "Drawing telephone", "3–30", "✓", "✓"],
                 ["Skribbl.io", "Pictionary", "2–12", "✓", "✓"],
                 ["Codenames", "Word deduction", "4–8", "✓", "✓"],

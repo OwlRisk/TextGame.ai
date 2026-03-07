@@ -116,7 +116,7 @@ export default function SkribblAlternativesPage() {
               <th className="py-3 text-zinc-400 font-semibold">Free</th>
             </tr></thead>
             <tbody className="text-zinc-300">
-              {[["Skribbl.io", "Pictionary", "2–12", "✓"], ["Gartic Phone", "Drawing telephone", "3–30", "✓"], ["Drawize", "Drawing modes", "2–10", "✓"], ["Drawasaurus", "Pictionary", "2–16", "✓"], [SITE_NAME, "AI party games", "1–15", "✓"], ["Codenames", "Word deduction", "4–8", "✓"], ["Wavelength", "Spectrum", "2–12", "✓"], ["Sporcle", "Trivia", "1–8", "✓"]].map(([n, t, p, f]) => (
+              {[["Skribbl.io", "Pictionary", "2–12", "✓"], ["Gartic Phone", "Drawing telephone", "3–30", "✓"], ["Drawize", "Drawing modes", "2–10", "✓"], ["Drawasaurus", "Pictionary", "2–16", "✓"], [SITE_NAME, "AI party games", "1+", "✓"], ["Codenames", "Word deduction", "4–8", "✓"], ["Wavelength", "Spectrum", "2–12", "✓"], ["Sporcle", "Trivia", "1–8", "✓"]].map(([n, t, p, f]) => (
                 <tr key={n} className="border-b border-zinc-800/60">
                   <td className={`py-3 pr-4 font-semibold ${n === SITE_NAME ? "text-violet-400" : "text-white"}`}>{n}</td>
                   <td className="py-3 pr-4">{t}</td><td className="py-3 pr-4">{p}</td><td className="py-3">{f}</td>

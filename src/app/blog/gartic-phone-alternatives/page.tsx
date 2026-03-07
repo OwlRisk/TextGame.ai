@@ -114,7 +114,7 @@ export default function GarticPhoneAlternativesPage() {
               <th className="py-3 text-zinc-400 font-semibold">Players</th>
             </tr></thead>
             <tbody className="text-zinc-300">
-              {[["Gartic Phone", "Drawing telephone", "✓", "3–30"], ["Skribbl.io", "Pictionary", "✓", "2–12"], ["Drawize", "Drawing modes", "✓", "2–10"], [SITE_NAME, "AI party games", "✓", "1–15"], ["Drawful 2", "Prompt drawing", "Paid", "3–8"], ["Fake Artist", "Drawing + deduction", "✓", "5–10"], ["Aggie.io", "Collab canvas", "✓", "Unlimited"]].map(([n, t, f, p]) => (
+              {[["Gartic Phone", "Drawing telephone", "✓", "3–30"], ["Skribbl.io", "Pictionary", "✓", "2–12"], ["Drawize", "Drawing modes", "✓", "2–10"], [SITE_NAME, "AI party games", "✓", "1+"], ["Drawful 2", "Prompt drawing", "Paid", "3–8"], ["Fake Artist", "Drawing + deduction", "✓", "5–10"], ["Aggie.io", "Collab canvas", "✓", "Unlimited"]].map(([n, t, f, p]) => (
                 <tr key={n} className="border-b border-zinc-800/60">
                   <td className={`py-3 pr-4 font-semibold ${n === SITE_NAME ? "text-violet-400" : "text-white"}`}>{n}</td>
                   <td className="py-3 pr-4">{t}</td><td className="py-3 pr-4">{f}</td><td className="py-3">{p}</td>

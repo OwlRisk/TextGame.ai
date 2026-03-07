@@ -126,7 +126,7 @@ export default function PlayVampireCourtOnlinePage() {
         <H2 id="what-is">What Is Vampire Court?</H2>
         <P>
           <strong className="text-white">Vampire Court</strong> is a gothic social deduction game for
-          5–15 players. Set in a candlelit aristocratic court, one or more players are secretly vampires
+          5 or more players. Set in a candlelit aristocratic court, one or more players are secretly vampires
           hiding among human nobles. Each night the vampire feeds, and each day the court debates who to
           stake. The atmosphere is thick with suspicion, dramatic accusations, and last-second revelations.
         </P>
@@ -138,7 +138,7 @@ export default function PlayVampireCourtOnlinePage() {
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 mb-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
-            <div><p className="text-2xl mb-1">🧛</p><p className="font-semibold text-white">5–15 players</p></div>
+            <div><p className="text-2xl mb-1">🧛</p><p className="font-semibold text-white">5+ players</p></div>
             <div><p className="text-2xl mb-1">⏱️</p><p className="font-semibold text-white">15–25 min</p></div>
             <div><p className="text-2xl mb-1">🌙</p><p className="font-semibold text-white">Gothic Theme</p></div>
             <div><p className="text-2xl mb-1">🔍</p><p className="font-semibold text-white">Social Deduction</p></div>
@@ -256,7 +256,7 @@ export default function PlayVampireCourtOnlinePage() {
           <div>
             <H3>How many players does Vampire Court need?</H3>
             <P>
-              The game supports 5–15 players. On {SITE_NAME}, AI fills empty slots so you can play
+              The game supports 5 or more players with no upper limit. On {SITE_NAME}, AI fills empty slots so you can play
               with just 1–2 humans. The AI plays both nobles and vampires convincingly.
             </P>
           </div>

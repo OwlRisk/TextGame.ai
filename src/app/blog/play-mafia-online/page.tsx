@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
-const TITLE = "Play Mafia Online: Free AI-Powered Game for 3-15 Players";
+const TITLE = "Play Mafia Online: Free AI-Powered Game for Any Group Size";
 const DESCRIPTION =
   "Learn the rules of Mafia, every role explained, winning strategies, and how to play online for free with an AI Game Master. No moderator needed.";
 const CANONICAL = "/blog/play-mafia-online";
@@ -155,7 +155,7 @@ export default function PlayMafiaOnlinePage() {
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 mb-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
-            <div><p className="text-2xl mb-1">👥</p><p className="font-semibold text-white">3–15 players</p></div>
+            <div><p className="text-2xl mb-1">👥</p><p className="font-semibold text-white">3+ players</p></div>
             <div><p className="text-2xl mb-1">⏱️</p><p className="font-semibold text-white">30–45 min</p></div>
             <div><p className="text-2xl mb-1">🎯</p><p className="font-semibold text-white">Social Deduction</p></div>
             <div><p className="text-2xl mb-1">🧠</p><p className="font-semibold text-white">Strategic</p></div>
@@ -266,7 +266,7 @@ export default function PlayMafiaOnlinePage() {
             <H3>How many people do you need to play Mafia?</H3>
             <P>
               Traditionally 6–12. On {SITE_NAME}, you can start with just 1–2 humans — AI characters
-              fill the rest of the seats. Games support 3–15 players.
+              fill the rest of the seats. You can add as many players as you like.
             </P>
           </div>
           <div>
