@@ -11,22 +11,19 @@ export interface InlineFormattingOptions {
   emotionClassName?: string;
 }
 
-/** Inworld emotion/tone tag → emoji; renders [angry] etc. as emoji in chat */
+/**
+ * Sound/physical tag → emoji.
+ * Emotion labels (angry, happy, etc.) are intentionally excluded — AI is
+ * instructed to express those through writing style, not tags.
+ */
 export const EMOTION_EMOJI: Record<string, string> = {
-  angry: "😠",
-  happy: "😊",
-  sad: "😢",
-  surprised: "😲",
-  fearful: "😨",
-  disgusted: "🤢",
-  laughing: "😂",
-  whispering: "🤫",
   cough: "🤧",
   sigh: "😮‍💨",
   laugh: "😄",
   breathe: "💨",
   clear_throat: "😤",
   yawn: "🥱",
+  whispering: "🤫",
 };
 
 const DEFAULT_OPTIONS: InlineFormattingOptions = {
@@ -35,7 +32,7 @@ const DEFAULT_OPTIONS: InlineFormattingOptions = {
   codeClassName: "bg-zinc-800/50 px-1.5 py-0.5 rounded text-[13px] font-mono text-violet-300 border border-zinc-700/50",
   strikethroughClassName: "line-through text-zinc-400",
   mentionClassName: "inline-flex items-center bg-violet-500/20 text-violet-300 px-1 rounded font-medium",
-  emotionClassName: "inline-block align-middle",
+  emotionClassName: "inline-block align-middle opacity-80 text-[0.9em]",
 };
 
 /**

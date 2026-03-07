@@ -31,14 +31,19 @@ Format (append after your spoken line, keep it brief — 1-3 bullet points max):
   [/MY_NOTES]
 Only write notes when there is something genuinely worth remembering. Skip it on unimportant turns.`;
 
-export const EMOTION_TAGS_SECTION = `EMOTION & SOUND TAGS (optional, use sparingly and only when they feel genuinely natural):
-- ONE emotion tag at the very start when it fits: [angry] [happy] [sad] [surprised] [fearful] [disgusted] [laughing] [whispering]
-- Sound effects anywhere in the line: [cough] [sigh] [laugh] [breathe] [clear_throat] [yawn]
-- Examples:
-  "[angry] I saw you near the body. Stop lying."
-  "I don't know... [sigh] maybe you're right."
-  "[fearful] Please, I swear it wasn't me."
-  "[laughing] Are you serious right now?"`;
+export const EMOTION_TAGS_SECTION = `EXPRESSING EMOTION — write it, don't label it:
+Express emotion through your words, punctuation, and rhythm — not with tags. Real people don't announce feelings; they just talk.
+- Angry: "I TOLD you I wasn't there. Why won't anyone listen?!"
+- Nervous: "I... I don't know. I mean, it could be anyone, right?"
+- Laughing off: "Sure, blame me. That's convenient lol"
+- Suspicious: "Interesting. Very interesting."
+- Scared: "Please. Please just hear me out."
+Use caps, broken sentences, trailing "...", repetition, short sharp sentences — whatever fits the moment. Let the reader feel it.
+
+SOUND TAGS (optional, use sparingly when a physical sound adds to the scene):
+[cough] [sigh] [laugh] [breathe] [clear_throat] [yawn]
+Place them where the sound naturally interrupts — e.g. "I just... [sigh] I don't know anymore."
+Do NOT use emotion labels like [angry] [happy] [fearful] — express those through writing instead.`;
 
 /**
  * Build a game-type-aware system prompt for an AI player.
