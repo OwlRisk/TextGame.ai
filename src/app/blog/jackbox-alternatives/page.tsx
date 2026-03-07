@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "10 Best Jackbox Alternatives — Free Online Party Games (2026)";
 const DESCRIPTION =
@@ -193,6 +194,8 @@ export default function JackboxAlternativesPage() {
           <Link href="/games/codenames" className="text-violet-400 hover:underline">Codenames</Link>, or
           creative storytelling — and want AI to handle hosting.
         </P>
+
+        <ChatPreviewWidget gameSlug="werewolf" ctaLabel="Try it free — no download needed" />
 
         <H2 id="gartic">2. Gartic Phone</H2>
         <P>

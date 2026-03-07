@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "Play Secret Hitler Online with AI — Rules, Strategy & Free Game";
 const DESCRIPTION =
@@ -122,6 +123,8 @@ export default function PlaySecretHitlerOnlinePage() {
         </nav>
 
         {/* ── What is Secret Hitler ─────────────────────────────────── */}
+        <ChatPreviewWidget gameSlug="secret-hitler" />
+
         <H2 id="what-is">What is Secret Hitler?</H2>
         <P>
           Secret Hitler is a <strong className="text-white">social deduction party game</strong> set in

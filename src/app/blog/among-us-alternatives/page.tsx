@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "10 Best Among Us Alternatives — Social Deduction Games Online (2026)";
 const DESCRIPTION =
@@ -166,6 +167,8 @@ export default function AmongUsAlternativesPage() {
           description="The original social deduction game. Werewolves secretly eliminate villagers at night while the village tries to identify and vote them out during the day. More roles and deeper strategy than Among Us."
           link={<><strong className="text-white">Play free:</strong> <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf on {SITE_NAME}</Link> — AI Game Master, AI players, no minimum player count.</>}
         />
+        <ChatPreviewWidget gameSlug="werewolf" ctaLabel="Play Werewolf free on TextGame.ai" />
+
         <GameCard rank={2} emoji="🎭" name="Mafia" players="6–15" platform="Browser, mobile"
           description="Werewolf&apos;s urban cousin. The Mafia eliminates townspeople at night. Roles like Detective and Doctor add investigative layers. Extended discussion phases make for more intense debates."
           link={<><strong className="text-white">Play free:</strong> <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia on {SITE_NAME}</Link> — full game with AI characters that bluff and accuse.</>}

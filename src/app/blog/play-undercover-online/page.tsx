@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "Play Who's the Spy (Undercover) Online — Rules & Strategy";
 const DESCRIPTION =
@@ -141,6 +142,8 @@ export default function PlayUndercoverOnlinePage() {
         </nav>
 
         {/* ── What is Who's the Spy ─────────────────────────────────── */}
+        <ChatPreviewWidget gameSlug="undercover" />
+
         <H2 id="what-is">What is Who&apos;s the Spy?</H2>
         <P>
           Born as a Chinese party game (谁是卧底) and popularized by TV shows, Who&apos;s the Spy

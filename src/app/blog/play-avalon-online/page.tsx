@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "Play Avalon Online with AI — Rules, Roles & Strategy Guide";
 const DESCRIPTION =
@@ -121,6 +122,8 @@ export default function PlayAvalonOnlinePage() {
         </nav>
 
         {/* ── What is Avalon ─────────────────────────────────────── */}
+        <ChatPreviewWidget gameSlug="avalon" />
+
         <H2 id="what-is">What is Avalon?</H2>
         <P>
           <strong className="text-white">The Resistance: Avalon</strong> is a social deduction board game

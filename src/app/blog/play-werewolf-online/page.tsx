@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "How to Play Werewolf Online with AI — Rules, Roles & Free Game";
 const DESCRIPTION =
@@ -143,6 +144,8 @@ export default function PlayWerewolfOnlinePage() {
             ))}
           </ol>
         </nav>
+
+        <ChatPreviewWidget gameSlug="werewolf" />
 
         {/* ── What is Werewolf ─────────────────────────────────────── */}
         <H2 id="what-is">What is Werewolf?</H2>

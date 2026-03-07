@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "Play Mafia Online: Free AI-Powered Game for Any Group Size";
 const DESCRIPTION =
@@ -140,6 +141,8 @@ export default function PlayMafiaOnlinePage() {
         </nav>
 
         {/* ── What is the Mafia Game ───────────────────────────────── */}
+        <ChatPreviewWidget gameSlug="mafia" />
+
         <H2 id="what-is">What is the Mafia Game?</H2>
         <P>
           Mafia is a <strong className="text-white">social deduction party game</strong> invented in

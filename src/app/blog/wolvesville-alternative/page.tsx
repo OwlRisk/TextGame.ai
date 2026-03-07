@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "Wolvesville vs TextGame.ai — Best Werewolf App (2026)";
 const DESCRIPTION =
@@ -188,6 +189,8 @@ export default function WolvesvilleAlternativePage() {
           <li><strong className="text-white">Smaller community</strong> — no ranked matchmaking with strangers</li>
           <li><strong className="text-white">Fewer Werewolf roles</strong> than Wolvesville&apos;s 50+</li>
         </ul>
+
+        <ChatPreviewWidget gameSlug="werewolf" ctaLabel="Play Werewolf free — no download" />
 
         <H2 id="comparison">Feature Comparison</H2>
         <H3>Playing with Friends</H3>

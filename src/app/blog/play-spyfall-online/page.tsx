@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "Play Spyfall Online Free — Rules, Tips & AI-Hosted Game";
 const DESCRIPTION =
@@ -121,6 +122,8 @@ export default function PlaySpyfallOnlinePage() {
         </nav>
 
         {/* ── What is Spyfall ────────────────────────────────────── */}
+        <ChatPreviewWidget gameSlug="spyfall" />
+
         <H2 id="what-is">What is Spyfall?</H2>
         <P>
           <strong className="text-white">Spyfall</strong> is a social deduction party game designed by

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
 
 const TITLE = "Best Town of Salem Alternatives — Play Social Deduction Online (2026)";
 const DESCRIPTION =
@@ -94,6 +95,8 @@ export default function TownOfSalemAlternativePage() {
         </P>
         <Pros items={["Free browser-based play — like old Town of Salem", "AI Game Master handles all game logic", "AI fills empty seats — no waiting for players", "20+ social deduction and party games", "Play with friends via invite link", "Custom game creation"]} />
         <Cons items={["Text-based (no visual avatars)", "Smaller community than Town of Salem at its peak"]} />
+
+        <ChatPreviewWidget gameSlug="mafia" ctaLabel="Try TextGame.ai free" />
 
         <H2 id="wolvesville">2. Wolvesville</H2>
         <P>
