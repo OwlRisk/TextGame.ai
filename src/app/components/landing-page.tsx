@@ -60,23 +60,40 @@ function MessageList({
   return (
     <>
       {messages.slice(0, visibleCount).map((msg, index) => (
-        <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn">
+        <div key={`${gameKey}-${index}`} className="flex gap-4 animate-fadeIn mt-5 first:mt-0">
           <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} />
-          <div className="flex-1">
-            <div className="flex items-baseline gap-2 mb-0.5">
-              <span className="font-semibold text-white text-sm">{msg.name}</span>
-              <span className="text-xs text-zinc-500">{msg.time}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className={`font-semibold text-sm ${msg.isHost ? "text-amber-300" : "text-white"}`}>{msg.name}</span>
+              <span className="text-[11px] text-zinc-500">{msg.time}</span>
             </div>
-            <StreamingText
-              text={msg.text}
-              speed={40}
-              onComplete={index === visibleCount - 1 ? handleMessageComplete : undefined}
-            />
+            <div className={msg.isHost
+              ? "text-sm leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 pl-3 py-1 -ml-0.5 text-zinc-200"
+              : "text-sm leading-relaxed text-zinc-300"
+            }>
+              <StreamingText
+                text={msg.text}
+                speed={40}
+                onComplete={index === visibleCount - 1 ? handleMessageComplete : undefined}
+              />
+            </div>
           </div>
         </div>
       ))}
     </>
   );
+}
+
+// Derive current phase from messages (e.g. "Night 1", "Day 2", "Round 1")
+function getPhaseLabel(messages: Array<{ time: string; isHost?: boolean }>) {
+  const first = messages[0];
+  if (!first) return null;
+  const t = first.time;
+  if (/night/i.test(t)) return { label: t, style: "bg-blue-500/15 text-blue-300 border-blue-500/30" };
+  if (/day/i.test(t)) return { label: t, style: "bg-amber-500/15 text-amber-400 border-amber-500/30" };
+  if (/round/i.test(t)) return { label: t, style: "bg-violet-500/15 text-violet-300 border-violet-500/30" };
+  if (/scene/i.test(t)) return { label: t, style: "bg-zinc-600/40 text-zinc-300 border-zinc-500/30" };
+  return null;
 }
 
 export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPageProps) {
@@ -95,6 +112,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
   }, [isAutoPlaying, selectedGame]);
 
   const currentScenario = GAME_SCENARIOS[selectedGame];
+  const phaseInfo = getPhaseLabel(currentScenario.messages);
 
   return (
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
@@ -201,36 +219,35 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
 
           {/* Right column – animated chat preview */}
           <div className="relative">
-            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-3xl" />
-            <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-zinc-700/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
-              {/* Window chrome */}
-              <div className="bg-zinc-800/70 px-4 py-3 border-b border-zinc-700/80 flex items-center gap-3">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/90" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90" />
-                </div>
-                <span className="text-sm font-semibold text-zinc-300"># game-room</span>
-                <span className="ml-auto text-xs text-zinc-500 bg-zinc-700/60 rounded-md px-2.5 py-1">
+            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-blue-900/10 rounded-3xl blur-3xl" />
+            <div className="relative bg-gradient-to-b from-blue-950/30 via-[#0a0618]/95 to-zinc-900/90 backdrop-blur-xl border border-violet-900/30 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
+              {/* Channel header — matches real game layout */}
+              <div className="h-14 px-5 flex items-center gap-2.5 border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
+                <span className="text-zinc-400 text-lg">#</span>
+                <span className="font-semibold text-base text-white">game-room</span>
+                {phaseInfo && (
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${phaseInfo.style}`}>
+                    {phaseInfo.label}
+                  </span>
+                )}
+                <span className="ml-auto text-xs text-zinc-500 bg-zinc-800/60 border border-zinc-700/40 rounded-md px-2.5 py-1">
                   {currentScenario.title}
                 </span>
               </div>
               {/* Streaming messages */}
-              <div className="p-4 space-y-4 h-[340px] overflow-y-auto">
+              <div className="px-6 py-5 space-y-0 h-[340px] overflow-y-auto">
                 <MessageList messages={currentScenario.messages} gameKey={selectedGame} />
                 {/* Typing indicator */}
-                <div className="flex gap-3">
+                <div className="flex gap-4 mt-5">
                   <PreviewAvatar
                     name="Drew"
                     role="Villager"
                     personality="Quiet observer"
                     gender="other"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-semibold text-white text-sm">Drew</span>
-                    </div>
-                    <div className="flex gap-1 items-center" aria-hidden="true">
+                  <div className="flex-1 min-w-0 pt-1">
+                    <span className="font-semibold text-white text-sm">Drew</span>
+                    <div className="flex gap-1 items-center mt-1.5" aria-hidden="true">
                       <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse" />
                       <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-75" />
                       <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-150" />
@@ -238,10 +255,15 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                   </div>
                 </div>
               </div>
-              {/* Mock input */}
-              <div className="bg-zinc-800/70 px-4 py-3 border-t border-zinc-700/80">
-                <div className="bg-zinc-800/80 rounded-xl px-4 py-2.5 text-sm text-zinc-500 border border-zinc-600/50">
-                  Type your message...
+              {/* Mock input — mirrors real chat input */}
+              <div className="px-4 py-3 border-t border-violet-900/20 bg-zinc-900/40">
+                <div className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-4 py-2.5 border border-zinc-700/50">
+                  <span className="flex-1 text-sm text-zinc-500">Type your message...</span>
+                  <div className="w-7 h-7 rounded-lg bg-violet-600/40 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-violet-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
