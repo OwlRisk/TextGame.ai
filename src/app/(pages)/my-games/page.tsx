@@ -12,7 +12,7 @@ import { Lock, LogIn } from "lucide-react";
 
 export default function MyGamesPageRoute() {
   const router = useRouter();
-  const { games, selectGame, gamesLoading, isHydrated } = useGameContext();
+  const { games, selectGame, gamesLoading, isHydrated, removeGame } = useGameContext();
   const { user, loading, signInWithGoogle } = useAuth();
 
   // Sync sidebar highlight to "my-games" when entering My Games page
@@ -65,6 +65,7 @@ export default function MyGamesPageRoute() {
           router.push(`/game/${gameId}`);
         }}
         onCreateGame={() => router.push("/create")}
+        onDeleteGame={(gameId) => removeGame(gameId)}
       />
       <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
     </>

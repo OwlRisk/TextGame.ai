@@ -1,9 +1,10 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
-import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star } from "lucide-react";
+import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star, Search, X, RotateCcw } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ interface Game {
   color: string;
   config: GameConfig;
   isActive: boolean;
+  updatedAt?: string;
 }
 
 interface MyGamesPageProps {
@@ -24,314 +26,359 @@ interface MyGamesPageProps {
   onDeleteGame?: (gameId: string) => void;
 }
 
+function timeAgo(dateStr?: string): string {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
 function SkeletonCard() {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-7 animate-pulse">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-xl bg-white/10" />
-        <div className="h-5 w-20 rounded-full bg-white/10" />
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 animate-pulse">
+      <div className="flex items-start justify-between mb-3">
+        <div className="w-11 h-11 rounded-xl bg-white/10" />
+        <div className="h-5 w-16 rounded-full bg-white/10" />
       </div>
       <div className="h-5 w-2/3 rounded bg-white/10 mb-3" />
-      <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-white/10">
-        <div className="h-8 rounded bg-white/10" />
-        <div className="h-8 rounded bg-white/10" />
-      </div>
-      <div className="space-y-2 mb-4">
-        <div className="h-4 w-1/2 rounded bg-white/10" />
-        <div className="h-4 w-1/3 rounded bg-white/10" />
+      <div className="flex gap-3 mb-4">
+        <div className="h-4 w-20 rounded bg-white/10" />
+        <div className="h-4 w-16 rounded bg-white/10" />
       </div>
       <div className="h-8 rounded-lg bg-white/10" />
     </div>
   );
 }
 
-function SkeletonSection({ count = 3 }: { count?: number }) {
+function GameCard({
+  game,
+  onSelect,
+  onDelete,
+  onPlayAgain,
+}: {
+  game: Game;
+  onSelect: () => void;
+  onDelete?: () => void;
+  onPlayAgain?: () => void;
+}) {
+  const isActive = game.isActive;
+
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-5 h-5 rounded bg-white/10 animate-pulse" />
-        <div className="h-6 w-32 rounded bg-white/10 animate-pulse" />
-        <div className="h-5 w-8 rounded-full bg-white/10 animate-pulse" />
+    <div
+      className={`group relative bg-white/5 backdrop-blur-xl border rounded-2xl p-5 transition-all cursor-pointer ${
+        isActive
+          ? "border-white/10 hover:border-purple-500/40 hover:bg-white/[0.07]"
+          : "border-white/[0.06] hover:border-zinc-500/30 opacity-70 hover:opacity-90"
+      }`}
+      onClick={onSelect}
+    >
+      {/* Top row: icon + badge + delete */}
+      <div className="flex items-start justify-between mb-3">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-lg overflow-hidden flex-shrink-0"
+          style={{ background: game.color }}
+        >
+          {game.icon.startsWith("data:image") || game.icon.startsWith("http") ? (
+            <img src={game.icon} alt={game.name} className="w-full h-full object-cover" />
+          ) : (
+            game.icon
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 ml-2">
+          <Badge
+            className={
+              isActive
+                ? "bg-green-500/20 border-green-500/30 text-green-300 text-[10px] px-2 py-0"
+                : "bg-zinc-500/20 border-zinc-500/30 text-zinc-400 text-[10px] px-2 py-0"
+            }
+          >
+            {isActive ? "Active" : "Done"}
+          </Badge>
+
+          {onDelete && (
+            <button
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title="Delete"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {Array.from({ length: count }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
+
+      {/* Game name */}
+      <h3 className="text-base font-bold text-white mb-2 leading-snug line-clamp-1">{game.name}</h3>
+
+      {/* Meta row */}
+      <div className="flex items-center gap-3 text-xs text-zinc-500 mb-4">
+        <span className="flex items-center gap-1">
+          <Users className="h-3.5 w-3.5 text-violet-400" />
+          {game.config.playerCount + 1} players
+        </span>
+        {game.updatedAt && (
+          <span className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            {timeAgo(game.updatedAt)}
+          </span>
+        )}
       </div>
+
+      {/* Action */}
+      {isActive ? (
+        <div className="flex gap-2">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            className="flex-1 bg-purple-600 hover:bg-purple-500 text-white h-8 text-xs"
+            size="sm"
+          >
+            Continue Playing
+          </Button>
+          {onPlayAgain && (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlayAgain();
+              }}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-white/5 border-white/10 hover:bg-white/10 text-zinc-400 hover:text-white flex-shrink-0"
+              title="Duplicate & Modify"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            variant="outline"
+            className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-white h-8 text-xs"
+            size="sm"
+          >
+            View Replay
+          </Button>
+          {onPlayAgain && (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlayAgain();
+              }}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-white/5 border-white/10 hover:bg-violet-500/20 hover:border-violet-500/30 text-zinc-400 hover:text-violet-300 flex-shrink-0"
+              title="Play Again"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGame, onDeleteGame }: MyGamesPageProps) {
-  const activeGames = games.filter(g => g.isActive);
-  const completedGames = games.filter(g => !g.isActive);
-  
-  const handleDuplicateGame = (game: Game, e: React.MouseEvent) => {
-    e.stopPropagation();
-    toast.success(`"${game.name}" duplicated! Opening...`);
-    setTimeout(() => {
-      onCreateGame();
-    }, 500);
+  const [search, setSearch] = useState("");
+
+  const filteredGames = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return games;
+    return games.filter((g) => g.name.toLowerCase().includes(q));
+  }, [games, search]);
+
+  const activeGames = filteredGames.filter((g) => g.isActive);
+  const completedGames = filteredGames.filter((g) => !g.isActive);
+
+  const handlePlayAgain = (game: Game) => {
+    toast.success(`Creating new game based on "${game.name}"…`);
+    setTimeout(() => onCreateGame(), 400);
   };
 
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-br from-zinc-950 via-zinc-900 to-black min-h-0 relative">
-      {/* Ambient Background - Enhanced */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.06),transparent_50%)] pointer-events-none" />
-      
+
       {/* Header */}
       <div className="border-b border-white/5 bg-black/50 backdrop-blur-xl flex-shrink-0 relative z-10 shadow-2xl">
-        <div className="h-24 px-10 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent mb-1">My Games</h1>
-            <p className="text-sm text-zinc-400 font-medium">
-              {isLoading ? (
-                <span className="inline-block h-4 w-24 rounded bg-white/10 animate-pulse align-middle" />
-              ) : (
-                <>{games.length} {games.length === 1 ? 'game' : 'games'} total</>
+        <div className="h-16 px-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="text-xl font-bold text-white whitespace-nowrap">My Games</h1>
+            {!isLoading && (
+              <span className="text-xs text-zinc-500 whitespace-nowrap">
+                {games.length} {games.length === 1 ? "game" : "games"}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 flex-1 max-w-xs">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search games…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-8 pl-8 pr-7 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.08] transition-all"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               )}
-            </p>
+            </div>
           </div>
 
           <Button
             onClick={onCreateGame}
-            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all hover:scale-105 h-11 px-6"
+            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 h-8 px-4 text-sm whitespace-nowrap flex-shrink-0"
           >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Create New Game
+            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+            New Game
           </Button>
         </div>
       </div>
 
       <ScrollArea className="flex-1 min-h-0">
-        <div className="max-w-7xl mx-auto px-10 py-16">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {isLoading ? (
-            <div className="space-y-10">
-              <SkeletonSection count={3} />
+            <div className="space-y-8">
+              <div>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="h-5 w-5 rounded bg-white/10 animate-pulse" />
+                  <div className="h-5 w-28 rounded bg-white/10 animate-pulse" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+              </div>
             </div>
           ) : games.length === 0 ? (
-            // Empty State - Enhanced
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-20">
               <div className="relative">
-                {/* Glow Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 blur-3xl" />
-                
-                <div className="relative bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-2xl border border-white/10 rounded-3xl p-16 text-center max-w-2xl shadow-2xl">
-                  {/* Animated Icon */}
-                  <div className="relative inline-flex mb-8">
+                <div className="relative bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-2xl border border-white/10 rounded-3xl p-14 text-center max-w-lg shadow-2xl">
+                  <div className="relative inline-flex mb-7">
                     <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-3xl blur-xl opacity-50 animate-pulse" />
-                    <div className="relative bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 backdrop-blur-sm rounded-3xl p-8 border border-violet-400/30">
-                      <Sparkles className="h-16 w-16 text-violet-300" />
+                    <div className="relative bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 backdrop-blur-sm rounded-3xl p-7 border border-violet-400/30">
+                      <Sparkles className="h-14 w-14 text-violet-300" />
                     </div>
                   </div>
-                  
-                  <h2 className="text-4xl font-bold bg-gradient-to-r from-white via-violet-100 to-fuchsia-100 bg-clip-text text-transparent mb-4">
-                    No Games Yet
-                  </h2>
-                  <p className="text-lg text-zinc-300 mb-8 leading-relaxed max-w-md mx-auto">
-                    Start your adventure by creating your first game. Choose from classic favorites or design something completely unique!
+                  <h2 className="text-3xl font-bold text-white mb-3">No Games Yet</h2>
+                  <p className="text-zinc-400 mb-8 leading-relaxed">
+                    Start your first adventure — pick a template or describe your idea to the AI Game Master.
                   </p>
-                  
-                  {/* Feature Highlights */}
-                  <div className="grid grid-cols-3 gap-4 mb-10 max-w-xl mx-auto">
-                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                      <Users className="h-6 w-6 text-violet-400 mx-auto mb-2" />
-                      <p className="text-xs text-zinc-400 font-medium">Multiplayer</p>
-                    </div>
-                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                      <Sparkles className="h-6 w-6 text-fuchsia-400 mx-auto mb-2" />
-                      <p className="text-xs text-zinc-400 font-medium">Custom Rules</p>
-                    </div>
-                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                      <Star className="h-6 w-6 text-amber-400 mx-auto mb-2 fill-amber-400" />
-                      <p className="text-xs text-zinc-400 font-medium">Immersive</p>
-                    </div>
+                  <div className="grid grid-cols-3 gap-3 mb-8">
+                    {[
+                      { icon: <Users className="h-5 w-5 text-violet-400 mx-auto mb-1.5" />, label: "Multiplayer" },
+                      { icon: <Sparkles className="h-5 w-5 text-fuchsia-400 mx-auto mb-1.5" />, label: "Custom Rules" },
+                      { icon: <Star className="h-5 w-5 text-amber-400 mx-auto mb-1.5 fill-amber-400" />, label: "Immersive" },
+                    ].map(({ icon, label }) => (
+                      <div key={label} className="bg-white/5 rounded-xl p-3 border border-white/10">
+                        {icon}
+                        <p className="text-xs text-zinc-400">{label}</p>
+                      </div>
+                    ))}
                   </div>
-                  
                   <Button
                     onClick={onCreateGame}
                     size="lg"
-                    className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-lg px-8 py-6 h-auto shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:scale-105"
+                    className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white px-8 h-11 shadow-2xl shadow-violet-500/30 hover:scale-105 transition-all"
                   >
-                    <Sparkles className="h-5 w-5 mr-2" />
+                    <Sparkles className="h-4 w-4 mr-2" />
                     Create Your First Game
                   </Button>
                 </div>
               </div>
             </div>
+          ) : filteredGames.length === 0 ? (
+            // No search results
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Search className="h-12 w-12 text-zinc-600 mb-4" />
+              <p className="text-zinc-400 text-lg font-medium mb-1">No games match "{search}"</p>
+              <p className="text-zinc-600 text-sm mb-4">Try a different name</p>
+              <button onClick={() => setSearch("")} className="text-sm text-violet-400 hover:text-violet-300 transition-colors">
+                Clear search
+              </button>
+            </div>
           ) : (
-            <div className="space-y-10">
-              {/* Active Games */}
+            <div className="space-y-8">
               {activeGames.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <Play className="h-5 w-5 text-green-400" />
-                    <h2 className="text-2xl font-bold text-white">Active Games</h2>
-                    <Badge variant="outline" className="bg-green-500/20 border-green-500/30 text-green-300">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <Play className="h-4 w-4 text-green-400" />
+                    <h2 className="text-base font-bold text-white">Active Games</h2>
+                    <Badge variant="outline" className="bg-green-500/20 border-green-500/30 text-green-300 text-[10px]">
                       {activeGames.length}
                     </Badge>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {activeGames.map((game) => (
-                        <div
-                          key={game.id}
-                          className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-7 hover:border-purple-500/30 transition-all cursor-pointer"
-                          onClick={() => onSelectGame(game.id)}
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div 
-                              className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg overflow-hidden"
-                              style={{ background: game.color }}
-                            >
-                              {(game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
-                                <img 
-                                  src={game.icon} 
-                                  alt={game.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                game.icon
-                              )}
-                            </div>
-                            <Badge className="bg-green-500/20 border-green-500/30 text-green-300">
-                              Active
-                            </Badge>
-                          </div>
-
-                          <h3 className="text-lg font-bold text-white mb-4">{game.name}</h3>
-                          
-                          <div className="space-y-2 text-sm text-zinc-400 mb-5">
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-violet-400 flex-shrink-0" />
-                              <span>{game.config.playerCount + 1} players</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-green-400 flex-shrink-0" />
-                              <span className="text-green-300">In progress</span>
-                            </div>
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectGame(game.id);
-                              }}
-                              className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
-                              size="sm"
-                            >
-                              Continue Playing
-                            </Button>
-                            <Button
-                              onClick={(e) => handleDuplicateGame(game, e)}
-                              variant="outline"
-                              size="icon"
-                              className="bg-white/5 border-white/10 hover:bg-white/10 text-white flex-shrink-0"
-                              title="Duplicate & Modify"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          {onDeleteGame && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-4 right-14 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteGame(game.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        onSelect={() => onSelectGame(game.id)}
+                        onDelete={onDeleteGame ? () => onDeleteGame(game.id) : undefined}
+                        onPlayAgain={() => handlePlayAgain(game)}
+                      />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Completed Games */}
               {completedGames.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <Archive className="h-5 w-5 text-zinc-500" />
-                    <h2 className="text-2xl font-bold text-white">Completed Games</h2>
-                    <Badge variant="outline" className="bg-zinc-500/20 border-zinc-500/30 text-zinc-400">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <Archive className="h-4 w-4 text-zinc-500" />
+                    <h2 className="text-base font-bold text-white">Completed</h2>
+                    <Badge variant="outline" className="bg-zinc-500/20 border-zinc-500/30 text-zinc-400 text-[10px]">
                       {completedGames.length}
                     </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {completedGames.map((game) => (
-                      <div
-                        key={game.id}
-                        className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-7 hover:border-zinc-500/30 transition-all cursor-pointer opacity-75"
-                        onClick={() => onSelectGame(game.id)}
+                    {onDeleteGame && completedGames.length > 1 && (
+                      <button
+                        className="ml-auto text-xs text-zinc-600 hover:text-red-400 transition-colors flex items-center gap-1"
+                        onClick={() => {
+                          if (confirm(`Delete all ${completedGames.length} completed games?`)) {
+                            completedGames.forEach((g) => onDeleteGame(g.id));
+                          }
+                        }}
                       >
-                        <div className="flex items-start justify-between mb-4">
-                          <div 
-                            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl overflow-hidden"
-                            style={{ background: game.color }}
-                          >
-                            {(game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
-                              <img 
-                                src={game.icon} 
-                                alt={game.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              game.icon
-                            )}
-                          </div>
-                          <Badge className="bg-zinc-500/20 border-zinc-500/30 text-zinc-400">
-                            Completed
-                          </Badge>
-                        </div>
-
-                        <h3 className="text-lg font-bold text-white mb-4">{game.name}</h3>
-                        
-                        <div className="space-y-2 text-sm text-zinc-400 mb-5">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-zinc-500 flex-shrink-0" />
-                            <span>{game.config.playerCount + 1} players</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-zinc-500 flex-shrink-0" />
-                            <span>Finished</span>
-                          </div>
-                        </div>
-
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectGame(game.id);
-                          }}
-                          variant="outline"
-                          className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white"
-                          size="sm"
-                        >
-                          View Game
-                        </Button>
-
-                        {onDeleteGame && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteGame(game.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                        <Trash2 className="h-3 w-3" />
+                        Delete all
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {completedGames.map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        onSelect={() => onSelectGame(game.id)}
+                        onDelete={onDeleteGame ? () => onDeleteGame(game.id) : undefined}
+                        onPlayAgain={() => handlePlayAgain(game)}
+                      />
                     ))}
                   </div>
                 </div>
