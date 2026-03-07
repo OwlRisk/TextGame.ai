@@ -72,10 +72,10 @@ export const FEATURED_TEMPLATE: GameTemplate = {
   style: "Strategic",
   color: "from-purple-900 to-indigo-900",
   features: [
-    "🎭 8+ unique character roles",
-    "🌙 Day/Night cycle gameplay",
-    "🗳️ Democratic voting system",
-    "💬 Group discussion phases",
+    "8+ unique character roles",
+    "Day/Night cycle gameplay",
+    "Democratic voting system",
+    "Group discussion phases",
   ],
   templateId: "werewolf",
   rules: `SETTING: A village haunted by werewolves. Neighbors by day, predators by night. Find them before the town falls.

@@ -155,7 +155,7 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
 
 export const GAME_SCENARIOS: Record<string, GameScenario> = {
   werewolf: {
-    title: "🐺 Werewolf",
+    title: "Werewolf",
     messages: [
       { isHost: true, name: "Warden Lunaris", time: "Night 1", text: "Night falls on the village. The wolves stir... Werewolves, open your eyes and choose your target." },
       { name: "Alex", time: "Day 2", text: "Blake barely said a word all night. That silence is suspicious — I'm calling it out.", role: "Villager", personality: "Outspoken and analytical", gender: "male" },
@@ -164,7 +164,7 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
     ],
   },
   mafia: {
-    title: "🎭 Mafia",
+    title: "Mafia",
     messages: [
       { isHost: true, name: "Don Ferrante", time: "Night 1", text: "The city falls silent. Mafia — open your eyes. Choose your target before dawn." },
       { name: "Lucia", time: "Day 2", text: "Marco was outside the bakery at midnight. That's not a coincidence — I checked the records.", role: "Detective", personality: "Sharp, suspicious of everyone", gender: "female" },
@@ -173,7 +173,7 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
     ],
   },
   spy: {
-    title: "🕵️ Who's the Spy",
+    title: "Who's the Spy",
     messages: [
       { isHost: true, name: "Game Master", time: "Round 1", text: "Secret words sent. Everyone has the same word — except one player. Describe yours without giving it away." },
       { name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning... very comforting.", role: "Civilian", personality: "Clever, deliberately vague", gender: "other" },
@@ -182,7 +182,7 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
     ],
   },
   mystery: {
-    title: "🔍 Murder Mystery",
+    title: "Murder Mystery",
     messages: [
       { isHost: true, name: "Detective Kate", time: "Scene 1", text: "A priceless diamond has vanished from the locked museum vault. Every person in this room is a suspect." },
       { name: "Morgan", time: "Scene 1", text: "I... saw someone near the display case around 9 PM. I didn't think much of it at the time.", role: "Witness", personality: "Nervous, detail-oriented", gender: "other" },
@@ -291,15 +291,15 @@ export const FAQ_ITEMS: FAQItem[] = [
 ];
 
 const BASE_MARQUEE_CHARACTERS: MarqueeCharacter[] = [
-  { name: "Alex",   role: "Villager",  personality: "Outspoken and analytical",             game: "🐺 Werewolf" },
-  { name: "Casey",  role: "Doctor",    personality: "Calm, protective instincts",            game: "🐺 Werewolf" },
-  { name: "Lucia",  role: "Detective", personality: "Sharp, suspicious of everyone",         game: "🎭 Mafia"    },
-  { name: "Marco",  role: "Civilian",  personality: "Nervous, eager to prove innocence",     game: "🎭 Mafia"    },
-  { name: "Jordan", role: "Civilian",  personality: "Clever, deliberately vague",            game: "🕵️ Who's the Spy" },
-  { name: "Riley",  role: "Spy",       personality: "Paranoid, accuses to deflect",          game: "🕵️ Who's the Spy" },
-  { name: "Morgan", role: "Witness",   personality: "Nervous, detail-oriented",              game: "🔍 Mystery"  },
-  { name: "Taylor", role: "Suspect",   personality: "Confrontational, quick to contradict",  game: "🔍 Mystery" },
-  { name: "Drew",   role: "Villager",  personality: "Quiet, watchful observer",              game: "🐺 Werewolf" },
+  { name: "Alex",   role: "Villager",  personality: "Outspoken and analytical",             game: "Werewolf" },
+  { name: "Casey",  role: "Doctor",    personality: "Calm, protective instincts",            game: "Werewolf" },
+  { name: "Lucia",  role: "Detective", personality: "Sharp, suspicious of everyone",         game: "Mafia"    },
+  { name: "Marco",  role: "Civilian",  personality: "Nervous, eager to prove innocence",     game: "Mafia"    },
+  { name: "Jordan", role: "Civilian",  personality: "Clever, deliberately vague",            game: "Who's the Spy" },
+  { name: "Riley",  role: "Spy",       personality: "Paranoid, accuses to deflect",          game: "Who's the Spy" },
+  { name: "Morgan", role: "Witness",   personality: "Nervous, detail-oriented",              game: "Mystery"  },
+  { name: "Taylor", role: "Suspect",   personality: "Confrontational, quick to contradict",  game: "Mystery" },
+  { name: "Drew",   role: "Villager",  personality: "Quiet, watchful observer",              game: "Werewolf" },
 ];
 
 /** Duplicated for seamless infinite marquee loop */

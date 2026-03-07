@@ -206,10 +206,10 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
         } else {
           addGMMessage(
             "I'm not sure which game you'd prefer. Let me help you:\n\n" +
-            "🐺 **Werewolf** - Perfect for strategy lovers. Players debate to find hidden werewolves.\n" +
-            "🕵️ **Undercover** - Quick and fun! Guess who has the different word.\n" +
-            "🃏 **Tarot** - A reflective card reading; just you and the Host.\n" +
-            "🎮 **Custom** - Have a unique idea? Let's build it together!\n\n" +
+            "**Werewolf** - Strategy and deception. Debate to find the hidden wolves.\n" +
+            "**Undercover** - Quick word game. Guess who has the different word.\n" +
+            "**Tarot** - A reflective card reading, just you and the Host.\n" +
+            "**Custom** - Have a unique idea? Let's build it together.\n\n" +
             "Which one sounds interesting to you?"
           );
         }
