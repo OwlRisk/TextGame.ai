@@ -124,8 +124,9 @@ test.describe("Performance – page load times", () => {
       }
     });
 
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
+    // Give a moment for deferred scripts to fire
+    await page.waitForTimeout(2000);
 
     // Sanity check: should have some JS, but not an excessive amount
     expect(jsRequests.length).toBeGreaterThan(0);

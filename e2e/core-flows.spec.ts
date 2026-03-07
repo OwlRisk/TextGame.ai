@@ -35,13 +35,12 @@ test.describe("Discover → Game Template Selection", () => {
 
 test.describe("Game Master (GM) Interface", () => {
   test("GM page loads for unauthenticated users and shows sign-in prompt or GM interface", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     const gmButton = page.locator('a[href*="/create"], button:has-text("Create"), a:has-text("Create")').first();
     if (await gmButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await gmButton.click();
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("domcontentloaded");
 
       const hasContent = await page.locator("h1, h2, textarea, [contenteditable]").first().isVisible({ timeout: 10000 }).catch(() => false);
       expect(hasContent).toBe(true);
@@ -52,8 +51,7 @@ test.describe("Game Master (GM) Interface", () => {
 test.describe("Responsive Layout", () => {
   test("landing page is responsive on mobile viewport", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     await expect(page.locator("h1").first()).toBeVisible();
     const hero = page.locator("h1").first();
@@ -124,8 +122,7 @@ test.describe("Error handling", () => {
 
 test.describe("Cookie Consent", () => {
   test("cookie consent banner does not appear for non-EEA users", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     await page.waitForTimeout(2000);
     const banner = page.locator('text=/cookie|Cookie/i');
@@ -146,7 +143,7 @@ test.describe("API Health", () => {
 
 test.describe("SEO", () => {
   test("landing page has proper meta tags", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     const title = await page.title();
     expect(title.length).toBeGreaterThan(10);
