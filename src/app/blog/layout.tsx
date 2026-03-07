@@ -1,42 +1,31 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { SITE_NAME } from "@/lib/site";
+"use client";
 
-export const metadata: Metadata = {
-  title: {
-    template: "%s",
-    default: `Blog · ${SITE_NAME}`,
-  },
-};
+import type { Metadata } from "next";
+import { useRouter } from "next/navigation";
+import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
+import { useGameContext } from "@/app/contexts/GameContext";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="h-full overflow-y-auto bg-zinc-950 text-zinc-200 flex flex-col">
-      <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="text-lg font-bold text-white hover:text-violet-400 transition-colors">
-            {SITE_NAME}
-          </Link>
-        </div>
-      </header>
+  const router = useRouter();
+  const { games, selectedGameId, selectGame, updateGame } = useGameContext();
+  const { user, loading } = useAuth();
 
-      <main className="flex-1">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+  return (
+    <AppLayoutWithSidebar
+      mobileTitle="Blog"
+      games={games}
+      selectedGameId={selectedGameId}
+      onSelectGame={(gameId) => selectGame(gameId)}
+      onCreateGame={user && !loading ? () => router.push("/create") : () => router.push("/signin")}
+      onOpenProfile={user && !loading ? () => router.push("/profile") : () => router.push("/signin")}
+      onUpdateGame={updateGame}
+    >
+      <div className="flex-1 overflow-y-auto bg-zinc-950 text-zinc-200">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
           {children}
         </div>
-      </main>
-
-      <footer className="border-t border-zinc-800 py-8 mt-8">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
-          <p>&copy; 2026 {SITE_NAME}</p>
-          <div className="flex gap-6">
-            <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
-            <Link href="/discover" className="hover:text-white transition-colors">Discover</Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </AppLayoutWithSidebar>
   );
 }
