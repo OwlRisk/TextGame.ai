@@ -320,6 +320,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   // Background merged into Rules - no separate tab needed
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
   const [isStartingGame, setIsStartingGame] = useState(false);
+  const [creatingStep, setCreatingStep] = useState<string>("");
   // AbortController for the Start Game fetch chain; aborted on component unmount to avoid state
   // updates after the component is gone.
   const startGameAbortRef = useRef<AbortController | null>(null);
@@ -806,6 +807,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       return;
     }
     setIsStartingGame(true);
+    setCreatingStep("Generating players…");
     const startToastId = "start-game";
     toast.loading("Preparing game...", { id: startToastId });
     startGameAbortRef.current?.abort();
@@ -846,6 +848,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       }
       type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: 'male' | 'female' | 'other' };
       let generatedHostData: GeneratedHost | null = null;
+      setCreatingStep("Generating game host…");
       toast.loading("Generating host...", { id: startToastId });
       try {
         const response = await fetch('/api/generate-host', {
@@ -872,6 +875,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         console.error('[Game Master] ❌ Failed to generate host:', error);
         toast.warning("⚠️ Host generation error. Will use default host (Echo).", { id: startToastId, duration: 4000 });
       }
+      setCreatingStep("Setting up game room…");
       toast.dismiss(startToastId);
       const tid = selectedTemplate?.id || "custom";
       const defaultChannelsByTemplate: Record<string, NonNullable<GameConfig["channels"]>> = {
@@ -901,6 +905,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       await onCreateGame(gameConfig);
     } finally {
       setIsStartingGame(false);
+      setCreatingStep("");
       startGameAbortRef.current = null;
     }
   };
@@ -1149,7 +1154,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     </span>
                   ) : "Create Room"}
                 </Button>
-                {rulesEmpty && (
+                {isStartingGame && creatingStep && (
+                  <p className="text-xs text-violet-400/80 text-center animate-pulse">
+                    {creatingStep} <span className="text-zinc-500">(~1–2 min)</span>
+                  </p>
+                )}
+                {rulesEmpty && !isStartingGame && (
                   <p className="text-xs text-zinc-500 text-center">Chat with GM to generate rules first.</p>
                 )}
               </div>
@@ -1495,7 +1505,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           </span>
                         ) : "Create Room"}
                       </Button>
-                      {rulesEmpty && (
+                      {isStartingGame && creatingStep && (
+                        <p className="w-full text-xs text-violet-400/80 mt-1.5 text-right animate-pulse">
+                          {creatingStep} <span className="text-zinc-500">(~1–2 min)</span>
+                        </p>
+                      )}
+                      {rulesEmpty && !isStartingGame && (
                         <p className="w-full text-xs text-zinc-500 mt-1.5 text-right">Chat with GM to generate rules first.</p>
                       )}
                     </>
