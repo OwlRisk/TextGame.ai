@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "5 Best Perchance AI Alternatives for Chat & Roleplay (2026)";
 const DESCRIPTION =
@@ -30,13 +31,13 @@ export const metadata: Metadata = {
     modifiedTime: MODIFIED,
     authors: [SITE_NAME],
     tags: ["Comparison", "AI Roleplay"],
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: TITLE }],
+    images: [{ url: "/blog/blog-perchance-ai-alternatives.png", width: 1792, height: 1024, alt: TITLE }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/hero.webp"],
+    images: ["/blog/blog-perchance-ai-alternatives.png"],
   },
 };
 
@@ -125,6 +126,16 @@ export default function PerchanceAlternativesPage() {
             <span>7 min read</span>
           </div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-perchance-ai-alternatives.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         <TableOfContents />
 

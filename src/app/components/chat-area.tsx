@@ -425,7 +425,7 @@ export function ChatArea({
               break;
             }
 
-            const isShowingCursor = !!(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length > 0 && syncedContent.length < rawContent.length));
+            const isShowingCursor = !!(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length > 0 && syncedContent.length < rawContent.trim().length));
 
             return (
               <ChatMessage

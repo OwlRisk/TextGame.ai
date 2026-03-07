@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "How AI Characters Think — The Tech Behind Smart Game NPCs";
 const DESCRIPTION =
@@ -13,8 +14,8 @@ export const metadata: Metadata = {
   title: TITLE, description: DESCRIPTION,
   keywords: ["ai characters", "ai npc technology", "how ai characters work", "ai game characters", "smart npc", "ai personality in games"],
   alternates: { canonical: CANONICAL },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "article", url: `${SITE_DOMAIN}${CANONICAL}`, publishedTime: PUBLISHED, modifiedTime: MODIFIED, authors: [SITE_NAME], tags: ["Product", "AI Characters"], images: [{ url: "/hero.webp", width: 1200, height: 630, alt: TITLE }] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/hero.webp"] },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "article", url: `${SITE_DOMAIN}${CANONICAL}`, publishedTime: PUBLISHED, modifiedTime: MODIFIED, authors: [SITE_NAME], tags: ["Product", "AI Characters"], images: [{ url: "/blog/blog-how-ai-characters-think.png", width: 1792, height: 1024, alt: TITLE }] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/blog/blog-how-ai-characters-think.png"] },
 };
 
 const articleJsonLd = { "@context": "https://schema.org", "@type": "Article", headline: TITLE, description: DESCRIPTION, datePublished: PUBLISHED, dateModified: MODIFIED, author: { "@type": "Organization", name: SITE_NAME, url: SITE_DOMAIN }, publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_DOMAIN, logo: { "@type": "ImageObject", url: `${SITE_DOMAIN}/icon.svg` } }, mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_DOMAIN}${CANONICAL}` } };
@@ -48,6 +49,16 @@ export default function HowAiCharactersThinkPage() {
           </P>
           <div className="flex items-center gap-3 text-xs text-zinc-500"><span>March 6, 2026</span><span>·</span><span>7 min read</span></div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-how-ai-characters-think.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         <nav className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 mb-10">
           <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Table of Contents</p>

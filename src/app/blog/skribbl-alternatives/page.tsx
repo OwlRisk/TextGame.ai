@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "7 Best Skribbl.io Alternatives — Free Browser Games (2026)";
 const DESCRIPTION = "Tired of Skribbl.io? Here are 7 free alternatives — drawing games, word games, and AI-powered party games you can play in your browser with friends.";
@@ -12,8 +13,8 @@ export const metadata: Metadata = {
   title: TITLE, description: DESCRIPTION,
   keywords: ["skribbl alternative", "games like skribbl", "skribbl.io alternatives", "free drawing games online", "pictionary online free", "browser games with friends", "multiplayer browser games free"],
   alternates: { canonical: CANONICAL },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "article", url: `${SITE_DOMAIN}${CANONICAL}`, publishedTime: PUBLISHED, modifiedTime: MODIFIED, authors: [SITE_NAME], tags: ["Comparison", "Browser Games"], images: [{ url: "/hero.webp", width: 1200, height: 630, alt: TITLE }] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/hero.webp"] },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "article", url: `${SITE_DOMAIN}${CANONICAL}`, publishedTime: PUBLISHED, modifiedTime: MODIFIED, authors: [SITE_NAME], tags: ["Comparison", "Browser Games"], images: [{ url: "/blog/blog-skribbl-alternatives.png", width: 1792, height: 1024, alt: TITLE }] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/blog/blog-skribbl-alternatives.png"] },
 };
 
 const articleJsonLd = { "@context": "https://schema.org", "@type": "Article", headline: TITLE, description: DESCRIPTION, datePublished: PUBLISHED, dateModified: MODIFIED, author: { "@type": "Organization", name: SITE_NAME, url: SITE_DOMAIN }, publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_DOMAIN, logo: { "@type": "ImageObject", url: `${SITE_DOMAIN}/icon.svg` } }, mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_DOMAIN}${CANONICAL}` } };
@@ -48,6 +49,16 @@ export default function SkribblAlternativesPage() {
           </P>
           <div className="flex items-center gap-3 text-xs text-zinc-500"><span>March 6, 2026</span><span>·</span><span>7 min read</span></div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-skribbl-alternatives.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         <H2 id="drawing">Drawing Game Alternatives</H2>
 

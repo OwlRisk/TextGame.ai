@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "10 Best Jackbox Alternatives — Free Online Party Games (2026)";
 const DESCRIPTION =
@@ -32,13 +33,13 @@ export const metadata: Metadata = {
     modifiedTime: MODIFIED,
     authors: [SITE_NAME],
     tags: ["Comparison", "Party Games", "Jackbox"],
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: TITLE }],
+    images: [{ url: "/blog/blog-jackbox-alternatives.png", width: 1792, height: 1024, alt: TITLE }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/hero.webp"],
+    images: ["/blog/blog-jackbox-alternatives.png"],
   },
 };
 
@@ -117,6 +118,16 @@ export default function JackboxAlternativesPage() {
             <span>March 6, 2026</span><span>·</span><span>10 min read</span>
           </div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-jackbox-alternatives.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         <nav className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 mb-10">
           <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Table of Contents</p>

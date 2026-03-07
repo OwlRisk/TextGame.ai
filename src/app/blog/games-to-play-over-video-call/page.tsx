@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "15 Best Games to Play Over Video Call with Friends (2026)";
 const DESCRIPTION =
@@ -29,13 +30,13 @@ export const metadata: Metadata = {
     modifiedTime: MODIFIED,
     authors: [SITE_NAME],
     tags: ["Use Case", "Video Call"],
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: TITLE }],
+    images: [{ url: "/blog/blog-games-to-play-over-video-call.png", width: 1792, height: 1024, alt: TITLE }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/hero.webp"],
+    images: ["/blog/blog-games-to-play-over-video-call.png"],
   },
 };
 
@@ -125,6 +126,16 @@ export default function GamesToPlayOverVideoCallPage() {
             <span>9 min read</span>
           </div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-games-to-play-over-video-call.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         {/* Table of Contents */}
         <nav className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 mb-10">

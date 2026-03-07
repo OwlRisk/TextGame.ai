@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "Wolvesville vs TextGame.ai — Best Werewolf App (2026)";
 const DESCRIPTION =
@@ -27,9 +28,9 @@ export const metadata: Metadata = {
     title: TITLE, description: DESCRIPTION, type: "article",
     url: `${SITE_DOMAIN}${CANONICAL}`, publishedTime: PUBLISHED, modifiedTime: MODIFIED,
     authors: [SITE_NAME], tags: ["Comparison", "Werewolf"],
-    images: [{ url: "/games/game-cover-werewolf.webp", width: 1200, height: 630, alt: TITLE }],
+    images: [{ url: "/blog/blog-wolvesville-alternative.png", width: 1792, height: 1024, alt: TITLE }],
   },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/games/game-cover-werewolf.webp"] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/blog/blog-wolvesville-alternative.png"] },
 };
 
 const articleJsonLd = {
@@ -78,6 +79,16 @@ export default function WolvesvilleAlternativePage() {
             <span>March 6, 2026</span><span>·</span><span>7 min read</span>
           </div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-wolvesville-alternative.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         <nav className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 mb-10">
           <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Table of Contents</p>

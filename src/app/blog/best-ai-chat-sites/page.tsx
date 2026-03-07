@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "10 Best AI Chat Sites for Roleplay & Games (2026)";
 const DESCRIPTION =
@@ -34,13 +35,13 @@ export const metadata: Metadata = {
     modifiedTime: MODIFIED,
     authors: [SITE_NAME],
     tags: ["Listicle", "AI Chat"],
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: TITLE }],
+    images: [{ url: "/blog/blog-best-ai-chat-sites.png", width: 1792, height: 1024, alt: TITLE }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/hero.webp"],
+    images: ["/blog/blog-best-ai-chat-sites.png"],
   },
 };
 
@@ -127,6 +128,16 @@ export default function BestAiChatSitesPage() {
             <span>10 min read</span>
           </div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-best-ai-chat-sites.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         <TableOfContents />
 

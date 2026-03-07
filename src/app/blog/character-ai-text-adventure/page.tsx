@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import Image from "next/image";
 
 const TITLE = "Character AI Text Adventure — Play Interactive Stories with AI Characters";
 const DESCRIPTION =
@@ -32,13 +33,13 @@ export const metadata: Metadata = {
     modifiedTime: MODIFIED,
     authors: [SITE_NAME],
     tags: ["Text Adventure", "AI Characters"],
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: TITLE }],
+    images: [{ url: "/blog/blog-character-ai-text-adventure.png", width: 1792, height: 1024, alt: TITLE }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/hero.webp"],
+    images: ["/blog/blog-character-ai-text-adventure.png"],
   },
 };
 
@@ -119,6 +120,16 @@ export default function CharacterAiTextAdventurePage() {
             <span>7 min read</span>
           </div>
         </header>
+
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10">
+          <Image
+            src="/blog/blog-character-ai-text-adventure.png"
+            alt={TITLE}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
 
         {/* ── What Is a Character AI Text Adventure? ─────────────────── */}
         <Heading2 id="what-is">What Is a Character AI Text Adventure?</Heading2>
