@@ -28,6 +28,7 @@ const FAQSection = dynamic(() => import("@/app/components/landing/FAQSection").t
 interface LandingPageProps {
   onSignIn: () => void;
   onCreateGame?: (presetId?: string) => void;
+  heroHeadline?: React.ReactNode;
 }
 
 // ─── Sequential message list with streaming ───────────────────────────────────
@@ -78,7 +79,7 @@ function MessageList({
   );
 }
 
-export function LandingPage({ onSignIn }: LandingPageProps) {
+export function LandingPage({ onSignIn, heroHeadline }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -126,13 +127,15 @@ export function LandingPage({ onSignIn }: LandingPageProps) {
               </div>
             </div>
 
-            {/* Headline */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-              Play multiplayer games with{" "}
-              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                AI characters
-              </span>
-            </h2>
+            {/* Headline — server-rendered slot for LCP (heroHeadline comes from page.tsx server component) */}
+            {heroHeadline ?? (
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
+                Play multiplayer games with{" "}
+                <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+                  AI characters
+                </span>
+              </h2>
+            )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
               Create custom game rules or play classic games like Werewolf and Undercover.

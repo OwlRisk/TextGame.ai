@@ -113,7 +113,20 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <HomeClient />
+      {/* heroHeadline is rendered here in the Server Component so the h2 is
+          in the initial SSR HTML (critical for LCP). HomeClient/LandingPage
+          receive it as a pre-rendered React node and render it in-place,
+          so hydration matches and no duplicate element appears. */}
+      <HomeClient
+        heroHeadline={
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
+            Play multiplayer games with{" "}
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              AI characters
+            </span>
+          </h2>
+        }
+      />
     </>
   );
 }

@@ -10,7 +10,7 @@ import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { trackEvent } from "@/lib/analytics";
 
-export default function HomeClient() {
+export default function HomeClient({ heroHeadline }: { heroHeadline?: React.ReactNode }) {
   const router = useRouter();
   const { selectGame, games, updateGame } = useGameContext();
   const { user, loading, signInWithGoogle } = useAuth();
@@ -64,6 +64,7 @@ export default function HomeClient() {
         <LandingPage
           onSignIn={handleSignIn}
           onCreateGame={handleCreateGame}
+          heroHeadline={heroHeadline}
         />
       )}
 
