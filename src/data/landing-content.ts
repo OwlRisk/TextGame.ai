@@ -100,10 +100,10 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     description:
       "Just chat with the Game Master in plain English. Describe what you want — whether it's classic Werewolf or your wildest custom idea. The GM helps you design rules, roles, and victory conditions.",
     messages: [
-      { name: "You", badge: "YOU", time: "2:30 PM", text: "I want to create a sci-fi mystery game set on a space station. Someone sabotaged the oxygen system!", role: "Player", personality: "Curious and strategic", gender: "other" },
-      { isHost: true, name: "Game Master", badge: null, time: "2:30 PM", text: "Great idea! Let's set up a 'Traitor on Mars Station' game. How many crew members? Should there be 1 or 2 traitors? And what special roles do you want — Engineer, Security Chief, Scientist?" },
-      { name: "You", badge: "YOU", time: "2:31 PM", text: "6 crew members total, 1 traitor. Add an Engineer who can inspect systems, and a Security Chief who can lock rooms.", role: "Player", personality: "Curious and strategic", gender: "other" },
-      { isHost: true, name: "Game Master", badge: null, time: "2:31 PM", text: "Perfect! I've set up your game. Ready to start? I'll assign roles secretly and begin the first round." },
+      { name: "You", badge: "YOU", time: "2:30 PM", text: "Let's do a Werewolf game but set on a space station. Crew trying to find a saboteur.", role: "Player", personality: "Curious and strategic", gender: "other" },
+      { isHost: true, name: "Game Master", badge: null, time: "2:30 PM", text: "Got it — space station traitor game. How many players, and do you want any special roles? Engineer, Security Chief, that kind of thing?" },
+      { name: "You", badge: "YOU", time: "2:31 PM", text: "6 total, 1 traitor. Add an Engineer who can scan systems.", role: "Player", personality: "Curious and strategic", gender: "other" },
+      { isHost: true, name: "Game Master", badge: null, time: "2:31 PM", text: "Done. I'll assign roles privately and start when you're ready." },
     ],
   },
   {
