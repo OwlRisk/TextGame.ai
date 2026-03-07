@@ -116,9 +116,9 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     description:
       "The Host AI manages everything — assigns secret roles, announces game phases, tracks votes, reveals information at the right time, and keeps the story flowing. You just focus on playing.",
     messages: [
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:15 PM", text: "🌙 Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:16 PM", text: "☀️ Morning arrives. The crew discovers the communication array is damaged! Engineer Nova, you may inspect one system." },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:17 PM", text: "⚠️ It's time to vote! Discuss who you think is the traitor. You have 3 minutes to decide, then vote to eliminate." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:15 PM", text: "Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:16 PM", text: "Morning arrives. The crew discovers the communication array is damaged — Engineer Nova, you may inspect one system." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:17 PM", text: "Time to vote. Discuss who you think is the traitor — you have 3 minutes, then vote to eliminate." },
     ],
   },
   {
@@ -148,7 +148,7 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     messages: [
       { name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain.", role: "Seer", personality: "Careful, observant", gender: "other" },
       { name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies! The Seer would never reveal themselves this early. You're panicking and pointing fingers 😡", role: "Werewolf", personality: "Manipulative, aggressive deflection", gender: "male" },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "5:11 PM", text: "⚖️ The village has voted. Gideon Hale is eliminated. His role is revealed: 🐺 Werewolf. Villagers win!" },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "5:11 PM", text: "The village has voted. Gideon Hale is eliminated — his role is revealed: Werewolf. Villagers win!" },
     ],
   },
 ];
@@ -157,37 +157,37 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
   werewolf: {
     title: "🐺 Werewolf",
     messages: [
-      { isHost: true, name: "Warden Lunaris", time: "Night 1", text: "🌙 Night falls on the village. The wolves stir... Werewolves, open your eyes and choose your target." },
+      { isHost: true, name: "Warden Lunaris", time: "Night 1", text: "Night falls on the village. The wolves stir... Werewolves, open your eyes and choose your target." },
       { name: "Alex", time: "Day 2", text: "Blake barely said a word all night. That silence is suspicious — I'm calling it out.", role: "Villager", personality: "Outspoken and analytical", gender: "male" },
-      { name: "Casey", time: "Day 2", text: "No way it's Blake. I protected them last night — if they were a wolf, we'd already know 😤", role: "Doctor", personality: "Calm, protective instincts", gender: "female" },
-      { name: "Alex", time: "Day 2", text: "Wait... Casey just revealed their ability. Why would the Doctor expose themselves unless they're deflecting? 👀", role: "Villager", personality: "Outspoken and analytical", gender: "male" },
+      { name: "Casey", time: "Day 2", text: "No way it's Blake. I protected them last night — if they were a wolf, we'd already know.", role: "Doctor", personality: "Calm, protective instincts", gender: "female" },
+      { name: "Alex", time: "Day 2", text: "Wait... Casey just revealed their ability. Why would the Doctor expose themselves unless they're deflecting?", role: "Villager", personality: "Outspoken and analytical", gender: "male" },
     ],
   },
   mafia: {
     title: "🎭 Mafia",
     messages: [
-      { isHost: true, name: "Don Ferrante", time: "Night 1", text: "🌃 The city falls silent. Mafia — open your eyes. Choose your target before dawn." },
+      { isHost: true, name: "Don Ferrante", time: "Night 1", text: "The city falls silent. Mafia — open your eyes. Choose your target before dawn." },
       { name: "Lucia", time: "Day 2", text: "Marco was outside the bakery at midnight. That's not a coincidence — I checked the records.", role: "Detective", personality: "Sharp, suspicious of everyone", gender: "female" },
-      { name: "Marco", time: "Day 2", text: "I swear I was just getting bread for my family!! Why would I lie about something like this 😭", role: "Civilian", personality: "Nervous, eager to prove innocence", gender: "male" },
-      { name: "Lucia", time: "Day 2", text: "Because that's exactly what a Mafia member would say. Too convenient, Marco 😏", role: "Detective", personality: "Sharp, suspicious of everyone", gender: "female" },
+      { name: "Marco", time: "Day 2", text: "I swear I was just getting bread for my family!! Why would I lie about something like this?", role: "Civilian", personality: "Nervous, eager to prove innocence", gender: "male" },
+      { name: "Lucia", time: "Day 2", text: "Because that's exactly what a Mafia member would say. Too convenient, Marco.", role: "Detective", personality: "Sharp, suspicious of everyone", gender: "female" },
     ],
   },
   spy: {
     title: "🕵️ Who's the Spy",
     messages: [
-      { isHost: true, name: "Game Master", time: "Round 1", text: "🤫 Secret words sent. Everyone has the same word — except one player. Describe yours without giving it away!" },
-      { name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning... very comforting ☕", role: "Civilian", personality: "Clever, deliberately vague", gender: "other" },
-      { name: "Riley", time: "Round 1", text: "That's extremely vague, Jordan. You're either the spy or just trying to sound like one 👀", role: "Spy", personality: "Paranoid, accuses to deflect", gender: "female" },
-      { name: "Jordan", time: "Round 1", text: "Or maybe I just don't want to make it too obvious? You're the one deflecting, Riley 😂", role: "Civilian", personality: "Clever, deliberately vague", gender: "other" },
+      { isHost: true, name: "Game Master", time: "Round 1", text: "Secret words sent. Everyone has the same word — except one player. Describe yours without giving it away." },
+      { name: "Jordan", time: "Round 1", text: "Mine is something warm people reach for on a slow morning... very comforting.", role: "Civilian", personality: "Clever, deliberately vague", gender: "other" },
+      { name: "Riley", time: "Round 1", text: "That's extremely vague, Jordan. You're either the spy or just trying to sound like one.", role: "Spy", personality: "Paranoid, accuses to deflect", gender: "female" },
+      { name: "Jordan", time: "Round 1", text: "Or maybe I just don't want to make it too obvious? You're the one deflecting here, Riley.", role: "Civilian", personality: "Clever, deliberately vague", gender: "other" },
     ],
   },
   mystery: {
     title: "🔍 Murder Mystery",
     messages: [
-      { isHost: true, name: "Detective Kate", time: "Scene 1", text: "A priceless diamond 💎 has vanished from the locked museum vault. Every person in this room is a suspect." },
-      { name: "Morgan", time: "Scene 1", text: "I... saw someone near the display case around 9 PM. I didn't think much of it at the time", role: "Witness", personality: "Nervous, detail-oriented", gender: "other" },
-      { name: "Taylor", time: "Scene 1", text: "That's impossible — the museum closes at 8! Who let you in after hours, Morgan?", role: "Suspect", personality: "Confrontational, quick to contradict", gender: "male" },
-      { name: "Morgan", time: "Scene 1", text: "I had a key. It wasn't me, I promise... I was just doing inventory 🫣", role: "Witness", personality: "Nervous, detail-oriented", gender: "other" },
+      { isHost: true, name: "Detective Kate", time: "Scene 1", text: "A priceless diamond has vanished from the locked museum vault. Every person in this room is a suspect." },
+      { name: "Morgan", time: "Scene 1", text: "I... saw someone near the display case around 9 PM. I didn't think much of it at the time.", role: "Witness", personality: "Nervous, detail-oriented", gender: "other" },
+      { name: "Taylor", time: "Scene 1", text: "That's impossible — the museum closes at 8. Who let you in after hours, Morgan?", role: "Suspect", personality: "Confrontational, quick to contradict", gender: "male" },
+      { name: "Morgan", time: "Scene 1", text: "I had a key. It wasn't me, I promise... I was just doing inventory.", role: "Witness", personality: "Nervous, detail-oriented", gender: "other" },
     ],
   },
 };
