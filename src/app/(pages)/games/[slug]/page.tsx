@@ -218,26 +218,18 @@ export default async function GameLandingPage({ params }: Props) {
         />
       )}
 
-      {/* Nav */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-zinc-950/80 border-b border-zinc-800/50">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-4">
+      {/* Breadcrumb */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/80">
+        <div className="max-w-4xl mx-auto px-4 h-10 flex items-center gap-2">
           <Link
             href="/games"
-            className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-white transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
             All Games
           </Link>
           <span className="text-zinc-700">/</span>
-          <span className="text-sm text-zinc-300">{game.name}</span>
-          <div className="ml-auto">
-            <Link
-              href={`/create?preset=${game.presetId}`}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
-            >
-              Play Now
-            </Link>
-          </div>
+          <span className="text-sm text-zinc-400">{game.name}</span>
         </div>
       </div>
 
