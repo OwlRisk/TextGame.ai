@@ -267,7 +267,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                   const rowDelay = i === 0 ? "0ms" : "1400ms";
                   return (
                     <div
-                      key={`${selectedGame}-${user.name}-${visibleCount}`}
+                      key={`${selectedGame}-${user.name}`}
                       className="flex gap-4 mt-5"
                       style={{ opacity: 0, animation: `fadeInUp 0.3s ease forwards`, animationDelay: rowDelay }}
                     >
