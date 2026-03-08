@@ -18,7 +18,7 @@ export function GameOverBanner({ gameOverSummary, onPlayAgain, onNewGame, onSave
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-bold text-amber-200 mb-1">Game Over</h3>
           <p className="text-sm text-amber-100/80 leading-relaxed whitespace-pre-line">{gameOverSummary}</p>
-          <div className="flex gap-2 mt-3">
+          <div className="flex flex-wrap gap-2 mt-3">
             {onPlayAgain && (
               <Button size="sm" variant="outline" className="border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white gap-1.5" onClick={onPlayAgain}>
                 <RotateCcw className="h-3.5 w-3.5" /> Play Again

@@ -219,18 +219,29 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
 
       {/* Header */}
       <div className="border-b border-white/5 bg-black/50 backdrop-blur-xl flex-shrink-0 relative z-10 shadow-2xl">
-        <div className="h-16 px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-xl font-bold text-white whitespace-nowrap">My Games</h1>
-            {!isLoading && (
-              <span className="text-xs text-zinc-500 whitespace-nowrap">
-                {games.length} {games.length === 1 ? "game" : "games"}
-              </span>
-            )}
+        {/* Mobile: two rows. Desktop: single row. */}
+        <div className="px-4 sm:px-6 pt-3 pb-3 sm:pt-0 sm:pb-0 sm:h-16 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          {/* Row 1: title + mobile "New Game" */}
+          <div className="flex items-center justify-between sm:justify-start gap-3 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-xl font-bold text-white whitespace-nowrap">My Games</h1>
+              {!isLoading && (
+                <span className="text-xs text-zinc-500 whitespace-nowrap hidden sm:inline">
+                  {games.length} {games.length === 1 ? "game" : "games"}
+                </span>
+              )}
+            </div>
+            <Button
+              onClick={onCreateGame}
+              className="sm:hidden bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 h-9 px-3 text-sm whitespace-nowrap flex-shrink-0"
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-1" />
+              New Game
+            </Button>
           </div>
 
-          <div className="flex items-center gap-3 flex-1 max-w-xs">
-            {/* Search */}
+          {/* Row 2 (mobile) / inline (desktop): search + desktop New Game */}
+          <div className="flex items-center gap-3 flex-1 sm:max-w-xs">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 pointer-events-none" />
               <input
@@ -238,12 +249,12 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
                 placeholder="Search games…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-7 bg-white/5 border border-white/10 rounded-lg text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.08] transition-all"
+                className="w-full h-10 sm:h-8 pl-8 pr-7 bg-white/5 border border-white/10 rounded-lg text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.08] transition-all"
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-white transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -253,7 +264,7 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
 
           <Button
             onClick={onCreateGame}
-            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 h-8 px-4 text-sm whitespace-nowrap flex-shrink-0"
+            className="hidden sm:flex bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 h-8 px-4 text-sm whitespace-nowrap flex-shrink-0"
           >
             <Sparkles className="h-3.5 w-3.5 mr-1.5" />
             New Game

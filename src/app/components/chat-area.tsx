@@ -157,6 +157,12 @@ export function ChatArea({
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
+  // Immediately scroll to bottom on first mount (before first paint) so users
+  // land at the latest message when entering a game room.
+  useLayoutEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, []);
+
   // Lazy-load messages: show last N first, load more when user scrolls up
   const INITIAL_PAGE_SIZE = 40;
   const PAGE_SIZE = 30;
