@@ -1174,8 +1174,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
-          <div className="h-14 sm:h-16 px-3 sm:px-6 md:px-8 flex items-center justify-between relative gap-3">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="h-14 sm:h-16 px-3 sm:px-6 md:px-8 flex items-center justify-between relative gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               {/* Mobile sessions toggle */}
               <Button
                 variant="ghost"
@@ -1191,14 +1191,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 <GeneratedAvatar
                   name="Game Master"
                   type="gm"
-                  className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-white/10 shadow-xl shadow-amber-500/20 relative"
+                  className="h-9 w-9 sm:h-12 sm:w-12 border-2 border-white/10 shadow-xl shadow-amber-500/20 relative"
                   fallbackColor="#f59e0b"
-                  fallback={<Sparkles className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />}
+                  fallback={<Sparkles className="h-4 w-4 sm:h-6 sm:w-6 animate-pulse" />}
                 />
               </div>
-              <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-semibold text-white tracking-tight truncate">Game Master</h1>
-                <p className="text-xs text-zinc-500 font-medium truncate">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-xl font-semibold text-white tracking-tight truncate">Game Master</h1>
+                <p className="text-[11px] sm:text-xs text-zinc-500 font-medium truncate">
                   {isGMTyping || isStreaming ? (
                     <span className="inline-flex items-center gap-1.5 text-amber-400/90">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -1226,11 +1226,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative"
+                className="h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative flex-shrink-0"
                 onClick={() => setMobileRulesOpen(true)}
                 aria-label="Game Document"
               >
-                <FileText className="h-5 w-5" />
+                <FileText className="h-4 w-4" />
                 {isRulesBeingEdited && (
                   <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                 )}
@@ -1242,12 +1242,15 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     size="sm"
                     onClick={handleStartGame}
                     disabled={isRulesBeingEdited || isStartingGame || rulesEmpty}
-                    className="h-9 px-3 rounded-[11px] bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    className="h-9 px-2.5 sm:px-3.5 rounded-[11px] bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 gap-1.5"
                   >
                     {isStartingGame ? (
                       <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
                     ) : (
-                      "Create Room"
+                      <>
+                        <Play className="h-3 w-3 flex-shrink-0 sm:hidden" />
+                        <span>Create Room</span>
+                      </>
                     )}
                   </Button>
                 );

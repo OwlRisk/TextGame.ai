@@ -81,6 +81,9 @@ export function handleGameDocEnter(editor: unknown): boolean {
 export function cleanGMMessageContentForDisplay(content: string): string {
   if (!content?.trim()) return content;
   return content
+    // Complete paired tags
+    .replace(/<commentary>[\s\S]*?<\/commentary>/gi, '')
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
     .replace(/<EDIT_RULES>[\s\S]*?<\/EDIT_RULES>/gi, '')
     .replace(/<ADD_TO_RULES[^>]*>[\s\S]*?<\/ADD_TO_RULES>/gi, '')
     .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*?<\/REPLACE_IN_RULES>/gi, '')
@@ -89,6 +92,11 @@ export function cleanGMMessageContentForDisplay(content: string): string {
     .replace(/<CONFIG_CHANNELS>[\s\S]*?<\/CONFIG_CHANNELS>/gi, '')
     .replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '')
     .replace(/<UPDATE_GENERAL>[\s\S]*?<\/UPDATE_GENERAL>/gi, '')
+    // Orphan closing tags (when opening tag was at start of message, already consumed)
+    .replace(/<\/(commentary|thinking|EDIT_RULES|ADD_TO_RULES|REPLACE_IN_RULES|UPDATE_RULES|CONFIG_PLAYERS|CONFIG_CHANNELS|UPDATE_GENERAL)>/gi, '')
+    // Unclosed opening tags — swallow everything after them (streaming partial)
+    .replace(/<commentary>[\s\S]*$/i, '')
+    .replace(/<thinking>[\s\S]*$/i, '')
     .replace(/<EDIT_RULES>[\s\S]*$/i, '')
     .replace(/<ADD_TO_RULES[^>]*>[\s\S]*$/i, '')
     .replace(/<REPLACE_IN_RULES[^>]*>[\s\S]*$/i, '')

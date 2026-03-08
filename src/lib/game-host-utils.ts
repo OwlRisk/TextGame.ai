@@ -73,6 +73,12 @@ export function stripDirectiveLines(content: string): string {
   cleaned = cleaned.replace(/\[(BOARD|SECTION|ACCESS):[^\]]*\][\s\S]*?\[\/\1\]/gi, "");
   cleaned = cleaned.replace(/\[GAME_OVER\][\s\S]*?\[\/GAME_OVER\]/gi, "");
   cleaned = cleaned.replace(DIRECTIVE_PREFIXES_RE, "");
+  // Strip XML-style internal tags that AI sometimes leaks into public output
+  cleaned = cleaned.replace(/<commentary>[\s\S]*?<\/commentary>/gi, "");
+  cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "");
+  cleaned = cleaned.replace(/<\/(commentary|thinking)>/gi, "");
+  cleaned = cleaned.replace(/<commentary>[\s\S]*$/i, "");
+  cleaned = cleaned.replace(/<thinking>[\s\S]*$/i, "");
   return cleaned.replace(/\n{2,}/g, "\n\n").trim();
 }
 
