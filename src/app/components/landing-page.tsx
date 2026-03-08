@@ -165,7 +165,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             {/* Headline — server-rendered slot for LCP (heroHeadline comes from page.tsx server component) */}
             {heroHeadline ?? (
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-                Play Werewolf, Mafia & more —{" "}
+                Play multiplayer games{" "}
                 <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                   with AI characters
                 </span>
