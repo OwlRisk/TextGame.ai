@@ -56,12 +56,10 @@ function MessageList({
   return (
     <>
       {messages.slice(0, visibleCount).map((msg, index) => (
-        <div key={`${gameKey}-${index}`} className="flex gap-4 animate-fadeIn mt-5 first:mt-0">
+        <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn mt-4 first:mt-0">
           <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} />
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="font-semibold text-sm text-white">{msg.name}</span>
-            </div>
+            <span className="font-semibold text-sm text-white block mb-0.5">{msg.name}</span>
             <div className="text-sm leading-relaxed text-zinc-300">
               <StreamingText
                 text={msg.text}
@@ -225,7 +223,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                   onMessageComplete={() => setVisibleCount(v => Math.min(v + 1, currentScenario.messages.length))}
                 />
                 {/* Simple typing indicator */}
-                <div className="flex gap-3 mt-5">
+                <div className="flex gap-3 mt-4">
                   <PreviewAvatar
                     name="Drew"
                     role="Villager"
