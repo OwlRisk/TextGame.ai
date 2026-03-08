@@ -60,13 +60,10 @@ function MessageList({
           <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} />
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 mb-1">
-              <span className={`font-semibold text-sm ${msg.isHost ? "text-amber-300" : "text-white"}`}>{msg.name}</span>
+              <span className="font-semibold text-sm text-white">{msg.name}</span>
               <span className="text-[11px] text-zinc-500">{msg.time}</span>
             </div>
-            <div className={msg.isHost
-              ? "text-sm leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 pl-3 py-1 -ml-0.5 text-zinc-200"
-              : "text-sm leading-relaxed text-zinc-300"
-            }>
+            <div className="text-sm leading-relaxed text-zinc-300">
               <StreamingText
                 text={msg.text}
                 speed={40}
