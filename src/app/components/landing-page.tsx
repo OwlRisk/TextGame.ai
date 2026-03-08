@@ -235,7 +235,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 </span>
               </div>
               {/* Streaming messages */}
-              <div className="px-6 py-5 space-y-0 h-[340px] overflow-y-auto">
+              <div className="px-6 py-5 space-y-0 h-[340px] overflow-y-auto scrollbar-hide">
                 <MessageList messages={currentScenario.messages} gameKey={selectedGame} />
                 {/* Typing indicator */}
                 <div className="flex gap-4 mt-5">
