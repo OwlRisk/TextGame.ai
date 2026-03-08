@@ -179,7 +179,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
                   <Zap className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-base">No moderator. No full group needed. Start in minutes.</span>
+                <span className="text-base">Play solo or invite friends — AI fills every empty seat</span>
               </div>
             </div>
 
