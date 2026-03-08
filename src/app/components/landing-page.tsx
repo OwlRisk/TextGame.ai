@@ -167,19 +167,19 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
                   <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
-                <span className="text-base">AI characters with unique voices and personalities</span>
+                <span className="text-base">Each AI player has their own voice, personality &amp; strategy</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
                   <MessageCircle className="h-4 w-4 text-fuchsia-400" />
                 </div>
-                <span className="text-base">20+ templates — or design your own game</span>
+                <span className="text-base">Characters argue, bluff &amp; react — not just bots filling seats</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
                   <Zap className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-base">Room ready in 2 minutes — friends join instantly</span>
+                <span className="text-base">No moderator. No full group needed. Start in minutes.</span>
               </div>
             </div>
 
