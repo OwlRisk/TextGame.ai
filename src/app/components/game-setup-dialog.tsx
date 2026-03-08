@@ -456,7 +456,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                     onChange={(e) => setPlayerBoardLabel(e.target.value)}
                     placeholder="My Board (default)"
                     maxLength={24}
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-base sm:text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
                   />
                 </div>
                 {/* Confirmation Buttons - Prominent Position */}

@@ -216,7 +216,7 @@ export function HelpSupportContent() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value.slice(0, MAX_CHARS))}
                     placeholder="Share your thoughts, report a bug, or suggest a feature..."
-                    className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 min-h-[130px] resize-none text-sm"
+                    className="bg-zinc-800/60 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-violet-500/60 min-h-[130px] resize-none text-base md:text-sm"
                     required
                   />
                 </div>

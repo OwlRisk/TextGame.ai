@@ -238,7 +238,7 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
                 placeholder="Search games…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-7 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.08] transition-all"
+                className="w-full h-8 pl-8 pr-7 bg-white/5 border border-white/10 rounded-lg text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.08] transition-all"
               />
               {search && (
                 <button

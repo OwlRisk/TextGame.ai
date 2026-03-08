@@ -245,7 +245,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               placeholder="Search games..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value.trim()) setActiveCategory("all"); }}
-              className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"
+              className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"
             />
           </div>
         </div>
