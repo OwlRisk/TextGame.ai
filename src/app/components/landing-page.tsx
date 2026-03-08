@@ -238,21 +238,34 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
               {/* Streaming messages */}
               <div className="px-6 py-5 space-y-0 h-[340px] overflow-y-auto scrollbar-hide">
                 <MessageList messages={currentScenario.messages} gameKey={selectedGame} />
-                {/* Typing indicator */}
-                <div className="flex gap-4 mt-5">
-                  <PreviewAvatar
-                    name="Drew"
-                    role="Villager"
-                    personality="Quiet observer"
-                    gender="other"
-                  />
-                  <div className="flex-1 min-w-0 pt-1">
-                    <span className="font-semibold text-white text-sm">Drew</span>
-                    <div className="flex gap-1 items-center mt-1.5" aria-hidden="true">
-                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse" />
-                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-75" />
-                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse delay-150" />
+                {/* Multi-user typing indicator — 3 players simultaneously */}
+                <div className="flex items-center gap-3 mt-5">
+                  {/* Overlapping mini avatars */}
+                  <div className="flex flex-shrink-0">
+                    {(["Drew", "Morgan", "Casey"] as const).map((name, i) => {
+                      const src = LANDING_AVATAR_MAP[name];
+                      return (
+                        <div
+                          key={name}
+                          className="w-7 h-7 rounded-full ring-2 ring-[#0a0618] overflow-hidden bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white"
+                          style={{ marginLeft: i === 0 ? 0 : "-8px", zIndex: 3 - i, position: "relative" }}
+                        >
+                          {src
+                            ? <img src={src} alt={name} className="w-full h-full object-cover" />
+                            : name.substring(0, 1)
+                          }
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Bouncing dots + label */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1 items-center" aria-hidden="true">
+                      <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                     </div>
+                    <span className="text-xs text-zinc-500">Drew, Morgan & Casey are typing...</span>
                   </div>
                 </div>
               </div>
