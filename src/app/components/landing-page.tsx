@@ -150,13 +150,14 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
                 Play Werewolf, Mafia & more —{" "}
                 <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                  AI does the hosting
+                  with AI characters
                 </span>
               </h2>
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
-              No moderator needed. AI assigns roles, runs every phase, and fills empty seats with voiced characters.
+              No moderator needed. Play solo, with friends, or with a mix of both. AI characters fill every empty
+              seat and actually bluff, argue, and react like real players.
               <br className="hidden sm:block" />
               Start with a template — or just describe your idea.
             </p>
@@ -167,19 +168,19 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
                   <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
-                <span className="text-base">Each AI player has their own voice, personality &amp; strategy</span>
+                <span className="text-base">Play solo, with friends, or both — AI fills every empty seat</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
                   <MessageCircle className="h-4 w-4 text-fuchsia-400" />
                 </div>
-                <span className="text-base">Characters argue, bluff &amp; react — not just bots filling seats</span>
+                <span className="text-base">AI characters bluff, accuse, and react like real players</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
                   <Zap className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-base">Play solo or invite friends — AI fills every empty seat</span>
+                <span className="text-base">No moderator, no setup, no waiting for a full group</span>
               </div>
             </div>
 

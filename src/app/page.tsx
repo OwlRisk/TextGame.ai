@@ -3,9 +3,9 @@ import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import HomeClient from "./home-client";
 
 export const metadata: Metadata = {
-  title: "TextGame.ai — AI Game Master for Werewolf, Mafia & Social Games",
+  title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
   description:
-    "Play Werewolf, Mafia, Murder Mystery and more with an AI Game Master. No moderator needed — AI assigns roles, runs every phase, and fills empty seats with voiced characters. Free to play.",
+    "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed — play solo, with friends, or with a mix of both. AI fills every empty seat and reacts like real players.",
   keywords: [
     "AI game master",
     "text-based games online",
@@ -18,18 +18,18 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "TextGame.ai — AI Game Master for Werewolf, Mafia & Social Games",
+    title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
     description:
-      "Play Werewolf, Mafia, Murder Mystery and more with an AI Game Master. No moderator needed — AI runs every phase automatically.",
+      "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed — play solo or with friends.",
     type: "website",
     url: SITE_DOMAIN,
     images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TextGame.ai — AI Game Master for Werewolf, Mafia & Social Games",
+    title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
     description:
-      "Play Werewolf, Mafia, Murder Mystery and more with an AI Game Master. No moderator needed.",
+      "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed.",
     images: ["/hero.webp"],
   },
 };
@@ -122,7 +122,7 @@ export default function HomePage() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
             Play Werewolf, Mafia & more —{" "}
             <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-              AI does the hosting
+              with AI characters
             </span>
           </h2>
         }
