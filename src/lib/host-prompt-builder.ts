@@ -171,8 +171,8 @@ REVEAL_ROLE: All             ← reveals everyone at once (e.g. game over)
 ELIMINATE: <exact name>
 Marks the player as eliminated; they will not speak again. If roles are assigned in this game, also output REVEAL_ROLE: <player name>.
 
-**Game over** (when a win/loss condition is met):
-GAME_OVER: <outcome description>
+**Story ends** (when the story reaches its natural conclusion):
+GAME_OVER: <outcome description — describe what happened, not just who won or lost>
 Also output REVEAL_ROLE: All. Do NOT output NEXT_SPEAKER after GAME_OVER.
 
 **Event memory** (record key moments so you never forget):

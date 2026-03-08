@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy, RotateCcw, Plus, Heart } from "lucide-react";
+import { BookOpen, RotateCcw, Plus, Heart } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
 interface GameOverBannerProps {
@@ -14,9 +14,9 @@ export function GameOverBanner({ gameOverSummary, onPlayAgain, onNewGame, onSave
   return (
     <div className="mx-4 mt-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-orange-500/10 px-5 py-4 backdrop-blur-sm">
       <div className="flex items-start gap-3">
-        <Trophy className="h-6 w-6 text-amber-400 flex-shrink-0 mt-0.5" />
+        <BookOpen className="h-6 w-6 text-amber-400 flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold text-amber-200 mb-1">Game Over</h3>
+          <h3 className="text-base font-bold text-amber-200 mb-1">The End</h3>
           <p className="text-sm text-amber-100/80 leading-relaxed whitespace-pre-line">{gameOverSummary}</p>
           <div className="flex flex-wrap gap-2 mt-3">
             {onPlayAgain && (

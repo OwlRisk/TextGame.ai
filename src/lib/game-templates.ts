@@ -62,9 +62,9 @@ PHASES:
 4. Vote — Players vote to eliminate one suspect. Majority rules; ties = no elimination.
 5. Reveal — Eliminated player's true role is shown. Repeat from Night.
 
-WIN CONDITIONS:
-- Villagers win: All Werewolves are eliminated.
-- Werewolves win: Werewolves equal or outnumber the remaining Villagers.`,
+HOW THE STORY ENDS:
+- The village is saved: All Werewolves are found and eliminated.
+- The wolves take over: Werewolves equal or outnumber the remaining Villagers.`,
   },
 
   {
@@ -96,9 +96,9 @@ PHASES:
 
 MAFIA COUNT: 1–2 for 6–8 players; 2–3 for 9–11; 3–4 for 12–15.
 
-WIN CONDITIONS:
-- Town wins: All Mafia are eliminated.
-- Mafia wins: Mafia equal or outnumber remaining Town members.`,
+HOW THE STORY ENDS:
+- The town is safe: All Mafia members are exposed and eliminated.
+- The Mafia takes control: Mafia equal or outnumber remaining Town members.`,
   },
 
   {
@@ -129,10 +129,10 @@ DESCRIPTION RULES:
 - You may not say the word directly or rhyme it.
 - Describe a related concept, feeling, or use case.
 
-WIN CONDITIONS:
-- Civilians win: The Undercover is eliminated before the final 3 players remain.
-- Undercover wins: Still alive when only 3 players remain.
-- Mr. White wins: Correctly guesses the Civilians' word when eliminated.`,
+HOW THE STORY ENDS:
+- Spy uncovered: The Undercover is found and eliminated before the final 3 players remain.
+- Spy escapes: The Undercover is still among the last 3 standing.
+- Mr. White's gambit: Mr. White correctly guesses the Civilians' word when eliminated.`,
   },
 
   {
@@ -198,9 +198,9 @@ CLUE RULES:
 - One word only. Cannot be any form of a word currently on the board.
 - The number only indicates how many cards relate to the clue — not additional hints.
 
-WIN CONDITIONS:
-- First team to contact all their agents wins.
-- Guessing the Assassin means instant defeat for that team.`,
+HOW THE STORY ENDS:
+- Mission complete: First team to contact all their agents closes the operation.
+- Assassin triggered: The team that guesses the Assassin card is exposed and the game ends immediately.`,
   },
 
   {
@@ -238,9 +238,9 @@ QUEST TEAM SIZES:
 - 6 players: 2 / 3 / 4 / 3 / 4
 - 7 players: 2 / 3 / 3 / 4* / 4  (*requires 2 Fails)
 
-WIN CONDITIONS:
-- Good wins: 3 successful quests AND Assassin fails to identify Merlin afterward.
-- Evil wins: 3 failed quests, OR the Assassin correctly names Merlin after Good's third success.`,
+HOW THE STORY ENDS:
+- Camelot is saved: Good completes 3 quests AND the Assassin fails to identify Merlin.
+- Camelot falls: Evil sabotages 3 quests, OR the Assassin correctly unmasks Merlin.`,
   },
 
   {
@@ -272,9 +272,9 @@ SPECIAL PRESIDENTIAL POWERS (unlock as Fascist policies accumulate):
 - Policy Peek: View the top 3 policy tiles.
 - Execution: Kill one player. If Hitler is killed, Liberals win immediately.
 
-WIN CONDITIONS:
-- Liberals win: 5 Liberal policies enacted, OR Hitler is executed.
-- Fascists win: 6 Fascist policies enacted, OR Hitler is elected Chancellor after 3+ Fascist policies.`,
+HOW THE STORY ENDS:
+- Democracy holds: 5 Liberal policies are enacted, or Hitler is executed before taking power.
+- Fascism rises: 6 Fascist policies are enacted, or Hitler is elected Chancellor after 3+ Fascist policies pass.`,
   },
 
   {
@@ -302,9 +302,9 @@ GAMEPLAY:
 
 TIMING: Rounds last approximately 8–10 minutes.
 
-WIN CONDITIONS:
-- Regular players win: Correctly vote out the Spy, AND the Spy doesn't correctly name the location.
-- Spy wins: Survives until time runs out, OR correctly names the secret location when accused.`,
+HOW THE STORY ENDS:
+- Spy exposed: The group correctly votes out the Spy before they can name the location.
+- Spy vanishes: The Spy survives to the end, or correctly names the secret location when cornered.`,
   },
 
   {
@@ -338,9 +338,9 @@ TEAM SIZES by player count:
 - 6 players: 2 / 3 / 4 / 3 / 4
 - 7–10 players: Host adjusts accordingly.
 
-WIN CONDITIONS:
-- Resistance wins: 3 successful missions completed.
-- Spies win: 3 missions sabotaged, OR 5 consecutive team proposals rejected.`,
+HOW THE STORY ENDS:
+- The resistance prevails: 3 missions completed successfully.
+- The empire wins: 3 missions are sabotaged, or 5 consecutive team proposals are rejected.`,
   },
 
   {
@@ -376,9 +376,9 @@ CLUE TYPES:
 - Witness statements: observations, overheard conversations.
 - Alibi gaps: unverifiable time periods.
 
-WIN CONDITIONS:
-- Detectives win: At least one correct full accusation (all three elements must match).
-- Culprit wins: No detective correctly names all three elements.`,
+HOW THE STORY ENDS:
+- Case closed: At least one detective correctly names the culprit, motive, and method.
+- The culprit escapes: No detective pieces together the full truth in time.`,
   },
 
   {
@@ -410,9 +410,9 @@ GAMEPLAY:
    - Correct: you win.
    - Wrong: you are eliminated but continue showing cards to others.
 
-WIN CONDITIONS:
-- First player to make a correct Accusation wins.
-- If all players are eliminated with wrong accusations, the Host reveals the solution.`,
+HOW THE STORY ENDS:
+- Mystery solved: The first player to name the correct Suspect, Room, and Weapon cracks the case.
+- Unsolved: If all players make wrong accusations, the Host reveals the truth.`,
   },
 
   {
@@ -449,9 +449,9 @@ PUZZLE TYPES:
 - Item combination: Use found objects together to reveal a clue or unlock something.
 - Hidden messages: Find clues concealed within objects, text, or imagery.
 
-WIN CONDITIONS:
-- Players win: Complete the final lock sequence before time expires.
-- Players lose: Time runs out before escape.`,
+HOW THE STORY ENDS:
+- Escaped: Players solve the final puzzle and get out before time runs out.
+- Trapped: Time expires before the last lock is cracked — the room keeps its secrets.`,
   },
 
   {
@@ -485,8 +485,8 @@ QUESTION FORMATS:
 - Multiple choice: Host provides A/B/C/D options.
 - Speed round: 10 rapid-fire questions with no discussion.
 
-WIN CONDITIONS:
-- Highest total score after all rounds wins.
+HOW THE STORY ENDS:
+- Champion crowned: Highest total score after all rounds takes the title.
 - Ties broken by a sudden-death tiebreaker question.`,
   },
 
@@ -518,8 +518,8 @@ JUDGING CRITERIA (Host evaluates on):
 - Persuasiveness and clarity.
 - Quality of rebuttals.
 
-WIN CONDITIONS:
-- The Host declares a winner based on argument quality — not on which position is objectively correct.
+HOW THE STORY ENDS:
+- The Host reflects on argument quality — not on which position is objectively correct — and shares who made the most compelling case.
 - In multi-player debates, the Host ranks all participants after the final round.`,
   },
 
@@ -554,7 +554,7 @@ OPTIONAL SCORING (after the story ends — vote for):
 - Most Memorable Line
 - Character of the Story
 
-WIN CONDITIONS: Cooperative by default — the goal is creating a memorable story together. Scoring is optional and light-hearted.`,
+THE GOAL: Cooperative by default — creating a memorable story together is the only real ending. Scoring is optional and light-hearted.`,
   },
 
   {
@@ -644,9 +644,9 @@ GOOD QUESTION STRATEGY:
 - Start broad: Is it alive? Is it human? Is it natural or man-made?
 - Narrow progressively: Is it something you'd find indoors? Is it edible?
 
-WIN CONDITIONS:
-- Guessers win: Correctly identify the target within 20 questions.
-- Thinker wins: The target is not guessed after all 20 questions. Thinker then reveals the answer.
+HOW THE STORY ENDS:
+- Cracked it: Guessers correctly identify the target within 20 questions.
+- Too mysterious: The target is not guessed after all 20 questions — the Thinker reveals the answer.
 Rotate the Thinker role after each round.`,
   },
 
@@ -677,7 +677,7 @@ CRAFTING GOOD STATEMENTS:
 - The best truths are surprising — things others would never guess.
 - Avoid obvious lies and boring truths.
 
-WIN CONDITIONS: Most points after all players have taken a turn wins. Or play cooperatively for fun — no scoring needed.`,
+HOW THE STORY ENDS: Most points after all players have taken a turn. Or play cooperatively for fun — no scoring needed.`,
   },
 
   {
@@ -710,9 +710,9 @@ GAMEPLAY (3 rounds):
 3. Teams use negotiation, persuasion, and deception to control who moves where.
 4. Players may claim or deny their role — lying is allowed.
 
-WIN CONDITIONS:
-- Blue wins: The President and Bomber are in different rooms at the end of Round 3.
-- Red wins: The President and Bomber are in the same room at the end of Round 3.`,
+HOW THE STORY ENDS:
+- Crisis averted: The President and Bomber end up in different rooms after Round 3.
+- Explosion: The President and Bomber end up together in the same room after Round 3.`,
   },
 
   {
@@ -742,9 +742,9 @@ PHASES:
 4. Vote — Majority vote banishes one suspect. Their true identity is then revealed.
 5. Repeat.
 
-WIN CONDITIONS:
-- Nobles win: All Vampires are banished from court.
-- Vampires win: Vampires equal or outnumber the remaining Nobles.`,
+HOW THE STORY ENDS:
+- The court survives: All Vampires are unmasked and banished.
+- The night takes hold: Vampires equal or outnumber the remaining Nobles.`,
   },
 
   {
@@ -778,9 +778,9 @@ MISSION TEAM SIZES (per round):
 - 5 players: 2 / 3 / 2 / 3 / 3
 - 6 players: 2 / 3 / 4 / 3 / 4
 
-WIN CONDITIONS:
-- Crew wins: 3 successful repair missions completed.
-- Saboteur wins: 3 missions sabotaged, OR the Saboteur is the last player remaining.`,
+HOW THE STORY ENDS:
+- Ship saved: The crew completes 3 successful repair missions.
+- Adrift: 3 missions are sabotaged, or the Saboteur outlasts the rest of the crew.`,
   },
 
   {
@@ -810,9 +810,9 @@ INFLUENCE: The currency of power. Reaching 0 means exile from court and eliminat
 
 COURT EVENTS: Each round, the Host announces a political event that shifts the power balance.
 
-WIN CONDITIONS:
-- The game ends after 6 rounds or when only 2 Nobles remain.
-- The Noble with the most Influence claims the throne and wins.
+HOW THE STORY ENDS:
+- The game concludes after 6 rounds or when only 2 Nobles remain.
+- The Noble with the most Influence claims the throne.
 - Ties broken by: most completed secret agendas → most active alliances → fewest betrayals.`,
   },
 
