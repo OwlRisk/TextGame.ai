@@ -31,32 +31,28 @@ interface LandingPageProps {
   heroHeadline?: React.ReactNode;
 }
 
+type PreviewMessage = {
+  isHost?: boolean;
+  name: string;
+  role?: string;
+  personality?: string;
+  gender?: string;
+  time: string;
+  text: string;
+};
+
 // ─── Sequential message list with streaming ───────────────────────────────────
 function MessageList({
   messages,
   gameKey,
+  visibleCount,
+  onMessageComplete,
 }: {
-  messages: Array<{
-    isHost?: boolean;
-    name: string;
-    role?: string;
-    personality?: string;
-    gender?: string;
-    time: string;
-    text: string;
-  }>;
+  messages: PreviewMessage[];
   gameKey: string;
+  visibleCount: number;
+  onMessageComplete: () => void;
 }) {
-  const [visibleCount, setVisibleCount] = useState(1);
-
-  useEffect(() => {
-    setVisibleCount(1);
-  }, [gameKey]);
-
-  const handleMessageComplete = () => {
-    setVisibleCount((prev) => Math.min(prev + 1, messages.length));
-  };
-
   return (
     <>
       {messages.slice(0, visibleCount).map((msg, index) => (
@@ -74,7 +70,7 @@ function MessageList({
               <StreamingText
                 text={msg.text}
                 speed={40}
-                onComplete={index === visibleCount - 1 ? handleMessageComplete : undefined}
+                onComplete={index === visibleCount - 1 ? onMessageComplete : undefined}
               />
             </div>
           </div>
@@ -99,6 +95,7 @@ function getPhaseLabel(messages: Array<{ time: string; isHost?: boolean }>) {
 export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(1);
 
   useEffect(() => {
     if (!isAutoPlaying) return;
@@ -111,8 +108,28 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
     return () => clearInterval(interval);
   }, [isAutoPlaying, selectedGame]);
 
+  // Reset visible count when switching games
+  useEffect(() => {
+    setVisibleCount(1);
+  }, [selectedGame]);
+
   const currentScenario = GAME_SCENARIOS[selectedGame];
   const phaseInfo = getPhaseLabel(currentScenario.messages);
+
+  // Derive next 2 unique non-host characters whose messages haven't been shown yet
+  const typingUsers = (() => {
+    const upcoming = currentScenario.messages.slice(visibleCount);
+    const result: PreviewMessage[] = [];
+    const seen = new Set<string>();
+    for (const msg of upcoming) {
+      if (!msg.isHost && !seen.has(msg.name)) {
+        seen.add(msg.name);
+        result.push(msg);
+      }
+      if (result.length >= 2) break;
+    }
+    return result;
+  })();
 
   return (
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
@@ -236,38 +253,27 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 </span>
               </div>
               {/* Streaming messages */}
-              <div className="px-6 py-5 space-y-0 h-[340px] overflow-y-auto scrollbar-hide">
-                <MessageList messages={currentScenario.messages} gameKey={selectedGame} />
-                {/* Multi-user typing indicator — 3 players simultaneously */}
-                <div className="flex items-center gap-3 mt-5">
-                  {/* Overlapping mini avatars */}
-                  <div className="flex flex-shrink-0">
-                    {(["Drew", "Morgan", "Casey"] as const).map((name, i) => {
-                      const src = LANDING_AVATAR_MAP[name];
-                      return (
-                        <div
-                          key={name}
-                          className="w-7 h-7 rounded-full ring-2 ring-[#0a0618] overflow-hidden bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white"
-                          style={{ marginLeft: i === 0 ? 0 : "-8px", zIndex: 3 - i, position: "relative" }}
-                        >
-                          {src
-                            ? <img src={src} alt={name} className="w-full h-full object-cover" />
-                            : name.substring(0, 1)
-                          }
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {/* Bouncing dots + label */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1 items-center" aria-hidden="true">
-                      <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+              <div className="px-6 py-5 space-y-0 h-[340px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+                <MessageList
+                  messages={currentScenario.messages}
+                  gameKey={selectedGame}
+                  visibleCount={visibleCount}
+                  onMessageComplete={() => setVisibleCount(v => Math.min(v + 1, currentScenario.messages.length))}
+                />
+                {/* Dynamic typing indicators — same layout as message rows, only upcoming characters */}
+                {typingUsers.map((user, i) => (
+                  <div key={user.name} className="flex gap-4 mt-5">
+                    <PreviewAvatar name={user.name} role={user.role} personality={user.personality} gender={user.gender} />
+                    <div className="flex-1 min-w-0 pt-1">
+                      <span className="font-semibold text-white text-sm">{user.name}</span>
+                      <div className="flex gap-1 items-center mt-1.5" aria-hidden="true">
+                        <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 120}ms` }} />
+                        <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 120 + 150}ms` }} />
+                        <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 120 + 300}ms` }} />
+                      </div>
                     </div>
-                    <span className="text-xs text-zinc-500">Drew, Morgan & Casey are typing...</span>
                   </div>
-                </div>
+                ))}
               </div>
               {/* Mock input — mirrors real chat input */}
               <div className="px-4 py-3 border-t border-violet-900/20 bg-zinc-900/40">
