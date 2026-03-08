@@ -173,10 +173,9 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
-              No moderator needed. Play solo, with friends, or with a mix of both. AI characters fill every empty
-              seat and actually bluff, argue, and react like real players.
+              Play solo, with friends, or both. AI characters fill every empty seat and react like real players.
               <br className="hidden sm:block" />
-              Start with a template — or just describe your idea.
+              Start with Werewolf, Mafia, Who&apos;s the Spy, and more.
             </p>
 
             {/* Core features – 3 simple rows */}
@@ -185,19 +184,19 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
                   <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
-                <span className="text-base">Play solo, with friends, or both — AI fills every empty seat</span>
+                <span className="text-base">Play solo, with friends, or both</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
                   <MessageCircle className="h-4 w-4 text-fuchsia-400" />
                 </div>
-                <span className="text-base">AI characters bluff, accuse, and react like real players</span>
+                <span className="text-base">AI fills every empty seat automatically</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
                   <Zap className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-base">No moderator, no setup, no waiting for a full group</span>
+                <span className="text-base">Characters bluff, accuse, and react like real players</span>
               </div>
             </div>
 

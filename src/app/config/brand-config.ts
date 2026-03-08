@@ -2,7 +2,7 @@
 export const BRAND_CONFIG = {
   name: "TextGame.ai",
   shortName: "TextGame",
-  tagline: "Any game you can describe, you can play",
+  tagline: "Play social deduction and board games with AI characters",
   description:
     "Describe any game idea in plain English. AI builds the rules, runs the session, and fills every seat.",
 
