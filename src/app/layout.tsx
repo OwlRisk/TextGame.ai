@@ -15,6 +15,7 @@ import { Analytics } from "@vercel/analytics/next";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  minimumScale: 1,
   maximumScale: 5,
   userScalable: true,
   themeColor: "#0a0a0b",
@@ -143,6 +144,11 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full overflow-hidden [-webkit-tap-highlight-color:transparent]`}>
       <head>
+        {/* Reset Safari iOS zoom state on every page load.
+            Safari remembers zoom levels between navigations/refreshes.
+            Temporarily clamping maximum-scale=1 forces it back to 1,
+            then we restore the original value so users can still pinch-zoom. */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.querySelector('meta[name="viewport"]');if(!m)return;var c=m.getAttribute('content')||'';m.setAttribute('content',c+',maximum-scale=1');requestAnimationFrame(function(){m.setAttribute('content',c);});})();` }} />
         <link rel="preconnect" href="https://hazjbhhreltgjexxaazn.supabase.co" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />

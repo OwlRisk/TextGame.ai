@@ -226,10 +226,13 @@
     color: var(--color-foreground);
   }
 
-  /* 触控友好：减少延迟与高亮 */
+  /* 触控友好：减少延迟、防止双击放大 */
   button,
   a,
-  [role="button"] {
+  [role="button"],
+  input,
+  textarea,
+  select {
     touch-action: manipulation;
   }
 
