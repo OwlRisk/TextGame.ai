@@ -140,9 +140,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
-              Create custom game rules or play classic games like Werewolf and Undercover.
-              <br className="hidden sm:block" />
-              Your AI gaming playground starts here.
+              Play solo or with friends — AI characters fill every empty seat and react like real players.
             </p>
 
             {/* Core features – 3 simple rows */}
@@ -151,19 +149,19 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
                   <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
-                <span className="text-base">Smart AI characters that adapt to your game</span>
+                <span className="text-base">Werewolf, Mafia, Who&apos;s the Spy, and more</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
-                  <MessageCircle className="h-4 w-4 text-fuchsia-400" />
+                  <Zap className="h-4 w-4 text-fuchsia-400" />
                 </div>
-                <span className="text-base">Fully customizable rules and gameplay</span>
+                <span className="text-base">Room ready in under a minute</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
-                  <Zap className="h-4 w-4 text-blue-400" />
+                  <MessageCircle className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-base">Create and start playing in 2 minutes</span>
+                <span className="text-base">Characters bluff, lie, and actually react to what you say</span>
               </div>
             </div>
 
@@ -195,7 +193,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
               >
                 <Link href="/discover">
                   <Compass className="h-5 w-5 mr-2" />
-                  Explore Games First
+                  Explore Games
                 </Link>
               </Button>
             </div>
@@ -320,7 +318,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
             <h3 className="text-4xl font-black text-white mb-4">Why You&apos;ll Love It</h3>
-            <p className="text-lg text-zinc-400">Everything you need to bring any game to life</p>
+            <p className="text-lg text-zinc-400">Everything you need to bring any game to life.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map((feature, index) => {
@@ -346,10 +344,10 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
         <div className="mb-32">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
+              <span className="text-sm font-bold text-violet-400">FEATURED TEMPLATES</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">Featured Templates</h3>
-            <p className="text-lg text-zinc-400">One-click start — or use them as inspiration for your own</p>
+            <h3 className="text-3xl font-black text-white mb-3">One-click start — or make it your own</h3>
+            <p className="text-lg text-zinc-400">Classic games ready to play, or describe your own idea and the AI builds it for you.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {FEATURED_GAMES.map((game, index) => (
@@ -413,10 +411,10 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
-                Ready to Create Your Game?
+                Start Your First Game — Free
               </h3>
               <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Start creating your AI multiplayer games today
+                Sign in to create a room. Friends join instantly — no account needed.
               </p>
               <div className="relative inline-block">
                 <div className="absolute inset-0 bg-gradient-to-r from-white/50 to-white/50 rounded-xl blur-xl opacity-40 animate-pulse" style={{ animationDuration: '3s' }} />
@@ -441,7 +439,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
         {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
-            <p>© 2026 {BRAND_CONFIG.name} • {BRAND_CONFIG.tagline}</p>
+            <p>© 2026 {BRAND_CONFIG.name} • Any game you describe, playable in minutes</p>
             <div className="flex gap-6">
               <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
