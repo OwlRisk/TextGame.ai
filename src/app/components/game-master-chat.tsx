@@ -1424,7 +1424,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                         placeholder={
                           isGMTyping || isStreaming ? "GM is thinking..." : "Chat with Game Master, design your game rules..."
                         }
-                        className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-sm rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
+                        className="bg-white/5 backdrop-blur-xl border border-white/10 focus:border-violet-500/40 text-white placeholder:text-zinc-500 text-base sm:text-sm rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3 font-normal transition-all duration-200 relative shadow-md focus:shadow-lg focus:shadow-violet-500/10 disabled:opacity-70 disabled:cursor-not-allowed resize-none leading-relaxed scrollbar-hide"
                         style={{ minHeight: `${MIN_INPUT_H}px`, maxHeight: `${MAX_INPUT_H}px` }}
                         disabled={isGMTyping}
                         rows={1}
