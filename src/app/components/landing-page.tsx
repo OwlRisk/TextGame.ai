@@ -61,7 +61,6 @@ function MessageList({
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 mb-1">
               <span className="font-semibold text-sm text-white">{msg.name}</span>
-              <span className="text-[11px] text-zinc-500">{msg.time}</span>
             </div>
             <div className="text-sm leading-relaxed text-zinc-300">
               <StreamingText
