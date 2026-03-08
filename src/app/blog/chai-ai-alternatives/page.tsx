@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
 import Image from "next/image";
 
 const TITLE = "7 Best Chai AI Alternatives for AI Chat & Roleplay (2026)";
@@ -299,16 +300,13 @@ export default function ChaiAiAlternativesPage() {
 
         {/* CTA */}
         <div className="bg-gradient-to-br from-emerald-600/20 to-violet-600/20 border border-emerald-500/30 rounded-2xl p-8 text-center mb-12">
-          <h2 className="text-2xl font-bold text-white mb-3">🎮 Try AI-Powered Games for Free</h2>
+          <h2 className="text-2xl font-bold text-white mb-3">Play with AI Characters — No Group Needed</h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            Multiplayer AI games with rules, roles, and real strategy. Not just another chatbot.
+            Pick a game, describe your own world, or just start. AI characters fill every seat and react like real players.
           </p>
-          <Link
-            href="/discover"
-            className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-          >
-            Explore Games
-          </Link>
+          <BlogCTAButton href="/" source="chai-ai-alternatives">
+            Try It Free
+          </BlogCTAButton>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

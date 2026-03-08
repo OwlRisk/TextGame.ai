@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
 
 const TITLE = "AI Murder Mystery Games — Host a Virtual Whodunit Online";
 const DESCRIPTION =
@@ -280,12 +281,12 @@ export default function AiMurderMysteryGamesPage() {
             crack the case — solo or with friends. No prep, no download, no cost.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/games/detective-mystery" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+            <BlogCTAButton href="/create?preset=detective-mystery" source="ai-murder-mystery-games">
               Play Detective Mystery
-            </Link>
-            <Link href="/discover" className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors">
+            </BlogCTAButton>
+            <BlogCTAButton href="/" source="ai-murder-mystery-games-home" variant="secondary">
               Browse All Games
-            </Link>
+            </BlogCTAButton>
           </div>
         </div>
 

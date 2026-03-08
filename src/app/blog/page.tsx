@@ -192,6 +192,24 @@ const posts: BlogPost[] = [
     tags: ["Thought Leadership", "Game Design"],
   },
   {
+    slug: "replika-alternatives",
+    title: "7 Best Replika Alternatives (2026) — AI Companions That Go Further",
+    excerpt:
+      "Replika changed AI companionship — but it's changed. These 7 alternatives offer richer conversations, roleplay, and characters you can actually do things with.",
+    date: "March 6, 2026",
+    readTime: "9 min read",
+    tags: ["Comparison", "AI Companions"],
+  },
+  {
+    slug: "play-murder-mystery-alone",
+    title: "How to Play Murder Mystery Alone with AI (No Group Required)",
+    excerpt:
+      "You don't need 6 friends for a murder mystery. AI characters fill every suspect role. Here's how to run a full whodunit solo — any time you want.",
+    date: "March 6, 2026",
+    readTime: "7 min read",
+    tags: ["Guide", "Solo Play"],
+  },
+  {
     slug: "chai-ai-alternatives",
     title: "7 Best Chai AI Alternatives for AI Chat & Roleplay (2026)",
     excerpt:

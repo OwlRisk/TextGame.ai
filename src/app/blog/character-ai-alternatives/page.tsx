@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
 
 const TITLE = "5 Best Character.AI Alternatives for Multiplayer Games (2026)";
 const DESCRIPTION =
@@ -604,25 +605,18 @@ export default function CharacterAiAlternativesPage() {
         {/* ── CTA ──────────────────────────────────────────────────── */}
         <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">
-            Ready to Play Games with AI Characters?
+            Play with AI Characters — No Group Needed
           </h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            Pick a game template or describe your own rules. The AI Game Master handles everything — roles,
-            phases, and narration. Free to start, no credit card needed.
+            AI characters fill every role and react to what you say. Werewolf, Murder Mystery, Roleplay — free to start, no credit card.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/discover"
-              className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-            >
-              Browse Game Templates
-            </Link>
-            <Link
-              href="/signin"
-              className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors"
-            >
-              Start Creating Free
-            </Link>
+            <BlogCTAButton href="/" source="character-ai-alternatives">
+              Try It Free
+            </BlogCTAButton>
+            <BlogCTAButton href="/create" source="character-ai-alternatives-create" variant="secondary">
+              Create Your Own Game
+            </BlogCTAButton>
           </div>
         </div>
 

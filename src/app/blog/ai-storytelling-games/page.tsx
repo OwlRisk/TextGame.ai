@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
 
 const TITLE = "AI Storytelling Games: Let AI Write Your Adventure";
 const DESCRIPTION =
@@ -441,25 +442,19 @@ export default function AiStorytellingGamesPage() {
         {/* ── CTA ─────────────────────────────────────────────────── */}
         <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">
-            Ready to Play AI Storytelling Games?
+            Start Your Story — No Group Needed
           </h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            Pick a template or describe your own game. The AI Game Master runs the session — rules,
-            roles, and narration. Play with friends or let AI fill the table.
+            Describe a world, pick a template, or just start. AI characters fill every seat and react
+            to everything you say.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/discover"
-              className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-            >
-              Browse Game Templates
-            </Link>
-            <Link
-              href="/signin"
-              className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors"
-            >
-              Start Creating Free
-            </Link>
+            <BlogCTAButton href="/" source="ai-storytelling-games">
+              Play Free Now
+            </BlogCTAButton>
+            <BlogCTAButton href="/create" source="ai-storytelling-games-create" variant="secondary">
+              Create Your Own Game
+            </BlogCTAButton>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
 
 const TITLE = "Best Single Player Games with AI Companions (2026)";
 const DESCRIPTION =
@@ -318,26 +319,15 @@ export default function BestSinglePlayerAiGamesPage() {
             Play Solo — Anytime
           </h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            AI fills every seat. Werewolf, Murder Mystery, Tarot, and more. No friends needed. Read
-            our{" "}
-            <Link href="/blog/roleplay-ai-guide" className="text-violet-400 hover:underline">
-              roleplay AI guide
-            </Link>{" "}
-            for more ideas.
+            AI fills every seat. Werewolf, Murder Mystery, Tarot, and more. No waiting, no group needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/discover"
-              className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-            >
-              Browse Games
-            </Link>
-            <Link
-              href="/games/werewolf"
-              className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors"
-            >
+            <BlogCTAButton href="/" source="best-single-player-ai-games">
+              Play Free Now
+            </BlogCTAButton>
+            <BlogCTAButton href="/create?preset=werewolf" source="best-single-player-ai-games-werewolf" variant="secondary">
               Try Werewolf Solo
-            </Link>
+            </BlogCTAButton>
           </div>
         </div>
 
