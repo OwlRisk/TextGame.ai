@@ -213,7 +213,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 <span className="text-sm font-semibold text-zinc-300"># game-room</span>
               </div>
               {/* Streaming messages */}
-              <div className="p-4 space-y-0 h-[340px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+              <div className="p-4 h-[340px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                 <MessageList
                   messages={currentScenario.messages}
                   gameKey={selectedGame}
