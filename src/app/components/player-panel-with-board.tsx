@@ -361,12 +361,12 @@ const PlayerCard = memo(function PlayerCard({
               : null
           )}
         </div>
-        <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-1 flex-shrink-0 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
           {onRegenerateAvatar && player.isAI && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 hover:bg-zinc-600/50"
+              className="h-8 w-8 hover:bg-zinc-600/50"
               disabled={regenerating}
               title="Regenerate avatar (DALL-E 3)"
               aria-label={`Regenerate avatar for ${player.name}`}
@@ -394,7 +394,7 @@ const PlayerCard = memo(function PlayerCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 hover:bg-zinc-600/50"
+                    className="h-8 w-8 hover:bg-zinc-600/50"
                     title={boundGuest ? `Unassign ${boundGuest.nickname}` : "Assign a guest"}
                     aria-label={boundGuest ? `Unassign ${boundGuest.nickname} from ${player.name}` : `Assign a guest to ${player.name}`}
                     onClick={(e) => e.stopPropagation()}
@@ -454,7 +454,7 @@ const PlayerCard = memo(function PlayerCard({
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 hover:bg-zinc-600/50"
+              className="h-8 w-8 hover:bg-zinc-600/50"
               onClick={(e) => { e.stopPropagation(); onToggleMute?.(player.id); }}
               aria-label={player.isMuted ? `Unmute ${player.name}` : `Mute ${player.name}`}
             >

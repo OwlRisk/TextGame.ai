@@ -329,7 +329,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               <PopoverContent 
                 side="right" 
                 align="end" 
-                className="w-80 bg-zinc-900 border-zinc-800 text-white p-0 ml-2 rounded-xl overflow-hidden"
+                className="w-[min(320px,calc(100vw-1rem))] bg-zinc-900 border-zinc-800 text-white p-0 ml-2 rounded-xl overflow-hidden"
               >
                 <div className="p-4 space-y-4">
                   {/* User Avatar & Info: avatar + name, bottom border */}

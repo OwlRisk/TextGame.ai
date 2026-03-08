@@ -223,7 +223,7 @@ export function SettingsContent() {
                             setTtsTemperature(v);
                             localStorage.setItem('tts_temperature', v);
                           }}
-                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                          className="w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
                         >−</button>
                         <input
                           id="tts-temperature"
@@ -241,7 +241,7 @@ export function SettingsContent() {
                             setTtsTemperature(v);
                             localStorage.setItem('tts_temperature', v);
                           }}
-                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                          className="w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
                         >+</button>
                         <button type="button" onClick={() => { setTtsTemperature('1.1'); localStorage.setItem('tts_temperature', '1.1'); }} className="text-xs text-zinc-600 hover:text-zinc-400 w-8 text-right transition-colors">reset</button>
                       </div>
@@ -272,7 +272,7 @@ export function SettingsContent() {
                             setTtsSpeed(v);
                             localStorage.setItem('tts_speed', v);
                           }}
-                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                          className="w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
                         >−</button>
                         <input
                           id="tts-speed"
@@ -290,7 +290,7 @@ export function SettingsContent() {
                             setTtsSpeed(v);
                             localStorage.setItem('tts_speed', v);
                           }}
-                          className="w-6 h-6 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
+                          className="w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center text-sm font-bold shrink-0 transition-colors"
                         >+</button>
                         <button type="button" onClick={() => { setTtsSpeed('1.0'); localStorage.setItem('tts_speed', '1.0'); }} className="text-xs text-zinc-600 hover:text-zinc-400 w-8 text-right transition-colors">reset</button>
                       </div>

@@ -313,17 +313,17 @@ export function ChatArea({
   return (
     <div className={`flex-1 flex flex-col min-w-0 h-full overflow-hidden backdrop-blur-sm transition-colors duration-1000 ${moodBg}`}>
       {/* Channel Header */}
-      <div className="h-14 px-6 flex items-center justify-between border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <span className="text-zinc-400 text-lg">#</span>
-          <h2 className="font-semibold text-base text-white">{channelName}</h2>
+      <div className="h-14 px-3 sm:px-6 flex items-center justify-between gap-2 border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md shadow-sm">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-zinc-400 text-lg flex-shrink-0">#</span>
+          <h2 className="font-semibold text-base text-white truncate">{channelName}</h2>
           {gamePhaseLabel && (
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 flex-shrink-0">
               {gamePhaseLabel}
             </span>
           )}
           {timerDisplay && (
-            <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${
+            <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
               timerEndsAt && timerEndsAt - Date.now() <= 10000
                 ? "bg-red-500/20 text-red-400 border-red-500/40 animate-pulse"
                 : "bg-zinc-700/50 text-zinc-300 border-zinc-600/40"
@@ -333,7 +333,7 @@ export function ChatArea({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {inworldTTSSupported && (
             <Button
               variant="ghost"

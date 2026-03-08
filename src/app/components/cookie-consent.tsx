@@ -71,7 +71,7 @@ export function CookieConsent({ inEEA }: { inEEA: boolean }) {
   return (
     <>
       {/* Banner */}
-      <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 md:p-6 bg-zinc-900/95 backdrop-blur-lg border-t border-zinc-800 shadow-2xl">
+      <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] md:p-6 bg-zinc-900/95 backdrop-blur-lg border-t border-zinc-800 shadow-2xl">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
             <div className="flex items-start gap-3 flex-1">

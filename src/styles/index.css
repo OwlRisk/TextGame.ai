@@ -10,6 +10,8 @@
   outline: none;
   min-height: 100%;
   padding: 0 !important;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Placeholder */

@@ -1180,7 +1180,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden flex-shrink-0 h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10"
+                className="md:hidden flex-shrink-0 h-10 w-10 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10"
                 onClick={() => setMobileSessionsOpen(true)}
                 aria-label="View sessions"
               >
@@ -1226,7 +1226,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative flex-shrink-0"
+                className="h-10 w-10 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative flex-shrink-0"
                 onClick={() => setMobileRulesOpen(true)}
                 aria-label="Game Document"
               >
