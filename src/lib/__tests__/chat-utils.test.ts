@@ -62,10 +62,17 @@ describe("formatMessageTime", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("stripEmotionTags", () => {
-  it("replaces known underscore-form tags with emoji", () => {
-    expect(stripEmotionTags("[happy] Hello")).toContain("😊");
-    expect(stripEmotionTags("[angry] Go away")).toContain("😠");
+  it("replaces known sound-effect tags with emoji", () => {
     expect(stripEmotionTags("[clear_throat] Ahem")).toContain("😤");
+    expect(stripEmotionTags("[sigh] Whatever")).toContain("😮‍💨");
+    expect(stripEmotionTags("[laugh] Ha")).toContain("😄");
+  });
+
+  it("strips unknown emotion tags entirely", () => {
+    expect(stripEmotionTags("[happy] Hello")).not.toContain("[");
+    expect(stripEmotionTags("[happy] Hello")).toContain("Hello");
+    expect(stripEmotionTags("[angry] Go away")).not.toContain("[");
+    expect(stripEmotionTags("[angry] Go away")).toContain("Go away");
   });
 
   it("replaces known space-form tags with emoji via fallback", () => {
@@ -97,10 +104,10 @@ describe("stripEmotionTags", () => {
     expect(stripEmotionTags("")).toBe("");
   });
 
-  it("handles multiple known tags in one sentence", () => {
+  it("strips multiple unknown emotion tags, keeps text", () => {
     const result = stripEmotionTags("[laughing] That was [surprised] amazing!");
-    expect(result).toContain("😂");
-    expect(result).toContain("😲");
+    expect(result).not.toContain("[laughing]");
+    expect(result).not.toContain("[surprised]");
     expect(result).toContain("amazing!");
   });
 
@@ -109,9 +116,10 @@ describe("stripEmotionTags", () => {
     expect(result).toContain("😮‍💨");
   });
 
-  it("strips tags that start with uppercase", () => {
+  it("strips unknown tags that start with uppercase", () => {
     const result = stripEmotionTags("[Happy] world");
-    expect(result).toContain("😊");
+    expect(result).not.toContain("[");
+    expect(result).toContain("world");
   });
 });
 

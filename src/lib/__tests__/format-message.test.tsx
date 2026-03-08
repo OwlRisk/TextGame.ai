@@ -28,10 +28,16 @@ function findByTag(nodes: React.ReactNode[], tag: string): React.ReactElement[] 
 // ─── EMOTION_EMOJI ────────────────────────────────────────────────────────
 
 describe('EMOTION_EMOJI', () => {
-  it('has emoji for common emotions', () => {
-    expect(EMOTION_EMOJI.happy).toBe('😊');
-    expect(EMOTION_EMOJI.sad).toBe('😢');
-    expect(EMOTION_EMOJI.angry).toBe('😠');
+  it('has emoji for sound-effect tags', () => {
+    expect(EMOTION_EMOJI.cough).toBe('🤧');
+    expect(EMOTION_EMOJI.sigh).toBe('😮‍💨');
+    expect(EMOTION_EMOJI.clear_throat).toBe('😤');
+  });
+
+  it('does not include plain emotion words', () => {
+    expect(EMOTION_EMOJI.happy).toBeUndefined();
+    expect(EMOTION_EMOJI.sad).toBeUndefined();
+    expect(EMOTION_EMOJI.angry).toBeUndefined();
   });
 
   it('all values are non-empty strings', () => {
@@ -144,13 +150,13 @@ describe('parseInlineFormatting – mention', () => {
 // ─── parseInlineFormatting: emotion tags ─────────────────────────────────
 
 describe('parseInlineFormatting – emotion', () => {
-  it('replaces [happy] with its emoji', () => {
-    const nodes = parseInlineFormatting('[happy]');
+  it('replaces known sound-effect tag [cough] with its emoji', () => {
+    const nodes = parseInlineFormatting('[cough]');
     const emotionSpan = nodes.find(
       (n): n is React.ReactElement =>
         React.isValidElement(n) &&
         n.type === 'span' &&
-        (n.props as { children?: string }).children === EMOTION_EMOJI.happy
+        (n.props as { children?: string }).children === EMOTION_EMOJI.cough
     );
     expect(emotionSpan).toBeDefined();
   });
@@ -161,10 +167,10 @@ describe('parseInlineFormatting – emotion', () => {
     expect(text).toContain('[unknowntag]');
   });
 
-  it('is case-insensitive for emotion tags', () => {
-    const lower = parseInlineFormatting('[happy]');
-    const upper = parseInlineFormatting('[HAPPY]');
-    expect(toText(lower)).toBe(toText(upper));
+  it('renders [happy] as literal text since it is no longer mapped', () => {
+    const nodes = parseInlineFormatting('[happy]');
+    const text = toText(nodes);
+    expect(text).toContain('[happy]');
   });
 });
 
