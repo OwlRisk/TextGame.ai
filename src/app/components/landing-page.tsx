@@ -338,8 +338,8 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
-            <h3 className="text-4xl font-black text-white mb-4">Why It&apos;s Different</h3>
-            <p className="text-lg text-zinc-400">No moderator, no setup — AI handles everything</p>
+            <h3 className="text-4xl font-black text-white mb-4">Why it works for game night</h3>
+            <p className="text-lg text-zinc-400">AI keeps the table full, runs the rules, and keeps the game moving.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map((feature, index) => {
@@ -367,8 +367,8 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
               <span className="text-sm font-bold text-violet-400">CLASSIC BOARD GAMES</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">Your favourite games, hosted by AI</h3>
-            <p className="text-lg text-zinc-400">No moderator needed — pick a game and start playing in minutes</p>
+            <h3 className="text-3xl font-black text-white mb-3">Start with a game you already know</h3>
+            <p className="text-lg text-zinc-400">Werewolf, Mafia, Who&apos;s the Spy and more — ready to play with AI characters in minutes.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {FEATURED_GAMES.map((game, index) => (
@@ -413,7 +413,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
                     <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Play with AI host →
+                      Start this game →
                     </span>
                   </div>
                 </div>

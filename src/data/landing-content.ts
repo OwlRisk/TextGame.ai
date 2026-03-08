@@ -195,26 +195,26 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
 export const FEATURES: Feature[] = [
   {
     icon: Crown,
-    title: "No moderator needed",
-    description: "AI runs every phase — assigns roles, announces night results, and keeps the game moving. You just play.",
+    title: "AI runs the table",
+    description: "Roles, phases, votes, reveals — the host keeps the game moving so nobody has to moderate.",
     gradient: "from-violet-500 to-purple-500",
   },
   {
     icon: Users,
-    title: "AI fills empty seats",
-    description: "Can't get enough players? AI characters join your game with unique personalities and strategies. Play anytime.",
+    title: "Always enough players",
+    description: "Play solo, with friends, or with a mix of both. AI characters fill every empty seat automatically.",
     gradient: "from-orange-500 to-pink-500",
   },
   {
     icon: MessageCircle,
-    title: "Friends join in seconds",
-    description: "Share a link — friends join instantly from their browser. No account, no download, no setup.",
+    title: "AI characters actually play",
+    description: "They bluff, accuse, defend themselves, and react like real players — not silent filler bots.",
     gradient: "from-green-500 to-emerald-500",
   },
   {
     icon: Sparkles,
-    title: "Voice & atmosphere",
-    description: "Every AI character has their own voice and personality. Each game feels like a real tabletop session.",
+    title: "Easy to start with friends",
+    description: "Share a link and start in minutes. No download, no setup, no need to wait for a full group.",
     gradient: "from-blue-500 to-cyan-500",
   },
 ];
