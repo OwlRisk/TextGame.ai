@@ -289,6 +289,18 @@
     line-height: 1.5;
   }
 
+  /* Typing indicator dots — sequential fade like iMessage */
+  @keyframes typingDot {
+    0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+
+  /* Row entrance — slide up + fade in */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   /* Custom animations */
   @keyframes shimmer {
     0% {

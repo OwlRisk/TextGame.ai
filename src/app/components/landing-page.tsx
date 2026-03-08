@@ -260,20 +260,37 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                   visibleCount={visibleCount}
                   onMessageComplete={() => setVisibleCount(v => Math.min(v + 1, currentScenario.messages.length))}
                 />
-                {/* Dynamic typing indicators — same layout as message rows, only upcoming characters */}
-                {typingUsers.map((user, i) => (
-                  <div key={user.name} className="flex gap-4 mt-5">
-                    <PreviewAvatar name={user.name} role={user.role} personality={user.personality} gender={user.gender} />
-                    <div className="flex-1 min-w-0 pt-1">
-                      <span className="font-semibold text-white text-sm">{user.name}</span>
-                      <div className="flex gap-1 items-center mt-1.5" aria-hidden="true">
-                        <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 120}ms` }} />
-                        <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 120 + 150}ms` }} />
-                        <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 120 + 300}ms` }} />
+                {/* Dynamic typing indicators — staggered entrance, independent dot rhythm */}
+                {typingUsers.map((user, i) => {
+                  // Each person types at their own speed: person 0 faster, person 1 slower
+                  const period = i === 0 ? "1.1s" : "1.4s";
+                  // Person 1 joins 1.4s after the previous message finishes
+                  const rowDelay = i === 0 ? "0ms" : "1400ms";
+                  return (
+                    <div
+                      key={`${selectedGame}-${user.name}-${visibleCount}`}
+                      className="flex gap-4 mt-5"
+                      style={{ opacity: 0, animation: `fadeInUp 0.3s ease forwards`, animationDelay: rowDelay }}
+                    >
+                      <PreviewAvatar name={user.name} role={user.role} personality={user.personality} gender={user.gender} />
+                      <div className="flex-1 min-w-0 pt-1">
+                        <span className="font-semibold text-white text-sm">{user.name}</span>
+                        <div className="flex gap-1.5 items-center mt-2" aria-hidden="true">
+                          {[0, 1, 2].map((dot) => (
+                            <span
+                              key={dot}
+                              className="w-2 h-2 bg-zinc-400 rounded-full"
+                              style={{
+                                animation: `typingDot ${period} ease-in-out infinite`,
+                                animationDelay: `${dot * 0.18}s`,
+                              }}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {/* Mock input — mirrors real chat input */}
               <div className="px-4 py-3 border-t border-violet-900/20 bg-zinc-900/40">
