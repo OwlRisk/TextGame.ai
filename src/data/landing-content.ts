@@ -195,26 +195,26 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
 export const FEATURES: Feature[] = [
   {
     icon: Crown,
-    title: "AI runs the table",
-    description: "Roles, phases, votes, reveals — the host keeps the game moving so nobody has to moderate.",
+    title: "Plain English creation",
+    description: "Describe your game idea in plain English — the AI builds the rules, roles, and world for you.",
     gradient: "from-violet-500 to-purple-500",
   },
   {
     icon: Users,
-    title: "Always enough players",
-    description: "Play solo, with friends, or with a mix of both. AI characters fill every empty seat automatically.",
+    title: "AI Game Master + players",
+    description: "A dedicated GM hosts every session — assigns roles, runs phases, and keeps the story flowing. AI fills every seat.",
     gradient: "from-orange-500 to-pink-500",
   },
   {
     icon: MessageCircle,
-    title: "AI characters actually play",
-    description: "They bluff, accuse, defend themselves, and react like real players — not silent filler bots.",
+    title: "Real-time multiplayer",
+    description: "Share a link and friends join instantly — no sign-up required. Play with any mix of humans and AI.",
     gradient: "from-green-500 to-emerald-500",
   },
   {
     icon: Sparkles,
-    title: "Easy to start with friends",
-    description: "Share a link and start in minutes. No download, no setup, no need to wait for a full group.",
+    title: "Voice & immersion",
+    description: "AI characters speak with unique voices. Every game has its own atmosphere and personality.",
     gradient: "from-blue-500 to-cyan-500",
   },
 ];

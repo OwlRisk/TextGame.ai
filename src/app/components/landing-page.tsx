@@ -140,7 +140,9 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
-              Play solo or with friends — AI characters fill every empty seat and react like real players.
+              Create custom game rules or play classic games like Werewolf and Undercover.
+              <br className="hidden sm:block" />
+              Your AI gaming playground starts here.
             </p>
 
             {/* Core features – 3 simple rows */}
@@ -149,19 +151,19 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                 <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
                   <Sparkles className="h-4 w-4 text-violet-400" />
                 </div>
-                <span className="text-base">Werewolf, Mafia, Who&apos;s the Spy, and more</span>
+                <span className="text-base">Smart AI characters that adapt to your game</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
-                  <Zap className="h-4 w-4 text-fuchsia-400" />
+                  <MessageCircle className="h-4 w-4 text-fuchsia-400" />
                 </div>
-                <span className="text-base">Room ready in under a minute</span>
+                <span className="text-base">Fully customizable rules and gameplay</span>
               </div>
               <div className="flex items-center gap-3 text-zinc-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
-                  <MessageCircle className="h-4 w-4 text-blue-400" />
+                  <Zap className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-base">Characters bluff, lie, and actually react to what you say</span>
+                <span className="text-base">Create and start playing in 2 minutes</span>
               </div>
             </div>
 
@@ -193,7 +195,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
               >
                 <Link href="/discover">
                   <Compass className="h-5 w-5 mr-2" />
-                  Explore Games
+                  Explore Games First
                 </Link>
               </Button>
             </div>
@@ -317,8 +319,8 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
-            <h3 className="text-4xl font-black text-white mb-4">Why it works for game night</h3>
-            <p className="text-lg text-zinc-400">AI keeps the table full, runs the rules, and keeps the game moving.</p>
+            <h3 className="text-4xl font-black text-white mb-4">Why You&apos;ll Love It</h3>
+            <p className="text-lg text-zinc-400">Everything you need to bring any game to life</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map((feature, index) => {
@@ -344,10 +346,10 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
         <div className="mb-32">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">CLASSIC BOARD GAMES</span>
+              <span className="text-sm font-bold text-violet-400">COMMUNITY</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">Start with a game you already know</h3>
-            <p className="text-lg text-zinc-400">Werewolf, Mafia, Who&apos;s the Spy and more — ready to play with AI characters in minutes.</p>
+            <h3 className="text-3xl font-black text-white mb-3">Featured Templates</h3>
+            <p className="text-lg text-zinc-400">One-click start — or use them as inspiration for your own</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {FEATURED_GAMES.map((game, index) => (
@@ -411,10 +413,10 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
-                Start Your First Game — Free
+                Ready to Create Your Game?
               </h3>
               <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Sign in to create a room. Friends join instantly — no account needed.
+                Start creating your AI multiplayer games today
               </p>
               <div className="relative inline-block">
                 <div className="absolute inset-0 bg-gradient-to-r from-white/50 to-white/50 rounded-xl blur-xl opacity-40 animate-pulse" style={{ animationDuration: '3s' }} />
@@ -439,7 +441,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
         {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
-            <p>© 2026 {BRAND_CONFIG.name} • Any game you describe, playable in minutes</p>
+            <p>© 2026 {BRAND_CONFIG.name} • {BRAND_CONFIG.tagline}</p>
             <div className="flex gap-6">
               <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
