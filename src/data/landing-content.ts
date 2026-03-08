@@ -116,9 +116,9 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     description:
       "The Host AI manages everything — assigns secret roles, announces game phases, tracks votes, reveals information at the right time, and keeps the story flowing. You just focus on playing.",
     messages: [
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:15 PM", text: "Night falls on Mars Station. Everyone close your eyes... Traitor, you may choose your sabotage target now." },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:16 PM", text: "Morning arrives. The crew discovers the communication array is damaged — Engineer Nova, you may inspect one system." },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:17 PM", text: "Time to vote. Discuss who you think is the traitor — you have 3 minutes, then vote to eliminate." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:15 PM", text: "Night falls on Mars Station. Everyone close your eyes... Traitor, choose your sabotage target now." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:16 PM", text: "Morning. The comm array is down. Engineer Nova, you may inspect one system." },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:17 PM", text: "Time to vote. Discuss who you think is the traitor — 3 minutes, then eliminate." },
     ],
   },
   {
@@ -133,7 +133,7 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     messages: [
       { name: "Dr. Chen", badge: "AI", time: "4:20 PM", text: "I was in the medical bay all night. Anyone can confirm? I'm getting suspicious of whoever was near the comm array...", role: "Scientist", personality: "Methodical, defensive under pressure", gender: "female" },
       { name: "Captain Rex", badge: "AI", time: "4:20 PM", text: "Dr. Chen is acting defensive — that's a red flag! I saw them leaving the engineering deck right around the time of the sabotage.", role: "Security Chief", personality: "Assertive, blunt, leadership instinct", gender: "male" },
-      { name: "Engineer Nova", badge: "AI", time: "4:21 PM", text: "Wait — I ran a system check on the comm array. The damage pattern suggests someone with medical knowledge... 👀", role: "Engineer", personality: "Analytical, observant, cautious", gender: "female" },
+      { name: "Engineer Nova", badge: "AI", time: "4:21 PM", text: "Wait — I ran a system check on the comm array. The damage pattern suggests someone with medical knowledge. That narrows it down.", role: "Engineer", personality: "Analytical, observant, cautious", gender: "female" },
     ],
   },
   {
@@ -147,8 +147,8 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
       "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
     messages: [
       { name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain.", role: "Seer", personality: "Careful, observant", gender: "other" },
-      { name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies! The Seer would never reveal themselves this early. You're panicking and pointing fingers 😡", role: "Werewolf", personality: "Manipulative, aggressive deflection", gender: "male" },
-      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "5:11 PM", text: "The village has voted. Gideon Hale is eliminated — his role is revealed: Werewolf. Villagers win!" },
+      { name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies. The Seer would never expose themselves this early. You're desperate and pointing fingers.", role: "Werewolf", personality: "Manipulative, aggressive deflection", gender: "male" },
+      { isHost: true, name: "Warden Lunaris", badge: "GM", time: "5:11 PM", text: "The village has voted. Gideon Hale is eliminated — his role is revealed: Werewolf. The village survives." },
     ],
   },
 ];
@@ -195,26 +195,26 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
 export const FEATURES: Feature[] = [
   {
     icon: Crown,
-    title: "Plain English creation",
-    description: "Describe your game idea in plain English — the AI builds the rules, roles, and world for you.",
+    title: "AI runs the table",
+    description: "Roles, phases, votes, reveals — the host keeps the game moving so nobody has to moderate.",
     gradient: "from-violet-500 to-purple-500",
   },
   {
     icon: Users,
-    title: "AI Game Master + players",
-    description: "A dedicated GM hosts every session — assigns roles, runs phases, and keeps the story flowing. AI fills every seat.",
+    title: "Always enough players",
+    description: "Play solo, with friends, or with a mix of both. AI characters fill every empty seat automatically.",
     gradient: "from-orange-500 to-pink-500",
   },
   {
     icon: MessageCircle,
-    title: "Real-time multiplayer",
-    description: "Share a link and friends join instantly — no sign-up required. Play with any mix of humans and AI.",
+    title: "AI characters actually play",
+    description: "They bluff, accuse, defend themselves, and react like real players — not silent filler bots.",
     gradient: "from-green-500 to-emerald-500",
   },
   {
     icon: Sparkles,
-    title: "Voice & immersion",
-    description: "AI characters speak with unique voices. Every game has its own atmosphere and personality.",
+    title: "Easy to start with friends",
+    description: "Share a link and start in minutes. No download, no setup, no need to wait for a full group.",
     gradient: "from-blue-500 to-cyan-500",
   },
 ];
