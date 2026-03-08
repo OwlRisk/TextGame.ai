@@ -215,9 +215,6 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90" />
                 </div>
                 <span className="text-sm font-semibold text-zinc-300"># game-room</span>
-                <span className="ml-auto text-xs text-zinc-500 bg-zinc-700/60 rounded-md px-2.5 py-1">
-                  {currentScenario.title}
-                </span>
               </div>
               {/* Streaming messages */}
               <div className="p-4 space-y-0 h-[340px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
