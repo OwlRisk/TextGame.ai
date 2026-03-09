@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -241,7 +242,7 @@ export default function AiTextAdventureGamesPage() {
           On <Link href="/" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
           multiplayer is built in. Share a link, and friends join your adventure instantly. AI players
           fill any empty seats so the story always feels alive. Whether you&apos;re playing a{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf game</Link>,
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf game</TrackedGameLink>,
           a D&amp;D-style quest, or a custom scenario, everything runs in real time with the AI Game
           Master coordinating the action.
         </P>

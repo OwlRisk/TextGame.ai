@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -88,10 +89,10 @@ export default function TownOfSalemAlternativePage() {
           <Link href="/discover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> offers
           the closest experience to Town of Salem&apos;s social deduction gameplay, but with a modern AI
           Game Master that runs everything. Play{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>,{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>,{" "}
-          <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">Secret Hitler</Link>,{" "}
-          <Link href="/games/avalon" className="text-violet-400 hover:underline">Avalon</Link>, and more — all free in the browser.
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">Secret Hitler</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">Avalon</TrackedGameLink>, and more — all free in the browser.
         </P>
         <Pros items={["Free browser-based play — like old Town of Salem", "AI Game Master handles all game logic", "AI fills empty seats — no waiting for players", "20+ social deduction and party games", "Play with friends via invite link", "Custom game creation"]} />
         <Cons items={["Text-based (no visual avatars)", "Smaller community than Town of Salem at its peak"]} />

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
+import { ScrollDepthTracker } from "@/app/components/blog/ScrollDepthTracker";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
 
@@ -25,6 +26,7 @@ export function BlogLayoutClient({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </div>
+      <ScrollDepthTracker />
     </AppLayoutWithSidebar>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -198,9 +199,9 @@ export default function VirtualTeamBuildingGamesPage() {
               debate and vote. Great for <strong className="text-white">trust and deduction</strong> —
               teams learn to read each other, spot lies, and collaborate under pressure.
             </P>
-            <Link href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Werewolf →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -210,9 +211,9 @@ export default function VirtualTeamBuildingGamesPage() {
               interrogate suspects, and work together to solve the crime. Builds{" "}
               <strong className="text-white">collaboration and critical thinking</strong>.
             </P>
-            <Link href="/games/detective-mystery" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Murder Mystery →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -233,9 +234,9 @@ export default function VirtualTeamBuildingGamesPage() {
               word without revealing it — the spy must blend in. Sharpens{" "}
               <strong className="text-white">word skills and observation</strong>.
             </P>
-            <Link href="/games/undercover" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/undercover" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Who&apos;s the Spy →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -256,9 +257,9 @@ export default function VirtualTeamBuildingGamesPage() {
               AI-generated puzzles and clues. Teams work together to solve riddles and escape before
               time runs out. Builds <strong className="text-white">problem solving and teamwork</strong>.
             </P>
-            <Link href="/games/escape-room" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Escape Room →
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 
@@ -354,12 +355,12 @@ export default function VirtualTeamBuildingGamesPage() {
             >
               Browse Games
             </Link>
-            <Link
+            <TrackedGameLink
               href="/games/werewolf"
               className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors"
             >
               Try Werewolf
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 

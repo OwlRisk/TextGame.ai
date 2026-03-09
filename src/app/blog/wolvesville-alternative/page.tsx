@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -175,10 +176,10 @@ export default function WolvesvilleAlternativePage() {
           <li><strong className="text-white">Play with friends</strong> — share a link, they join instantly</li>
           <li><strong className="text-white">AI players</strong> — play solo or with 1 friend and AI fills the rest</li>
           <li><strong className="text-white">20+ game types</strong> —{" "}
-            <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>,{" "}
-            <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>,{" "}
-            <Link href="/games/avalon" className="text-violet-400 hover:underline">Avalon</Link>,{" "}
-            <Link href="/games/trivia" className="text-violet-400 hover:underline">Trivia</Link>, and more
+            <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
+            <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>,{" "}
+            <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">Avalon</TrackedGameLink>,{" "}
+            <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">Trivia</TrackedGameLink>, and more
           </li>
           <li><strong className="text-white">Custom game creation</strong> — describe any game and the AI builds it</li>
           <li><strong className="text-white">Browser-based</strong> — works on any device</li>
@@ -256,7 +257,7 @@ export default function WolvesvilleAlternativePage() {
             <H3>Can I play Werewolf alone on TextGame.ai?</H3>
             <P>
               Yes. AI characters fill every empty seat with unique personalities. You can play a full{" "}
-              <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf game</Link> solo.
+              <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf game</TrackedGameLink> solo.
             </P>
           </div>
         </div>
@@ -266,9 +267,9 @@ export default function WolvesvilleAlternativePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Game Master. AI players. Invite your friends or play solo. No download needed.
           </p>
-          <Link href="/games/werewolf" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+          <TrackedGameLink href="/games/werewolf" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
             Play Werewolf Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

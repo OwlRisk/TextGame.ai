@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -132,7 +133,7 @@ export default function FreeOnlineGamesWithFriendsPage() {
         <P>
           The classic hidden-role game where villagers try to identify werewolves before they&apos;re
           all eliminated.{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Play Werewolf on {SITE_NAME}</Link>{" "}
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Play Werewolf on {SITE_NAME}</TrackedGameLink>{" "}
           with an AI Game Master that assigns roles, runs night/day phases, and controls AI villagers. Works with 1–20 players.
         </P>
 
@@ -140,14 +141,14 @@ export default function FreeOnlineGamesWithFriendsPage() {
         <P>
           Mafia follows similar rules to Werewolf with a crime-family theme. The AI moderator manages
           accusations, votes, and reveals.{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Play Mafia online</Link> — free, no download.
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Play Mafia online</TrackedGameLink> — free, no download.
         </P>
 
         <H3>3. Secret Hitler (on TextGame.ai)</H3>
         <P>
           A political deduction game where liberals and fascists clash over policy. Hidden roles,
           government elections, and escalating tension.{" "}
-          <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">Play Secret Hitler</Link>{" "}
+          <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">Play Secret Hitler</TrackedGameLink>{" "}
           with AI players filling any empty seats.
         </P>
 
@@ -307,8 +308,8 @@ export default function FreeOnlineGamesWithFriendsPage() {
             <H3>What&apos;s the best game for a large group?</H3>
             <P>
               For 10+ players, try Kahoot! for trivia, Gartic Phone for laughs, or{" "}
-              <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf on
-              {SITE_NAME}</Link> for intense social deduction. All handle large groups well.
+              <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf on
+              {SITE_NAME}</TrackedGameLink> for intense social deduction. All handle large groups well.
             </P>
           </div>
         </div>

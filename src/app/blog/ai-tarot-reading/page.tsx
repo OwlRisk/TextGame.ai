@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -231,7 +232,7 @@ export default function AiTarotReadingPage() {
         {/* ── Try It ───────────────────────────────────────────────── */}
         <H2 id="try-it">Try AI Tarot on {SITE_NAME}</H2>
         <P>
-          On {SITE_NAME}, the <Link href="/games/tarot" className="text-violet-400 hover:underline font-semibold">AI Tarot template</Link> gives
+          On {SITE_NAME}, the <TrackedGameLink href="/games/tarot" className="text-violet-400 hover:underline font-semibold">AI Tarot template</TrackedGameLink> gives
           you a fully interactive reading experience:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -303,12 +304,12 @@ export default function AiTarotReadingPage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             Ask a question, draw your cards, and receive a personalized interpretation — powered by AI.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/tarot"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Start Tarot Reading
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

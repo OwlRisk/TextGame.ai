@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -212,14 +213,14 @@ export default function PlayKingdomIntrigueOnlinePage() {
         <H2 id="online">Play Online with AI</H2>
         <P>
           Experience the full medieval court experience on{" "}
-          <Link href="/games/kingdom-intrigue" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>.
+          <TrackedGameLink href="/games/kingdom-intrigue" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>.
           The AI narrator runs the story while AI nobles fill empty seats with cunning, believable opponents.
         </P>
         <P>
           If you enjoy political intrigue, also check out{" "}
-          <Link href="/games/avalon" className="text-violet-400 hover:underline">Avalon</Link> for Arthurian
+          <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">Avalon</TrackedGameLink> for Arthurian
           deduction or{" "}
-          <Link href="/games/vampire-court" className="text-violet-400 hover:underline">Vampire Court</Link>{" "}
+          <TrackedGameLink href="/games/vampire-court" className="text-violet-400 hover:underline">Vampire Court</TrackedGameLink>{" "}
           for a gothic twist on court politics.
         </P>
 
@@ -252,7 +253,7 @@ export default function PlayKingdomIntrigueOnlinePage() {
           <div>
             <H3>Is Kingdom Intrigue free to play?</H3>
             <P>
-              Yes. <Link href="/games/kingdom-intrigue" className="text-violet-400 hover:underline">Play Kingdom Intrigue online for free</Link> on {SITE_NAME} with
+              Yes. <TrackedGameLink href="/games/kingdom-intrigue" className="text-violet-400 hover:underline">Play Kingdom Intrigue online for free</TrackedGameLink> on {SITE_NAME} with
               full AI narration and AI opponents. No download needed.
             </P>
           </div>
@@ -264,12 +265,12 @@ export default function PlayKingdomIntrigueOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             Forge alliances, betray rivals, and scheme your way to the crown. AI narrator included.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/kingdom-intrigue"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Kingdom Intrigue Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

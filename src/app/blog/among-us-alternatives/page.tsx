@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -165,25 +166,25 @@ export default function AmongUsAlternativesPage() {
 
         <GameCard rank={1} emoji="🐺" name="Werewolf" players="5–15" platform="Browser, mobile"
           description="The original social deduction game. Werewolves secretly eliminate villagers at night while the village tries to identify and vote them out during the day. More roles and deeper strategy than Among Us."
-          link={<><strong className="text-white">Play free:</strong> <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf on {SITE_NAME}</Link> — AI Game Master, AI players, no minimum player count.</>}
+          link={<><strong className="text-white">Play free:</strong> <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf on {SITE_NAME}</TrackedGameLink> — AI Game Master, AI players, no minimum player count.</>}
         />
         <ChatPreviewWidget gameSlug="werewolf" ctaLabel="Play Werewolf free on TextGame.ai" />
 
         <GameCard rank={2} emoji="🎭" name="Mafia" players="6–15" platform="Browser, mobile"
           description="Werewolf&apos;s urban cousin. The Mafia eliminates townspeople at night. Roles like Detective and Doctor add investigative layers. Extended discussion phases make for more intense debates."
-          link={<><strong className="text-white">Play free:</strong> <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia on {SITE_NAME}</Link> — full game with AI characters that bluff and accuse.</>}
+          link={<><strong className="text-white">Play free:</strong> <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia on {SITE_NAME}</TrackedGameLink> — full game with AI characters that bluff and accuse.</>}
         />
         <GameCard rank={3} emoji="📜" name="Secret Hitler" players="5–10" platform="Browser"
           description="Players are secretly Liberals or Fascists. The government passes policies each round — but Fascists want to enact their agenda or elect Hitler as Chancellor. Trust no one."
-          link={<><strong className="text-white">Play free:</strong> <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">Secret Hitler on {SITE_NAME}</Link></>}
+          link={<><strong className="text-white">Play free:</strong> <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">Secret Hitler on {SITE_NAME}</TrackedGameLink></>}
         />
         <GameCard rank={4} emoji="⚔️" name="The Resistance / Avalon" players="5–10" platform="Browser"
           description="Teams go on missions. Loyal servants want missions to succeed; spies secretly sabotage them. Avalon adds Merlin — who knows the spies but must stay hidden. No player elimination, so everyone stays in the game."
-          link={<><strong className="text-white">Play free:</strong> <Link href="/games/avalon" className="text-violet-400 hover:underline">Avalon on {SITE_NAME}</Link></>}
+          link={<><strong className="text-white">Play free:</strong> <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">Avalon on {SITE_NAME}</TrackedGameLink></>}
         />
         <GameCard rank={5} emoji="🌍" name="Spyfall" players="3–8" platform="Browser"
           description="Everyone is at a secret location — except the spy, who doesn&apos;t know where they are. Ask each other questions to find the spy without revealing the location. Quick 10-minute rounds."
-          link={<><strong className="text-white">Play free:</strong> <Link href="/games/spyfall" className="text-violet-400 hover:underline">Spyfall on {SITE_NAME}</Link></>}
+          link={<><strong className="text-white">Play free:</strong> <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline">Spyfall on {SITE_NAME}</TrackedGameLink></>}
         />
         <GameCard rank={6} emoji="🕵️" name="Town of Salem" players="7–15" platform="PC, browser"
           description="A deeper take on Mafia with dozens of unique roles across three factions: Town, Mafia, and Neutrals. Games last longer and require careful record-keeping. Great for players who want more complexity."
@@ -196,7 +197,7 @@ export default function AmongUsAlternativesPage() {
         />
         <GameCard rank={9} emoji="🕵️‍♂️" name="Who&apos;s the Spy (Undercover)" players="4–10" platform="Browser"
           description="Everyone receives a secret word except the spy, who gets a similar but different word. Describe your word vaguely enough to not reveal it, but specifically enough to identify the odd one out."
-          link={<><strong className="text-white">Play free:</strong> <Link href="/games/undercover" className="text-violet-400 hover:underline">Undercover on {SITE_NAME}</Link></>}
+          link={<><strong className="text-white">Play free:</strong> <TrackedGameLink href="/games/undercover" className="text-violet-400 hover:underline">Undercover on {SITE_NAME}</TrackedGameLink></>}
         />
         <GameCard rank={10} emoji="🤖" name={`${SITE_NAME} (AI Social Deduction)`} players="1+" platform="Browser"
           description={`Play any social deduction game with an AI Game Master and AI characters. Werewolf, Mafia, Avalon, Spyfall, and more — all in one platform. AI fills empty seats so you never need to wait for enough players.`}
@@ -264,8 +265,8 @@ export default function AmongUsAlternativesPage() {
             <P>
               Goose Goose Duck is the most similar in gameplay (tasks + impostors + voting). For a
               text-based alternative with deeper discussion, try{" "}
-              <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link> or{" "}
-              <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link> on {SITE_NAME}.
+              <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink> or{" "}
+              <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink> on {SITE_NAME}.
             </P>
           </div>
           <div>

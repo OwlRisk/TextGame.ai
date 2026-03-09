@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -187,7 +188,7 @@ export default function AITriviaGamesPage() {
           ))}
         </div>
         <P>
-          On <Link href="/games/trivia" className="text-violet-400 hover:underline">{SITE_NAME}&apos;s trivia game</Link>,
+          On <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">{SITE_NAME}&apos;s trivia game</TrackedGameLink>,
           you can also request custom mixed categories or niche topics like &quot;Marvel Cinematic Universe
           phase 4&quot; or &quot;world capitals that start with B.&quot;
         </P>
@@ -278,7 +279,7 @@ export default function AITriviaGamesPage() {
           <div>
             <H3>Is it free?</H3>
             <P>
-              Yes. You can <Link href="/games/trivia" className="text-violet-400 hover:underline">play AI trivia for free</Link> on {SITE_NAME}.
+              Yes. You can <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">play AI trivia for free</TrackedGameLink> on {SITE_NAME}.
               No subscription required to start a game.
             </P>
           </div>
@@ -290,12 +291,12 @@ export default function AITriviaGamesPage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             Unlimited questions. Any topic. AI host keeps score. Play free with friends or solo.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/trivia"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Trivia Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

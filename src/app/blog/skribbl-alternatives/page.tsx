@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -84,9 +85,9 @@ export default function SkribblAlternativesPage() {
           If you&apos;re looking for a Skribbl alternative because you want <em>variety</em>, not just
           another drawing game, <Link href="/discover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> offers
           20+ text-based party games. Try{" "}
-          <Link href="/games/codenames" className="text-violet-400 hover:underline">Codenames</Link> for word puzzles,{" "}
-          <Link href="/games/spyfall" className="text-violet-400 hover:underline">Spyfall</Link> for social deduction, or{" "}
-          <Link href="/games/trivia" className="text-violet-400 hover:underline">AI Trivia</Link> for quiz nights.
+          <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline">Codenames</TrackedGameLink> for word puzzles,{" "}
+          <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline">Spyfall</TrackedGameLink> for social deduction, or{" "}
+          <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">AI Trivia</TrackedGameLink> for quiz nights.
         </P>
         <Pros items={["20+ game types — not just drawing", "AI Game Master and AI players", "Free, browser-based, no download", "Every game unique thanks to AI"]} />
         <Cons items={["Text-based — no drawing", "Different experience than visual games"]} />
@@ -129,7 +130,7 @@ export default function SkribblAlternativesPage() {
         <H2 id="faq">FAQ</H2>
         <div className="space-y-6 mb-12">
           <div><H3>Is Skribbl.io still the best free drawing game?</H3><P>For pure Pictionary, yes. But Gartic Phone offers a more social experience, and Drawize has more game modes. For non-drawing party games, {SITE_NAME} has the most variety.</P></div>
-          <div><H3>What browser games can I play with friends besides drawing?</H3><P>Social deduction ({SITE_NAME}&apos;s <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>, <Link href="/games/spyfall" className="text-violet-400 hover:underline">Spyfall</Link>), word games (Codenames), trivia (Sporcle, <Link href="/games/trivia" className="text-violet-400 hover:underline">AI Trivia</Link>), and creative games (<Link href="/games/improv-comedy" className="text-violet-400 hover:underline">Improv Comedy</Link>).</P></div>
+          <div><H3>What browser games can I play with friends besides drawing?</H3><P>Social deduction ({SITE_NAME}&apos;s <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>, <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline">Spyfall</TrackedGameLink>), word games (Codenames), trivia (Sporcle, <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">AI Trivia</TrackedGameLink>), and creative games (<TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline">Improv Comedy</TrackedGameLink>).</P></div>
         </div>
 
         <div className="bg-gradient-to-br from-cyan-600/20 to-violet-600/20 border border-cyan-500/30 rounded-2xl p-8 text-center mb-12">

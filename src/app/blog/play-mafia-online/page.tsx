@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -176,8 +177,8 @@ export default function PlayMafiaOnlinePage() {
           <RoleCard emoji="🎩" name="Godfather" team="Mafia" description="The mafia leader. Appears innocent when investigated by the Detective. Must coordinate with other mafia to eliminate key town roles." />
         </div>
         <P>
-          On {SITE_NAME}, the <Link href="/games/mafia" className="text-violet-400 hover:underline">AI Game Master assigns roles
-          secretly</Link> at the start — you don&apos;t need to deal cards or have a moderator.
+          On {SITE_NAME}, the <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">AI Game Master assigns roles
+          secretly</TrackedGameLink> at the start — you don&apos;t need to deal cards or have a moderator.
         </P>
 
         {/* ── Rules ────────────────────────────────────────────────── */}
@@ -212,8 +213,8 @@ export default function PlayMafiaOnlinePage() {
         </P>
         <P>
           If you know how to play one, you know how to play the other. On {SITE_NAME}, you can try both:{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link> and{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>. Browse more{" "}
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink> and{" "}
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>. Browse more{" "}
           <Link href="/discover" className="text-violet-400 hover:underline">social deduction games</Link> or see our{" "}
           <Link href="/blog/best-social-deduction-games" className="text-violet-400 hover:underline">best social deduction games</Link> list.
         </P>
@@ -222,7 +223,7 @@ export default function PlayMafiaOnlinePage() {
         <H2 id="online">How to Play Mafia Online with AI</H2>
         <P>
           Traditionally, Mafia needs 6+ people in the same room with a human moderator. That&apos;s hard
-          to organize. With <Link href="/games/mafia" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          to organize. With <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           you can play anytime:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -285,14 +286,14 @@ export default function PlayMafiaOnlinePage() {
               They&apos;re extremely similar — both are social deduction games with hidden roles and day/night
               cycles. Mafia uses a city theme while Werewolf uses a village theme. The core mechanics
               are the same. We have both:{" "}
-              <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link> and{" "}
-              <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>.
+              <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink> and{" "}
+              <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>.
             </P>
           </div>
           <div>
             <H3>Is Mafia free to play online?</H3>
             <P>
-              Yes. On {SITE_NAME}, you can <Link href="/games/mafia" className="text-violet-400 hover:underline">play Mafia online for free</Link> with
+              Yes. On {SITE_NAME}, you can <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">play Mafia online for free</TrackedGameLink> with
               an AI Game Master and AI players. No subscription required.
             </P>
           </div>
@@ -304,12 +305,12 @@ export default function PlayMafiaOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Game Master. AI players. No moderator needed. Start a game in 30 seconds.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/mafia"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Mafia Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

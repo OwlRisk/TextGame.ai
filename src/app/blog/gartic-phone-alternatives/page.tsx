@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -77,8 +78,8 @@ export default function GarticPhoneAlternativesPage() {
           If your group loves Gartic Phone for the laughs and social dynamics — but wants a break from
           drawing — <Link href="/discover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> offers
           20+ text-based party games with an AI host.{" "}
-          <Link href="/games/improv-comedy" className="text-violet-400 hover:underline">Improv Comedy</Link> and{" "}
-          <Link href="/games/storyteller" className="text-violet-400 hover:underline">Epic Storyteller</Link> generate
+          <TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline">Improv Comedy</TrackedGameLink> and{" "}
+          <TrackedGameLink href="/games/storyteller" className="text-violet-400 hover:underline">Epic Storyteller</TrackedGameLink> generate
           similar laugh-out-loud moments through creative prompts instead of drawings.
         </P>
         <Pros items={["AI generates unlimited unique scenarios", "20+ games beyond drawing", "AI fills empty seats", "Free browser play"]} />

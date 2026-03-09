@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -212,9 +213,9 @@ export default function BestIcebreakerGamesOnlinePage() {
               science, company history — so everyone has a shot. Rounds are fast, competitive,
               and naturally spark conversation (&quot;How did you know that?!&quot;).
             </P>
-            <Link href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
               Play AI Trivia →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -224,9 +225,9 @@ export default function BestIcebreakerGamesOnlinePage() {
               whatever comes to mind. Low stakes, high laughs — perfect for loosening up a
               room full of strangers.
             </P>
-            <Link href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Improv Comedy →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -236,9 +237,9 @@ export default function BestIcebreakerGamesOnlinePage() {
               clues. Forces collaboration with people you just met — you have to think like
               your teammates to win.
             </P>
-            <Link href="/games/codenames" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Codenames →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -248,9 +249,9 @@ export default function BestIcebreakerGamesOnlinePage() {
               questions to find the spy while the spy bluffs. Five minutes of hilarious
               suspicion that gets people talking fast.
             </P>
-            <Link href="/games/spyfall" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Spyfall →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">

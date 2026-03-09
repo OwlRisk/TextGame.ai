@@ -1384,13 +1384,27 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           ) : (
             <>
               <h1 className="text-2xl font-bold mb-4">Game not found</h1>
-              <p className="text-zinc-400 text-sm mb-4">This game may have been deleted or the link is invalid.</p>
-              <button
-                onClick={() => router.push("/")}
-                className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700"
-              >
-                Go Home
-              </button>
+              <p className="text-zinc-400 text-sm mb-6">This game may have been deleted or the link is invalid.</p>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <button
+                  onClick={() => router.push("/discover")}
+                  className="px-4 py-2 bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors"
+                >
+                  Explore Games
+                </button>
+                <button
+                  onClick={() => router.push("/my-games")}
+                  className="px-4 py-2 bg-zinc-700 rounded-lg hover:bg-zinc-600 transition-colors"
+                >
+                  My Games
+                </button>
+                <button
+                  onClick={() => router.push("/")}
+                  className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                >
+                  Home
+                </button>
+              </div>
             </>
           )}
         </div>

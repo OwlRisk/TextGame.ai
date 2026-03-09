@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -262,7 +263,7 @@ export default function PlayImprovComedyOnlinePage() {
           <div>
             <H3>Is it free to play?</H3>
             <P>
-              Yes. <Link href="/games/improv-comedy" className="text-violet-400 hover:underline">Play AI Improv Comedy online for free</Link> on {SITE_NAME}.
+              Yes. <TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline">Play AI Improv Comedy online for free</TrackedGameLink> on {SITE_NAME}.
               No signup, no download — just share a link and start improvising.
             </P>
           </div>
@@ -274,17 +275,17 @@ export default function PlayImprovComedyOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI-generated scenes. Unexpected twists. Guaranteed laughs. Jump in — no experience needed.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/improv-comedy"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Improv Comedy Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <P>
           Love creative games? Try{" "}
-          <Link href="/games/storyteller" className="text-violet-400 hover:underline">Storyteller</Link> for
+          <TrackedGameLink href="/games/storyteller" className="text-violet-400 hover:underline">Storyteller</TrackedGameLink> for
           collaborative fiction or explore all our{" "}
           <Link href="/blog/best-online-party-games" className="text-violet-400 hover:underline">online party games</Link>.
         </P>

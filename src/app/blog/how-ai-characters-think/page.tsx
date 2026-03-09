@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -123,7 +124,7 @@ export default function HowAiCharactersThinkPage() {
         </ul>
         <P>
           These profiles create natural variety. In a{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link> game
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink> game
           with four AI characters, you might face a loud accuser, a quiet analyst, a friendly mediator,
           and a paranoid loner — each playing the same role differently.
         </P>

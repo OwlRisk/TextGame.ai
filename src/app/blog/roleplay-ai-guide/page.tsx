@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -277,9 +278,9 @@ export default function RoleplayAiGuidePage() {
         <P>
           This is what <Link href="/" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> does.
           You can play{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>,{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>,{" "}
-          <Link href="/games/undercover" className="text-violet-400 hover:underline">Who&apos;s the Spy</Link>,
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/undercover" className="text-violet-400 hover:underline">Who&apos;s the Spy</TrackedGameLink>,
           or create entirely custom games — all with AI characters that think, react, and try to win.
         </P>
 

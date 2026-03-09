@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -128,8 +129,8 @@ export default function AiGameMasterGuidePage() {
         <P>
           A <strong className="text-white">Game Master</strong> (GM) is the person who runs a tabletop game.
           In games like <strong className="text-white">D&amp;D</strong>, they&apos;re called a Dungeon Master (DM).
-          In <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link> or{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>, they&apos;re the
+          In <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink> or{" "}
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>, they&apos;re the
           moderator. In any structured tabletop game, the GM manages the rules, narrates the story, keeps
           play fair, and guides the experience.
         </P>
@@ -327,9 +328,9 @@ export default function AiGameMasterGuidePage() {
             <Link href="/discover" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
               Browse Games
             </Link>
-            <Link href="/games/werewolf" className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors">
+            <TrackedGameLink href="/games/werewolf" className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors">
               Play Werewolf
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 

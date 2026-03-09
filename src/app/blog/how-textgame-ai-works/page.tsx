@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -96,8 +97,8 @@ export default function HowTextgameAiWorksPage() {
         <H2 id="session-flow">How a Game Session Works</H2>
         <P>
           Every game on {SITE_NAME} follows a consistent flow, whether you&apos;re playing{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>,{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>, or a
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>, or a
           completely custom game.
         </P>
 

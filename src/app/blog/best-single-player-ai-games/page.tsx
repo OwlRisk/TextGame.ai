@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
@@ -213,9 +214,9 @@ export default function BestSinglePlayerAiGamesPage() {
               Practice social deduction against AI. The AI plays werewolves and villagers with
               distinct strategies. Learn to read bluffs and improve before playing with friends.
             </P>
-            <Link href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Werewolf Solo →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -225,9 +226,9 @@ export default function BestSinglePlayerAiGamesPage() {
               and accuse the culprit. The AI plays every character — a full detective experience
               alone.
             </P>
-            <Link href="/games/detective-mystery" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Murder Mystery Solo →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -236,9 +237,9 @@ export default function BestSinglePlayerAiGamesPage() {
               Reflective, introspective experience. Draw cards, get AI interpretations, and explore
               themes. Not competitive — more like a guided solo reflection.
             </P>
-            <Link href="/games/tarot" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/tarot" className="text-violet-400 hover:underline text-sm font-semibold">
               Try Tarot AI →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">

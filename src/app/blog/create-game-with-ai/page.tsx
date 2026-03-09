@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -136,8 +137,8 @@ export default function CreateGameWithAiPage() {
         </P>
         <P>
           Platforms like <Link href="/" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> let
-          you either pick from templates (e.g. <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>,{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>) or describe a completely custom game.
+          you either pick from templates (e.g. <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>) or describe a completely custom game.
           Either way, the AI hosts the session and fills empty seats with AI players if needed.
         </P>
 

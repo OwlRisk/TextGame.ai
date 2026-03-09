@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -189,9 +190,9 @@ export default function JackboxAlternativesPage() {
         ]} />
         <P>
           <strong className="text-white">Best for:</strong> Groups that love{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>,{" "}
-          <Link href="/games/trivia" className="text-violet-400 hover:underline">trivia</Link>,{" "}
-          <Link href="/games/codenames" className="text-violet-400 hover:underline">Codenames</Link>, or
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">trivia</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline">Codenames</TrackedGameLink>, or
           creative storytelling — and want AI to handle hosting.
         </P>
 
@@ -255,7 +256,7 @@ export default function JackboxAlternativesPage() {
         <P>
           <strong className="text-white">Best for:</strong> Groups of 4+ who love word games and strategy. Also
           available with AI players on{" "}
-          <Link href="/games/codenames" className="text-violet-400 hover:underline">{SITE_NAME}</Link>.
+          <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline">{SITE_NAME}</TrackedGameLink>.
         </P>
 
         <H2 id="spyfall">5. Spyfall Online</H2>
@@ -274,7 +275,7 @@ export default function JackboxAlternativesPage() {
         ]} />
         <P>
           <strong className="text-white">Best for:</strong> Social deduction fans. Try the AI-hosted version
-          on <Link href="/games/spyfall" className="text-violet-400 hover:underline">{SITE_NAME}</Link> for
+          on <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline">{SITE_NAME}</TrackedGameLink> for
           unlimited locations.
         </P>
 
@@ -296,7 +297,7 @@ export default function JackboxAlternativesPage() {
         <P>
           <strong className="text-white">Best for:</strong> Trivia nights and educational events. For AI-generated
           trivia with no setup, try{" "}
-          <Link href="/games/trivia" className="text-violet-400 hover:underline">AI Trivia on {SITE_NAME}</Link>.
+          <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">AI Trivia on {SITE_NAME}</TrackedGameLink>.
         </P>
 
         <H2 id="among-us">7. Among Us</H2>
@@ -317,7 +318,7 @@ export default function JackboxAlternativesPage() {
         <P>
           <strong className="text-white">Best for:</strong> Groups willing to download an app. For a text-based
           Among Us experience, try{" "}
-          <Link href="/games/space-mutiny" className="text-violet-400 hover:underline">Space Mutiny</Link> on {SITE_NAME}.
+          <TrackedGameLink href="/games/space-mutiny" className="text-violet-400 hover:underline">Space Mutiny</TrackedGameLink> on {SITE_NAME}.
         </P>
 
         <H2 id="wavelength">8. Wavelength</H2>

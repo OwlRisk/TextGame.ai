@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -232,7 +233,7 @@ export default function ResistanceVsAvalonPage() {
           <li><strong className="text-white">You want dramatic endings.</strong> The Assassin&apos;s final guess can flip the entire game in seconds.</li>
         </ul>
         <P>
-          On <Link href="/games/avalon" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          On <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           you can play both — the AI Game Master handles team selection, voting, mission resolution, and
           role reveals. AI players fill empty seats so you can start with any group size.
         </P>
@@ -278,18 +279,18 @@ export default function ResistanceVsAvalonPage() {
             AI Game Master. AI players fill empty seats. No moderator needed. Start in 30 seconds.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link
+            <TrackedGameLink
               href="/games/avalon"
               className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
             >
               Play Avalon
-            </Link>
-            <Link
+            </TrackedGameLink>
+            <TrackedGameLink
               href="/games/resistance"
               className="inline-flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
             >
               Play The Resistance
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 

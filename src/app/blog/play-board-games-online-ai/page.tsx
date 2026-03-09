@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -217,9 +218,9 @@ export default function PlayBoardGamesOnlineAiPage() {
             <div>
               <strong className="text-white">Werewolf</strong> — Classic social deduction. Hidden
               werewolves, day/night phases, voting.{" "}
-              <Link href="/games/werewolf" className="text-violet-400 hover:underline">
+              <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">
                 Play Werewolf
-              </Link>
+              </TrackedGameLink>
             </div>
           </div>
           <div className="flex gap-4 items-start">
@@ -234,9 +235,9 @@ export default function PlayBoardGamesOnlineAiPage() {
             <div>
               <strong className="text-white">Avalon</strong> — The Resistance: Avalon. Hidden
               loyalty, missions, deduction.{" "}
-              <Link href="/games/avalon" className="text-violet-400 hover:underline">
+              <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">
                 Play Avalon
-              </Link>
+              </TrackedGameLink>
             </div>
           </div>
           <div className="flex gap-4 items-start">
@@ -244,9 +245,9 @@ export default function PlayBoardGamesOnlineAiPage() {
             <div>
               <strong className="text-white">Secret Hitler</strong> — Liberals vs Fascists. Secret
               roles, policy cards, betrayal.{" "}
-              <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">
+              <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">
                 Play Secret Hitler
-              </Link>
+              </TrackedGameLink>
             </div>
           </div>
           <div className="flex gap-4 items-start">
@@ -382,12 +383,12 @@ export default function PlayBoardGamesOnlineAiPage() {
             >
               Browse Games
             </Link>
-            <Link
+            <TrackedGameLink
               href="/games/werewolf"
               className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors"
             >
               Try Werewolf
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 

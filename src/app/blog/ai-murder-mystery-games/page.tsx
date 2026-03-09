@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
@@ -211,8 +212,8 @@ export default function AiMurderMysteryGamesPage() {
         <H2 id="textgame-template">The Detective Mystery on TextGame.ai</H2>
         <P>
           {SITE_NAME} offers a dedicated{" "}
-          <Link href="/games/detective-mystery" className="text-violet-400 hover:underline font-semibold">
-          Detective Mystery template</Link> that makes hosting effortless:
+          <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline font-semibold">
+          Detective Mystery template</TrackedGameLink> that makes hosting effortless:
         </P>
         <P>
           The AI generates a unique murder scenario every time — different victims, suspects, motives,

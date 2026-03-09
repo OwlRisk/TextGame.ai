@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -181,8 +182,8 @@ export default function PlayWerewolfOnlinePage() {
           <RoleCard emoji="🧙" name="Witch" team="Village" description="Has two one-use potions: one to save a victim, one to poison a player. Powerful but limited — use them wisely." />
         </div>
         <P>
-          On {SITE_NAME}, the <Link href="/games/werewolf" className="text-violet-400 hover:underline">AI Game Master assigns roles
-          secretly</Link> at the start — you don&apos;t need to deal cards or have a moderator.
+          On {SITE_NAME}, the <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">AI Game Master assigns roles
+          secretly</TrackedGameLink> at the start — you don&apos;t need to deal cards or have a moderator.
         </P>
 
         {/* ── Rules ────────────────────────────────────────────────── */}
@@ -229,7 +230,7 @@ export default function PlayWerewolfOnlinePage() {
         <H2 id="online">How to Play Werewolf Online with AI</H2>
         <P>
           Traditionally, Werewolf needs 6+ people in the same room with a human moderator. That&apos;s hard
-          to organize. With <Link href="/games/werewolf" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          to organize. With <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           you can play anytime:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -308,8 +309,8 @@ export default function PlayWerewolfOnlinePage() {
               They&apos;re extremely similar — both are social deduction games with hidden roles and day/night
               cycles. Werewolf uses a village theme while Mafia uses a city theme. The core mechanics
               are the same. We have both:{" "}
-              <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link> and{" "}
-              <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>.
+              <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink> and{" "}
+              <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>.
             </P>
           </div>
           <div>
@@ -327,12 +328,12 @@ export default function PlayWerewolfOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Game Master. AI players. No moderator needed. Start a game in 30 seconds.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/werewolf"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Werewolf Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

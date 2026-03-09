@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -221,7 +222,7 @@ export default function PlayClueOnlinePage() {
         <H2 id="online">Play Clue Online on {SITE_NAME}</H2>
         <P>
           Setting up a physical Clue game takes time — the board, tokens, cards, and notepad. On{" "}
-          <Link href="/games/clue" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          <TrackedGameLink href="/games/clue" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           the AI handles everything:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -272,8 +273,8 @@ export default function PlayClueOnlinePage() {
           <div>
             <H3>Is Clue free to play online?</H3>
             <P>
-              Yes! You can <Link href="/games/clue" className="text-violet-400 hover:underline">play Clue online for
-              free</Link> on {SITE_NAME} with an AI Game Master. No subscription needed.
+              Yes! You can <TrackedGameLink href="/games/clue" className="text-violet-400 hover:underline">play Clue online for
+              free</TrackedGameLink> on {SITE_NAME} with an AI Game Master. No subscription needed.
             </P>
           </div>
         </div>
@@ -284,12 +285,12 @@ export default function PlayClueOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Game Master. AI suspects. Full deduction gameplay. Solve the mystery in minutes.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/clue"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Clue Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

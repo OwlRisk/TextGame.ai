@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -204,7 +205,7 @@ export default function PlayCodenamesOnlinePage() {
         <H2 id="online">How to Play Codenames Online with AI</H2>
         <P>
           Codenames traditionally needs 4+ players split into teams. With{" "}
-          <Link href="/games/codenames" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           you can play anytime with AI filling any role:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -255,7 +256,7 @@ export default function PlayCodenamesOnlinePage() {
           <div>
             <H3>Is Codenames free to play online?</H3>
             <P>
-              Yes. You can <Link href="/games/codenames" className="text-violet-400 hover:underline">play Codenames online for free</Link> on {SITE_NAME} with
+              Yes. You can <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline">play Codenames online for free</TrackedGameLink> on {SITE_NAME} with
               AI teammates, AI opponents, or a mix of human and AI players.
             </P>
           </div>
@@ -267,12 +268,12 @@ export default function PlayCodenamesOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Spymaster. AI teammates. Fresh boards every game. Start playing in 30 seconds.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/codenames"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Codenames Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

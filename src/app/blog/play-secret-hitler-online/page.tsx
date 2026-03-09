@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -183,8 +184,8 @@ export default function PlaySecretHitlerOnlinePage() {
           </div>
         </div>
         <P>
-          On {SITE_NAME}, the <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">AI Game Master assigns roles
-          secretly</Link> at the start — you don&apos;t need to deal cards or have a moderator.
+          On {SITE_NAME}, the <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">AI Game Master assigns roles
+          secretly</TrackedGameLink> at the start — you don&apos;t need to deal cards or have a moderator.
         </P>
 
         {/* ── Rules ────────────────────────────────────────────────── */}
@@ -251,7 +252,7 @@ export default function PlaySecretHitlerOnlinePage() {
         <H2 id="online">Play Secret Hitler Online</H2>
         <P>
           Traditionally, Secret Hitler needs 5–10 people and a physical board. With{" "}
-          <Link href="/games/secret-hitler" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           you can play anytime:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -305,7 +306,7 @@ export default function PlaySecretHitlerOnlinePage() {
           <div>
             <H3>Is Secret Hitler free to play online?</H3>
             <P>
-              Yes. On {SITE_NAME}, you can <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">play Secret Hitler online for free</Link> with
+              Yes. On {SITE_NAME}, you can <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">play Secret Hitler online for free</TrackedGameLink> with
               an AI Game Master and AI players. No subscription required.
             </P>
           </div>
@@ -317,12 +318,12 @@ export default function PlaySecretHitlerOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Game Master. AI players. No moderator needed. Start a game in 30 seconds.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/secret-hitler"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Secret Hitler Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

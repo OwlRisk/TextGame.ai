@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
@@ -373,9 +374,9 @@ export default function CharacterAiAlternativesPage() {
           </Para>
           <Para>
             You can play classic social deduction games
-            like <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>,{" "}
-            <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>, or{" "}
-            <Link href="/games/undercover" className="text-violet-400 hover:underline">Who&apos;s the Spy</Link> — or
+            like <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
+            <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>, or{" "}
+            <TrackedGameLink href="/games/undercover" className="text-violet-400 hover:underline">Who&apos;s the Spy</TrackedGameLink> — or
             describe a completely original game and let the AI build the rules for you. Every AI character has
             its own personality and strategy, so they lie, bluff, defend themselves, and form alliances just
             like human players.
@@ -579,7 +580,7 @@ export default function CharacterAiAlternativesPage() {
           <div>
             <Heading3>Can I play Werewolf or Mafia with AI characters?</Heading3>
             <Para>
-              Yes — <Link href="/games/werewolf" className="text-violet-400 hover:underline">TextGame.ai</Link> has
+              Yes — <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">TextGame.ai</TrackedGameLink> has
               ready-to-play Werewolf, Mafia, and 20+ other templates with full game rules. An AI Game Master
               runs the phases and AI characters make strategic decisions. You can play solo or invite friends.
             </Para>

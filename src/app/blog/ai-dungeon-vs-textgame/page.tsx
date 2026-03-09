@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -197,13 +198,13 @@ export default function AiDungeonVsTextgamePage() {
 
         <P>
           You can play classic social deduction games like{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">
             Werewolf
-          </Link>{" "}
+          </TrackedGameLink>{" "}
           and{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">
             Mafia
-          </Link>
+          </TrackedGameLink>
           , or describe any custom game in plain English and the AI builds the rules for you. Each AI
           character has a unique personality and strategy — they bluff, accuse, defend, and form
           alliances. It&apos;s designed for <em>playing games with friends</em>, whether you have a full
@@ -382,9 +383,9 @@ export default function AiDungeonVsTextgamePage() {
               Not really. AI Dungeon has no game structure — no role assignment, voting, or phase
               management. You could try to prompt it to run Werewolf, but it won&apos;t enforce rules
               consistently. For social deduction games,{" "}
-              <Link href="/games/werewolf" className="text-violet-400 hover:underline">
+              <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">
                 TextGame.ai
-              </Link>{" "}
+              </TrackedGameLink>{" "}
               has dedicated templates with a full rules engine.
             </P>
           </div>

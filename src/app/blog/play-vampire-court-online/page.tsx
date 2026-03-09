@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -131,7 +132,7 @@ export default function PlayVampireCourtOnlinePage() {
           stake. The atmosphere is thick with suspicion, dramatic accusations, and last-second revelations.
         </P>
         <P>
-          The game blends the deduction of <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link> with
+          The game blends the deduction of <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink> with
           a unique <strong className="text-white">gothic narrative layer</strong> — an AI narrator describes the
           midnight feedings, the rising paranoia, and the court&apos;s descent into chaos. It&apos;s
           social deduction with atmosphere turned up to eleven.
@@ -224,7 +225,7 @@ export default function PlayVampireCourtOnlinePage() {
         <H2 id="online">Play Online with AI</H2>
         <P>
           Step into the gothic court on{" "}
-          <Link href="/games/vampire-court" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>.
+          <TrackedGameLink href="/games/vampire-court" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>.
           An AI narrator sets the mood with atmospheric descriptions while AI nobles fill empty seats
           with sharp, believable play.
         </P>
@@ -244,9 +245,9 @@ export default function PlayVampireCourtOnlinePage() {
         </div>
         <P>
           Love hidden-role games? Try{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link> for the
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink> for the
           classic or{" "}
-          <Link href="/games/mafia" className="text-violet-400 hover:underline">Mafia</Link>{" "}
+          <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>{" "}
           for the original social deduction experience.
         </P>
 
@@ -278,7 +279,7 @@ export default function PlayVampireCourtOnlinePage() {
           <div>
             <H3>Is Vampire Court free?</H3>
             <P>
-              Yes. <Link href="/games/vampire-court" className="text-violet-400 hover:underline">Play Vampire Court online for free</Link> on {SITE_NAME} — full
+              Yes. <TrackedGameLink href="/games/vampire-court" className="text-violet-400 hover:underline">Play Vampire Court online for free</TrackedGameLink> on {SITE_NAME} — full
               AI narration, AI opponents, no download required.
             </P>
           </div>
@@ -290,12 +291,12 @@ export default function PlayVampireCourtOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             Gothic narration. Hidden vampires. Stake your suspect or become the next victim.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/vampire-court"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Vampire Court Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

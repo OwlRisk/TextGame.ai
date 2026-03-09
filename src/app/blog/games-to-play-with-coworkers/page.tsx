@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -194,9 +195,9 @@ export default function GamesToPlayWithCoworkersPage() {
               debate, and the leaderboard adds just enough competition. Try themed rounds like
               &quot;company trivia&quot; or &quot;90s pop culture.&quot;
             </P>
-            <Link href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Trivia →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -231,9 +232,9 @@ export default function GamesToPlayWithCoworkersPage() {
               board. Strategic, collaborative, and workplace-appropriate. One round takes about
               10–15 minutes.
             </P>
-            <Link href="/games/codenames" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Codenames →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -243,9 +244,9 @@ export default function GamesToPlayWithCoworkersPage() {
               invisible product.&quot; Players respond in character. Breaks down hierarchy and
               gets people laughing together.
             </P>
-            <Link href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Improv Comedy →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -196,9 +197,9 @@ export default function GamesForLargeGroupsPage() {
               Game Master handles role assignment, night actions, and vote counting so nobody
               has to moderate.
             </P>
-            <Link href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Werewolf →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -208,9 +209,9 @@ export default function GamesForLargeGroupsPage() {
               for newcomers, while still delivering the core experience — lies, accusations, and
               dramatic reveals. Scales beautifully to 15–20 players.
             </P>
-            <Link href="/games/mafia" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Mafia →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -220,9 +221,9 @@ export default function GamesForLargeGroupsPage() {
               missions while spies sabotage from within. Fast rounds, constant suspicion, and
               nobody sits out. Perfect for groups that hate being eliminated early.
             </P>
-            <Link href="/games/resistance" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/resistance" className="text-violet-400 hover:underline text-sm font-semibold">
               Play The Resistance →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -232,9 +233,9 @@ export default function GamesForLargeGroupsPage() {
               President, the other has the Bomber. The biggest social deduction game you can
               play — and {SITE_NAME}&apos;s AI version handles all the logistics.
             </P>
-            <Link href="/games/two-rooms" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/two-rooms" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Two Rooms →
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 

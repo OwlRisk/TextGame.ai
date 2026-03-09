@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -228,9 +229,9 @@ export default function AIGamesForStudentsPage() {
               The AI Game Master assigns roles, runs voting phases, and narrates eliminations — so
               the teacher can participate instead of moderating.
             </P>
-            <Link href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Werewolf →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -263,9 +264,9 @@ export default function AIGamesForStudentsPage() {
               The AI generates unique puzzles each session, so students can&apos;t simply share
               answers between classes.
             </P>
-            <Link href="/games/escape-room" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Escape Room →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -281,9 +282,9 @@ export default function AIGamesForStudentsPage() {
               These formats are ideal for ESL/EFL classes, speech courses, and any setting where
               verbal fluency matters.
             </P>
-            <Link href="/games/debate" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/debate" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Debate →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -299,9 +300,9 @@ export default function AIGamesForStudentsPage() {
               Unlike static quiz tools, AI trivia never repeats questions and accepts flexible
               answer formats, so students focus on understanding rather than exact phrasing.
             </P>
-            <Link href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Trivia →
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 
@@ -395,9 +396,9 @@ export default function AIGamesForStudentsPage() {
             game templates
           </Link>{" "}
           — pre-built games you can launch with one click. From{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link> to{" "}
-          <Link href="/games/trivia" className="text-violet-400 hover:underline">Trivia</Link> to{" "}
-          <Link href="/games/escape-room" className="text-violet-400 hover:underline">Escape Rooms</Link>,
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink> to{" "}
+          <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">Trivia</TrackedGameLink> to{" "}
+          <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline">Escape Rooms</TrackedGameLink>,
           there&apos;s something for every subject and age group.
         </P>
 
@@ -440,7 +441,7 @@ export default function AIGamesForStudentsPage() {
           Most games take 15–30 minutes, making them easy to fit into a single class period. You can
           run a quick trivia round as a warm-up, use an escape room as a review activity, or
           dedicate a full session to a{" "}
-          <Link href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</Link>{" "}
+          <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>{" "}
           game that teaches argumentation and logic.
         </P>
 
@@ -460,12 +461,12 @@ export default function AIGamesForStudentsPage() {
             >
               Browse Games
             </Link>
-            <Link
+            <TrackedGameLink
               href="/games/trivia"
               className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors"
             >
               Try Trivia
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 

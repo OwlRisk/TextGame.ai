@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -214,7 +215,7 @@ export default function PlaySpyfallOnlinePage() {
         <H2 id="online">How to Play Spyfall Online with AI</H2>
         <P>
           Spyfall is best with a group, but finding 3–8 players isn&apos;t always easy. With{" "}
-          <Link href="/games/spyfall" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           you can play anytime:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -266,7 +267,7 @@ export default function PlaySpyfallOnlinePage() {
           <div>
             <H3>Is Spyfall free to play online?</H3>
             <P>
-              Yes. You can <Link href="/games/spyfall" className="text-violet-400 hover:underline">play Spyfall online for free</Link> on {SITE_NAME} with
+              Yes. You can <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline">play Spyfall online for free</TrackedGameLink> on {SITE_NAME} with
               an AI host and AI players. No subscription, no app install required.
             </P>
           </div>
@@ -278,12 +279,12 @@ export default function PlaySpyfallOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI host. AI players. Dozens of locations. Find the Spy in 30 seconds.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/spyfall"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Spyfall Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

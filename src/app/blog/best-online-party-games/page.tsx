@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -99,7 +100,7 @@ const SOCIAL_DEDUCTION: GameEntry[] = [
     players: "6–12",
     time: "30–45 min",
     description: "The classic. Werewolves hide among villagers. By day, debate and vote. By night, the wolves hunt. Special roles like Seer and Doctor add strategic depth.",
-    playOnline: <Link href="/games/werewolf" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI Game Master and AI players</Link>,
+    playOnline: <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI Game Master and AI players</TrackedGameLink>,
   },
   {
     emoji: "🎭",
@@ -107,7 +108,7 @@ const SOCIAL_DEDUCTION: GameEntry[] = [
     players: "6–15",
     time: "45–60 min",
     description: "The game that started social deduction. The Mafia eliminates townspeople at night. The town tries to identify and vote out the Mafia during the day.",
-    playOnline: <Link href="/games/mafia" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI host</Link>,
+    playOnline: <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI host</TrackedGameLink>,
   },
   {
     emoji: "🎩",
@@ -115,7 +116,7 @@ const SOCIAL_DEDUCTION: GameEntry[] = [
     players: "5–10",
     time: "30–45 min",
     description: "Players are secretly Liberals or Fascists. The government enacts policies — but Fascists try to pass their agenda or elect Hitler as Chancellor. Liberals must stop them.",
-    playOnline: <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">Free on {SITE_NAME}</Link>,
+    playOnline: <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">Free on {SITE_NAME}</TrackedGameLink>,
   },
   {
     emoji: "⚔️",
@@ -123,7 +124,7 @@ const SOCIAL_DEDUCTION: GameEntry[] = [
     players: "5–10",
     time: "30–40 min",
     description: "Players are loyal servants of Arthur or minions of Mordred. Teams go on quests — but the evil players can secretly sabotage missions. Merlin knows who's evil but must stay hidden.",
-    playOnline: <Link href="/games/avalon" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI players</Link>,
+    playOnline: <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI players</TrackedGameLink>,
   },
   {
     emoji: "🕵️",
@@ -131,7 +132,7 @@ const SOCIAL_DEDUCTION: GameEntry[] = [
     players: "4–10",
     time: "15–20 min",
     description: "Everyone receives a secret word — except the spy, who gets a different (but similar) word. Go around describing your word without being too specific. Figure out who has the odd word out.",
-    playOnline: <Link href="/games/undercover" className="text-violet-400 hover:underline">Free on {SITE_NAME}</Link>,
+    playOnline: <TrackedGameLink href="/games/undercover" className="text-violet-400 hover:underline">Free on {SITE_NAME}</TrackedGameLink>,
   },
 ];
 
@@ -142,7 +143,7 @@ const WORD_TRIVIA: GameEntry[] = [
     players: "4–12",
     time: "15–25 min",
     description: "Two teams compete to contact all their secret agents using one-word clues. The Spymaster knows which words belong to their team — and must give clever clues without accidentally guiding opponents to the Assassin.",
-    playOnline: <Link href="/games/codenames" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI host</Link>,
+    playOnline: <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI host</TrackedGameLink>,
   },
   {
     emoji: "💡",
@@ -150,7 +151,7 @@ const WORD_TRIVIA: GameEntry[] = [
     players: "2–10",
     time: "20–30 min",
     description: "Go head-to-head on history, science, pop culture, sports, and more. The AI host generates questions on any topic you choose, keeps score in real time, and adjusts difficulty to keep every round exciting.",
-    playOnline: <Link href="/games/trivia" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI-generated questions</Link>,
+    playOnline: <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">Free on {SITE_NAME} with AI-generated questions</TrackedGameLink>,
   },
   {
     emoji: "📝",
@@ -185,7 +186,7 @@ const STRATEGY_BLUFFING: GameEntry[] = [
     players: "3–8",
     time: "10–15 min",
     description: "Everyone is at the same location — except the spy, who doesn't know where they are. Ask each other questions to find the spy, but don't reveal the location!",
-    playOnline: <Link href="/games/spyfall" className="text-violet-400 hover:underline">Free on {SITE_NAME}</Link>,
+    playOnline: <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline">Free on {SITE_NAME}</TrackedGameLink>,
   },
   {
     emoji: "💌",
@@ -204,7 +205,7 @@ const CREATIVE_STORYTELLING: GameEntry[] = [
     players: "4–8",
     time: "30–60 min",
     description: "One player is the killer. Everyone has alibis, motives, and secrets. Gather clues, question suspects, and piece together who committed the crime.",
-    playOnline: <Link href="/games/detective-mystery" className="text-violet-400 hover:underline">AI-hosted on {SITE_NAME} with unique cases</Link>,
+    playOnline: <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline">AI-hosted on {SITE_NAME} with unique cases</TrackedGameLink>,
   },
   {
     emoji: "📖",
@@ -212,7 +213,7 @@ const CREATIVE_STORYTELLING: GameEntry[] = [
     players: "3–8",
     time: "30–50 min",
     description: "Players collaborate to build an evolving story — each person adding a sentence or two. The AI host suggests themes, introduces unexpected plot twists, and keeps the adventure moving.",
-    playOnline: <Link href="/games/storyteller" className="text-violet-400 hover:underline">Epic Storyteller on {SITE_NAME}</Link>,
+    playOnline: <TrackedGameLink href="/games/storyteller" className="text-violet-400 hover:underline">Epic Storyteller on {SITE_NAME}</TrackedGameLink>,
   },
   {
     emoji: "🕵️‍♂️",

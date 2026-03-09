@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -222,8 +223,8 @@ export default function CharacterAiTextAdventurePage() {
         <Para>
           The multiplayer angle is unique: share a link and friends join your game instantly. You can have any
           mix of human and AI players in games like{" "}
-          <Link href="/games/detective-mystery" className="text-violet-400 hover:underline">Detective Mystery</Link>,{" "}
-          <Link href="/games/escape-room" className="text-violet-400 hover:underline">Escape Room</Link>,
+          <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline">Detective Mystery</TrackedGameLink>,{" "}
+          <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline">Escape Room</TrackedGameLink>,
           social deduction, RPG quests, and more. With 50+ game templates and the ability to create custom
           adventures by describing your idea in plain English, it bridges the gap between interactive fiction and
           tabletop gaming.
@@ -271,8 +272,8 @@ export default function CharacterAiTextAdventurePage() {
           </li>
           <li>
             <strong className="text-white">50+ game templates</strong> — from{" "}
-            <Link href="/games/detective-mystery" className="text-violet-400 hover:underline">detective mysteries</Link>{" "}
-            and <Link href="/games/escape-room" className="text-violet-400 hover:underline">escape rooms</Link> to
+            <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline">detective mysteries</TrackedGameLink>{" "}
+            and <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline">escape rooms</TrackedGameLink> to
             social deduction and RPG quests, there&apos;s a template for every genre.
           </li>
           <li>

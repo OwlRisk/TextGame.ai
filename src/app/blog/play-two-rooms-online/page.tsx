@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -208,7 +209,7 @@ export default function PlayTwoRoomsOnlinePage() {
         <H2 id="online">Play Online with AI</H2>
         <P>
           Gathering 10+ people is hard. With{" "}
-          <Link href="/games/two-rooms" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          <TrackedGameLink href="/games/two-rooms" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           you can play Two Rooms and a Boom anytime — even with a small group:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -231,8 +232,8 @@ export default function PlayTwoRoomsOnlinePage() {
         </div>
         <P>
           Love social deduction? Try{" "}
-          <Link href="/games/resistance" className="text-violet-400 hover:underline">The Resistance</Link> or{" "}
-          <Link href="/games/secret-hitler" className="text-violet-400 hover:underline">Secret Hitler</Link>{" "}
+          <TrackedGameLink href="/games/resistance" className="text-violet-400 hover:underline">The Resistance</TrackedGameLink> or{" "}
+          <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">Secret Hitler</TrackedGameLink>{" "}
           for smaller groups with the same tense bluffing energy.
         </P>
 
@@ -266,7 +267,7 @@ export default function PlayTwoRoomsOnlinePage() {
           <div>
             <H3>Can I play Two Rooms and a Boom for free?</H3>
             <P>
-              Yes. <Link href="/games/two-rooms" className="text-violet-400 hover:underline">Play Two Rooms and a Boom online for free</Link> on {SITE_NAME} with
+              Yes. <TrackedGameLink href="/games/two-rooms" className="text-violet-400 hover:underline">Play Two Rooms and a Boom online for free</TrackedGameLink> on {SITE_NAME} with
               an AI host and AI players. No subscription or app install required.
             </P>
           </div>
@@ -278,12 +279,12 @@ export default function PlayTwoRoomsOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI host. AI players. Negotiate, bluff, and boom — start a game in 30 seconds.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/two-rooms"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Two Rooms and a Boom Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

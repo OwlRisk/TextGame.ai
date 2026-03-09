@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -193,9 +194,9 @@ export default function GamesToPlayOverVideoCallPage() {
               debates and votes. The AI assigns roles, runs night phases, and narrates kills —
               so nobody has to sit out as moderator.
             </P>
-            <Link href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Werewolf →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -204,9 +205,9 @@ export default function GamesToPlayOverVideoCallPage() {
               The OG social deduction game. Simpler roles than Werewolf, making it ideal for
               groups with first-timers. The AI handles accusations, voting, and reveals.
             </P>
-            <Link href="/games/mafia" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Mafia →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -215,9 +216,9 @@ export default function GamesToPlayOverVideoCallPage() {
               Everyone gets a secret location except the spy. Ask each other questions to find
               the spy — but don&apos;t give the location away. Quick rounds, tons of laughs.
             </P>
-            <Link href="/games/spyfall" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Spyfall →
-            </Link>
+            </TrackedGameLink>
           </div>
         </div>
 
@@ -232,9 +233,9 @@ export default function GamesToPlayOverVideoCallPage() {
               to help their team guess the right words. Brilliant over video call because
               discussion happens naturally.
             </P>
-            <Link href="/games/codenames" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Codenames →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -257,9 +258,9 @@ export default function GamesToPlayOverVideoCallPage() {
               The AI generates fresh questions every round — no repeated question packs. Pick a
               theme or go random. Leaderboards keep it competitive without being stressful.
             </P>
-            <Link href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
               Play AI Trivia →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -282,9 +283,9 @@ export default function GamesToPlayOverVideoCallPage() {
               Is It Anyway?&quot; — on your couch. No drawing skills required, just willingness
               to be silly.
             </P>
-            <Link href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Improv Comedy →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">

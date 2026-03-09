@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -232,7 +233,7 @@ export default function PlaySpaceMutinyOnlinePage() {
           <div>
             <H3>Is Space Mutiny free to play?</H3>
             <P>
-              Yes. <Link href="/games/space-mutiny" className="text-violet-400 hover:underline">Play Space Mutiny online for free</Link> on {SITE_NAME} with
+              Yes. <TrackedGameLink href="/games/space-mutiny" className="text-violet-400 hover:underline">Play Space Mutiny online for free</TrackedGameLink> on {SITE_NAME} with
               an AI host and AI crew members. No download, no subscription.
             </P>
           </div>
@@ -267,17 +268,17 @@ export default function PlaySpaceMutinyOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             One traitor. Failing systems. Can you find the Saboteur before the ship is lost?
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/space-mutiny"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Space Mutiny Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <P>
           Looking for more sci-fi deduction? Check out{" "}
-          <Link href="/games/resistance" className="text-violet-400 hover:underline">The Resistance</Link> for
+          <TrackedGameLink href="/games/resistance" className="text-violet-400 hover:underline">The Resistance</TrackedGameLink> for
           mission-based traitor hunting, or browse our{" "}
           <Link href="/blog/among-us-alternatives" className="text-violet-400 hover:underline">Among Us alternatives</Link> guide.
         </P>

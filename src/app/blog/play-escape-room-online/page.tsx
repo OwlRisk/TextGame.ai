@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -235,7 +236,7 @@ export default function PlayEscapeRoomOnlinePage() {
         {/* ── Play on TextGame.ai ───────────────────────────────────── */}
         <H2 id="online">Play on {SITE_NAME}</H2>
         <P>
-          On <Link href="/games/escape-room" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          On <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           escape rooms are powered by a dedicated AI Game Master that creates immersive,
           puzzle-packed experiences:
         </P>
@@ -285,8 +286,8 @@ export default function PlayEscapeRoomOnlinePage() {
           <div>
             <H3>Are online escape rooms free?</H3>
             <P>
-              Yes! On {SITE_NAME}, you can <Link href="/games/escape-room" className="text-violet-400 hover:underline">play
-              escape rooms for free</Link> with an AI Game Master. No subscription required.
+              Yes! On {SITE_NAME}, you can <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline">play
+              escape rooms for free</TrackedGameLink> with an AI Game Master. No subscription required.
             </P>
           </div>
         </div>
@@ -297,12 +298,12 @@ export default function PlayEscapeRoomOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Game Master. Procedural puzzles. Multiple themes. Escape in minutes — if you can.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/escape-room"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Escape Room Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

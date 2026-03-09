@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 import { ChatPreviewWidget } from "@/app/components/blog/ChatPreviewWidget";
@@ -224,7 +225,7 @@ export default function PlayUndercoverOnlinePage() {
         <H2 id="online">Play Undercover Online on {SITE_NAME}</H2>
         <P>
           Undercover is perfect for parties, but gathering enough people can be tricky. On{" "}
-          <Link href="/games/undercover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link>,
+          <TrackedGameLink href="/games/undercover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</TrackedGameLink>,
           the AI makes it effortless:
         </P>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-3 mb-6 text-sm">
@@ -274,8 +275,8 @@ export default function PlayUndercoverOnlinePage() {
           <div>
             <H3>Is Undercover free to play online?</H3>
             <P>
-              Yes! <Link href="/games/undercover" className="text-violet-400 hover:underline">Play Undercover for
-              free</Link> on {SITE_NAME} with AI players and an AI Game Master.
+              Yes! <TrackedGameLink href="/games/undercover" className="text-violet-400 hover:underline">Play Undercover for
+              free</TrackedGameLink> on {SITE_NAME} with AI players and an AI Game Master.
             </P>
           </div>
         </div>
@@ -286,12 +287,12 @@ export default function PlayUndercoverOnlinePage() {
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
             AI Game Master. AI players. Hundreds of word pairs. Blend in or get caught.
           </p>
-          <Link
+          <TrackedGameLink
             href="/games/undercover"
             className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             Play Undercover Free
-          </Link>
+          </TrackedGameLink>
         </div>
 
         <div className="border-t border-zinc-800 pt-8 text-center">

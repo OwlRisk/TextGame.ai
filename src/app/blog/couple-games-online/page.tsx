@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
@@ -208,9 +209,9 @@ export default function CoupleGamesOnlinePage() {
               history, food) or go random for surprises. Friendly competition with a leaderboard
               that tracks your all-time scores. Perfect for couples who like a little rivalry.
             </P>
-            <Link href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Trivia →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -221,9 +222,9 @@ export default function CoupleGamesOnlinePage() {
               It&apos;s like co-authoring a novel in real time, with plot twists you didn&apos;t
               see coming.
             </P>
-            <Link href="/games/storyteller" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/storyteller" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Storytelling →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
@@ -243,9 +244,9 @@ export default function CoupleGamesOnlinePage() {
               eat.&quot; Low pressure, high laughs — especially fun when you know each other
               well enough to play off shared humor.
             </P>
-            <Link href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
+            <TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline text-sm font-semibold">
               Play Improv Comedy →
-            </Link>
+            </TrackedGameLink>
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5">
