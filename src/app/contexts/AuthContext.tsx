@@ -13,6 +13,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signInWithGoogle: (returnUrl?: string) => Promise<void>;
+  signInWithFacebook: (returnUrl?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -53,8 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  // When true, onAuthStateChange must NOT update React state because we are
+  // about to do a full page reload. Updating state triggers re-renders with
+  // user=null which crashes downstream components before the reload fires.
+  const signingOutRef = React.useRef(false);
 
   const doSignOut = useCallback(async () => {
+    signingOutRef.current = true;
     setAuthCookie(null);
     try {
       await supabase.auth.signOut();
@@ -200,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (signingOutRef.current) return;
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
       if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
@@ -271,7 +278,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithFacebook = async (returnUrl?: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          ...(returnUrl && { state: returnUrl }),
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error signing in with Facebook:', error);
+      throw error;
+    }
+  };
+
   const signOut = async () => {
+    signingOutRef.current = true;
     setAuthCookie(null);
     // Do NOT clear React state (setUser/setSession) here — doing so
     // triggers ProtectedRoute's redirect to /signin before the hard
@@ -291,7 +315,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signInWithFacebook, signOut }}>
       {children}
     </AuthContext.Provider>
   );

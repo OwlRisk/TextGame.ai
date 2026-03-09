@@ -13,7 +13,7 @@ import { trackEvent } from "@/lib/analytics";
 export default function HomeClient({ heroHeadline }: { heroHeadline?: React.ReactNode }) {
   const router = useRouter();
   const { selectGame, games, updateGame } = useGameContext();
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithFacebook } = useAuth();
 
   // Render the landing page immediately so the hero h2 is in the SSR HTML
   // (critical for LCP). Logged-in users are redirected after hydration.
@@ -47,6 +47,15 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     trackEvent("cta_click", { label: "sign_in", source: "landing" });
     try {
       await signInWithGoogle("/create");
+    } catch {
+      toast.error("Sign-in failed. Please try again.");
+    }
+  };
+
+  const handleSignInFacebook = async () => {
+    trackEvent("cta_click", { label: "sign_in_facebook", source: "landing" });
+    try {
+      await signInWithFacebook("/create");
     } catch {
       toast.error("Sign-in failed. Please try again.");
     }
