@@ -10,6 +10,23 @@ import { parseInlineFormatting } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/app/components/player-panel";
 
+// ─── Cursor injection ─────────────────────────────────────────────────────
+/** Append a trailing node (blinking cursor) inside the last line of formatted content. */
+function withCursor(content: React.ReactNode, cursor: React.ReactNode): React.ReactNode {
+  if (!content || !React.isValidElement(content)) return <>{content}{cursor}</>;
+  const wrapper = content as React.ReactElement<{ children?: React.ReactNode }>;
+  const lines = React.Children.toArray(wrapper.props.children);
+  if (lines.length === 0) return React.cloneElement(wrapper, {}, cursor);
+  const lastLine = lines[lines.length - 1];
+  if (!React.isValidElement(lastLine)) {
+    return React.cloneElement(wrapper, {}, ...lines, cursor);
+  }
+  const lastEl = lastLine as React.ReactElement<{ children?: React.ReactNode }>;
+  const kids = React.Children.toArray(lastEl.props.children);
+  lines[lines.length - 1] = React.cloneElement(lastEl, {}, ...kids, cursor);
+  return React.cloneElement(wrapper, {}, ...lines);
+}
+
 // ─── Formatting helpers (LRU-cached) ──────────────────────────────────────
 const FORMAT_CACHE = new Map<string, React.JSX.Element>();
 const FORMAT_CACHE_MAX = 200;
@@ -210,25 +227,28 @@ export function ChatMessage({
   ) : null;
   const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
 
-  const contentBlock = (
-    <>
-      {message.imageUrl && (
+  const cursor = isShowingCursor
+    ? <span key="streaming-cursor" className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 align-text-bottom animate-pulse" />
+    : null;
+
+  const contentBlock = (() => {
+    let formatted: React.ReactNode = null;
+    if (syncedContent.trim()) formatted = formatMessage(stripEmotionTags(syncedContent));
+    else if (rawContent.trim()) formatted = formatMessage(stripEmotionTags(rawContent));
+    else if (!message.isAI && !message.imageUrl && !message.isStreaming) formatted = <span className="italic text-zinc-500">(No content)</span>;
+
+    const body = cursor ? withCursor(formatted, cursor) : formatted;
+
+    return message.imageUrl ? (
+      <>
         <div className="my-2 rounded-lg overflow-hidden max-w-[280px] border border-white/10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={message.imageUrl} alt="" className="w-full h-auto object-cover" />
         </div>
-      )}
-      {(() => {
-        if (syncedContent.trim()) return formatMessage(stripEmotionTags(syncedContent));
-        if (rawContent.trim()) return formatMessage(stripEmotionTags(rawContent));
-        if (!message.isAI && !message.imageUrl && !message.isStreaming) return <span className="italic text-zinc-500">(No content)</span>;
-        return null;
-      })()}
-      {isShowingCursor && (
-        <span className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 animate-pulse" />
-      )}
-    </>
-  );
+        {body}
+      </>
+    ) : body;
+  })();
 
   const hostStyle = isHost
     ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5"
