@@ -85,7 +85,7 @@ export function PlayerPanel({
         <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Players — {players.length}</h3>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-3 space-y-3">
           {/* Game Master Section */}
           {players.filter(p => p.isGameMaster).map((player) => (

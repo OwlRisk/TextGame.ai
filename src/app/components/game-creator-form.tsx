@@ -189,7 +189,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="max-w-5xl mx-auto py-12 px-8">
           {/* Step 1: Game Type */}
           {currentStep === "game-type" && (

@@ -422,7 +422,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
         </DialogHeader>
 
         {/* Chat Messages */}
-        <ScrollArea className="flex-1 px-8">
+        <ScrollArea className="flex-1 min-h-0 px-8">
           <div className="py-6 space-y-8 max-w-5xl mx-auto">
             {/* Host Selector in Confirmation State */}
             {conversationState === "confirmation" && showHostSelector && (

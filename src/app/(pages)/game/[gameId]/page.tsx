@@ -1525,7 +1525,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           </div>
         )}
         {selectedChannelId === RULES_CHANNEL_ID ? (
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="max-w-2xl p-6">
               <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-zinc-700/50">
                 <BookOpen className="h-5 w-5 text-violet-400" />
@@ -1565,7 +1565,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         ) : (() => {
           const activeSection = sections.find((s) => s.id === selectedChannelId);
           if (activeSection) return (
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 min-h-0">
               <div className="max-w-2xl p-6">
                 <h2 className="text-base font-semibold text-zinc-200 mb-4">{activeSection.name}</h2>
                 {activeSection.content.trim() ? (
