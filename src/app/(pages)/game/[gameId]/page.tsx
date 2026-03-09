@@ -48,6 +48,7 @@ import { useQuickReplies } from "@/hooks/useQuickReplies";
 import {
   getConversationMode,
   hostPace,
+  dynamicPace,
 } from "@/lib/game-pace";
 import { buildHostSystemPrompt } from "@/lib/host-prompt-builder";
 import {
@@ -1122,14 +1123,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         ? (() => { setCurrentSpeakerId(userId); return true; })()
         : await runSpeakerQueueFn(sqCtx, currentQueue);
 
+      let lastBeatContentLen = hostContent?.length ?? 0;
       for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
-        await hostPace();
+        await dynamicPace(lastBeatContentLen);
         const advanced = await callHostStream(
           "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]",
           channelId
         );
         if (!advanced.hostContent && advanced.speakerQueue.length === 0) break;
         if (advanced.hostContent) {
+          lastBeatContentLen = advanced.hostContent.length;
           recentForNextRef.current = [
             ...recentForNextRef.current,
             { senderName: gmName, content: advanced.hostContent },

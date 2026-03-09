@@ -53,14 +53,16 @@ export function PreviewAvatar({ name, isHost }: {
   if (isHost) {
     const avatarSrc = src || GAME_MASTER_AVATAR;
     return (
-      <SafeAvatar
-        src={avatarSrc}
-        fallback={GAME_MASTER_AVATAR}
-        alt={name}
-        width={36}
-        height={36}
-        className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 object-cover"
-      />
+      <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
+        <SafeAvatar
+          src={avatarSrc}
+          fallback={GAME_MASTER_AVATAR}
+          alt={name}
+          width={36}
+          height={36}
+          className="w-full h-full object-cover"
+        />
+      </div>
     );
   }
 
