@@ -41,12 +41,13 @@ export function SafeAvatar({
 }
 
 /** Shared avatar renderer for landing page preview messages */
-export function PreviewAvatar({ name, isHost }: {
+export function PreviewAvatar({ name, isHost, priority }: {
   name: string;
   isHost?: boolean;
   role?: string;
   personality?: string;
   gender?: string;
+  priority?: boolean;
 }) {
   const src = LANDING_AVATAR_MAP[name];
 
@@ -61,6 +62,7 @@ export function PreviewAvatar({ name, isHost }: {
           width={36}
           height={36}
           className="w-full h-full object-cover"
+          priority={priority}
         />
       </div>
     );
@@ -77,6 +79,7 @@ export function PreviewAvatar({ name, isHost }: {
           width={36}
           height={36}
           className="w-full h-full object-cover"
+          priority={priority}
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-white">
