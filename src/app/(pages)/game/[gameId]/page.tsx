@@ -1298,10 +1298,26 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   });
 
   const copyToClipboard = async (text: string): Promise<boolean> => {
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return false;
+    // Try modern Clipboard API first
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // fall through to execCommand fallback
+      }
+    }
+    // execCommand fallback (works in most mobile/older browsers)
     try {
-      await navigator.clipboard.writeText(text);
-      return true;
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
     } catch {
       return false;
     }
@@ -1329,7 +1345,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       const data = (await res.json()) as { inviteUrl: string };
       const ok = await copyToClipboard(data.inviteUrl);
       trackEvent("invite_shared", { template: currentGame?.config?.template || "custom" });
-      toast.success(ok ? "Invite link copied! Share it with players." : `Invite: ${data.inviteUrl}`);
+      if (ok) {
+        toast.success("Invite link copied! Share it with players.");
+      } else {
+        // Clipboard unavailable — prompt user to copy manually
+        toast.info(data.inviteUrl, {
+          description: "Tap and hold to copy this link",
+          duration: 10000,
+        });
+      }
       setInviteCopied(true);
       setTimeout(() => setInviteCopied(false), 2500);
     } catch (e) {
