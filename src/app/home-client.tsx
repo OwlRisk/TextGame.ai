@@ -74,7 +74,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       {!hidden && (
         <LandingPage
           onSignIn={handleSignIn}
-          onSignInFacebook={handleSignInFacebook}
+          // onSignInFacebook={handleSignInFacebook} // hidden: pending Meta business verification
           onCreateGame={handleCreateGame}
           onExploreGames={handleExploreGames}
           heroHeadline={heroHeadline}
