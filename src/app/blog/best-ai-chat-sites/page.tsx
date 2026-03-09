@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
 
 const TITLE = "10 Best AI Chat Sites for Roleplay & Games (2026)";
 const DESCRIPTION =
@@ -211,6 +212,13 @@ export default function BestAiChatSitesPage() {
           <strong className="text-red-400">Cons:</strong> Text-based (no graphics), newer community. <strong className="text-white">Pricing:</strong> Free starting credits; subscription for heavier use.
         </P>
 
+        <div className="my-8 p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl text-center">
+          <p className="text-sm text-zinc-300 mb-3">Want AI chat with multiplayer and an AI Game Master?</p>
+          <BlogCTAButton href="/discover" source="best-ai-chat-sites-mid" variant="primary">
+            Try TextGame.ai Free
+          </BlogCTAButton>
+        </div>
+
         <H3>4. Talkie AI — Mobile-First AI Companions</H3>
         <P>
           Talkie AI brings AI characters to your phone with a polished mobile experience. It includes voice calls with AI characters, making conversations feel more personal. Great for users who want a quick AI chat on the go.
@@ -323,12 +331,12 @@ export default function BestAiChatSitesPage() {
             TextGame.ai turns AI chat into multiplayer games with an AI Game Master. Pick a template or create your own rules — free to start.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/discover" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+            <BlogCTAButton href="/discover" source="best-ai-chat-sites">
               Explore Games
-            </Link>
-            <Link href="/signin" className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors">
-              Start Free
-            </Link>
+            </BlogCTAButton>
+            <BlogCTAButton href="/create?preset=werewolf-classic" source="best-ai-chat-sites-werewolf" variant="secondary">
+              Try Werewolf Free
+            </BlogCTAButton>
           </div>
         </div>
 

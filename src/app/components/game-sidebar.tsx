@@ -33,6 +33,7 @@ import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 interface Game {
   id: string;
@@ -216,7 +217,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   size="icon"
                   className="!h-12 !w-12 bg-green-600 hover:!bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-200"
                   aria-label="Create Game"
-                  onClick={onCreateGame}
+                  onClick={() => { trackEvent("cta_click", { label: "create_game", source: "sidebar" }); onCreateGame(); }}
                 >
                   <Plus className="h-7 w-7 text-white" aria-hidden="true" />
                 </Button>
@@ -430,7 +431,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                   size="icon"
                   aria-label="Sign In"
                   className="!h-12 !w-12 !p-0 rounded-full bg-zinc-800 hover:!bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30"
-                  onClick={() => router.push('/signin')}
+                  onClick={() => { trackEvent("cta_click", { label: "sign_in", source: "sidebar" }); router.push('/signin'); }}
                 >
                   <LogIn className="h-6 w-6 text-white" aria-hidden="true" />
                 </Button>

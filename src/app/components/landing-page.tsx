@@ -28,6 +28,7 @@ const FAQSection = dynamic(() => import("@/app/components/landing/FAQSection").t
 interface LandingPageProps {
   onSignIn: () => void;
   onCreateGame?: (presetId?: string) => void;
+  onExploreGames?: () => void;
   heroHeadline?: React.ReactNode;
 }
 
@@ -75,7 +76,7 @@ function MessageList({
 }
 
 
-export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPageProps) {
+export function LandingPage({ onSignIn, onCreateGame, onExploreGames, heroHeadline }: LandingPageProps) {
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [visibleCount, setVisibleCount] = useState(1);
@@ -200,17 +201,29 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
 
             {/* Browse/Discover Button */}
             <div>
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 !rounded-[11px] transition-all"
-              >
-                <Link href="/discover">
+              {onExploreGames ? (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={onExploreGames}
+                  className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 !rounded-[11px] transition-all"
+                >
                   <Compass className="h-5 w-5 mr-2" />
                   Explore Games
-                </Link>
-              </Button>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 !rounded-[11px] transition-all"
+                >
+                  <Link href="/discover">
+                    <Compass className="h-5 w-5 mr-2" />
+                    Explore Games
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
 

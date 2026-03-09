@@ -29,6 +29,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   }, [loading, user, router, selectGame]);
 
   const handleCreateGame = (presetId?: string) => {
+    trackEvent("cta_click", { label: presetId ? `play_${presetId}` : "create_game", source: "landing" });
     const target = presetId ? `/create?preset=${presetId}` : "/create";
     if (!user && !loading) {
       router.push(`/signin?returnUrl=${encodeURIComponent(target)}`);
@@ -65,6 +66,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
         <LandingPage
           onSignIn={handleSignIn}
           onCreateGame={handleCreateGame}
+          onExploreGames={handleExploreGames}
           heroHeadline={heroHeadline}
         />
       )}

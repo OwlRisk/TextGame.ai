@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
+import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
+import { BlogCTAButton } from "@/app/components/blog/BlogCTAButton";
 
 const TITLE = "10 Best Social Deduction Games You Can Play Online in 2026";
 const DESCRIPTION =
@@ -100,7 +102,7 @@ function GameCard({ game }: { game: GameEntry }) {
       <p className="text-sm text-zinc-300">
         <strong className="text-white">Play online:</strong>{" "}
         {game.link ? (
-          <Link href={game.link} className="text-violet-400 hover:underline">{game.playOnline}</Link>
+          <TrackedGameLink href={game.link} className="text-violet-400 hover:underline">{game.playOnline}</TrackedGameLink>
         ) : (
           game.playOnline
         )}
@@ -292,6 +294,13 @@ export default function BestSocialDeductionGamesPage() {
           (or AI) at the table.
         </P>
 
+        <div className="my-8 p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl text-center">
+          <p className="text-sm text-zinc-300 mb-3">Want to try social deduction with AI right now?</p>
+          <BlogCTAButton href="/create?preset=werewolf-classic" source="best-social-deduction-games-mid" variant="primary">
+            Play Werewolf Free — No Download
+          </BlogCTAButton>
+        </div>
+
         {/* ── The List ─────────────────────────────────────────────── */}
         <H2 id="list">The 10 Best Social Deduction Games Online</H2>
         {GAMES.map((game) => (
@@ -357,12 +366,12 @@ export default function BestSocialDeductionGamesPage() {
             20+ games. AI Game Master. AI players that bluff and strategize. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/discover" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+            <BlogCTAButton href="/discover" source="best-social-deduction-games">
               Browse All Games
-            </Link>
-            <Link href="/signin" className="inline-flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-6 py-3 rounded-xl border border-zinc-700 transition-colors">
-              Start Free
-            </Link>
+            </BlogCTAButton>
+            <BlogCTAButton href="/create?preset=werewolf-classic" source="best-social-deduction-games-werewolf" variant="secondary">
+              Try Werewolf Free
+            </BlogCTAButton>
           </div>
         </div>
 
