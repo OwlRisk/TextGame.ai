@@ -12,6 +12,7 @@ import type { DiscoverPreset } from "@/data/discover-templates";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -753,6 +754,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
           if (isInsufficientTokens) {
             setShowOutOfCredits(true);
+            trackEvent("token_insufficient", { context: "stream" });
           } else if (isConfigError) {
             toast.error('OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.', {
               duration: 10000,
@@ -767,6 +769,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             );
           } else {
             toast.error(error.message || 'Failed to get AI response. Please try again.');
+            trackEvent("error_shown", { type: "ai_response", message: String(error.message || "unknown").slice(0, 100) });
             addGMMessage(
               "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
             );
@@ -789,8 +792,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
       if (isInsufficientTokens) {
         setShowOutOfCredits(true);
+        trackEvent("token_insufficient", { context: "non_stream" });
       } else if (!isStreaming) {
         toast.error(error.message || 'Failed to get AI response. Please try again.');
+        trackEvent("error_shown", { type: "ai_response", message: String(error.message || "unknown").slice(0, 100) });
         addGMMessage(
           "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
         );

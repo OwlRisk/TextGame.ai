@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/app/components
 import { Gamepad2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/app/components/ui/sonner";
+import { trackEvent } from "@/lib/analytics";
 
 function SignInLoading() {
   return (
@@ -56,6 +57,12 @@ function SignInPageInner() {
   if (loading) {
     return <SignInLoading />;
   }
+
+  useEffect(() => {
+    if (!loading && !user) {
+      trackEvent("sign_up_prompt_shown", { source: returnUrl === "/" ? "direct" : "redirect" });
+    }
+  }, [loading, user, returnUrl]);
 
   if (user) {
     return null; // Will redirect via useEffect

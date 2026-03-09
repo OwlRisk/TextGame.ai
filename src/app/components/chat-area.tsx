@@ -228,7 +228,7 @@ export function ChatArea({
       const newHeight = el.offsetHeight;
       if (newHeight !== prevHeight) {
         prevHeight = newHeight;
-        scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
       }
     });
     observer.observe(el);
@@ -446,7 +446,7 @@ export function ChatArea({
                 useGeneratedAvatarForUser={useGeneratedAvatarForUser}
                 humanPlayer={humanPlayer}
                 userAvatarName={userAvatarName}
-                gameId={gameId}
+                                gameId={gameId}
                 players={players}
                 avatarImageUrls={avatarImageUrls ?? {}}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
@@ -459,7 +459,7 @@ export function ChatArea({
               typingUsers={typingUsers}
               streamingNames={streamingNames}
               players={players}
-              gameId={gameId}
+                    gameId={gameId}
               userId={userId}
               humanPlayer={humanPlayer}
               useGeneratedAvatarForUser={useGeneratedAvatarForUser}
@@ -489,28 +489,28 @@ export function ChatArea({
 
       {/* Input — isolated in its own component so typing doesn't re-render the message list */}
       <div ref={inputAreaRef}>
-        <ChatInputArea
-          channelName={channelName}
-          onSendMessage={onSendMessage}
-          players={players}
-          userId={userId}
-          isGameActive={isGameActive}
-          currentSpeakerId={currentSpeakerId}
-          isEliminated={isEliminated}
-          isRoundInProgress={isRoundInProgress}
-          quickReplies={quickReplies}
-          quickRepliesLoading={quickRepliesLoading}
-          introYourTurnHint={introYourTurnHint}
-          introYourTurnReply={introYourTurnReply}
-          introEveryoneSpokenHint={introEveryoneSpokenHint}
-          aiSuggestedPrompts={aiSuggestedPrompts}
-          aiSuggestionsLabel={aiSuggestionsLabel}
-          lastFailedSendContent={lastFailedSendContent}
-          onRetryLastMessage={onRetryLastMessage}
-          activeVote={activeVote}
-          onVote={onVote}
-          alivePlayers={alivePlayers}
-        />
+      <ChatInputArea
+        channelName={channelName}
+        onSendMessage={onSendMessage}
+        players={players}
+        userId={userId}
+        isGameActive={isGameActive}
+        currentSpeakerId={currentSpeakerId}
+        isEliminated={isEliminated}
+        isRoundInProgress={isRoundInProgress}
+        quickReplies={quickReplies}
+        quickRepliesLoading={quickRepliesLoading}
+        introYourTurnHint={introYourTurnHint}
+        introYourTurnReply={introYourTurnReply}
+        introEveryoneSpokenHint={introEveryoneSpokenHint}
+        aiSuggestedPrompts={aiSuggestedPrompts}
+        aiSuggestionsLabel={aiSuggestionsLabel}
+        lastFailedSendContent={lastFailedSendContent}
+        onRetryLastMessage={onRetryLastMessage}
+        activeVote={activeVote}
+        onVote={onVote}
+        alivePlayers={alivePlayers}
+      />
       </div>
     </div>
   );

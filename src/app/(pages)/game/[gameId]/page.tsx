@@ -213,6 +213,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   }, [gameId]);
 
   const gameEnteredAtRef = useRef(Date.now());
+  const gamePhaseRef = useRef(gamePhase);
+  useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
   useEffect(() => {
     gameEnteredAtRef.current = Date.now();
     trackEvent("game_room_entered", { template: currentGame?.config?.template || "unknown" });
@@ -223,7 +225,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       }
     };
     document.addEventListener("visibilitychange", handleVisChange);
-    return () => document.removeEventListener("visibilitychange", handleVisChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisChange);
+      if (gamePhaseRef.current === "lobby") {
+        trackEvent("game_abandoned", {
+          template: currentGame?.config?.template || "unknown",
+          duration_seconds: Math.round((Date.now() - gameEnteredAtRef.current) / 1000),
+        });
+      }
+    };
   }, [gameId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Always reflects the latest players so async closures (handleSendMessage, runSpeakerQueue)
@@ -562,75 +572,75 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameStartingRef.current = true;
 
     try {
-      const config = currentGame.config;
-      const { hostName, hostColor } = buildHostPlayer(config);
+    const config = currentGame.config;
+    const { hostName, hostColor } = buildHostPlayer(config);
 
-      const currentPlayers = playersRef.current;
-      const aiPlayers = currentPlayers.filter((p) => p.isAI && !p.isGameMaster);
+    const currentPlayers = playersRef.current;
+    const aiPlayers = currentPlayers.filter((p) => p.isAI && !p.isGameMaster);
 
-      const hasHumanPlayers = currentPlayers.some((p) => !p.isAI && !p.isGameMaster);
-      if (aiPlayers.length === 0 && !hasHumanPlayers) {
-        toast.error("At least one player is required to start the game. Please add AI players or invite friends.");
-        return;
-      }
+    const hasHumanPlayers = currentPlayers.some((p) => !p.isAI && !p.isGameMaster);
+    if (aiPlayers.length === 0 && !hasHumanPlayers) {
+      toast.error("At least one player is required to start the game. Please add AI players or invite friends.");
+      return;
+    }
 
-      // Assign roles from config if available (werewolf/mafia/undercover)
-      const configuredPlayers = config.configuredPlayers || [];
-      if (configuredPlayers.length > 0) {
-        setPlayers((prev) =>
-          prev.map((p) => {
-            if (p.isGameMaster) return p;
-            const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1]) - 1 : -1;
-            const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
-            if (!cp) return p;
-            const role = cp.role || undefined;
-            const stats = { ...p.stats };
-            if (role && (config.template === "werewolf" || config.template === "mafia")) {
-              stats.Status = "Alive";
-            }
-            if ((cp as any).word && config.template === "undercover") {
-              stats.Word = (cp as any).word;
-            }
-            return { ...p, role, stats };
-          })
-        );
-      }
+    // Assign roles from config if available (werewolf/mafia/undercover)
+    const configuredPlayers = config.configuredPlayers || [];
+    if (configuredPlayers.length > 0) {
+      setPlayers((prev) =>
+        prev.map((p) => {
+          if (p.isGameMaster) return p;
+          const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1]) - 1 : -1;
+          const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
+          if (!cp) return p;
+          const role = cp.role || undefined;
+          const stats = { ...p.stats };
+          if (role && (config.template === "werewolf" || config.template === "mafia")) {
+            stats.Status = "Alive";
+          }
+          if ((cp as any).word && config.template === "undercover") {
+            stats.Word = (cp as any).word;
+          }
+          return { ...p, role, stats };
+        })
+      );
+    }
 
       // Cancel any in-flight seed from a prior (interrupted) start attempt
       seedCancelledRef.current = true;
       await new Promise((r) => setTimeout(r, 0));
       seedCancelledRef.current = false;
 
-      setGamePhase("active");
+    setGamePhase("active");
       trackEvent("game_started", {
         template: config.template || "custom",
         player_count: currentPlayers.filter((p) => !p.isGameMaster).length,
         game_name: currentGame.name,
       });
 
-      const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
-      const hostGreeting = config.template === "tarot"
-        ? `The cards are ready. Share a question or an area of your life you'd like insight on — or say you'd like a general reading.`
-        : `Alright, the game is on! Let's get started. Check the Rules section if you need a refresher.`;
+    const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
+    const hostGreeting = config.template === "tarot"
+      ? `The cards are ready. Share a question or an area of your life you'd like insight on — or say you'd like a general reading.`
+      : `Alright, the game is on! Let's get started. Check the Rules section if you need a refresher.`;
 
       const greetingId = `start-greeting-${gameId}`;
-      addMessage(
+    addMessage(
         { id: greetingId, senderId: "gm-1", senderName: hostName, senderAvatar: hostColor, content: hostGreeting, isAI: true },
-        defaultChannelId
-      );
+      defaultChannelId
+    );
 
-      seedInitialPlayerReplies({
-        channelId: defaultChannelId,
-        hostName,
-        hostContent: hostGreeting,
-        aiPlayers,
-        gameName: currentGame.name,
-        rules: config.rules,
-        addStreamingMessage,
-        updateStreamingMessage,
-        setTypingUsers,
-        sessionToken: session?.access_token,
-        isCancelled: () => seedCancelledRef.current,
+    seedInitialPlayerReplies({
+      channelId: defaultChannelId,
+      hostName,
+      hostContent: hostGreeting,
+      aiPlayers,
+      gameName: currentGame.name,
+      rules: config.rules,
+      addStreamingMessage,
+      updateStreamingMessage,
+      setTypingUsers,
+      sessionToken: session?.access_token,
+      isCancelled: () => seedCancelledRef.current,
       }).catch((e) => {
         console.warn("Initial player replies failed", e);
         toast.error("Some AI players failed to respond. You can still play normally.");
@@ -783,7 +793,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         // C-5: use playersRef.current (not stale closure `players`) for freshest data after awaits
         const result = parseRoleAssignments(content, playersRef.current, userId, humanName, humanGameIdentity?.name ?? null);
         if (result.isGameOver) {
-          setGamePhase("ended");
+            setGamePhase("ended");
           setGameOverSummary(result.gameOverSummary || "Game over!");
         }
         if (result.roleUpdates.length > 0 || result.revealIds.length > 0 || result.eliminateIds.length > 0) {
@@ -1048,9 +1058,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         convMode: getConversationMode(currentGame?.config?.template),
         playersRef, aiOnly,
         gameName: currentGame?.name ?? "",
-        gameTemplate: currentGame?.config?.template,
+              gameTemplate: currentGame?.config?.template,
         gameRules: currentGame?.config?.rules,
-        gamePhase,
+              gamePhase,
         myBoardContent,
         playerNotes,
         sessionToken: session?.access_token,
@@ -1210,6 +1220,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   });
 
   const RULES_CHANNEL_ID = "__rules__";
+
+  useEffect(() => {
+    if (selectedChannelId === RULES_CHANNEL_ID) {
+      trackEvent("rules_viewed", { template: currentGame?.config?.template || "unknown" });
+    }
+  }, [selectedChannelId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Quick reply suggestions (fetched when it's the human player's turn)
   const { quickReplies, quickRepliesLoading, setQuickReplies } = useQuickReplies({

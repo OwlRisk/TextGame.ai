@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Users, Clock, Play, Crown, Search, Sparkles } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
@@ -27,6 +28,23 @@ interface DiscoverPageProps {
 export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleCategoryChange = useCallback((id: string) => {
+    setActiveCategory(id);
+    trackEvent("discover_filter", { type: "category", value: id });
+  }, []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) setActiveCategory("all");
+    clearTimeout(searchTimerRef.current);
+    if (value.trim()) {
+      searchTimerRef.current = setTimeout(() => {
+        trackEvent("discover_filter", { type: "search", value: value.trim().slice(0, 50) });
+      }, 800);
+    }
+  }, []);
 
   const toPreset = (t: GameTemplate): DiscoverPreset => ({
     id: t.id,
@@ -222,7 +240,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             {CATEGORIES.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
-                onClick={() => setActiveCategory(id)}
+                onClick={() => handleCategoryChange(id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                   activeCategory === id
                     ? "bg-violet-600 text-white shadow-md shadow-violet-900/40"
@@ -244,7 +262,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               type="text"
               placeholder="Search games..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value.trim()) setActiveCategory("all"); }}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"
             />
           </div>
