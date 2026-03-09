@@ -23,7 +23,6 @@ const nextConfig = {
       'recharts',
       'date-fns',
       'sonner',
-      'framer-motion',
     ],
   },
   compiler: {

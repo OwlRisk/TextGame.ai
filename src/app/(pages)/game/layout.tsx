@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GeistMono } from "geist/font/mono";
 
 export const metadata: Metadata = {
   title: "Game Room",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function GameLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <div className={`${GeistMono.variable} contents`}>{children}</div>;
 }

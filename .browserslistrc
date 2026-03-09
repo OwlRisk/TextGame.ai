@@ -1,8 +1,8 @@
 [production]
-chrome >= 87
-firefox >= 78
-safari >= 14
-edge >= 88
+chrome >= 96
+firefox >= 95
+safari >= 15.4
+edge >= 96
 not dead
 not op_mini all
 

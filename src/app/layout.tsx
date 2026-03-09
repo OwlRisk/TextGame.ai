@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers, cookies } from "next/headers";
 import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 import "../styles/index.css";
 import { GameProvider } from "@/app/contexts/GameContext";
 import { AuthProvider } from "@/app/contexts/AuthContext";
@@ -142,7 +141,7 @@ export default async function RootLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full overflow-hidden [-webkit-tap-highlight-color:transparent]`}>
+    <html lang="en" className={`${GeistSans.variable} h-full overflow-hidden [-webkit-tap-highlight-color:transparent]`}>
       <head>
         {/* Reset Safari iOS zoom state on every page load.
             Safari remembers zoom levels between navigations/refreshes.
