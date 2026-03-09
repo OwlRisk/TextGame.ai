@@ -451,6 +451,35 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
           </div>
         </div>
 
+        {/* ── Blog Links (SEO internal linking) ──────────────────── */}
+        <div className="mb-16">
+          <h3 className="text-lg font-bold text-white mb-4">Guides & Resources</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { href: "/blog/play-werewolf-online", label: "How to Play Werewolf Online" },
+              { href: "/blog/play-mafia-online", label: "Play Mafia Online with AI" },
+              { href: "/blog/best-online-party-games", label: "Best Online Party Games" },
+              { href: "/blog/best-social-deduction-games", label: "Best Social Deduction Games" },
+              { href: "/blog/jackbox-alternatives", label: "Jackbox Alternatives" },
+              { href: "/blog/ai-game-master-guide", label: "What is an AI Game Master?" },
+              { href: "/blog/play-secret-hitler-online", label: "Play Secret Hitler Online" },
+              { href: "/blog/character-ai-alternatives", label: "Character.AI Alternatives" },
+              { href: "/blog/among-us-alternatives", label: "Among Us Alternatives" },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="text-sm text-zinc-400 hover:text-violet-400 transition-colors truncate"
+              >
+                {label} →
+              </Link>
+            ))}
+          </div>
+          <Link href="/blog" className="inline-block mt-4 text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
+            View all guides →
+          </Link>
+        </div>
+
         {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
