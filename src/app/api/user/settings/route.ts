@@ -5,10 +5,13 @@ import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
+const DB_NOT_CONFIGURED = { error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' };
+const DB_UNAVAILABLE = { error: 'Database unavailable. Check DATABASE_URL and that migrations have been run.' };
+
 /** GET /api/user/settings — return stored user preferences */
 export async function GET(request: NextRequest) {
   if (!isDatabaseConfigured()) {
-    return NextResponse.json({}, { status: 503 });
+    return NextResponse.json(DB_NOT_CONFIGURED, { status: 503 });
   }
   const user = await getAuthUserFromRequest(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
     const preferences = result.rows[0]?.preferences ?? {};
     return NextResponse.json(preferences);
   } catch (error) {
-    if (isDatabaseError(error)) return NextResponse.json({}, { status: 503 });
+    if (isDatabaseError(error)) return NextResponse.json(DB_UNAVAILABLE, { status: 503 });
     return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
   }
 }
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
 /** PUT /api/user/settings — merge-update user preferences */
 export async function PUT(request: NextRequest) {
   if (!isDatabaseConfigured()) {
-    return NextResponse.json({}, { status: 503 });
+    return NextResponse.json(DB_NOT_CONFIGURED, { status: 503 });
   }
   const user = await getAuthUserFromRequest(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -59,7 +62,7 @@ export async function PUT(request: NextRequest) {
     );
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (isDatabaseError(error)) return NextResponse.json({}, { status: 503 });
+    if (isDatabaseError(error)) return NextResponse.json(DB_UNAVAILABLE, { status: 503 });
     console.error('[settings] PUT error:', error);
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
   }
