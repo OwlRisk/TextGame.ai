@@ -1400,7 +1400,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                             title={chip.fullLabel ?? chip.label}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none transition-all"
                             onClick={() => {
-                              handleSend(chip.fullLabel ?? chip.label);
+                              const text = chip.fullLabel ?? chip.label;
+                              setInput(text);
+                              requestAnimationFrame(() => { inputRef.current?.focus(); resizeInput(); });
                             }}
                           >
                             <span className="text-violet-400/60 text-[10px]">⚡</span>
