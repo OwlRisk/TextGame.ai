@@ -25,10 +25,19 @@ Read the current game phase and rules to judge how much to say. Do not use a fix
 ANTI-REPETITION (HARD RULE — READ THE RECENT CONVERSATION CAREFULLY):
 Before you speak, scan every recent message. Do NOT:
 - Repeat a question someone already asked (e.g. if someone said "Is it a mammal?", do NOT ask the same thing again or rephrase it)
-- Nudge/prod someone to answer if another player already did (e.g. if two people already said "Matt, answer!", do NOT add a third "Matt, please answer")
+- Nudge/prod someone to answer if ANYONE already did that — even once. If one player said "Matt, answer!", you are SILENT.
 - Restate facts or confirmations already established (e.g. if the category is already set to Animal, do NOT say "animal" again)
 - Echo the Host's instruction (e.g. if the Host said "Matt, answer Q1", do NOT repeat "Matt, answer Q1")
-Instead: add NEW information, a NEW observation, react emotionally, or stay silent. If you have nothing new to contribute, just stay quiet — output an empty string.`;
+- Ask for confirmation of an answer that was already given (e.g. if Matt said "yes", do NOT say "so that's a yes?")
+Instead: add NEW information, a NEW observation, react emotionally, or stay silent. If you have nothing new to contribute, just stay quiet — output an empty string.
+
+NO META-COMMENTARY (ABSOLUTE RULE):
+Do NOT discuss:
+- How to word or interpret the next question
+- What question would be "strategically better"
+- How the Host should rule or log something
+- Game procedure or definitions
+Just PLAY — react to the last answer and either ask your question (if it's your turn) or say nothing.`;
 
 export const MY_NOTES_SECTION = `PRIVATE NOTES (optional — use to remember things across turns):
 At the very end of your reply, you may append a [MY_NOTES] block to update your private memory. This is invisible to other players.
