@@ -149,8 +149,8 @@ export function UserProfile({ onClose }: UserProfileProps) {
           </div>
 
           {/* Scrollable Content */}
-          <ScrollArea className="flex-1 px-10 pb-20">
-            <div className="space-y-6 max-w-2xl">
+          <ScrollArea className="flex-1 px-10">
+            <div className="space-y-6 max-w-2xl pb-20">
               {/* My Account Tab */}
               {activeTab === "account" && (
                 <>

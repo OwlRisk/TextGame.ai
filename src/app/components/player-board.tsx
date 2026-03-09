@@ -126,8 +126,8 @@ export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardPr
           </Button>
         </div>
 
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-6">
+        <ScrollArea className="flex-1">
+          <div className="space-y-6 p-6">
             {/* Attributes Section */}
             <section>
               <div className="flex items-center justify-between mb-4">
