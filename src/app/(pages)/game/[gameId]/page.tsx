@@ -1609,11 +1609,23 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             isOwner={isGuestPlayer ? false : (isOwner ? true : undefined)}
             gamePhaseLabel={phaseLabel || undefined}
             gameOverSummary={gameOverSummary || undefined}
-            onPlayAgain={gameOverSummary ? () => {
+            onResumeGame={gameOverSummary && isOwner ? () => {
+              setGamePhase("active");
+              setGameOverSummary("");
+              updateGame(gameId, { isActive: true });
+              addMessage({
+                senderId: "system",
+                senderName: "System",
+                senderAvatar: "#6366f1",
+                content: "Game resumed by the host.",
+                isAI: false,
+                isSystemMessage: true,
+              });
+            } : undefined}
+            onNewGame={gameOverSummary ? () => {
               const preset = currentGame?.config?.template;
               router.push(preset ? `/create?preset=${preset}` : "/create");
             } : undefined}
-            onNewGame={gameOverSummary ? () => router.push("/create") : undefined}
             onSaveCharacters={gameOverSummary && isOwner && session?.access_token ? async () => {
               const aiPlayers = players.filter((p) => p.isAI && !p.isGameMaster);
               if (aiPlayers.length === 0) { toast.info("No AI characters to save"); return; }

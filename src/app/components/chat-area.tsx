@@ -90,8 +90,8 @@ interface ChatAreaProps {
   isOwner?: boolean;
   /** Game Over summary text from GAME_OVER directive */
   gameOverSummary?: string;
-  /** Navigate to play again (same template) */
-  onPlayAgain?: () => void;
+  /** Resume the current game (reactivate from ended state) */
+  onResumeGame?: () => void;
   /** Navigate to new game */
   onNewGame?: () => void;
   /** Save AI characters from this game to user's collection */
@@ -142,7 +142,7 @@ export function ChatArea({
   onAvatarUrlLoaded,
   isOwner,
   gameOverSummary,
-  onPlayAgain,
+  onResumeGame,
   onNewGame,
   onSaveCharacters,
   isEliminated = false,
@@ -378,7 +378,7 @@ export function ChatArea({
       {gameOverSummary && (
         <GameOverBanner
           gameOverSummary={gameOverSummary}
-          onPlayAgain={onPlayAgain}
+          onResumeGame={onResumeGame}
           onNewGame={onNewGame}
           onSaveCharacters={onSaveCharacters}
         />

@@ -1,16 +1,16 @@
 "use client";
 
-import { BookOpen, RotateCcw, Plus, Heart } from "lucide-react";
+import { BookOpen, Play, Plus, Heart } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
 interface GameOverBannerProps {
   gameOverSummary: string;
-  onPlayAgain?: () => void;
+  onResumeGame?: () => void;
   onNewGame?: () => void;
   onSaveCharacters?: () => void;
 }
 
-export function GameOverBanner({ gameOverSummary, onPlayAgain, onNewGame, onSaveCharacters }: GameOverBannerProps) {
+export function GameOverBanner({ gameOverSummary, onResumeGame, onNewGame, onSaveCharacters }: GameOverBannerProps) {
   return (
     <div className="mx-4 mt-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-orange-500/10 px-5 py-4 backdrop-blur-sm">
       <div className="flex items-start gap-3">
@@ -19,9 +19,9 @@ export function GameOverBanner({ gameOverSummary, onPlayAgain, onNewGame, onSave
           <h3 className="text-base font-bold text-amber-200 mb-1">The End</h3>
           <p className="text-sm text-amber-100/80 leading-relaxed whitespace-pre-line">{gameOverSummary}</p>
           <div className="flex flex-wrap gap-2 mt-3">
-            {onPlayAgain && (
-              <Button size="sm" variant="outline" className="border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white gap-1.5" onClick={onPlayAgain}>
-                <RotateCcw className="h-3.5 w-3.5" /> Play Again
+            {onResumeGame && (
+              <Button size="sm" variant="outline" className="border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white gap-1.5" onClick={onResumeGame}>
+                <Play className="h-3.5 w-3.5" /> Resume Game
               </Button>
             )}
             {onNewGame && (
