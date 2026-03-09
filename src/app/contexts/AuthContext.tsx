@@ -280,14 +280,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithFacebook = async (returnUrl?: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          ...(returnUrl && { state: returnUrl }),
+          skipBrowserRedirect: true,
         },
       });
       if (error) throw error;
+      if (data?.url) {
+        const parsed = new URL(data.url);
+        const redirectUri = parsed.searchParams.get('redirect_uri');
+        console.warn('[FB OAuth Debug] Full URL:', data.url);
+        console.warn('[FB OAuth Debug] redirect_uri:', redirectUri);
+        window.location.href = data.url;
+      }
     } catch (error) {
       console.error('Error signing in with Facebook:', error);
       throw error;
