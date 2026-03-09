@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import NextImage from "next/image";
 import {
   MessageCircle,
@@ -83,13 +83,35 @@ function InsideGameMessageList({
 
 export function InsideGameSection() {
   const [selectedStep, setSelectedStep] = useState(0);
+  // 1 = sliding in from right (going forward), -1 = sliding in from left (going back)
+  const [direction, setDirection] = useState<1 | -1>(1);
   const currentStep = INSIDE_GAME_STEPS[selectedStep];
 
+  // Touch swipe state
+  const touchStartX = useRef<number | null>(null);
+  const SWIPE_THRESHOLD = 40;
+
+  const goTo = (index: number, dir: 1 | -1) => {
+    setDirection(dir);
+    setSelectedStep(index);
+  };
+
   const handlePrevious = () => {
-    setSelectedStep((prev) => (prev === 0 ? INSIDE_GAME_STEPS.length - 1 : prev - 1));
+    goTo(selectedStep === 0 ? INSIDE_GAME_STEPS.length - 1 : selectedStep - 1, -1);
   };
   const handleNext = () => {
-    setSelectedStep((prev) => (prev === INSIDE_GAME_STEPS.length - 1 ? 0 : prev + 1));
+    goTo(selectedStep === INSIDE_GAME_STEPS.length - 1 ? 0 : selectedStep + 1, 1);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (delta < -SWIPE_THRESHOLD) handleNext();
+    else if (delta > SWIPE_THRESHOLD) handlePrevious();
   };
 
   return (
@@ -110,7 +132,7 @@ export function InsideGameSection() {
             type="button"
             role="tab"
             aria-selected={selectedStep === index}
-            onClick={() => setSelectedStep(index)}
+            onClick={() => goTo(index, index >= selectedStep ? 1 : -1)}
             className={`group relative px-6 py-3 rounded-full border transition-all duration-300 ${
               selectedStep === index
                 ? "border-fuchsia-500 bg-fuchsia-500/10 shadow-lg shadow-fuchsia-500/20"
@@ -128,29 +150,38 @@ export function InsideGameSection() {
       </div>
 
       {/* Content */}
-      <div className="relative bg-zinc-950/50 border border-zinc-800 rounded-3xl overflow-hidden">
+      <div
+        className="relative bg-zinc-950/50 border border-zinc-800 rounded-3xl overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
           {/* Left – image + heading */}
           <div className="relative p-8 lg:p-12 flex flex-col justify-between bg-gradient-to-br from-zinc-900/80 to-zinc-950/80">
-            <div>
-              <div className="inline-flex items-center gap-2 mb-4">
-                <Gamepad2 className="h-5 w-5 text-fuchsia-400" />
-                <span className="text-sm font-bold text-fuchsia-400">
-                  STEP {currentStep.step} / {currentStep.total}
-                </span>
-              </div>
-              <h4 className="text-3xl lg:text-4xl font-black text-white mb-6 leading-tight">{currentStep.heading}</h4>
-              <div className="relative rounded-xl overflow-hidden">
-                <NextImage
-                  src={currentStep.image}
-                  alt={currentStep.imageAlt}
-                  width={800}
-                  height={500}
-                  loading="lazy"
-                  quality={75}
-                  sizes="(min-width: 1024px) 50vw, 100vw"
-                  className="w-full h-auto object-cover rounded-xl"
-                />
+            <div className="overflow-hidden">
+              <div
+                key={selectedStep}
+                className={direction === 1 ? "animate-slide-in-right" : "animate-slide-in-left"}
+              >
+                <div className="inline-flex items-center gap-2 mb-4">
+                  <Gamepad2 className="h-5 w-5 text-fuchsia-400" />
+                  <span className="text-sm font-bold text-fuchsia-400">
+                    STEP {currentStep.step} / {currentStep.total}
+                  </span>
+                </div>
+                <h4 className="text-3xl lg:text-4xl font-black text-white mb-6 leading-tight">{currentStep.heading}</h4>
+                <div className="relative rounded-xl overflow-hidden">
+                  <NextImage
+                    src={currentStep.image}
+                    alt={currentStep.imageAlt}
+                    width={800}
+                    height={500}
+                    loading="lazy"
+                    quality={75}
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="w-full h-auto object-cover rounded-xl"
+                  />
+                </div>
               </div>
             </div>
 
@@ -163,7 +194,7 @@ export function InsideGameSection() {
                     type="button"
                     aria-label={`Go to step: ${step.title}`}
                     aria-current={selectedStep === index ? "step" : undefined}
-                    onClick={() => setSelectedStep(index)}
+                    onClick={() => goTo(index, index >= selectedStep ? 1 : -1)}
                     className={`transition-all duration-300 rounded-full ${
                       selectedStep === index
                         ? "w-8 h-2 bg-fuchsia-500"
