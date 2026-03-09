@@ -188,7 +188,7 @@ describe("Resume Game — inactivity timer behavior", () => {
     let autoEnded = false;
     const isMountedRef = { current: true };
     const lastActivityRef = { current: Date.now() };
-    const gamePhase = "ended";
+    const gamePhase: string = "ended";
 
     const check = () => {
       if (!isMountedRef.current) return;
@@ -209,7 +209,7 @@ describe("Resume Game — inactivity timer behavior", () => {
     let autoEnded = false;
     const isMountedRef = { current: true };
     const lastActivityRef = { current: Date.now() };
-    const gamePhase = "active";
+    const gamePhase: string = "active";
 
     const check = () => {
       if (!isMountedRef.current) return;
