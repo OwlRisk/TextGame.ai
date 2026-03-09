@@ -58,11 +58,24 @@ function NativeAvatar({ src, fallback, alt, className }: {
       ref={ref}
       src={src}
       alt={alt}
+      width={36}
+      height={36}
       decoding="sync"
       className={className}
       onError={() => { if (ref.current) ref.current.src = fallback; }}
     />
   );
+}
+
+/** Map a full-size avatar path to its 72x72 small variant. */
+function smallAvatar(path: string): string {
+  if (path.startsWith("/avatars/preview/") && !path.includes("/small/")) {
+    return path.replace("/avatars/preview/", "/avatars/preview/small/");
+  }
+  if (path === "/game-master-avatar.webp") {
+    return "/avatars/preview/small/game-master-avatar.webp";
+  }
+  return path;
 }
 
 /** Shared avatar renderer for landing page preview messages */
@@ -76,12 +89,12 @@ export function PreviewAvatar({ name, isHost }: {
   const src = LANDING_AVATAR_MAP[name];
 
   if (isHost) {
-    const avatarSrc = src || GAME_MASTER_AVATAR;
+    const avatarSrc = smallAvatar(src || GAME_MASTER_AVATAR);
     return (
       <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
         <NativeAvatar
           src={avatarSrc}
-          fallback={GAME_MASTER_AVATAR}
+          fallback={smallAvatar(GAME_MASTER_AVATAR)}
           alt={name}
           className="w-full h-full object-cover"
         />
@@ -94,8 +107,8 @@ export function PreviewAvatar({ name, isHost }: {
     <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
       {src ? (
         <NativeAvatar
-          src={src}
-          fallback={GAME_MASTER_AVATAR}
+          src={smallAvatar(src)}
+          fallback={smallAvatar(GAME_MASTER_AVATAR)}
           alt={name}
           className="w-full h-full object-cover"
         />

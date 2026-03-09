@@ -96,13 +96,13 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
     setVisibleCount(1);
   }, [selectedGame]);
 
-  // Preload all scenario avatars so game-switching is instant
+  // Preload small (72x72) avatars so game-tab switching is instant
   useEffect(() => {
     const urls = new Set<string>();
     for (const scenario of Object.values(GAME_SCENARIOS)) {
       for (const msg of scenario.messages) {
         const src = LANDING_AVATAR_MAP[msg.name];
-        if (src) urls.add(src);
+        if (src) urls.add(src.replace("/avatars/preview/", "/avatars/preview/small/"));
       }
     }
     urls.forEach((url) => {
@@ -381,6 +381,7 @@ export function LandingPage({ onSignIn, onCreateGame, heroHeadline }: LandingPag
                     width={400}
                     height={160}
                     loading="lazy"
+                    quality={60}
                     sizes="(min-width: 768px) 400px, 100vw"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
