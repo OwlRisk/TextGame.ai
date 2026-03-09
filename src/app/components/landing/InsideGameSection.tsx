@@ -4,10 +4,19 @@ import { useState, useEffect } from "react";
 import NextImage from "next/image";
 import {
   MessageCircle,
+  Flame,
+  Bot,
   Gamepad2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+
+const STEP_ICONS: Record<string, React.ElementType> = {
+  design: MessageCircle,
+  host: Flame,
+  "ai-players": Bot,
+  "you-play": Gamepad2,
+};
 import { INSIDE_GAME_STEPS } from "@/data/landing-content";
 import { PreviewAvatar, StreamingText } from "./shared";
 
@@ -109,7 +118,7 @@ export function InsideGameSection() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{step.icon}</span>
+              {(() => { const Icon = STEP_ICONS[step.id]; return Icon ? <Icon className={`h-4 w-4 ${selectedStep === index ? "text-fuchsia-400" : "text-zinc-500 group-hover:text-zinc-300"}`} /> : null; })()}
               <span className={`text-sm font-bold transition-colors ${selectedStep === index ? "text-white" : "text-zinc-400 group-hover:text-white"}`}>
                 {step.title}
               </span>
