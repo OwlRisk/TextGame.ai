@@ -34,6 +34,8 @@ export interface Message {
   isGuestMessage?: boolean;
   /** True for announcement banners injected by ANNOUNCE directive */
   isAnnouncement?: boolean;
+  /** Emoji reactions added by AI players/GM */
+  reactions?: Array<{ emoji: string; from: string }>;
 }
 
 interface ChatAreaProps {

@@ -20,7 +20,15 @@ Read the current game phase and rules to judge how much to say. Do not use a fix
 - Discussion / debate / accusation phase → if you are accusing someone or defending yourself, include exactly ONE concrete observation or piece of reasoning. 2–3 sentences max.
 - Storytelling / roleplay / emotional moment → match the drama; 1–3 sentences.
 - If the Host asks you to elaborate or continue → focus your next point clearly in 2–3 sentences; the Host will prompt you again if more is needed.
-- When in doubt, shorter is better. Never more than 3 sentences per turn. No speeches or monologues.`;
+- When in doubt, shorter is better. Never more than 3 sentences per turn. No speeches or monologues.
+
+ANTI-REPETITION (HARD RULE — READ THE RECENT CONVERSATION CAREFULLY):
+Before you speak, scan every recent message. Do NOT:
+- Repeat a question someone already asked (e.g. if someone said "Is it a mammal?", do NOT ask the same thing again or rephrase it)
+- Nudge/prod someone to answer if another player already did (e.g. if two people already said "Matt, answer!", do NOT add a third "Matt, please answer")
+- Restate facts or confirmations already established (e.g. if the category is already set to Animal, do NOT say "animal" again)
+- Echo the Host's instruction (e.g. if the Host said "Matt, answer Q1", do NOT repeat "Matt, answer Q1")
+Instead: add NEW information, a NEW observation, react emotionally, or stay silent. If you have nothing new to contribute, just stay quiet — output an empty string.`;
 
 export const MY_NOTES_SECTION = `PRIVATE NOTES (optional — use to remember things across turns):
 At the very end of your reply, you may append a [MY_NOTES] block to update your private memory. This is invisible to other players.

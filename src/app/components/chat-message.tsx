@@ -145,6 +145,7 @@ export interface ChatMessageProps {
     isPrivate?: boolean;
     isAnnouncement?: boolean;
     imageUrl?: string;
+    reactions?: Array<{ emoji: string; from: string }>;
   };
   showAvatar: boolean;
   syncedContent: string;
@@ -254,6 +255,21 @@ export const ChatMessage = React.memo(function ChatMessage({
     ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5"
     : "leading-relaxed";
 
+  const reactionsBlock = message.reactions && message.reactions.length > 0 ? (
+    <div className="flex flex-wrap gap-1 mt-1.5">
+      {message.reactions.map((r, i) => (
+        <span
+          key={i}
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs bg-white/5 border border-white/10 text-zinc-300 select-none"
+          title={r.from}
+        >
+          <span>{r.emoji}</span>
+          <span className="text-zinc-500 text-[10px] leading-none">{r.from}</span>
+        </span>
+      ))}
+    </div>
+  ) : null;
+
   return (
     <div className={showAvatar ? "mt-5" : "mt-2"}>
       {showAvatar ? (
@@ -300,6 +316,7 @@ export const ChatMessage = React.memo(function ChatMessage({
             <div className={`text-zinc-100 text-sm break-words ${hostStyle}`}>
               {contentBlock}
             </div>
+            {reactionsBlock}
           </div>
         </div>
       ) : (
@@ -307,6 +324,7 @@ export const ChatMessage = React.memo(function ChatMessage({
           <div className="w-11 flex-shrink-0" />
           <div className={`flex-1 text-zinc-100 text-sm leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : ""}`}>
             {contentBlock}
+            {reactionsBlock}
           </div>
         </div>
       )}

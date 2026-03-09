@@ -37,6 +37,8 @@ export type HostAction =
   | { type: "end_vote" }
   /** Start or stop a countdown timer */
   | { type: "timer"; seconds: number | "stop" }
+  /** Emoji reaction to a recent message */
+  | { type: "react"; emoji: string; targetSender?: string }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -169,6 +171,16 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
         const val = m[1].trim().toLowerCase();
         return { type: "timer", seconds: val === "stop" ? "stop" : parseInt(val, 10) };
       },
+    },
+    {
+      // REACT: 😂               ← react to the last message
+      // REACT: 👍 -> Noah Reyes  ← react to the last message from that player
+      regex: /^REACT:\s*(\S+)(?:\s*->\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "react",
+        emoji: m[1].trim(),
+        targetSender: m[2]?.trim() || undefined,
+      }),
     },
   ];
 

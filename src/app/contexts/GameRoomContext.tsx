@@ -66,6 +66,7 @@ interface GameRoomContextType {
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
   addEventNotification: (content: string) => void;
   addPrivateMessage: (playerNameOrId: string, content: string, fromName: string) => void;
+  addReaction: (messageId: string, emoji: string, from: string) => void;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 
   // Actions - Players
@@ -662,6 +663,18 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     [addMessage]
   );
 
+  const addReaction = useCallback((messageId: string, emoji: string, from: string) => {
+    if (!isMountedRef.current) return;
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== messageId) return m;
+        const existing = m.reactions ?? [];
+        if (existing.some((r) => r.emoji === emoji && r.from === from)) return m;
+        return { ...m, reactions: [...existing, { emoji, from }] };
+      })
+    );
+  }, []);
+
   const addPrivateMessage = useCallback(
     (playerNameOrId: string, content: string, fromName: string) => {
       if (!isMountedRef.current) return;
@@ -750,6 +763,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     updateStreamingMessage,
     addEventNotification,
     addPrivateMessage,
+    addReaction,
     setMessages,
     setPlayers,
     updatePlayer,
@@ -783,7 +797,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     avatarImageUrls, isHydrated, phaseLabel, mood, activeVote, timerEndsAt,
     gameOverSummary, onAvatarUrlLoaded, regenerateAvatar, addMessage,
     addStreamingMessage, updateStreamingMessage, addEventNotification,
-    addPrivateMessage, updatePlayer, resetGame, saveNow, userId,
+    addPrivateMessage, addReaction, updatePlayer, resetGame, saveNow, userId,
   ]);
 
   return (

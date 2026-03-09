@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     if (isSeedGreeting) {
       lines.push(`The game just started. Say something brief and in-character as ${player.name}—a casual greeting, a comment, or a reaction. IMPORTANT: Do NOT repeat what others already said. Be unique: if someone asked a question, don't ask the same thing. Show YOUR personality. Keep it short (1-2 sentences).`);
     } else {
-      lines.push(`Your turn. Reply as ${player.name}.`);
+      lines.push(`Your turn. Reply as ${player.name}. CRITICAL: Read the recent conversation above. Do NOT repeat any question, nudge, or statement that someone already made. If you have nothing genuinely new to add, output just "..." or a brief reaction (e.g. a nod, a hmm). Advance the conversation — don't echo it.`);
     }
 
     const userContent = lines.join('\n');

@@ -119,6 +119,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setTimerEndsAt,
     gameOverSummary,
     setGameOverSummary,
+    addReaction,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -241,6 +242,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // don't operate on stale role/stat data after setPlayers() takes effect between awaits.
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
+
+  // Always reflects the latest messages so applyHostActionsAndClean can find
+  // the correct target message for REACT directives without stale closure data.
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   // C-4: Stable ref to handleSendMessage so the guest-message-trigger effect
   // (which would otherwise re-run on every render because handleSendMessage is a new
@@ -897,6 +903,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             } else {
               setTimerEndsAt(Date.now() + a.seconds * 1000);
             }
+          } else if (a.type === "react") {
+            const currentMessages = messagesRef.current;
+            const targetMsg = a.targetSender
+              ? [...currentMessages].reverse().find(
+                  (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming &&
+                    m.senderName.toLowerCase() === a.targetSender!.toLowerCase()
+                )
+              : [...currentMessages].reverse().find(
+                  (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
+                );
+            if (targetMsg) addReaction(targetMsg.id, a.emoji, gmName);
           }
         }
         return cleanContent;
@@ -1171,37 +1188,71 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // C-4: Use handleSendMessageRef instead of handleSendMessage directly so this
   // effect is NOT re-run on every render (the function reference changes each render).
   const lastProcessedGuestMsgRef = useRef<string | null>(null);
-  // Tracks whether we have seen the initial DB-loaded messages yet.
-  // On the first run that contains guest messages we record the latest ID without
-  // triggering the AI — this prevents re-firing for historical messages after a
-  // page refresh.  Only messages that arrive AFTER initialization will trigger AI.
-  const autoTriggerInitializedRef = useRef(false);
+  // Queue of unprocessed guest messages that arrived while isRoundInProgress was true.
+  const pendingGuestMsgsRef = useRef<Array<{ content: string; channelId?: string }>>([]);
+  // Snapshot the message IDs present at hydration time so we can distinguish
+  // "loaded from DB" from "arrived via Realtime after mount".
+  const hydratedMsgIdsRef = useRef<Set<string> | null>(null);
   useEffect(() => {
-    if (!isOwner || isRoundInProgress) return;
+    if (!isOwner) return;
+    // Capture the initial set of message IDs once on the first run where isOwner is true.
+    // Any message whose ID is in this set is "historical" and should not trigger AI.
+    if (hydratedMsgIdsRef.current === null) {
+      hydratedMsgIdsRef.current = new Set(messages.map((m) => m.id));
+      const guestMsgs = messages.filter(
+        (m) => (m as unknown as { isGuestMessage?: boolean }).isGuestMessage && !m.isAI
+      );
+      if (guestMsgs.length > 0) {
+        lastProcessedGuestMsgRef.current = guestMsgs[guestMsgs.length - 1].id;
+      }
+      return;
+    }
+
     const guestMessages = messages.filter(
       (m) => (m as unknown as { isGuestMessage?: boolean }).isGuestMessage && !m.isAI
     );
     if (guestMessages.length === 0) return;
     const latest = guestMessages[guestMessages.length - 1];
 
-    if (!autoTriggerInitializedRef.current) {
-      // First time we see guest messages: these are historical (loaded from DB on mount).
-      // Mark the latest as processed so we don't re-trigger AI for them after refresh.
-      autoTriggerInitializedRef.current = true;
+    // Already processed
+    if (latest.id === lastProcessedGuestMsgRef.current) return;
+    // Historical message loaded from DB — skip
+    if (hydratedMsgIdsRef.current.has(latest.id)) {
       lastProcessedGuestMsgRef.current = latest.id;
       return;
     }
 
-    if (latest.id === lastProcessedGuestMsgRef.current) return;
     lastProcessedGuestMsgRef.current = latest.id;
-    // Trigger host AI response. Pass skipAddMessage so the guest's existing message
-    // is not duplicated under the owner's name. Pass channelId so the AI replies
-    // in the same channel the guest used, not necessarily the owner's current view.
-    handleSendMessageRef.current?.(latest.content, {
-      skipAddMessage: true,
+
+    const payload = {
+      content: latest.content,
       channelId: (latest as unknown as { channelId?: string }).channelId ?? undefined,
+    };
+
+    if (isRoundInProgress) {
+      // AI is busy — queue this message so it's processed when the round finishes.
+      pendingGuestMsgsRef.current.push(payload);
+      return;
+    }
+
+    handleSendMessageRef.current?.(payload.content, {
+      skipAddMessage: true,
+      channelId: payload.channelId,
     });
   }, [messages, isOwner, isRoundInProgress]); // handleSendMessage intentionally omitted — use ref
+
+  // Process queued guest messages once the current round finishes
+  useEffect(() => {
+    if (isRoundInProgress || !isOwner) return;
+    if (pendingGuestMsgsRef.current.length === 0) return;
+    const next = pendingGuestMsgsRef.current.shift();
+    if (next) {
+      handleSendMessageRef.current?.(next.content, {
+        skipAddMessage: true,
+        channelId: next.channelId,
+      });
+    }
+  }, [isRoundInProgress, isOwner]);
 
   // Channel management: game room entries, visibility, message filtering, unread counts
   const {
