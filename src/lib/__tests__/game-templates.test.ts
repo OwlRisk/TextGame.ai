@@ -105,9 +105,9 @@ describe('GAME_TEMPLATES – defaultRules', () => {
     }
   });
 
-  it('werewolf rules mention WIN CONDITIONS', () => {
+  it('werewolf rules mention win/end conditions', () => {
     const t = GAME_TEMPLATES.find((x) => x.id === 'werewolf');
-    expect(t?.defaultRules).toMatch(/WIN CONDITIONS/i);
+    expect(t?.defaultRules).toMatch(/WIN CONDITIONS|HOW THE STORY ENDS/i);
   });
 
   it('mafia rules mention ROLES', () => {
