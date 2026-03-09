@@ -25,6 +25,8 @@ export interface InsideGameStep {
   title: string;
   heading: string;
   description: string;
+  image: string;
+  imageAlt: string;
   messages: InsideGameMessage[];
 }
 
@@ -38,6 +40,8 @@ export interface Feature {
   title: string;
   description: string;
   gradient: string;
+  image: string;
+  alt: string;
 }
 
 export interface FeaturedGame {
@@ -99,6 +103,8 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     heading: "Tell the GM your game idea",
     description:
       "Just chat with the Game Master in plain English. Describe what you want — whether it's classic Werewolf or your wildest custom idea. The GM helps you design rules, roles, and victory conditions.",
+    image: "/steps/step-design.png",
+    imageAlt: "Chat with the AI Game Master to design your custom game",
     messages: [
       { name: "You", badge: "YOU", time: "2:30 PM", text: "Let's do a Werewolf game but set on a space station. Crew trying to find a saboteur.", role: "Player", personality: "Curious and strategic", gender: "other" },
       { isHost: true, name: "Game Master", badge: null, time: "2:30 PM", text: "Got it — space station traitor game. How many players, and do you want any special roles? Engineer, Security Chief, that kind of thing?" },
@@ -115,6 +121,8 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     heading: "AI Host runs the show",
     description:
       "The Host AI manages everything — assigns secret roles, announces game phases, tracks votes, reveals information at the right time, and keeps the story flowing. You just focus on playing.",
+    image: "/steps/step-host.png",
+    imageAlt: "AI host orchestrating game phases, day/night cycles and votes",
     messages: [
       { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:15 PM", text: "Night falls on Mars Station. Everyone close your eyes... Traitor, choose your sabotage target now." },
       { isHost: true, name: "Warden Lunaris", badge: "GM", time: "3:16 PM", text: "Morning. The comm array is down. Engineer Nova, you may inspect one system." },
@@ -130,6 +138,8 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     heading: "AI players think and react",
     description:
       "Each AI player has their own personality, role, and objectives. They observe what happens, form opinions, make strategic decisions, and respond naturally to your actions. They'll lie, defend themselves, or team up — just like real players.",
+    image: "/steps/step-ai-players.png",
+    imageAlt: "AI players with unique personalities thinking and strategizing",
     messages: [
       { name: "Dr. Chen", badge: "AI", time: "4:20 PM", text: "I was in the medical bay all night. Anyone can confirm? I'm getting suspicious of whoever was near the comm array...", role: "Scientist", personality: "Methodical, defensive under pressure", gender: "female" },
       { name: "Captain Rex", badge: "AI", time: "4:20 PM", text: "Dr. Chen is acting defensive — that's a red flag! I saw them leaving the engineering deck right around the time of the sabotage.", role: "Security Chief", personality: "Assertive, blunt, leadership instinct", gender: "male" },
@@ -145,6 +155,8 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     heading: "You play your role — the AI reacts",
     description:
       "Type anything as your character. Accuse, defend, vote, or stay silent. The Host and AI players respond to what you say and adapt the game around your choices in real time.",
+    image: "/steps/step-you-play.png",
+    imageAlt: "Player typing in the game chat with AI characters reacting in real time",
     messages: [
       { name: "You", badge: "YOU", time: "5:10 PM", text: "I used my Seer ability last night. Gideon is a Werewolf — I'm certain.", role: "Seer", personality: "Careful, observant", gender: "other" },
       { name: "Gideon", badge: "AI", time: "5:10 PM", text: "Lies. The Seer would never expose themselves this early. You're desperate and pointing fingers.", role: "Werewolf", personality: "Manipulative, aggressive deflection", gender: "male" },
@@ -198,24 +210,32 @@ export const FEATURES: Feature[] = [
     title: "AI runs the table",
     description: "Roles, phases, votes, reveals — the host keeps the game moving so nobody has to moderate.",
     gradient: "from-violet-500 to-purple-500",
+    image: "/features/feature-ai-host.png",
+    alt: "AI game master managing roles, phases, votes and reveals automatically",
   },
   {
     icon: Users,
     title: "Always enough players",
     description: "Play solo, with friends, or with a mix of both. AI characters fill every empty seat automatically.",
     gradient: "from-orange-500 to-pink-500",
+    image: "/features/feature-always-players.png",
+    alt: "AI characters filling every empty seat at the game table",
   },
   {
     icon: MessageCircle,
     title: "AI characters actually play",
     description: "They bluff, accuse, defend themselves, and react like real players — not silent filler bots.",
     gradient: "from-green-500 to-emerald-500",
+    image: "/features/feature-ai-plays.png",
+    alt: "AI characters bluffing, accusing and defending like real players",
   },
   {
     icon: Sparkles,
     title: "Easy to start with friends",
     description: "Share a link and start in minutes. No download, no setup, no need to wait for a full group.",
     gradient: "from-blue-500 to-cyan-500",
+    image: "/features/feature-easy-start.png",
+    alt: "Share a link and friends join instantly in their browser",
   },
 ];
 
@@ -225,7 +245,7 @@ export const FEATURED_GAMES: FeaturedGame[] = [
     title: "Werewolf",
     players: "4+",
     tags: ["Social Deduction", "Classic"],
-    description: "Villagers vs. hidden werewolves. Debate, vote, and eliminate before the wolves take over.",
+    description: "Villagers vs. hidden werewolves. Find them before it's too late.",
     cover: "/games/game-cover-werewolf.webp",
     accent: "from-violet-500/20 to-purple-500/10",
     border: "hover:border-violet-500/50",
@@ -236,7 +256,7 @@ export const FEATURED_GAMES: FeaturedGame[] = [
     title: "Mafia",
     players: "4+",
     tags: ["Social Deduction", "Classic"],
-    description: "The mafia hides in plain sight. Citizens must find and eliminate them before it's too late.",
+    description: "The mafia hides in plain sight. Trust no one.",
     cover: "/games/game-cover-mafia.webp",
     accent: "from-red-500/20 to-orange-500/10",
     border: "hover:border-red-500/50",
@@ -247,7 +267,7 @@ export const FEATURED_GAMES: FeaturedGame[] = [
     title: "Who's the Spy",
     players: "3+",
     tags: ["Word Game", "Party"],
-    description: "Everyone shares a secret word — except the spy. Can the spy bluff their way through?",
+    description: "One spy, one secret word. Can you bluff your way through?",
     cover: "/games/game-cover-undercover.webp",
     accent: "from-emerald-500/20 to-teal-500/10",
     border: "hover:border-emerald-500/50",

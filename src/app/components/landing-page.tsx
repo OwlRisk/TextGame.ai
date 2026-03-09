@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from "react";
 import {
-  Sparkles,
-  MessageCircle,
-  Users,
-  Zap,
   Compass,
+  Users,
 } from "lucide-react";
 import NextImage from "next/image";
 import Link from "next/link";
@@ -155,31 +152,9 @@ export function LandingPage({ onSignIn, onCreateGame, onExploreGames, heroHeadli
               </h2>
             )}
 
-            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-8 leading-relaxed">
-              Play solo or with friends — AI characters fill every empty seat and react like real players.
+            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-10 leading-relaxed">
+              AI fills every seat. Play solo or with friends.
             </p>
-
-            {/* Core features – 3 simple rows */}
-            <div className="mb-10 space-y-3">
-              <div className="flex items-center gap-3 text-zinc-300">
-                <div className="flex items-center justify-center w-8 h-8 bg-violet-500/10 rounded-[11px]">
-                  <Sparkles className="h-4 w-4 text-violet-400" />
-                </div>
-                <span className="text-base">Werewolf, Mafia, Who&apos;s the Spy, and more</span>
-              </div>
-              <div className="flex items-center gap-3 text-zinc-300">
-                <div className="flex items-center justify-center w-8 h-8 bg-fuchsia-500/10 rounded-[11px]">
-                  <Zap className="h-4 w-4 text-fuchsia-400" />
-                </div>
-                <span className="text-base">Room ready in under a minute</span>
-              </div>
-              <div className="flex items-center gap-3 text-zinc-300">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500/10 rounded-[11px]">
-                  <MessageCircle className="h-4 w-4 text-blue-400" />
-                </div>
-                <span className="text-base">Characters bluff, lie, and actually react to what you say</span>
-              </div>
-            </div>
 
             {/* Google Sign-in Button */}
             <div className="mb-4 relative">
@@ -346,25 +321,31 @@ export function LandingPage({ onSignIn, onCreateGame, onExploreGames, heroHeadli
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
             <h3 className="text-4xl font-black text-white mb-4">Why You&apos;ll Love It</h3>
-            <p className="text-lg text-zinc-400">Everything you need to bring any game to life.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {FEATURES.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={index}
-                  className="group relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 hover:border-violet-500/30 rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
-                  <div className={`relative w-12 h-12 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <h4 className="relative text-lg font-bold text-white mb-2">{feature.title}</h4>
-                  <p className="relative text-sm text-zinc-400 leading-relaxed">{feature.description}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {FEATURES.map((feature, index) => (
+              <div
+                key={index}
+                className="group relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 hover:border-violet-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02]"
+              >
+                <div className="relative h-52 overflow-hidden">
+                  <NextImage
+                    src={feature.image}
+                    alt={feature.alt}
+                    width={800}
+                    height={500}
+                    loading="lazy"
+                    quality={75}
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/30 to-transparent" />
                 </div>
-              );
-            })}
+                <div className="p-5">
+                  <h4 className="text-lg font-bold text-white">{feature.title}</h4>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -387,7 +368,7 @@ export function LandingPage({ onSignIn, onCreateGame, onExploreGames, heroHeadli
                 className={`group relative bg-zinc-900/60 border border-zinc-800 ${game.border} rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer overflow-hidden text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500`}
               >
                 {/* Cover image */}
-                <div className="relative h-40 overflow-hidden">
+                <div className="relative h-48 overflow-hidden">
                   <NextImage
                     src={game.cover}
                     alt={game.title}
@@ -439,12 +420,9 @@ export function LandingPage({ onSignIn, onCreateGame, onExploreGames, heroHeadli
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
-              <h3 className="text-4xl md:text-5xl font-black text-white mb-4">
+              <h3 className="text-4xl md:text-5xl font-black text-white mb-8">
                 Start Your First Game — Free
               </h3>
-              <p className="text-xl text-violet-100 mb-8 max-w-2xl mx-auto">
-                Sign in to create a room. Friends join instantly — no account needed.
-              </p>
               <div className="relative inline-block">
                 <div className="absolute inset-0 bg-gradient-to-r from-white/50 to-white/50 rounded-xl blur-xl opacity-40 animate-pulse" style={{ animationDuration: '3s' }} />
                 <Button

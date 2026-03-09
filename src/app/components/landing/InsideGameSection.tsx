@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import NextImage from "next/image";
 import {
   MessageCircle,
   Gamepad2,
@@ -120,21 +121,32 @@ export function InsideGameSection() {
       {/* Content */}
       <div className="relative bg-zinc-950/50 border border-zinc-800 rounded-3xl overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
-          {/* Left – description */}
-          <div className="relative p-12 flex flex-col justify-between bg-gradient-to-br from-zinc-900/80 to-zinc-950/80">
+          {/* Left – image + heading */}
+          <div className="relative p-8 lg:p-12 flex flex-col justify-between bg-gradient-to-br from-zinc-900/80 to-zinc-950/80">
             <div>
-              <div className="inline-flex items-center gap-2 mb-6">
+              <div className="inline-flex items-center gap-2 mb-4">
                 <Gamepad2 className="h-5 w-5 text-fuchsia-400" />
                 <span className="text-sm font-bold text-fuchsia-400">
                   STEP {currentStep.step} / {currentStep.total}
                 </span>
               </div>
-              <h4 className="text-4xl font-black text-white mb-6 leading-tight">{currentStep.heading}</h4>
-              <p className="text-lg text-zinc-400 leading-relaxed">{currentStep.description}</p>
+              <h4 className="text-3xl lg:text-4xl font-black text-white mb-6 leading-tight">{currentStep.heading}</h4>
+              <div className="relative rounded-xl overflow-hidden">
+                <NextImage
+                  src={currentStep.image}
+                  alt={currentStep.imageAlt}
+                  width={800}
+                  height={500}
+                  loading="lazy"
+                  quality={75}
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="w-full h-auto object-cover rounded-xl"
+                />
+              </div>
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between mt-12">
+            <div className="flex items-center justify-between mt-8">
               <div className="flex items-center gap-2">
                 {INSIDE_GAME_STEPS.map((step, index) => (
                   <button
