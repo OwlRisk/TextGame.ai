@@ -43,6 +43,9 @@ export function useGameRoomLifecycle({
     callbacksRef.current = { setGameOverSummary, setGamePhase, updateGame, currentGameExists };
   });
 
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
+
   // Timer expiry
   useEffect(() => {
     if (!timerEndsAt) return;
@@ -74,6 +77,7 @@ export function useGameRoomLifecycle({
   useEffect(() => {
     if (gamePhase !== "active") return;
     const check = () => {
+      if (!isMountedRef.current) return;
       if (Date.now() - lastActivityRef.current >= GAME_INACTIVITY_TIMEOUT_MS) {
         const cbs = callbacksRef.current;
         cbs.setGameOverSummary(
@@ -100,8 +104,10 @@ export function useGameRoomLifecycle({
     if (isOwnerOnline === false) {
       if (!ownerLeftTimerRef.current) {
         ownerLeftTimerRef.current = setTimeout(() => {
-          setGameOverSummary("The host has left the game. Game ended.");
-          setGamePhase("ended");
+          if (!isMountedRef.current) return;
+          const cbs = callbacksRef.current;
+          cbs.setGameOverSummary("The host has left the game. Game ended.");
+          cbs.setGamePhase("ended");
         }, 5 * 60 * 1000);
       }
     } else {

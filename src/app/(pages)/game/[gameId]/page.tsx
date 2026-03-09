@@ -826,9 +826,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
         const { cleanContent, actions } = parseHostActions(content);
+        const currentPlayers = playersRef.current;
         for (const a of actions) {
           if (a.type === "my_board") {
-            const playerId = resolvePlayerRefToId(a.playerRef, players, userId, humanGameIdentity?.name);
+            const playerId = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
             if (playerId) setMyBoardContent((prev) => ({ ...prev, [playerId]: a.content }));
           } else if (a.type === "access") {
             // Resolve channel ref with fuzzy matching so minor HOST misspellings still work.
@@ -845,7 +846,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             } else {
               // Resolve each player ref to an id
               const resolvedIds = a.playerRefs
-                .map((ref) => resolvePlayerRefToId(ref, players, userId, humanGameIdentity?.name))
+                .map((ref) => resolvePlayerRefToId(ref, currentPlayers, userId, humanGameIdentity?.name))
                 .filter((id): id is string => id !== null);
               setChannelPermissions((prev) => ({ ...prev, [chId]: resolvedIds }));
 

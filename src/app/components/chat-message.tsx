@@ -161,7 +161,7 @@ export interface ChatMessageProps {
   onAvatarUrlLoaded?: (key: string, url: string) => void;
 }
 
-export function ChatMessage({
+export const ChatMessage = React.memo(function ChatMessage({
   message, showAvatar, syncedContent, rawContent, isShowingCursor,
   userId, userAvatarUrl, useGeneratedAvatarForUser, humanPlayer, userAvatarName,
   gameId, players, avatarImageUrls, onAvatarUrlLoaded,
@@ -312,7 +312,7 @@ export function ChatMessage({
       )}
     </div>
   );
-}
+});
 
 // ─── Avatar sub-component ──────────────────────────────────────────────
 function MessageAvatar({

@@ -57,6 +57,15 @@ const rarityColors = {
   legendary: "bg-amber-600 text-amber-100",
 };
 
+const ATTR_COLORS: Record<string, string> = {
+  blue: "rgb(96,165,250)", red: "rgb(248,113,113)", green: "rgb(74,222,128)",
+  yellow: "rgb(250,204,21)", purple: "rgb(192,132,252)", orange: "rgb(251,146,60)",
+  pink: "rgb(244,114,182)", cyan: "rgb(34,211,238)",
+};
+function attrColor(color?: string): string {
+  return ATTR_COLORS[color ?? "blue"] ?? ATTR_COLORS.blue;
+}
+
 const attributeIcons: Record<string, React.JSX.Element> = {
   health: <Heart className="h-4 w-4" />,
   mana: <Zap className="h-4 w-4" />,
@@ -135,7 +144,7 @@ export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardPr
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className={`text-${attr.color || 'blue'}-400`}>
+                        <div style={{ color: attrColor(attr.color) }}>
                           {attributeIcons[attr.id.toLowerCase()] || <Sparkles className="h-4 w-4" />}
                         </div>
                         <span className="font-medium text-white">{attr.name}</span>
@@ -143,9 +152,11 @@ export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardPr
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-white">
                           {attr.value}
-                          {attr.maxValue && <span className="text-zinc-500">/{attr.maxValue}</span>}
+                          {attr.maxValue != null && attr.maxValue > 0 && (
+                            <span className="text-zinc-500">/{attr.maxValue}</span>
+                          )}
                         </span>
-                        {attr.maxValue && (
+                        {attr.maxValue != null && attr.maxValue > 0 && (
                           <span className="text-sm text-zinc-400 tabular-nums">
                             ({Math.round((attr.value / attr.maxValue) * 100)}%)
                           </span>

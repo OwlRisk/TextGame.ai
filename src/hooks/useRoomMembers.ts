@@ -20,21 +20,21 @@ export function useRoomMembers(gameId: string) {
 
   useEffect(() => {
     if (!gameId) return;
-    let cancelled = false;
+    const ac = new AbortController();
     let consecutiveErrors = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const schedule = () => {
-      if (cancelled) return;
+      if (ac.signal.aborted) return;
       timer = setTimeout(() => { load(); }, MEMBERS_POLL_INTERVAL_MS);
     };
 
     const load = () => {
-      if (cancelled) return;
-      fetch(`/api/games/${gameId}/members`)
+      if (ac.signal.aborted) return;
+      fetch(`/api/games/${gameId}/members`, { signal: ac.signal })
         .then((r) => r.ok ? r.json() : null)
         .then((data: { members?: RoomMember[] } | null) => {
-          if (cancelled) return;
+          if (ac.signal.aborted) return;
           if (data?.members) {
             setRoomMembers(data.members);
             consecutiveErrors = 0;
@@ -43,15 +43,15 @@ export function useRoomMembers(gameId: string) {
           }
           if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
         })
-        .catch(() => {
-          if (cancelled) return;
+        .catch((e) => {
+          if (ac.signal.aborted || (e instanceof DOMException && e.name === "AbortError")) return;
           consecutiveErrors++;
           if (consecutiveErrors < MEMBERS_MAX_ERRORS) schedule();
         });
     };
 
     load();
-    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+    return () => { ac.abort(); if (timer) clearTimeout(timer); };
   }, [gameId]);
 
   const refreshMembers = useCallback(async () => {

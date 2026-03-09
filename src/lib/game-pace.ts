@@ -78,16 +78,19 @@ export function typewriterReveal(
     const messageId = addStreamFn(msgMeta, channelId, text.slice(0, idx));
     if (!messageId) { resolve(""); return; }
     if (done) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
-    let rafId: number;
-    const step = () => {
-      if (cancelled?.()) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
+    let rafId = requestAnimationFrame(step);
+    function step() {
+      if (cancelled?.()) {
+        cancelAnimationFrame(rafId);
+        updateStreamFn(messageId, text, true);
+        resolve(messageId);
+        return;
+      }
       idx = Math.min(idx + charsPerTick, text.length);
       const finished = idx >= text.length;
       updateStreamFn(messageId, text.slice(0, idx), finished);
       if (finished) { resolve(messageId); return; }
       rafId = requestAnimationFrame(step);
-    };
-    rafId = requestAnimationFrame(step);
-    void rafId;
+    }
   });
 }

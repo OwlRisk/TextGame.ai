@@ -68,6 +68,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const sendingLockRef = useRef(false);
+  const composingRef = useRef(false);
 
   const voice = useVoiceInput();
   const {
@@ -442,7 +443,10 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                   setMentionQuery(null);
                 }
               }}
+              onCompositionStart={() => { composingRef.current = true; }}
+              onCompositionEnd={() => { composingRef.current = false; }}
               onKeyDown={(e) => {
+                if (composingRef.current) return;
                 if (showPopup) {
                   if (e.key === "ArrowUp") {
                     e.preventDefault();
