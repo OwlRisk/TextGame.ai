@@ -668,11 +668,11 @@ describe("withCursor helper", () => {
 
     // The result should be a div with 2 children, where the last child
     // now has the cursor appended
-    const resultEl = result as React.ReactElement;
+    const resultEl = result as React.ReactElement<{ children?: React.ReactNode }>;
     const children = React.Children.toArray(resultEl.props.children);
     expect(children).toHaveLength(2);
 
-    const lastChild = children[1] as React.ReactElement;
+    const lastChild = children[1] as React.ReactElement<{ children?: React.ReactNode }>;
     const lastChildren = React.Children.toArray(lastChild.props.children);
     expect(lastChildren).toHaveLength(2); // "Line 2" + cursor
   });
@@ -680,7 +680,7 @@ describe("withCursor helper", () => {
   it("handles wrapper with no children", () => {
     const cursor = React.createElement("span", { key: "c" }, "|");
     const content = React.createElement("div", {});
-    const result = withCursor(content, cursor) as React.ReactElement;
+    const result = withCursor(content, cursor) as React.ReactElement<{ children?: React.ReactNode }>;
     const children = React.Children.toArray(result.props.children);
     expect(children).toHaveLength(1); // just the cursor
   });
