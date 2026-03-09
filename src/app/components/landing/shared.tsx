@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import NextImage from "next/image";
 import { LANDING_AVATAR_MAP } from "@/data/landing-content";
 import { GAME_MASTER_AVATAR } from "@/lib/game-master-avatar";
@@ -40,14 +40,38 @@ export function SafeAvatar({
   );
 }
 
+/**
+ * Native <img> avatar for landing page messages.
+ * Uses decoding="sync" so the browser paints the (cached) image in the same
+ * frame as the DOM insertion — no black-flash between mount and decode.
+ */
+function NativeAvatar({ src, fallback, alt, className }: {
+  src: string;
+  fallback: string;
+  alt: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLImageElement>(null);
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      ref={ref}
+      src={src}
+      alt={alt}
+      decoding="sync"
+      className={className}
+      onError={() => { if (ref.current) ref.current.src = fallback; }}
+    />
+  );
+}
+
 /** Shared avatar renderer for landing page preview messages */
-export function PreviewAvatar({ name, isHost, priority }: {
+export function PreviewAvatar({ name, isHost }: {
   name: string;
   isHost?: boolean;
   role?: string;
   personality?: string;
   gender?: string;
-  priority?: boolean;
 }) {
   const src = LANDING_AVATAR_MAP[name];
 
@@ -55,14 +79,11 @@ export function PreviewAvatar({ name, isHost, priority }: {
     const avatarSrc = src || GAME_MASTER_AVATAR;
     return (
       <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
-        <SafeAvatar
+        <NativeAvatar
           src={avatarSrc}
           fallback={GAME_MASTER_AVATAR}
           alt={name}
-          width={36}
-          height={36}
           className="w-full h-full object-cover"
-          priority={priority}
         />
       </div>
     );
@@ -72,14 +93,11 @@ export function PreviewAvatar({ name, isHost, priority }: {
   return (
     <div className="w-9 h-9 rounded-full flex-shrink-0 ring-1 ring-zinc-600/50 overflow-hidden bg-zinc-700">
       {src ? (
-        <SafeAvatar
+        <NativeAvatar
           src={src}
           fallback={GAME_MASTER_AVATAR}
           alt={name}
-          width={36}
-          height={36}
           className="w-full h-full object-cover"
-          priority={priority}
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-white">

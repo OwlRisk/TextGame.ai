@@ -57,7 +57,7 @@ function MessageList({
     <>
       {messages.slice(0, visibleCount).map((msg, index) => (
         <div key={`${gameKey}-${index}`} className="flex gap-3 animate-fadeIn mt-2 first:mt-0">
-          <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} priority={index === 0} />
+          <PreviewAvatar name={msg.name} isHost={msg.isHost} role={msg.role} personality={msg.personality} gender={msg.gender} />
           <div className="flex-1 min-w-0">
             <span className="font-semibold text-sm text-white block mb-0.5">{msg.name}</span>
             <div className="text-sm leading-relaxed text-zinc-300">
