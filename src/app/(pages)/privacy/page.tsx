@@ -110,6 +110,7 @@ export default function PrivacyPage() {
               <li><strong className="text-zinc-300">Stripe</strong> — payment processing and subscription management</li>
               <li><strong className="text-zinc-300">Vercel</strong> — hosting, edge delivery, and anonymous usage analytics</li>
               <li><strong className="text-zinc-300">Google</strong> — OAuth sign-in provider</li>
+              <li><strong className="text-zinc-300">Meta (Facebook)</strong> — OAuth sign-in provider</li>
             </ul>
           </section>
 
@@ -187,8 +188,29 @@ export default function PrivacyPage() {
             </p>
           </section>
 
+          <section id="deletion">
+            <h2 className="text-lg font-semibold text-white mb-2">13. Facebook Data Deletion</h2>
+            <p>
+              If you have used Facebook to sign in to TextGame.ai and wish to have your data deleted, you can do so in either of the following ways:
+            </p>
+            <ol className="mt-2 space-y-2 list-decimal list-inside text-zinc-400">
+              <li>
+                <strong className="text-zinc-300">Delete via Settings</strong> — Sign in to TextGame.ai and go to{' '}
+                <strong className="text-zinc-300">Settings → Account → Delete account</strong>. This will permanently delete all data associated with your account within 30 days.
+              </li>
+              <li>
+                <strong className="text-zinc-300">Request by email</strong> — Send a deletion request to{' '}
+                <a href="mailto:info@cvnio.com" className="underline hover:text-zinc-300">info@cvnio.com</a>{' '}
+                with the subject line <em>"Facebook Data Deletion Request"</em>. Include the email address or Facebook name associated with your account. We will process the request within 30 days and send a confirmation.
+              </li>
+            </ol>
+            <p className="mt-3">
+              Upon deletion we remove your account profile, game history, and all associated personal data from our systems. Anonymous analytics data (which contains no personal identifiers) may be retained.
+            </p>
+          </section>
+
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">13. Contact Us</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">14. Contact Us</h2>
             <p className="text-zinc-400">
               For privacy-related questions, data access/deletion requests, or concerns, contact us at{' '}
               <a href="mailto:info@cvnio.com" className="underline hover:text-zinc-300">info@cvnio.com</a>.
