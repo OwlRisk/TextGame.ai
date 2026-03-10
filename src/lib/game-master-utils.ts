@@ -3,7 +3,7 @@ import type { ChannelRoomType } from "@/types/game-master";
 
 export function formatMessageTime(date: Date): string {
   const now = new Date();
-  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
   const isToday =
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&

@@ -4,13 +4,13 @@
 import { EMOTION_EMOJI } from "./format-message";
 
 /**
- * Returns a human-readable timestamp for a chat message.
- * - Today      → "07:29 PM"
- * - Yesterday  → "Yesterday 07:29 PM"
- * - Older      → "Mar 1, 07:29 PM"
+ * Returns a human-readable timestamp for a chat message (24-hour format).
+ * - Today      → "19:29"
+ * - Yesterday  → "Yesterday 19:29"
+ * - Older      → "Mar 1, 19:29"
  */
 export function formatMessageTime(date: Date, now: Date = new Date()): string {
-  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
   const isToday =
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&

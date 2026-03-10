@@ -300,8 +300,7 @@ export const ChatMessage = React.memo(function ChatMessage({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 mb-2">
                 <span
                   className={`font-semibold text-sm shrink-0 ${
                     isHost ? "text-amber-300" : message.senderId === userId ? "text-blue-200" : "text-white"
@@ -319,10 +318,9 @@ export const ChatMessage = React.memo(function ChatMessage({
                     YOU
                   </span>
                 )}
-              </div>
-              <span className="text-[11px] text-zinc-500 shrink-0" aria-hidden="true">
-                {formatMessageTime(message.timestamp)}
-              </span>
+                <span className="text-[11px] text-zinc-500 shrink-0" aria-hidden="true">
+                  {formatMessageTime(message.timestamp)}
+                </span>
             </div>
             <div className={`text-zinc-100 text-sm break-words ${hostStyle}`}>
               {contentBlock}
