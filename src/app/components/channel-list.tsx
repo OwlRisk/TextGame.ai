@@ -3,7 +3,7 @@ import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Separator } from "@/app/components/ui/separator";
 import {
@@ -94,7 +94,7 @@ export function ChannelList({
   hasRules,
 }: ChannelListProps) {
   const { user } = useAuth();
-  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userAvatarUrl = getUserAvatarUrl(user);
   const displayName = (gameUserDisplayName && gameUserDisplayName.trim()) || (userDisplayName && userDisplayName.trim()) ? (gameUserDisplayName || userDisplayName || "Player").trim() : "Player";
   const shortLabel = (displayName !== "Player") ? "You" : "#0001";
   // Unified style: human players also use AI-style generated avatars in-game

@@ -46,7 +46,18 @@ export async function GET(request: Request) {
     // Persist provider avatar into user_metadata so it survives session refresh and is
     // returned by getUser() on the client (callback does not set browser session/cookies).
     const meta = session?.user?.user_metadata as Record<string, unknown> | undefined;
-    const avatarUrl = meta ? ((meta.avatar_url ?? meta.picture) as string | undefined) : undefined;
+    let avatarUrl: string | undefined;
+    if (meta) {
+      if (typeof meta.avatar_url === "string" && meta.avatar_url) {
+        avatarUrl = meta.avatar_url;
+      } else if (typeof meta.picture === "string" && meta.picture) {
+        avatarUrl = meta.picture;
+      } else if (meta.picture && typeof meta.picture === "object") {
+        // Facebook returns picture as { data: { url: "..." } }
+        const picData = (meta.picture as Record<string, unknown>).data as Record<string, unknown> | undefined;
+        if (picData && typeof picData.url === "string") avatarUrl = picData.url;
+      }
+    }
     if (session?.user?.id && avatarUrl && typeof avatarUrl === "string") {
       const merged = { ...meta, avatar_url: avatarUrl, picture: avatarUrl };
       if (supabaseAdmin) {

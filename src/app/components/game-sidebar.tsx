@@ -31,7 +31,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 
@@ -123,7 +123,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
   };
 
   const username = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || "Guest";
-  const userAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userAvatar = getUserAvatarUrl(user);
 
   return (
     <div className="h-full w-[72px] min-w-[72px] flex-shrink-0 z-10 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950 border-r border-violet-900/20 flex flex-col items-center py-3 gap-2 overflow-hidden backdrop-blur-sm">

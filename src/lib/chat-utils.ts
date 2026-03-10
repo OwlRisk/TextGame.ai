@@ -10,7 +10,7 @@ import { EMOTION_EMOJI } from "./format-message";
  * - Older      → "Mar 1, 19:29"
  */
 export function formatMessageTime(date: Date, now: Date = new Date()): string {
-  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }).replace(/^24:/, "00:");
   const isToday =
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
