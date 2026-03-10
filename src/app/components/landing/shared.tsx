@@ -39,7 +39,7 @@ export function SafeAvatar({
       className={className}
       loading={priority ? undefined : loading}
       priority={priority}
-      quality={quality ?? 85}
+      quality={quality ?? 90}
       sizes={sizes ?? `${width}px`}
       onError={() => setImgSrc(fallback)}
     />

@@ -170,7 +170,7 @@ export function InsideGameSection() {
                   width={800}
                   height={500}
                   loading="eager"
-                  quality={75}
+                  quality={90}
                   sizes="(min-width: 1024px) 50vw, 100vw"
                   className="w-full h-auto object-cover rounded-lg sm:rounded-xl"
                 />
@@ -183,7 +183,7 @@ export function InsideGameSection() {
                     width={1}
                     height={1}
                     loading="eager"
-                    quality={75}
+                    quality={90}
                     className="absolute w-0 h-0 opacity-0 pointer-events-none"
                     aria-hidden="true"
                   />

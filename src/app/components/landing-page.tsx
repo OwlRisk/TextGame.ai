@@ -360,7 +360,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                     width={800}
                     height={500}
                     loading="lazy"
-                    quality={75}
+                    quality={90}
                     sizes="(min-width: 768px) 50vw, 100vw"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
@@ -400,7 +400,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                     width={400}
                     height={160}
                     loading="lazy"
-                    quality={60}
+                    quality={85}
                     sizes="(min-width: 768px) 400px, 100vw"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
