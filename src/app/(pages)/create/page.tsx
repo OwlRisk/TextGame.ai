@@ -59,44 +59,18 @@ function CreateGamePageContent() {
     toast.loading("Creating game...", { id: toastId });
 
     try {
-      // Generate game icon
-      let gameIcon = "🎮";
-      try {
-        toast.loading("Generating icon...", { id: toastId });
-        const iconResponse = await fetch("/api/generate-game-icon", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            gameName: config.name,
-            gameTemplate: config.template,
-            rules: config.rules,
-          }),
-        });
-
-        if (iconResponse.ok) {
-          const iconData = await iconResponse.json();
-          gameIcon = iconData.icon;
-        } else {
-          gameIcon =
-            config.template === "werewolf"
-              ? "🐺"
-              : config.template === "undercover"
-              ? "🕵️"
-              : config.template === "mafia"
-              ? "🎭"
-              : config.template === "tarot"
-              ? "🃏"
-              : "🎮";
-        }
-      } catch (error) {
-        console.error("Error generating game icon:", error);
-        gameIcon =
-          config.template === "werewolf"
-            ? "🐺"
-            : config.template === "undercover"
-            ? "🕵️"
-            : "🎮";
-      }
+      // Use a default emoji immediately — the real AI icon will be generated
+      // in the background after entering the game room to avoid blocking navigation.
+      const gameIcon =
+        config.template === "werewolf"
+          ? "🐺"
+          : config.template === "undercover"
+          ? "🕵️"
+          : config.template === "mafia"
+          ? "🎭"
+          : config.template === "tarot"
+          ? "🃏"
+          : "🎮";
 
       // Generate players via LLM if not configured
       let finalConfig = config;

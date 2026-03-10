@@ -394,6 +394,25 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
   }, [currentGame?.config?.channels, selectedChannelId, setSelectedChannelId]);
 
+  // Generate the AI icon in the background after entering the room so it
+  // doesn't block navigation. Only fires once per game (when icon is still an emoji).
+  const iconGeneratedRef = useRef(false);
+  useEffect(() => {
+    if (!currentGame || iconGeneratedRef.current) return;
+    const icon = currentGame.icon ?? "";
+    if (icon.startsWith("http") || icon.startsWith("data:image")) return;
+    iconGeneratedRef.current = true;
+    const { name, config } = currentGame;
+    fetch("/api/generate-game-icon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameName: name, gameTemplate: config?.template, rules: config?.rules }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data?.icon) updateGame(gameId, { icon: data.icon }); })
+      .catch(() => {});
+  }, [currentGame?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Initialize game room only if there's no saved state.
   // CRITICAL: wait until room state has loaded (isRoomLoading=false) OR we already have
   // players from the local-first cache (players.length > 0).
