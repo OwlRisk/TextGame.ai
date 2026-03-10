@@ -519,7 +519,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return (configuredPlayers || []).map((configPlayer: any, i: number) => ({
       id: `ai-${i + 1}`,
       name: configPlayer.name,
-      avatar: AI_COLORS[i % AI_COLORS.length],
+      // Use pool-provided avatar_url as initial avatar; fetchAvatarsForRoom will overwrite
+      // only if no pool avatar exists.
+      avatar: (configPlayer.avatar_url as string | undefined) ?? AI_COLORS[i % AI_COLORS.length],
       role: undefined as string | undefined,
       stats: {} as Record<string, string | number>,
       isAI: true,
@@ -528,7 +530,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       background: configPlayer.background || "A game enthusiast",
       gender: configPlayer.gender as "male" | "female" | "other" | undefined,
       status: "online" as const,
-      voiceId: undefined as string | undefined,
+      // Use pre-assigned voice from pool; assignVoicesForRoom will only be called for those without one.
+      voiceId: (configPlayer.voice_id as string | undefined) ?? undefined,
     }));
   }, []);
 
@@ -554,33 +557,54 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       status: "online" as const,
     };
 
-    // Assign stable TTS voices so each character keeps the same voice across sessions
-    const voiceMap = assignVoicesForRoom([
-      { name: gameMaster.name, gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background },
-      ...aiPlayers.map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
-        name: p.name, gender: p.gender, personality: p.personality, background: p.background,
-      })),
-    ]);
-    gameMaster.voiceId = voiceMap[gameMaster.name];
-    for (const p of aiPlayers) {
-      p.voiceId = voiceMap[p.name];
+    // Assign voices: players that came from the pool already have a voiceId set in buildAiPlayers.
+    // Only run assignVoicesForRoom for the GM and any players without a pre-assigned voice.
+    const speakersNeedingVoice = [
+      !gameMaster.voiceId ? { name: gameMaster.name, gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background } : null,
+      ...aiPlayers
+        .filter((p: { voiceId?: string }) => !p.voiceId)
+        .map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
+          name: p.name, gender: p.gender, personality: p.personality, background: p.background,
+        })),
+    ].filter(Boolean) as { name: string; gender?: string; personality?: string; background?: string }[];
+
+    if (speakersNeedingVoice.length > 0) {
+      const voiceMap = assignVoicesForRoom(speakersNeedingVoice);
+      if (!gameMaster.voiceId) gameMaster.voiceId = voiceMap[gameMaster.name];
+      for (const p of aiPlayers) {
+        if (!p.voiceId) p.voiceId = voiceMap[p.name];
+      }
     }
 
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
-    // Batch-fetch avatars for AI players and GM only.
-    // Human player uses their real Google/Facebook profile picture (set above).
-    const roomPlayers: RoomPlayerInfo[] = [
+    // Batch-fetch avatars only for players without a pool avatar (i.e., avatar is a color string).
+    // Pool characters already have avatar_url loaded as their avatar.
+    // Human player uses their real Google/Facebook profile picture.
+    const roomPlayersNeedingAvatar: RoomPlayerInfo[] = [
+      // GM always needs an avatar (generated from personality)
       { name: gameMaster.name, type: 'host', gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background },
-      ...aiPlayers.map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
-        name: p.name, type: 'player' as const, gender: p.gender, personality: p.personality, background: p.background,
-      })),
+      // AI players only if they don't already have a URL avatar from the pool
+      ...aiPlayers
+        .filter((p: { avatar?: string }) => !p.avatar || !p.avatar.startsWith('http'))
+        .map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
+          name: p.name, type: 'player' as const, gender: p.gender, personality: p.personality, background: p.background,
+        })),
     ];
-    fetchAvatarsForRoom(roomPlayers, gameId).then((urlMap) => {
-      for (const [key, url] of Object.entries(urlMap)) {
-        onAvatarUrlLoaded(key, url);
+    // For pool players that have a URL, register their avatar_url directly so
+    // the avatar lookup map is populated without a separate fetch.
+    for (const p of aiPlayers) {
+      if (p.avatar?.startsWith('http')) {
+        onAvatarUrlLoaded(p.name, p.avatar);
       }
-    }).catch(() => {});
+    }
+    if (roomPlayersNeedingAvatar.length > 0) {
+      fetchAvatarsForRoom(roomPlayersNeedingAvatar, gameId).then((urlMap) => {
+        for (const [key, url] of Object.entries(urlMap)) {
+          onAvatarUrlLoaded(key, url);
+        }
+      }).catch(() => {});
+    }
 
     setCurrentSpeakerId(null);
     setGamePhase("lobby");

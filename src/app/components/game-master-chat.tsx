@@ -122,6 +122,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     gender?: string;
     personality?: string;
     background?: string;
+    avatar_url?: string;
+    voice_id?: string;
   }>>([]);
   /** Channels (game rooms) decided by the GM via <CONFIG_CHANNELS>. null = use template default. */
   const [gmChannels, setGmChannels] = useState<{ id: string; name: string; roomType?: ChannelRoomType }[] | null>(null);
@@ -821,34 +823,73 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     try {
       let finalConfiguredPlayers = configuredPlayers;
       let finalPlayerCount = configuredPlayers.length > 0 ? configuredPlayers.length : playerCount;
-      if (configuredPlayers.length === 0) {
-        toast.loading("Setting up players...", { id: startToastId });
-        try {
-          const response = await fetch('/api/generate-players', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: abortCtrl.signal,
-            body: JSON.stringify({
-              playerCount: playerCount || 0,
-              gameTemplate: selectedTemplate?.id || "custom",
-              rules: customRules,
-              minPlayers: selectedTemplate?.minPlayers ?? 2,
-              maxPlayers: selectedTemplate?.maxPlayers ?? 20
-            })
-          });
-          if (response.ok) {
-            const data = await response.json();
-            finalConfiguredPlayers = data.players;
-            finalPlayerCount = data.players?.length ?? (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6);
-            setConfiguredPlayers(data.players);
+
+      // Always try to use the character pool (pre-built avatars + voices = faster start).
+      // If the GM chat already provided configuredPlayers, enrich them with pool data.
+      // Otherwise, fetch the whole batch from the pool.
+      toast.loading("Setting up players...", { id: startToastId });
+      try {
+        const needCount = finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers.length : (playerCount || 6);
+        const excludeNames = finalConfiguredPlayers.map((p) => p.name).join(",");
+        const poolRes = await fetch(
+          `/api/characters/pool?count=${needCount}&exclude=${encodeURIComponent(excludeNames)}`,
+          { signal: abortCtrl.signal }
+        );
+        if (poolRes.ok) {
+          const poolData = await poolRes.json();
+          const poolChars: Array<{ name: string; gender?: string; personality?: string; background?: string; avatar_url?: string; voice_id?: string }> = poolData.characters ?? [];
+
+          if (finalConfiguredPlayers.length > 0) {
+            // Enrich LLM-configured players with pool avatars/voices, matched by index
+            finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => ({
+              ...cp,
+              avatar_url: cp.avatar_url ?? poolChars[i]?.avatar_url,
+              voice_id: cp.voice_id ?? poolChars[i]?.voice_id,
+            }));
+          } else if (poolChars.length > 0) {
+            // No LLM config: use pool characters directly
+            finalConfiguredPlayers = poolChars;
+            finalPlayerCount = poolChars.length;
+            setConfiguredPlayers(poolChars);
             if (playerCount === 0) setPlayerCount(finalPlayerCount);
           } else {
-            console.error('[Game Master] ❌ Player generation failed. Status:', response.status);
-            toast.warning("⚠️ Player generation failed. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
+            // Pool empty — fall back to LLM generation
+            throw new Error("Pool empty");
           }
-        } catch (error) {
-          console.error('Error generating players:', error);
-          toast.warning("⚠️ Player generation error. The game will start with no AI players — you can add them manually.", { id: startToastId, duration: 5000 });
+        } else {
+          throw new Error(`Pool API ${poolRes.status}`);
+        }
+      } catch (poolErr) {
+        console.warn('[Game Master] Pool fetch failed, falling back to generate-players:', poolErr);
+        // Fallback: generate players via LLM if pool is unavailable
+        if (finalConfiguredPlayers.length === 0) {
+          try {
+            const response = await fetch('/api/generate-players', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: abortCtrl.signal,
+              body: JSON.stringify({
+                playerCount: playerCount || 0,
+                gameTemplate: selectedTemplate?.id || "custom",
+                rules: customRules,
+                minPlayers: selectedTemplate?.minPlayers ?? 2,
+                maxPlayers: selectedTemplate?.maxPlayers ?? 20,
+              }),
+            });
+            if (response.ok) {
+              const data = await response.json();
+              finalConfiguredPlayers = data.players;
+              finalPlayerCount = data.players?.length ?? (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6);
+              setConfiguredPlayers(data.players);
+              if (playerCount === 0) setPlayerCount(finalPlayerCount);
+            } else {
+              console.error('[Game Master] ❌ Player generation failed. Status:', response.status);
+              toast.warning("⚠️ Player setup failed. The game will start with no AI players.", { id: startToastId, duration: 5000 });
+            }
+          } catch (genErr) {
+            console.error('Error generating players:', genErr);
+            toast.warning("⚠️ Player generation error. The game will start with no AI players.", { id: startToastId, duration: 5000 });
+          }
         }
       }
       type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: 'male' | 'female' | 'other' };

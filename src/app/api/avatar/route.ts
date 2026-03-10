@@ -149,10 +149,16 @@ async function uploadToPool(buffer: Buffer, gender: 'male' | 'female'): Promise<
 /** Save a generated character to the ai_characters table for future community use. */
 async function saveCharacterToDb(opts: {
   name: string; gender?: string; personality?: string; background?: string;
-  avatarUrl?: string; gameId?: string;
+  avatarUrl?: string; gameId?: string; voiceId?: string;
 }): Promise<void> {
   if (!supabaseAdmin) return;
   try {
+    // Compute a voice if not provided
+    let voiceId = opts.voiceId;
+    if (!voiceId) {
+      const { pickVoiceForSpeaker } = await import('@/lib/inworld-voices');
+      voiceId = pickVoiceForSpeaker(opts.gender, opts.personality);
+    }
     const { error } = await supabaseAdmin.from('ai_characters').insert({
       user_id: 'system',
       name: opts.name,
@@ -160,6 +166,7 @@ async function saveCharacterToDb(opts: {
       personality: opts.personality || null,
       background: opts.background || null,
       avatar_url: opts.avatarUrl || null,
+      voice_id: voiceId || null,
       is_system: true,
       source_game_id: opts.gameId || null,
     });
