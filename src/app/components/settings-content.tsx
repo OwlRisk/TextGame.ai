@@ -39,7 +39,35 @@ export function SettingsContent() {
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
   const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));
   const [imageGenEnabled, setImageGenEnabled] = useState<boolean>(() => ls('image_gen_enabled', 'true') !== 'false');
+  const [avatarStyle, setAvatarStyle] = useState<string>(() => ls('avatar_style_pack', 'semi-realistic'));
   const [saving, setSaving] = useState(false);
+
+  const AVATAR_STYLES = [
+    {
+      value: 'semi-realistic',
+      label: 'Semi-Realistic',
+      description: 'Painterly game art, Arcane-inspired',
+      emoji: '🎨',
+    },
+    {
+      value: 'anime',
+      label: 'Anime',
+      description: 'Japanese cel-shaded illustration',
+      emoji: '✨',
+    },
+    {
+      value: 'painted',
+      label: 'Painted Portrait',
+      description: 'Dark Renaissance oil painting',
+      emoji: '🖼️',
+    },
+    {
+      value: 'pixel',
+      label: 'Pixel Art',
+      description: 'Retro 16-bit RPG style',
+      emoji: '👾',
+    },
+  ];
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -353,6 +381,49 @@ export function SettingsContent() {
             )}
           </div>
 
+          {/* Avatar Style Pack */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                <ImageIcon className="h-5 w-5 text-orange-400" />
+              </div>
+              <div>
+                <h2 className="text-white font-semibold text-lg mb-0.5">Avatar Style</h2>
+                <p className="text-zinc-400 text-sm">Art style for AI character portraits in the game room</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {AVATAR_STYLES.map((style) => (
+                <button
+                  key={style.value}
+                  type="button"
+                  onClick={() => {
+                    setAvatarStyle(style.value);
+                    localStorage.setItem('avatar_style_pack', style.value);
+                    toast.success(`Avatar style: ${style.label}`);
+                  }}
+                  className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all text-center ${
+                    avatarStyle === style.value
+                      ? 'border-orange-500 bg-orange-500/10 text-white'
+                      : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                  }`}
+                >
+                  {avatarStyle === style.value && (
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-orange-400" />
+                  )}
+                  <span className="text-2xl">{style.emoji}</span>
+                  <div>
+                    <p className="text-xs font-semibold leading-tight">{style.label}</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5 leading-tight">{style.description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p className="text-zinc-600 text-xs">
+              Takes effect for new games. All 130 characters are available in each style.
+            </p>
+          </div>
+
           {/* Save */}
           <div className="flex justify-end pt-2">
             <Button
@@ -362,6 +433,7 @@ export function SettingsContent() {
                 try {
                   localStorage.setItem('ai_model', aiModel);
                   localStorage.setItem('image_gen_enabled', String(imageGenEnabled));
+                  localStorage.setItem('avatar_style_pack', avatarStyle);
                   // Persist to server when logged in
                   if (session?.access_token) {
                     await fetch('/api/user/settings', {

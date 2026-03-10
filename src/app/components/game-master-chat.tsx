@@ -832,7 +832,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         const needCount = finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers.length : (playerCount || 6);
         const excludeNames = finalConfiguredPlayers.map((p) => p.name).join(",");
         const poolRes = await fetch(
-          `/api/characters/pool?count=${needCount}&exclude=${encodeURIComponent(excludeNames)}`,
+          `/api/characters/pool?count=${needCount}&exclude=${encodeURIComponent(excludeNames)}&style=${encodeURIComponent(typeof window !== 'undefined' ? (localStorage.getItem('avatar_style_pack') ?? 'semi-realistic') : 'semi-realistic')}`,
           { signal: abortCtrl.signal }
         );
         if (poolRes.ok) {
