@@ -346,7 +346,7 @@ export const ChatMessage = React.memo(function ChatMessage({
 // ─── Reaction picker (appears on hover) ────────────────────────────────
 function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (messageId: string, emoji: string) => void }) {
   const [justReacted, setJustReacted] = useState<string | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleClick = useCallback((emoji: string) => {
     onReact(messageId, emoji);
