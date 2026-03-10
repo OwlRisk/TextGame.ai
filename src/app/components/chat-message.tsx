@@ -275,7 +275,7 @@ export const ChatMessage = React.memo(function ChatMessage({
             title={names.join(", ")}
             onClick={() => onReact?.(message.id, emoji)}
           >
-            <span className="text-2xl leading-none">{emoji}</span>
+            <span className="text-[22px] leading-none">{emoji}</span>
             {names.length > 1 && (
               <span className="text-sm text-zinc-400 font-medium leading-none">{names.length}</span>
             )}
@@ -390,7 +390,7 @@ function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (m
           <button
             key={emoji}
             onClick={() => handleClick(emoji)}
-            className={`w-7 h-7 flex items-center justify-center rounded-full text-sm hover:bg-white/10 active:scale-125 transition-all duration-100 ${
+            className={`w-9 h-9 flex items-center justify-center rounded-full text-xl hover:bg-white/10 active:scale-125 transition-all duration-100 ${
               justReacted === emoji ? "scale-125 bg-white/10" : ""
             }`}
           >
