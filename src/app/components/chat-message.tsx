@@ -260,15 +260,15 @@ export const ChatMessage = React.memo(function ChatMessage({
     : "leading-relaxed";
 
   const reactionsBlock = message.reactions && message.reactions.length > 0 ? (
-    <div className="flex flex-wrap gap-1 mt-1.5">
+    <div className="flex flex-wrap gap-1.5 mt-2">
       {message.reactions.map((r, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs bg-white/5 border border-white/10 text-zinc-300 select-none"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm bg-white/5 border border-white/10 text-zinc-300 select-none"
           title={r.from}
         >
-          <span>{r.emoji}</span>
-          <span className="text-zinc-500 text-[10px] leading-none">{r.from}</span>
+          <span className="text-base">{r.emoji}</span>
+          <span className="text-zinc-500 text-xs leading-none">{r.from}</span>
         </span>
       ))}
     </div>
@@ -303,7 +303,7 @@ export const ChatMessage = React.memo(function ChatMessage({
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 mb-2">
                 <span
-                  className={`font-semibold text-sm shrink-0 ${
+                  className={`font-semibold text-[15px] shrink-0 ${
                     isHost ? "text-amber-300" : message.senderId === userId ? "text-blue-200" : "text-white"
                   }`}
                 >
@@ -319,11 +319,11 @@ export const ChatMessage = React.memo(function ChatMessage({
                     YOU
                   </span>
                 )}
-                <span className="text-[11px] text-zinc-500 shrink-0" aria-hidden="true">
+                <span className="text-xs text-zinc-500 shrink-0" aria-hidden="true">
                   {formatMessageTime(message.timestamp)}
                 </span>
             </div>
-            <div className={`text-zinc-100 text-sm break-words ${hostStyle}`}>
+            <div className={`text-zinc-100 text-[15px] break-words ${hostStyle}`}>
               {contentBlock}
             </div>
             {reactionsBlock}
@@ -332,7 +332,7 @@ export const ChatMessage = React.memo(function ChatMessage({
       ) : (
         <div className="flex gap-4">
           <div className="w-11 flex-shrink-0" />
-          <div className={`flex-1 text-zinc-100 text-sm leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : ""}`}>
+          <div className={`flex-1 text-zinc-100 text-[15px] leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : ""}`}>
             {contentBlock}
             {reactionsBlock}
           </div>
