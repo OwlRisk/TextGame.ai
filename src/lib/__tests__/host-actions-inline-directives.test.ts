@@ -154,6 +154,84 @@ START_VOTE: Who to eliminate? | Alice, Bob, Charlie`;
     });
   });
 
+  describe("REACT directive", () => {
+    it("extracts a simple emoji reaction", () => {
+      const { cleanContent, actions } = parseHostActions("Great move!\nREACT: 😂");
+      expect(actions).toContainEqual({ type: "react", emoji: "😂", targetSender: undefined });
+      expect(cleanContent).not.toContain("REACT:");
+      expect(cleanContent).toContain("Great move!");
+    });
+
+    it("extracts reaction with target sender", () => {
+      const { actions } = parseHostActions("REACT: 👍 -> Noah Reyes");
+      expect(actions).toContainEqual({ type: "react", emoji: "👍", targetSender: "Noah Reyes" });
+    });
+
+    it("handles multiple REACT directives", () => {
+      const { actions } = parseHostActions("REACT: 😮\nREACT: 🤔 -> Alice");
+      const reacts = actions.filter(a => a.type === "react");
+      expect(reacts).toHaveLength(2);
+      expect(reacts[0]).toEqual({ type: "react", emoji: "😮", targetSender: undefined });
+      expect(reacts[1]).toEqual({ type: "react", emoji: "🤔", targetSender: "Alice" });
+    });
+
+    it("strips REACT from clean content", () => {
+      const { cleanContent } = parseHostActions("Before\nREACT: ❤️\nAfter");
+      expect(cleanContent).not.toContain("REACT:");
+      expect(cleanContent).toContain("Before");
+      expect(cleanContent).toContain("After");
+    });
+
+    it("works case-insensitively", () => {
+      const { actions } = parseHostActions("react: 👀");
+      expect(actions).toContainEqual({ type: "react", emoji: "👀", targetSender: undefined });
+    });
+  });
+
+  describe("ENGAGEMENT directive", () => {
+    it("extracts engagement score", () => {
+      const { cleanContent, actions } = parseHostActions("Nice!\nENGAGEMENT: 4");
+      expect(actions).toContainEqual({ type: "engagement", score: 4 });
+      expect(cleanContent).not.toContain("ENGAGEMENT:");
+      expect(cleanContent).toContain("Nice!");
+    });
+
+    it("clamps score to minimum 1", () => {
+      const { actions } = parseHostActions("ENGAGEMENT: 0");
+      const eng = actions.find(a => a.type === "engagement");
+      expect(eng).toBeDefined();
+      if (eng && eng.type === "engagement") expect(eng.score).toBe(1);
+    });
+
+    it("clamps score to maximum 5", () => {
+      const { actions } = parseHostActions("ENGAGEMENT: 9");
+      const eng = actions.find(a => a.type === "engagement");
+      expect(eng).toBeDefined();
+      if (eng && eng.type === "engagement") expect(eng.score).toBe(5);
+    });
+
+    it("strips ENGAGEMENT from clean content", () => {
+      const { cleanContent } = parseHostActions("Hello\nENGAGEMENT: 3\nWorld");
+      expect(cleanContent).not.toContain("ENGAGEMENT:");
+      expect(cleanContent).toContain("Hello");
+      expect(cleanContent).toContain("World");
+    });
+
+    it("works alongside other directives", () => {
+      const raw = "PHASE: Day 1\nENGAGEMENT: 5\nREACT: 😂\nGood morning!";
+      const { cleanContent, actions } = parseHostActions(raw);
+      expect(actions.find(a => a.type === "phase")).toBeDefined();
+      expect(actions.find(a => a.type === "engagement")).toEqual({ type: "engagement", score: 5 });
+      expect(actions.find(a => a.type === "react")).toBeDefined();
+      expect(cleanContent).toBe("Good morning!");
+    });
+
+    it("works case-insensitively", () => {
+      const { actions } = parseHostActions("engagement: 2");
+      expect(actions).toContainEqual({ type: "engagement", score: 2 });
+    });
+  });
+
   describe("block directives with inline directives", () => {
     it("extracts both BOARD blocks and inline PHASE", () => {
       const raw = `PHASE: Day 2

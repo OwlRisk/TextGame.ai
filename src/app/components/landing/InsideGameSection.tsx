@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+
 const STEP_ICONS: Record<string, React.ElementType> = {
   design: MessageCircle,
   host: Flame,
@@ -83,12 +84,9 @@ function InsideGameMessageList({
 
 const AUTO_PLAY_INTERVAL = 8000;
 
-function useDragCarousel(count: number) {
+function useAutoCarousel(count: number) {
   const [current, setCurrent] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
   const [paused, setPaused] = useState(false);
-  const touchRef = useRef<{ x: number; y: number; locked: boolean } | null>(null);
   const pauseTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const pauseAutoPlay = useCallback(() => {
@@ -102,55 +100,18 @@ function useDragCarousel(count: number) {
   const next = useCallback(() => { setCurrent((c) => (c === count - 1 ? 0 : c + 1)); pauseAutoPlay(); }, [count, pauseAutoPlay]);
 
   useEffect(() => {
-    if (paused || isDragging) return;
+    if (paused) return;
     const id = setInterval(() => {
       setCurrent((c) => (c === count - 1 ? 0 : c + 1));
     }, AUTO_PLAY_INTERVAL);
     return () => clearInterval(id);
-  }, [paused, isDragging, count]);
+  }, [paused, count]);
 
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchRef.current = { x: t.clientX, y: t.clientY, locked: false };
-    setIsDragging(true);
-  }, []);
-
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchRef.current) return;
-    const t = e.touches[0];
-    const dx = t.clientX - touchRef.current.x;
-    const dy = t.clientY - touchRef.current.y;
-    if (!touchRef.current.locked) {
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-        touchRef.current = null;
-        setIsDragging(false);
-        setDragOffset(0);
-        return;
-      }
-      if (Math.abs(dx) > 10) touchRef.current.locked = true;
-    }
-    if (touchRef.current?.locked) {
-      e.preventDefault();
-      setDragOffset(dx);
-    }
-  }, []);
-
-  const onTouchEnd = useCallback(() => {
-    const threshold = 60;
-    if (touchRef.current?.locked) {
-      if (dragOffset < -threshold) next();
-      else if (dragOffset > threshold) prev();
-    }
-    touchRef.current = null;
-    setDragOffset(0);
-    setIsDragging(false);
-  }, [dragOffset, next, prev]);
-
-  return { current, dragOffset, isDragging, goTo, prev, next, handlers: { onTouchStart, onTouchMove, onTouchEnd } };
+  return { current, goTo, prev, next };
 }
 
 export function InsideGameSection() {
-  const { current: selectedStep, dragOffset, isDragging, goTo: setSelectedStep, prev: handlePrevious, next: handleNext, handlers: dragHandlers } = useDragCarousel(INSIDE_GAME_STEPS.length);
+  const { current: selectedStep, goTo: setSelectedStep, prev: handlePrevious, next: handleNext } = useAutoCarousel(INSIDE_GAME_STEPS.length);
   const currentStep = INSIDE_GAME_STEPS[selectedStep];
 
   return (
@@ -189,14 +150,8 @@ export function InsideGameSection() {
       </div>
 
       {/* Content */}
-      <div
-        className="relative bg-zinc-950/50 border border-zinc-800 rounded-2xl sm:rounded-3xl overflow-hidden mx-2 sm:mx-0"
-        {...dragHandlers}
-      >
-        <div
-          className={`grid grid-cols-1 lg:grid-cols-2 ${isDragging ? "" : "transition-transform duration-300 ease-out"}`}
-          style={{ transform: dragOffset ? `translateX(${dragOffset}px)` : undefined }}
-        >
+      <div className="relative bg-zinc-950/50 border border-zinc-800 rounded-2xl sm:rounded-3xl overflow-hidden mx-2 sm:mx-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2">
           {/* Left – image + heading */}
           <div className="relative p-5 sm:p-8 lg:p-12 flex flex-col justify-between bg-gradient-to-br from-zinc-900/80 to-zinc-950/80">
             <div>
@@ -219,6 +174,20 @@ export function InsideGameSection() {
                   sizes="(min-width: 1024px) 50vw, 100vw"
                   className="w-full h-auto object-cover rounded-lg sm:rounded-xl"
                 />
+                {/* Preload next image */}
+                {INSIDE_GAME_STEPS.length > 1 && (
+                  <NextImage
+                    key={`preload-${INSIDE_GAME_STEPS[(selectedStep + 1) % INSIDE_GAME_STEPS.length].id}`}
+                    src={INSIDE_GAME_STEPS[(selectedStep + 1) % INSIDE_GAME_STEPS.length].image}
+                    alt=""
+                    width={1}
+                    height={1}
+                    loading="eager"
+                    quality={75}
+                    className="absolute w-0 h-0 opacity-0 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                )}
               </div>
             </div>
 
