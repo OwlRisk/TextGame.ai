@@ -138,8 +138,8 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
               <NextImage
                 src="/logo.png"
                 alt={`${BRAND_CONFIG.name} logo`}
-                width={48}
-                height={48}
+                width={56}
+                height={56}
                 className="rounded-xl"
                 priority
               />
