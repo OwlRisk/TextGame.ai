@@ -174,11 +174,11 @@ export function InsideGameSection() {
                   sizes="(min-width: 1024px) 50vw, 100vw"
                   className="w-full h-auto object-cover rounded-lg sm:rounded-xl"
                 />
-                {/* Preload next image */}
-                {INSIDE_GAME_STEPS.length > 1 && (
+                {/* Preload all other images */}
+                {INSIDE_GAME_STEPS.map((step, i) => i !== selectedStep ? (
                   <NextImage
-                    key={`preload-${INSIDE_GAME_STEPS[(selectedStep + 1) % INSIDE_GAME_STEPS.length].id}`}
-                    src={INSIDE_GAME_STEPS[(selectedStep + 1) % INSIDE_GAME_STEPS.length].image}
+                    key={`preload-${step.id}`}
+                    src={step.image}
                     alt=""
                     width={1}
                     height={1}
@@ -187,7 +187,7 @@ export function InsideGameSection() {
                     className="absolute w-0 h-0 opacity-0 pointer-events-none"
                     aria-hidden="true"
                   />
-                )}
+                ) : null)}
               </div>
             </div>
 
