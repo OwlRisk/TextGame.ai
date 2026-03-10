@@ -136,3 +136,8 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .DS_Store
+
+# Local avatar assets (originals stored in Supabase)
+pool-avatars-backup/
+pool-avatars-new/
+avatar-style-samples/
