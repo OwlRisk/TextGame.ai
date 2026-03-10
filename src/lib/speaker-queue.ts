@@ -117,6 +117,67 @@ export async function runPlayerSpeak(
   }
 }
 
+// ─── Passive reactions: AI players spontaneously react based on personality ──
+
+interface PersonalityReactionRule {
+  keywords: RegExp;
+  emojis: string[];
+  chance: number;
+}
+
+const PERSONALITY_REACTION_RULES: PersonalityReactionRule[] = [
+  { keywords: /warm|trusting|kind|empathetic|supportive|nurturing|caring/i, emojis: ["👍", "❤️"], chance: 0.30 },
+  { keywords: /chaotic|playful|comedian|witty|humorous|funny|joker/i, emojis: ["😂", "😅", "😮"], chance: 0.35 },
+  { keywords: /skeptical|analytical|critical|debate|logical/i, emojis: ["🤔", "👀"], chance: 0.15 },
+  { keywords: /quiet|observant|reserved|stoic|patient|silent/i, emojis: ["🤔"], chance: 0.10 },
+  { keywords: /bold|confident|aggressive|leader|decisive|brash/i, emojis: ["👍", "😮"], chance: 0.25 },
+  { keywords: /nervous|anxious|cautious|worried|timid/i, emojis: ["😅", "😬"], chance: 0.20 },
+  { keywords: /dramatic|expressive|emotional|passionate/i, emojis: ["😮", "❤️", "😂"], chance: 0.30 },
+  { keywords: /calm|reassuring|mediator|steady|soothing/i, emojis: ["👍", "❤️", "🤔"], chance: 0.20 },
+];
+
+const PASSIVE_REACTION_DEFAULT_EMOJIS = ["👍", "🤔"];
+const PASSIVE_REACTION_DEFAULT_CHANCE = 0.15;
+const PASSIVE_REACTION_MAX = 2;
+
+function getReactionRuleForPersonality(personality?: string): { emojis: string[]; chance: number } {
+  if (!personality) return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
+  for (const rule of PERSONALITY_REACTION_RULES) {
+    if (rule.keywords.test(personality)) return { emojis: rule.emojis, chance: rule.chance };
+  }
+  return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
+}
+
+export function triggerPassiveReactions(
+  ctx: SpeakerQueueContext,
+  messageId: string,
+  excludePlayerId?: string,
+): void {
+  if (!ctx.addReaction) return;
+  const addReaction = ctx.addReaction;
+  const candidates = ctx.playersRef.current.filter(
+    (p) => p.isAI && !p.isGameMaster && p.id !== excludePlayerId
+  );
+  if (candidates.length === 0) return;
+
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  let reactionCount = 0;
+
+  for (const player of shuffled) {
+    if (reactionCount >= PASSIVE_REACTION_MAX) break;
+    const { emojis, chance } = getReactionRuleForPersonality(player.personality);
+    if (Math.random() > chance) continue;
+
+    reactionCount++;
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    const delay = 500 + Math.random() * 2000;
+
+    setTimeout(() => {
+      addReaction(messageId, emoji, player.name);
+    }, delay);
+  }
+}
+
 export async function speakAndReveal(
   ctx: SpeakerQueueContext,
   player: Player,
@@ -130,9 +191,10 @@ export async function speakAndReveal(
   ctx.setTypingUsers(remaining);
   if (txt) {
     const speed = getTypewriterSpeed(player.personality);
-    await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
+    const revealedMsgId = await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
       senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true,
     }, ctx.channelId, speed);
+    if (revealedMsgId) triggerPassiveReactions(ctx, revealedMsgId, player.id);
     const totalPace = Math.min(
       HOST_PACE_BASE_MS + Math.floor(txt.length / 50) * HOST_PACE_PER_50_CHARS_MS,
       HOST_PACE_MAX_MS,

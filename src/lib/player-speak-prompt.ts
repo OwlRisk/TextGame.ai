@@ -186,9 +186,8 @@ REACT: 😂       ← that was funny
 REACT: 🤔       ← hmm interesting
 REACT: 😮       ← whoa, surprised
 REACT: 😬       ← yikes / awkward
-REACT: 🎯       ← spot on
 You can write text AND react, or just react with no text. A quick emoji reaction is way better than "...".
-Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 🎯 😅 🫡
+Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 😅 🫡
 
 ${EMOTION_TAGS_SECTION}
 

@@ -220,7 +220,7 @@ Examples: "Night Falls — Close Your Eyes", "Voting Time", "Round 3 Begins"
 **Emoji reaction** (react to a recent message — use sparingly, max 1–2 per turn):
 REACT: <emoji>                   ← react to the last message
 REACT: <emoji> -> <player_name>  ← react to the last message from that player
-Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 🎯 😅 🫡
+Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 😅 🫡
 Only use when a reaction genuinely adds colour or confirms something — not as filler.
 
 **Mood/atmosphere** (shift chat background, optional):

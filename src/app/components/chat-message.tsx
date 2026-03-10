@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
-import { AlertCircle, Lock } from "lucide-react";
+import React, { useState, useRef, useCallback, lazy, Suspense } from "react";
+import { AlertCircle, Lock, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
+import { Popover, PopoverTrigger, PopoverContent } from "@/app/components/ui/popover";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { formatMessageTime, stripEmotionTags } from "@/lib/chat-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/app/components/player-panel";
+
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 // ─── Cursor injection ─────────────────────────────────────────────────────
 /** Append a trailing node (blinking cursor) inside the last line of formatted content. */
@@ -131,7 +134,7 @@ function resolveContent(syncedContent: string, rawContent: string, voiceEnabled:
 }
 
 // ─── Component ──────────────────────────────────────────────────────────
-const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "🤔", "😬", "🎯", "😅"];
+const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "🤔", "😬", "😅"];
 
 export interface ChatMessageProps {
   message: {
@@ -344,17 +347,21 @@ export const ChatMessage = React.memo(function ChatMessage({
 // ─── Reaction picker (appears on hover) ────────────────────────────────
 function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (messageId: string, emoji: string) => void }) {
   const [justReacted, setJustReacted] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleClick = useCallback((emoji: string) => {
     onReact(messageId, emoji);
     setJustReacted(emoji);
+    setPickerOpen(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setJustReacted(null), 800);
   }, [messageId, onReact]);
 
   return (
-    <div className="absolute -top-3 right-2 z-10 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-150 pointer-events-none group-hover/msg:pointer-events-auto">
+    <div className={`absolute -top-3 right-2 z-10 transition-opacity duration-150 ${
+      pickerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 group-hover/msg:opacity-100 pointer-events-none group-hover/msg:pointer-events-auto"
+    }`}>
       <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-zinc-800/95 border border-white/10 shadow-lg backdrop-blur-sm">
         {REACTION_EMOJIS.map((emoji) => (
           <button
@@ -367,6 +374,32 @@ function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (m
             {emoji}
           </button>
         ))}
+        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-white/10 transition-all duration-100"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="end"
+            sideOffset={8}
+            className="w-auto p-0 border-white/10 bg-transparent shadow-xl"
+          >
+            <Suspense fallback={<div className="w-[350px] h-[400px] bg-zinc-900 rounded-lg flex items-center justify-center text-zinc-500 text-sm">Loading...</div>}>
+              <EmojiPicker
+                onEmojiClick={(emojiData) => handleClick(emojiData.emoji)}
+                theme={"dark" as import("emoji-picker-react").Theme}
+                width={350}
+                height={400}
+                searchPlaceholder="Search emoji..."
+                lazyLoadEmojis
+              />
+            </Suspense>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
