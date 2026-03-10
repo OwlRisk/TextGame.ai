@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, lazy, Suspense } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { AlertCircle, Lock, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
@@ -10,8 +10,6 @@ import { formatMessageTime, stripEmotionTags } from "@/lib/chat-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/app/components/player-panel";
-
-const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 // ─── Cursor injection ─────────────────────────────────────────────────────
 /** Append a trailing node (blinking cursor) inside the last line of formatted content. */
@@ -344,6 +342,20 @@ export const ChatMessage = React.memo(function ChatMessage({
   );
 });
 
+// ─── Emoji grid for the "+" popover ────────────────────────────────────
+const EMOJI_GRID = [
+  ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😊"],
+  ["😇","🥰","😍","🤩","😘","😗","😋","😛","😜","🤪"],
+  ["😎","🤓","🧐","😏","😒","😞","😔","😟","😕","🙁"],
+  ["😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡"],
+  ["🤯","😳","🥵","🥶","😱","😨","😰","😥","🤫","🤭"],
+  ["🤗","🤔","🫡","🤐","🤨","😐","😑","😶","😬","🙄"],
+  ["😮","😲","🥱","😴","🤤","😷","🤒","🤕","🤑","🤠"],
+  ["👍","👎","👏","🙌","🤝","🤞","✌️","🤟","🫶","💪"],
+  ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","💯","💥"],
+  ["🔥","⭐","✨","💫","🎉","🎊","👀","💀","👻","🫠"],
+];
+
 // ─── Reaction picker (appears on hover) ────────────────────────────────
 function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (messageId: string, emoji: string) => void }) {
   const [justReacted, setJustReacted] = useState<string | null>(null);
@@ -386,18 +398,19 @@ function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (m
             side="top"
             align="end"
             sideOffset={8}
-            className="w-auto p-0 border-white/10 bg-transparent shadow-xl"
+            className="w-auto p-2 border-white/10 bg-zinc-900/95 backdrop-blur-sm shadow-xl"
           >
-            <Suspense fallback={<div className="w-[350px] h-[400px] bg-zinc-900 rounded-lg flex items-center justify-center text-zinc-500 text-sm">Loading...</div>}>
-              <EmojiPicker
-                onEmojiClick={(emojiData) => handleClick(emojiData.emoji)}
-                theme={"dark" as import("emoji-picker-react").Theme}
-                width={350}
-                height={400}
-                searchPlaceholder="Search emoji..."
-                lazyLoadEmojis
-              />
-            </Suspense>
+            <div className="grid grid-cols-10 gap-0.5">
+              {EMOJI_GRID.flat().map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleClick(emoji)}
+                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 active:scale-110 transition-all duration-75 text-lg"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           </PopoverContent>
         </Popover>
       </div>
