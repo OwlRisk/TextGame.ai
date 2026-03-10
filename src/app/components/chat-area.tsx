@@ -5,7 +5,7 @@ import { User, Volume2, VolumeX, ArrowDown, Timer } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { Player } from "@/app/components/player-panel";
 import { useChatTTS } from "@/hooks/use-chat-tts";
 import { trackEvent } from "@/lib/analytics";
@@ -108,6 +108,8 @@ interface ChatAreaProps {
   onVote?: (choice: string) => void;
   /** Countdown timer end timestamp */
   timerEndsAt?: number | null;
+  /** Called when user reacts with an emoji to a message */
+  onReact?: (messageId: string, emoji: string) => void;
 }
 
 export function ChatArea({ 
@@ -152,6 +154,7 @@ export function ChatArea({
   activeVote,
   onVote,
   timerEndsAt,
+  onReact,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -184,7 +187,7 @@ export function ChatArea({
 
   // Auth + player info for avatar rendering
   const { user } = useAuth();
-  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userAvatarUrl = getUserAvatarUrl(user);
   const humanPlayer = players.find((p) => p.id === userId);
   const useGeneratedAvatarForUser = !!(gameId && humanPlayer);
   const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
@@ -452,6 +455,7 @@ export function ChatArea({
                 players={players}
                 avatarImageUrls={avatarImageUrls ?? {}}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
+                onReact={onReact}
               />
             );
           })}

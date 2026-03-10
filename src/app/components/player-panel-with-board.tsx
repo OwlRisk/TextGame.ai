@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef, useCallback, memo } from "react";
-import { Volume2, VolumeX, User, Package, Info, UserPlus, UserMinus, RefreshCw } from "lucide-react";
-import { safeMarked } from "@/lib/safe-marked";
+import { useState, useCallback, memo } from "react";
+import { Volume2, VolumeX, User, Info, UserPlus, UserMinus, RefreshCw } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Badge } from "@/app/components/ui/badge";
 import {
   DropdownMenu,
@@ -14,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import { Player } from "@/app/components/player-panel";
-import { PlayerBoardData } from "@/app/components/player-board";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
@@ -36,18 +33,10 @@ interface PlayerPanelWithBoardProps {
   gameId?: string;
   onToggleMute?: (playerId: string) => void;
   onSelectSpeaker?: (playerId: string) => void;
-  playerBoardData: PlayerBoardData;
-  /** Content written by AI Host for this player's My Board (e.g. role, night result). Only this player sees it. */
-  myBoardContentFromHost?: string;
   /** If true (e.g. werewolf/mafia), hide other players' roles in the list—only show own role. */
   isHiddenRoleGame?: boolean;
   /** Current user's player id—used to show own role and hide others' in hidden-role games. */
   currentUserId?: string;
-  /** When set, tab is controlled by parent (e.g. open to My Board from chat). */
-  activeTab?: "players" | "board";
-  onTabChange?: (tab: "players" | "board") => void;
-  /** Custom label for the private panel Tab and heading. Defaults to "My Board". Set by GM at game creation. */
-  playerBoardLabel?: string;
   /** When set, human player uses this in-game name for avatar key. */
   humanGameIdentity?: { name: string } | null;
   /** Persisted avatar URLs (key = "name|type") for cross-device. */
@@ -74,16 +63,11 @@ export function PlayerPanelWithBoard({
   gameId,
   onToggleMute,
   onSelectSpeaker,
-  playerBoardData,
-  myBoardContentFromHost = "",
   isHiddenRoleGame = false,
   currentUserId,
-  activeTab,
-  onTabChange,
   humanGameIdentity,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
-  playerBoardLabel = "My Board",
   viewerIsGuest = false,
   guestMembers = [],
   onAssignGuest,
@@ -91,27 +75,6 @@ export function PlayerPanelWithBoard({
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [internalTab, setInternalTab] = useState<"players" | "board">("players");
-  const [hasBoardUpdate, setHasBoardUpdate] = useState(false);
-  const prevBoardContentRef = useRef<string>("");
-
-  const isControlled = activeTab !== undefined;
-  const tabValue = isControlled ? activeTab : internalTab;
-
-  useEffect(() => {
-    const trimmed = myBoardContentFromHost.trim();
-    if (trimmed && trimmed !== prevBoardContentRef.current) {
-      setHasBoardUpdate(true);
-    }
-    prevBoardContentRef.current = trimmed;
-  }, [myBoardContentFromHost]);
-
-  const handleTabChange = useCallback((value: string) => {
-    const tab = value as "players" | "board";
-    if (!isControlled) setInternalTab(tab);
-    onTabChange?.(tab);
-    if (tab === "board") setHasBoardUpdate(false);
-  }, [isControlled, onTabChange]);
 
   const openProfile = useCallback((p: Player) => {
     setProfilePlayer(p);
@@ -129,86 +92,42 @@ export function PlayerPanelWithBoard({
         onAvatarUrlLoaded={onAvatarUrlLoaded}
         humanGameIdentity={humanGameIdentity}
       />
-      <Tabs value={tabValue} onValueChange={handleTabChange} className="flex flex-col h-full overflow-hidden flex-1">
-        <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
-          <TabsList className="grid w-full grid-cols-2 bg-zinc-900/80 backdrop-blur-sm h-10">
-            <TabsTrigger value="players" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-white text-zinc-400 text-xs">
-              <User className="h-3.5 w-3.5 mr-2" />
-              Players
-            </TabsTrigger>
-            <TabsTrigger value="board" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-white text-zinc-400 text-xs relative">
-              <Package className="h-3 w-3 mr-1.5" />
-              {playerBoardLabel}
-              {hasBoardUpdate && (
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-zinc-900" aria-hidden />
-              )}
-            </TabsTrigger>
-          </TabsList>
+      <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
+        <div className="flex items-center gap-2 text-zinc-300">
+          <User className="h-4 w-4" />
+          <span className="text-sm font-semibold">Players</span>
+          <span className="text-xs text-zinc-500">({players.length + guestMembers.length})</span>
         </div>
-
-        {/* Players Tab */}
-        <TabsContent value="players" className="flex-1 m-0 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-3 space-y-3">
-              <div className="text-xs font-semibold text-zinc-400 uppercase mb-2 tracking-wide">
-                Players — {players.length + guestMembers.length}
-              </div>
-              <div className="space-y-1.5">
-                {players.map((player) => (
-                  <PlayerCard
-                    key={player.id}
-                    player={player}
-                    isSpeaking={currentSpeakerId === player.id}
-                    isUserGameMaster={isUserGameMaster}
-                    gameId={gameId}
-                    onToggleMute={onToggleMute}
-                    onSelectSpeaker={onSelectSpeaker}
-                    onViewProfile={openProfile}
-                    isHiddenRoleGame={isHiddenRoleGame}
-                    currentUserId={currentUserId}
-                    avatarImageUrls={avatarImageUrls}
-                    onAvatarUrlLoaded={onAvatarUrlLoaded}
-                    viewerIsGuest={viewerIsGuest}
-                    guestMembers={guestMembers}
-                    onAssignGuest={onAssignGuest}
-                    onRegenerateAvatar={onRegenerateAvatar}
-                  />
-                ))}
-                {/* Guest participants joined via invite link */}
-                {guestMembers.map((g) => (
-                  <GuestCard key={g.id} guest={g} />
-                ))}
-              </div>
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        {/* My Board Tab — plain text, edited only by AI Host via MY_BOARD_FOR_xxx */}
-        <TabsContent value="board" className="flex-1 m-0 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-3">
-              <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#1a0f0a]/40 to-zinc-900/50 p-4 shadow-lg backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
-                    <Info className="h-3.5 w-3.5" />
-                  </span>
-                  <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wide">{playerBoardLabel}</h4>
-                </div>
-                {myBoardContentFromHost.trim() ? (
-                  <div
-                    className="mt-3 prose prose-invert prose-sm max-w-none prose-headings:text-white prose-p:text-white prose-li:text-white prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: safeMarked(myBoardContentFromHost.trim()) }}
-                  />
-                ) : (
-                  <p className="mt-3 text-xs text-zinc-500 italic">
-                    Nothing here yet. The Game Master will update your board as the game progresses.
-                  </p>
-                )}
-              </div>
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+      </div>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-3 space-y-3">
+          <div className="space-y-1.5">
+            {players.map((player) => (
+              <PlayerCard
+                key={player.id}
+                player={player}
+                isSpeaking={currentSpeakerId === player.id}
+                isUserGameMaster={isUserGameMaster}
+                gameId={gameId}
+                onToggleMute={onToggleMute}
+                onSelectSpeaker={onSelectSpeaker}
+                onViewProfile={openProfile}
+                isHiddenRoleGame={isHiddenRoleGame}
+                currentUserId={currentUserId}
+                avatarImageUrls={avatarImageUrls}
+                onAvatarUrlLoaded={onAvatarUrlLoaded}
+                viewerIsGuest={viewerIsGuest}
+                guestMembers={guestMembers}
+                onAssignGuest={onAssignGuest}
+                onRegenerateAvatar={onRegenerateAvatar}
+              />
+            ))}
+            {guestMembers.map((g) => (
+              <GuestCard key={g.id} guest={g} />
+            ))}
+          </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

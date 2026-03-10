@@ -669,8 +669,12 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       prev.map((m) => {
         if (m.id !== messageId) return m;
         const existing = m.reactions ?? [];
-        if (existing.some((r) => r.emoji === emoji && r.from === from)) return m;
-        return { ...m, reactions: [...existing, { emoji, from }] };
+        const sameExact = existing.findIndex((r) => r.emoji === emoji && r.from === from);
+        if (sameExact >= 0) {
+          return { ...m, reactions: existing.filter((_, i) => i !== sameExact) };
+        }
+        const withoutPrev = existing.filter((r) => r.from !== from);
+        return { ...m, reactions: [...withoutPrev, { emoji, from }] };
       })
     );
   }, []);

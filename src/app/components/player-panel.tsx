@@ -10,7 +10,7 @@ import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avat
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 
 export interface Player {
   id: string;
@@ -168,7 +168,7 @@ function PlayerCard({
   const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
   const isClickable = !!onOpenProfile;
   const { user } = useAuth();
-  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userAvatarUrl = getUserAvatarUrl(user);
 
   return (
     <div

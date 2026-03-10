@@ -166,7 +166,10 @@ When your public message asks a specific player to elaborate, explain further, c
 ${hasVotingPhase ? `
 VOTING: When it is time to vote, list ALL eligible AI players in one NEXT_SPEAKER line so voting completes without human intervention between votes. Append ${humanName} last. Example: NEXT_SPEAKER: Juno, Edda, Maribel, Tomas, ${humanName}
 ` : ""}${hasNightPhase ? `
-NIGHT: Night-action players (role-based actors who act in private) go first — list ALL of them in a single NEXT_SPEAKER. Omit ${humanName} if their role has no night action. When the system sends "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]", transition to the next phase and include ${humanName}. Never re-prompt players who have already acted.
+NIGHT PHASE RULES:
+- Announce night ONCE, then output NEXT_SPEAKER listing night-action roles. Use AUTO_CHANNEL for private decisions (e.g. Werewolves).
+- On auto-advance ("[System: all pending AI actions…]"): transition to the NEXT phase (Day). Do NOT re-announce night.
+- Use ANNOUNCE at most ONCE per phase transition. Never repeat yourself.
 ` : ""}
 ## DIRECTIVES REFERENCE
 All directives go after "---". They are stripped from public display and never read aloud.
@@ -220,8 +223,13 @@ Examples: "Night Falls — Close Your Eyes", "Voting Time", "Round 3 Begins"
 **Emoji reaction** (react to a recent message — use sparingly, max 1–2 per turn):
 REACT: <emoji>                   ← react to the last message
 REACT: <emoji> -> <player_name>  ← react to the last message from that player
-Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 🎯 😅 🫡
+Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 😅 🫡
 Only use when a reaction genuinely adds colour or confirms something — not as filler.
+
+**Engagement score** (rate how reaction-worthy the last player message was — ALWAYS include this):
+ENGAGEMENT: <1-5>
+1 = routine/boring, 2 = unremarkable, 3 = normal/interesting, 4 = funny/clever/dramatic, 5 = hilarious/shocking/amazing
+Output this every turn. It controls how many AI players react with emoji. Higher = more reactions.
 
 **Mood/atmosphere** (shift chat background, optional):
 MOOD: dark | light | neutral

@@ -39,6 +39,8 @@ export type HostAction =
   | { type: "timer"; seconds: number | "stop" }
   /** Emoji reaction to a recent message */
   | { type: "react"; emoji: string; targetSender?: string }
+  /** Engagement score for the last message (1-5), controls passive AI reactions */
+  | { type: "engagement"; score: number }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -182,6 +184,13 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
         targetSender: m[2]?.trim() || undefined,
       }),
     },
+    {
+      regex: /^ENGAGEMENT:\s*(\d)$/gim,
+      parse: (m) => ({
+        type: "engagement",
+        score: Math.max(1, Math.min(5, parseInt(m[1], 10))),
+      }),
+    },
   ];
 
   for (const dir of INLINE_DIRECTIVES) {
@@ -197,7 +206,14 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
     }
   }
 
-  cleanContent = cleanContent.replace(/\n{2,}/g, "\n\n").trim();
+  cleanContent = cleanContent
+    .replace(/\[\/?MY_NOTES\]/gi, "")
+    .replace(/\[\/?BOARD(?::[^\]]*)?\]/gi, "")
+    .replace(/\[\/?ACCESS(?::[^\]]*)?\]/gi, "")
+    .replace(/\[\/?SECTION(?::[^\]]*)?\]/gi, "")
+    .replace(/\[\/?GAME_OVER\]/gi, "")
+    .replace(/\n{2,}/g, "\n\n")
+    .trim();
   return { cleanContent, actions };
 }
 

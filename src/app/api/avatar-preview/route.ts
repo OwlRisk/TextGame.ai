@@ -49,7 +49,7 @@ function isRateLimited(ip: string): boolean {
 
 const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 64;
-const AVATAR_STORAGE_VERSION = 'v5';
+const AVATAR_STORAGE_VERSION = 'v7';
 
 function avatarCacheKey(name: string): string {
   return `${name}|player`;
@@ -72,10 +72,18 @@ async function resizeAvatarTo64(dataUrl: string): Promise<string> {
   return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
-const SOLO_PORTRAIT = 'Solo character portrait. One person only. Head and shoulders framing. Single individual, centered in frame.';
-const BOTH_EYES_REQUIRED = 'Full face visible, front-facing or very slight three-quarter angle. Both eyes, nose, and mouth clearly shown. Centered in frame, complete face within image boundaries.';
-const FRIENDLY_SAFE = 'Cheerful, friendly, wholesome appearance. Cute, charming anime style. Suitable for all ages. Game avatar.';
-const SHARED_CORE_STYLE = 'Anime illustration style. Vibrant colors, expressive large eyes, clean line art, soft shading. ' + SOLO_PORTRAIT + ' ' + BOTH_EYES_REQUIRED + ' ' + FRIENDLY_SAFE + ' Clean illustrated portrait. Pure visual artwork.';
+const SOLO_PORTRAIT =
+  'Solo character portrait. EXACTLY ONE person only — no second face, no reflections, no mirrors, no split images. ' +
+  'Upper body visible from head to chest. Single individual, centered in frame. Dark moody atmospheric background with subtle bokeh lights.';
+const BOTH_EYES_REQUIRED =
+  'Face visible, front-facing or slight three-quarter angle. Both eyes clearly shown. One face only.';
+const FRIENDLY_SAFE =
+  'Approachable, expressive appearance. Semi-realistic western RPG style. Suitable for all ages. Game character portrait.';
+const CLEAN_PORTRAIT = 'Clean illustrated portrait. Pure visual artwork. No text, no labels, no watermarks.';
+const SHARED_CORE_STYLE =
+  'Semi-realistic digital painting style, similar to Arcane or western RPG character art. ' +
+  'Painterly brushstrokes, dramatic side lighting, rich color depth. Realistic skin texture with slightly stylized proportions. ' +
+  SOLO_PORTRAIT + ' ' + BOTH_EYES_REQUIRED + ' ' + FRIENDLY_SAFE + ' ' + CLEAN_PORTRAIT;
 
 function genderPhrase(gender?: string): string {
   if (!gender) return '';
@@ -95,9 +103,9 @@ function sanitize(text: string): string {
 function buildPrompt(gender?: string, background?: string): string {
   const gp = genderPhrase(gender);
   const bg = background ? sanitize(background.trim()) : '';
-  const base = `Close-up anime portrait. ${gp}${SHARED_CORE_STYLE} Solo individual, centered composition.`;
+  const base = `Semi-realistic character portrait. ${gp}${SHARED_CORE_STYLE} Solo individual, centered composition.`;
   if (!bg || bg.length < 2) return base.slice(0, 1000);
-  const prefix = `Close-up anime portrait. ${gp}Description: `;
+  const prefix = `Semi-realistic character portrait. ${gp}Description: `;
   const suffix = `. ${SHARED_CORE_STYLE} Solo individual, centered composition.`;
   const available = 1000 - prefix.length - suffix.length;
   const truncBg = bg.length > available ? bg.slice(0, available - 3) + '...' : bg;

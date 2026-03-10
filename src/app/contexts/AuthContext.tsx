@@ -8,6 +8,20 @@ import { useRouter } from 'next/navigation';
 
 /** Auth state never expires; kept alive by Supabase refresh tokens */
 
+/** Extract avatar URL from user metadata, handling Facebook's nested { data: { url } } format. */
+export function getUserAvatarUrl(user: User | null | undefined): string | undefined {
+  if (!user) return undefined;
+  const meta = user.user_metadata;
+  if (!meta) return undefined;
+  if (typeof meta.avatar_url === "string" && meta.avatar_url) return meta.avatar_url;
+  if (typeof meta.picture === "string" && meta.picture) return meta.picture;
+  if (meta.picture && typeof meta.picture === "object") {
+    const picData = (meta.picture as Record<string, unknown>).data as Record<string, unknown> | undefined;
+    if (picData && typeof picData.url === "string") return picData.url;
+  }
+  return undefined;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -146,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         let sessionToSet = session;
         let userToSet = session?.user ?? null;
-        if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
+        if (userToSet && !getUserAvatarUrl(userToSet)) {
           try {
             const { data: { session: refreshed }, error: refreshError } = await supabase.auth.refreshSession();
             if (refreshError && isInvalidRefreshToken(refreshError)) {
@@ -159,12 +173,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setLoading(false);
               return;
             }
-            if (refreshed?.user && (refreshed.user.user_metadata?.avatar_url || refreshed.user.user_metadata?.picture)) {
+            if (refreshed?.user && getUserAvatarUrl(refreshed.user)) {
               userToSet = refreshed.user;
               sessionToSet = refreshed;
             } else {
               const { data: { user: freshUser } } = await supabase.auth.getUser();
-              if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+              if (freshUser && getUserAvatarUrl(freshUser)) {
                 userToSet = freshUser;
               }
             }
@@ -180,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else {
               try {
                 const { data: { user: freshUser } } = await supabase.auth.getUser();
-                if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+                if (freshUser && getUserAvatarUrl(freshUser)) {
                   userToSet = freshUser;
                 }
               } catch {
@@ -209,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (signingOutRef.current) return;
       let sessionToSet = session;
       let userToSet = session?.user ?? null;
-      if (userToSet && (!userToSet.user_metadata?.avatar_url && !userToSet.user_metadata?.picture)) {
+      if (userToSet && !getUserAvatarUrl(userToSet)) {
         try {
           const { data: { session: refreshed }, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError && isInvalidRefreshToken(refreshError)) {
@@ -222,12 +236,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false);
             return;
           }
-          if (refreshed?.user && (refreshed.user.user_metadata?.avatar_url || refreshed.user.user_metadata?.picture)) {
+          if (refreshed?.user && getUserAvatarUrl(refreshed.user)) {
             userToSet = refreshed.user;
             sessionToSet = refreshed;
           } else {
             const { data: { user: freshUser } } = await supabase.auth.getUser();
-            if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+            if (freshUser && getUserAvatarUrl(freshUser)) {
               userToSet = freshUser;
             }
           }
@@ -243,7 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             try {
               const { data: { user: freshUser } } = await supabase.auth.getUser();
-              if (freshUser && (freshUser.user_metadata?.avatar_url || freshUser.user_metadata?.picture)) {
+              if (freshUser && getUserAvatarUrl(freshUser)) {
                 userToSet = freshUser;
               }
             } catch {

@@ -13,7 +13,6 @@ import dynamic from "next/dynamic";
 const LobbyView = dynamic(() => import("@/app/components/lobby-view").then(m => m.LobbyView), { ssr: false });
 const CharacterBrowser = dynamic(() => import("@/app/components/character-browser").then(m => m.CharacterBrowser), { ssr: false });
 const PlayerPanelWithBoard = dynamic(() => import("@/app/components/player-panel-with-board").then(m => m.PlayerPanelWithBoard), { ssr: false });
-import type { PlayerBoardData } from "@/app/components/player-board";
 import { parseHostActions, resolvePlayerRefToId } from "@/lib/host-actions";
 import { isPlayerEliminated } from "@/lib/player-badges";
 import {
@@ -27,7 +26,7 @@ import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
 import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
-import { Menu, Hash, Users, BookOpen } from "lucide-react";
+import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
@@ -179,21 +178,23 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return roomMembers.find((m) => m.guest_id === guestId && !m.is_owner)?.player_id ?? null;
   }, [isGuestPlayer, guestId, roomMembers]);
 
-  const playerBoardDataMemo: PlayerBoardData = useMemo(() => {
-    const humanPlayer = players.find((p) => p.id === userId);
-    return {
-      characterName: humanGameIdentity?.name ?? humanPlayer?.name ?? "You",
-      avatar: humanPlayer?.avatar ?? "#6366f1",
-      attributes: [],
-      items: [],
-      statusEffects: [],
-    };
-  }, [players, userId, humanGameIdentity]);
-
   const boardContentForViewer = useMemo(() => {
     if (isGuestPlayer) return guestPlayerBinding ? myBoardContent[guestPlayerBinding] ?? "" : "";
     return myBoardContent[userId] ?? "";
   }, [isGuestPlayer, guestPlayerBinding, myBoardContent, userId]);
+
+  const prevBoardContentRef = useRef<string>("");
+  useEffect(() => {
+    const trimmed = boardContentForViewer.trim();
+    if (trimmed && trimmed !== prevBoardContentRef.current) {
+      setMyBoardHasUpdate(true);
+    }
+    prevBoardContentRef.current = trimmed;
+  }, [boardContentForViewer]);
+
+  useEffect(() => {
+    if (selectedChannelId === "__my_board__") setMyBoardHasUpdate(false);
+  }, [selectedChannelId]);
 
   /** True while Host + AI replies are being generated (prevents double-send and shows loading) */
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
@@ -261,8 +262,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   /** Mobile left drawer: 'app' nav | 'channels' channel list */
   const [mobileLeftDrawer, setMobileLeftDrawer] = useState<"app" | "channels" | null>(null);
   const [mobileRightDrawer, setMobileRightDrawer] = useState(false);
-  /** Right panel active tab: Players | My Board (private to you, editable by Host only) */
-  const [rightPanelTab, setRightPanelTab] = useState<"players" | "board">("players");
+  const [myBoardHasUpdate, setMyBoardHasUpdate] = useState(false);
 
   useEffect(() => {
     setMobileLeftDrawer(null);
@@ -704,7 +704,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         recentSlice.length === 0
           ? "(No prior messages in this channel.)"
           : recentSlice
-              .map((m) => `- ${m.senderName}: ${m.content}`)
+              .map((m) => {
+                let line = `- ${m.senderName}: ${m.content}`;
+                if (m.reactions?.length) {
+                  line += ` [reactions: ${m.reactions.map((r) => `${r.emoji} ${r.from}`).join(", ")}]`;
+                }
+                return line;
+              })
               .join("\n");
 
       const gmName = currentGame?.config?.generatedHost?.name || "Game Master";
@@ -829,6 +835,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       const parseHostResult = (raw: string) =>
         parseHostResultUtil(raw, playersRef.current, humanName, gameRoomEntries);
 
+      let latestEngagementScore = 3;
+      const seenAnnouncements = new Set<string>();
+
       /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
         const { cleanContent, actions } = parseHostActions(content);
@@ -883,14 +892,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           } else if (a.type === "phase") {
             setPhaseLabel(a.label);
           } else if (a.type === "announce") {
-            addMessage({
-              senderId: "system",
-              senderName: "Announcement",
-              senderAvatar: "#8b5cf6",
-              content: a.text,
-              isAI: false,
-              isAnnouncement: true,
-            });
+            const key = a.text.trim().toLowerCase();
+            if (!seenAnnouncements.has(key)) {
+              seenAnnouncements.add(key);
+              addMessage({
+                senderId: "system",
+                senderName: "Announcement",
+                senderAvatar: "#8b5cf6",
+                content: a.text,
+                isAI: false,
+                isAnnouncement: true,
+              });
+            }
           } else if (a.type === "mood") {
             setMood(a.value);
           } else if (a.type === "start_vote") {
@@ -914,6 +927,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
                 );
             if (targetMsg) addReaction(targetMsg.id, a.emoji, gmName);
+          } else if (a.type === "engagement") {
+            latestEngagementScore = a.score;
           }
         }
         return cleanContent;
@@ -1092,6 +1107,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         recentForNext: recentRef,
         setCurrentSpeakerId, setTypingUsers, setPlayerNotes,
         addStreamingMessage, updateStreamingMessage,
+        addReaction,
+        engagementScore: latestEngagementScore,
       });
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
@@ -1125,7 +1142,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
       if (!isSilentTurn) await hostPace();
       const recentForNextRef = { current: [
-        ...channelMessagesForRecent.slice(-18).map((m) => ({ senderName: m.senderName, content: m.content })),
+        ...channelMessagesForRecent.slice(-18).map((m) => ({
+          senderName: m.senderName,
+          content: m.reactions?.length
+            ? `${m.content} [reactions: ${m.reactions.map((r) => `${r.emoji} ${r.from}`).join(", ")}]`
+            : m.content,
+        })),
         { senderName: humanName, content },
         ...(hostContent ? [{ senderName: gmName, content: hostContent }] : []),
       ] as Array<{ senderName: string; content: string }> };
@@ -1144,8 +1166,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       let lastBeatContentLen = hostContent?.length ?? 0;
       for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
         await dynamicPace(lastBeatContentLen);
+        const recentSummary = recentForNextRef.current.slice(-10)
+          .map((m) => `${m.senderName}: ${m.content}`).join("\n");
         const advanced = await callHostStream(
-          "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]",
+          `[System: all pending AI actions in this beat are done — advance the game to the next beat automatically. Do NOT repeat any announcement or phase transition you already made.]\n\nRecent messages for context:\n${recentSummary}`,
           channelId
         );
         if (!advanced.hostContent && advanced.speakerQueue.length === 0) break;
@@ -1154,7 +1178,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           recentForNextRef.current = [
             ...recentForNextRef.current,
             { senderName: gmName, content: advanced.hostContent },
-          ];
+          ].slice(-30);
         }
         currentQueue = advanced.speakerQueue;
         humanReached = await runSpeakerQueueFn(sqCtx, currentQueue);
@@ -1275,6 +1299,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   });
 
   const RULES_CHANNEL_ID = "__rules__";
+  const BOARD_CHANNEL_ID = "__my_board__";
 
   useEffect(() => {
     if (selectedChannelId === RULES_CHANNEL_ID) {
@@ -1512,6 +1537,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     allPlayers: players,
     unreadCounts,
     hasRules: !!(currentGame?.config?.rules ?? "").trim(),
+    hasMyBoard: gamePhase !== "lobby",
+    myBoardHasUpdate,
+    playerBoardLabel: currentGame?.config?.playerBoardLabel,
     onDeleteChannel: (id: string | undefined) => {
       if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
     },
@@ -1619,6 +1647,30 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               )}
             </div>
           </ScrollArea>
+        ) : selectedChannelId === BOARD_CHANNEL_ID ? (
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="max-w-2xl p-6">
+              <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#1a0f0a]/40 to-zinc-900/50 p-5 shadow-lg backdrop-blur-sm">
+                <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-amber-500/20">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
+                    <Info className="h-4 w-4" />
+                  </span>
+                  <h2 className="text-lg font-semibold text-amber-200">{currentGame?.config?.playerBoardLabel || "My Board"}</h2>
+                </div>
+                {boardContentForViewer.trim() ? (
+                  <div
+                    className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs"
+                    dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-500">
+                    <p className="text-sm font-medium">Nothing here yet.</p>
+                    <p className="text-xs mt-1">The Game Master will update your board as the game progresses.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollArea>
         ) : gamePhase === "lobby" ? (
           <LobbyView
             gameName={currentGame?.name ?? "Game"}
@@ -1677,8 +1729,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
             onOpenPlayerBoard={() => {
-              setMobileRightDrawer(true);
-              setRightPanelTab("board");
+              setSelectedChannelId(BOARD_CHANNEL_ID);
+              setMobileLeftDrawer(null);
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
             isOwner={isGuestPlayer ? false : (isOwner ? true : undefined)}
@@ -1738,12 +1790,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             } : undefined}
             timerEndsAt={timerEndsAt}
             alivePlayers={players.filter(p => !isPlayerEliminated(p))}
+            onReact={(messageId, emoji) => {
+              const displayName = humanGameIdentity?.name || "You";
+              addReaction(messageId, emoji, displayName);
+            }}
           />
         ) : null)}
       </div>
       </ErrorBoundary>
 
-      {/* Player panel + My Board (private, Host-editable): desktop visible, right Sheet on mobile */}
+      {/* Player panel: desktop visible, right Sheet on mobile */}
             <div className="hidden md:block flex-shrink-0 w-80">
               <PlayerPanelWithBoard
                 players={playersForChannel}
@@ -1751,12 +1807,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 humanGameIdentity={humanGameIdentity}
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
-                playerBoardData={playerBoardDataMemo}
-                myBoardContentFromHost={boardContentForViewer}
                 currentUserId={userId}
-                activeTab={rightPanelTab}
-                onTabChange={setRightPanelTab}
-                playerBoardLabel={currentGame?.config?.playerBoardLabel}
                 viewerIsGuest={isGuestPlayer}
                 guestMembers={enrichedGuestMembers}
                 onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
@@ -1771,12 +1822,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   humanGameIdentity={humanGameIdentity}
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
-                  playerBoardData={playerBoardDataMemo}
-                  myBoardContentFromHost={boardContentForViewer}
                   currentUserId={userId}
-                  activeTab={rightPanelTab}
-                  onTabChange={setRightPanelTab}
-                  playerBoardLabel={currentGame?.config?.playerBoardLabel}
                   viewerIsGuest={isGuestPlayer}
                   guestMembers={enrichedGuestMembers}
                   onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}

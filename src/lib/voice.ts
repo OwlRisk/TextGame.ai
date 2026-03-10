@@ -338,7 +338,14 @@ interface TTSQueueItem {
  * as-is and let Inworld handle it — no extra stripping at API level.
  * If a user hears the tag spoken, they should switch to a model that supports it.
  */
+let ttsConsecutiveFailures = 0;
+let ttsCooldownUntil = 0;
+const TTS_MAX_FAILURES = 3;
+const TTS_COOLDOWN_MS = 60_000;
+
 async function prefetchTTSAudio(text: string, voiceId: string): Promise<string | null> {
+  if (Date.now() < ttsCooldownUntil) return null;
+
   const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-max';
 
   /** Raw API call — used directly by the owner (or single-player). */
@@ -349,10 +356,22 @@ async function prefetchTTSAudio(text: string, voiceId: string): Promise<string |
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text.slice(0, 2000), voiceId, modelId }),
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        ttsConsecutiveFailures++;
+        if (ttsConsecutiveFailures >= TTS_MAX_FAILURES) {
+          ttsCooldownUntil = Date.now() + TTS_COOLDOWN_MS;
+          console.warn(`[TTS] ${ttsConsecutiveFailures} consecutive failures, pausing for ${TTS_COOLDOWN_MS / 1000}s`);
+        }
+        return null;
+      }
+      ttsConsecutiveFailures = 0;
       const data = (await res.json()) as { audioBase64?: string };
       return data.audioBase64 ?? null;
     } catch {
+      ttsConsecutiveFailures++;
+      if (ttsConsecutiveFailures >= TTS_MAX_FAILURES) {
+        ttsCooldownUntil = Date.now() + TTS_COOLDOWN_MS;
+      }
       return null;
     }
   };

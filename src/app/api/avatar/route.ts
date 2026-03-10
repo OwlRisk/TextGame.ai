@@ -187,7 +187,7 @@ function avatarCacheKey(name: string, type: AvatarType): string {
 }
 
 /** Version prefix: bump to force regeneration when style/prompt changes (e.g. host and player same prompt) */
-const AVATAR_STORAGE_VERSION = 'v6';
+const AVATAR_STORAGE_VERSION = 'v7';
 
 /** Deterministic storage path for upsert */
 function avatarStoragePath(name: string, type: AvatarType): string {
@@ -208,7 +208,7 @@ function getModel(): AvatarModel {
 /** Solo character: exactly one person in frame, upper-body portrait */
 const SOLO_PORTRAIT =
   'Solo character portrait. EXACTLY ONE person only — no second face, no reflections, no mirrors, no split images. ' +
-  'Upper body visible from head to chest. Single individual, centered in frame. Plain or simple background.';
+  'Upper body visible from head to chest. Single individual, centered in frame. Dark moody atmospheric background with subtle bokeh lights.';
 
 /** Clean visual output: image contains only the illustrated portrait */
 const CLEAN_PORTRAIT = 'Clean illustrated portrait. Pure visual artwork. No text, no labels, no watermarks.';
@@ -217,13 +217,14 @@ const CLEAN_PORTRAIT = 'Clean illustrated portrait. Pure visual artwork. No text
 const BOTH_EYES_REQUIRED =
   'Face visible, front-facing or slight three-quarter angle. Both eyes clearly shown. One face only.';
 
-/** Friendly, wholesome look — keeps avatars suitable for a casual game regardless of role name */
+/** Friendly, approachable look — keeps avatars suitable for a casual game regardless of role name */
 const FRIENDLY_SAFE =
-  'Cheerful, friendly, wholesome appearance. Cute, charming anime style. Suitable for all ages. Game avatar.';
+  'Approachable, expressive appearance. Semi-realistic western RPG style. Suitable for all ages. Game character portrait.';
 
-/** Single shared style for Host and Player — identical so all avatars look the same (anime, not realistic). */
+/** Single shared style for Host and Player — semi-realistic Arcane/western RPG aesthetic. */
 const SHARED_CORE_STYLE =
-  'Anime illustration style. Vibrant colors, expressive large eyes, clean line art, soft shading. ' +
+  'Semi-realistic digital painting style, similar to Arcane or western RPG character art. ' +
+  'Painterly brushstrokes, dramatic side lighting, rich color depth. Realistic skin texture with slightly stylized proportions. ' +
   SOLO_PORTRAIT + ' ' +
   BOTH_EYES_REQUIRED + ' ' +
   FRIENDLY_SAFE + ' ' +
@@ -297,7 +298,7 @@ function buildPrompt(
 
   const MAX_PROMPT_LENGTH = 1000;
 
-  const singleStart = 'Anime character portrait. ';
+  const singleStart = 'Semi-realistic character portrait. ';
   const singleEnd = ' Solo individual, centered composition.';
 
   const basePrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;

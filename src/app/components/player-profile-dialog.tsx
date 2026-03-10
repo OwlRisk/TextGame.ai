@@ -6,7 +6,7 @@ import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avat
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { User, Sparkles, BookOpen } from "lucide-react";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 
 interface PlayerProfileDialogProps {
   player: Player | null;
@@ -29,7 +29,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
   const useGameAvatarForHuman = isUser && !!gameId;
   const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
   const { user } = useAuth();
-  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userAvatarUrl = getUserAvatarUrl(user);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
-import { AlertCircle, Lock } from "lucide-react";
+import React, { useState, useRef, useCallback } from "react";
+import { AlertCircle, Lock, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
+import { Popover, PopoverTrigger, PopoverContent } from "@/app/components/ui/popover";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { formatMessageTime, stripEmotionTags } from "@/lib/chat-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
@@ -131,6 +132,8 @@ function resolveContent(syncedContent: string, rawContent: string, voiceEnabled:
 }
 
 // ─── Component ──────────────────────────────────────────────────────────
+const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "🤔", "😬", "😅"];
+
 export interface ChatMessageProps {
   message: {
     id: string;
@@ -160,12 +163,13 @@ export interface ChatMessageProps {
   players: Player[];
   avatarImageUrls: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  onReact?: (messageId: string, emoji: string) => void;
 }
 
 export const ChatMessage = React.memo(function ChatMessage({
   message, showAvatar, syncedContent, rawContent, isShowingCursor,
   userId, userAvatarUrl, useGeneratedAvatarForUser, humanPlayer, userAvatarName,
-  gameId, players, avatarImageUrls, onAvatarUrlLoaded,
+  gameId, players, avatarImageUrls, onAvatarUrlLoaded, onReact,
 }: ChatMessageProps) {
   if (message.isAnnouncement) {
     return (
@@ -255,23 +259,42 @@ export const ChatMessage = React.memo(function ChatMessage({
     ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5"
     : "leading-relaxed";
 
-  const reactionsBlock = message.reactions && message.reactions.length > 0 ? (
-    <div className="flex flex-wrap gap-1 mt-1.5">
-      {message.reactions.map((r, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs bg-white/5 border border-white/10 text-zinc-300 select-none"
-          title={r.from}
-        >
-          <span>{r.emoji}</span>
-          <span className="text-zinc-500 text-[10px] leading-none">{r.from}</span>
-        </span>
-      ))}
-    </div>
-  ) : null;
+  const reactionsBlock = message.reactions && message.reactions.length > 0 ? (() => {
+    const grouped = new Map<string, string[]>();
+    for (const r of message.reactions) {
+      const names = grouped.get(r.emoji) ?? [];
+      names.push(r.from);
+      grouped.set(r.emoji, names);
+    }
+    return (
+      <div className="flex flex-wrap gap-1.5 mt-2">
+        {[...grouped.entries()].map(([emoji, names]) => (
+          <button
+            key={emoji}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-300 select-none hover:bg-white/10 transition-colors cursor-pointer"
+            title={names.join(", ")}
+            onClick={() => onReact?.(message.id, emoji)}
+          >
+            <span className="text-[22px] leading-none">{emoji}</span>
+            {names.length > 1 && (
+              <span className="text-sm text-zinc-400 font-medium leading-none">{names.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+    );
+  })() : null;
+
+  const canReact = !!onReact && !message.isStreaming;
 
   return (
-    <div className={showAvatar ? "mt-5" : "mt-2"}>
+    <div className={`group/msg relative ${showAvatar ? "mt-5" : "mt-2"}`}>
+      {canReact && (
+        <ReactionPicker
+          messageId={message.id}
+          onReact={onReact}
+        />
+      )}
       {showAvatar ? (
         <div className="flex gap-4">
           <div className="relative flex-shrink-0" title={message.senderName}>
@@ -289,10 +312,9 @@ export const ChatMessage = React.memo(function ChatMessage({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 mb-2">
                 <span
-                  className={`font-semibold text-sm shrink-0 ${
+                  className={`font-semibold text-[15px] shrink-0 ${
                     isHost ? "text-amber-300" : message.senderId === userId ? "text-blue-200" : "text-white"
                   }`}
                 >
@@ -308,12 +330,11 @@ export const ChatMessage = React.memo(function ChatMessage({
                     YOU
                   </span>
                 )}
-              </div>
-              <span className="text-[11px] text-zinc-500 shrink-0" aria-hidden="true">
-                {formatMessageTime(message.timestamp)}
-              </span>
+                <span className="text-xs text-zinc-500 shrink-0" aria-hidden="true">
+                  {formatMessageTime(message.timestamp)}
+                </span>
             </div>
-            <div className={`text-zinc-100 text-sm break-words ${hostStyle}`}>
+            <div className={`text-zinc-100 text-[15px] break-words ${hostStyle}`}>
               {contentBlock}
             </div>
             {reactionsBlock}
@@ -322,7 +343,7 @@ export const ChatMessage = React.memo(function ChatMessage({
       ) : (
         <div className="flex gap-4">
           <div className="w-11 flex-shrink-0" />
-          <div className={`flex-1 text-zinc-100 text-sm leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : ""}`}>
+          <div className={`flex-1 text-zinc-100 text-[15px] leading-relaxed break-words ${isHost ? "rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5" : ""}`}>
             {contentBlock}
             {reactionsBlock}
           </div>
@@ -331,6 +352,82 @@ export const ChatMessage = React.memo(function ChatMessage({
     </div>
   );
 });
+
+// ─── Emoji grid for the "+" popover ────────────────────────────────────
+const EMOJI_GRID = [
+  ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😊"],
+  ["😇","🥰","😍","🤩","😘","😗","😋","😛","😜","🤪"],
+  ["😎","🤓","🧐","😏","😒","😞","😔","😟","😕","🙁"],
+  ["😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡"],
+  ["🤯","😳","🥵","🥶","😱","😨","😰","😥","🤫","🤭"],
+  ["🤗","🤔","🫡","🤐","🤨","😐","😑","😶","😬","🙄"],
+  ["😮","😲","🥱","😴","🤤","😷","🤒","🤕","🤑","🤠"],
+  ["👍","👎","👏","🙌","🤝","🤞","✌️","🤟","🫶","💪"],
+  ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","💯","💥"],
+  ["🔥","⭐","✨","💫","🎉","🎊","👀","💀","👻","🫠"],
+];
+
+// ─── Reaction picker (appears on hover) ────────────────────────────────
+function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (messageId: string, emoji: string) => void }) {
+  const [justReacted, setJustReacted] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleClick = useCallback((emoji: string) => {
+    onReact(messageId, emoji);
+    setJustReacted(emoji);
+    setPickerOpen(false);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setJustReacted(null), 800);
+  }, [messageId, onReact]);
+
+  return (
+    <div className={`absolute -top-3 right-2 z-10 transition-opacity duration-150 ${
+      pickerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 group-hover/msg:opacity-100 pointer-events-none group-hover/msg:pointer-events-auto"
+    }`}>
+      <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-zinc-800/95 border border-white/10 shadow-lg backdrop-blur-sm">
+        {REACTION_EMOJIS.map((emoji) => (
+          <button
+            key={emoji}
+            onClick={() => handleClick(emoji)}
+            className={`w-9 h-9 flex items-center justify-center rounded-full text-xl hover:bg-white/10 active:scale-125 transition-all duration-100 ${
+              justReacted === emoji ? "scale-125 bg-white/10" : ""
+            }`}
+          >
+            {emoji}
+          </button>
+        ))}
+        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-white/10 transition-all duration-100"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="end"
+            sideOffset={8}
+            className="w-auto p-2 border-white/10 bg-zinc-900/95 backdrop-blur-sm shadow-xl"
+          >
+            <div className="grid grid-cols-10 gap-0.5">
+              {EMOJI_GRID.flat().map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleClick(emoji)}
+                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 active:scale-110 transition-all duration-75 text-lg"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
 
 // ─── Avatar sub-component ──────────────────────────────────────────────
 function MessageAvatar({

@@ -114,6 +114,13 @@ export async function POST(request: NextRequest) {
 
     if (isSeedGreeting) {
       lines.push(`The game just started. Say something brief and in-character as ${player.name}—a casual greeting, a comment, or a reaction. IMPORTANT: Do NOT repeat what others already said. Be unique: if someone asked a question, don't ask the same thing. Show YOUR personality. Keep it short (1-2 sentences).`);
+    } else if (gameTemplate === '20-questions') {
+      lines.push(`Your turn. Reply as ${player.name}. RULES:
+1. Don't repeat a question someone already asked.
+2. React to the last answer — get excited, groan, speculate, whatever feels natural.
+3. You CAN suggest what to ask next or throw out a guess — that's the fun part.
+4. Keep it super casual and short. 1 sentence, maybe 2.
+5. If you truly have NOTHING to say, "..." is okay — but try a quick reaction first.`);
     } else {
       lines.push(`Your turn. Reply as ${player.name}. CRITICAL RULES:
 1. Read every recent message carefully. If someone already asked/nudged/said what you were going to say, output ONLY "..." — do not paraphrase it.

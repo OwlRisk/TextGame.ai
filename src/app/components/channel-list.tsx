@@ -1,9 +1,9 @@
-import { Hash, Users, Lock, Trash2, Link2, Check, UserPlus, BookOpen, FileText } from "lucide-react";
+import { Hash, Users, Lock, Trash2, Link2, Check, UserPlus, BookOpen, FileText, Package } from "lucide-react";
 import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Separator } from "@/app/components/ui/separator";
 import {
@@ -70,6 +70,12 @@ interface ChannelListProps {
   viewerMemberId?: string;
   /** When true, shows a "Rules" entry at the top of the channel list that selects the special "__rules__" channel. */
   hasRules?: boolean;
+  /** When true, shows a "My Board" entry below Rules that selects the special "__my_board__" channel. */
+  hasMyBoard?: boolean;
+  /** When true, shows an amber notification dot on the My Board entry. */
+  myBoardHasUpdate?: boolean;
+  /** Custom label for the My Board entry. Defaults to "My Board". */
+  playerBoardLabel?: string;
 }
 
 export function ChannelList({ 
@@ -92,9 +98,12 @@ export function ChannelList({
   roomMembers,
   viewerMemberId,
   hasRules,
+  hasMyBoard,
+  myBoardHasUpdate,
+  playerBoardLabel = "My Board",
 }: ChannelListProps) {
   const { user } = useAuth();
-  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userAvatarUrl = getUserAvatarUrl(user);
   const displayName = (gameUserDisplayName && gameUserDisplayName.trim()) || (userDisplayName && userDisplayName.trim()) ? (gameUserDisplayName || userDisplayName || "Player").trim() : "Player";
   const shortLabel = (displayName !== "Player") ? "You" : "#0001";
   // Unified style: human players also use AI-style generated avatars in-game
@@ -130,8 +139,8 @@ export function ChannelList({
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3">
-          {/* Rules entry + dynamic sections from AI Host */}
-          {(hasRules || channels.some(c => c.type === "text")) && (
+          {/* Rules entry + My Board + dynamic sections from AI Host */}
+          {(hasRules || hasMyBoard || channels.some(c => c.type === "text")) && (
             <div className="mb-5">
               {hasRules && (
                 <Button
@@ -145,6 +154,23 @@ export function ChannelList({
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
                   <span className="text-sm">Rules</span>
+                </Button>
+              )}
+              {hasMyBoard && (
+                <Button
+                  variant="ghost"
+                  className={`w-full justify-start px-3 h-9 mb-1 rounded-lg ${
+                    selectedChannelId === "__my_board__"
+                      ? "bg-zinc-700/50 text-white"
+                      : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300"
+                  }`}
+                  onClick={() => onSelectChannel("__my_board__")}
+                >
+                  <Package className="h-4 w-4 mr-2 text-amber-400/60" />
+                  <span className="text-sm">{playerBoardLabel}</span>
+                  {myBoardHasUpdate && selectedChannelId !== "__my_board__" && (
+                    <span className="ml-auto h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" aria-hidden />
+                  )}
                 </Button>
               )}
               {(() => {
@@ -190,7 +216,7 @@ export function ChannelList({
             </div>
           )}
 
-          {(hasRules || channels.some(c => c.type === "text")) && <Separator className="my-3 bg-zinc-700/50" />}
+          {(hasRules || hasMyBoard || channels.some(c => c.type === "text")) && <Separator className="my-3 bg-zinc-700/50" />}
 
           {/* Game Rooms */}
           <div>

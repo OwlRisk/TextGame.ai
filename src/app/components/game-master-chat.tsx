@@ -33,7 +33,7 @@ import { HOST_PERSONALITIES, getDefaultHost, getLastSelectedHostId, saveLastSele
 
 import { OutOfCreditsModal } from "@/app/components/out-of-credits-modal";
 import { HostSelector } from "@/app/components/host-selector";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { useGameMasterSessions } from "@/hooks/useGameMasterSessions";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
 import { useVoiceInput, useVoiceOutput } from "@/lib/voice";
@@ -64,7 +64,7 @@ export type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, 
 export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
   const { session, user } = useAuth();
   const authToken = session?.access_token;
-  const userAvatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userAvatarUrl = getUserAvatarUrl(user);
 
   // Current conversation state
   const [messages, setMessages] = useState<ChatMessage[]>([]);

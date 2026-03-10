@@ -33,7 +33,7 @@ export interface SpeakerQueueContext {
   gameChannels?: Array<{ id?: string; name: string; roomType?: string }>;
   gameRoomEntries: Array<{ id: string; name: string }>;
   cfgChannelDefaultId: string;
-  messages: Array<{ channelId?: string; senderName: string; content: string }>;
+  messages: Array<{ id?: string; channelId?: string; senderName: string; content: string; isSystemMessage?: boolean; isAnnouncement?: boolean; isStreaming?: boolean }>;
   pendingDecisionSummariesRef: { current: string[] };
 
   /** Mutable ref tracking the running conversation history for the current turn. */
@@ -44,6 +44,14 @@ export interface SpeakerQueueContext {
   setPlayerNotes: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
   addStreamingMessage: (msg: StreamMsgMeta, channelId?: string, initialContent?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
+  addReaction?: (messageId: string, emoji: string, from: string) => void;
+  /** GM engagement score for the current turn (1-5), controls passive reaction intensity */
+  engagementScore?: number;
+}
+
+export function isNightPhase(phase: string | undefined): boolean {
+  if (!phase) return false;
+  return /\bnight\b/i.test(phase);
 }
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
@@ -92,10 +100,101 @@ export async function runPlayerSpeak(
     if (notesAction && notesAction.type === "player_notes") {
       ctx.setPlayerNotes((prev) => ({ ...prev, [speaker.id]: notesAction.content }));
     }
+
+    if (ctx.addReaction) {
+      for (const a of actions) {
+        if (a.type === "react") {
+          const targetMsg = a.targetSender
+            ? [...ctx.messages].reverse().find(
+                (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming &&
+                  m.senderName.toLowerCase() === a.targetSender!.toLowerCase()
+              )
+            : [...ctx.messages].reverse().find(
+                (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
+              );
+          if (targetMsg?.id) ctx.addReaction(targetMsg.id, a.emoji, speaker.name);
+        }
+      }
+    }
+
     return cleanContent || null;
   } catch (err) {
     console.error("Error generating AI player reply:", err);
     return null;
+  }
+}
+
+// ─── Passive reactions: AI players spontaneously react based on personality ──
+
+interface PersonalityReactionRule {
+  keywords: RegExp;
+  emojis: string[];
+  chance: number;
+}
+
+const PERSONALITY_REACTION_RULES: PersonalityReactionRule[] = [
+  { keywords: /warm|trusting|kind|empathetic|supportive|nurturing|caring/i, emojis: ["👍", "❤️"], chance: 0.30 },
+  { keywords: /chaotic|playful|comedian|witty|humorous|funny|joker/i, emojis: ["😂", "😅", "😮"], chance: 0.35 },
+  { keywords: /skeptical|analytical|critical|debate|logical/i, emojis: ["🤔", "👀"], chance: 0.15 },
+  { keywords: /quiet|observant|reserved|stoic|patient|silent/i, emojis: ["🤔"], chance: 0.10 },
+  { keywords: /bold|confident|aggressive|leader|decisive|brash/i, emojis: ["👍", "😮"], chance: 0.25 },
+  { keywords: /nervous|anxious|cautious|worried|timid/i, emojis: ["😅", "😬"], chance: 0.20 },
+  { keywords: /dramatic|expressive|emotional|passionate/i, emojis: ["😮", "❤️", "😂"], chance: 0.30 },
+  { keywords: /calm|reassuring|mediator|steady|soothing/i, emojis: ["👍", "❤️", "🤔"], chance: 0.20 },
+];
+
+const PASSIVE_REACTION_DEFAULT_EMOJIS = ["👍", "🤔"];
+const PASSIVE_REACTION_DEFAULT_CHANCE = 0.15;
+
+function getReactionRuleForPersonality(personality?: string): { emojis: string[]; chance: number } {
+  if (!personality) return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
+  for (const rule of PERSONALITY_REACTION_RULES) {
+    if (rule.keywords.test(personality)) return { emojis: rule.emojis, chance: rule.chance };
+  }
+  return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
+}
+
+const ENGAGEMENT_RATIO: Record<number, { chanceMultiplier: number; ratio: number }> = {
+  1: { chanceMultiplier: 0.1, ratio: 0 },
+  2: { chanceMultiplier: 0.5, ratio: 0.15 },
+  3: { chanceMultiplier: 1.0, ratio: 0.3 },
+  4: { chanceMultiplier: 1.5, ratio: 0.55 },
+  5: { chanceMultiplier: 2.0, ratio: 0.85 },
+};
+
+export function triggerPassiveReactions(
+  ctx: SpeakerQueueContext,
+  messageId: string,
+  excludePlayerId?: string,
+  engagementScore: number = 3,
+): void {
+  if (!ctx.addReaction) return;
+  const addReaction = ctx.addReaction;
+  const candidates = ctx.playersRef.current.filter(
+    (p) => p.isAI && !p.isGameMaster && p.id !== excludePlayerId
+  );
+  if (candidates.length === 0) return;
+
+  const clamped = Math.max(1, Math.min(5, engagementScore));
+  const scale = ENGAGEMENT_RATIO[clamped] ?? ENGAGEMENT_RATIO[3];
+  const maxReactions = Math.max(0, Math.round(candidates.length * scale.ratio));
+  if (maxReactions === 0) return;
+
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  let reactionCount = 0;
+
+  for (const player of shuffled) {
+    if (reactionCount >= maxReactions) break;
+    const { emojis, chance } = getReactionRuleForPersonality(player.personality);
+    if (Math.random() > chance * scale.chanceMultiplier) continue;
+
+    reactionCount++;
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    const delay = 500 + Math.random() * 2000;
+
+    setTimeout(() => {
+      addReaction(messageId, emoji, player.name);
+    }, delay);
   }
 }
 
@@ -112,9 +211,10 @@ export async function speakAndReveal(
   ctx.setTypingUsers(remaining);
   if (txt) {
     const speed = getTypewriterSpeed(player.personality);
-    await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
+    const revealedMsgId = await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
       senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true,
     }, ctx.channelId, speed);
+    if (revealedMsgId) triggerPassiveReactions(ctx, revealedMsgId, player.id, ctx.engagementScore);
     const totalPace = Math.min(
       HOST_PACE_BASE_MS + Math.floor(txt.length / 50) * HOST_PACE_PER_50_CHARS_MS,
       HOST_PACE_MAX_MS,
@@ -127,15 +227,21 @@ export async function speakAndReveal(
     } else {
       await dynamicPace(txt.length, player.personality, ctx.convMode);
     }
-    ctx.recentForNext.current = [...ctx.recentForNext.current, { senderName: player.name, content: txt }];
+    ctx.recentForNext.current = [...ctx.recentForNext.current, { senderName: player.name, content: txt }].slice(-30);
   }
   return txt;
 }
 
+/**
+ * Run the speaker queue. During night phase, skip all AI public speech —
+ * night actions are handled exclusively through private channels (AUTO_CHANNEL).
+ */
 export async function runSpeakerQueue(
   ctx: SpeakerQueueContext,
   queue: SpeakerQueueItem[],
 ): Promise<boolean> {
+  const night = isNightPhase(ctx.gamePhase);
+
   for (let qi = 0; qi < queue.length; qi++) {
     const item = queue[qi];
     if (item.type === "human") {
@@ -144,7 +250,7 @@ export async function runSpeakerQueue(
     }
     if (item.type === "everyone") {
       ctx.setCurrentSpeakerId(null);
-      if (ctx.aiOnly.length > 0) {
+      if (!night && ctx.aiOnly.length > 0) {
         const count = ctx.convMode === "freeform"
           ? Math.min(ctx.aiOnly.length, 2 + Math.floor(Math.random() * 2))
           : 1;
@@ -159,6 +265,9 @@ export async function runSpeakerQueue(
       ctx.setTypingUsers([]);
       return true;
     }
+
+    if (night) continue;
+
     const freshPlayer = ctx.playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
     const itemStatus = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
     if (itemStatus === "eliminated" || itemStatus === "dead") continue;

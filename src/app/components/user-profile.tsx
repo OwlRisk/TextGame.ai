@@ -5,7 +5,7 @@ import { User, History, Camera, X, LogOut, Loader2, Gamepad2, ExternalLink } fro
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { getGames } from "@/lib/db";
 import Link from "next/link";
@@ -160,7 +160,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                     <div className="flex items-center gap-6">
                       <Avatar className="h-20 w-20">
                         <AvatarImage
-                          src={user?.user_metadata?.avatar_url || user?.user_metadata?.picture}
+                          src={getUserAvatarUrl(user)}
                           alt={username}
                         />
                         <AvatarFallback className="bg-gradient-to-br from-blue-600 to-cyan-600 text-white text-2xl">

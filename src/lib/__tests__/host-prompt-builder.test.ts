@@ -123,14 +123,14 @@ describe("buildHostSystemPrompt", () => {
     it("when hasNightPhase is true: includes NIGHT section", () => {
       const opts = defaultOpts({ hasNightPhase: true });
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("NIGHT:");
-      expect(output).toContain("Night-action players");
+      expect(output).toContain("NIGHT PHASE RULES:");
+      expect(output).toContain("night-action roles");
     });
 
     it("when hasNightPhase is false: does NOT include NIGHT section", () => {
       const opts = defaultOpts({ hasNightPhase: false });
       const output = buildHostSystemPrompt(opts);
-      expect(output).not.toContain("NIGHT:");
+      expect(output).not.toContain("NIGHT PHASE RULES:");
     });
   });
 
