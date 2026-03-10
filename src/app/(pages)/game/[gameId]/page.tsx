@@ -704,7 +704,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         recentSlice.length === 0
           ? "(No prior messages in this channel.)"
           : recentSlice
-              .map((m) => `- ${m.senderName}: ${m.content}`)
+              .map((m) => {
+                let line = `- ${m.senderName}: ${m.content}`;
+                if (m.reactions?.length) {
+                  line += ` [reactions: ${m.reactions.map((r) => `${r.emoji} ${r.from}`).join(", ")}]`;
+                }
+                return line;
+              })
               .join("\n");
 
       const gmName = currentGame?.config?.generatedHost?.name || "Game Master";
@@ -1126,7 +1132,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
       if (!isSilentTurn) await hostPace();
       const recentForNextRef = { current: [
-        ...channelMessagesForRecent.slice(-18).map((m) => ({ senderName: m.senderName, content: m.content })),
+        ...channelMessagesForRecent.slice(-18).map((m) => ({
+          senderName: m.senderName,
+          content: m.reactions?.length
+            ? `${m.content} [reactions: ${m.reactions.map((r) => `${r.emoji} ${r.from}`).join(", ")}]`
+            : m.content,
+        })),
         { senderName: humanName, content },
         ...(hostContent ? [{ senderName: gmName, content: hostContent }] : []),
       ] as Array<{ senderName: string; content: string }> };
@@ -1715,6 +1726,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             } : undefined}
             timerEndsAt={timerEndsAt}
             alivePlayers={players.filter(p => !isPlayerEliminated(p))}
+            onReact={(messageId, emoji) => {
+              const displayName = humanGameIdentity?.name || "You";
+              addReaction(messageId, emoji, displayName);
+            }}
           />
         ) : null)}
       </div>

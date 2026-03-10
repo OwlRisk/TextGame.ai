@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { AlertCircle, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
@@ -131,6 +131,8 @@ function resolveContent(syncedContent: string, rawContent: string, voiceEnabled:
 }
 
 // ─── Component ──────────────────────────────────────────────────────────
+const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "🤔", "😬", "🎯", "😅"];
+
 export interface ChatMessageProps {
   message: {
     id: string;
@@ -160,12 +162,13 @@ export interface ChatMessageProps {
   players: Player[];
   avatarImageUrls: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  onReact?: (messageId: string, emoji: string) => void;
 }
 
 export const ChatMessage = React.memo(function ChatMessage({
   message, showAvatar, syncedContent, rawContent, isShowingCursor,
   userId, userAvatarUrl, useGeneratedAvatarForUser, humanPlayer, userAvatarName,
-  gameId, players, avatarImageUrls, onAvatarUrlLoaded,
+  gameId, players, avatarImageUrls, onAvatarUrlLoaded, onReact,
 }: ChatMessageProps) {
   if (message.isAnnouncement) {
     return (
@@ -270,8 +273,16 @@ export const ChatMessage = React.memo(function ChatMessage({
     </div>
   ) : null;
 
+  const canReact = !!onReact && !message.isStreaming;
+
   return (
-    <div className={showAvatar ? "mt-5" : "mt-2"}>
+    <div className={`group/msg relative ${showAvatar ? "mt-5" : "mt-2"}`}>
+      {canReact && (
+        <ReactionPicker
+          messageId={message.id}
+          onReact={onReact}
+        />
+      )}
       {showAvatar ? (
         <div className="flex gap-4">
           <div className="relative flex-shrink-0" title={message.senderName}>
@@ -331,6 +342,37 @@ export const ChatMessage = React.memo(function ChatMessage({
     </div>
   );
 });
+
+// ─── Reaction picker (appears on hover) ────────────────────────────────
+function ReactionPicker({ messageId, onReact }: { messageId: string; onReact: (messageId: string, emoji: string) => void }) {
+  const [justReacted, setJustReacted] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleClick = useCallback((emoji: string) => {
+    onReact(messageId, emoji);
+    setJustReacted(emoji);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setJustReacted(null), 800);
+  }, [messageId, onReact]);
+
+  return (
+    <div className="absolute -top-3 right-2 z-10 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-150 pointer-events-none group-hover/msg:pointer-events-auto">
+      <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-zinc-800/95 border border-white/10 shadow-lg backdrop-blur-sm">
+        {REACTION_EMOJIS.map((emoji) => (
+          <button
+            key={emoji}
+            onClick={() => handleClick(emoji)}
+            className={`w-7 h-7 flex items-center justify-center rounded-full text-sm hover:bg-white/10 active:scale-125 transition-all duration-100 ${
+              justReacted === emoji ? "scale-125 bg-white/10" : ""
+            }`}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Avatar sub-component ──────────────────────────────────────────────
 function MessageAvatar({

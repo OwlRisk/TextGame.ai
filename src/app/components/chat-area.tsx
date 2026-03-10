@@ -108,6 +108,8 @@ interface ChatAreaProps {
   onVote?: (choice: string) => void;
   /** Countdown timer end timestamp */
   timerEndsAt?: number | null;
+  /** Called when user reacts with an emoji to a message */
+  onReact?: (messageId: string, emoji: string) => void;
 }
 
 export function ChatArea({ 
@@ -152,6 +154,7 @@ export function ChatArea({
   activeVote,
   onVote,
   timerEndsAt,
+  onReact,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -452,6 +455,7 @@ export function ChatArea({
                 players={players}
                 avatarImageUrls={avatarImageUrls ?? {}}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
+                onReact={onReact}
               />
             );
           })}
