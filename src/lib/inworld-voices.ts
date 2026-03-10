@@ -290,9 +290,17 @@ function rankedVoicesForSpeaker(
   if (pool.length === 0) pool = INWORLD_VOICE_META.filter((v) => v.langCode === 'EN_US');
 
   if (g) {
+    // Strict gender filter: never include wrong-gender voices, even as fallback
     const candidates = pool.filter((v) => v.gender === g);
-    const finalCandidates = candidates.length > 0 ? candidates : pool;
-    return finalCandidates
+    // If somehow no voices for this gender exist in the language, fall back to all but
+    // still sort same-gender first to minimize cross-gender pollution
+    if (candidates.length === 0) {
+      return pool
+        .map((v) => ({ voiceId: v.voiceId, score: scoreVoice(v, tokens) + (v.gender === g ? 100 : 0) }))
+        .sort((a, b) => b.score - a.score)
+        .map((v) => v.voiceId);
+    }
+    return candidates
       .map((v) => ({ voiceId: v.voiceId, score: scoreVoice(v, tokens) }))
       .sort((a, b) => b.score - a.score)
       .map((v) => v.voiceId);
@@ -314,6 +322,8 @@ export interface RoomSpeaker {
 /**
  * Assign unique Inworld voices to all speakers in a room.
  * Each speaker gets their best-match voice that hasn't been taken by a higher-priority speaker.
+ * When a speaker has an explicit gender, only voices of that gender are considered —
+ * even if all same-gender voices are taken, we duplicate rather than cross genders.
  * Returns a map of speaker name → voiceId.
  */
 export function assignVoicesForRoom(speakers: RoomSpeaker[]): Record<string, string> {
@@ -322,9 +332,22 @@ export function assignVoicesForRoom(speakers: RoomSpeaker[]): Record<string, str
 
   for (const speaker of speakers) {
     const hint = [speaker.personality, speaker.background].filter(Boolean).join('. ') || undefined;
+    const g = normalizeGender(speaker.gender);
     const ranked = rankedVoicesForSpeaker(speaker.gender, hint);
 
-    const chosen = ranked.find((v) => !usedVoices.has(v)) ?? ranked[0];
+    // If gender is known, only pick from same-gender voices to prevent cross-gender assignment.
+    // Fall back to any unused voice from the full ranked list only when gender is unknown.
+    let chosen: string;
+    if (g) {
+      // Try to find an unused same-gender voice
+      const sameGenderUnused = ranked.find((v) => !usedVoices.has(v));
+      // If all same-gender voices are taken, duplicate the best same-gender voice
+      chosen = sameGenderUnused ?? ranked[0];
+    } else {
+      // No gender constraint — pick best unused voice from any gender
+      chosen = ranked.find((v) => !usedVoices.has(v)) ?? ranked[0];
+    }
+
     usedVoices.add(chosen);
     result[speaker.name] = chosen;
   }

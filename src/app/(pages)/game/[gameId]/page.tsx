@@ -30,7 +30,7 @@ import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
-import { assignVoicesForRoom, pickVoiceForSpeaker } from "@/lib/inworld-voices";
+import { assignVoicesForRoom, pickVoiceForSpeaker, INWORLD_VOICE_META } from "@/lib/inworld-voices";
 import { safeMarked } from "@/lib/safe-marked";
 import {
   MAX_AUTO_ADVANCES,
@@ -427,7 +427,22 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         console.error("initializeLobby failed — will retry on next effect run:", err);
       }
     } else if (!isInitialized && players.length > 0) {
-      // Players came from saved state (DB or localStorage) — mark initialized, don't re-init
+      // Players came from saved state (DB or localStorage) — mark initialized, don't re-init.
+      // Validate voiceIds: if a player has a gendered voiceId that doesn't match their gender,
+      // reassign voices for the whole room so the fix applies to existing sessions too.
+      const needsVoiceFix = players.some((p) => {
+        if (!p.isAI || !p.voiceId || !p.gender) return false;
+        const g = p.gender.toLowerCase();
+        if (g !== 'male' && g !== 'female') return false;
+        const meta = INWORLD_VOICE_META.find(v => v.voiceId === p.voiceId);
+        return meta ? meta.gender !== g : false;
+      });
+      if (needsVoiceFix) {
+        const voiceMap = assignVoicesForRoom(players.filter(p => p.isAI).map(p => ({
+          name: p.name, gender: p.gender, personality: p.personality, background: p.background,
+        })));
+        setPlayers(prev => prev.map(p => p.isAI && voiceMap[p.name] ? { ...p, voiceId: voiceMap[p.name] } : p));
+      }
       setIsInitialized(true);
     }
   }, [currentGame, isInitialized, players.length, gameId, isRoomLoading]);
