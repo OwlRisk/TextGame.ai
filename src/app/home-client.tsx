@@ -74,7 +74,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       {!hidden && (
         <LandingPage
           onSignIn={handleSignIn}
-          // onSignInFacebook={handleSignInFacebook} // hidden: pending Facebook App Review for email permission
+          onSignInFacebook={handleSignInFacebook}
           onCreateGame={handleCreateGame}
           onExploreGames={handleExploreGames}
           heroHeadline={heroHeadline}
