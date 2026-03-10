@@ -26,9 +26,9 @@ function buildPrompt(
 ): string {
   const { background, personality, gender } = opts;
   const genderPrefix = genderPhrase(gender);
-  const SHARED_CORE_STYLE = "Anime illustration style.";
+  const SHARED_CORE_STYLE = "Semi-realistic digital painting style.";
   const MAX_PROMPT_LENGTH = 1000;
-  const singleStart = "Anime character portrait. ";
+  const singleStart = "Semi-realistic character portrait. ";
   const singleEnd = " Solo individual, centered composition.";
   const basePrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;
 
