@@ -33,7 +33,7 @@ export interface SpeakerQueueContext {
   gameChannels?: Array<{ id?: string; name: string; roomType?: string }>;
   gameRoomEntries: Array<{ id: string; name: string }>;
   cfgChannelDefaultId: string;
-  messages: Array<{ channelId?: string; senderName: string; content: string }>;
+  messages: Array<{ id?: string; channelId?: string; senderName: string; content: string; isSystemMessage?: boolean; isAnnouncement?: boolean; isStreaming?: boolean }>;
   pendingDecisionSummariesRef: { current: string[] };
 
   /** Mutable ref tracking the running conversation history for the current turn. */
@@ -44,6 +44,7 @@ export interface SpeakerQueueContext {
   setPlayerNotes: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
   addStreamingMessage: (msg: StreamMsgMeta, channelId?: string, initialContent?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
+  addReaction?: (messageId: string, emoji: string, from: string) => void;
 }
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
@@ -92,6 +93,23 @@ export async function runPlayerSpeak(
     if (notesAction && notesAction.type === "player_notes") {
       ctx.setPlayerNotes((prev) => ({ ...prev, [speaker.id]: notesAction.content }));
     }
+
+    if (ctx.addReaction) {
+      for (const a of actions) {
+        if (a.type === "react") {
+          const targetMsg = a.targetSender
+            ? [...ctx.messages].reverse().find(
+                (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming &&
+                  m.senderName.toLowerCase() === a.targetSender!.toLowerCase()
+              )
+            : [...ctx.messages].reverse().find(
+                (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
+              );
+          if (targetMsg?.id) ctx.addReaction(targetMsg.id, a.emoji, speaker.name);
+        }
+      }
+    }
+
     return cleanContent || null;
   } catch (err) {
     console.error("Error generating AI player reply:", err);

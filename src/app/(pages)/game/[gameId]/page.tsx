@@ -1092,6 +1092,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         recentForNext: recentRef,
         setCurrentSpeakerId, setTypingUsers, setPlayerNotes,
         addStreamingMessage, updateStreamingMessage,
+        addReaction,
       });
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
