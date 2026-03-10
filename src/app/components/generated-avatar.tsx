@@ -82,7 +82,7 @@ export function GeneratedAvatar({
   if (isGM) {
     return (
       <Avatar className={cn("flex-shrink-0 overflow-hidden rounded-full", className)}>
-        <AvatarImage src={GAME_MASTER_AVATAR} alt="Game Master" className="object-cover" />
+        <AvatarImage src={GAME_MASTER_AVATAR} alt="Game Master" className="object-cover object-top" />
         <AvatarFallback
           className={cn("flex items-center justify-center text-sm font-semibold text-white", fallbackColor && "bg-transparent")}
           style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
@@ -106,7 +106,7 @@ export function GeneratedAvatar({
         <AvatarImage
           src={displaySrc!}
           alt={name ?? "Avatar"}
-          className="object-cover"
+          className="object-cover object-top"
           onError={useInitialUrl ? () => setInitialUrlFailed(true) : undefined}
         />
       )}

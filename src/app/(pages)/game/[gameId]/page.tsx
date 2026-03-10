@@ -1411,14 +1411,30 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const handleInvite = useCallback(async () => {
     if (!gameId) return;
     try {
-      // Always grab the freshest token from Supabase to avoid stale-closure / expired-JWT 401s.
+      const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "");
+
+      // Fast path: if we already have an invite code, copy immediately without an API round-trip.
+      const existingCode = (currentGame as { invite_code?: string } | null)?.invite_code;
+      if (existingCode) {
+        const inviteUrl = `${base}/join/${existingCode}`;
+        const ok = await copyToClipboard(inviteUrl);
+        trackEvent("invite_shared", { template: currentGame?.config?.template || "custom" });
+        if (ok) {
+          toast.success("Invite link copied! Share it with players.");
+        } else {
+          toast.info(inviteUrl, { description: "Tap and hold to copy this link", duration: 10000 });
+        }
+        setInviteCopied(true);
+        setTimeout(() => setInviteCopied(false), 2500);
+        return;
+      }
+
+      // Slow path: generate a new invite code via API (first time only).
       let token = session?.access_token;
       try {
         const { data: { session: refreshed } } = await supabase.auth.refreshSession();
         if (refreshed?.access_token) token = refreshed.access_token;
-      } catch {
-        // fall through to whatever token we already have
-      }
+      } catch { /* use existing token */ }
       if (!token) return;
 
       const res = await fetch(`/api/games/${gameId}/invite`, {
@@ -1432,11 +1448,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       if (ok) {
         toast.success("Invite link copied! Share it with players.");
       } else {
-        // Clipboard unavailable — prompt user to copy manually
-        toast.info(data.inviteUrl, {
-          description: "Tap and hold to copy this link",
-          duration: 10000,
-        });
+        toast.info(data.inviteUrl, { description: "Tap and hold to copy this link", duration: 10000 });
       }
       setInviteCopied(true);
       setTimeout(() => setInviteCopied(false), 2500);
@@ -1444,7 +1456,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       console.error("[invite]", e);
       toast.error("Failed to generate invite link");
     }
-  }, [gameId, session?.access_token]);
+  }, [gameId, session?.access_token, currentGame]);
 
   /**
    * Guest sends a message via the server-side API route (bypasses auth requirement).
@@ -1584,8 +1596,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    onInvite: undefined,
-    inviteJustCopied: false,
+    onInvite: isOwner ? handleInvite : undefined,
+    inviteJustCopied: inviteCopied,
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || guestNickname || null,

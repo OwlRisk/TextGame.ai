@@ -67,6 +67,12 @@ export function SettingsContent() {
       description: 'Retro 16-bit RPG style',
       emoji: '👾',
     },
+    {
+      value: 'cyberpunk',
+      label: 'Cyberpunk',
+      description: 'Neon & dark, Danganronpa-inspired',
+      emoji: '⚡',
+    },
   ];
 
   useEffect(() => {
@@ -288,7 +294,7 @@ export function SettingsContent() {
                         <Label className="text-zinc-400 text-xs uppercase tracking-wide">Talking Speed</Label>
                         <div className="flex items-center gap-3 text-xs text-zinc-500">
                           <span>0.5×</span>
-                          <span className="text-emerald-400 font-semibold text-sm tabular-nums">{numVal.toFixed(1)}×</span>
+                          <span className="text-emerald-400 font-semibold text-sm tabular-nums">{numVal.toFixed(2)}×</span>
                           <span>1.5×</span>
                         </div>
                       </div>

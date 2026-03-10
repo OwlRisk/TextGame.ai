@@ -199,7 +199,7 @@ function PlayerCard({
               }`}
             >
               {userAvatarUrl ? (
-                <AvatarImage src={userAvatarUrl} alt={player.name} className="object-cover" />
+                <AvatarImage src={userAvatarUrl} alt={player.name} className="object-cover object-top" />
               ) : null}
               <AvatarFallback
                 className="text-sm font-semibold text-white"

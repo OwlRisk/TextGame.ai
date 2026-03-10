@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const VALID_STYLES = ["semi-realistic", "anime", "painted", "pixel"] as const;
+const VALID_STYLES = ["semi-realistic", "anime", "painted", "pixel", "cyberpunk"] as const;
 type AvatarStyle = (typeof VALID_STYLES)[number];
 
 /**

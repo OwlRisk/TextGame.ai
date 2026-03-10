@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { AlertCircle, Lock, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
@@ -259,6 +259,19 @@ export const ChatMessage = React.memo(function ChatMessage({
     ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5"
     : "leading-relaxed";
 
+  // Random delays per emoji — seeded by message id + emoji so they're stable across re-renders
+  const reactionDelays = useMemo(() => {
+    if (!message.reactions) return {};
+    const emojis = [...new Set(message.reactions.map((r) => r.emoji))];
+    const delays: Record<string, number> = {};
+    emojis.forEach((emoji) => {
+      // 1.2s base + 0~2s random, each emoji gets its own stable value
+      delays[emoji] = 1.2 + Math.random() * 2;
+    });
+    return delays;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message.id]);
+
   const reactionsBlock = message.reactions && message.reactions.length > 0 ? (() => {
     const grouped = new Map<string, string[]>();
     for (const r of message.reactions) {
@@ -271,7 +284,8 @@ export const ChatMessage = React.memo(function ChatMessage({
         {[...grouped.entries()].map(([emoji, names]) => (
           <button
             key={emoji}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-300 select-none hover:bg-white/10 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-300 select-none hover:bg-white/10 transition-colors cursor-pointer animate-fade-in"
+            style={{ animationDelay: `${reactionDelays[emoji] ?? 1.2}s`, animationFillMode: 'both', opacity: 0 }}
             title={names.join(", ")}
             onClick={() => onReact?.(message.id, emoji)}
           >

@@ -33,22 +33,27 @@ const STYLE_PROMPTS = {
   'semi-realistic': (name, gender, personality, background) => {
     const gStr = gender === 'female' ? 'Woman' : gender === 'male' ? 'Man' : 'Person';
     const traits = [personality, background].filter(Boolean).join(' ').slice(0, 150);
-    return `Semi-realistic digital painting, game concept art style inspired by Arcane and western RPG art. Portrait of ${gStr}: ${traits}. Upper body visible, centered composition, both eyes clearly shown, one person only. Painterly brushstrokes, dramatic warm side lighting, rich color depth, atmospheric tavern or study background with soft bokeh. No text, no watermark, no borders. Suitable for all ages.`;
+    return `Semi-realistic digital painting, game concept art style inspired by Arcane and western RPG art. Portrait of ${gStr}: ${traits}. Close-up bust portrait, face and shoulders filling the upper two-thirds of the frame, both eyes clearly shown, one person only. Painterly brushstrokes, dramatic warm side lighting, rich color depth, atmospheric tavern or study background with soft bokeh. No text, no watermark, no borders. Suitable for all ages.`;
   },
   'anime': (name, gender, personality, background) => {
     const gStr = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'androgynous';
     const traits = [personality, background].filter(Boolean).join(' ').slice(0, 120);
-    return `Japanese anime illustration style, clean cel-shaded character portrait. ${gStr} character: ${traits}. Upper body, centered, both eyes visible, one character only. Clean outlines, vibrant colors, expressive face, Ghibli-inspired quality, cozy tavern or indoor background. No text, no watermark.`;
+    return `High-quality Japanese mobile game character portrait illustration. ${gStr} character: ${traits}. Style inspired by Fate/Grand Order and Blue Archive — polished cel-shading, fine linework, detailed hair and costume, vivid expressive eyes. Close-up bust portrait, face and shoulders filling the upper two-thirds of the frame. Soft gradient background. Both eyes clearly visible, one character only. No text, no watermark.`;
   },
   'painted': (name, gender, personality, background) => {
     const gStr = gender === 'female' ? 'woman' : gender === 'male' ? 'man' : 'person';
     const traits = [personality, background].filter(Boolean).join(' ').slice(0, 120);
-    return `Dark Renaissance oil painting portrait style. A ${gStr}: ${traits}. Classical European portrait composition, upper body, dramatic chiaroscuro lighting with single candle, rich warm amber tones, museum-quality realism, Rembrandt-inspired brushwork, dark moody background. One subject only. No text, no watermark.`;
+    return `Dark Renaissance oil painting portrait style. A ${gStr}: ${traits}. Close-up bust portrait, face and shoulders filling the upper two-thirds of the frame. Dramatic chiaroscuro lighting with single candle, rich warm amber tones, museum-quality realism, Rembrandt-inspired brushwork, dark moody background. One subject only. No text, no watermark.`;
   },
   'pixel': (name, gender, personality, background) => {
     const gStr = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'androgynous';
     const traits = [personality, background].filter(Boolean).join(' ').slice(0, 100);
-    return `16-bit pixel art RPG character portrait. ${gStr} character: ${traits}. Detailed pixel art face and upper body, centered, warm candlelit tavern background, limited warm color palette, retro JRPG style similar to Stardew Valley or Fire Emblem GBA. One character only. No text, no watermark.`;
+    return `16-bit pixel art RPG character portrait. ${gStr} character: ${traits}. Close-up face and shoulders filling most of the frame, detailed pixel art, warm candlelit tavern background, limited warm color palette, retro JRPG style similar to Stardew Valley or Fire Emblem GBA. One character only. No text, no watermark.`;
+  },
+  'cyberpunk': (name, gender, personality, background) => {
+    const gStr = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'androgynous';
+    const traits = [personality, background].filter(Boolean).join(' ').slice(0, 120);
+    return `Japanese cyberpunk anime character portrait, inspired by Danganronpa and Promare / Trigger animation studio. ${gStr} character: ${traits}. Bold ultra-thick black outlines with flat cel-shading. Close-up bust portrait, face and shoulders filling the upper two-thirds of the frame. Background: deep black with a bright yellow circular halo glowing behind the head; scattered neon graphic elements including hearts, diamonds, triangles, mechanical circuit parts, and abstract symbols in electric pink, cyan, orange, and lime green — arranged dynamically around the character. Dark heavy vignette border framing the whole image. High contrast, vivid neon accents on dark base. One character only. Suitable for all ages. No text, no watermarks.`;
   },
 };
 
@@ -133,26 +138,48 @@ async function generateOne(char, style) {
     throw new Error('No image data in response: ' + JSON.stringify(resp).slice(0, 200));
   }
 
-  // Resize + compress to JPEG to stay under 512KB Supabase limit
+  // ── Compressed version: 512×512 JPEG (for in-game use, stays under 512KB) ──
+  // Use position 'top' so face (upper portion of portrait) is always preserved.
   const imgBytes = await sharp(rawBytes)
-    .resize(512, 512, { fit: 'cover', position: 'centre' })
+    .resize(512, 512, { fit: 'cover', position: 'top' })
     .jpeg({ quality: 88, mozjpeg: true })
     .toBuffer();
 
-  // Upload to Supabase Storage (as JPEG)
+  // ── HD version: 1024×1024 JPEG quality 92 (for future character library) ──
+  const hdBytes = await sharp(rawBytes)
+    .resize(1024, 1024, { fit: 'cover', position: 'top' })
+    .jpeg({ quality: 92 })
+    .toBuffer();
+
+  // Upload compressed version
   const jpegPath = storagePath.replace('.png', '.jpg');
   const { error: uploadErr } = await supabase.storage
     .from(BUCKET)
     .upload(jpegPath, imgBytes, { contentType: 'image/jpeg', upsert: true });
-  if (uploadErr) throw new Error('Upload: ' + uploadErr.message);
+  if (uploadErr) throw new Error('Upload (compressed): ' + uploadErr.message);
 
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(jpegPath);
   const publicUrl = urlData.publicUrl;
 
-  // Merge new style URL into avatar_styles JSONB
+  // Upload HD version to pool/hd/{style}/{voice_id}.jpg
+  const hdPath = `pool/hd/${style}/${voice_id}.jpg`;
+  const { error: hdUploadErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(hdPath, hdBytes, { contentType: 'image/jpeg', upsert: true });
+  if (hdUploadErr) {
+    console.warn(`  [HD upload warn] ${hdUploadErr.message}`);
+  }
+  const { data: hdUrlData } = supabase.storage.from(BUCKET).getPublicUrl(hdPath);
+  const hdPublicUrl = hdUrlData.publicUrl;
+
+  // Merge new style URL (and HD URL) into avatar_styles JSONB
   const { data: existing } = await supabase
     .from('ai_characters').select('avatar_styles, avatar_url').eq('id', id).single();
-  const styles = { ...(existing?.avatar_styles || {}), [style]: publicUrl };
+  const styles = {
+    ...(existing?.avatar_styles || {}),
+    [style]: publicUrl,
+    [`${style}_hd`]: hdPublicUrl,  // high-res backup for future use
+  };
   // avatar_url = semi-realistic by default, fallback to first available
   const avatarUrl = styles['semi-realistic'] || publicUrl;
   await supabase.from('ai_characters')
