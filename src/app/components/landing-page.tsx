@@ -305,8 +305,10 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                           src={LANDING_AVATAR_MAP[char.name]}
                           fallback={GAME_MASTER_AVATAR}
                           alt={char.name}
-                          width={64}
-                          height={64}
+                          width={128}
+                          height={128}
+                          quality={90}
+                          sizes="64px"
                           loading="lazy"
                           className="w-16 h-16 rounded-full object-cover ring-2 ring-zinc-700/80 group-hover:ring-violet-500/50 transition-all"
                         />

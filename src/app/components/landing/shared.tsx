@@ -15,6 +15,8 @@ export function SafeAvatar({
   className,
   loading,
   priority,
+  quality,
+  sizes,
 }: {
   src: string;
   fallback: string;
@@ -24,6 +26,8 @@ export function SafeAvatar({
   className?: string;
   loading?: "lazy" | "eager";
   priority?: boolean;
+  quality?: number;
+  sizes?: string;
 }) {
   const [imgSrc, setImgSrc] = useState(src);
   return (
@@ -35,6 +39,8 @@ export function SafeAvatar({
       className={className}
       loading={priority ? undefined : loading}
       priority={priority}
+      quality={quality ?? 85}
+      sizes={sizes ?? `${width}px`}
       onError={() => setImgSrc(fallback)}
     />
   );
