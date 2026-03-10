@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { GameSidebar } from "@/app/components/game-sidebar";
@@ -526,10 +526,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     const aiPlayers = buildAiPlayers(config.configuredPlayers || [], config.template);
 
     const userName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "You";
+    // Use real Google/Facebook profile picture if available, fallback to color
+    const userProfileAvatar = getUserAvatarUrl(session?.user) ?? "#6366f1";
     const userPlayer = {
       id: userId,
       name: userName,
-      avatar: "#6366f1",
+      avatar: userProfileAvatar,
       role: undefined as string | undefined,
       stats: config.template === "werewolf" || config.template === "mafia" ? { Status: "Alive" } : undefined,
       isAI: false,
@@ -551,14 +553,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
-    // Batch-fetch avatars: 1 random AI player gets a freshly generated avatar
-    // (saved to pool + ai_characters DB), the rest (including human) get free pool avatars.
+    // Batch-fetch avatars for AI players and GM only.
+    // Human player uses their real Google/Facebook profile picture (set above).
     const roomPlayers: RoomPlayerInfo[] = [
       { name: gameMaster.name, type: 'host', gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background },
       ...aiPlayers.map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
         name: p.name, type: 'player' as const, gender: p.gender, personality: p.personality, background: p.background,
       })),
-      { name: userName, type: 'player' as const, isHuman: true },
     ];
     fetchAvatarsForRoom(roomPlayers, gameId).then((urlMap) => {
       for (const [key, url] of Object.entries(urlMap)) {

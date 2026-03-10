@@ -164,11 +164,12 @@ function PlayerCard({
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
 }) {
-  const useGameAvatarForHuman = !player.isAI && !!gameId;
-  const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
   const isClickable = !!onOpenProfile;
   const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
+  const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
+  // Only use pool-generated avatar for human if they have no real profile picture
+  const useGameAvatarForHuman = !player.isAI && !!gameId && !userAvatarUrl;
 
   return (
     <div
