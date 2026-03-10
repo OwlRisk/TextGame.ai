@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import NextImage from "next/image";
 import {
   MessageCircle,
@@ -81,16 +81,59 @@ function InsideGameMessageList({
   );
 }
 
-export function InsideGameSection() {
-  const [selectedStep, setSelectedStep] = useState(0);
-  const currentStep = INSIDE_GAME_STEPS[selectedStep];
+function useDragCarousel(count: number) {
+  const [current, setCurrent] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchRef = useRef<{ x: number; y: number; locked: boolean } | null>(null);
 
-  const handlePrevious = () => {
-    setSelectedStep((prev) => (prev === 0 ? INSIDE_GAME_STEPS.length - 1 : prev - 1));
-  };
-  const handleNext = () => {
-    setSelectedStep((prev) => (prev === INSIDE_GAME_STEPS.length - 1 ? 0 : prev + 1));
-  };
+  const goTo = useCallback((i: number) => setCurrent(i), []);
+  const prev = useCallback(() => setCurrent((c) => (c === 0 ? count - 1 : c - 1)), [count]);
+  const next = useCallback(() => setCurrent((c) => (c === count - 1 ? 0 : c + 1)), [count]);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchRef.current = { x: t.clientX, y: t.clientY, locked: false };
+    setIsDragging(true);
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchRef.current.x;
+    const dy = t.clientY - touchRef.current.y;
+    if (!touchRef.current.locked) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+        touchRef.current = null;
+        setIsDragging(false);
+        setDragOffset(0);
+        return;
+      }
+      if (Math.abs(dx) > 10) touchRef.current.locked = true;
+    }
+    if (touchRef.current?.locked) {
+      e.preventDefault();
+      setDragOffset(dx);
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    const threshold = 60;
+    if (touchRef.current?.locked) {
+      if (dragOffset < -threshold) next();
+      else if (dragOffset > threshold) prev();
+    }
+    touchRef.current = null;
+    setDragOffset(0);
+    setIsDragging(false);
+  }, [dragOffset, next, prev]);
+
+  return { current, dragOffset, isDragging, goTo, prev, next, handlers: { onTouchStart, onTouchMove, onTouchEnd } };
+}
+
+export function InsideGameSection() {
+  const { current: selectedStep, dragOffset, isDragging, goTo: setSelectedStep, prev: handlePrevious, next: handleNext, handlers: dragHandlers } = useDragCarousel(INSIDE_GAME_STEPS.length);
+  const currentStep = INSIDE_GAME_STEPS[selectedStep];
 
   return (
     <div className="mb-32">
@@ -128,8 +171,14 @@ export function InsideGameSection() {
       </div>
 
       {/* Content */}
-      <div className="relative bg-zinc-950/50 border border-zinc-800 rounded-3xl overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
+      <div
+        className="relative bg-zinc-950/50 border border-zinc-800 rounded-3xl overflow-hidden"
+        {...dragHandlers}
+      >
+        <div
+          className={`grid grid-cols-1 lg:grid-cols-2 min-h-[600px] ${isDragging ? "" : "transition-transform duration-300 ease-out"}`}
+          style={{ transform: dragOffset ? `translateX(${dragOffset}px)` : undefined }}
+        >
           {/* Left – image + heading */}
           <div className="relative p-8 lg:p-12 flex flex-col justify-between bg-gradient-to-br from-zinc-900/80 to-zinc-950/80">
             <div>
@@ -142,11 +191,12 @@ export function InsideGameSection() {
               <h4 className="text-3xl lg:text-4xl font-black text-white mb-6 leading-tight">{currentStep.heading}</h4>
               <div className="relative rounded-xl overflow-hidden">
                 <NextImage
+                  key={currentStep.id}
                   src={currentStep.image}
                   alt={currentStep.imageAlt}
                   width={800}
                   height={500}
-                  loading="lazy"
+                  loading="eager"
                   quality={75}
                   sizes="(min-width: 1024px) 50vw, 100vw"
                   className="w-full h-auto object-cover rounded-xl"
