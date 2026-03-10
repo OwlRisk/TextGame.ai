@@ -206,7 +206,14 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
     }
   }
 
-  cleanContent = cleanContent.replace(/\n{2,}/g, "\n\n").trim();
+  cleanContent = cleanContent
+    .replace(/\[\/?MY_NOTES\]/gi, "")
+    .replace(/\[\/?BOARD(?::[^\]]*)?\]/gi, "")
+    .replace(/\[\/?ACCESS(?::[^\]]*)?\]/gi, "")
+    .replace(/\[\/?SECTION(?::[^\]]*)?\]/gi, "")
+    .replace(/\[\/?GAME_OVER\]/gi, "")
+    .replace(/\n{2,}/g, "\n\n")
+    .trim();
   return { cleanContent, actions };
 }
 

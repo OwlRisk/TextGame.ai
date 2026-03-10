@@ -49,6 +49,11 @@ export interface SpeakerQueueContext {
   engagementScore?: number;
 }
 
+export function isNightPhase(phase: string | undefined): boolean {
+  if (!phase) return false;
+  return /\bnight\b/i.test(phase);
+}
+
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
 
 export async function runPlayerSpeak(
@@ -222,15 +227,21 @@ export async function speakAndReveal(
     } else {
       await dynamicPace(txt.length, player.personality, ctx.convMode);
     }
-    ctx.recentForNext.current = [...ctx.recentForNext.current, { senderName: player.name, content: txt }];
+    ctx.recentForNext.current = [...ctx.recentForNext.current, { senderName: player.name, content: txt }].slice(-30);
   }
   return txt;
 }
 
+/**
+ * Run the speaker queue. During night phase, skip all AI public speech —
+ * night actions are handled exclusively through private channels (AUTO_CHANNEL).
+ */
 export async function runSpeakerQueue(
   ctx: SpeakerQueueContext,
   queue: SpeakerQueueItem[],
 ): Promise<boolean> {
+  const night = isNightPhase(ctx.gamePhase);
+
   for (let qi = 0; qi < queue.length; qi++) {
     const item = queue[qi];
     if (item.type === "human") {
@@ -239,7 +250,7 @@ export async function runSpeakerQueue(
     }
     if (item.type === "everyone") {
       ctx.setCurrentSpeakerId(null);
-      if (ctx.aiOnly.length > 0) {
+      if (!night && ctx.aiOnly.length > 0) {
         const count = ctx.convMode === "freeform"
           ? Math.min(ctx.aiOnly.length, 2 + Math.floor(Math.random() * 2))
           : 1;
@@ -254,6 +265,9 @@ export async function runSpeakerQueue(
       ctx.setTypingUsers([]);
       return true;
     }
+
+    if (night) continue;
+
     const freshPlayer = ctx.playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
     const itemStatus = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
     if (itemStatus === "eliminated" || itemStatus === "dead") continue;

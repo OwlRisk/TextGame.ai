@@ -836,6 +836,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         parseHostResultUtil(raw, playersRef.current, humanName, gameRoomEntries);
 
       let latestEngagementScore = 3;
+      const seenAnnouncements = new Set<string>();
 
       /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
@@ -891,14 +892,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           } else if (a.type === "phase") {
             setPhaseLabel(a.label);
           } else if (a.type === "announce") {
-            addMessage({
-              senderId: "system",
-              senderName: "Announcement",
-              senderAvatar: "#8b5cf6",
-              content: a.text,
-              isAI: false,
-              isAnnouncement: true,
-            });
+            const key = a.text.trim().toLowerCase();
+            if (!seenAnnouncements.has(key)) {
+              seenAnnouncements.add(key);
+              addMessage({
+                senderId: "system",
+                senderName: "Announcement",
+                senderAvatar: "#8b5cf6",
+                content: a.text,
+                isAI: false,
+                isAnnouncement: true,
+              });
+            }
           } else if (a.type === "mood") {
             setMood(a.value);
           } else if (a.type === "start_vote") {
@@ -1161,8 +1166,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       let lastBeatContentLen = hostContent?.length ?? 0;
       for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
         await dynamicPace(lastBeatContentLen);
+        const recentSummary = recentForNextRef.current.slice(-10)
+          .map((m) => `${m.senderName}: ${m.content}`).join("\n");
         const advanced = await callHostStream(
-          "[System: all pending AI actions in this beat are done — advance the game to the next beat automatically.]",
+          `[System: all pending AI actions in this beat are done — advance the game to the next beat automatically. Do NOT repeat any announcement or phase transition you already made.]\n\nRecent messages for context:\n${recentSummary}`,
           channelId
         );
         if (!advanced.hostContent && advanced.speakerQueue.length === 0) break;
@@ -1171,7 +1178,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           recentForNextRef.current = [
             ...recentForNextRef.current,
             { senderName: gmName, content: advanced.hostContent },
-          ];
+          ].slice(-30);
         }
         currentQueue = advanced.speakerQueue;
         humanReached = await runSpeakerQueueFn(sqCtx, currentQueue);

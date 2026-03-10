@@ -186,19 +186,13 @@ export async function fetchAvatarsForRoom(
 ): Promise<Record<string, string>> {
   if (players.length === 0) return {};
 
-  const aiPlayers = players.filter(p => (p.type ?? 'player') === 'player' && !p.isHuman);
-
-  // Pick 1 random AI player for generateAndPool
-  const generateIndex = aiPlayers.length > 0 ? Math.floor(Math.random() * aiPlayers.length) : -1;
-
   const results: Record<string, string> = {};
 
   const fetchOne = async (player: RoomPlayerInfo, extraBody?: Record<string, unknown>) => {
     const pType: AvatarType = (player.type ?? 'player') as AvatarType;
     const key = identityCacheKey(player.name, pType);
-    const isGenerateTarget = !extraBody && aiPlayers.indexOf(player) === generateIndex;
 
-    if (!isGenerateTarget && !extraBody) {
+    if (!extraBody) {
       const cached = cache.get(key);
       if (cached) { results[key] = cached; return; }
       const stored = loadFromStorage(key);
@@ -218,33 +212,11 @@ export async function fetchAvatarsForRoom(
           background: player.background || undefined,
           personality: player.personality || undefined,
           gender: player.gender || undefined,
-          generateAndPool: isGenerateTarget || undefined,
           ...(extraBody ?? {}),
         }),
       });
 
-      if (!res.ok) {
-        if (isGenerateTarget && res.status === 402) {
-          const fallbackRes = await fetch('/api/avatar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              name: player.name, type: pType,
-              gender: player.gender || undefined,
-              ...(extraBody ?? {}),
-            }),
-          });
-          if (fallbackRes.ok) {
-            const data = await fallbackRes.json() as { image: string };
-            cache.set(key, data.image);
-            saveToStorage(key, data.image);
-            results[key] = data.image;
-            return;
-          }
-        }
-        return;
-      }
+      if (!res.ok) return;
 
       const data = (await res.json()) as { image: string };
       cache.set(key, data.image);
