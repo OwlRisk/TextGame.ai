@@ -669,7 +669,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       prev.map((m) => {
         if (m.id !== messageId) return m;
         const existing = m.reactions ?? [];
-        if (existing.some((r) => r.emoji === emoji && r.from === from)) return m;
+        const idx = existing.findIndex((r) => r.emoji === emoji && r.from === from);
+        if (idx >= 0) {
+          const updated = existing.filter((_, i) => i !== idx);
+          return { ...m, reactions: updated };
+        }
         return { ...m, reactions: [...existing, { emoji, from }] };
       })
     );

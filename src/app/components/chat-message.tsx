@@ -271,13 +271,13 @@ export const ChatMessage = React.memo(function ChatMessage({
         {[...grouped.entries()].map(([emoji, names]) => (
           <button
             key={emoji}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-300 select-none hover:bg-white/10 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-300 select-none hover:bg-white/10 transition-colors cursor-pointer"
             title={names.join(", ")}
             onClick={() => onReact?.(message.id, emoji)}
           >
-            <span className="text-xl leading-none">{emoji}</span>
+            <span className="text-2xl leading-none">{emoji}</span>
             {names.length > 1 && (
-              <span className="text-xs text-zinc-400 font-medium leading-none">{names.length}</span>
+              <span className="text-sm text-zinc-400 font-medium leading-none">{names.length}</span>
             )}
           </button>
         ))}
