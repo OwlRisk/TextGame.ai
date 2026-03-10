@@ -7,7 +7,7 @@ export const BRAND_CONFIG = {
     "Describe any game idea in plain English. AI builds the rules, runs the session, and fills every seat.",
 
   logo: {
-    square: "/logo.svg",
+    square: "/logo.png",
     horizontal: "/logo-horizontal.svg",
     favicon: "/favicon.ico",
   },

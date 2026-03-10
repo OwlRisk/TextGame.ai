@@ -116,7 +116,7 @@ describe("root layout metadata exports", () => {
     "@type": "Organization",
     name: SITE_NAME,
     url: SITE_DOMAIN,
-    logo: `${SITE_DOMAIN}/icon.svg`,
+    logo: `${SITE_DOMAIN}/logo.png`,
     sameAs: [],
   };
 
@@ -208,8 +208,8 @@ describe("root layout metadata exports", () => {
       expect(organizationJsonLd["@type"]).toBe("Organization");
     });
 
-    it("logo URL points to an SVG", () => {
-      expect(organizationJsonLd.logo).toMatch(/\.svg$/);
+    it("logo URL points to a valid image", () => {
+      expect(organizationJsonLd.logo).toMatch(/\.(svg|png|jpg|webp)$/);
     });
   });
 

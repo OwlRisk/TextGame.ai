@@ -135,6 +135,14 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
           <div>
             {/* Logo */}
             <div className="flex items-center gap-3 mb-8">
+              <NextImage
+                src="/logo.png"
+                alt={`${BRAND_CONFIG.name} logo`}
+                width={48}
+                height={48}
+                className="rounded-xl"
+                priority
+              />
               <div>
                 <h1 className="text-4xl font-black text-white tracking-tight">
                   {BRAND_CONFIG.name}

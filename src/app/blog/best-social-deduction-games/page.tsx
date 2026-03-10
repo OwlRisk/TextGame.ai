@@ -55,7 +55,7 @@ const articleJsonLd = {
   datePublished: PUBLISHED,
   dateModified: PUBLISHED,
   author: { "@type": "Organization", name: SITE_NAME, url: SITE_DOMAIN },
-  publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_DOMAIN, logo: { "@type": "ImageObject", url: `${SITE_DOMAIN}/icon.svg` } },
+  publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_DOMAIN, logo: { "@type": "ImageObject", url: `${SITE_DOMAIN}/logo.png` } },
   mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_DOMAIN}${CANONICAL}` },
 };
 

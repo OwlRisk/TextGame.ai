@@ -109,7 +109,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: SITE_NAME,
   url: SITE_DOMAIN,
-  logo: `${SITE_DOMAIN}/icon.svg`,
+  logo: `${SITE_DOMAIN}/logo.png`,
   sameAs: [],
 };
 
