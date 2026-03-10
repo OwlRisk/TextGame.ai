@@ -137,6 +137,7 @@ function SignInPageInner() {
             )}
           </Button>
 
+          {/* Facebook button hidden: pending Facebook App Review for email permission
           <Button
             onClick={handleFacebookSignIn}
             disabled={isSigningInFacebook || isSigningIn}
@@ -157,6 +158,7 @@ function SignInPageInner() {
               </>
             )}
           </Button>
+          */}
 
           <p className="text-xs text-center text-zinc-500 leading-relaxed">
             By signing in, you agree to our{" "}
