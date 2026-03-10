@@ -223,6 +223,11 @@ REACT: <emoji> -> <player_name>  ← react to the last message from that player
 Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 😅 🫡
 Only use when a reaction genuinely adds colour or confirms something — not as filler.
 
+**Engagement score** (rate how reaction-worthy the last player message was — ALWAYS include this):
+ENGAGEMENT: <1-5>
+1 = routine/boring, 2 = unremarkable, 3 = normal/interesting, 4 = funny/clever/dramatic, 5 = hilarious/shocking/amazing
+Output this every turn. It controls how many AI players react with emoji. Higher = more reactions.
+
 **Mood/atmosphere** (shift chat background, optional):
 MOOD: dark | light | neutral
 Use "dark" for night/tense phases, "light" for day/calm phases. Default is neutral.

@@ -259,20 +259,31 @@ export const ChatMessage = React.memo(function ChatMessage({
     ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5"
     : "leading-relaxed";
 
-  const reactionsBlock = message.reactions && message.reactions.length > 0 ? (
-    <div className="flex flex-wrap gap-1.5 mt-2">
-      {message.reactions.map((r, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm bg-white/5 border border-white/10 text-zinc-300 select-none"
-          title={r.from}
-        >
-          <span className="text-base">{r.emoji}</span>
-          <span className="text-zinc-500 text-xs leading-none">{r.from}</span>
-        </span>
-      ))}
-    </div>
-  ) : null;
+  const reactionsBlock = message.reactions && message.reactions.length > 0 ? (() => {
+    const grouped = new Map<string, string[]>();
+    for (const r of message.reactions) {
+      const names = grouped.get(r.emoji) ?? [];
+      names.push(r.from);
+      grouped.set(r.emoji, names);
+    }
+    return (
+      <div className="flex flex-wrap gap-1.5 mt-2">
+        {[...grouped.entries()].map(([emoji, names]) => (
+          <button
+            key={emoji}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-300 select-none hover:bg-white/10 transition-colors cursor-pointer"
+            title={names.join(", ")}
+            onClick={() => onReact?.(message.id, emoji)}
+          >
+            <span className="text-xl leading-none">{emoji}</span>
+            {names.length > 1 && (
+              <span className="text-xs text-zinc-400 font-medium leading-none">{names.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+    );
+  })() : null;
 
   const canReact = !!onReact && !message.isStreaming;
 

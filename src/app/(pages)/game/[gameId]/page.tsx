@@ -835,6 +835,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       const parseHostResult = (raw: string) =>
         parseHostResultUtil(raw, playersRef.current, humanName, gameRoomEntries);
 
+      let latestEngagementScore = 3;
+
       /** Parse [BOARD:Name]...[/BOARD], [ACCESS:Room]...[/ACCESS], [SECTION:Title]...[/SECTION], etc. Apply actions; return public display content. */
       const applyHostActionsAndClean = (content: string): string => {
         const { cleanContent, actions } = parseHostActions(content);
@@ -920,6 +922,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
                 );
             if (targetMsg) addReaction(targetMsg.id, a.emoji, gmName);
+          } else if (a.type === "engagement") {
+            latestEngagementScore = a.score;
           }
         }
         return cleanContent;
@@ -1099,6 +1103,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         setCurrentSpeakerId, setTypingUsers, setPlayerNotes,
         addStreamingMessage, updateStreamingMessage,
         addReaction,
+        engagementScore: latestEngagementScore,
       });
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);

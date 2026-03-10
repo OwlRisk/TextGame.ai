@@ -45,6 +45,8 @@ export interface SpeakerQueueContext {
   addStreamingMessage: (msg: StreamMsgMeta, channelId?: string, initialContent?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
   addReaction?: (messageId: string, emoji: string, from: string) => void;
+  /** GM engagement score for the current turn (1-5), controls passive reaction intensity */
+  engagementScore?: number;
 }
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
@@ -138,7 +140,6 @@ const PERSONALITY_REACTION_RULES: PersonalityReactionRule[] = [
 
 const PASSIVE_REACTION_DEFAULT_EMOJIS = ["👍", "🤔"];
 const PASSIVE_REACTION_DEFAULT_CHANCE = 0.15;
-const PASSIVE_REACTION_MAX = 2;
 
 function getReactionRuleForPersonality(personality?: string): { emojis: string[]; chance: number } {
   if (!personality) return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
@@ -148,10 +149,19 @@ function getReactionRuleForPersonality(personality?: string): { emojis: string[]
   return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
 }
 
+const ENGAGEMENT_RATIO: Record<number, { chanceMultiplier: number; ratio: number }> = {
+  1: { chanceMultiplier: 0.1, ratio: 0 },
+  2: { chanceMultiplier: 0.5, ratio: 0.15 },
+  3: { chanceMultiplier: 1.0, ratio: 0.3 },
+  4: { chanceMultiplier: 1.5, ratio: 0.55 },
+  5: { chanceMultiplier: 2.0, ratio: 0.85 },
+};
+
 export function triggerPassiveReactions(
   ctx: SpeakerQueueContext,
   messageId: string,
   excludePlayerId?: string,
+  engagementScore: number = 3,
 ): void {
   if (!ctx.addReaction) return;
   const addReaction = ctx.addReaction;
@@ -160,13 +170,18 @@ export function triggerPassiveReactions(
   );
   if (candidates.length === 0) return;
 
+  const clamped = Math.max(1, Math.min(5, engagementScore));
+  const scale = ENGAGEMENT_RATIO[clamped] ?? ENGAGEMENT_RATIO[3];
+  const maxReactions = Math.max(0, Math.round(candidates.length * scale.ratio));
+  if (maxReactions === 0) return;
+
   const shuffled = [...candidates].sort(() => Math.random() - 0.5);
   let reactionCount = 0;
 
   for (const player of shuffled) {
-    if (reactionCount >= PASSIVE_REACTION_MAX) break;
+    if (reactionCount >= maxReactions) break;
     const { emojis, chance } = getReactionRuleForPersonality(player.personality);
-    if (Math.random() > chance) continue;
+    if (Math.random() > chance * scale.chanceMultiplier) continue;
 
     reactionCount++;
     const emoji = emojis[Math.floor(Math.random() * emojis.length)];
@@ -194,7 +209,7 @@ export async function speakAndReveal(
     const revealedMsgId = await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
       senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true,
     }, ctx.channelId, speed);
-    if (revealedMsgId) triggerPassiveReactions(ctx, revealedMsgId, player.id);
+    if (revealedMsgId) triggerPassiveReactions(ctx, revealedMsgId, player.id, ctx.engagementScore);
     const totalPace = Math.min(
       HOST_PACE_BASE_MS + Math.floor(txt.length / 50) * HOST_PACE_PER_50_CHARS_MS,
       HOST_PACE_MAX_MS,

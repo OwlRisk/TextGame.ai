@@ -39,6 +39,8 @@ export type HostAction =
   | { type: "timer"; seconds: number | "stop" }
   /** Emoji reaction to a recent message */
   | { type: "react"; emoji: string; targetSender?: string }
+  /** Engagement score for the last message (1-5), controls passive AI reactions */
+  | { type: "engagement"; score: number }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -180,6 +182,13 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
         type: "react",
         emoji: m[1].trim(),
         targetSender: m[2]?.trim() || undefined,
+      }),
+    },
+    {
+      regex: /^ENGAGEMENT:\s*(\d)$/gim,
+      parse: (m) => ({
+        type: "engagement",
+        score: Math.max(1, Math.min(5, parseInt(m[1], 10))),
       }),
     },
   ];
