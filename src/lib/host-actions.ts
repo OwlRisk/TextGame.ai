@@ -97,6 +97,10 @@ const BLOCK_PARSERS: BlockParser[] = [
 /**
  * Parses host reply for special blocks, removes them from the message, and returns
  * clean content plus a list of actions. Order of actions matches order of blocks in the text.
+ *
+ * Defensive stripping also handles the leaked format where the AI omits the [MY_NOTES]
+ * opening tag (due to token pressure) but still outputs note content + [/MY_NOTES]:
+ *   "(message) - note1\n• note2\n[/MY_NOTES]"
  */
 export function parseHostActions(rawContent: string): ParseHostActionsResult {
   let cleanContent = rawContent;
@@ -134,6 +138,22 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
       cleanContent = cleanContent.replace(full, replacement);
     }
   }
+
+  // ─── Defensive: strip leaked [MY_NOTES] where opening tag was omitted ──
+  // The AI sometimes skips [MY_NOTES] to save tokens, outputting:
+  //   "(message) - note1\n• note2\n[/MY_NOTES]"
+  // We strip from the first note-separator (" - " or newline-"• ") that leads
+  // to a [/MY_NOTES] closing tag, then clean up any bare tags.
+  if (/\[\/MY_NOTES\]/i.test(cleanContent)) {
+    // Inline note on same line as message: "text - note...[/MY_NOTES]"
+    cleanContent = cleanContent.replace(/ - [\s\S]*?\[\/MY_NOTES\]/i, '');
+    // Newline-prefixed note blocks: "\n- note\n• note\n[/MY_NOTES]"
+    cleanContent = cleanContent.replace(/\n[-•][\s\S]*?\[\/MY_NOTES\]/i, '');
+    // Fallback: strip any remaining closing tag
+    cleanContent = cleanContent.replace(/\[\/MY_NOTES\]/gi, '');
+  }
+  // Strip orphaned opening tags (e.g. model output got cut off before content)
+  cleanContent = cleanContent.replace(/\[MY_NOTES\]/gi, '');
 
   // ─── Inline single-line directives (GM-driven UI) ──────────────────────
   const INLINE_DIRECTIVES: Array<{
