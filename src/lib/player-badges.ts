@@ -40,7 +40,7 @@ export function resolveOnlineBadge(
 /** Badge shown on individual player cards in the right-side player panel. */
 export enum PlayerCardBadge {
   You = "YOU",
-  GM  = "GM",
+  GM  = "HOST",
 }
 
 /** Status values that indicate a player has been removed from active play. */

@@ -243,13 +243,7 @@ const PlayerCard = memo(function PlayerCard({
                   </span>
                   {player.isGameMaster && (
                     <Badge className="inline-flex items-center justify-center leading-none bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wider shadow-sm rounded-md">
-                      GM
-                    </Badge>
-                  )}
-                  {/* Viewer is a guest: show Host badge on the human room owner's character */}
-                  {!player.isAI && !player.isGameMaster && viewerIsGuest && (
-                    <Badge className="inline-flex items-center justify-center leading-none bg-violet-500/20 text-violet-300 border-violet-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
-                      Host
+                      HOST
                     </Badge>
                   )}
                   {resolveYouBadge(player, currentUserId) && (

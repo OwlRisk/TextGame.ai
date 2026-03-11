@@ -336,7 +336,7 @@ export const ChatMessage = React.memo(function ChatMessage({
                 </span>
                 {isHost && (
                   <span className="inline-flex items-center justify-center leading-none min-h-[20px] px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full shrink-0 text-[10px] font-bold text-white uppercase tracking-wide shadow-sm">
-                    GM
+                    HOST
                   </span>
                 )}
                 {message.senderId === userId && !isHost && (

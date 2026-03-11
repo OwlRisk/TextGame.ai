@@ -310,9 +310,6 @@ export function ChannelList({
                     {badge === OnlineBadge.You && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-600/60 text-zinc-300 font-bold tracking-wide">{OnlineBadge.You}</span>
                     )}
-                    {badge === OnlineBadge.Host && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-400 font-bold tracking-wide border border-violet-500/30">{OnlineBadge.Host}</span>
-                    )}
                     {badge === OnlineBadge.Guest && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold tracking-wide border border-emerald-500/25">{OnlineBadge.Guest}</span>
                     )}
