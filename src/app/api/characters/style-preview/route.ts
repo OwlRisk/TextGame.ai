@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const STYLES = ["semi-realistic", "anime", "painted", "pixel", "cyberpunk"] as const;
+const STYLES = ["toon3d", "semi-realistic", "anime", "painted", "pixel", "cyberpunk"] as const;
 
 /**
  * GET /api/characters/style-preview
