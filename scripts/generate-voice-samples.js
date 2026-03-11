@@ -172,12 +172,8 @@ function pickVoiceForSpeaker(gender, personalityText, speakerName) {
 // ── Personality → TTS params mapping ────────────────────────────────────────
 function getTtsParams(personality) {
   const p = (personality || '').toLowerCase();
-  if (/calm|gentle|soothing|serene|soft|quiet|reserved|nurturing|comforting/.test(p))
-    return { temperature: 0.8, speed: 0.95 };
   if (/energetic|dominant|bold|fierce|aggressive|commanding|intense|fiery|assertive/.test(p))
     return { temperature: 1.3, speed: 1.1 };
-  if (/mysterious|dark|brooding|sinister|enigmatic|shadowy|cryptic|eerie/.test(p))
-    return { temperature: 1.0, speed: 0.9 };
   if (/playful|cheerful|witty|lighthearted|bubbly|jovial|humorous|mischievous/.test(p))
     return { temperature: 1.2, speed: 1.1 };
   return { temperature: 1.0, speed: 1.0 };
