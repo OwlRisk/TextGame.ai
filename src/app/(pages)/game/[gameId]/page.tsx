@@ -1424,15 +1424,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         trackEvent("invite_shared", { template: currentGame?.config?.template || "custom" });
         if (ok) {
           toast.success("Invite link copied! Share it with players.");
+          setInviteCopied(true);
+          setTimeout(() => setInviteCopied(false), 2500);
         } else {
           toast.info(inviteUrl, { description: "Tap and hold to copy this link", duration: 10000 });
         }
-        setInviteCopied(true);
-        setTimeout(() => setInviteCopied(false), 2500);
         return;
       }
 
       // Slow path: generate a new invite code via API (first time only).
+      // Token refresh and API fetch consume the browser user-gesture context, so
+      // clipboard.writeText will fail silently afterwards. We fetch the URL first,
+      // then attempt clipboard — and only show "Copied" when it actually succeeds.
       let token = session?.access_token;
       try {
         const { data: { session: refreshed } } = await supabase.auth.refreshSession();
@@ -1446,15 +1449,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       });
       if (!res.ok) { toast.error("Failed to generate invite link"); return; }
       const data = (await res.json()) as { inviteUrl: string };
-      const ok = await copyToClipboard(data.inviteUrl);
       trackEvent("invite_shared", { template: currentGame?.config?.template || "custom" });
+      const ok = await copyToClipboard(data.inviteUrl);
       if (ok) {
         toast.success("Invite link copied! Share it with players.");
+        setInviteCopied(true);
+        setTimeout(() => setInviteCopied(false), 2500);
       } else {
         toast.info(data.inviteUrl, { description: "Tap and hold to copy this link", duration: 10000 });
       }
-      setInviteCopied(true);
-      setTimeout(() => setInviteCopied(false), 2500);
     } catch (e) {
       console.error("[invite]", e);
       toast.error("Failed to generate invite link");

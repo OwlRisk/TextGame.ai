@@ -1,4 +1,4 @@
-import { Hash, Users, Lock, Trash2, Link2, Check, UserPlus, BookOpen, FileText, Package } from "lucide-react";
+import { Hash, Users, Lock, Trash2, Link2, BookOpen, FileText, Package } from "lucide-react";
 import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -116,25 +116,6 @@ export function ChannelList({
       {/* Game Header */}
       <div className="h-14 px-3 flex items-center justify-between border-b border-zinc-900/50 shadow-sm gap-1">
         <h2 className="font-semibold text-base text-white truncate flex-1 pl-2">{gameName}</h2>
-        {/* Invite button (owner only) */}
-        {onInvite && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`h-8 focus-visible:ring-2 focus-visible:ring-violet-500/50 ${inviteJustCopied ? "min-w-[5rem]" : "w-8 px-0"}`}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onInvite(); }}
-            title={inviteJustCopied ? "Invite link copied!" : "Invite players"}
-          >
-            {inviteJustCopied ? (
-              <span className="text-xs font-medium text-emerald-400 flex items-center gap-1">
-                <Check className="h-3 w-3" />Copied
-              </span>
-            ) : (
-              <UserPlus className="h-4 w-4 text-violet-400 hover:text-violet-300" />
-            )}
-          </Button>
-        )}
       </div>
 
       <ScrollArea className="flex-1 min-h-0">
