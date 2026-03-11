@@ -35,6 +35,23 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 const BUCKET = 'avatars';
 const PROGRESS_FILE = '/tmp/avatar-gen-progress.json';
 
+// ── langCode → nationality label ─────────────────────────────────────────────
+const LANG_TO_NATIONALITY = {
+  EN_US: 'American', EN_GB: 'British', EN_AU: 'Australian', EN_CA: 'Canadian',
+  ZH_CN: 'Chinese', ZH_TW: 'Taiwanese', JA_JP: 'Japanese', KO_KR: 'Korean',
+  FR_FR: 'French', DE_DE: 'German', IT_IT: 'Italian', ES_ES: 'Spanish',
+  PT_BR: 'Brazilian', PT_PT: 'Portuguese', RU_RU: 'Russian', PL_PL: 'Polish',
+  NL_NL: 'Dutch', HI_IN: 'Indian', AR_SA: 'Arab', HE_IL: 'Israeli',
+  TR_TR: 'Turkish', SV_SE: 'Swedish', NO_NO: 'Norwegian', DA_DK: 'Danish',
+  FI_FI: 'Finnish', CS_CZ: 'Czech', HU_HU: 'Hungarian', RO_RO: 'Romanian',
+};
+
+const AGE_GROUP_LABEL = {
+  young: 'young (20s)',
+  middle_aged: 'middle-aged (35–50)',
+  elderly: 'elderly (60s+)',
+};
+
 // ── Style prompts ────────────────────────────────────────────────────────────
 const STYLE_PROMPTS = {
   'semi-realistic': (name, gender, personality, background) => {
@@ -61,6 +78,15 @@ const STYLE_PROMPTS = {
     const gStr = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'androgynous';
     const traits = [personality, background].filter(Boolean).join(' ').slice(0, 120);
     return `Japanese cyberpunk anime character portrait, inspired by Danganronpa and Promare / Trigger animation studio. ${gStr} character: ${traits}. Bold ultra-thick black outlines with flat cel-shading. Close-up bust portrait, face and shoulders filling the upper two-thirds of the frame. Background: deep black with a bright yellow circular halo glowing behind the head; scattered neon graphic elements including hearts, diamonds, triangles, mechanical circuit parts, and abstract symbols in electric pink, cyan, orange, and lime green — arranged dynamically around the character. Dark heavy vignette border framing the whole image. High contrast, vivid neon accents on dark base. One character only. Suitable for all ages. No text, no watermarks.`;
+  },
+  'toon3d': (name, gender, personality, background, inworldData) => {
+    const gStr = gender === 'female' ? 'woman' : gender === 'male' ? 'man' : 'person';
+    const traits = [personality, background].filter(Boolean).join(' ').slice(0, 200);
+    const nationality = inworldData?.langCode ? (LANG_TO_NATIONALITY[inworldData.langCode] || null) : null;
+    const ageLabel = inworldData?.ageGroup ? (AGE_GROUP_LABEL[inworldData.ageGroup] || null) : null;
+    const nationalityStr = nationality ? `Nationality: ${nationality}.` : `Use the name "${name}" to infer likely ethnicity.`;
+    const ageStr = ageLabel ? `Age: ${ageLabel}.` : '';
+    return `3D animated feature film character portrait, vibrant CGI render. A ${gStr}. ${nationalityStr} ${ageStr} ${traits}. Large expressive eyes with bright subtle catchlights, perfectly smooth luminous skin with natural healthy warmth, genuine expression that matches the character's personality and occupation. Tight head-and-shoulders portrait, face centered and filling approximately 60% of the frame height, subject looking toward camera. Soft warm cinematic lighting with gentle bokeh background. High-quality 3D animation studio render — bright, vibrant, full of personality. One character only. No text, no watermark. Suitable for all ages.`;
   },
 };
 
@@ -116,18 +142,23 @@ function openaiRequest(body) {
   });
 }
 
-function loadProgress() {
-  try { return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8')); }
+// Use style-specific progress files so parallel runs don't conflict
+function progressFile(style) {
+  return style ? `/tmp/avatar-gen-progress-${style}.json` : PROGRESS_FILE;
+}
+function loadProgress(style) {
+  try { return JSON.parse(fs.readFileSync(progressFile(style), 'utf8')); }
   catch { return {}; }
 }
-function saveProgress(p) {
-  fs.writeFileSync(PROGRESS_FILE, JSON.stringify(p, null, 2));
+function saveProgress(p, style) {
+  fs.writeFileSync(progressFile(style), JSON.stringify(p, null, 2));
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
-async function generateOne(char, style) {
+async function generateOne(char, style, inworldMap) {
   const { id, name, gender, personality, background, voice_id } = char;
-  const prompt = STYLE_PROMPTS[style](name, gender, personality, background);
+  const inworldData = inworldMap?.[voice_id] || null;
+  const prompt = STYLE_PROMPTS[style](name, gender, personality, background, inworldData);
   const storagePath = `pool/${style}/${safeFilename(voice_id)}.jpg`;
 
   // Generate image
@@ -204,11 +235,38 @@ async function generateOne(char, style) {
   return publicUrl;
 }
 
+async function fetchInworldMap() {
+  const basic = env.INWORLD_BASIC_BASE64;
+  if (!basic) { console.warn('  [warn] INWORLD_BASIC_BASE64 not set — nationality/age data unavailable'); return {}; }
+  try {
+    const res = await fetch('https://api.inworld.ai/voices/v1/voices', {
+      headers: { Authorization: `Basic ${basic}` },
+    });
+    if (!res.ok) { console.warn('  [warn] Inworld API error', res.status); return {}; }
+    const data = await res.json();
+    const map = {};
+    for (const v of (data.voices || [])) {
+      map[v.voiceId] = { langCode: v.langCode, ageGroup: v.ageGroup, tags: v.tags, description: v.description };
+    }
+    console.log(`  Loaded ${Object.keys(map).length} Inworld voice profiles`);
+    return map;
+  } catch (e) {
+    console.warn('  [warn] Failed to fetch Inworld data:', e.message);
+    return {};
+  }
+}
+
 async function main() {
-  const targetStyles = process.argv[2] && process.argv[2] !== 'all'
-    ? [process.argv[2]] : ALL_STYLES;
+  const args = process.argv.slice(2);
+  const forceRegen = args.includes('--force');
+  const styleArg = args.find(a => !a.startsWith('--'));
+  const targetStyles = styleArg && styleArg !== 'all'
+    ? [styleArg] : ALL_STYLES;
 
   console.log(`\n🎨 Generating avatars for styles: ${targetStyles.join(', ')}`);
+
+  // Fetch Inworld voice profiles for nationality/age enrichment
+  const inworldMap = await fetchInworldMap();
 
   // Fetch all 130 system characters
   const { data: chars, error } = await supabase
@@ -227,21 +285,20 @@ async function main() {
     .select('id, avatar_styles')
     .eq('is_system', true)
     .limit(500);
-  const progress = loadProgress();
-  for (const c of (existingChars || [])) {
-    const styles = c.avatar_styles || {};
-    for (const s of ALL_STYLES) {
-      if (styles[s]) progress[`${s}:${c.id}`] = 'done';
-    }
-  }
-  saveProgress(progress);
-  const totalDone = Object.values(progress).filter(v => v === 'done').length;
-  console.log(`DB check complete: ${totalDone} already done, ${chars.length * targetStyles.length - Object.keys(progress).filter(k => targetStyles.some(s => k.startsWith(s+':'))).length} to generate`);
-
+  // Each style gets its own progress file (safe for parallel runs)
   let generated = 0, skipped = 0, failed = 0;
 
   for (const style of targetStyles) {
-    console.log(`\n━━━ Style: ${style.toUpperCase()} ━━━`);
+    const progress = forceRegen ? {} : loadProgress(style);
+    // Seed progress from DB (skip already-done) — unless --force
+    if (!forceRegen) {
+      for (const c of (existingChars || [])) {
+        if (c.avatar_styles?.[style]) progress[`${style}:${c.id}`] = 'done';
+      }
+    }
+    const totalDone = Object.values(progress).filter(v => v === 'done').length;
+    console.log(`\n━━━ Style: ${style.toUpperCase()} ━━━  (${totalDone}/${chars.length} already done)`);
+
     for (let i = 0; i < chars.length; i++) {
       const char = chars[i];
       const key = `${style}:${char.id}`;
@@ -257,9 +314,9 @@ async function main() {
       let attempts = 0;
       while (attempts < 3) {
         try {
-          const url = await generateOne(char, style);
+          const url = await generateOne(char, style, inworldMap);
           progress[key] = 'done';
-          saveProgress(progress);
+          saveProgress(progress, style);
           process.stdout.write(`✓`);
           generated++;
           break;
@@ -285,7 +342,7 @@ async function main() {
   }
 
   console.log(`\n\n✅ Done! Generated: ${generated}, Skipped: ${skipped}, Failed: ${failed}`);
-  console.log(`Progress saved to ${PROGRESS_FILE}`);
+  console.log(`Progress files: /tmp/avatar-gen-progress-{style}.json`);
 }
 
 main().catch(e => { console.error('Fatal:', e); process.exit(1); });

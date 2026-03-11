@@ -4,22 +4,22 @@ import { buildSystemPrompt, PACING_RULE, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '
 // ─── Constants ────────────────────────────────────────────────────────────
 
 describe('PLAYER_SPEAK_HARD_LIMIT_TOKENS', () => {
-  it('is 120 tokens', () => {
-    expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBe(120);
+  it('is 180 tokens', () => {
+    expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBe(180);
   });
 });
 
 describe('PACING_RULE', () => {
-  it('mentions 3 sentences as the maximum per turn', () => {
-    expect(PACING_RULE).toMatch(/3 sentences/i);
+  it('enforces a hard limit of 2 sentences per turn', () => {
+    expect(PACING_RULE).toMatch(/2 sentences/i);
   });
 
   it('instructs AI to use 1 sentence for action/vote phases', () => {
     expect(PACING_RULE).toMatch(/1 sentence/i);
   });
 
-  it('says "shorter is better"', () => {
-    expect(PACING_RULE).toMatch(/shorter is better/i);
+  it('includes a HARD LIMIT clause', () => {
+    expect(PACING_RULE).toMatch(/HARD LIMIT/i);
   });
 });
 
@@ -72,7 +72,7 @@ describe('buildSystemPrompt – werewolf / mafia', () => {
 
   it('prompt includes instructions to give a concrete reason when accusing', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'G');
-    expect(prompt).toMatch(/ONE concrete observation/i);
+    expect(prompt).toMatch(/concrete observation/i);
   });
 });
 
@@ -140,9 +140,9 @@ describe('buildSystemPrompt – default (unknown template)', () => {
     expect(prompt).toContain('PACING');
   });
 
-  it('default prompt forbids monologues', () => {
+  it('default prompt forbids speeches and long turns', () => {
     const prompt = buildSystemPrompt('Lena', undefined, 'G');
-    expect(prompt).toMatch(/no monologues/i);
+    expect(prompt).toMatch(/No speeches/i);
   });
 });
 
@@ -151,11 +151,11 @@ describe('buildSystemPrompt – default (unknown template)', () => {
 describe('buildSystemPrompt – elaboration pacing', () => {
   it('mentions that the Host will prompt again when elaboration is needed', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game');
-    expect(prompt).toMatch(/Host will prompt you again/i);
+    expect(prompt).toMatch(/host will prompt again/i);
   });
 
-  it('limits elaboration answer to 2–3 sentences', () => {
+  it('limits elaboration answer to 2 sentences', () => {
     const prompt = buildSystemPrompt('Alice', 'mafia', 'Game');
-    expect(prompt).toMatch(/2.?3 sentences/);
+    expect(prompt).toMatch(/2 sentences/);
   });
 });

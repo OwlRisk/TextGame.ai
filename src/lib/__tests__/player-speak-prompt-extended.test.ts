@@ -72,7 +72,7 @@ describe("buildSystemPrompt — all templates", () => {
   it("default prompt is generic and flexible", () => {
     const prompt = buildSystemPrompt("Player", undefined, "Custom");
     expect(prompt).toContain("game table");
-    expect(prompt).toContain("No monologues");
+    expect(prompt).toContain("No speeches");
   });
 });
 
@@ -83,7 +83,7 @@ describe("player-speak constants", () => {
   });
 
   it("PACING_RULE mentions sentence limits", () => {
-    expect(PACING_RULE).toContain("3 sentences");
+    expect(PACING_RULE).toContain("2 sentences");
   });
 
   it("MY_NOTES_SECTION explains [MY_NOTES] format", () => {
