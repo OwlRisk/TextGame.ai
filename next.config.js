@@ -58,7 +58,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.openai.com https://*.oaiusercontent.com https://*.supabase.co https://*.googleusercontent.com https://www.google-analytics.com",
               "font-src 'self' data:",
-              "media-src 'self' blob:",
+              "media-src 'self' blob: https://*.supabase.co",
               "connect-src 'self' https://*.openai.com https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.sentry.io https://*.ingest.sentry.io",
               "frame-ancestors 'none'",
               "object-src 'none'",
