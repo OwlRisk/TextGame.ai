@@ -251,9 +251,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.humanGameIdentity && typeof (state.humanGameIdentity as any).name === "string") {
         setHumanGameIdentity({ name: (state.humanGameIdentity as any).name });
       }
-      if (state.avatarImageUrls && typeof state.avatarImageUrls === "object") {
-        setAvatarImageUrls(state.avatarImageUrls as Record<string, string>);
-      }
+      // avatarImageUrls is a client-side style-aware cache; do NOT restore from
+      // persisted state because it may have been written by a different client with
+      // a different avatar style selected, which would show wrong-style images.
       if (typeof state.phaseLabel === "string") setPhaseLabel(state.phaseLabel);
       if (state.mood === "dark" || state.mood === "light" || state.mood === "neutral") setMood(state.mood);
       if (typeof state.gameOverSummary === "string") setGameOverSummary(state.gameOverSummary);
@@ -363,7 +363,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
               .filter(([, arr]) => (arr as unknown[]).length > 0)
           ),
           humanGameIdentity: humanGameIdentityRef.current || undefined,
-          avatarImageUrls: Object.keys(avatarImageUrlsRef.current).length ? avatarImageUrlsRef.current : undefined,
           phaseLabel: phaseLabelRef.current || undefined,
           mood: moodRef.current !== "neutral" ? moodRef.current : undefined,
           gameOverSummary: gameOverSummaryRef.current || undefined,
@@ -422,13 +421,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (arr.length) trimmedPrivateMessages[pid] = arr;
     }
 
-    // Only persist avatar URLs for participants currently in this game (key format: "name|type").
-    // This prevents unbounded growth as players are added/removed across sessions.
-    const activePlayerNames = new Set(players.map((p) => p.name));
-    const trimmedAvatarImageUrls = Object.fromEntries(
-      Object.entries(avatarImageUrls).filter(([key]) => activePlayerNames.has(key.split("|")[0]))
-    );
-
     const state = {
       messages: trimmedMessages,
       players,
@@ -441,7 +433,6 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       gameEvents,
       privateMessages: trimmedPrivateMessages,
       humanGameIdentity: humanGameIdentity || undefined,
-      avatarImageUrls: Object.keys(trimmedAvatarImageUrls).length ? trimmedAvatarImageUrls : undefined,
       phaseLabel: phaseLabel || undefined,
       mood: mood !== "neutral" ? mood : undefined,
       gameOverSummary: gameOverSummary || undefined,
@@ -542,12 +533,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (remoteState.gameEvents && Array.isArray(remoteState.gameEvents)) {
       setGameEvents(remoteState.gameEvents as string[]);
     }
-    if (remoteState.avatarImageUrls && typeof remoteState.avatarImageUrls === "object") {
-      setAvatarImageUrls((prev) => ({
-        ...prev,
-        ...(remoteState.avatarImageUrls as Record<string, string>),
-      }));
-    }
+    // avatarImageUrls is intentionally NOT synced from remote state.
+    // It is a per-client cache keyed by name|type|style; merging another
+    // client's cache (which may use a different style) would show wrong-style images.
     if (typeof remoteState.phaseLabel === "string") setPhaseLabel(remoteState.phaseLabel);
     if (remoteState.mood === "dark" || remoteState.mood === "light" || remoteState.mood === "neutral") setMood(remoteState.mood);
     if (typeof remoteState.gameOverSummary === "string") setGameOverSummary(remoteState.gameOverSummary);
