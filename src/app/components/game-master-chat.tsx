@@ -837,7 +837,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         );
         if (poolRes.ok) {
           const poolData = await poolRes.json();
-          const poolChars: Array<{ name: string; gender?: string; personality?: string; background?: string; avatar_url?: string; voice_id?: string }> = poolData.characters ?? [];
+          const poolChars: Array<{ name: string; gender?: string; personality?: string; background?: string; avatar_url?: string; voice_id?: string; voice_sample_url?: string }> = poolData.characters ?? [];
 
           if (finalConfiguredPlayers.length > 0) {
             // Enrich LLM-configured players with pool avatars/voices, matched by index.
@@ -847,6 +847,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               ...cp,
               avatar_url: poolChars[i]?.avatar_url ?? cp.avatar_url,
               voice_id: cp.voice_id ?? poolChars[i]?.voice_id,
+              voice_sample_url: poolChars[i]?.voice_sample_url ?? (cp as any).voice_sample_url,
             }));
           } else if (poolChars.length > 0) {
             // No LLM config: use pool characters directly

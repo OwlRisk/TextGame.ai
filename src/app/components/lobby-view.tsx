@@ -76,7 +76,17 @@ export function LobbyView({
 
     setTestingVoice(player.id);
     try {
-      // Ask AI to generate a greeting in-character
+      // Fast path: play pre-generated voice sample from CDN if available
+      if (player.voiceSampleUrl) {
+        const audio = new Audio(player.voiceSampleUrl);
+        testAudioRef.current = audio;
+        audio.onended = () => { setTestingVoice(null); testAudioRef.current = null; };
+        audio.onerror = () => { setTestingVoice(null); testAudioRef.current = null; };
+        await audio.play();
+        return;
+      }
+
+      // Slow path: generate greeting + TTS on the fly
       const greetRes = await fetch('/api/characters/greet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

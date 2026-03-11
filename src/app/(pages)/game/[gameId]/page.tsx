@@ -551,6 +551,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       status: "online" as const,
       // Use pre-assigned voice from pool; assignVoicesForRoom will only be called for those without one.
       voiceId: (configPlayer.voice_id as string | undefined) ?? undefined,
+      voiceSampleUrl: (configPlayer.voice_sample_url as string | undefined) ?? undefined,
     }));
   }, []);
 
@@ -1932,6 +1933,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             gender: char.gender as "male" | "female" | "other" | undefined,
             status: "online" as const,
             voiceId: pickVoiceForSpeaker(char.gender, voiceHint, undefined, char.name),
+            voiceSampleUrl: char.voice_sample_url ?? undefined,
           };
           setPlayers((prev) => {
             const humanIdx = prev.findIndex((p) => !p.isAI && !p.isGameMaster);

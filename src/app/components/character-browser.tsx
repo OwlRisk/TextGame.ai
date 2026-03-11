@@ -25,12 +25,13 @@ export interface AiCharacter {
   avatar_color: string;
   source_game_id: string | null;
   created_at: string;
+  voice_sample_url?: string | null;
 }
 
 interface CharacterBrowserProps {
   open: boolean;
   onClose: () => void;
-  onSelectCharacter: (character: { name: string; gender: string; personality: string; background: string }) => void;
+  onSelectCharacter: (character: { name: string; gender: string; personality: string; background: string; voice_sample_url?: string | null }) => void;
   gameId?: string;
 }
 
@@ -100,7 +101,7 @@ export function CharacterBrowser({ open, onClose, onSelectCharacter, gameId }: C
   }, [session?.access_token, generating, theme]);
 
   const handleSelectAndClose = useCallback(
-    (char: { name: string; gender: string; personality: string; background: string }) => {
+    (char: { name: string; gender: string; personality: string; background: string; voice_sample_url?: string | null }) => {
       onSelectCharacter(char);
       onClose();
     },
@@ -186,12 +187,14 @@ export function CharacterBrowser({ open, onClose, onSelectCharacter, gameId }: C
                       gender={char.gender}
                       personality={char.personality || ""}
                       background={char.background || ""}
+                      voiceSampleUrl={char.voice_sample_url}
                       onSelect={() =>
                         handleSelectAndClose({
                           name: char.name,
                           gender: char.gender,
                           personality: char.personality || "",
                           background: char.background || "",
+                          voice_sample_url: char.voice_sample_url,
                         })
                       }
                       onDelete={() => handleDelete(char.id)}
@@ -264,6 +267,7 @@ function CharacterCard({
   gender,
   personality,
   background,
+  voiceSampleUrl,
   onSelect,
   onDelete,
   onSave,
@@ -272,6 +276,7 @@ function CharacterCard({
   gender: string;
   personality: string;
   background: string;
+  voiceSampleUrl?: string | null;
   onSelect: () => void;
   onDelete?: () => void;
   onSave?: () => void;
@@ -283,7 +288,6 @@ function CharacterCard({
   const handleVoicePreview = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Stop if already playing
     if (voicePlaying && audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -293,6 +297,18 @@ function CharacterCard({
 
     setVoiceLoading(true);
     try {
+      // Fast path: play pre-generated sample from CDN
+      if (voiceSampleUrl) {
+        const audio = new Audio(voiceSampleUrl);
+        audioRef.current = audio;
+        setVoicePlaying(true);
+        audio.onended = () => { audioRef.current = null; setVoicePlaying(false); };
+        audio.onerror = () => { audioRef.current = null; setVoicePlaying(false); };
+        await audio.play();
+        return;
+      }
+
+      // Slow path: generate on the fly
       const voiceId = pickVoiceForSpeaker(gender, personality);
       const sampleText = `Hi, I'm ${name}. ${personality ? personality.split(",")[0] + "." : "Ready to play."}`;
       const modelId = (typeof window !== "undefined" ? localStorage.getItem("tts_model") : null) ?? "inworld-tts-1.5-max";
@@ -329,7 +345,7 @@ function CharacterCard({
     } finally {
       setVoiceLoading(false);
     }
-  }, [gender, personality, name, voicePlaying]);
+  }, [gender, personality, name, voicePlaying, voiceSampleUrl]);
 
   return (
     <div className="group flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 hover:border-zinc-600 transition-colors">

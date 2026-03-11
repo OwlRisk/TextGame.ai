@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   // Fetch all system characters (no hard limit — we have ~130 and want full coverage).
   const { data, error } = await supabaseAdmin
     .from("ai_characters")
-    .select("id, name, gender, personality, background, avatar_url, avatar_styles, voice_id")
+    .select("id, name, gender, personality, background, avatar_url, avatar_styles, voice_id, voice_sample_url")
     .eq("is_system", true)
     .not("voice_id", "is", null)
     .order("created_at", { ascending: true })
@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
       background: c.background,
       avatar_url: avatarUrl,
       voice_id: c.voice_id,
+      voice_sample_url: c.voice_sample_url ?? null,
     };
   }).filter((c) => !!c.avatar_url);
 

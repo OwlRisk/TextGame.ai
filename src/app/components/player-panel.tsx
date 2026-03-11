@@ -32,6 +32,8 @@ export interface Player {
   roleRevealed?: boolean;
   /** Persistent TTS voice ID (Inworld). Assigned at player creation so each character keeps a stable voice. */
   voiceId?: string;
+  /** Pre-generated voice greeting sample URL (Supabase Storage). Used for instant lobby voice preview. */
+  voiceSampleUrl?: string;
 }
 
 interface PlayerPanelProps {
