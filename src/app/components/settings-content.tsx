@@ -305,7 +305,13 @@ export function SettingsContent() {
                         >+</button>
                         <button type="button" onClick={() => { setTtsTemperature('1.1'); localStorage.setItem('tts_temperature', '1.1'); }} className="text-xs text-zinc-600 hover:text-zinc-400 w-8 text-right transition-colors">reset</button>
                       </div>
-                      <p className="text-zinc-600 text-xs mt-1.5">Controls expressiveness and variation in speech.</p>
+                      <p className="text-zinc-600 text-xs mt-1.5">
+                        {numVal <= 0.9
+                          ? 'Stable and predictable tone with minimal variation — ideal for narration or formal speech.'
+                          : numVal >= 1.3
+                            ? 'Highly expressive with rich emotion and dramatic intonation — may occasionally sound unnatural.'
+                            : 'Balanced expressiveness with natural-sounding variation.'}
+                      </p>
                     </div>
                   );
                 })()}
