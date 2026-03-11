@@ -142,7 +142,7 @@ describe('coerceStyle helper', () => {
 // ─── 3. sortByStylePriority ───────────────────────────────────────────────────
 
 describe('sortByStylePriority', () => {
-  const characters = [
+  const characters: Array<{ name: string; avatar_styles?: Record<string, string> | null }> = [
     { name: 'Alice', avatar_styles: { 'semi-realistic': 'https://sr/alice.jpg' } },
     { name: 'Bob', avatar_styles: { anime: 'https://anime/bob.jpg' } },
     { name: 'Carol', avatar_styles: null },
