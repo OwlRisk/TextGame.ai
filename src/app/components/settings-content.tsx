@@ -19,6 +19,7 @@ import type { SubscriptionTier } from '@/lib/subscription';
 import {
   AVATAR_STYLE_PACKS,
   AVATAR_STYLE_STORAGE_KEY,
+  coerceStyle,
   type AvatarStyle,
 } from '@/lib/avatar-style-constants';
 import { setAvatarStyleGlobal } from '@/lib/use-avatar-style';
@@ -79,7 +80,7 @@ export function SettingsContent() {
           localStorage.setItem('image_gen_enabled', String(prefs.image_gen_enabled));
         }
         if (typeof prefs.avatar_style_pack === 'string') {
-          setAvatarStyle(prefs.avatar_style_pack);
+          setAvatarStyle(coerceStyle(prefs.avatar_style_pack));
           localStorage.setItem('avatar_style_pack', prefs.avatar_style_pack);
         }
         if (typeof prefs.tts_model === 'string') {
