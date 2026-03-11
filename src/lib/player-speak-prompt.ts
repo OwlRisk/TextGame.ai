@@ -74,8 +74,19 @@ export function buildSystemPrompt(
   background?: string,
 ): string {
   let base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...".`;
+
+  // Personality and background are not just labels — they define WHO YOU ARE in this game.
+  // They should influence what you notice, who you trust or suspect, and how you react.
   if (personality) base += ` Your personality: ${personality}.`;
   if (background) base += ` ${background}`;
+
+  // Core participation rule that applies to every game type
+  const PARTICIPATION_RULE = `\nYOU ARE IN THIS GAME — ACT LIKE IT:
+- You have a stake in the outcome. Play to win, or play your role fully.
+- React to SPECIFIC people by name. "I think Maya is hiding something" beats "I think someone is hiding something."
+- Your personality and background shape what you NOTICE and CARE ABOUT — use them to filter the conversation. A nervous person fixates on the wrong detail. A strategist spots the pattern. A joker deflects with humor.
+- If you have nothing new to ADD, you still have something to FEEL. A reaction, a look, a doubt. Express it briefly instead of going silent.
+- Do NOT be a spectator. Every turn, you are someone with opinions, loyalties, suspicions, and stakes.`;
   switch (gameTemplate) {
     case 'werewolf':
     case 'mafia': {
@@ -86,6 +97,10 @@ RULES:
 - If you're a werewolf/mafia: blend in, deflect, mislead subtly—but give a plausible reason when pressed.
 - If you're a villager/detective: observe, deduce, call people out with evidence.
 - Never reveal your role directly unless the game explicitly asks.
+- Name the person you're reacting to. "Jake went quiet after that question" is more powerful than "someone seems suspicious."
+- Form opinions and defend them. Changing your mind is fine, but you must have a position.
+
+${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
@@ -100,6 +115,10 @@ ${MY_NOTES_SECTION}`;
 RULES:
 - Describe your word sideways; don't say it outright.
 - React to what others said—agree, push back, or add a new angle.
+- Notice when someone's description feels slightly off. Call it out or file it away.
+- Your personality shapes HOW you describe: a cynical person uses dry comparisons, a creative person goes metaphorical.
+
+${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
@@ -114,6 +133,9 @@ ${MY_NOTES_SECTION}`;
 RULES:
 - No game-theory talk or accusations.
 - Build on what was just shared or offer a different lens.
+- Connect what others said to your own experience or feeling. Make it personal.
+
+${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
@@ -128,6 +150,10 @@ ${MY_NOTES_SECTION}`;
 
 RULES:
 - Just your gut reaction and brief reasoning—no long explanations.
+- Celebrate when you're right, groan when you're wrong. Show you care about the score.
+- React to other players' answers: agree, doubt, or playfully trash-talk.
+
+${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
@@ -143,6 +169,9 @@ ${MY_NOTES_SECTION}`;
 RULES:
 - Speak as your character, not as a player discussing the game.
 - Be vivid and emotionally grounded.
+- Your character has wants, fears, and opinions about the other characters. Let those show.
+
+${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
@@ -198,10 +227,16 @@ ${MY_NOTES_SECTION}`;
     }
 
     default: {
-      return `${base} Speak like a real person at a game table—casual, direct, reacting to what was just said. Agree, push back, ask questions, share your take. Match the tone of the game.
+      return `${base} You're a real person at a game table. You have opinions. You're watching the other players, reading the room, trying to figure out what's really going on.
 
-RULES:
-- No monologues. React specifically to the last thing said.
+HOW TO ENGAGE:
+- React to what was JUST SAID — but also to WHO said it and why they might have said it.
+- Name people: "I buy that from Maya, but Jake? No way." not just "I'm not sure I believe that."
+- Have a current suspicion, theory, or preference — and let it color how you respond.
+- If nothing interesting just happened, say the thing you've been holding back. A doubt, a hunch, a challenge.
+- Silence is only for when you are truly, genuinely, 100% irrelevant to the moment. Before going silent, ask: "could my character react emotionally?" If yes, do that instead.
+
+${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 

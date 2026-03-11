@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     lines.push('');
 
     if (isSeedGreeting) {
-      lines.push(`The game just started. Say something brief and in-character as ${player.name}—a casual greeting, a comment, or a reaction. IMPORTANT: Do NOT repeat what others already said. Be unique: if someone asked a question, don't ask the same thing. Show YOUR personality. Keep it short (1-2 sentences).`);
+      lines.push(`The game just started. Introduce yourself or react as ${player.name} — make it unmistakably YOU. Do NOT repeat what others already said (read the recent messages above carefully). Your personality, background, and way of seeing the world should be obvious from just these 1-2 sentences. Maybe you're sizing someone up, maybe you're cracking a joke, maybe you're already suspicious of someone — show it.`);
     } else if (gameTemplate === '20-questions') {
       // Inject structured Q&A history so the model can reason from confirmed facts
       const allMessages = recentMessages;
@@ -194,11 +194,11 @@ export async function POST(request: NextRequest) {
 4. 1–2 sentences total. No strategies, no "we should ask...", just play.
 5. If you truly have nothing new, output an emoji reaction: REACT: 🤔`);
     } else {
-      lines.push(`Your turn. Reply as ${player.name}. CRITICAL RULES:
-1. Read every recent message carefully. If someone already asked/nudged/said what you were going to say, output ONLY "..." — do not paraphrase it.
-2. If a question has already been answered, DO NOT ask for confirmation or re-ask it. Accept the answer and move on.
-3. NO meta-commentary. Never say things like "we should ask X next" or "that definition is ambiguous" — just play the game.
-4. If you have nothing genuinely new to contribute, output ONLY "..." (literally three dots, nothing else).`);
+      lines.push(`Your turn as ${player.name}. RULES:
+1. Read every recent message carefully. If someone already said exactly what you were going to say, do NOT repeat it — find a different angle, or react emotionally to what was said.
+2. Do NOT ask for confirmation on answers already given. Accept them and build forward.
+3. NO meta-commentary. Never say "we should ask X" or "that's ambiguous" — just play.
+4. LAST RESORT ONLY: if you truly have zero to add and no emotional reaction either, output "..." — but exhaust every other option first. Emotional reactions (doubt, excitement, discomfort, amusement) count as a contribution.`);
     }
 
     const userContent = lines.join('\n');
