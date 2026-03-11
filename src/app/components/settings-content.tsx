@@ -82,6 +82,45 @@ export function SettingsContent() {
       .catch(() => setCurrentPlan('free'));
   }, [session?.access_token]);
 
+  // Load server-persisted settings and sync them into localStorage and local state.
+  useEffect(() => {
+    if (!session?.access_token) return;
+    fetch('/api/user/settings', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((prefs: Record<string, unknown> | null) => {
+        if (!prefs) return;
+        if (typeof prefs.ai_model === 'string') {
+          setAiModel(prefs.ai_model);
+          localStorage.setItem('ai_model', prefs.ai_model);
+        }
+        if (typeof prefs.image_gen_enabled === 'boolean') {
+          setImageGenEnabled(prefs.image_gen_enabled);
+          localStorage.setItem('image_gen_enabled', String(prefs.image_gen_enabled));
+        }
+        if (typeof prefs.avatar_style_pack === 'string') {
+          setAvatarStyle(prefs.avatar_style_pack);
+          localStorage.setItem('avatar_style_pack', prefs.avatar_style_pack);
+        }
+        if (typeof prefs.tts_model === 'string') {
+          setTtsModel(prefs.tts_model);
+          localStorage.setItem('tts_model', prefs.tts_model);
+        }
+        if (typeof prefs.tts_enabled === 'boolean') {
+          setTtsEnabled(prefs.tts_enabled);
+          localStorage.setItem('voice_enabled', String(prefs.tts_enabled));
+        }
+        if (typeof prefs.tts_temperature === 'string') {
+          setTtsTemperature(prefs.tts_temperature);
+          localStorage.setItem('tts_temperature', prefs.tts_temperature);
+        }
+        if (typeof prefs.tts_speed === 'string') {
+          setTtsSpeed(prefs.tts_speed);
+          localStorage.setItem('tts_speed', prefs.tts_speed);
+        }
+      })
+      .catch(() => {});
+  }, [session?.access_token]);
+
   useEffect(() => {
     fetch('/api/characters/style-preview')
       .then((r) => (r.ok ? r.json() : null))
@@ -468,7 +507,7 @@ export function SettingsContent() {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${session.access_token}`,
                       },
-                      body: JSON.stringify({ ai_model: aiModel, image_gen_enabled: imageGenEnabled }),
+                      body: JSON.stringify({ ai_model: aiModel, image_gen_enabled: imageGenEnabled, avatar_style_pack: avatarStyle }),
                     });
                   }
                   toast.success('Settings saved!');

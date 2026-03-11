@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
   }
 
   // Allowlist the keys that can be stored
-  const allowed = ['ai_model', 'image_gen_enabled', 'tts_model', 'tts_enabled', 'tts_temperature', 'tts_speed'];
+  const allowed = ['ai_model', 'image_gen_enabled', 'avatar_style_pack', 'tts_model', 'tts_enabled', 'tts_temperature', 'tts_speed'];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];

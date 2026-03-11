@@ -72,11 +72,22 @@ function saveToStorage(key: string, dataUrl: string): void {
  * fetch will hit the API again (e.g. after force-regeneration).
  */
 export function invalidateAvatarCache(name: string, type: AvatarType): void {
-  const key = identityCacheKey(name, type);
-  cache.delete(key);
-  inFlight.delete(key);
+  const baseKey = identityCacheKey(name, type);
+  // Clear the base key and all style-variant keys (e.g. "Alice|player|anime")
+  for (const k of [...cache.keys()]) {
+    if (k === baseKey || k.startsWith(`${baseKey}|`)) cache.delete(k);
+  }
+  for (const k of [...inFlight.keys()]) {
+    if (k === baseKey || k.startsWith(`${baseKey}|`)) inFlight.delete(k);
+  }
   if (typeof window !== 'undefined') {
-    try { localStorage.removeItem(PERSIST_PREFIX + key); } catch (_) {}
+    try {
+      const keysJson = localStorage.getItem(PERSIST_KEYS_LIST);
+      const keys: string[] = keysJson ? JSON.parse(keysJson) : [];
+      for (const k of keys.filter(k => k === baseKey || k.startsWith(`${baseKey}|`))) {
+        localStorage.removeItem(PERSIST_PREFIX + k);
+      }
+    } catch (_) {}
   }
 }
 
@@ -91,7 +102,9 @@ export async function fetchGeneratedAvatar(
   forceRegenerate?: boolean,
   style?: string,
 ): Promise<string> {
-  const key = identityCacheKey(name, type);
+  const baseKey = identityCacheKey(name, type);
+  // Include style in the cache key so switching style packs never returns stale avatars.
+  const key = style ? `${baseKey}|${style}` : baseKey;
 
   if (!forceRegenerate) {
     const cached = cache.get(key);
@@ -294,7 +307,9 @@ export function useGeneratedAvatar(
     style,
     enabled = true,
   } = options;
-  const key = (name && enabled) ? identityCacheKey(name, type) : '';
+  const baseKey = (name && enabled) ? identityCacheKey(name, type) : '';
+  // Include style in cache key so switching style packs always re-fetches from the correct bucket.
+  const key = (baseKey && style) ? `${baseKey}|${style}` : baseKey;
   // Always start with null so server and client first paint match (no localStorage on server).
   // Cache/storage is read in fetchAvatar() inside useEffect (client-only).
   const [src, setSrc] = useState<string | null>(null);

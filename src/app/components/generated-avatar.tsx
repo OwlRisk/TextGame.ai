@@ -36,6 +36,7 @@ export function GeneratedAvatar({
   background,
   personality,
   gender,
+  style,
   enabled = true,
   initialUrl,
   onAvatarLoaded,
@@ -52,6 +53,18 @@ export function GeneratedAvatar({
   // Reset failure state whenever initialUrl itself changes
   useEffect(() => { setInitialUrlFailed(false); }, [initialUrl]);
 
+  // Read avatar style from localStorage when not explicitly passed.
+  // Initialized to undefined to avoid SSR/hydration mismatch; set on client mount.
+  const [resolvedStyle, setResolvedStyle] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (style !== undefined) {
+      setResolvedStyle(style);
+    } else {
+      const stored = localStorage.getItem('avatar_style_pack') ?? undefined;
+      setResolvedStyle(stored);
+    }
+  }, [style]);
+
   const useInitialUrl = hasValidInitialUrl && !initialUrlFailed;
 
   // Always run the hook so it pre-loads from localStorage/cache.
@@ -64,6 +77,7 @@ export function GeneratedAvatar({
     background,
     personality,
     gender,
+    style: resolvedStyle,
     enabled: isGM ? false : enabled,
   });
 
