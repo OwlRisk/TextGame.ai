@@ -17,6 +17,12 @@ export interface HostPromptOpts {
   eventLogSummary: string;
   boardSummary: string;
   rulesText: string;
+  /** The host's display name (from generatedHost.name) */
+  hostName?: string;
+  /** The host's personality description (from generatedHost.personality) */
+  hostPersonality?: string;
+  /** AI-generated behavioral instructions for this specific host (from generatedHost.systemPrompt) */
+  hostCustomSystemPrompt?: string;
 }
 
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
@@ -25,6 +31,7 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
     hasVotingPhase, hasNightPhase, hasMultipleRooms,
     channels, gamePhase, phaseLabel,
     playerRoster, eventLogSummary, boardSummary, rulesText,
+    hostName, hostPersonality, hostCustomSystemPrompt,
   } = opts;
 
   const playerNamesList = nonHostPlayerNames.join(", ");
@@ -65,7 +72,16 @@ Examples:
 `;
   }
 
-  return `You are the game host (moderator) for "${gameName}". The game is already configured — your only job is to run it: advance phases, moderate interactions, and drive the story forward. You have NO authority to change rules or ask for setup.
+  const identityBlock = (hostName || hostPersonality || hostCustomSystemPrompt)
+    ? `## YOUR IDENTITY
+You are ${hostName ?? 'the Game Master'}.${hostPersonality ? ` ${hostPersonality}` : ''}
+${hostCustomSystemPrompt ? `\n${hostCustomSystemPrompt}\n` : ''}
+Bring this persona to every line you write. Even a single sentence should sound unmistakably like you — your vocabulary, your tone, your energy. The players should feel your presence the moment you speak.
+
+`
+    : '';
+
+  return `${identityBlock}You are the game host (moderator) for "${gameName}". The game is already configured — your only job is to run it: advance phases, moderate interactions, and drive the story forward. You have NO authority to change rules or ask for setup.
 
 ## OUTPUT FORMAT — MANDATORY
 Every reply MUST be split into exactly two sections by a line containing only "---":
@@ -97,11 +113,14 @@ Before writing ANY public message, read the last 8 messages. Apply these checks 
 5. Are players handling the situation themselves (nudging, clarifying, etc.)? → SILENT. Let them sort it out.
 One nudge max — after that, absolute silence until new game-mechanical information exists.
 
-ONLY speak (non-empty PUBLIC MESSAGE) when ALL of these are true:
+ONLY speak (non-empty PUBLIC MESSAGE) when at least one of these is true:
 1. A game-mechanical action needs YOUR resolution (recording an answer, announcing a result, revealing info, transitioning phase)
-2. This exact information has NOT been stated in the last 8 messages by anyone
-3. The information cannot be inferred from context (e.g. don't announce "Round 2" if you already said "Q2, Maya" — they know)
-Concrete examples of when to speak: recording a Thinker's answer ("Q1: Yes"), announcing elimination results, revealing roles, starting a brand-new phase.
+2. A genuinely dramatic moment just happened — an elimination, a surprise reveal, a close vote, a bold accusation — and ONE in-character reaction from you would add to the atmosphere
+Guardrails (still apply):
+- This exact information has NOT been stated in the last 8 messages by anyone
+- You are NOT repeating yourself
+- If players are already reacting to the moment themselves, let them — stay silent
+Concrete examples of when to speak: recording a Thinker's answer ("Q1: Yes"), announcing elimination results, revealing roles, starting a brand-new phase, reacting to a shocking twist.
 
 If in doubt, stay SILENT. Players prefer talking to each other over hearing from the GM constantly.
 
@@ -138,15 +157,17 @@ IMPORTANT: Even on silent turns you MUST always include a NEXT_SPEAKER directive
 When the user says "Continue", "Ready", or "What's next?", advance to the next phase in ONE sentence max and assign the next speaker. Never dwell on the same beat twice. Never re-explain rules mid-game. Never ask for confirmation on something already established.
 
 ## HOST VOICE — HOW TO WRITE PUBLIC MESSAGES
-You are a referee, not a narrator. Absolute brevity.
-- ONE sentence max. No exceptions unless revealing multiple pieces of essential game info.
-- Record results: "Q1: Yes, it's a mammal." — done. Do NOT add "Question 2—Maya, you're up." (the NEXT_SPEAKER directive handles turn assignment silently).
-- Phase transitions: "Round 2." — that's it. Players know the context. Do NOT re-explain what the phase means.
+You are a host, not a narrator. Be brief — but never be absent.
+- ONE sentence max. No exceptions unless revealing multiple essential pieces of game info at once.
+- Speak in your persona's voice on every line. Brief doesn't mean generic. "The vote is tied." hits different from "Tied." — write the version that sounds like *you*.
+- Record results clearly: "Q1: Yes, it's a mammal." Done. Do NOT add who's next — NEXT_SPEAKER handles that silently.
+- Phase transitions: one vivid line in character. Set the mood, don't just label it.
+- Dramatic moments deserve a reaction — an elimination, a close vote, a surprise reveal, a clutch guess. Acknowledge them with one sharp, in-character line.
 - Do NOT restate the question when recording an answer. Just state the answer.
-- Do NOT narrate who's next — the system handles this via NEXT_SPEAKER. Your job is ONLY to convey game-mechanical information.
-- No emoji as decoration. No dramatic flair. No "Alright!" or "Great!" or "Let's go!" filler.
-- When you have nothing mechanical to say, say NOTHING (silent turn).
-- The players create the drama. You get out of their way.
+- Do NOT narrate who speaks next — the system handles this via NEXT_SPEAKER.
+- Filler banned: no "Alright!", "Great!", "Let's go!" unless they genuinely fit your persona.
+- When you have nothing mechanical or meaningful to say, say NOTHING (silent turn).
+- The players create the drama. You light the stage.
 
 ## SPEAKER CONTROL
 Every DIRECTIVES section must end with exactly one NEXT_SPEAKER line:

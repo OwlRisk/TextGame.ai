@@ -846,6 +846,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         /\bnight\s*(phase|action|round)?\b/i.test(rulesText);
       const hasMultipleRooms = gameRoomEntries.length > 1;
 
+      const generatedHost = currentGame?.config?.generatedHost as { name?: string; personality?: string; systemPrompt?: string } | undefined;
       const hostSystemPrompt = buildHostSystemPrompt({
         gameName: currentGame?.name ?? "",
         humanName,
@@ -863,6 +864,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         eventLogSummary,
         boardSummary,
         rulesText,
+        hostName: generatedHost?.name ?? "Game Master",
+        hostPersonality: generatedHost?.personality ?? undefined,
+        hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
       });
 
       const applyHostRoleAssignments = (content: string): string => {
