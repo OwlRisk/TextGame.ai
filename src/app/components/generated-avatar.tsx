@@ -9,9 +9,14 @@ import { useAvatarStyle } from "@/lib/use-avatar-style";
 
 type AvatarDisplayType = 'gm' | 'host' | 'player';
 
-/** Key format for persisted avatar URLs (must match lib/avatar identityCacheKey). */
-export function avatarCacheKey(name: string, type: 'host' | 'player'): string {
-  return `${name}|${type}`;
+/**
+ * Key format for persisted avatar URLs.
+ * Including style ensures that switching styles never serves a stale cached URL.
+ * Callers that don't know the style yet may omit it and receive the base key —
+ * the GameRoomContext clears the map on style change so stale entries are evicted.
+ */
+export function avatarCacheKey(name: string, type: 'host' | 'player', style?: string): string {
+  return style ? `${name}|${type}|${style}` : `${name}|${type}`;
 }
 
 interface GeneratedAvatarProps extends Omit<UseGeneratedAvatarOptions, 'type'> {
@@ -79,13 +84,17 @@ export function GeneratedAvatar({
   const displaySrc = useInitialUrl ? initialUrl : src;
   const displayLoading = useInitialUrl ? false : loading;
 
-  // Persist URL when we get a result from the API (http or data:) so it syncs across components and re-login
-  const key = name && apiType ? avatarCacheKey(name, apiType) : "";
+  // Persist URL using a style-aware key so that different styles never share an entry.
+  // The base key (without style) is also registered for backward-compat with call sites
+  // that look up avatarImageUrls[avatarCacheKey(name, type)] without a style.
+  const baseKey = name && apiType ? avatarCacheKey(name, apiType) : "";
+  const styledKey = baseKey && resolvedStyle ? avatarCacheKey(name!, apiType, resolvedStyle) : baseKey;
   useEffect(() => {
-    if (key && onAvatarLoaded && src && (src.startsWith("http") || src.startsWith("data:"))) {
-      onAvatarLoaded(key, src);
-    }
-  }, [key, onAvatarLoaded, src]);
+    if (!onAvatarLoaded || !src || !(src.startsWith("http") || src.startsWith("data:"))) return;
+    if (styledKey) onAvatarLoaded(styledKey, src);
+    // Also write the base key so consumers without style context still find a URL.
+    if (baseKey && baseKey !== styledKey) onAvatarLoaded(baseKey, src);
+  }, [baseKey, styledKey, onAvatarLoaded, src]);
 
   if (isGM) {
     return (

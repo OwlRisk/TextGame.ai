@@ -13,6 +13,7 @@ import {
   DEFAULT_GAME_PHASE,
 } from "@/app/config/game-phase";
 import { fetchGeneratedAvatar, invalidateAvatarCache } from "@/lib/avatar";
+import { AVATAR_STYLE_CHANGED_EVENT } from "@/lib/avatar-style-constants";
 
 interface PrivateMessage {
   id: string;
@@ -145,6 +146,19 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const onAvatarUrlLoaded = useCallback((key: string, url: string) => {
     if (!key || !url || !url.startsWith("http")) return;
     setAvatarImageUrls((prev) => (prev[key] === url ? prev : { ...prev, [key]: url }));
+  }, []);
+
+  // When the user changes avatar style, the cached URLs in avatarImageUrls belong to
+  // the OLD style. Clear the map so every GeneratedAvatar falls through to its
+  // style-aware hook and re-fetches with the new style. The hook uses the in-memory
+  // and localStorage caches (keyed by name|type|style), so re-fetches are instant
+  // for styles the user has already visited.
+  useEffect(() => {
+    function handleStyleChange() {
+      setAvatarImageUrls({});
+    }
+    window.addEventListener(AVATAR_STYLE_CHANGED_EVENT, handleStyleChange);
+    return () => window.removeEventListener(AVATAR_STYLE_CHANGED_EVENT, handleStyleChange);
   }, []);
 
   const regenerateAvatar = useCallback(async (
