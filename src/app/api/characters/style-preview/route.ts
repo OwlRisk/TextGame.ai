@@ -26,23 +26,22 @@ export async function GET() {
     return NextResponse.json({ error: "No characters found" }, { status: 404 });
   }
 
-  // Pick the character with the most style variants available
-  let best: (typeof data)[number] | null = null;
-  let bestCount = 0;
+  // Rank characters by number of style variants, pick the second-best
+  // to avoid the previous default character whose portrait was less appealing.
+  const ranked = data
+    .map((c) => {
+      const styles = (c.avatar_styles ?? {}) as Record<string, string>;
+      const count = STYLES.filter((s) => !!styles[s]).length;
+      return { ...c, styleCount: count };
+    })
+    .filter((c) => c.styleCount > 0)
+    .sort((a, b) => b.styleCount - a.styleCount);
 
-  for (const c of data) {
-    const styles = (c.avatar_styles ?? {}) as Record<string, string>;
-    const count = STYLES.filter((s) => !!styles[s]).length;
-    if (count > bestCount) {
-      bestCount = count;
-      best = c;
-      if (count === STYLES.length) break;
-    }
-  }
-
-  if (!best) {
+  if (!ranked.length) {
     return NextResponse.json({ error: "No styled characters found" }, { status: 404 });
   }
+
+  const best = ranked.length > 1 ? ranked[1] : ranked[0];
 
   const styles = (best.avatar_styles ?? {}) as Record<string, string>;
   const previews: Record<string, string | null> = {};
