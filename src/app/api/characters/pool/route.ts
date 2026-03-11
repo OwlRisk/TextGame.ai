@@ -27,14 +27,14 @@ export async function GET(request: NextRequest) {
     ? (rawStyle as AvatarStyle)
     : "semi-realistic";
 
-  // Fetch a larger batch so we can shuffle and pick `count` without bias.
+  // Fetch all system characters (no hard limit — we have ~130 and want full coverage).
   const { data, error } = await supabaseAdmin
     .from("ai_characters")
     .select("id, name, gender, personality, background, avatar_url, avatar_styles, voice_id")
     .eq("is_system", true)
     .not("voice_id", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(80);
+    .order("created_at", { ascending: true })
+    .limit(500);
 
   if (error) {
     console.error("[pool] query error:", error);

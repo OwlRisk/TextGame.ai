@@ -623,7 +623,7 @@ export async function POST(request: NextRequest) {
         .eq('is_system', true)
         .eq('gender', g)
         .not('avatar_url', 'is', null)
-        .limit(150);
+        .limit(500);
 
       if (chars?.length) {
         const key = `${name}|${avatarType}`;
