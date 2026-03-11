@@ -618,7 +618,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       }
     }
     if (roomPlayersNeedingAvatar.length > 0) {
-      fetchAvatarsForRoom(roomPlayersNeedingAvatar, gameId).then((urlMap) => {
+      const avatarStyle = typeof window !== 'undefined'
+        ? (localStorage.getItem('avatar_style_pack') ?? 'semi-realistic')
+        : 'semi-realistic';
+      fetchAvatarsForRoom(roomPlayersNeedingAvatar, gameId, avatarStyle).then((urlMap) => {
         for (const [key, url] of Object.entries(urlMap)) {
           onAvatarUrlLoaded(key, url);
         }

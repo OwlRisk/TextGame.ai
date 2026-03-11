@@ -88,7 +88,8 @@ export async function fetchGeneratedAvatar(
   background?: string,
   personality?: string,
   gender?: string,
-  forceRegenerate?: boolean
+  forceRegenerate?: boolean,
+  style?: string,
 ): Promise<string> {
   const key = identityCacheKey(name, type);
 
@@ -122,6 +123,7 @@ export async function fetchGeneratedAvatar(
           background: background || undefined,
           personality: personality || undefined,
           gender: gender || undefined,
+          style: style || undefined,
           forceRegenerate: forceRegenerate || undefined,
         }),
       });
@@ -183,6 +185,7 @@ export interface RoomPlayerInfo {
 export async function fetchAvatarsForRoom(
   players: RoomPlayerInfo[],
   gameId?: string,
+  style?: string,
 ): Promise<Record<string, string>> {
   if (players.length === 0) return {};
 
@@ -212,6 +215,7 @@ export async function fetchAvatarsForRoom(
           background: player.background || undefined,
           personality: player.personality || undefined,
           gender: player.gender || undefined,
+          style: style || undefined,
           ...(extraBody ?? {}),
         }),
       });
@@ -267,6 +271,8 @@ export interface UseGeneratedAvatarOptions {
   personality?: string;
   /** male / female / other - ensures avatar appearance matches name gender */
   gender?: string;
+  /** Avatar style pack: semi-realistic | anime | painted | pixel | cyberpunk */
+  style?: string;
   enabled?: boolean;
 }
 
@@ -281,6 +287,7 @@ export function useGeneratedAvatar(
     background,
     personality,
     gender,
+    style,
     enabled = true,
   } = options;
   const key = (name && enabled) ? identityCacheKey(name, type) : '';
@@ -315,7 +322,7 @@ export function useGeneratedAvatar(
     }
     setLoading(true);
     setError(null);
-    fetchGeneratedAvatar(name, type, gameId, role, background, personality, gender)
+    fetchGeneratedAvatar(name, type, gameId, role, background, personality, gender, undefined, style)
       .then((image) => {
         setSrc(image);
         setError(null);
@@ -325,7 +332,7 @@ export function useGeneratedAvatar(
         setSrc(null);
       })
       .finally(() => setLoading(false));
-  }, [name, type, enabled, key, gameId, role, background, personality, gender]);
+  }, [name, type, enabled, key, gameId, role, background, personality, gender, style]);
 
   useEffect(() => {
     fetchAvatar();

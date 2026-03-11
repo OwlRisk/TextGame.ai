@@ -42,30 +42,30 @@ const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 128;
 const POOL_OUTPUT_SIZE = 256;
 
-/** Minimum pool size (initial seed); actual size is fetched dynamically. */
+const VALID_STYLES = ['semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'] as const;
+type AvatarStyle = (typeof VALID_STYLES)[number];
+
+/** Minimum pool size (initial seed); kept for test compatibility. */
 const MIN_POOL_SIZE = 30;
 
-/** In-memory cache of actual pool sizes per gender (refreshed every 5 min). */
-const poolSizeCache: Record<string, { count: number; fetchedAt: number }> = {};
-const POOL_SIZE_TTL_MS = 5 * 60 * 1000;
-
-async function getActualPoolSize(gender: 'male' | 'female'): Promise<number> {
-  const cached = poolSizeCache[gender];
-  if (cached && Date.now() - cached.fetchedAt < POOL_SIZE_TTL_MS) return cached.count;
-  if (!supabaseAdmin) return MIN_POOL_SIZE;
-  try {
-    const { data } = await supabaseAdmin.storage.from(AVATAR_BUCKET).list(`pool/${gender}`, { limit: 1000 });
-    const count = data?.filter(f => f.name.endsWith('.png')).length ?? MIN_POOL_SIZE;
-    const size = Math.max(count, MIN_POOL_SIZE);
-    poolSizeCache[gender] = { count: size, fetchedAt: Date.now() };
-    return size;
-  } catch {
-    return poolSizeCache[gender]?.count ?? MIN_POOL_SIZE;
-  }
-}
-
-/** Exported for tests — returns MIN_POOL_SIZE synchronously; runtime uses dynamic value. */
+/** Exported for tests — value kept for backward compatibility. */
 export const POOL_SIZE = MIN_POOL_SIZE;
+
+/**
+ * Deterministic pool avatar URL (legacy numbered pool).
+ * Kept for test compatibility — production now uses ai_characters table.
+ */
+export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string, offset = 0): string | null {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return null;
+  const key = `${name}|${type}`;
+  const hash = crypto.createHash('sha256').update(key).digest('hex');
+  const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
+  const baseIndex = parseInt(hash.slice(0, 8), 16) % MIN_POOL_SIZE;
+  const index = ((baseIndex + offset) % MIN_POOL_SIZE) + 1;
+  const padded = String(index).padStart(3, '0');
+  return `${supabaseUrl}/storage/v1/object/public/${AVATAR_BUCKET}/pool/${g}/${padded}.png`;
+}
 
 /** Resize a base64 data-URL image to AVATAR_OUTPUT_SIZE and return as data-URL */
 async function resizeAvatarTo64(dataUrl: string): Promise<string> {
@@ -113,13 +113,6 @@ export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string
   const index = ((baseIndex + offset) % poolSize) + 1;
   const padded = String(index).padStart(3, '0');
   return `${supabaseUrl}/storage/v1/object/public/${AVATAR_BUCKET}/pool/${g}/${padded}.png`;
-}
-
-/** Async version that fetches actual pool size first. */
-async function getPoolAvatarUrlAsync(name: string, type: AvatarType, gender?: string, offset = 0): Promise<string | null> {
-  const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
-  await getActualPoolSize(g);
-  return getPoolAvatarUrl(name, type, gender, offset);
 }
 
 /** Get next available pool index for a gender, then upload the avatar there. */
@@ -467,6 +460,7 @@ export async function POST(request: NextRequest) {
       background,
       personality,
       gender,
+      style,
       forceRegenerate,
       generateAndPool,
       avatarOffset,
@@ -478,6 +472,7 @@ export async function POST(request: NextRequest) {
       background?: string;
       personality?: string;
       gender?: string;
+      style?: string;
       forceRegenerate?: boolean;
       generateAndPool?: boolean;
       avatarOffset?: number;
@@ -633,11 +628,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ image: image64, generated: true });
     }
 
-    // --- 4. Default: return pool avatar URL (no generation, no cost) ---
-    const poolUrl = await getPoolAvatarUrlAsync(name, avatarType, typeof gender === 'string' ? gender : undefined, avatarOffset || 0);
-    if (poolUrl) {
-      logger.log('[Avatar API] returning pool avatar:', poolUrl);
-      return NextResponse.json({ image: poolUrl, pool: true });
+    // --- 4. Default: pick from ai_characters table (deterministic by name hash) ---
+    if (supabaseAdmin) {
+      const g = (typeof gender === 'string' && gender.trim().toLowerCase() === 'female') ? 'female' : 'male';
+      const requestedStyle: AvatarStyle = (typeof style === 'string' && (VALID_STYLES as readonly string[]).includes(style))
+        ? (style as AvatarStyle)
+        : 'semi-realistic';
+
+      const { data: chars } = await supabaseAdmin
+        .from('ai_characters')
+        .select('avatar_url, avatar_styles')
+        .eq('is_system', true)
+        .eq('gender', g)
+        .not('avatar_url', 'is', null)
+        .limit(150);
+
+      if (chars?.length) {
+        const key = `${name}|${avatarType}`;
+        const hash = crypto.createHash('sha256').update(key).digest('hex');
+        const baseIdx = parseInt(hash.slice(0, 8), 16) % chars.length;
+        const idx = ((baseIdx + (avatarOffset || 0)) % chars.length);
+        const char = chars[idx];
+        const styles = (char.avatar_styles ?? {}) as Record<string, string>;
+        const url = styles[requestedStyle] ?? styles['semi-realistic'] ?? char.avatar_url;
+        if (url) {
+          logger.log('[Avatar API] returning ai_characters avatar:', url);
+          return NextResponse.json({ image: url, pool: true });
+        }
+      }
     }
 
     // --- 5. Fallback: pool URL unavailable (no Supabase URL), generate with Replicate/DALL-E 3 ---
