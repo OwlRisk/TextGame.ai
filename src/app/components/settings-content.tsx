@@ -430,7 +430,7 @@ export function SettingsContent() {
                 <p className="text-zinc-400 text-sm">Art style for AI character portraits in the game room</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {AVATAR_STYLES.map((style) => {
                 const previewUrl = stylePreviewUrls[style.value];
                 return (

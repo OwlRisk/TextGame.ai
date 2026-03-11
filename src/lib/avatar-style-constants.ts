@@ -9,6 +9,7 @@
  */
 
 export const VALID_STYLES = [
+  'toon3d',
   'semi-realistic',
   'anime',
   'painted',
@@ -38,6 +39,11 @@ export const AVATAR_STYLE_PACKS: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
+  {
+    value: 'toon3d',
+    label: '3D Animated',
+    description: 'Vibrant 3D animation studio style',
+  },
   {
     value: 'semi-realistic',
     label: 'Semi-Realistic',
