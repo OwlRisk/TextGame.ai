@@ -187,18 +187,24 @@ export async function POST(request: NextRequest) {
         lines.push(`(${qaLog.split('\n').length} question(s) used so far)`);
       }
       lines.push('');
-      lines.push(`Your turn as ${player.name} (GUESSER). RULES:
+      lines.push(`Your turn as ${player.name} (GUESSER).
+SPOKEN REPLY: 1–2 sentences MAX. This is a game — keep it snappy.
+RULES:
 1. Check the Q&A history above — NEVER repeat a question already listed there.
 2. Ask ONE new yes/no question that builds on the confirmed facts, OR make a final guess if you're confident.
 3. React briefly to the last answer first (surprise, frustration, excitement) — 1 sentence — then ask your question.
-4. 1–2 sentences total. No strategies, no "we should ask...", just play.
-5. If you truly have nothing new, output an emoji reaction: REACT: 🤔`);
+4. No strategies, no "we should ask...", just play.
+5. If you truly have nothing new, output an emoji reaction: REACT: 🤔
+After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
     } else {
-      lines.push(`Your turn as ${player.name}. RULES:
+      lines.push(`Your turn as ${player.name}.
+SPOKEN REPLY: 1–2 sentences MAX — this is a game, not an essay. Short, punchy, in-character.
+RULES:
 1. Read every recent message carefully. If someone already said exactly what you were going to say, do NOT repeat it — find a different angle, or react emotionally to what was said.
 2. Do NOT ask for confirmation on answers already given. Accept them and build forward.
 3. NO meta-commentary. Never say "we should ask X" or "that's ambiguous" — just play.
-4. LAST RESORT ONLY: if you truly have zero to add and no emotional reaction either, output "..." — but exhaust every other option first. Emotional reactions (doubt, excitement, discomfort, amusement) count as a contribution.`);
+4. LAST RESORT ONLY: if you truly have zero to add and no emotional reaction either, output "..." — but exhaust every other option first. Emotional reactions (doubt, excitement, discomfort, amusement) count as a contribution.
+After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
     }
 
     const userContent = lines.join('\n');

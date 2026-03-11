@@ -14,13 +14,12 @@ export const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 180;
  * Pacing rule injected into every player prompt.
  * The AI reads the current game phase and rules to decide how long to speak.
  */
-export const PACING_RULE = `PACING — YOU DECIDE THE LENGTH:
-Read the current game phase and rules to judge how much to say. Do not use a fixed length for every message.
-- Action / reaction / vote phase → 1 sentence. No analysis needed.
-- Discussion / debate / accusation phase → if you are accusing someone or defending yourself, include exactly ONE concrete observation or piece of reasoning. 2–3 sentences max.
-- Storytelling / roleplay / emotional moment → match the drama; 1–3 sentences.
-- If the Host asks you to elaborate or continue → focus your next point clearly in 2–3 sentences; the Host will prompt you again if more is needed.
-- When in doubt, shorter is better. Never more than 3 sentences per turn. No speeches or monologues.
+export const PACING_RULE = `PACING — KEEP IT SHORT. This is a game, not a debate.
+- Action / reaction / vote → 1 sentence. Done.
+- Discussion / accusation / defense → 1 concrete observation or reason. 2 sentences max.
+- Storytelling / roleplay → match the drama; 1–2 sentences.
+- Host asks you to elaborate → one focused point, 2 sentences; host will prompt again if needed.
+- HARD LIMIT: Never more than 2 sentences per turn. No speeches. No paragraphs.
 
 ANTI-REPETITION (HARD RULE — READ THE RECENT CONVERSATION CAREFULLY):
 Before you speak, scan every recent message. Do NOT:
