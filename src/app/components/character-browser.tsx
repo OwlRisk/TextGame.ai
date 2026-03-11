@@ -23,6 +23,8 @@ export interface AiCharacter {
   personality: string | null;
   background: string | null;
   avatar_color: string;
+  avatar_url?: string | null;
+  avatar_styles?: Record<string, string> | null;
   source_game_id: string | null;
   created_at: string;
   voice_sample_url?: string | null;
@@ -187,6 +189,8 @@ export function CharacterBrowser({ open, onClose, onSelectCharacter, gameId }: C
                       gender={char.gender}
                       personality={char.personality || ""}
                       background={char.background || ""}
+                      avatarUrl={char.avatar_url}
+                      avatarColor={char.avatar_color}
                       voiceSampleUrl={char.voice_sample_url}
                       onSelect={() =>
                         handleSelectAndClose({
@@ -267,6 +271,8 @@ function CharacterCard({
   gender,
   personality,
   background,
+  avatarUrl,
+  avatarColor,
   voiceSampleUrl,
   onSelect,
   onDelete,
@@ -276,6 +282,8 @@ function CharacterCard({
   gender: string;
   personality: string;
   background: string;
+  avatarUrl?: string | null;
+  avatarColor?: string | null;
   voiceSampleUrl?: string | null;
   onSelect: () => void;
   onDelete?: () => void;
@@ -348,21 +356,31 @@ function CharacterCard({
   }, [gender, personality, name, voicePlaying, voiceSampleUrl]);
 
   return (
-    <div className="group flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 hover:border-zinc-600 transition-colors">
-      <div className="h-9 w-9 rounded-full bg-violet-900/40 flex items-center justify-center flex-shrink-0">
-        <User className="h-4 w-4 text-violet-400" />
+    <div className="group flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 hover:border-zinc-600 transition-colors cursor-pointer" onClick={onSelect}>
+      {/* Avatar */}
+      <div className="h-11 w-11 rounded-full flex-shrink-0 overflow-hidden ring-1 ring-zinc-700">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+        ) : (
+          <div
+            className="h-full w-full flex items-center justify-center text-white text-sm font-bold"
+            style={{ background: avatarColor || '#7c3aed' }}
+          >
+            {name.charAt(0).toUpperCase()}
+          </div>
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-white truncate">{name}</span>
-          <span className="text-[10px] px-1 py-0.5 rounded bg-zinc-800 text-zinc-500 capitalize">{gender}</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 capitalize">{gender}</span>
         </div>
         {personality && <p className="text-xs text-zinc-400 truncate mt-0.5">{personality}</p>}
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
         {/* Voice preview */}
         <button
-          onClick={handleVoicePreview}
+          onClick={(e) => { e.stopPropagation(); handleVoicePreview(e); }}
           disabled={voiceLoading}
           className={cn(
             "p-1.5 rounded-md transition-colors",
@@ -401,7 +419,7 @@ function CharacterCard({
         <Button
           size="sm"
           variant="ghost"
-          onClick={onSelect}
+          onClick={(e) => { e.stopPropagation(); onSelect(); }}
           className="text-xs text-violet-400 hover:text-violet-300 hover:bg-violet-900/30"
         >
           Add
