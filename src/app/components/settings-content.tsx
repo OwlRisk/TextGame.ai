@@ -41,37 +41,33 @@ export function SettingsContent() {
   const [imageGenEnabled, setImageGenEnabled] = useState<boolean>(() => ls('image_gen_enabled', 'true') !== 'false');
   const [avatarStyle, setAvatarStyle] = useState<string>(() => ls('avatar_style_pack', 'semi-realistic'));
   const [saving, setSaving] = useState(false);
+  const [stylePreviewUrls, setStylePreviewUrls] = useState<Record<string, string | null>>({});
 
   const AVATAR_STYLES = [
     {
       value: 'semi-realistic',
       label: 'Semi-Realistic',
       description: 'Painterly game art, Arcane-inspired',
-      emoji: '🎨',
     },
     {
       value: 'anime',
       label: 'Anime',
       description: 'Japanese cel-shaded illustration',
-      emoji: '✨',
     },
     {
       value: 'painted',
       label: 'Painted Portrait',
       description: 'Dark Renaissance oil painting',
-      emoji: '🖼️',
     },
     {
       value: 'pixel',
       label: 'Pixel Art',
       description: 'Retro 16-bit RPG style',
-      emoji: '👾',
     },
     {
       value: 'cyberpunk',
       label: 'Cyberpunk',
       description: 'Neon & dark, Danganronpa-inspired',
-      emoji: '⚡',
     },
   ];
 
@@ -85,6 +81,15 @@ export function SettingsContent() {
       })
       .catch(() => setCurrentPlan('free'));
   }, [session?.access_token]);
+
+  useEffect(() => {
+    fetch('/api/characters/style-preview')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.previews) setStylePreviewUrls(data.previews);
+      })
+      .catch(() => {});
+  }, []);
 
   const isPaid = currentPlan !== 'free';
 
@@ -398,35 +403,50 @@ export function SettingsContent() {
                 <p className="text-zinc-400 text-sm">Art style for AI character portraits in the game room</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {AVATAR_STYLES.map((style) => (
-                <button
-                  key={style.value}
-                  type="button"
-                  onClick={() => {
-                    setAvatarStyle(style.value);
-                    localStorage.setItem('avatar_style_pack', style.value);
-                    toast.success(`Avatar style: ${style.label}`);
-                  }}
-                  className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all text-center ${
-                    avatarStyle === style.value
-                      ? 'border-orange-500 bg-orange-500/10 text-white'
-                      : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
-                  }`}
-                >
-                  {avatarStyle === style.value && (
-                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-orange-400" />
-                  )}
-                  <span className="text-2xl">{style.emoji}</span>
-                  <div>
-                    <p className="text-xs font-semibold leading-tight">{style.label}</p>
-                    <p className="text-[10px] text-zinc-500 mt-0.5 leading-tight">{style.description}</p>
-                  </div>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {AVATAR_STYLES.map((style) => {
+                const previewUrl = stylePreviewUrls[style.value];
+                return (
+                  <button
+                    key={style.value}
+                    type="button"
+                    onClick={() => {
+                      setAvatarStyle(style.value);
+                      localStorage.setItem('avatar_style_pack', style.value);
+                      toast.success(`Avatar style: ${style.label}`);
+                    }}
+                    className={`relative flex flex-col items-center gap-2 rounded-xl border transition-all text-center overflow-hidden ${
+                      avatarStyle === style.value
+                        ? 'border-orange-500 ring-2 ring-orange-500/40 text-white'
+                        : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                    }`}
+                  >
+                    {avatarStyle === style.value && (
+                      <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-orange-400 z-10 ring-2 ring-zinc-900" />
+                    )}
+                    {previewUrl ? (
+                      <div className="w-full aspect-square bg-zinc-800">
+                        <img
+                          src={previewUrl}
+                          alt={style.label}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full aspect-square bg-zinc-800 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-zinc-700 animate-pulse" />
+                      </div>
+                    )}
+                    <div className="px-2 pb-2.5 pt-0.5">
+                      <p className="text-xs font-semibold leading-tight">{style.label}</p>
+                      <p className="text-[10px] text-zinc-500 mt-0.5 leading-tight">{style.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             <p className="text-zinc-600 text-xs">
-              Takes effect for new games. All 130 characters are available in each style.
+              Takes effect for new games. Same character, different art styles.
             </p>
           </div>
 
