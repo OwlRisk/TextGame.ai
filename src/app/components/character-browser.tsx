@@ -31,6 +31,7 @@ interface CharacterBrowserProps {
     personality: string;
     background: string;
     voice_sample_url?: string | null;
+    avatar_url?: string | null;
   }) => void;
   gameId?: string;
 }
@@ -95,6 +96,7 @@ export function CharacterBrowser({
         personality: char.personality || "",
         background: char.background || "",
         voice_sample_url: char.voice_sample_url,
+        avatar_url: char.avatar_url,
       });
       onClose();
     },

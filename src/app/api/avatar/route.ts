@@ -609,13 +609,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ image: image64, generated: true });
     }
 
-    // --- 4. Default: pick from ai_characters table (deterministic by name hash) ---
+    // --- 4. Default: look up exact character by name, then fall back to hash-based pick ---
     if (supabaseAdmin) {
-      const g = (typeof gender === 'string' && gender.trim().toLowerCase() === 'female') ? 'female' : 'male';
       const requestedStyle: AvatarStyle = (typeof style === 'string' && isValidStyle(style))
         ? style
         : DEFAULT_STYLE;
 
+      // Try exact name match first (covers characters selected from the browser)
+      const { data: exactMatch } = await supabaseAdmin
+        .from('ai_characters')
+        .select('avatar_url, avatar_styles')
+        .eq('is_system', true)
+        .eq('name', name)
+        .not('avatar_url', 'is', null)
+        .limit(1)
+        .maybeSingle();
+
+      if (exactMatch) {
+        const styles = (exactMatch.avatar_styles ?? {}) as Record<string, string>;
+        const url = styles[requestedStyle] ?? styles['semi-realistic'] ?? exactMatch.avatar_url;
+        if (url) {
+          logger.log('[Avatar API] exact name match for:', name, url);
+          return NextResponse.json({ image: url, pool: true });
+        }
+      }
+
+      // Fallback: hash-based pick from same-gender pool
+      const g = (typeof gender === 'string' && gender.trim().toLowerCase() === 'female') ? 'female' : 'male';
       const { data: chars } = await supabaseAdmin
         .from('ai_characters')
         .select('avatar_url, avatar_styles')
@@ -627,7 +647,6 @@ export async function POST(request: NextRequest) {
       if (chars?.length) {
         const key = `${name}|${avatarType}`;
         const hash = crypto.createHash('sha256').update(key).digest('hex');
-        // Prefer characters that have the requested style to avoid cross-style mixing.
         const withStyle = chars.filter((c) => {
           const s = (c.avatar_styles ?? {}) as Record<string, string>;
           return !!s[requestedStyle];

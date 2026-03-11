@@ -1927,7 +1927,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           const newPlayer = {
             id: `ai-${nextIndex}`,
             name: char.name,
-            avatar: AI_COLORS[(nextIndex - 1) % AI_COLORS.length],
+            avatar: char.avatar_url || AI_COLORS[(nextIndex - 1) % AI_COLORS.length],
             role: undefined as string | undefined,
             stats: {} as Record<string, string | number>,
             isAI: true,
