@@ -207,7 +207,7 @@ describe('pool request URL construction', () => {
   });
 
   it('defaults to semi-realistic when localStorage is empty', () => {
-    const style = undefined ?? 'semi-realistic';
+    const style = 'semi-realistic';
     const url = buildPoolUrl(6, [], style);
     expect(url).toContain('style=semi-realistic');
   });
