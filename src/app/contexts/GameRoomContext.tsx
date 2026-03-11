@@ -154,10 +154,12 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   ): Promise<string | null> => {
     try {
       invalidateAvatarCache(playerName, type);
+      const style = typeof window !== 'undefined' ? (localStorage.getItem('avatar_style_pack') ?? undefined) : undefined;
       const newUrl = await fetchGeneratedAvatar(
         playerName, type, gameId,
         opts?.role, opts?.background, opts?.personality, opts?.gender,
         true,
+        style,
       );
       if (newUrl) {
         const key = `${playerName}|${type}`;

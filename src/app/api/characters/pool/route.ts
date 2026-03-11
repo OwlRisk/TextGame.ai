@@ -41,30 +41,50 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to load character pool" }, { status: 500 });
   }
 
-  // Resolve avatar_url for the requested style; fall back to avatar_url (semi-realistic default)
-  const resolved = (data ?? [])
-    .filter((c) => !excludeNames.includes(c.name))
-    .map((c) => {
-      const styles = (c.avatar_styles ?? {}) as Record<string, string>;
-      const avatarUrl = styles[style] ?? styles["semi-realistic"] ?? c.avatar_url ?? null;
-      return {
-        id: c.id,
-        name: c.name,
-        gender: c.gender,
-        personality: c.personality,
-        background: c.background,
-        avatar_url: avatarUrl,
-        voice_id: c.voice_id,
-      };
-    })
-    // Only include characters that have at least one avatar
-    .filter((c) => !!c.avatar_url);
+  const allChars = (data ?? []).filter((c) => !excludeNames.includes(c.name));
 
-  // Fisher-Yates shuffle
-  for (let i = resolved.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [resolved[i], resolved[j]] = [resolved[j], resolved[i]];
+  // Separate characters into those that have the requested style vs fallbacks.
+  // Prioritise exact-style matches so we don't return a mix of styles when
+  // the pool contains characters without all variants generated.
+  const withStyle: typeof allChars = [];
+  const withFallback: typeof allChars = [];
+  for (const c of allChars) {
+    const styles = (c.avatar_styles ?? {}) as Record<string, string>;
+    if (styles[style]) {
+      withStyle.push(c);
+    } else if (styles["semi-realistic"] || c.avatar_url) {
+      withFallback.push(c);
+    }
   }
+
+  // Fisher-Yates shuffle each bucket independently
+  const shuffle = <T>(arr: T[]): T[] => {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+  shuffle(withStyle);
+  shuffle(withFallback);
+
+  // Fill `count` from exact-style matches first, pad with fallbacks only if needed
+  const prioritised = [...withStyle, ...withFallback].slice(0, count);
+
+  // Resolve avatar_url for each selected character
+  const resolved = prioritised.map((c) => {
+    const styles = (c.avatar_styles ?? {}) as Record<string, string>;
+    const avatarUrl = styles[style] ?? styles["semi-realistic"] ?? c.avatar_url ?? null;
+    return {
+      id: c.id,
+      name: c.name,
+      gender: c.gender,
+      personality: c.personality,
+      background: c.background,
+      avatar_url: avatarUrl,
+      voice_id: c.voice_id,
+    };
+  }).filter((c) => !!c.avatar_url);
 
   const selected = resolved.slice(0, count);
 

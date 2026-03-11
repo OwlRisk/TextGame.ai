@@ -628,9 +628,15 @@ export async function POST(request: NextRequest) {
       if (chars?.length) {
         const key = `${name}|${avatarType}`;
         const hash = crypto.createHash('sha256').update(key).digest('hex');
-        const baseIdx = parseInt(hash.slice(0, 8), 16) % chars.length;
-        const idx = ((baseIdx + (avatarOffset || 0)) % chars.length);
-        const char = chars[idx];
+        // Prefer characters that have the requested style to avoid cross-style mixing.
+        const withStyle = chars.filter((c) => {
+          const s = (c.avatar_styles ?? {}) as Record<string, string>;
+          return !!s[requestedStyle];
+        });
+        const pool = withStyle.length > 0 ? withStyle : chars;
+        const baseIdx = parseInt(hash.slice(0, 8), 16) % pool.length;
+        const idx = ((baseIdx + (avatarOffset || 0)) % pool.length);
+        const char = pool[idx];
         const styles = (char.avatar_styles ?? {}) as Record<string, string>;
         const url = styles[requestedStyle] ?? styles['semi-realistic'] ?? char.avatar_url;
         if (url) {
