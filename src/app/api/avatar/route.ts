@@ -98,27 +98,12 @@ async function resizeForPool(dataUrl: string): Promise<Buffer> {
     .toBuffer();
 }
 
-/**
- * Construct a deterministic pool avatar URL based on name, type, and gender.
- * Uses dynamic pool size so newly added avatars are also reachable.
- */
-export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string, offset = 0): string | null {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) return null;
-  const key = `${name}|${type}`;
-  const hash = crypto.createHash('sha256').update(key).digest('hex');
-  const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
-  const poolSize = poolSizeCache[g]?.count ?? MIN_POOL_SIZE;
-  const baseIndex = parseInt(hash.slice(0, 8), 16) % poolSize;
-  const index = ((baseIndex + offset) % poolSize) + 1;
-  const padded = String(index).padStart(3, '0');
-  return `${supabaseUrl}/storage/v1/object/public/${AVATAR_BUCKET}/pool/${g}/${padded}.png`;
-}
-
 /** Get next available pool index for a gender, then upload the avatar there. */
 async function uploadToPool(buffer: Buffer, gender: 'male' | 'female'): Promise<string | null> {
   if (!supabaseAdmin) return null;
-  const currentSize = await getActualPoolSize(gender);
+  // Count existing pool files to find the next index
+  const { data } = await supabaseAdmin.storage.from(AVATAR_BUCKET).list(`pool/${gender}`, { limit: 1000 });
+  const currentSize = Math.max(data?.filter(f => f.name.endsWith('.png')).length ?? MIN_POOL_SIZE, MIN_POOL_SIZE);
   const newIndex = currentSize + 1;
   const padded = String(newIndex).padStart(3, '0');
   const storagePath = `pool/${gender}/${padded}.png`;
@@ -130,9 +115,6 @@ async function uploadToPool(buffer: Buffer, gender: 'male' | 'female'): Promise<
     logger.warn('[Avatar] Pool upload failed:', error.message);
     return null;
   }
-
-  // Invalidate cache so next request sees updated pool size
-  delete poolSizeCache[gender];
 
   const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(storagePath);
   logger.log(`[Avatar] New avatar added to pool: ${storagePath} (pool size now ~${newIndex})`);
