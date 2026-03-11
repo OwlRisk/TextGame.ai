@@ -4,6 +4,7 @@
  */
 
 import { Player } from "@/app/components/player-panel";
+import { AvatarStyle } from "./avatar-style-constants";
 
 /**
  * Get standardized avatar props for a player.
@@ -11,8 +12,14 @@ import { Player } from "@/app/components/player-panel";
  * - Host (isGameMaster): type "host"; identity from Host selector or generated Host.
  * - AI Player (isAI && !isGameMaster): type "player".
  * Use getAvatarPropsForPlayer + gameId when rendering GeneratedAvatar.
+ *
+ * Pass `style` to include it in the returned props so callers can forward it
+ * directly to <GeneratedAvatar style={...}> without reading localStorage themselves.
  */
-export function getAvatarPropsForPlayer(player: Player | undefined | null) {
+export function getAvatarPropsForPlayer(
+  player: Player | undefined | null,
+  style?: AvatarStyle,
+) {
   if (!player) {
     return {
       name: undefined,
@@ -21,6 +28,7 @@ export function getAvatarPropsForPlayer(player: Player | undefined | null) {
       personality: undefined,
       role: undefined,
       gender: undefined,
+      style,
     };
   }
 
@@ -34,6 +42,7 @@ export function getAvatarPropsForPlayer(player: Player | undefined | null) {
       personality: undefined,
       role: undefined,
       gender: undefined,
+      style,
     };
   }
 
@@ -59,5 +68,6 @@ export function getAvatarPropsForPlayer(player: Player | undefined | null) {
     personality: normalizedPersonality,
     role: normalizedRole,
     gender,
+    style,
   };
 }

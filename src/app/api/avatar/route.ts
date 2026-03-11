@@ -42,8 +42,7 @@ const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 128;
 const POOL_OUTPUT_SIZE = 256;
 
-const VALID_STYLES = ['semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'] as const;
-type AvatarStyle = (typeof VALID_STYLES)[number];
+import { VALID_STYLES, isValidStyle, DEFAULT_STYLE, type AvatarStyle } from '@/lib/avatar-style-constants';
 
 /** Minimum pool size (initial seed); kept for test compatibility. */
 const MIN_POOL_SIZE = 30;
@@ -613,9 +612,9 @@ export async function POST(request: NextRequest) {
     // --- 4. Default: pick from ai_characters table (deterministic by name hash) ---
     if (supabaseAdmin) {
       const g = (typeof gender === 'string' && gender.trim().toLowerCase() === 'female') ? 'female' : 'male';
-      const requestedStyle: AvatarStyle = (typeof style === 'string' && (VALID_STYLES as readonly string[]).includes(style))
-        ? (style as AvatarStyle)
-        : 'semi-realistic';
+      const requestedStyle: AvatarStyle = (typeof style === 'string' && isValidStyle(style))
+        ? style
+        : DEFAULT_STYLE;
 
       const { data: chars } = await supabaseAdmin
         .from('ai_characters')

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { useGeneratedAvatar, type UseGeneratedAvatarOptions } from "@/lib/avatar";
 import { GAME_MASTER_AVATAR } from "@/lib/game-master-avatar";
 import { cn } from "@/app/components/ui/utils";
+import { useAvatarStyle } from "@/lib/use-avatar-style";
 
 type AvatarDisplayType = 'gm' | 'host' | 'player';
 
@@ -53,17 +54,10 @@ export function GeneratedAvatar({
   // Reset failure state whenever initialUrl itself changes
   useEffect(() => { setInitialUrlFailed(false); }, [initialUrl]);
 
-  // Read avatar style from localStorage when not explicitly passed.
-  // Initialized to undefined to avoid SSR/hydration mismatch; set on client mount.
-  const [resolvedStyle, setResolvedStyle] = useState<string | undefined>(undefined);
-  useEffect(() => {
-    if (style !== undefined) {
-      setResolvedStyle(style);
-    } else {
-      const stored = localStorage.getItem('avatar_style_pack') ?? undefined;
-      setResolvedStyle(stored);
-    }
-  }, [style]);
+  // Resolve style: explicit prop takes precedence; otherwise the reactive hook
+  // reads from localStorage and updates when the user changes their style pack.
+  const hookStyle = useAvatarStyle();
+  const resolvedStyle = style !== undefined ? style : hookStyle;
 
   const useInitialUrl = hasValidInitialUrl && !initialUrlFailed;
 

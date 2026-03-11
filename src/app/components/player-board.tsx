@@ -47,6 +47,8 @@ interface PlayerBoardProps {
   data: PlayerBoardData;
   onClose: () => void;
   isEditable?: boolean;
+  /** Game room ID — enables room-level avatar caching consistent with other panels. */
+  gameId?: string;
 }
 
 const rarityColors = {
@@ -73,7 +75,7 @@ const attributeIcons: Record<string, React.JSX.Element> = {
   attack: <Sword className="h-4 w-4" />,
 };
 
-export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardProps) {
+export function PlayerBoard({ data, onClose, isEditable = false, gameId }: PlayerBoardProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-zinc-900 rounded-lg border border-zinc-700 w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
@@ -93,6 +95,7 @@ export function PlayerBoard({ data, onClose, isEditable = false }: PlayerBoardPr
               <GeneratedAvatar
                 name={data.characterName}
                 type="player"
+                gameId={gameId}
                 background={`Game character. Role: ${data.characterClass ?? "Player"}.`}
                 role={data.characterClass}
                 enabled={true}

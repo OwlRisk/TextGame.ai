@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const VALID_STYLES = ["semi-realistic", "anime", "painted", "pixel", "cyberpunk"] as const;
-type AvatarStyle = (typeof VALID_STYLES)[number];
+import { VALID_STYLES, isValidStyle, DEFAULT_STYLE, type AvatarStyle } from "@/lib/avatar-style-constants";
 
 /**
  * GET /api/characters/pool?count=5&exclude=Name1,Name2&style=semi-realistic
@@ -23,9 +22,7 @@ export async function GET(request: NextRequest) {
     ? excludeParam.split(",").map((n) => n.trim()).filter(Boolean)
     : [];
   const rawStyle = searchParams.get("style") ?? "semi-realistic";
-  const style: AvatarStyle = VALID_STYLES.includes(rawStyle as AvatarStyle)
-    ? (rawStyle as AvatarStyle)
-    : "semi-realistic";
+  const style: AvatarStyle = isValidStyle(rawStyle) ? rawStyle : DEFAULT_STYLE;
 
   // Fetch all system characters (no hard limit — we have ~130 and want full coverage).
   const { data, error } = await supabaseAdmin

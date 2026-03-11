@@ -16,6 +16,12 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
 import type { SubscriptionTier } from '@/lib/subscription';
+import {
+  AVATAR_STYLE_PACKS,
+  AVATAR_STYLE_STORAGE_KEY,
+  type AvatarStyle,
+} from '@/lib/avatar-style-constants';
+import { setAvatarStyleGlobal } from '@/lib/use-avatar-style';
 
 const TTS_MODELS = [
   { value: 'inworld-tts-1.5-max', label: 'Inworld TTS 1.5 Max', description: 'Highest quality' },
@@ -39,37 +45,12 @@ export function SettingsContent() {
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
   const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));
   const [imageGenEnabled, setImageGenEnabled] = useState<boolean>(() => ls('image_gen_enabled', 'true') !== 'false');
-  const [avatarStyle, setAvatarStyle] = useState<string>(() => ls('avatar_style_pack', 'semi-realistic'));
+  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>(() => ls(AVATAR_STYLE_STORAGE_KEY, 'semi-realistic') as AvatarStyle);
   const [saving, setSaving] = useState(false);
   const [stylePreviewUrls, setStylePreviewUrls] = useState<Record<string, string | null>>({});
 
-  const AVATAR_STYLES = [
-    {
-      value: 'semi-realistic',
-      label: 'Semi-Realistic',
-      description: 'Painterly game art, Arcane-inspired',
-    },
-    {
-      value: 'anime',
-      label: 'Anime',
-      description: 'Japanese cel-shaded illustration',
-    },
-    {
-      value: 'painted',
-      label: 'Painted Portrait',
-      description: 'Dark Renaissance oil painting',
-    },
-    {
-      value: 'pixel',
-      label: 'Pixel Art',
-      description: 'Retro 16-bit RPG style',
-    },
-    {
-      value: 'cyberpunk',
-      label: 'Cyberpunk',
-      description: 'Neon & dark, Danganronpa-inspired',
-    },
-  ];
+  // Use the canonical style list from constants — no local copy needed.
+  const AVATAR_STYLES = AVATAR_STYLE_PACKS;
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -451,7 +432,7 @@ export function SettingsContent() {
                     type="button"
                     onClick={() => {
                       setAvatarStyle(style.value);
-                      localStorage.setItem('avatar_style_pack', style.value);
+                      setAvatarStyleGlobal(style.value);
                       toast.success(`Avatar style: ${style.label}`);
                     }}
                     className={`relative flex flex-col items-center gap-2 rounded-xl border transition-all text-center overflow-hidden ${
@@ -498,7 +479,9 @@ export function SettingsContent() {
                 try {
                   localStorage.setItem('ai_model', aiModel);
                   localStorage.setItem('image_gen_enabled', String(imageGenEnabled));
-                  localStorage.setItem('avatar_style_pack', avatarStyle);
+                  // Use setAvatarStyleGlobal to also dispatch the change event
+                  // so any mounted GeneratedAvatar components update immediately.
+                  setAvatarStyleGlobal(avatarStyle);
                   // Persist to server when logged in
                   if (session?.access_token) {
                     await fetch('/api/user/settings', {

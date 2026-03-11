@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getAvatarPropsForPlayer } from '../avatar-utils';
 import type { Player } from '@/app/components/player-panel';
+import { VALID_STYLES, type AvatarStyle } from '../avatar-style-constants';
 
 // Minimal player factory to reduce repetition
 function makePlayer(overrides: Partial<Player> = {}): Player {
@@ -149,5 +150,52 @@ describe('getAvatarPropsForPlayer – AI player', () => {
   it('keeps name as-is', () => {
     const props = getAvatarPropsForPlayer(makePlayer({ name: 'Boris' }));
     expect(props.name).toBe('Boris');
+  });
+});
+
+// ─── style parameter ──────────────────────────────────────────────────────────
+
+describe('getAvatarPropsForPlayer – style parameter', () => {
+  it('returns undefined style when not passed (hook resolves it later)', () => {
+    expect(getAvatarPropsForPlayer(makePlayer({ isAI: false })).style).toBeUndefined();
+    expect(getAvatarPropsForPlayer(makePlayer({ isAI: true })).style).toBeUndefined();
+    expect(getAvatarPropsForPlayer(null).style).toBeUndefined();
+  });
+
+  it('forwards style for human player', () => {
+    const props = getAvatarPropsForPlayer(makePlayer({ isAI: false }), 'anime');
+    expect(props.style).toBe('anime');
+  });
+
+  it('forwards style for AI player', () => {
+    const props = getAvatarPropsForPlayer(makePlayer({ isAI: true }), 'pixel');
+    expect(props.style).toBe('pixel');
+  });
+
+  it('forwards style for host (isGameMaster)', () => {
+    const props = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), 'cyberpunk');
+    expect(props.style).toBe('cyberpunk');
+  });
+
+  it('forwards style for null player', () => {
+    const props = getAvatarPropsForPlayer(null, 'painted');
+    expect(props.style).toBe('painted');
+  });
+
+  it('all valid styles are forwarded correctly', () => {
+    for (const style of VALID_STYLES) {
+      const aiProps = getAvatarPropsForPlayer(makePlayer({ isAI: true }), style as AvatarStyle);
+      expect(aiProps.style).toBe(style);
+    }
+  });
+
+  it('human, AI, and host all return the same style value', () => {
+    const style: AvatarStyle = 'painted';
+    const human = getAvatarPropsForPlayer(makePlayer({ isAI: false }), style).style;
+    const ai = getAvatarPropsForPlayer(makePlayer({ isAI: true }), style).style;
+    const host = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), style).style;
+    expect(human).toBe(style);
+    expect(ai).toBe(style);
+    expect(host).toBe(style);
   });
 });

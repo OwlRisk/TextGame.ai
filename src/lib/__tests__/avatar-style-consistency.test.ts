@@ -6,11 +6,9 @@
  * - Fallback chain when a character lacks the requested style
  */
 import { describe, it, expect } from 'vitest';
+import { VALID_STYLES, type AvatarStyle } from '../avatar-style-constants';
 
 // ─── Pure helpers (mirroring production logic) ────────────────────────────────
-
-const VALID_STYLES = ['semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'] as const;
-type AvatarStyle = (typeof VALID_STYLES)[number];
 
 /** Mirrors identityCacheKey in src/lib/avatar.ts */
 function identityCacheKey(name: string, type: 'host' | 'player'): string {
@@ -163,8 +161,10 @@ describe('avatar style resolution (pool API)', () => {
 });
 
 // ─── Section 4: VALID_STYLES contract ────────────────────────────────────────
+// These tests use the imported VALID_STYLES from avatar-style-constants.ts —
+// they serve as a contract test ensuring the real constant has the expected values.
 
-describe('VALID_STYLES', () => {
+describe('VALID_STYLES (imported from avatar-style-constants)', () => {
   it('contains exactly 5 style packs', () => {
     expect(VALID_STYLES).toHaveLength(5);
   });
