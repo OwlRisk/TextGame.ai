@@ -840,10 +840,12 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           const poolChars: Array<{ name: string; gender?: string; personality?: string; background?: string; avatar_url?: string; voice_id?: string }> = poolData.characters ?? [];
 
           if (finalConfiguredPlayers.length > 0) {
-            // Enrich LLM-configured players with pool avatars/voices, matched by index
+            // Enrich LLM-configured players with pool avatars/voices, matched by index.
+            // Pool avatar always wins over any pre-existing avatar_url so the selected
+            // style pack is consistently applied to every player.
             finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => ({
               ...cp,
-              avatar_url: cp.avatar_url ?? poolChars[i]?.avatar_url,
+              avatar_url: poolChars[i]?.avatar_url ?? cp.avatar_url,
               voice_id: cp.voice_id ?? poolChars[i]?.voice_id,
             }));
           } else if (poolChars.length > 0) {

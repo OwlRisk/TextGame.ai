@@ -193,13 +193,16 @@ export async function fetchAvatarsForRoom(
 
   const fetchOne = async (player: RoomPlayerInfo, extraBody?: Record<string, unknown>) => {
     const pType: AvatarType = (player.type ?? 'player') as AvatarType;
-    const key = identityCacheKey(player.name, pType);
+    // Result key (name|type) is used by the room to look up avatars in avatarImageUrls.
+    const resultKey = identityCacheKey(player.name, pType);
+    // Cache key includes style so switching style packs always fetches fresh avatars.
+    const cacheKey = style ? `${resultKey}|${style}` : resultKey;
 
     if (!extraBody) {
-      const cached = cache.get(key);
-      if (cached) { results[key] = cached; return; }
-      const stored = loadFromStorage(key);
-      if (stored) { cache.set(key, stored); results[key] = stored; return; }
+      const cached = cache.get(cacheKey);
+      if (cached) { results[resultKey] = cached; return; }
+      const stored = loadFromStorage(cacheKey);
+      if (stored) { cache.set(cacheKey, stored); results[resultKey] = stored; return; }
     }
 
     try {
@@ -223,9 +226,9 @@ export async function fetchAvatarsForRoom(
       if (!res.ok) return;
 
       const data = (await res.json()) as { image: string };
-      cache.set(key, data.image);
-      saveToStorage(key, data.image);
-      results[key] = data.image;
+      cache.set(cacheKey, data.image);
+      saveToStorage(cacheKey, data.image);
+      results[resultKey] = data.image;
     } catch {
       // Silently skip failed avatars
     }
@@ -236,10 +239,10 @@ export async function fetchAvatarsForRoom(
 
   // Pass 2: resolve collisions — if two players got the same pool URL, re-fetch with offset
   const urlToKeys = new Map<string, string[]>();
-  for (const [key, url] of Object.entries(results)) {
+  for (const [resultKey, url] of Object.entries(results)) {
     if (!url) continue;
     const existing = urlToKeys.get(url) ?? [];
-    existing.push(key);
+    existing.push(resultKey);
     urlToKeys.set(url, existing);
   }
 
@@ -248,11 +251,12 @@ export async function fetchAvatarsForRoom(
     if (keys.length <= 1) continue;
     // Keep the first player's avatar, re-fetch the rest with increasing offsets
     for (let i = 1; i < keys.length; i++) {
-      const collidingKey = keys[i];
-      const player = players.find(p => identityCacheKey(p.name, (p.type ?? 'player') as AvatarType) === collidingKey);
+      const collidingResultKey = keys[i];
+      const player = players.find(p => identityCacheKey(p.name, (p.type ?? 'player') as AvatarType) === collidingResultKey);
       if (!player) continue;
-      // Clear cached collision so re-fetch actually hits the API
-      cache.delete(collidingKey);
+      // Clear both cache key formats so the re-fetch hits the API
+      cache.delete(collidingResultKey);
+      if (style) cache.delete(`${collidingResultKey}|${style}`);
       collisionFixes.push(fetchOne(player, { avatarOffset: i }));
     }
   }
