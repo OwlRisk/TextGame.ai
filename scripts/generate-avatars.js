@@ -9,14 +9,21 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const https = require('https');
 const http = require('http');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const sharp = require('sharp');
 
 // ── Config ──────────────────────────────────────────────────────────────────
+const ENV_CANDIDATES = [
+  path.join(__dirname, '../.env'),
+  '/Users/brookma/Documents/GitHub/GameMaster/.env',
+];
+const envFile = ENV_CANDIDATES.find(p => fs.existsSync(p));
+if (!envFile) throw new Error('No .env found. Tried:\n' + ENV_CANDIDATES.join('\n'));
 const env = Object.fromEntries(
-  fs.readFileSync('/Users/brookma/Documents/GitHub/GameMaster/.env', 'utf8')
-    .split('\n').filter(l => l.includes('=')).map(l => {
+  fs.readFileSync(envFile, 'utf8')
+    .split('\n').filter(l => l.includes('=') && !l.startsWith('#')).map(l => {
       const [k, ...v] = l.split('='); return [k.trim(), v.join('=').trim()];
     })
 );
@@ -61,6 +68,14 @@ const ALL_STYLES = Object.keys(STYLE_PROMPTS);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/** Normalize voice_id to ASCII-safe filename (strip accents, replace special chars). */
+function safeFilename(voiceId) {
+  return voiceId
+    .normalize('NFD')                  // decompose accented chars: é → e + ́
+    .replace(/[\u0300-\u036f]/g, '')   // strip combining diacritics
+    .replace(/[^a-zA-Z0-9_-]/g, '_'); // replace any remaining non-ASCII with _
+}
 
 function httpsGet(url) {
   return new Promise((resolve, reject) => {
@@ -113,7 +128,7 @@ function saveProgress(p) {
 async function generateOne(char, style) {
   const { id, name, gender, personality, background, voice_id } = char;
   const prompt = STYLE_PROMPTS[style](name, gender, personality, background);
-  const storagePath = `pool/${style}/${voice_id}.jpg`;
+  const storagePath = `pool/${style}/${safeFilename(voice_id)}.jpg`;
 
   // Generate image
   const resp = await openaiRequest({
@@ -162,7 +177,7 @@ async function generateOne(char, style) {
   const publicUrl = urlData.publicUrl;
 
   // Upload HD version to pool/hd/{style}/{voice_id}.jpg
-  const hdPath = `pool/hd/${style}/${voice_id}.jpg`;
+  const hdPath = `pool/hd/${style}/${safeFilename(voice_id)}.jpg`;
   const { error: hdUploadErr } = await supabase.storage
     .from(BUCKET)
     .upload(hdPath, hdBytes, { contentType: 'image/jpeg', upsert: true });
@@ -205,7 +220,24 @@ async function main() {
   if (error) { console.error('DB error:', error); process.exit(1); }
   console.log(`Found ${chars.length} characters\n`);
 
+  // Build progress from DB: mark characters that already have each style
+  console.log('Checking DB for existing styles...');
+  const { data: existingChars } = await supabase
+    .from('ai_characters')
+    .select('id, avatar_styles')
+    .eq('is_system', true)
+    .limit(500);
   const progress = loadProgress();
+  for (const c of (existingChars || [])) {
+    const styles = c.avatar_styles || {};
+    for (const s of ALL_STYLES) {
+      if (styles[s]) progress[`${s}:${c.id}`] = 'done';
+    }
+  }
+  saveProgress(progress);
+  const totalDone = Object.values(progress).filter(v => v === 'done').length;
+  console.log(`DB check complete: ${totalDone} already done, ${chars.length * targetStyles.length - Object.keys(progress).filter(k => targetStyles.some(s => k.startsWith(s+':'))).length} to generate`);
+
   let generated = 0, skipped = 0, failed = 0;
 
   for (const style of targetStyles) {
