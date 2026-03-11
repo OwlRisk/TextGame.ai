@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, preferredModel, channelGoal, playerNotes, isSeedGreeting } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
@@ -107,6 +107,8 @@ export async function POST(request: NextRequest) {
         boardContent?: string;
       };
       recentMessages: Array<{ senderName: string; content: string }>;
+      /** All players in the game — same list the human sees in the sidebar. */
+      playerRoster?: Array<{ name: string; role?: string; isHuman?: boolean }>;
     };
 
     if (!player?.name || !Array.isArray(recentMessages)) {
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI();
     const recentText = recentMessages
-      .slice(-20)
+      .slice(-50)
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
@@ -145,9 +147,20 @@ export async function POST(request: NextRequest) {
       lines.push(`Your private notes from previous turns:\n${playerNotes.trim().slice(0, 500)}`);
     }
 
+    // Player roster: same list the human sees in the sidebar
+    if (playerRoster && playerRoster.length > 0) {
+      const rosterLines = playerRoster.map((p) => {
+        const tag = p.isHuman ? ' (human)' : '';
+        const roleTag = p.role ? ` — ${p.role}` : '';
+        return `- ${p.name}${tag}${roleTag}`;
+      });
+      lines.push(`Players in this game:\n${rosterLines.join('\n')}`);
+      lines.push('');
+    }
+
     if (rules?.trim()) {
       lines.push('');
-      lines.push(`Game rules (summary):\n${rules.slice(0, 1200)}`);
+      lines.push(`Game rules:\n${rules}`);
     }
 
     if (channelGoal?.trim()) {

@@ -69,6 +69,12 @@ export async function runPlayerSpeak(
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (ctx.sessionToken) headers.Authorization = `Bearer ${ctx.sessionToken}`;
 
+    // Build player roster so AI sees the same player list as the human sidebar.
+    // Only include name and public role (not private board content of others).
+    const playerRoster = ctx.playersRef.current
+      .filter((p) => !p.isGameMaster)
+      .map((p) => ({ name: p.name, role: p.role ?? undefined, isHuman: !p.isAI }));
+
     const res = await fetch("/api/chat/player-speak", {
       method: "POST",
       headers,
@@ -86,6 +92,7 @@ export async function runPlayerSpeak(
         },
         ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
         recentMessages: recent,
+        playerRoster,
         preferredModel: getPreferredModel(),
         ...(channelGoal ? { channelGoal } : {}),
       }),
@@ -227,7 +234,7 @@ export async function speakAndReveal(
     } else {
       await dynamicPace(txt.length, player.personality, ctx.convMode);
     }
-    ctx.recentForNext.current = [...ctx.recentForNext.current, { senderName: player.name, content: txt }].slice(-30);
+    ctx.recentForNext.current = [...ctx.recentForNext.current, { senderName: player.name, content: txt }].slice(-50);
   }
   return txt;
 }
@@ -306,7 +313,7 @@ export async function runPrivateChannelConversation(
 
   const channelRecent = ctx.messages
     .filter((m) => (m.channelId ?? ctx.cfgChannelDefaultId) === targetChannelId)
-    .slice(-15)
+    .slice(-50)
     .map((m) => ({ senderName: m.senderName, content: m.content }));
   let recentContext = channelRecent;
 
