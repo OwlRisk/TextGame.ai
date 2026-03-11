@@ -640,9 +640,19 @@ GAMEPLAY:
 4. A player may use their turn to make a direct guess instead of asking a question.
 5. The game ends after 20 questions total, or a correct direct guess — whichever comes first.
 
+HOT/COLD HINTS (the fun twist!):
+After every 5th question (Q5, Q10, Q15), the Thinker must give a warmth rating on how close the group's thinking is:
+  🧊 Ice Cold — totally off track
+  ❄️ Cold — wrong direction
+  🌤️ Warm — getting closer
+  🔥 Hot — very close
+  💥 Burning! — almost there
+The warmth rating reflects the group's OVERALL line of questioning — not just the last question.
+
 GOOD QUESTION STRATEGY:
 - Start broad: Is it alive? Is it human? Is it natural or man-made?
 - Narrow progressively: Is it something you'd find indoors? Is it edible?
+- After a Hot/Cold hint, redirect strategy if needed.
 
 HOW THE STORY ENDS:
 - Cracked it: Guessers correctly identify the target within 20 questions.

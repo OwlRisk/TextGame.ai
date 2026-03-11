@@ -2,49 +2,640 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Avatar Style Preview</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avatar Style Packs — GameMaster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  body { background: #0f0f13; color: #fff; font-family: system-ui; margin: 0; padding: 24px; }
-  h1 { text-align: center; font-size: 20px; color: #a78bfa; margin-bottom: 32px; }
-  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 1000px; margin: 0 auto; }
-  .card { background: #1a1a2e; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
-  .card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-  .label { padding: 12px; text-align: center; }
-  .label h3 { margin: 0 0 4px; font-size: 14px; color: #e2e8f0; }
-  .label p { margin: 0; font-size: 11px; color: #94a3b8; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080810;
+    --surface: #11111e;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --accent: #f97316;
+    --accent2: #a855f7;
+
+    --sr-color: #c8a86b;
+    --anime-color: #e879f9;
+    --painted-color: #84cc16;
+    --pixel-color: #38bdf8;
+    --cyber-color: #00ffaa;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background grain ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 72px 24px 48px;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(249,115,22,0.1);
+    border: 1px solid rgba(249,115,22,0.25);
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* ── Tabs ── */
+  .tabs-wrapper {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 24px 48px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+
+  .tab.active {
+    color: #000;
+    font-weight: 600;
+  }
+
+  .tab[data-style="semi-realistic"].active { background: var(--sr-color); border-color: var(--sr-color); }
+  .tab[data-style="anime"].active          { background: var(--anime-color); border-color: var(--anime-color); }
+  .tab[data-style="painted"].active        { background: var(--painted-color); border-color: var(--painted-color); }
+  .tab[data-style="pixel"].active          { background: var(--pixel-color); border-color: var(--pixel-color); }
+  .tab[data-style="cyberpunk"].active      { background: var(--cyber-color); border-color: var(--cyber-color); }
+
+  .tab-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .tab[data-style="semi-realistic"] .tab-dot { background: var(--sr-color); }
+  .tab[data-style="anime"] .tab-dot          { background: var(--anime-color); }
+  .tab[data-style="painted"] .tab-dot        { background: var(--painted-color); }
+  .tab[data-style="pixel"] .tab-dot          { background: var(--pixel-color); }
+  .tab[data-style="cyberpunk"] .tab-dot      { background: var(--cyber-color); }
+
+  .tab.active .tab-dot { background: #000; }
+
+  /* ── Main gallery ── */
+  .gallery {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── Style panel ── */
+  .style-panel {
+    display: none;
+    animation: fadeIn 0.35s ease;
+  }
+  .style-panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Hero card (single large image) ── */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 680px) {
+    .hero { grid-template-columns: 1fr; }
+  }
+
+  .hero-img-wrap {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  .hero-img-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba(255,255,255,0.1);
+    pointer-events: none;
+  }
+
+  .hero-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+  }
+
+  .hero-img-wrap:hover img { transform: scale(1.03); }
+
+  /* Style glow per pack */
+  [data-panel="semi-realistic"] .hero-img-wrap { box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 80px rgba(200,168,107,0.15); }
+  [data-panel="anime"] .hero-img-wrap          { box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 80px rgba(232,121,249,0.15); }
+  [data-panel="painted"] .hero-img-wrap        { box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 80px rgba(132,204,22,0.12); }
+  [data-panel="pixel"] .hero-img-wrap          { box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 80px rgba(56,189,248,0.15); }
+  [data-panel="cyberpunk"] .hero-img-wrap      { box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 80px rgba(0,255,170,0.15); }
+
+  .hero-info { padding: 8px 0; }
+
+  .style-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  [data-panel="semi-realistic"] .style-badge { background: rgba(200,168,107,0.12); color: var(--sr-color); border: 1px solid rgba(200,168,107,0.3); }
+  [data-panel="anime"] .style-badge          { background: rgba(232,121,249,0.12); color: var(--anime-color); border: 1px solid rgba(232,121,249,0.3); }
+  [data-panel="painted"] .style-badge        { background: rgba(132,204,22,0.12);  color: var(--painted-color); border: 1px solid rgba(132,204,22,0.3); }
+  [data-panel="pixel"] .style-badge          { background: rgba(56,189,248,0.12);  color: var(--pixel-color); border: 1px solid rgba(56,189,248,0.3); }
+  [data-panel="cyberpunk"] .style-badge      { background: rgba(0,255,170,0.08);   color: var(--cyber-color); border: 1px solid rgba(0,255,170,0.3); }
+
+  .hero-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(24px, 4vw, 40px);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+
+  .hero-desc {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 28px;
+    font-weight: 300;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag {
+    padding: 5px 12px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ── Divider ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .divider span {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── All styles comparison row ── */
+  .compare-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+
+  @media (max-width: 900px) { .compare-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .compare-row { grid-template-columns: repeat(2, 1fr); } }
+
+  .compare-card {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+
+  .compare-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
+
+  .compare-card.current { border-color: rgba(255,255,255,0.3); }
+  .compare-card[data-style="semi-realistic"].current { border-color: var(--sr-color); }
+  .compare-card[data-style="anime"].current          { border-color: var(--anime-color); }
+  .compare-card[data-style="painted"].current        { border-color: var(--painted-color); }
+  .compare-card[data-style="pixel"].current          { border-color: var(--pixel-color); }
+  .compare-card[data-style="cyberpunk"].current      { border-color: var(--cyber-color); }
+
+  .compare-card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    filter: brightness(0.85);
+    transition: filter 0.25s;
+  }
+
+  .compare-card:hover img,
+  .compare-card.current img { filter: brightness(1); }
+
+  .compare-label {
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .compare-label p {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .compare-label span {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ── Footer ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  footer strong { color: var(--text); }
 </style>
 </head>
 <body>
-<h1>🎭 Avatar Style Pack Preview</h1>
-<div class="grid">
-  <div class="card">
-    <img src="semi-realistic.png" alt="Semi-Realistic">
-    <div class="label">
-      <h3>Semi-Realistic</h3>
-      <p>Painterly game art, Arcane-inspired</p>
-    </div>
-  </div>
-  <div class="card">
-    <img src="anime.png" alt="Anime">
-    <div class="label">
-      <h3>Anime</h3>
-      <p>Japanese cel-shaded illustration</p>
-    </div>
-  </div>
-  <div class="card">
-    <img src="painted.png" alt="Painted Portrait">
-    <div class="label">
-      <h3>Painted Portrait</h3>
-      <p>Dark Renaissance oil painting</p>
-    </div>
-  </div>
-  <div class="card">
-    <img src="pixel.png" alt="Pixel Art">
-    <div class="label">
-      <h3>Pixel Art</h3>
-      <p>Retro 16-bit RPG style</p>
-    </div>
-  </div>
+
+<header>
+  <div class="eyebrow">Avatar Style Packs</div>
+  <h1>Five Worlds.<br>One Character.</h1>
+  <p class="subtitle">Every AI player can appear in 5 distinct art styles — choose the one that fits your game mood.</p>
+</header>
+
+<div class="tabs-wrapper">
+  <button class="tab active" data-style="semi-realistic" onclick="switchStyle('semi-realistic')">
+    <span class="tab-dot"></span> Semi-Realistic
+  </button>
+  <button class="tab" data-style="anime" onclick="switchStyle('anime')">
+    <span class="tab-dot"></span> Anime
+  </button>
+  <button class="tab" data-style="painted" onclick="switchStyle('painted')">
+    <span class="tab-dot"></span> Painted Portrait
+  </button>
+  <button class="tab" data-style="pixel" onclick="switchStyle('pixel')">
+    <span class="tab-dot"></span> Pixel Art
+  </button>
+  <button class="tab" data-style="cyberpunk" onclick="switchStyle('cyberpunk')">
+    <span class="tab-dot"></span> Cyberpunk
+  </button>
 </div>
+
+<div class="gallery">
+
+  <!-- ── Semi-Realistic ── -->
+  <div class="style-panel active" data-panel="semi-realistic">
+    <div class="hero">
+      <div class="hero-img-wrap">
+        <img src="semi-realistic.png" alt="Semi-Realistic avatar">
+      </div>
+      <div class="hero-info">
+        <div class="style-badge">✦ Semi-Realistic</div>
+        <h2 class="hero-title">Painterly Game Art</h2>
+        <p class="hero-desc">Dramatic side lighting, rich color depth, realistic skin texture with slightly stylized proportions — like stepping into Arcane or a western RPG. The default style for all games.</p>
+        <div class="tags">
+          <span class="tag">Arcane-inspired</span>
+          <span class="tag">Default style</span>
+          <span class="tag">Dramatic lighting</span>
+          <span class="tag">All ages</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"><span>All 5 Styles — Same Character</span></div>
+    <div class="compare-row">
+      <div class="compare-card current" data-style="semi-realistic" onclick="switchStyle('semi-realistic')">
+        <img src="semi-realistic.png" alt="Semi-Realistic">
+        <div class="compare-label"><p>Semi-Realistic</p><span>Painterly RPG art</span></div>
+      </div>
+      <div class="compare-card" data-style="anime" onclick="switchStyle('anime')">
+        <img src="anime.png" alt="Anime">
+        <div class="compare-label"><p>Anime</p><span>Cel-shaded illustration</span></div>
+      </div>
+      <div class="compare-card" data-style="painted" onclick="switchStyle('painted')">
+        <img src="painted.png" alt="Painted">
+        <div class="compare-label"><p>Painted Portrait</p><span>Oil painting style</span></div>
+      </div>
+      <div class="compare-card" data-style="pixel" onclick="switchStyle('pixel')">
+        <img src="pixel.png" alt="Pixel Art">
+        <div class="compare-label"><p>Pixel Art</p><span>Retro 16-bit RPG</span></div>
+      </div>
+      <div class="compare-card" data-style="cyberpunk" onclick="switchStyle('cyberpunk')">
+        <img src="cyberpunk.png" alt="Cyberpunk">
+        <div class="compare-label"><p>Cyberpunk</p><span>Neon-noir sci-fi</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Anime ── -->
+  <div class="style-panel" data-panel="anime">
+    <div class="hero">
+      <div class="hero-img-wrap">
+        <img src="anime.png" alt="Anime avatar">
+      </div>
+      <div class="hero-info">
+        <div class="style-badge">✦ Anime</div>
+        <h2 class="hero-title">Japanese Cel-Shaded Illustration</h2>
+        <p class="hero-desc">Bold outlines, expressive eyes, vivid colors — classic Japanese animation brought to the game table. Every character feels like they stepped out of a beloved shōnen or shōjo series.</p>
+        <div class="tags">
+          <span class="tag">Cel-shading</span>
+          <span class="tag">Bold outlines</span>
+          <span class="tag">Vivid colors</span>
+          <span class="tag">Expressive</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"><span>All 5 Styles — Same Character</span></div>
+    <div class="compare-row">
+      <div class="compare-card" data-style="semi-realistic" onclick="switchStyle('semi-realistic')">
+        <img src="semi-realistic.png" alt="Semi-Realistic">
+        <div class="compare-label"><p>Semi-Realistic</p><span>Painterly RPG art</span></div>
+      </div>
+      <div class="compare-card current" data-style="anime" onclick="switchStyle('anime')">
+        <img src="anime.png" alt="Anime">
+        <div class="compare-label"><p>Anime</p><span>Cel-shaded illustration</span></div>
+      </div>
+      <div class="compare-card" data-style="painted" onclick="switchStyle('painted')">
+        <img src="painted.png" alt="Painted">
+        <div class="compare-label"><p>Painted Portrait</p><span>Oil painting style</span></div>
+      </div>
+      <div class="compare-card" data-style="pixel" onclick="switchStyle('pixel')">
+        <img src="pixel.png" alt="Pixel Art">
+        <div class="compare-label"><p>Pixel Art</p><span>Retro 16-bit RPG</span></div>
+      </div>
+      <div class="compare-card" data-style="cyberpunk" onclick="switchStyle('cyberpunk')">
+        <img src="cyberpunk.png" alt="Cyberpunk">
+        <div class="compare-label"><p>Cyberpunk</p><span>Neon-noir sci-fi</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Painted ── -->
+  <div class="style-panel" data-panel="painted">
+    <div class="hero">
+      <div class="hero-img-wrap">
+        <img src="painted.png" alt="Painted Portrait avatar">
+      </div>
+      <div class="hero-info">
+        <div class="style-badge">✦ Painted Portrait</div>
+        <h2 class="hero-title">Oil-Painting Brush Strokes</h2>
+        <p class="hero-desc">Thick impasto textures, Old Masters lighting, romantic color palettes — each portrait feels like it belongs in a gallery. Perfect for mystery, intrigue, and historical settings.</p>
+        <div class="tags">
+          <span class="tag">Oil painting</span>
+          <span class="tag">Old Masters</span>
+          <span class="tag">Impasto texture</span>
+          <span class="tag">Gallery-quality</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"><span>All 5 Styles — Same Character</span></div>
+    <div class="compare-row">
+      <div class="compare-card" data-style="semi-realistic" onclick="switchStyle('semi-realistic')">
+        <img src="semi-realistic.png" alt="Semi-Realistic">
+        <div class="compare-label"><p>Semi-Realistic</p><span>Painterly RPG art</span></div>
+      </div>
+      <div class="compare-card" data-style="anime" onclick="switchStyle('anime')">
+        <img src="anime.png" alt="Anime">
+        <div class="compare-label"><p>Anime</p><span>Cel-shaded illustration</span></div>
+      </div>
+      <div class="compare-card current" data-style="painted" onclick="switchStyle('painted')">
+        <img src="painted.png" alt="Painted">
+        <div class="compare-label"><p>Painted Portrait</p><span>Oil painting style</span></div>
+      </div>
+      <div class="compare-card" data-style="pixel" onclick="switchStyle('pixel')">
+        <img src="pixel.png" alt="Pixel Art">
+        <div class="compare-label"><p>Pixel Art</p><span>Retro 16-bit RPG</span></div>
+      </div>
+      <div class="compare-card" data-style="cyberpunk" onclick="switchStyle('cyberpunk')">
+        <img src="cyberpunk.png" alt="Cyberpunk">
+        <div class="compare-label"><p>Cyberpunk</p><span>Neon-noir sci-fi</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Pixel ── -->
+  <div class="style-panel" data-panel="pixel">
+    <div class="hero">
+      <div class="hero-img-wrap">
+        <img src="pixel.png" alt="Pixel Art avatar">
+      </div>
+      <div class="hero-info">
+        <div class="style-badge">✦ Pixel Art</div>
+        <h2 class="hero-title">Retro 16-bit Game Sprites</h2>
+        <p class="hero-desc">Chunky pixels, limited palettes, pure nostalgia — the look of classic JRPGs and indie favorites. Pixel Art brings warmth and charm to any game night.</p>
+        <div class="tags">
+          <span class="tag">16-bit retro</span>
+          <span class="tag">JRPG vibes</span>
+          <span class="tag">Pixel perfect</span>
+          <span class="tag">Indie style</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"><span>All 5 Styles — Same Character</span></div>
+    <div class="compare-row">
+      <div class="compare-card" data-style="semi-realistic" onclick="switchStyle('semi-realistic')">
+        <img src="semi-realistic.png" alt="Semi-Realistic">
+        <div class="compare-label"><p>Semi-Realistic</p><span>Painterly RPG art</span></div>
+      </div>
+      <div class="compare-card" data-style="anime" onclick="switchStyle('anime')">
+        <img src="anime.png" alt="Anime">
+        <div class="compare-label"><p>Anime</p><span>Cel-shaded illustration</span></div>
+      </div>
+      <div class="compare-card" data-style="painted" onclick="switchStyle('painted')">
+        <img src="painted.png" alt="Painted">
+        <div class="compare-label"><p>Painted Portrait</p><span>Oil painting style</span></div>
+      </div>
+      <div class="compare-card current" data-style="pixel" onclick="switchStyle('pixel')">
+        <img src="pixel.png" alt="Pixel Art">
+        <div class="compare-label"><p>Pixel Art</p><span>Retro 16-bit RPG</span></div>
+      </div>
+      <div class="compare-card" data-style="cyberpunk" onclick="switchStyle('cyberpunk')">
+        <img src="cyberpunk.png" alt="Cyberpunk">
+        <div class="compare-label"><p>Cyberpunk</p><span>Neon-noir sci-fi</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Cyberpunk ── -->
+  <div class="style-panel" data-panel="cyberpunk">
+    <div class="hero">
+      <div class="hero-img-wrap">
+        <img src="cyberpunk.png" alt="Cyberpunk avatar">
+      </div>
+      <div class="hero-info">
+        <div class="style-badge">✦ Cyberpunk</div>
+        <h2 class="hero-title">Neon-Noir Sci-Fi Aesthetic</h2>
+        <p class="hero-desc">Electric glows, dark streets, rain-slicked neon reflections — the future is dangerous and beautiful. Cyberpunk avatars turn every game session into a noir thriller.</p>
+        <div class="tags">
+          <span class="tag">Neon glow</span>
+          <span class="tag">Sci-fi noir</span>
+          <span class="tag">Dark aesthetic</span>
+          <span class="tag">Futuristic</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"><span>All 5 Styles — Same Character</span></div>
+    <div class="compare-row">
+      <div class="compare-card" data-style="semi-realistic" onclick="switchStyle('semi-realistic')">
+        <img src="semi-realistic.png" alt="Semi-Realistic">
+        <div class="compare-label"><p>Semi-Realistic</p><span>Painterly RPG art</span></div>
+      </div>
+      <div class="compare-card" data-style="anime" onclick="switchStyle('anime')">
+        <img src="anime.png" alt="Anime">
+        <div class="compare-label"><p>Anime</p><span>Cel-shaded illustration</span></div>
+      </div>
+      <div class="compare-card" data-style="painted" onclick="switchStyle('painted')">
+        <img src="painted.png" alt="Painted">
+        <div class="compare-label"><p>Painted Portrait</p><span>Oil painting style</span></div>
+      </div>
+      <div class="compare-card" data-style="pixel" onclick="switchStyle('pixel')">
+        <img src="pixel.png" alt="Pixel Art">
+        <div class="compare-label"><p>Pixel Art</p><span>Retro 16-bit RPG</span></div>
+      </div>
+      <div class="compare-card current" data-style="cyberpunk" onclick="switchStyle('cyberpunk')">
+        <img src="cyberpunk.png" alt="Cyberpunk">
+        <div class="compare-label"><p>Cyberpunk</p><span>Neon-noir sci-fi</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /gallery -->
+
+<footer>
+  <strong>GameMaster</strong> — Avatar Style System &nbsp;·&nbsp; 5 styles &nbsp;·&nbsp; Same character, different worlds
+</footer>
+
+<script>
+  function switchStyle(style) {
+    // Update tabs
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.style === style);
+    });
+
+    // Update panels
+    document.querySelectorAll('.style-panel').forEach(p => {
+      p.classList.toggle('active', p.dataset.panel === style);
+    });
+
+    // Update compare-card highlights in all panels
+    document.querySelectorAll('.compare-card').forEach(c => {
+      c.classList.toggle('current', c.dataset.style === style);
+    });
+  }
+
+  // Keyboard navigation
+  const STYLES = ['semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'];
+  document.addEventListener('keydown', e => {
+    const activeTab = document.querySelector('.tab.active');
+    if (!activeTab) return;
+    const cur = STYLES.indexOf(activeTab.dataset.style);
+    if (e.key === 'ArrowRight' && cur < STYLES.length - 1) switchStyle(STYLES[cur + 1]);
+    if (e.key === 'ArrowLeft'  && cur > 0)                 switchStyle(STYLES[cur - 1]);
+  });
+</script>
+
 </body>
 </html>

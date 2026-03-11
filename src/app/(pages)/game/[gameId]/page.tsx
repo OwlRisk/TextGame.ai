@@ -527,7 +527,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         background: hostPersonality,
         personality: config.generatedHost?.voiceStyle || config.generatedHost?.personality,
         gender: config.generatedHost?.gender,
-        voiceId: undefined as string | undefined,
+        voiceId: (config.generatedHost?.voice_id as string | undefined) ?? undefined,
       },
       hostName,
       hostColor,

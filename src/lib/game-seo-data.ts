@@ -838,10 +838,12 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "One player (the Thinker) secretly chooses a person, place, animal, or object.",
       "The other players take turns asking yes-or-no questions to narrow down the answer.",
       "Questions must have a yes, no, or sometimes answer — no other hints allowed.",
+      "After every 5th question (Q5, Q10, Q15), the Thinker gives a Hot/Cold warmth rating — 🧊 Ice Cold to 💥 Burning — hinting at how close the group's thinking is.",
       "If players guess correctly within 20 questions, they win. If not, the Thinker wins.",
       "Rotate the Thinker role each round.",
     ],
     features: [
+      "Hot/Cold warmth hints after Q5, Q10, and Q15",
       "AI can act as the Thinker for solo play",
       "2–10 players",
       "Super quick 10–15 minute rounds",
@@ -849,7 +851,8 @@ export const GAME_SEO_DATA: GameSEOData[] = [
       "Great for remote teams and families",
     ],
     faq: [
-      { question: "How do you play 20 Questions?", answer: "One player thinks of something and others ask up to 20 yes-or-no questions to guess what it is. Correct guess within 20 questions wins for the questioners." },
+      { question: "How do you play 20 Questions?", answer: "One player thinks of something and others ask up to 20 yes-or-no questions to guess what it is. After every 5th question, the Thinker gives a Hot/Cold warmth rating to hint at how close the group is. Correct guess within 20 questions wins for the questioners." },
+      { question: "What is the Hot/Cold hint rule?", answer: "After questions 5, 10, and 15, the Thinker must give a warmth rating — from 🧊 Ice Cold (totally off track) to 💥 Burning (almost there). It doesn't reveal the answer but tells the group whether their overall thinking is heading in the right direction." },
       { question: "Can the AI play 20 Questions with me solo?", answer: "Yes. The AI host can act as the Thinker, choosing something for you to guess, or ask the questions itself while you choose the answer." },
       { question: "What categories work best for 20 Questions?", answer: "Animals, famous people, movies, and everyday objects make great choices. The AI host can suggest categories and keep the game moving." },
       { question: "Is there a time limit in 20 Questions?", answer: "No strict time limit, but you're limited to 20 questions per round. You can ask the AI host to set a time limit per question for extra pressure." },
