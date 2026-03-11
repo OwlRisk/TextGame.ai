@@ -217,18 +217,27 @@ function httpsPost(url, headers, body) {
 // ── Generate greeting text via OpenAI ────────────────────────────────────────
 async function generateGreeting(char) {
   const { name, personality, background } = char;
-  const prompt = `You are "${name}", a game character. Personality: ${personality || 'friendly'}. Background: ${background || 'adventurer'}.
-Say a single short greeting (1 sentence, under 15 words) introducing yourself in the lobby. Stay in character. English only.`;
+  const prompt = `You are "${name}", a player sitting in a multiplayer game lobby (social deduction / party game). Personality: ${personality || 'friendly'}. Background: ${background || 'adventurer'}.
+
+The game is about to start. Say ONE short sentence (under 15 words) to the other players in the lobby. Stay fully in character.
+
+Rules:
+- You're excited/ready/nervous/cocky about the upcoming GAME — not introducing your career or offering services.
+- Sound like a real person chatting before a game starts — casual, playful, competitive, mysterious, or intimidating depending on your personality.
+- Do NOT mention your job title, profession, or what you do for a living.
+- Do NOT say "here to help" or "here to guide" or "here to support".
+- Good examples: "Let's see who's got the guts to survive this round.", "Don't trust anyone — especially me.", "I've got a feeling someone here is hiding something.", "Alright, who's ready to lose?"
+- English only.`;
 
   const res = await httpsPost('https://api.openai.com/v1/chat/completions', {
     'Authorization': `Bearer ${OPENAI_KEY}`,
   }, {
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: 'Output ONLY the greeting line. No quotes, no stage directions, no asterisks.' },
+      { role: 'system', content: 'Output ONLY the greeting line. No quotes, no stage directions, no asterisks. The character is in a game lobby, NOT at a job interview.' },
       { role: 'user', content: prompt },
     ],
-    temperature: 1.0,
+    temperature: 1.2,
     max_tokens: 60,
   });
 
