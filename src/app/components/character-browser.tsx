@@ -7,424 +7,343 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Plus, Sparkles, Trash2, User, Loader2, Volume2, Square } from "lucide-react";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { Loader2, Volume2, Square, Search, X } from "lucide-react";
 import { cn } from "@/app/components/ui/utils";
-import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 
-export interface AiCharacter {
+interface PoolCharacter {
   id: string;
   name: string;
   gender: string;
   personality: string | null;
   background: string | null;
-  avatar_color: string;
-  avatar_url?: string | null;
-  avatar_styles?: Record<string, string> | null;
-  source_game_id: string | null;
-  created_at: string;
-  voice_sample_url?: string | null;
+  avatar_url: string | null;
+  voice_id: string;
+  voice_sample_url: string | null;
 }
 
 interface CharacterBrowserProps {
   open: boolean;
   onClose: () => void;
-  onSelectCharacter: (character: { name: string; gender: string; personality: string; background: string; voice_sample_url?: string | null }) => void;
+  onSelectCharacter: (character: {
+    name: string;
+    gender: string;
+    personality: string;
+    background: string;
+    voice_sample_url?: string | null;
+  }) => void;
   gameId?: string;
 }
 
-export function CharacterBrowser({ open, onClose, onSelectCharacter, gameId }: CharacterBrowserProps) {
-  const { session } = useAuth();
-  const [tab, setTab] = useState<string>("my");
-  const [characters, setCharacters] = useState<AiCharacter[]>([]);
+export function CharacterBrowser({
+  open,
+  onClose,
+  onSelectCharacter,
+}: CharacterBrowserProps) {
+  const [characters, setCharacters] = useState<PoolCharacter[]>([]);
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [generated, setGenerated] = useState<Array<{ name: string; gender: string; personality: string; background: string }>>([]);
-  const [theme, setTheme] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const fetchCharacters = useCallback(async () => {
-    if (!session?.access_token) return;
+  const fetchPool = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/characters", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
+      const style =
+        typeof window !== "undefined"
+          ? localStorage.getItem("avatar_style_pack") ?? "semi-realistic"
+          : "semi-realistic";
+      const res = await fetch(
+        `/api/characters/pool?count=200&sort=name&style=${encodeURIComponent(style)}`
+      );
       if (res.ok) {
         const data = await res.json();
-        // Deduplicate by name (keep the most recent — API returns newest first)
-        const seen = new Set<string>();
-        const unique = (data.characters || []).filter((c: AiCharacter) => {
-          const key = c.name.toLowerCase().trim();
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-        setCharacters(unique);
+        setCharacters(data.characters ?? []);
       }
     } catch (e) {
       console.warn("[character-browser] fetch error:", e);
     } finally {
       setLoading(false);
     }
-  }, [session?.access_token]);
+  }, []);
 
   useEffect(() => {
     if (open) {
-      fetchCharacters();
-      setGenerated([]);
+      fetchPool();
+      setSearch("");
+      setSelectedId(null);
     }
-  }, [open, fetchCharacters]);
+  }, [open, fetchPool]);
 
-  const handleGenerate = useCallback(async () => {
-    if (!session?.access_token || generating) return;
-    setGenerating(true);
-    try {
-      const res = await fetch("/api/characters/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ count: 4, theme: theme || undefined }),
+  const filtered = search.trim()
+    ? characters.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.personality?.toLowerCase().includes(search.toLowerCase()) ||
+          c.gender.toLowerCase().includes(search.toLowerCase())
+      )
+    : characters;
+
+  const selected = selectedId
+    ? characters.find((c) => c.id === selectedId)
+    : null;
+
+  const handleAdd = useCallback(
+    (char: PoolCharacter) => {
+      onSelectCharacter({
+        name: char.name,
+        gender: char.gender,
+        personality: char.personality || "",
+        background: char.background || "",
+        voice_sample_url: char.voice_sample_url,
       });
-      if (res.ok) {
-        const data = await res.json();
-        setGenerated(data.characters || []);
-      }
-    } catch (e) {
-      console.warn("[character-browser] generate error:", e);
-    } finally {
-      setGenerating(false);
-    }
-  }, [session?.access_token, generating, theme]);
-
-  const handleSelectAndClose = useCallback(
-    (char: { name: string; gender: string; personality: string; background: string; voice_sample_url?: string | null }) => {
-      onSelectCharacter(char);
       onClose();
     },
     [onSelectCharacter, onClose]
   );
 
-  const handleSaveToCollection = useCallback(
-    async (char: { name: string; gender: string; personality: string; background: string }) => {
-      if (!session?.access_token) return;
-      try {
-        const res = await fetch("/api/characters", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            name: char.name,
-            gender: char.gender,
-            personality: char.personality,
-            background: char.background,
-            source_game_id: gameId || null,
-          }),
-        });
-        if (res.ok) {
-          fetchCharacters();
-        }
-      } catch (e) {
-        console.warn("[character-browser] save error:", e);
-      }
-    },
-    [session?.access_token, gameId, fetchCharacters]
-  );
-
-  const handleDelete = useCallback(
-    async (id: string) => {
-      if (!session?.access_token) return;
-      try {
-        await fetch(`/api/characters/${id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        setCharacters((prev) => prev.filter((c) => c.id !== id));
-      } catch (e) {
-        console.warn("[character-browser] delete error:", e);
-      }
-    },
-    [session?.access_token]
-  );
-
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-lg bg-zinc-900 border-zinc-700 text-white">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Add AI Character</DialogTitle>
+      <DialogContent className="sm:max-w-2xl bg-zinc-900 border-zinc-700 text-white p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-5 pt-5 pb-3">
+          <DialogTitle className="text-lg font-semibold">
+            Add AI Character
+          </DialogTitle>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {characters.length} characters available
+          </p>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={setTab} className="mt-2">
-          <TabsList className="w-full bg-zinc-800/60">
-            <TabsTrigger value="my" className="flex-1 text-sm">My Characters</TabsTrigger>
-            <TabsTrigger value="generate" className="flex-1 text-sm">Generate New</TabsTrigger>
-          </TabsList>
+        {/* Search */}
+        <div className="px-5 pb-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search by name, personality, gender..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 pl-9 pr-8 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
 
-          <TabsContent value="my" className="mt-3">
+        {/* Character grid + detail panel */}
+        <div className="flex min-h-0" style={{ height: "min(480px, 60vh)" }}>
+          {/* Grid */}
+          <ScrollArea className="flex-1 px-5 pb-4">
             {loading ? (
-              <div className="flex items-center justify-center py-12 text-zinc-500">
+              <div className="flex items-center justify-center py-20 text-zinc-500">
                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
                 Loading…
               </div>
-            ) : characters.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-500">
-                <User className="h-10 w-10 mb-3 text-zinc-600" />
-                <p className="text-sm font-medium">No saved characters yet</p>
-                <p className="text-xs mt-1">Generate new characters or save them from games</p>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+                <p className="text-sm">No characters found</p>
               </div>
             ) : (
-              <ScrollArea className="max-h-[320px]">
-                <div className="space-y-2 pr-2">
-                  {characters.map((char) => (
-                    <CharacterCard
-                      key={char.id}
-                      name={char.name}
-                      gender={char.gender}
-                      personality={char.personality || ""}
-                      background={char.background || ""}
-                      avatarUrl={char.avatar_url}
-                      avatarColor={char.avatar_color}
-                      voiceSampleUrl={char.voice_sample_url}
-                      onSelect={() =>
-                        handleSelectAndClose({
-                          name: char.name,
-                          gender: char.gender,
-                          personality: char.personality || "",
-                          background: char.background || "",
-                          voice_sample_url: char.voice_sample_url,
-                        })
-                      }
-                      onDelete={() => handleDelete(char.id)}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
+                {filtered.map((char) => (
+                  <CharacterTile
+                    key={char.id}
+                    char={char}
+                    isSelected={selectedId === char.id}
+                    onSelect={() =>
+                      setSelectedId(
+                        selectedId === char.id ? null : char.id
+                      )
+                    }
+                    onAdd={() => handleAdd(char)}
+                  />
+                ))}
+              </div>
             )}
-          </TabsContent>
+          </ScrollArea>
 
-          <TabsContent value="generate" className="mt-3 space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Theme (optional): fantasy, sci-fi, mystery…"
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                className="flex-1 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
-                onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-              />
-              <Button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="bg-violet-600 hover:bg-violet-500 text-white"
-              >
-                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              </Button>
+          {/* Detail panel */}
+          {selected && (
+            <div className="w-56 border-l border-zinc-800 bg-zinc-900/80 flex flex-col shrink-0">
+              <div className="p-4 flex flex-col items-center">
+                <div className="h-24 w-24 rounded-full overflow-hidden ring-2 ring-violet-500/40 mb-3">
+                  {selected.avatar_url ? (
+                    <img
+                      src={selected.avatar_url}
+                      alt={selected.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-zinc-800 flex items-center justify-center text-2xl font-bold text-zinc-500">
+                      {selected.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <h3 className="text-sm font-semibold text-white text-center">
+                  {selected.name}
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 capitalize mt-1">
+                  {selected.gender}
+                </span>
+              </div>
+
+              <div className="px-4 flex-1 overflow-y-auto space-y-3 text-xs">
+                {selected.personality && (
+                  <div>
+                    <p className="text-zinc-500 font-medium mb-0.5">
+                      Personality
+                    </p>
+                    <p className="text-zinc-300 leading-relaxed">
+                      {selected.personality}
+                    </p>
+                  </div>
+                )}
+                {selected.background && (
+                  <div>
+                    <p className="text-zinc-500 font-medium mb-0.5">
+                      Background
+                    </p>
+                    <p className="text-zinc-300 leading-relaxed">
+                      {selected.background}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 space-y-2">
+                <VoicePreviewButton char={selected} />
+                <button
+                  onClick={() => handleAdd(selected)}
+                  className="w-full py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
+                >
+                  Add to Game
+                </button>
+              </div>
             </div>
-
-            {generating && (
-              <div className="flex items-center justify-center py-10 text-zinc-500">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                Generating characters…
-              </div>
-            )}
-
-            {!generating && generated.length > 0 && (
-              <ScrollArea className="max-h-[280px]">
-                <div className="space-y-2 pr-2">
-                  {generated.map((char, i) => (
-                    <CharacterCard
-                      key={`gen-${i}`}
-                      name={char.name}
-                      gender={char.gender}
-                      personality={char.personality}
-                      background={char.background}
-                      onSelect={() => handleSelectAndClose(char)}
-                      onSave={() => handleSaveToCollection(char)}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-
-            {!generating && generated.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-10 text-center text-zinc-500">
-                <Sparkles className="h-10 w-10 mb-3 text-zinc-600" />
-                <p className="text-sm font-medium">Generate AI characters</p>
-                <p className="text-xs mt-1">Enter a theme and click generate, or just click to get random characters</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-function CharacterCard({
-  name,
-  gender,
-  personality,
-  background,
-  avatarUrl,
-  avatarColor,
-  voiceSampleUrl,
+function CharacterTile({
+  char,
+  isSelected,
   onSelect,
-  onDelete,
-  onSave,
+  onAdd,
 }: {
-  name: string;
-  gender: string;
-  personality: string;
-  background: string;
-  avatarUrl?: string | null;
-  avatarColor?: string | null;
-  voiceSampleUrl?: string | null;
+  char: PoolCharacter;
+  isSelected: boolean;
   onSelect: () => void;
-  onDelete?: () => void;
-  onSave?: () => void;
+  onAdd: () => void;
 }) {
-  const [voiceLoading, setVoiceLoading] = useState(false);
-  const [voicePlaying, setVoicePlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const handleVoicePreview = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (voicePlaying && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setVoicePlaying(false);
-      return;
-    }
-
-    setVoiceLoading(true);
-    try {
-      // Fast path: play pre-generated sample from CDN
-      if (voiceSampleUrl) {
-        const audio = new Audio(voiceSampleUrl);
-        audioRef.current = audio;
-        setVoicePlaying(true);
-        audio.onended = () => { audioRef.current = null; setVoicePlaying(false); };
-        audio.onerror = () => { audioRef.current = null; setVoicePlaying(false); };
-        await audio.play();
-        return;
-      }
-
-      // Slow path: generate on the fly
-      const voiceId = pickVoiceForSpeaker(gender, personality);
-      const sampleText = `Hi, I'm ${name}. ${personality ? personality.split(",")[0] + "." : "Ready to play."}`;
-      const modelId = (typeof window !== "undefined" ? localStorage.getItem("tts_model") : null) ?? "inworld-tts-1.5-max";
-
-      const res = await fetch("/api/inworld-tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sampleText, voiceId, modelId }),
-      });
-      if (!res.ok) return;
-
-      const data = await res.json() as { audioBase64?: string };
-      if (!data.audioBase64) return;
-
-      const bytes = Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "audio/mpeg" });
-      const blobUrl = URL.createObjectURL(blob);
-      const audio = new Audio(blobUrl);
-      audioRef.current = audio;
-      setVoicePlaying(true);
-      audio.onended = () => {
-        URL.revokeObjectURL(blobUrl);
-        audioRef.current = null;
-        setVoicePlaying(false);
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(blobUrl);
-        audioRef.current = null;
-        setVoicePlaying(false);
-      };
-      await audio.play();
-    } catch (e) {
-      console.warn("[character-browser] voice preview error:", e);
-    } finally {
-      setVoiceLoading(false);
-    }
-  }, [gender, personality, name, voicePlaying, voiceSampleUrl]);
-
   return (
-    <div className="group flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 hover:border-zinc-600 transition-colors cursor-pointer" onClick={onSelect}>
-      {/* Avatar */}
-      <div className="h-11 w-11 rounded-full flex-shrink-0 overflow-hidden ring-1 ring-zinc-700">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+    <div
+      onClick={onSelect}
+      onDoubleClick={onAdd}
+      className={cn(
+        "group relative flex flex-col items-center p-2 rounded-xl cursor-pointer transition-all",
+        isSelected
+          ? "bg-violet-600/20 ring-1 ring-violet-500/60"
+          : "hover:bg-zinc-800/80"
+      )}
+    >
+      <div
+        className={cn(
+          "h-14 w-14 rounded-full overflow-hidden ring-1 transition-all",
+          isSelected ? "ring-violet-400" : "ring-zinc-700 group-hover:ring-zinc-500"
+        )}
+      >
+        {char.avatar_url ? (
+          <img
+            src={char.avatar_url}
+            alt={char.name}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         ) : (
-          <div
-            className="h-full w-full flex items-center justify-center text-white text-sm font-bold"
-            style={{ background: avatarColor || '#7c3aed' }}
-          >
-            {name.charAt(0).toUpperCase()}
+          <div className="h-full w-full bg-zinc-800 flex items-center justify-center text-lg font-bold text-zinc-500">
+            {char.name.charAt(0).toUpperCase()}
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-white truncate">{name}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 capitalize">{gender}</span>
-        </div>
-        {personality && <p className="text-xs text-zinc-400 truncate mt-0.5">{personality}</p>}
-      </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {/* Voice preview */}
-        <button
-          onClick={(e) => { e.stopPropagation(); handleVoicePreview(e); }}
-          disabled={voiceLoading}
-          className={cn(
-            "p-1.5 rounded-md transition-colors",
-            voicePlaying
-              ? "text-violet-400 hover:text-red-400 hover:bg-zinc-700/50"
-              : "text-zinc-500 hover:text-violet-400 hover:bg-zinc-700/50 opacity-0 group-hover:opacity-100"
-          )}
-          title={voicePlaying ? "Stop preview" : "Preview voice"}
-        >
-          {voiceLoading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : voicePlaying ? (
-            <Square className="h-3.5 w-3.5 fill-current" />
-          ) : (
-            <Volume2 className="h-3.5 w-3.5" />
-          )}
-        </button>
-        {onSave && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onSave(); }}
-            className="p-1.5 rounded-md hover:bg-zinc-700/50 text-zinc-500 hover:text-violet-400 transition-colors"
-            title="Save to collection"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-        )}
-        {onDelete && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1.5 rounded-md hover:bg-zinc-700/50 text-zinc-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-            title="Delete"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={(e) => { e.stopPropagation(); onSelect(); }}
-          className="text-xs text-violet-400 hover:text-violet-300 hover:bg-violet-900/30"
-        >
-          Add
-        </Button>
-      </div>
+      <p className="text-[11px] text-zinc-300 mt-1.5 text-center truncate w-full leading-tight">
+        {char.name.split(" ")[0]}
+      </p>
+      <p className="text-[9px] text-zinc-500 truncate w-full text-center capitalize">
+        {char.gender}
+      </p>
     </div>
+  );
+}
+
+function VoicePreviewButton({ char }: { char: PoolCharacter }) {
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggle = useCallback(async () => {
+    if (playing && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setPlaying(false);
+      return;
+    }
+
+    if (!char.voice_sample_url) return;
+    setLoading(true);
+    try {
+      const audio = new Audio(char.voice_sample_url);
+      audioRef.current = audio;
+      setPlaying(true);
+      audio.onended = () => {
+        audioRef.current = null;
+        setPlaying(false);
+      };
+      audio.onerror = () => {
+        audioRef.current = null;
+        setPlaying(false);
+      };
+      await audio.play();
+    } catch {
+      setPlaying(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [char.voice_sample_url, playing]);
+
+  if (!char.voice_sample_url) return null;
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={loading}
+      className={cn(
+        "w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2",
+        playing
+          ? "bg-red-600/20 text-red-400 hover:bg-red-600/30"
+          : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+      )}
+    >
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : playing ? (
+        <>
+          <Square className="h-3.5 w-3.5 fill-current" />
+          Stop
+        </>
+      ) : (
+        <>
+          <Volume2 className="h-3.5 w-3.5" />
+          Preview Voice
+        </>
+      )}
+    </button>
   );
 }

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const count = Math.min(Math.max(parseInt(searchParams.get("count") ?? "6", 10), 1), 20);
+  const count = Math.min(Math.max(parseInt(searchParams.get("count") ?? "6", 10), 1), 200);
   const excludeParam = searchParams.get("exclude") ?? "";
   const excludeNames = excludeParam
     ? excludeParam.split(",").map((n) => n.trim()).filter(Boolean)
@@ -54,19 +54,26 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Fisher-Yates shuffle each bucket independently
-  const shuffle = <T>(arr: T[]): T[] => {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  };
-  shuffle(withStyle);
-  shuffle(withFallback);
+  const sortMode = searchParams.get("sort") ?? "random";
+
+  if (sortMode === "random") {
+    const shuffle = <T>(arr: T[]): T[] => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
+    shuffle(withStyle);
+    shuffle(withFallback);
+  }
 
   // Fill `count` from exact-style matches first, pad with fallbacks only if needed
   const prioritised = [...withStyle, ...withFallback].slice(0, count);
+
+  if (sortMode === "name") {
+    prioritised.sort((a, b) => a.name.localeCompare(b.name));
+  }
 
   // Resolve avatar_url for each selected character
   const resolved = prioritised.map((c) => {

@@ -13,8 +13,9 @@ const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-const STYLES = ['semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'];
+const STYLES = ['toon3d', 'semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'];
 const STYLE_META = {
+  'toon3d':         { label: '3D Animated',      desc: 'Vibrant 3D animation studio style',  color: '#ff7eb3', bg: 'rgba(255,126,179,0.12)', border: 'rgba(255,126,179,0.3)' },
   'semi-realistic': { label: 'Semi-Realistic', desc: 'Painterly game art, Arcane-inspired', color: '#c8a86b', bg: 'rgba(200,168,107,0.12)', border: 'rgba(200,168,107,0.3)' },
   'anime':          { label: 'Anime',           desc: 'Japanese cel-shaded illustration',   color: '#e879f9', bg: 'rgba(232,121,249,0.12)', border: 'rgba(232,121,249,0.3)' },
   'painted':        { label: 'Painted Portrait', desc: 'Oil-painting brush strokes',        color: '#84cc16', bg: 'rgba(132,204,22,0.12)',  border: 'rgba(132,204,22,0.3)' },
@@ -22,12 +23,15 @@ const STYLE_META = {
   'cyberpunk':      { label: 'Cyberpunk',        desc: 'Neon-noir sci-fi aesthetic',        color: '#00ffaa', bg: 'rgba(0,255,170,0.08)',   border: 'rgba(0,255,170,0.3)' },
 };
 
+// Cache-bust timestamp — forces CDN to serve fresh images after regeneration
+const CACHE_BUST = `?v=${Date.now()}`;
+
 function resolveUrl(char, style) {
   const s = char.avatar_styles || {};
   const hdKey = style + '_hd';
-  if (s[hdKey]) return s[hdKey];
-  if (s[style]) return s[style];
-  if (style === 'semi-realistic' && char.avatar_url) return char.avatar_url;
+  if (s[hdKey]) return s[hdKey] + CACHE_BUST;
+  if (s[style]) return s[style] + CACHE_BUST;
+  if (style === 'semi-realistic' && char.avatar_url) return char.avatar_url + CACHE_BUST;
   return null;
 }
 
@@ -191,12 +195,14 @@ h1{font-family:'Cinzel',serif;font-size:clamp(22px,4vw,42px);font-weight:800;bac
 .tab{display:flex;align-items:center;gap:7px;padding:7px 16px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
 .tab:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
 .tab.active{color:#000;font-weight:600}
+.tab[data-style="toon3d"].active{background:#ff7eb3;border-color:#ff7eb3}
 .tab[data-style="semi-realistic"].active{background:#c8a86b;border-color:#c8a86b}
 .tab[data-style="anime"].active{background:#e879f9;border-color:#e879f9}
 .tab[data-style="painted"].active{background:#84cc16;border-color:#84cc16}
 .tab[data-style="pixel"].active{background:#38bdf8;border-color:#38bdf8}
 .tab[data-style="cyberpunk"].active{background:#00ffaa;border-color:#00ffaa}
 .tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.tab[data-style="toon3d"] .tab-dot{background:#ff7eb3}
 .tab[data-style="semi-realistic"] .tab-dot{background:#c8a86b}
 .tab[data-style="anime"] .tab-dot{background:#e879f9}
 .tab[data-style="painted"] .tab-dot{background:#84cc16}
@@ -296,10 +302,10 @@ ${panelsHTML}
 </footer>
 
 <script>
-const STYLES = ['semi-realistic','anime','painted','pixel','cyberpunk'];
-const STYLE_LABELS = {'semi-realistic':'Semi-Realistic','anime':'Anime','painted':'Painted','pixel':'Pixel','cyberpunk':'Cyberpunk'};
+const STYLES = ['toon3d','semi-realistic','anime','painted','pixel','cyberpunk'];
+const STYLE_LABELS = {'toon3d':'3D Animated','semi-realistic':'Semi-Realistic','anime':'Anime','painted':'Painted','pixel':'Pixel','cyberpunk':'Cyberpunk'};
 let currentChar = null;
-let currentStyle = 'semi-realistic';
+let currentStyle = 'toon3d';
 
 function switchStyle(style) {
   currentStyle = style;
