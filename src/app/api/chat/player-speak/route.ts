@@ -8,6 +8,54 @@ import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
 const limiter = createRateLimiter('player-speak', { limit: 40, windowSeconds: 60 });
 
+/**
+ * For 20 Questions: extract confirmed Q&A pairs from chat history.
+ * The Host logs each answer as "Q1: Yes." / "Q2: No." — we pair each
+ * with the nearest preceding question (message containing "?").
+ */
+function extractQALog(messages: Array<{ senderName: string; content: string }>): string {
+  const qaPattern = /^Q(\d+)[:：]\s*(.+)/i;
+  const entries: Array<{ n: number; question: string; answer: string }> = [];
+
+  for (let i = 0; i < messages.length; i++) {
+    const match = messages[i].content.match(qaPattern);
+    if (!match) continue;
+
+    const n = parseInt(match[1]);
+    const answer = match[2].trim().replace(/\.$/, '');
+
+    // Find the closest preceding message that contains a "?"
+    let question = '';
+    for (let j = i - 1; j >= Math.max(0, i - 6); j--) {
+      const text = messages[j].content;
+      if (text.includes('?')) {
+        // Extract just the question sentence
+        const parts = text.split(/(?<=[.!])\s+/);
+        const qPart = parts.find((s) => s.includes('?')) ?? text;
+        question = qPart.trim();
+        break;
+      }
+    }
+    entries.push({ n, question, answer });
+  }
+
+  if (entries.length === 0) return '';
+  return entries
+    .sort((a, b) => a.n - b.n)
+    .map((e) => (e.question ? `Q${e.n}. "${e.question}" → ${e.answer}` : `Q${e.n}. → ${e.answer}`))
+    .join('\n');
+}
+
+/** For 20 Questions: find who the Thinker is from Host messages. */
+function extractThinkerName(messages: Array<{ senderName: string; content: string }>): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i].content;
+    const match = m.match(/(\w[\w\s]+?)\s+is\s+the\s+Thinker/i) ?? m.match(/Thinker[:\s—]+(\w[\w\s]+)/i);
+    if (match) return match[1].trim();
+  }
+  return '';
+}
+
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
@@ -115,12 +163,23 @@ export async function POST(request: NextRequest) {
     if (isSeedGreeting) {
       lines.push(`The game just started. Say something brief and in-character as ${player.name}—a casual greeting, a comment, or a reaction. IMPORTANT: Do NOT repeat what others already said. Be unique: if someone asked a question, don't ask the same thing. Show YOUR personality. Keep it short (1-2 sentences).`);
     } else if (gameTemplate === '20-questions') {
-      lines.push(`Your turn. Reply as ${player.name}. RULES:
-1. Don't repeat a question someone already asked.
-2. React to the last answer — get excited, groan, speculate, whatever feels natural.
-3. You CAN suggest what to ask next or throw out a guess — that's the fun part.
-4. Keep it super casual and short. 1 sentence, maybe 2.
-5. If you truly have NOTHING to say, "..." is okay — but try a quick reaction first.`);
+      // Inject structured Q&A history so the model can reason from confirmed facts
+      const allMessages = recentMessages;
+      const qaLog = extractQALog(allMessages);
+      const thinker = extractThinkerName(allMessages);
+      if (thinker) lines.push(`Thinker (the person answering): ${thinker}`);
+      if (qaLog) {
+        lines.push('');
+        lines.push(`CONFIRMED Q&A HISTORY (do NOT ask these again):\n${qaLog}`);
+        lines.push(`(${qaLog.split('\n').length} question(s) used so far)`);
+      }
+      lines.push('');
+      lines.push(`Your turn as ${player.name} (GUESSER). RULES:
+1. Check the Q&A history above — NEVER repeat a question already listed there.
+2. Ask ONE new yes/no question that builds on the confirmed facts, OR make a final guess if you're confident.
+3. React briefly to the last answer first (surprise, frustration, excitement) — 1 sentence — then ask your question.
+4. 1–2 sentences total. No strategies, no "we should ask...", just play.
+5. If you truly have nothing new, output an emoji reaction: REACT: 🤔`);
     } else {
       lines.push(`Your turn. Reply as ${player.name}. CRITICAL RULES:
 1. Read every recent message carefully. If someone already asked/nudged/said what you were going to say, output ONLY "..." — do not paraphrase it.
