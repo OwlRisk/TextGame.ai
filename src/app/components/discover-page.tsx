@@ -4,11 +4,10 @@ import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Users, Clock, Play, Crown, Search, Sparkles, Globe, ChevronRight, Loader2 } from "lucide-react";
+import { Users, Clock, Play, Crown, Search, Sparkles, ChevronRight } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { WORLD_THEMES } from "@/data/world-themes";
 import { toast } from "sonner";
 import {
   type DiscoverPreset,
@@ -32,26 +31,6 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [creatingWorldId, setCreatingWorldId] = useState<string | null>(null);
-
-  const handleCreateWorld = useCallback(async (themeId: string) => {
-    setCreatingWorldId(themeId);
-    try {
-      const res = await fetch("/api/worlds/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ themeId }),
-      });
-      if (!res.ok) throw new Error("Failed to create world");
-      const data = await res.json();
-      trackEvent("world_created", { theme: themeId });
-      router.push(`/game/${data.startRoomId}`);
-    } catch {
-      toast.error("Failed to create world. Please try again.");
-    } finally {
-      setCreatingWorldId(null);
-    }
-  }, [router]);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleCategoryChange = useCallback((id: string) => {
@@ -257,59 +236,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           </div>
         )}
 
-        {/* Open World RPG Section */}
-        {showFeatured && (
-          <div className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <Globe className="h-5 w-5 text-amber-400" />
-              <h2 className="text-lg font-black text-white">Open World RPG</h2>
-              <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-2 py-0.5 font-bold">NEW</Badge>
-            </div>
-            <p className="text-sm text-zinc-400 mb-4">
-              Explore multi-room worlds with AI companions. Each location is a living room with NPCs, quests, and encounters.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {WORLD_THEMES.map((theme) => (
-                <button
-                  key={theme.id}
-                  disabled={creatingWorldId !== null}
-                  onClick={() => handleCreateWorld(theme.id)}
-                  className="group relative text-left bg-zinc-900/60 border border-zinc-800 hover:border-amber-500/40 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-                >
-                  {/* Cover image */}
-                  <div className="relative h-36 overflow-hidden">
-                    <Image
-                      src={theme.cover}
-                      alt={theme.name}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
-                    <div className="absolute bottom-3 left-4 right-4">
-                      <h3 className="font-bold text-white text-lg drop-shadow-lg">{theme.name}</h3>
-                      <span className="text-[11px] text-zinc-300/80">{theme.rooms.length} locations</span>
-                    </div>
-                  </div>
-                  {/* Info */}
-                  <div className="p-4">
-                    <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{theme.description}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {theme.partyRoles.map((role) => (
-                        <span key={role} className="text-[10px] px-2 py-0.5 bg-violet-500/10 text-violet-300 border border-violet-500/20 rounded-full">{role}</span>
-                      ))}
-                    </div>
-                  </div>
-                  {creatingWorldId === theme.id && (
-                    <div className="absolute inset-0 bg-zinc-900/80 rounded-xl flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 text-amber-400 animate-spin" />
-                      <span className="text-sm text-amber-400 ml-2">Creating world...</span>
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Open World RPG - hidden from discover, available at /worlds */}
 
         {/* Category Tabs + Search */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
