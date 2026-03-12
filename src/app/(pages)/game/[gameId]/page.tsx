@@ -55,6 +55,7 @@ import {
   parseRoleAssignments,
   parseHostResult as parseHostResultUtil,
 } from "@/lib/host-output-parser";
+import { getGameTemplate } from "@/lib/game-templates";
 import {
   type SpeakerQueueContext,
   runSpeakerQueue as runSpeakerQueueFn,
@@ -314,6 +315,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Find current game
   const currentGame = games.find((g) => g.id === gameId);
+  const lobbyMaxSeats = useMemo(() => {
+    const templateId = currentGame?.config?.template;
+    if (!templateId) return 12;
+    return getGameTemplate(templateId)?.maxPlayers ?? 12;
+  }, [currentGame?.config?.template]);
 
   // Timer expiry, inactivity auto-end, owner-leave auto-end
   useGameRoomLifecycle({
@@ -1813,13 +1819,20 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
             onStartGame={startGame}
-            onAddCharacter={() => setShowCharacterBrowser(true)}
+            onAddCharacter={() => {
+              const nonHostCount = players.filter((p) => !p.isGameMaster).length;
+              if (nonHostCount >= lobbyMaxSeats) {
+                toast.info(`Lobby is full (max ${lobbyMaxSeats} players).`);
+                return;
+              }
+              setShowCharacterBrowser(true);
+            }}
             onRemovePlayer={(playerId) => {
               setPlayers((prev) => prev.filter((p) => p.id !== playerId));
             }}
             onInvite={isOwner ? handleInvite : undefined}
             inviteJustCopied={inviteCopied}
-            maxPlayers={currentGame?.config?.playerCount || 12}
+            maxSeats={lobbyMaxSeats}
           />
         ) : (() => {
           const activeSection = sections.find((s) => s.id === selectedChannelId);
@@ -1968,6 +1981,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         onClose={() => setShowCharacterBrowser(false)}
         gameId={gameId}
         onSelectCharacter={(char) => {
+          const nonHostCount = players.filter((p) => !p.isGameMaster).length;
+          if (nonHostCount >= lobbyMaxSeats) {
+            toast.info(`Lobby is full (max ${lobbyMaxSeats} players).`);
+            return;
+          }
           const existingAiIds = players.filter((p) => p.isAI && !p.isGameMaster).map((p) => {
             const n = parseInt(p.id.split("-")[1]);
             return isNaN(n) ? 0 : n;

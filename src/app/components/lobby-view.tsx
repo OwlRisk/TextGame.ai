@@ -21,7 +21,7 @@ interface LobbyViewProps {
   onRemovePlayer: (playerId: string) => void;
   onInvite?: () => void;
   inviteJustCopied?: boolean;
-  maxPlayers?: number;
+  maxSeats?: number;
 }
 
 export function LobbyView({
@@ -37,7 +37,7 @@ export function LobbyView({
   onRemovePlayer,
   onInvite,
   inviteJustCopied,
-  maxPlayers = 12,
+  maxSeats = 12,
 }: LobbyViewProps) {
   const [startingGame, setStartingGame] = useState(false);
   const [testingVoice, setTestingVoice] = useState<string | null>(null);
@@ -136,7 +136,7 @@ export function LobbyView({
             <h1 className="text-lg font-semibold text-white">{gameName}</h1>
             <p className="text-sm text-zinc-400 mt-0.5">
               {nonHost.length} player{nonHost.length !== 1 ? "s" : ""} in lobby
-              {maxPlayers ? ` · max ${maxPlayers}` : ""}
+              {maxSeats ? ` · max ${maxSeats}` : ""}
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -269,7 +269,7 @@ export function LobbyView({
               ))}
 
               {/* Add player card */}
-              {isOwner && nonHost.length < maxPlayers && (
+              {isOwner && nonHost.length < maxSeats && (
                 <button
                   onClick={onAddCharacter}
                   className="rounded-xl border-2 border-dashed border-zinc-700 hover:border-zinc-500 p-4 flex items-center justify-center gap-2 transition-colors text-zinc-500 hover:text-zinc-300 min-h-[4.5rem]"
