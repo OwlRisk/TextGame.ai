@@ -13,6 +13,7 @@ import {
   ROLEPLAY_GAMES,
   EDUCATIONAL_GAMES,
   EXTRA_GAMES,
+  EXPLORATION_GAMES,
 } from "@/data/discover-templates";
 
 describe("Discover templates — ALL_PRESETS aggregate", () => {
@@ -25,7 +26,8 @@ describe("Discover templates — ALL_PRESETS aggregate", () => {
       MYSTERY_GAMES.length +
       ROLEPLAY_GAMES.length +
       EDUCATIONAL_GAMES.length +
-      EXTRA_GAMES.length;
+      EXTRA_GAMES.length +
+      EXPLORATION_GAMES.length;
     expect(ALL_PRESETS.length).toBe(expected);
   });
 

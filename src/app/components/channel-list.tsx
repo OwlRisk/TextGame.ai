@@ -1,4 +1,5 @@
-import { Hash, Users, Lock, Trash2, Link2, BookOpen, FileText, Package } from "lucide-react";
+import { Hash, Users, Lock, Trash2, Link2, BookOpen, FileText, Package, Map } from "lucide-react";
+import Link from "next/link";
 import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -76,6 +77,8 @@ interface ChannelListProps {
   myBoardHasUpdate?: boolean;
   /** Custom label for the My Board entry. Defaults to "My Board". */
   playerBoardLabel?: string;
+  /** If the game is part of a world, show a "World Map" link. */
+  worldId?: string | null;
 }
 
 export function ChannelList({ 
@@ -101,6 +104,7 @@ export function ChannelList({
   hasMyBoard,
   myBoardHasUpdate,
   playerBoardLabel = "My Board",
+  worldId,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
@@ -117,6 +121,16 @@ export function ChannelList({
       <div className="h-14 px-3 flex items-center justify-between border-b border-zinc-900/50 shadow-sm gap-1">
         <h2 className="font-semibold text-base text-white truncate flex-1 pl-2">{gameName}</h2>
       </div>
+
+      {worldId && (
+        <Link
+          href={`/world/${worldId}`}
+          className="flex items-center gap-2 px-4 py-2 text-sm text-amber-400 hover:bg-amber-500/10 border-b border-zinc-700/50 transition-colors"
+        >
+          <Map className="h-4 w-4" />
+          <span className="font-semibold">World Map</span>
+        </Link>
+      )}
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3">

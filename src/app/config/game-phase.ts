@@ -13,6 +13,13 @@ export interface ActiveVote {
   options: string[] | "players";
 }
 
+export interface QuestState {
+  id: string;
+  name: string;
+  status: "active" | "completed" | "failed";
+  description?: string;
+}
+
 export interface GamePhaseState {
   phase: GamePhaseKind;
   /** GM-set label shown in the channel header (e.g. "Night · Round 2", "Puzzle 3") */
@@ -25,6 +32,20 @@ export interface GamePhaseState {
   timerEndsAt: number | null;
   /** Summary text from GAME_OVER directive */
   gameOverSummary: string;
+
+  // ── RPG / Exploration state ───────────────────────────────────────────
+  /** Current scene/location ID the party is in. */
+  currentScene?: string;
+  /** Display name of the current scene. */
+  currentSceneName?: string;
+  /** Set of scene IDs the party has visited. */
+  visitedScenes?: string[];
+  /** Whether a combat encounter is currently active. */
+  inCombat?: boolean;
+  /** Name of the current combat enemy. */
+  combatEnemy?: string;
+  /** Active and completed quests. */
+  quests?: QuestState[];
 }
 
 export const DEFAULT_GAME_PHASE: GamePhaseState = {

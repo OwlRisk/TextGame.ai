@@ -41,6 +41,18 @@ export type HostAction =
   | { type: "react"; emoji: string; targetSender?: string }
   /** Engagement score for the last message (1-5), controls passive AI reactions */
   | { type: "engagement"; score: number }
+  /** Move the party to a new scene/location in exploration RPG */
+  | { type: "scene_change"; sceneId: string; sceneName?: string }
+  /** Change a player's HP (positive = heal, negative = damage) */
+  | { type: "hp_change"; playerRef: PlayerRef; delta: number; maxHp?: number }
+  /** Add or remove an item from a player's inventory */
+  | { type: "item_change"; playerRef: PlayerRef; item: string; action: "add" | "remove" }
+  /** Skill check: player, skill name, difficulty class, and result */
+  | { type: "skill_check"; playerRef: PlayerRef; skill: string; dc: number; roll?: number }
+  /** Start or end a combat encounter */
+  | { type: "combat"; action: "start" | "end"; enemy?: string }
+  /** Update quest progress */
+  | { type: "quest_update"; questId: string; status: "start" | "progress" | "complete" | "fail"; description?: string }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -209,6 +221,59 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
       parse: (m) => ({
         type: "engagement",
         score: Math.max(1, Math.min(5, parseInt(m[1], 10))),
+      }),
+    },
+    {
+      regex: /^SCENE:\s*(.+?)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "scene_change",
+        sceneId: m[1].trim().toLowerCase().replace(/\s+/g, "_"),
+        sceneName: m[2]?.trim() || m[1].trim(),
+      }),
+    },
+    {
+      regex: /^HP:\s*(.+?)\s*\|\s*([+-]?\d+)(?:\s*\/\s*(\d+))?$/gim,
+      parse: (m) => ({
+        type: "hp_change",
+        playerRef: m[1].trim(),
+        delta: parseInt(m[2], 10),
+        maxHp: m[3] ? parseInt(m[3], 10) : undefined,
+      }),
+    },
+    {
+      regex: /^ITEM:\s*(.+?)\s*\|\s*([+-])\s*(.+)$/gim,
+      parse: (m) => ({
+        type: "item_change",
+        playerRef: m[1].trim(),
+        item: m[3].trim(),
+        action: m[2] === "+" ? "add" as const : "remove" as const,
+      }),
+    },
+    {
+      regex: /^SKILL_CHECK:\s*(.+?)\s*\|\s*(.+?)\s*\|\s*DC:?\s*(\d+)(?:\s*\|\s*(\d+))?$/gim,
+      parse: (m) => ({
+        type: "skill_check",
+        playerRef: m[1].trim(),
+        skill: m[2].trim(),
+        dc: parseInt(m[3], 10),
+        roll: m[4] ? parseInt(m[4], 10) : undefined,
+      }),
+    },
+    {
+      regex: /^COMBAT:\s*(start|end)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "combat",
+        action: m[1].trim().toLowerCase() as "start" | "end",
+        enemy: m[2]?.trim(),
+      }),
+    },
+    {
+      regex: /^QUEST:\s*(.+?)\s*\|\s*(start|progress|complete|fail)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "quest_update",
+        questId: m[1].trim(),
+        status: m[2].trim().toLowerCase() as "start" | "progress" | "complete" | "fail",
+        description: m[3]?.trim(),
       }),
     },
   ];

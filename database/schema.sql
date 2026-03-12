@@ -50,6 +50,27 @@ CREATE TABLE IF NOT EXISTS game_drafts (
 -- Share: optional token on games for public/share links
 ALTER TABLE games ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
 
+-- Worlds: open-world RPG collections of game rooms
+CREATE TABLE IF NOT EXISTS worlds (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  theme TEXT NOT NULL,
+  icon TEXT NOT NULL DEFAULT '⚔️',
+  color TEXT NOT NULL DEFAULT '#7c2d12',
+  config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  party_state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- World-related columns on games (rooms within worlds)
+ALTER TABLE games ADD COLUMN IF NOT EXISTS world_id UUID REFERENCES worlds(id) ON DELETE CASCADE;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS room_type TEXT;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS room_connections JSONB;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS room_description TEXT;
+
 -- App cache (e.g. Inworld voices list), refreshed periodically
 CREATE TABLE IF NOT EXISTS app_cache (
   key TEXT PRIMARY KEY,
@@ -68,6 +89,9 @@ CREATE INDEX IF NOT EXISTS idx_game_room_state_user_id ON game_room_state(user_i
 CREATE INDEX IF NOT EXISTS idx_game_drafts_user_id ON game_drafts(user_id);
 CREATE INDEX IF NOT EXISTS idx_game_drafts_updated_at ON game_drafts(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_games_share_token ON games(share_token) WHERE share_token IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_worlds_user_id ON worlds(user_id);
+CREATE INDEX IF NOT EXISTS idx_worlds_updated_at ON worlds(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_world_id ON games(world_id) WHERE world_id IS NOT NULL;
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -95,11 +119,16 @@ DROP TRIGGER IF EXISTS update_game_drafts_updated_at ON game_drafts;
 CREATE TRIGGER update_game_drafts_updated_at BEFORE UPDATE ON game_drafts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_worlds_updated_at ON worlds;
+CREATE TRIGGER update_worlds_updated_at BEFORE UPDATE ON worlds
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE game_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE games ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_room_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE worlds ENABLE ROW LEVEL SECURITY;
 
 -- Create policies (adjust based on your auth setup)
 -- Drop first so schema is re-runnable

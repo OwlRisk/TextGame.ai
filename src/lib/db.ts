@@ -311,6 +311,87 @@ export async function addGameMember(member: {
   return { data, error: null };
 }
 
+// ─── Worlds (open-world RPG) ────────────────────────────────────────────────────
+type WorldInsert = Database['public']['Tables']['worlds']['Insert'];
+type WorldUpdate = Database['public']['Tables']['worlds']['Update'];
+
+export async function getWorlds(userId: string) {
+  const { data, error } = await supabase
+    .from('worlds')
+    .select('*')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false });
+
+  if (error) { logDbError('getWorlds', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+export async function getWorld(worldId: string) {
+  const { data, error } = await supabase
+    .from('worlds')
+    .select('*')
+    .eq('id', worldId)
+    .single();
+
+  if (error) { logDbError('getWorld', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+export async function createWorld(world: WorldInsert) {
+  const { data, error } = await supabase
+    .from('worlds')
+    .insert(world)
+    .select()
+    .single();
+
+  if (error) { logDbError('createWorld', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+export async function updateWorld(worldId: string, updates: WorldUpdate) {
+  const { data, error } = await supabase
+    .from('worlds')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', worldId)
+    .select()
+    .single();
+
+  if (error) { logDbError('updateWorld', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+export async function updateWorldPartyState(worldId: string, partyState: Record<string, unknown>) {
+  const { error } = await supabase
+    .from('worlds')
+    .update({ party_state: partyState, updated_at: new Date().toISOString() })
+    .eq('id', worldId);
+
+  if (error) { logDbError('updateWorldPartyState', error); return { error }; }
+  return { error: null };
+}
+
+export async function getWorldRooms(worldId: string) {
+  const { data, error } = await supabase
+    .from('games')
+    .select('id, name, icon, color, config, is_active, room_type, room_connections, room_description, world_id')
+    .eq('world_id', worldId)
+    .order('created_at', { ascending: true });
+
+  if (error) { logDbError('getWorldRooms', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
+export async function deleteWorld(worldId: string, userId: string) {
+  const { error } = await supabase
+    .from('worlds')
+    .delete()
+    .eq('id', worldId)
+    .eq('user_id', userId);
+
+  if (error) { logDbError('deleteWorld', error); return { error }; }
+  return { error: null };
+}
+
 // ─── Game drafts (saved configs not yet created as games) ──────────────────────
 type GameDraftInsert = Database['public']['Tables']['game_drafts']['Insert'];
 type GameDraftUpdate = Database['public']['Tables']['game_drafts']['Update'];

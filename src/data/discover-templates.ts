@@ -5,6 +5,7 @@ import {
   Search,
   Drama,
   Lightbulb,
+  Compass,
 } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -936,6 +937,152 @@ WIN CONDITIONS:
   },
 ];
 
+// ── Exploration / RPG Games ──────────────────────────────────────────────────
+
+export const EXPLORATION_GAMES: GameTemplate[] = [
+  {
+    id: "cursed-kingdom",
+    name: "The Cursed Kingdom",
+    description: "Lead a party of AI adventurers through a cursed kingdom. Your companions think, argue, fight, and explore alongside you.",
+    longDescription: "A multi-agent exploration RPG where your AI companions are true adventurers — they suggest paths, argue strategy, react to danger, and fight alongside you. Explore taverns, dark forests, castles, and dungeons across 13 interconnected locations. Your companions have their own personalities and will disagree, joke, and protect each other. You're the party leader — they follow your call, but they always have something to say.",
+    icon: "⚔️",
+    cover: "/games/game-cover-cursed-kingdom.webp",
+    category: "RPG",
+    tags: ["Exploration", "Fantasy", "Combat", "Quests", "RPG"],
+    players: "1-4",
+    duration: "60-120 min",
+    style: "Strategic",
+    color: "from-amber-900 to-red-950",
+    badge: "NEW",
+    features: [
+      "AI companions with real personalities",
+      "12+ explorable locations",
+      "Turn-based combat with skill rolls",
+      "Quests, inventory & party dynamics",
+    ],
+    playerCount: 4,
+    rules: `SETTING: The Kingdom of Valdris has fallen under a dark curse. Villages wither, monsters roam the roads, and the once-great capital lies shrouded in shadow. You are a band of adventurers who have answered the call to investigate the source of the curse and restore the kingdom.
+
+OBJECTIVE: Explore the Kingdom of Valdris, uncover the source of the dark curse, and defeat the Shadow Wraith in the cursed chamber beneath Castle Valdris.
+
+GAME TYPE: Multi-scene exploration RPG. The world has multiple interconnected locations. The party travels between them, talks to NPCs, fights enemies, collects items, and completes quests.
+
+WORLD MAP (scenes connected by paths):
+- tavern: "The Rusty Tankard" — A roadside tavern. Starting location. NPCs: Innkeeper Marta, Traveling Merchant Voss, Mysterious Stranger.
+  → Connects to: village, forest_edge
+- village: "Ashwick Village" — A small farming village plagued by disappearances. NPCs: Elder Rowan, Blacksmith Kael, Farmer's Daughter Lina.
+  → Connects to: tavern, graveyard, temple
+- forest_edge: "Edge of the Thornwood" — Dense forest entrance. Wolves prowl. Encounters: Wolf Pack (easy).
+  → Connects to: tavern, deep_forest, ruins
+- deep_forest: "Heart of the Thornwood" — Dark, ancient trees. Encounters: Forest Troll (medium), Giant Spiders (easy).
+  → Connects to: forest_edge, witch_hut
+- witch_hut: "The Witch's Clearing" — A hut surrounded by glowing mushrooms. NPC: Witch Morgana (quest giver).
+  → Connects to: deep_forest
+- ruins: "Fallen Watchtower" — Crumbling stone ruins. Encounters: Bandits (medium). Hidden treasure.
+  → Connects to: forest_edge, mountain_pass
+- mountain_pass: "Windcrest Pass" — A narrow mountain trail with harsh winds. Encounters: Rock Golem (hard).
+  → Connects to: ruins, castle_gate
+- castle_gate: "Gates of Castle Valdris" — The cursed castle entrance. Guards patrol. NPCs: Captain of the Guard.
+  → Connects to: mountain_pass, castle_hall
+- castle_hall: "The Throne Room" — The heart of the castle. The Cursed King sits on the throne. NPC: Cursed King Aldric.
+  → Connects to: castle_gate, dungeon_entrance
+- dungeon_entrance: "The Descent" — Stairs leading into darkness. Encounters: Undead Soldiers (hard).
+  → Connects to: castle_hall, dungeon_deep
+- dungeon_deep: "The Cursed Chamber" — Source of the curse. BOSS: Shadow Wraith (very hard).
+  → Connects to: dungeon_entrance
+- graveyard: "Ashwick Cemetery" — Fog-covered graves. Encounters: Skeletons (easy). Hidden clue about the curse.
+  → Connects to: village
+- temple: "Temple of the Dawn" — Abandoned holy site. NPC: Spirit of the High Priestess (quest giver). Healing fountain.
+  → Connects to: village
+
+QUESTS:
+1. "The Missing Villagers" — Elder Rowan asks you to investigate disappearances. Follow clues from village → graveyard → forest.
+2. "The Witch's Bargain" — Witch Morgana offers a powerful artifact in exchange for a rare herb from the mountain pass.
+3. "The Cursed King" — Reach the throne room to learn the curse's origin, then descend to the dungeon to break it.
+4. "The Bandit's Map" — Defeat the bandits in the ruins to find a map revealing a shortcut to the castle.
+
+PLAYER STATS:
+- Each party member starts with 100 HP.
+- Inventory starts empty; items are found or bought.
+- Assign each AI companion a role archetype based on their personality at game start using ASSIGN_ROLE. Suggested archetypes:
+  * Fighter — Skills: Combat, Intimidation. Charges into battle, protects the party, breaks obstacles.
+  * Rogue — Skills: Stealth, Lockpicking. Scouts ahead, disarms traps, picks locks, finds hidden passages.
+  * Mage — Skills: Magic, Lore. Identifies enchantments, casts offensive/utility spells, translates runes.
+  * Healer — Skills: Healing, Nature. Tends wounds, identifies herbs/potions, senses corruption, restores HP.
+- The human player is the Party Leader — they choose the path and make final decisions, but companions actively suggest and discuss.
+
+GM DIRECTIVES (use these inline directives to update game state):
+- SCENE: <scene_id> | <Display Name> — Move the party to a new location. Creates a channel for it.
+- HP: <PlayerName> | <+/-amount> — Deal damage or heal. Example: HP: You | -15
+- HP: <PlayerName> | <+/-amount>/<maxHp> — Set HP with explicit max. Example: HP: Aria | +20/100
+- ITEM: <PlayerName> | + <ItemName> — Add item. Example: ITEM: You | + Healing Potion
+- ITEM: <PlayerName> | - <ItemName> — Remove item. Example: ITEM: You | - Rusty Key
+- SKILL_CHECK: <PlayerName> | <SkillName> | DC:<number> | <roll> — Skill check with result.
+- COMBAT: start | <EnemyName> — Begin combat encounter.
+- COMBAT: end — End combat encounter.
+- QUEST: <QuestName> | start | <description> — Start a new quest.
+- QUEST: <QuestName> | progress | <update> — Update quest progress.
+- QUEST: <QuestName> | complete | <summary> — Complete a quest.
+
+HOSTING RULES:
+1. Start in the tavern. Describe the scene vividly — sights, sounds, smells. Introduce NPCs only as the party encounters them naturally.
+2. When the player wants to travel, use SCENE: to move to connected locations. Blocked paths require a reason ("The bridge is collapsed — you'd need rope or another route.").
+3. Describe each new location richly on first visit. On revisits, note changes ("The tavern is quieter now — Marta glances at you nervously.").
+4. NPCs speak in distinct voices. The innkeeper is gruff and warm; the merchant is sly; the witch speaks in riddles. Never break NPC character.
+5. Combat is turn-based and cinematic. Roll skill checks, describe strikes and misses vividly. Use NEXT_SPEAKER to cycle through party members and enemies.
+6. Track HP carefully. 0 HP = knocked unconscious (not dead). Healing or a rest can revive them.
+7. Use PHASE: to always show the current location name. Use MOOD: dark for dungeons/combat, light for taverns/temples, neutral for outdoors.
+8. The game ends when the Shadow Wraith is defeated or the party is wiped out.
+
+MULTI-AGENT COMPANION BEHAVIOR (CRITICAL — THIS IS NOT A SOLO GAME):
+The human player is the party LEADER, but the AI companions are NOT silent followers. They are ACTIVE adventurers with their own minds.
+
+1. AFTER EVERY SCENE CHANGE: Before asking the human what to do, let 1-2 companions react FIRST.
+   Example flow: GM describes forest → NEXT_SPEAKER: Aria, Kael → Aria says "I sense dark magic ahead..." → Kael says "I'll take point." → then human gets their turn.
+
+2. COMPANIONS HAVE OPINIONS: They should suggest paths, warn of danger, argue about strategy.
+   - The warrior wants to fight. "Let's clear these bandits out — I've been itching for a real fight."
+   - The rogue prefers stealth. "Wait — I can scout ahead. No need to charge in blind."
+   - The mage analyzes. "There's a ward on that door. Brute force won't work."
+   - The healer worries. "We're low on supplies. Maybe we should rest at the temple first."
+
+3. COMPANIONS DISAGREE: Don't always make them agree. Create moments of tension.
+   - "I say we go through the forest." / "Are you mad? The mountain pass is safer."
+   - The human player then decides. This makes the player feel like a real leader.
+
+4. COMPANIONS ACT AUTONOMOUSLY IN COMBAT: During fights, companions use their skills without being told.
+   - The healer heals wounded allies automatically (emit HP: directive).
+   - The warrior charges the strongest enemy.
+   - The rogue flanks or uses stealth.
+   - Use NEXT_SPEAKER to give each companion a combat turn where they describe their action, then you resolve it with SKILL_CHECK and HP directives.
+
+5. COMPANIONS REACT TO DISCOVERIES: When the party finds an item, a clue, or meets an NPC:
+   - "That symbol on the wall — I've seen it before in the old texts." (the scholar)
+   - "Careful with that potion. Smells like nightshade." (the healer)
+   - "Ooh, shiny! ...What? I'm just saying." (the rogue)
+
+6. COMPANIONS HAVE PERSONAL MOMENTS: Occasionally, a companion shares a memory, a fear, or a joke during travel or rest. This builds emotional investment.
+   - While resting at the tavern: "You know, my village looked like this... before the curse took it."
+   - After a close battle: "That was too close. Next round's on me — if we survive."
+
+7. SPEAKER FLOW FOR EXPLORATION: Use this pattern consistently:
+   - GM describes scene/event (1-2 sentences max) → NEXT_SPEAKER: [1-2 companions], [human]
+   - Companions react/suggest (each gets 1-2 sentences) → human decides
+   - GM resolves the action → cycle continues
+   Never skip straight to "What do you do?" without letting companions weigh in first.
+
+8. COMPANION SKILL USE: Each companion should actively use their unique skills:
+   - Fighter: Combat, Intimidation — volunteers for physical challenges
+   - Rogue: Stealth, Lockpicking — offers to scout, disarm traps, pick locks
+   - Mage: Magic, Lore — identifies magical items, translates runes, detects enchantments
+   - Healer: Healing, Nature — identifies herbs, tends wounds, senses corruption
+
+9. PARTY BANTER: Between locations or during calm moments, let companions chat with each other (not just the human). This makes them feel alive.
+
+IMPORTANT: Always emit the appropriate directives when state changes occur. The UI relies on these to update HP bars, inventory, quest log, and scene navigation.`,
+  },
+];
+
 // ── Aggregated & Derived ────────────────────────────────────────────────────
 
 export const ALL_PRESETS: GameTemplate[] = [
@@ -947,6 +1094,7 @@ export const ALL_PRESETS: GameTemplate[] = [
   ...ROLEPLAY_GAMES,
   ...EDUCATIONAL_GAMES,
   ...EXTRA_GAMES,
+  ...EXPLORATION_GAMES,
 ];
 
 export function getPresetById(presetId: string | null): DiscoverPreset | null {
@@ -969,6 +1117,7 @@ export const CATEGORIES = [
   { id: "mystery",   label: "Mystery",          icon: Search },
   { id: "creative",  label: "Creative",         icon: Drama },
   { id: "brain",     label: "Brain Games",      icon: Lightbulb },
+  { id: "rpg",       label: "RPG",              icon: Compass },
 ] as const;
 
 export const CATEGORY_MAP: Record<string, GameTemplate[]> = {
@@ -977,4 +1126,5 @@ export const CATEGORY_MAP: Record<string, GameTemplate[]> = {
   mystery:   [...MYSTERY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Mystery")],
   creative:  [...ROLEPLAY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Creative")],
   brain:     [...EDUCATIONAL_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Knowledge" || t.category === "Educational" || t.category === "Puzzle")],
+  rpg:       [...EXPLORATION_GAMES],
 };

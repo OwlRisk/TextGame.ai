@@ -23,6 +23,17 @@ export interface HostPromptOpts {
   hostPersonality?: string;
   /** AI-generated behavioral instructions for this specific host (from generatedHost.systemPrompt) */
   hostCustomSystemPrompt?: string;
+  /** World context for RPG rooms — injected into the prompt for world-aware GM behavior */
+  worldContext?: {
+    worldName: string;
+    theme: string;
+    roomName: string;
+    roomType: string;
+    roomDescription: string;
+    connectedRooms: Array<{ name: string; roomType: string }>;
+    partyState: Record<string, unknown>;
+    gmContext: string;
+  };
 }
 
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
@@ -280,6 +291,19 @@ ${eventLogSummary}
 Private Board (already sent — do not repeat publicly):
 ${boardSummary}
 
-## GAME RULES (enforce only, do not modify)
+${opts.worldContext ? `## WORLD CONTEXT — OPEN-WORLD RPG
+World: ${opts.worldContext.worldName} (Theme: ${opts.worldContext.theme})
+Current Location: ${opts.worldContext.roomName} (${opts.worldContext.roomType})
+${opts.worldContext.roomDescription}
+
+Connected Locations: ${opts.worldContext.connectedRooms.map((r) => `${r.name} (${r.roomType})`).join(", ")}
+
+Party State: ${JSON.stringify(opts.worldContext.partyState, null, 2)}
+
+${opts.worldContext.gmContext}
+
+ROOM NAVIGATION: When the party wants to move to a connected location, emit SCENE: <location name> in your directives. The system will handle the actual room transition. Do NOT refuse movement — if players want to go somewhere connected, let them.
+
+` : ''}## GAME RULES (enforce only, do not modify)
 ${rulesText || "No specific rules defined."}`.trim();
 }

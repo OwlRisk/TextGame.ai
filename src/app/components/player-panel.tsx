@@ -34,6 +34,20 @@ export interface Player {
   voiceId?: string;
   /** Pre-generated voice greeting sample URL (Supabase Storage). Used for instant lobby voice preview. */
   voiceSampleUrl?: string;
+
+  // ── RPG / Exploration fields ──────────────────────────────────────────
+  /** Current HP. undefined = RPG stats not active for this game. */
+  hp?: number;
+  /** Maximum HP. */
+  maxHp?: number;
+  /** Inventory items. */
+  inventory?: string[];
+  /** Skill list with levels. */
+  skills?: Array<{ name: string; level: number }>;
+  /** Which scene/location this character is currently in (for NPCs). */
+  currentScene?: string;
+  /** Whether this player is an NPC (not a party member). */
+  isNpc?: boolean;
 }
 
 interface PlayerPanelProps {
@@ -248,6 +262,22 @@ function PlayerCard({
           {(player.isGameMaster || (player.role && player.isAI && (isUserGameMaster || player.roleRevealed))) && (
             <div className="text-xs text-zinc-300 font-medium">
               {player.isGameMaster ? "Game Master" : player.role}
+            </div>
+          )}
+          {player.hp !== undefined && player.maxHp && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <div className="flex-1 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    player.hp / player.maxHp > 0.5 ? "bg-green-500" :
+                    player.hp / player.maxHp > 0.25 ? "bg-yellow-500" : "bg-red-500"
+                  }`}
+                  style={{ width: `${Math.max(0, (player.hp / player.maxHp) * 100)}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-zinc-400 font-mono tabular-nums whitespace-nowrap">
+                {player.hp}/{player.maxHp}
+              </span>
             </div>
           )}
         </div>

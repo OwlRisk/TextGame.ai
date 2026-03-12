@@ -119,6 +119,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameOverSummary,
     setGameOverSummary,
     addReaction,
+    gamePhaseState,
+    setGamePhaseState,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -128,10 +130,29 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [inviteCopied, setInviteCopied] = useState(false);
   const { roomMembers, refreshMembers } = useRoomMembers(gameId);
 
+  // ─── World / RPG room state ──────────────────────────────────────────────
+  const [worldData, setWorldData] = useState<{ id: string; name: string; theme: string; config: Record<string, unknown>; party_state: Record<string, unknown> } | null>(null);
+  const [worldRooms, setWorldRooms] = useState<Array<{ id: string; name: string; room_type: string; room_connections: Array<{ roomId: string; name: string }> | null; room_description: string }>>([]);
+  const isWorldRoom = !!(games.find((g) => g.id === gameId)?.worldId);
+
   // Guest player: arrived via /join/[inviteCode] with guestId URL param
   const [guestId, setGuestId] = useState<string | null>(null);
   const [guestMemberId, setGuestMemberId] = useState<string | null>(null);
   const [guestNickname, setGuestNickname] = useState<string | null>(null);
+  // Load world data for RPG rooms
+  useEffect(() => {
+    const game = games.find((g) => g.id === gameId);
+    if (!game?.worldId) return;
+    fetch(`/api/worlds/${game.worldId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data) {
+          setWorldData(data.world);
+          setWorldRooms(data.rooms || []);
+        }
+      });
+  }, [gameId, games]);
+
   // Presence: owner/guest online status via Supabase Presence
   const { onlineGuestPresences, isOwnerOnline } = useGameRoomPresence({
     gameId,
@@ -676,6 +697,48 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       );
     }
 
+    // Initialize RPG stats for exploration games (both old cursed-kingdom and new world rooms)
+    const isExplorationRpg = config.template === "cursed-kingdom" || config.template === "exploration";
+    if (isExplorationRpg) {
+      const worldParty = worldData?.party_state as { party?: Array<{ id: string; name: string; hp: number; maxHp: number; inventory?: string[]; skills?: Array<{ name: string; level: number }> }>; quests?: Array<{ id: string; name: string; status: string; description?: string }>; currentRoomId?: string; visitedRoomIds?: string[]; gold?: number } | undefined;
+      if (worldParty?.party && worldParty.party.length > 0) {
+        setPlayers((prev) =>
+          prev.map((p) => {
+            if (p.isGameMaster) return p;
+            const saved = worldParty.party!.find((wp) => wp.name === p.name || wp.id === p.id);
+            if (saved) {
+              return { ...p, hp: saved.hp, maxHp: saved.maxHp, inventory: saved.inventory || [], skills: saved.skills || [] };
+            }
+            return { ...p, hp: 100, maxHp: 100, inventory: [], skills: [] };
+          })
+        );
+        if (worldParty.quests) {
+          setGamePhaseState((prev) => ({
+            ...prev,
+            quests: worldParty.quests as Array<{ id: string; name: string; status: "active" | "completed" | "failed"; description?: string }>,
+          }));
+        }
+      } else {
+        setPlayers((prev) =>
+          prev.map((p) => {
+            if (p.isGameMaster) return p;
+            return { ...p, hp: 100, maxHp: 100, inventory: [], skills: [] };
+          })
+        );
+      }
+
+      const roomName = currentGame.name || "Unknown Location";
+      setGamePhaseState((prev) => ({
+        ...prev,
+        currentScene: gameId,
+        currentSceneName: roomName,
+        visitedScenes: Array.from(new Set([...(prev.visitedScenes || []), gameId])),
+        inCombat: false,
+        quests: prev.quests || [],
+      }));
+      setPhaseLabel(roomName);
+    }
+
       // Cancel any in-flight seed from a prior (interrupted) start attempt
       seedCancelledRef.current = true;
       await new Promise((r) => setTimeout(r, 0));
@@ -867,6 +930,25 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         hostName: generatedHost?.name ?? "Game Master",
         hostPersonality: generatedHost?.personality ?? undefined,
         hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
+        worldContext: (() => {
+          const game = games.find((g) => g.id === gameId);
+          if (!game?.worldId || !worldData) return undefined;
+          const thisRoom = worldRooms.find((r) => r.id === gameId);
+          const connectedRooms = (game.roomConnections || []).map((c: { roomId: string; name: string }) => {
+            const cr = worldRooms.find((r) => r.id === c.roomId);
+            return { name: c.name, roomType: cr?.room_type || "unknown" };
+          });
+          return {
+            worldName: worldData.name,
+            theme: worldData.theme,
+            roomName: game.name,
+            roomType: game.roomType || thisRoom?.room_type || "hub",
+            roomDescription: game.roomDescription || thisRoom?.room_description || "",
+            connectedRooms,
+            partyState: worldData.party_state,
+            gmContext: (worldData.config as { gmContext?: string })?.gmContext || "",
+          };
+        })(),
       });
 
       const applyHostRoleAssignments = (content: string): string => {
@@ -996,6 +1078,144 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             if (targetMsg) addReaction(targetMsg.id, a.emoji, gmName);
           } else if (a.type === "engagement") {
             latestEngagementScore = a.score;
+          } else if (a.type === "scene_change") {
+            const sceneId = a.sceneId;
+            const sceneName = a.sceneName || sceneId;
+
+            const game = games.find((g) => g.id === gameId);
+            if (game?.worldId && game.roomConnections) {
+              const targetConn = game.roomConnections.find(
+                (c: { roomId: string; name: string }) =>
+                  c.name.toLowerCase() === sceneName.toLowerCase() ||
+                  c.roomId === sceneId
+              );
+              if (targetConn) {
+                const currentPartyState = {
+                  ...worldData?.party_state,
+                  party: currentPlayers.map((p) => ({
+                    id: p.id, name: p.name, hp: p.hp ?? 100, maxHp: p.maxHp ?? 100,
+                    role: (p as unknown as { role?: string }).role,
+                    inventory: p.inventory || [], skills: p.skills || [],
+                  })),
+                  quests: gamePhaseState.quests || [],
+                  currentRoomId: targetConn.roomId,
+                };
+                fetch(`/api/worlds/${game.worldId}/navigate`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ targetRoomId: targetConn.roomId, partyState: currentPartyState }),
+                }).then(() => {
+                  router.push(`/game/${targetConn.roomId}`);
+                });
+                break;
+              }
+            }
+
+            setGamePhaseState((prev) => ({
+              ...prev,
+              currentScene: sceneId,
+              currentSceneName: sceneName,
+              visitedScenes: Array.from(new Set([...(prev.visitedScenes || []), sceneId])),
+            }));
+            setPhaseLabel(sceneName);
+            const sectionId = `scene_${sceneId}`;
+            setSections((prev) => {
+              if (prev.some((s) => s.id === sectionId)) return prev;
+              return [...prev, { id: sectionId, name: sceneName, content: "" }];
+            });
+            setSelectedChannelId(sectionId);
+            const sceneAnn = `📍 Moved to: ${sceneName}`;
+            if (!seenAnnouncements.has(sceneAnn.toLowerCase())) {
+              seenAnnouncements.add(sceneAnn.toLowerCase());
+              addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#f59e0b", content: sceneAnn, isAI: false, isAnnouncement: true });
+            }
+          } else if (a.type === "hp_change") {
+            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
+            if (pid) {
+              setPlayers((prev) => prev.map((p) => {
+                if (p.id !== pid) return p;
+                const curMax = a.maxHp ?? p.maxHp ?? 100;
+                const curHp = Math.max(0, Math.min(curMax, (p.hp ?? curMax) + a.delta));
+                return { ...p, hp: curHp, maxHp: curMax };
+              }));
+            }
+          } else if (a.type === "item_change") {
+            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
+            if (pid) {
+              setPlayers((prev) => prev.map((p) => {
+                if (p.id !== pid) return p;
+                const inv = [...(p.inventory || [])];
+                if (a.action === "add") {
+                  inv.push(a.item);
+                } else {
+                  const idx = inv.indexOf(a.item);
+                  if (idx >= 0) inv.splice(idx, 1);
+                }
+                return { ...p, inventory: inv };
+              }));
+            }
+          } else if (a.type === "combat") {
+            setGamePhaseState((prev) => ({
+              ...prev,
+              inCombat: a.action === "start",
+              combatEnemy: a.action === "start" ? (a.enemy || "Unknown Enemy") : undefined,
+            }));
+            if (a.action === "start") {
+              setMood("dark");
+              const combatAnnounce = `⚔️ Combat started${a.enemy ? ` — ${a.enemy}` : ""}!`;
+              if (!seenAnnouncements.has(combatAnnounce.toLowerCase())) {
+                seenAnnouncements.add(combatAnnounce.toLowerCase());
+                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#ef4444", content: combatAnnounce, isAI: false, isAnnouncement: true });
+              }
+            } else {
+              setMood("neutral");
+              const endAnnounce = "🏆 Combat ended!";
+              if (!seenAnnouncements.has(endAnnounce.toLowerCase())) {
+                seenAnnouncements.add(endAnnounce.toLowerCase());
+                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#22c55e", content: endAnnounce, isAI: false, isAnnouncement: true });
+              }
+            }
+          } else if (a.type === "quest_update") {
+            setGamePhaseState((prev) => {
+              const quests = [...(prev.quests || [])];
+              const existing = quests.findIndex((q) => q.id === a.questId);
+              const statusMap: Record<string, "active" | "completed" | "failed"> = {
+                start: "active", progress: "active", complete: "completed", fail: "failed",
+              };
+              if (existing >= 0) {
+                quests[existing] = { ...quests[existing], status: statusMap[a.status], description: a.description || quests[existing].description };
+              } else {
+                quests.push({ id: a.questId, name: a.questId, status: statusMap[a.status], description: a.description });
+              }
+              return { ...prev, quests };
+            });
+            if (a.status === "start") {
+              const qAnn = `📜 New quest: ${a.questId}`;
+              if (!seenAnnouncements.has(qAnn.toLowerCase())) {
+                seenAnnouncements.add(qAnn.toLowerCase());
+                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#10b981", content: qAnn, isAI: false, isAnnouncement: true });
+              }
+            } else if (a.status === "complete") {
+              const qAnn = `✅ Quest completed: ${a.questId}`;
+              if (!seenAnnouncements.has(qAnn.toLowerCase())) {
+                seenAnnouncements.add(qAnn.toLowerCase());
+                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#10b981", content: qAnn, isAI: false, isAnnouncement: true });
+              }
+            }
+          } else if (a.type === "skill_check") {
+            // Skill checks are purely narrative — the GM describes the result in chat text.
+            // We just ensure the player has the skill tracked.
+            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
+            if (pid) {
+              setPlayers((prev) => prev.map((p) => {
+                if (p.id !== pid) return p;
+                const skills = [...(p.skills || [])];
+                if (!skills.some((s) => s.name === a.skill)) {
+                  skills.push({ name: a.skill, level: 1 });
+                }
+                return { ...p, skills };
+              }));
+            }
           }
         }
         return cleanContent;
@@ -1622,6 +1842,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     hasMyBoard: gamePhase !== "lobby",
     myBoardHasUpdate,
     playerBoardLabel: currentGame?.config?.playerBoardLabel,
+    worldId: currentGame?.worldId,
     onDeleteChannel: (id: string | undefined) => {
       if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
     },
@@ -1893,6 +2114,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 viewerIsGuest={isGuestPlayer}
                 guestMembers={enrichedGuestMembers}
                 onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
+                rpgHumanPlayer={players.find((p) => p.id === userId && p.hp !== undefined) || null}
+                rpgQuests={gamePhaseState.quests}
+                rpgInCombat={gamePhaseState.inCombat}
+                rpgCombatEnemy={gamePhaseState.combatEnemy}
+                rpgCurrentScene={gamePhaseState.currentSceneName}
               />
             </div>
 
@@ -1908,6 +2134,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   viewerIsGuest={isGuestPlayer}
                   guestMembers={enrichedGuestMembers}
                   onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
+                  rpgHumanPlayer={players.find((p) => p.id === userId && p.hp !== undefined) || null}
+                  rpgQuests={gamePhaseState.quests}
+                  rpgInCombat={gamePhaseState.inCombat}
+                  rpgCombatEnemy={gamePhaseState.combatEnemy}
+                  rpgCurrentScene={gamePhaseState.currentSceneName}
                 />
               </SheetContent>
             </Sheet>
