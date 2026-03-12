@@ -22,9 +22,13 @@ describe("game-template-driver", () => {
       expect(getTemplateControlMode("custom")).toBe("open");
     });
 
-    it("falls back to hybrid for unknown templates", () => {
-      expect(getTemplateControlMode("codenames")).toBe("hybrid");
-      expect(getTemplateControlMode("")).toBe("hybrid");
+    it("codenames is a deduction template", () => {
+      expect(getTemplateControlMode("codenames")).toBe("deduction");
+    });
+
+    it("falls back to open for unknown templates", () => {
+      expect(getTemplateControlMode("nonexistent-game-xyz")).toBe("open");
+      expect(getTemplateControlMode("")).toBe("open");
     });
   });
 
