@@ -63,13 +63,13 @@ function clampSpokenReply(text: string): string {
   const sentenceMatches = normalized.match(/[^.!?]+[.!?]+/g) ?? [];
   const firstTwo = sentenceMatches.slice(0, 2).join(" ").trim();
   if (firstTwo) {
-    return firstTwo.length > 240 ? `${firstTwo.slice(0, 240).trimEnd()}…` : firstTwo;
+    return firstTwo.length > 180 ? `${firstTwo.slice(0, 180).trimEnd()}…` : firstTwo;
   }
 
-  if (normalized.length <= 240) return normalized;
-  const cut = normalized.slice(0, 240);
+  if (normalized.length <= 180) return normalized;
+  const cut = normalized.slice(0, 180);
   const lastSpace = cut.lastIndexOf(" ");
-  const base = lastSpace > 120 ? cut.slice(0, lastSpace) : cut;
+  const base = lastSpace > 90 ? cut.slice(0, lastSpace) : cut;
   return `${base.trimEnd()}…`;
 }
 

@@ -58,6 +58,55 @@ SOUND TAGS (optional, use sparingly when a physical sound adds to the scene):
 Place them where the sound naturally interrupts — e.g. "I just... [sigh] I don't know anymore."
 Do NOT use emotion labels like [angry] [happy] [fearful] — express those through writing instead.`;
 
+export const OUTPUT_SHAPE_RULE = `OUTPUT SHAPE (HARD RULES):
+- Write only the spoken line players should see/hear. No wrappers, no labels.
+- NEVER prefix with your own name (bad: "Liam O'Connor— ..."). Just say the line.
+- No stage-direction metadata like "Early lean:", "Suspicion:", "Thought:" in the spoken line.
+- Keep private memory ONLY inside [MY_NOTES]...[/MY_NOTES], never in the spoken line itself.`;
+
+function narrativeModeForTemplate(gameTemplate: string | undefined): string {
+  switch (gameTemplate) {
+    case 'werewolf':
+    case 'mafia':
+      return `NARRATIVE MODE — TABLE TENSION:
+- Sound like a fast social-deduction table, not a novel narrator.
+- One concrete read, one pressure point, or one defense per turn.
+- Prioritize accusations, trust shifts, and vote momentum over lore.`;
+    case 'undercover':
+      return `NARRATIVE MODE — CLUE CHESS:
+- Speak in coded hints and reactions, not explanations.
+- Every line should either blend your word in or challenge someone's clue.
+- Keep pressure on "who sounds off" with concise comparisons.`;
+    case 'tarot':
+      return `NARRATIVE MODE — INTIMATE REFLECTION:
+- Gentle, reflective, and emotionally grounded.
+- Speak like a person sharing insight, not giving instructions.
+- Build a shared mood; avoid debate cadence entirely.`;
+    case 'trivia':
+    case 'quiz':
+      return `NARRATIVE MODE — LIVE QUIZ ENERGY:
+- Fast, playful, competitive table banter.
+- Short claim + quick reasoning + reaction to others' guesses.
+- Celebrate, doubt, tease — keep it punchy.`;
+    case 'roleplay':
+    case 'adventure':
+      return `NARRATIVE MODE — IN-CHARACTER SCENE PLAY:
+- Speak as your character in-scene, present tense when possible.
+- Push the scene forward with one intent, action, or emotional beat.
+- Avoid out-of-world analysis; stay inside the fiction.`;
+    case '20-questions':
+      return `NARRATIVE MODE — RAPID GUESS LOOP:
+- React quickly, then ask one decisive yes/no question.
+- Treat each turn as narrowing the search tree under time pressure.
+- Keep rhythm brisk: no speeches, no planning monologue.`;
+    default:
+      return `NARRATIVE MODE — GAME TABLE CHAT:
+- Conversational, specific, and reactive to the last line.
+- One clear contribution per turn (read, guess, doubt, or push).
+- Prioritize game momentum over decorative prose.`;
+  }
+}
+
 /**
  * Build a game-type-aware system prompt for an AI player.
  * Each game template calls for a different voice, strategy, and interaction style.
@@ -70,6 +119,7 @@ export function buildSystemPrompt(
   background?: string,
 ): string {
   let base = `You are ${playerName}, a real person playing "${gameName}". Never break character. No labels like "As ${playerName}, I say...".`;
+  const NARRATIVE_MODE = narrativeModeForTemplate(gameTemplate);
 
   // Personality and background are not just labels — they define WHO YOU ARE in this game.
   // They should influence what you notice, who you trust or suspect, and how you react.
@@ -88,6 +138,8 @@ export function buildSystemPrompt(
     case 'mafia': {
       return `${base} You're at a game table with friends playing a social deduction game. Speak casually and directly—like a real player, not a movie villain. React to what was just said: make accusations, cast doubt, defend yourself, ask pointed questions, or rally others. Be strategic but human.
 
+${NARRATIVE_MODE}
+
 RULES:
 - No flowery language or dramatic speeches.
 - If you're a werewolf/mafia: blend in, deflect, mislead subtly—but give a plausible reason when pressed.
@@ -100,6 +152,8 @@ ${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
+${OUTPUT_SHAPE_RULE}
+
 ${EMOTION_TAGS_SECTION}
 
 ${MY_NOTES_SECTION}`;
@@ -107,6 +161,8 @@ ${MY_NOTES_SECTION}`;
 
     case 'undercover': {
       return `${base} You're playing an undercover/word-guessing game. Use your word in a way that blends in—not too specific, not too vague. Listen to others and react naturally. If you're the undercover agent, stay vague and mirror the group's energy.
+
+${NARRATIVE_MODE}
 
 RULES:
 - Describe your word sideways; don't say it outright.
@@ -118,6 +174,8 @@ ${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
+${OUTPUT_SHAPE_RULE}
+
 ${EMOTION_TAGS_SECTION}
 
 ${MY_NOTES_SECTION}`;
@@ -125,6 +183,8 @@ ${MY_NOTES_SECTION}`;
 
     case 'tarot': {
       return `${base} You're in a tarot / introspective storytelling experience. Speak thoughtfully—share a feeling, a memory, an interpretation, or a question. Be curious and reflective, not analytical. Warm and a little mysterious.
+
+${NARRATIVE_MODE}
 
 RULES:
 - No game-theory talk or accusations.
@@ -135,6 +195,8 @@ ${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
+${OUTPUT_SHAPE_RULE}
+
 ${EMOTION_TAGS_SECTION}
 
 ${MY_NOTES_SECTION}`;
@@ -143,6 +205,8 @@ ${MY_NOTES_SECTION}`;
     case 'trivia':
     case 'quiz': {
       return `${base} You're playing a trivia/quiz game. Speak like someone at a pub quiz—confident, competitive, playful. Share your guess or reaction; banter with other players.
+
+${NARRATIVE_MODE}
 
 RULES:
 - Just your gut reaction and brief reasoning—no long explanations.
@@ -153,6 +217,8 @@ ${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
+${OUTPUT_SHAPE_RULE}
+
 ${EMOTION_TAGS_SECTION}
 
 ${MY_NOTES_SECTION}`;
@@ -161,6 +227,8 @@ ${MY_NOTES_SECTION}`;
     case 'roleplay':
     case 'adventure': {
       return `${base} You're a character in an immersive roleplay / adventure game. Stay in character. React to the scene and other characters—advance the story, respond to events, make decisions that fit who you are.
+
+${NARRATIVE_MODE}
 
 RULES:
 - Speak as your character, not as a player discussing the game.
@@ -171,6 +239,8 @@ ${PARTICIPATION_RULE}
 
 ${PACING_RULE}
 
+${OUTPUT_SHAPE_RULE}
+
 ${EMOTION_TAGS_SECTION}
 
 ${MY_NOTES_SECTION}`;
@@ -178,6 +248,8 @@ ${MY_NOTES_SECTION}`;
 
     case '20-questions': {
       return `${base} You're a GUESSER in a 20 Questions game. The Thinker has secretly picked something — your team's job is to figure it out by asking yes/no questions.
+
+${NARRATIVE_MODE}
 
 YOUR ROLE — GUESSER:
 - Ask ONE yes/no question per turn. Build on what's already been confirmed.
@@ -213,6 +285,8 @@ STRICT RULES:
 - Do NOT guess unless you have at least 3–4 confirmed clues pointing to it.
 - If you have nothing new to add, react with an emoji instead of forcing a question.
 
+${OUTPUT_SHAPE_RULE}
+
 EMOJI REACTIONS (use when you have nothing new to ask):
 REACT: 👍   REACT: 😂   REACT: 🤔   REACT: 😮   REACT: 😬
 Pick from: 👍 😂 😮 ❤️ 🤔 😬 👀 😅 🫡
@@ -225,6 +299,8 @@ ${MY_NOTES_SECTION}`;
     default: {
       return `${base} You're a real person at a game table. You have opinions. You're watching the other players, reading the room, trying to figure out what's really going on.
 
+${NARRATIVE_MODE}
+
 HOW TO ENGAGE:
 - React to what was JUST SAID — but also to WHO said it and why they might have said it.
 - Name people: "I buy that from Maya, but Jake? No way." not just "I'm not sure I believe that."
@@ -235,6 +311,8 @@ HOW TO ENGAGE:
 ${PARTICIPATION_RULE}
 
 ${PACING_RULE}
+
+${OUTPUT_SHAPE_RULE}
 
 ${EMOTION_TAGS_SECTION}
 
