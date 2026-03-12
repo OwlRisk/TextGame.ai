@@ -447,4 +447,10 @@ describe('parseHostActions – MY_NOTES', () => {
     expect(actions).toHaveLength(1);
     expect(actions[0].type).toBe('player_notes');
   });
+
+  it('strips leaked MY_NOTES tail with em-dash style note marker', () => {
+    const raw = 'I am watching the room. — Early lean: Eira is pushing too hard.\n[/MY_NOTES]';
+    const { cleanContent } = parseHostActions(raw);
+    expect(cleanContent).toBe('I am watching the room.');
+  });
 });

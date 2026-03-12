@@ -134,6 +134,11 @@ describe("stripPrivateNotes", () => {
     const input = "Hello [MY_NOTES] world [/MY_NOTES]";
     expect(stripPrivateNotes(input)).toBe("Hello");
   });
+
+  it("removes leaked em-dash note tail", () => {
+    const input = "All good here. — Early lean: watch Eira's tone-setting. [/MY_NOTES]";
+    expect(stripPrivateNotes(input)).toBe("All good here.");
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -53,10 +53,14 @@ export function stripPrivateNotes(text: string): string {
   out = out.replace(/\[MY_NOTES\][\s\S]*?\[\/MY_NOTES\]/gi, "");
   // Orphan tags
   out = out.replace(/\[\/?MY_NOTES\]/gi, "");
-  // Fallback leaked inline note tail: " ... - note ... [/MY_NOTES]"
-  out = out.replace(/ - [\s\S]*?\[\/MY_NOTES\]/gi, "");
-  // Fallback bullet note tail ending with closing tag
-  out = out.replace(/\n[-*•][\s\S]*?\[\/MY_NOTES\]/gi, "");
+  // Fallback leaked inline note tails.
+  out = out.replace(/\s+[-–—]\s+[\s\S]*?\[\/MY_NOTES\]/gi, "");
+  out = out.replace(/\s+[-–—]\s*(?:early\s+lean|note|notes?)\s*:[\s\S]*?\[\/MY_NOTES\]/gi, "");
+  // Fallback line-based note tails ending with closing tag.
+  out = out.replace(/\n[-*•–—][\s\S]*?\[\/MY_NOTES\]/gi, "");
+  out = out.replace(/\n(?:early\s+lean|note|notes?)\s*:[\s\S]*?\[\/MY_NOTES\]/gi, "");
+  // If closing tag was removed but note marker remains, strip the marker tail.
+  out = out.replace(/\s+[-–—]\s*(?:early\s+lean|note|notes?)\s*:[^\n]*$/gi, "");
   // Compact extra blank lines left by removals
   return out.replace(/\n{3,}/g, "\n\n").trim();
 }

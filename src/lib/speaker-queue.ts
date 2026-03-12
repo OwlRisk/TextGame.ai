@@ -56,6 +56,23 @@ export function isNightPhase(phase: string | undefined): boolean {
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
 
+function clampSpokenReply(text: string): string {
+  const normalized = (text || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+
+  const sentenceMatches = normalized.match(/[^.!?]+[.!?]+/g) ?? [];
+  const firstTwo = sentenceMatches.slice(0, 2).join(" ").trim();
+  if (firstTwo) {
+    return firstTwo.length > 240 ? `${firstTwo.slice(0, 240).trimEnd()}…` : firstTwo;
+  }
+
+  if (normalized.length <= 240) return normalized;
+  const cut = normalized.slice(0, 240);
+  const lastSpace = cut.lastIndexOf(" ");
+  const base = lastSpace > 120 ? cut.slice(0, lastSpace) : cut;
+  return `${base.trimEnd()}…`;
+}
+
 export async function runPlayerSpeak(
   ctx: SpeakerQueueContext,
   speaker: Player,
@@ -124,7 +141,8 @@ export async function runPlayerSpeak(
       }
     }
 
-    return cleanContent || null;
+    const publicReply = clampSpokenReply(cleanContent);
+    return publicReply || null;
   } catch (err) {
     console.error("Error generating AI player reply:", err);
     return null;

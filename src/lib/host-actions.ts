@@ -146,9 +146,13 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
   // to a [/MY_NOTES] closing tag, then clean up any bare tags.
   if (/\[\/MY_NOTES\]/i.test(cleanContent)) {
     // Inline note on same line as message: "text - note...[/MY_NOTES]"
-    cleanContent = cleanContent.replace(/ - [\s\S]*?\[\/MY_NOTES\]/i, '');
+    cleanContent = cleanContent.replace(/\s+[-–—]\s+[\s\S]*?\[\/MY_NOTES\]/i, '');
+    // Common leaked "note tail" forms: "- Early lean: ...[/MY_NOTES]" / "— Note: ...[/MY_NOTES]"
+    cleanContent = cleanContent.replace(/\s+[-–—]\s*(?:early\s+lean|note|notes?)\s*:[\s\S]*?\[\/MY_NOTES\]/i, '');
     // Newline-prefixed note blocks: "\n- note\n• note\n[/MY_NOTES]"
-    cleanContent = cleanContent.replace(/\n[-•][\s\S]*?\[\/MY_NOTES\]/i, '');
+    cleanContent = cleanContent.replace(/\n[-•–—][\s\S]*?\[\/MY_NOTES\]/i, '');
+    // Newline-prefixed named note block without bullets: "\nEarly lean: ...\n[/MY_NOTES]"
+    cleanContent = cleanContent.replace(/\n(?:early\s+lean|note|notes?)\s*:[\s\S]*?\[\/MY_NOTES\]/i, '');
     // Fallback: strip any remaining closing tag
     cleanContent = cleanContent.replace(/\[\/MY_NOTES\]/gi, '');
   }
