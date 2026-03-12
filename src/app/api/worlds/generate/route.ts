@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
 import { getWorldThemeById } from "@/data/world-themes";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
@@ -109,13 +109,20 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (createdRooms.length === 0) {
-    console.error(`[worlds/generate] All ${theme.rooms.length} rooms failed to create. Cleaning up world ${worldId}.`);
+  const minRequired = Math.ceil(theme.rooms.length * 0.5);
+  if (createdRooms.length < minRequired) {
+    console.error(
+      `[worlds/generate] Only ${createdRooms.length}/${theme.rooms.length} rooms created (need ≥${minRequired}). Cleaning up world ${worldId}. Failed: ${failedRooms.join(", ")}`,
+    );
     await deleteWorld(worldId, user.id);
     return NextResponse.json(
-      { error: `Failed to create game rooms (0/${theme.rooms.length} succeeded). Check server logs.` },
+      { error: `Failed to create enough game rooms (${createdRooms.length}/${theme.rooms.length} succeeded, need ≥${minRequired}). Please try again.` },
       { status: 500 },
     );
+  }
+
+  if (failedRooms.length > 0) {
+    console.warn(`[worlds/generate] Partial success: ${createdRooms.length}/${theme.rooms.length} rooms created. Failed: ${failedRooms.join(", ")}`);
   }
 
   const actualStartRoom = createdRooms.find((r) => r.id === startRoomUuid) || createdRooms[0];
@@ -127,7 +134,7 @@ export async function POST(request: NextRequest) {
   });
 }
 
-function buildRoomRules(theme: ReturnType<typeof getWorldThemeById> & object, room: (typeof theme)["rooms"][number]): string {
+export function buildRoomRules(theme: ReturnType<typeof getWorldThemeById> & object, room: (typeof theme)["rooms"][number]): string {
   const t = theme as NonNullable<ReturnType<typeof getWorldThemeById>>;
   const lines: string[] = [];
 
