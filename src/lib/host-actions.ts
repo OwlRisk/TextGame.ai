@@ -50,9 +50,25 @@ export type HostAction =
   /** Skill check: player, skill name, difficulty class, and result */
   | { type: "skill_check"; playerRef: PlayerRef; skill: string; dc: number; roll?: number }
   /** Start or end a combat encounter */
-  | { type: "combat"; action: "start" | "end"; enemy?: string }
+  | { type: "combat"; action: "start" | "end"; enemy?: string; hp?: number; atk?: number; def?: number }
   /** Update quest progress */
   | { type: "quest_update"; questId: string; status: "start" | "progress" | "complete" | "fail"; description?: string }
+  /** Dice roll result for animation and logging */
+  | { type: "dice_roll"; character: string; diceType: string; roll: number; modifier: number; total: number; context: string }
+  /** MP (mana) change for a character */
+  | { type: "mp_change"; playerRef: PlayerRef; delta: number }
+  /** XP gain for the party or an individual */
+  | { type: "xp_gain"; amount: number; reason: string }
+  /** Loot drop from combat or exploration */
+  | { type: "loot_drop"; itemName: string; rarity: string; description: string }
+  /** Character leveled up */
+  | { type: "level_up"; playerRef: PlayerRef; newLevel: number }
+  /** Open a shop UI with items */
+  | { type: "shop"; action: "open" | "close"; items?: string }
+  /** Equip an item to a character's slot */
+  | { type: "equip"; playerRef: PlayerRef; item: string; slot: string }
+  /** World event that affects multiple rooms */
+  | { type: "world_event"; eventId: string; description: string }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -260,11 +276,14 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
       }),
     },
     {
-      regex: /^COMBAT:\s*(start|end)(?:\s*\|\s*(.+?))?$/gim,
+      regex: /^COMBAT:\s*(start|end)(?:\s*\|\s*(.+?))?(?:\s*\|\s*hp:\s*(\d+))?(?:\s*\|\s*atk:\s*(\d+))?(?:\s*\|\s*def:\s*(\d+))?$/gim,
       parse: (m) => ({
-        type: "combat",
+        type: "combat" as const,
         action: m[1].trim().toLowerCase() as "start" | "end",
         enemy: m[2]?.trim(),
+        hp: m[3] ? parseInt(m[3], 10) : undefined,
+        atk: m[4] ? parseInt(m[4], 10) : undefined,
+        def: m[5] ? parseInt(m[5], 10) : undefined,
       }),
     },
     {
@@ -274,6 +293,76 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
         questId: m[1].trim(),
         status: m[2].trim().toLowerCase() as "start" | "progress" | "complete" | "fail",
         description: m[3]?.trim(),
+      }),
+    },
+    {
+      regex: /^DICE:\s*(.+?)\s*\|\s*(\w+)\s*\|\s*(\d+)\s*\|\s*([+-]?\d+)\s*\|\s*=?\s*(\d+)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "dice_roll" as const,
+        character: m[1].trim(),
+        diceType: m[2].trim(),
+        roll: parseInt(m[3], 10),
+        modifier: parseInt(m[4], 10),
+        total: parseInt(m[5], 10),
+        context: m[6]?.trim() || "",
+      }),
+    },
+    {
+      regex: /^MP:\s*(.+?)\s*\|\s*([+-]?\d+)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "mp_change" as const,
+        playerRef: m[1].trim(),
+        delta: parseInt(m[2], 10),
+      }),
+    },
+    {
+      regex: /^XP:\s*(\d+)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "xp_gain" as const,
+        amount: parseInt(m[1], 10),
+        reason: m[2]?.trim() || "",
+      }),
+    },
+    {
+      regex: /^LOOT:\s*(.+?)\s*\|\s*(\w+)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "loot_drop" as const,
+        itemName: m[1].trim(),
+        rarity: m[2].trim().toLowerCase(),
+        description: m[3]?.trim() || "",
+      }),
+    },
+    {
+      regex: /^LEVEL_UP:\s*(.+?)\s*\|\s*(\d+)$/gim,
+      parse: (m) => ({
+        type: "level_up" as const,
+        playerRef: m[1].trim(),
+        newLevel: parseInt(m[2], 10),
+      }),
+    },
+    {
+      regex: /^SHOP:\s*(open|close)(?:\s*\|\s*(.+?))?$/gim,
+      parse: (m) => ({
+        type: "shop" as const,
+        action: m[1].trim().toLowerCase() as "open" | "close",
+        items: m[2]?.trim(),
+      }),
+    },
+    {
+      regex: /^EQUIP:\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+)$/gim,
+      parse: (m) => ({
+        type: "equip" as const,
+        playerRef: m[1].trim(),
+        item: m[2].trim(),
+        slot: m[3].trim().toLowerCase(),
+      }),
+    },
+    {
+      regex: /^WORLD_EVENT:\s*(.+?)\s*\|\s*(.+)$/gim,
+      parse: (m) => ({
+        type: "world_event" as const,
+        eventId: m[1].trim(),
+        description: m[2].trim(),
       }),
     },
   ];

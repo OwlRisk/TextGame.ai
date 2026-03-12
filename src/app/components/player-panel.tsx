@@ -40,10 +40,30 @@ export interface Player {
   hp?: number;
   /** Maximum HP. */
   maxHp?: number;
-  /** Inventory items. */
+  /** Current MP (mana/energy). */
+  mp?: number;
+  /** Maximum MP. */
+  maxMp?: number;
+  /** Character class (Fighter, Mage, etc.) */
+  characterClass?: string;
+  /** Character level. */
+  level?: number;
+  /** Current XP. */
+  xp?: number;
+  /** XP needed for next level. */
+  xpToNext?: number;
+  /** Gold / credits. */
+  gold?: number;
+  /** Inventory items (legacy string format for backwards compat). */
   inventory?: string[];
-  /** Skill list with levels. */
+  /** Skill list with levels (legacy format for backwards compat). */
   skills?: Array<{ name: string; level: number }>;
+  /** Full RPG character skills with costs/cooldowns. */
+  rpgSkills?: Array<{ name: string; type: string; cost: number; cooldown: number; currentCooldown: number; description: string }>;
+  /** Equipment slots. */
+  equipment?: { weapon?: string; armor?: string; accessory?: string };
+  /** Character attributes. */
+  attributes?: { strength: number; agility: number; intelligence: number; charisma: number; constitution: number };
   /** Which scene/location this character is currently in (for NPCs). */
   currentScene?: string;
   /** Whether this player is an NPC (not a party member). */
@@ -265,19 +285,40 @@ function PlayerCard({
             </div>
           )}
           {player.hp !== undefined && player.maxHp && (
-            <div className="mt-1 flex items-center gap-1.5">
-              <div className="flex-1 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    player.hp / player.maxHp > 0.5 ? "bg-green-500" :
-                    player.hp / player.maxHp > 0.25 ? "bg-yellow-500" : "bg-red-500"
-                  }`}
-                  style={{ width: `${Math.max(0, (player.hp / player.maxHp) * 100)}%` }}
-                />
+            <div className="mt-1 space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <div className="flex-1 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      player.hp / player.maxHp > 0.5 ? "bg-green-500" :
+                      player.hp / player.maxHp > 0.25 ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${Math.max(0, (player.hp / player.maxHp) * 100)}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-zinc-400 font-mono tabular-nums whitespace-nowrap">
+                  {player.hp}/{player.maxHp}
+                </span>
               </div>
-              <span className="text-[10px] text-zinc-400 font-mono tabular-nums whitespace-nowrap">
-                {player.hp}/{player.maxHp}
-              </span>
+              {player.mp !== undefined && player.maxMp && player.maxMp > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex-1 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 bg-blue-500"
+                      style={{ width: `${Math.max(0, (player.mp / player.maxMp) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-blue-400 font-mono tabular-nums whitespace-nowrap">
+                    {player.mp}/{player.maxMp}
+                  </span>
+                </div>
+              )}
+              {player.level !== undefined && (
+                <div className="flex items-center gap-1 text-[10px] text-zinc-500">
+                  <span className="text-amber-400/80">Lv.{player.level}</span>
+                  {player.characterClass && <span className="text-zinc-500">{player.characterClass}</span>}
+                </div>
+              )}
             </div>
           )}
         </div>

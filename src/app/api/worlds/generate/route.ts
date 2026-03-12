@@ -46,14 +46,21 @@ export async function POST(request: NextRequest) {
       itemPool: theme.itemPool,
       partyRoles: theme.partyRoles,
       gmContext: theme.gmContext,
+      mainQuest: theme.mainQuest,
+      itemTable: theme.itemTable,
+      enemyTable: theme.enemyTable,
     },
     party_state: {
-      party: [],
-      quests: [],
+      characters: [],
+      activeQuests: [],
+      completedQuests: [],
       currentRoomId: startRoomUuid,
       visitedRoomIds: [startRoomUuid],
+      roomStates: {},
       worldEvents: [],
-      gold: 0,
+      gold: 50,
+      playTimeMinutes: 0,
+      lastPlayedAt: new Date().toISOString(),
     },
   });
 
@@ -147,14 +154,23 @@ function buildRoomRules(theme: ReturnType<typeof getWorldThemeById> & object, ro
   lines.push(`\nGM DIRECTIVES (use inline — stripped from player view):
 - SCENE: <room_name> — Signal party wants to move (UI will handle room transition)
 - HP: <PlayerName> | <+/-amount> — Damage or heal
+- MP: <PlayerName> | <+/-amount> — Mana change
 - ITEM: <PlayerName> | + <ItemName> — Add item
 - ITEM: <PlayerName> | - <ItemName> — Remove item
 - SKILL_CHECK: <PlayerName> | <SkillName> | DC:<number> | <roll> — Skill check
-- COMBAT: start | <EnemyName> — Begin combat
+- COMBAT: start | <EnemyName> | hp:<hp> | atk:<atk> | def:<def> — Begin combat with stats
 - COMBAT: end — End combat
+- DICE: <CharName> | d20 | <roll> | +<modifier> | = <total> | <context> — Show dice roll
+- XP: <amount> | <reason> — Award XP to party
+- LOOT: <ItemName> | <rarity> | <description> — Drop loot
+- LEVEL_UP: <PlayerName> | <newLevel> — Level up
+- SHOP: open | <item1:price1, item2:price2> — Open shop
+- SHOP: close — Close shop
+- EQUIP: <PlayerName> | <ItemName> | <slot> — Equip item
 - QUEST: <QuestName> | start | <description> — Start quest
 - QUEST: <QuestName> | progress | <update> — Update quest
-- QUEST: <QuestName> | complete | <summary> — Complete quest`);
+- QUEST: <QuestName> | complete | <summary> — Complete quest
+- WORLD_EVENT: <eventId> | <description> — Global world event`);
 
   lines.push(`\nHOSTING RULES:
 1. Describe this location vividly when the party arrives. Use sensory details: sights, sounds, smells, atmosphere.

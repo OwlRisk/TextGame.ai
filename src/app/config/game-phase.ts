@@ -3,6 +3,9 @@
  * No game-specific logic here; the GM decides phases, moods, votes, and timers.
  */
 
+import type { DiceRollResult, CombatEnemy } from "@/lib/rpg-mechanics";
+import type { Item, ItemRarity } from "@/lib/rpg-types";
+
 export type GamePhaseKind = "waiting" | "lobby" | "active" | "ended";
 
 export type GameMood = "neutral" | "dark" | "light";
@@ -18,6 +21,13 @@ export interface QuestState {
   name: string;
   status: "active" | "completed" | "failed";
   description?: string;
+}
+
+export interface LootDrop {
+  name: string;
+  rarity: ItemRarity;
+  description: string;
+  timestamp: number;
 }
 
 export interface GamePhaseState {
@@ -44,8 +54,18 @@ export interface GamePhaseState {
   inCombat?: boolean;
   /** Name of the current combat enemy. */
   combatEnemy?: string;
+  /** Structured combat enemy stats (from COMBAT: start directive) */
+  combatEnemyStats?: CombatEnemy | null;
   /** Active and completed quests. */
   quests?: QuestState[];
+  /** Recent dice rolls for dice animation display. */
+  recentDiceRolls?: DiceRollResult[];
+  /** Recent loot drops for loot notification. */
+  recentLoot?: LootDrop[];
+  /** Whether a shop UI is open. */
+  shopOpen?: boolean;
+  /** Shop items available for purchase. */
+  shopItems?: Array<Item & { price: number }>;
 }
 
 export const DEFAULT_GAME_PHASE: GamePhaseState = {

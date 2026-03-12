@@ -1,3 +1,5 @@
+import type { MainQuestStage, ThemeItemDef, ThemeEnemyDef } from "@/lib/rpg-types";
+
 export interface WorldRoomDef {
   id: string;
   name: string;
@@ -25,6 +27,9 @@ export interface WorldTheme {
   startingRoomId: string;
   rooms: WorldRoomDef[];
   gmContext: string;
+  mainQuest?: MainQuestStage[];
+  itemTable?: ThemeItemDef[];
+  enemyTable?: ThemeEnemyDef[];
 }
 
 export const WORLD_THEMES: WorldTheme[] = [
@@ -70,7 +75,36 @@ ROOM BEHAVIOR BY TYPE:
 - mystery: Puzzles, hidden clues, investigation. Companions use skills (Lore, Stealth) to help.
 - shop: Buy/sell items. Merchant NPCs. Companions comment on gear.
 
-IMPORTANT: Use directives (SCENE, HP, ITEM, QUEST, COMBAT, SKILL_CHECK) to update game state. The UI relies on these.`,
+IMPORTANT: Use directives (SCENE, HP, ITEM, QUEST, COMBAT, SKILL_CHECK, DICE, MP, XP, LOOT) to update game state. The UI relies on these.`,
+    mainQuest: [
+      { id: "mq1", name: "The Village Plea", description: "Elder Rowan asks for help investigating disappearances in Ashwick.", roomId: "village", objectives: ["Speak with Elder Rowan", "Investigate the graveyard", "Report findings"] },
+      { id: "mq2", name: "The Witch's Knowledge", description: "Witch Morgana may know the source of the curse.", roomId: "witch_hut", objectives: ["Find the Witch's Clearing", "Earn Morgana's trust", "Learn the curse's origin"] },
+      { id: "mq3", name: "The Fallen Watchtower", description: "Bandits hold a piece of the curse-breaking artifact.", roomId: "ruins", objectives: ["Clear the bandits", "Recover the Shard of Dawn"] },
+      { id: "mq4", name: "Audience with the King", description: "The Cursed King may still be saved.", roomId: "castle_hall", objectives: ["Reach the throne room", "Break through the king's enchantment", "Learn the ritual"] },
+      { id: "mq5", name: "The Cursed Chamber", description: "Destroy the source of the curse in the dungeon depths.", roomId: "dungeon_deep", objectives: ["Defeat the Shadow Wraith", "Destroy the shattered altar", "Lift the curse"] },
+    ],
+    itemTable: [
+      { name: "Healing Potion", type: "consumable", rarity: "common", description: "Restores 30 HP", effect: "Heals 30 HP", buyPrice: 15 },
+      { name: "Mana Potion", type: "consumable", rarity: "common", description: "Restores 20 MP", effect: "Restores 20 MP", buyPrice: 20 },
+      { name: "Iron Sword", type: "weapon", rarity: "common", description: "A sturdy iron blade", stats: { attack: 3 }, buyPrice: 30 },
+      { name: "Steel Longsword", type: "weapon", rarity: "uncommon", description: "Well-crafted steel", stats: { attack: 6 }, buyPrice: 80 },
+      { name: "Enchanted Staff", type: "weapon", rarity: "rare", description: "Hums with arcane energy", stats: { attack: 8, intelligence: 2 }, buyPrice: 150 },
+      { name: "Chain Mail", type: "armor", rarity: "common", description: "Standard chain armor", stats: { defense: 3 }, buyPrice: 40 },
+      { name: "Shadow Ward", type: "accessory", rarity: "rare", description: "Protects against dark magic", stats: { defense: 2, intelligence: 2 }, buyPrice: 120 },
+      { name: "Shard of Dawn", type: "quest", rarity: "epic", description: "Fragment of the curse-breaking artifact" },
+      { name: "Antidote", type: "consumable", rarity: "common", description: "Cures poison", effect: "Removes poison", buyPrice: 10 },
+      { name: "Dragon Scale", type: "material", rarity: "legendary", description: "Scale from an ancient dragon" },
+    ],
+    enemyTable: [
+      { name: "Wolf Pack", hp: 30, attack: 8, defense: 3, xpReward: 15, goldReward: 5 },
+      { name: "Giant Spiders", hp: 25, attack: 10, defense: 4, xpReward: 20, goldReward: 8 },
+      { name: "Forest Troll", hp: 60, attack: 12, defense: 8, xpReward: 40, goldReward: 20, loot: [{ item: "Troll Hide", rarity: "uncommon", chance: 0.3 }] },
+      { name: "Bandits", hp: 35, attack: 9, defense: 5, xpReward: 25, goldReward: 30, loot: [{ item: "Steel Longsword", rarity: "uncommon", chance: 0.2 }] },
+      { name: "Skeletons", hp: 20, attack: 7, defense: 6, xpReward: 15, goldReward: 5 },
+      { name: "Undead Soldiers", hp: 40, attack: 11, defense: 7, xpReward: 30, goldReward: 15 },
+      { name: "Rock Golem", hp: 80, attack: 14, defense: 12, xpReward: 50, goldReward: 25, loot: [{ item: "Stone Heart", rarity: "rare", chance: 0.25 }] },
+      { name: "Shadow Wraith", hp: 120, attack: 18, defense: 10, xpReward: 100, goldReward: 50, loot: [{ item: "Shadowbane Blade", rarity: "epic", chance: 0.5 }] },
+    ],
   },
   {
     id: "zombie-siege",
@@ -111,7 +145,35 @@ ROOM BEHAVIOR:
 - boss: Final stand. Waves of zombies. Helicopter is coming but need to hold position.
 - mystery: What happened here? Find clues about the outbreak. Hidden supply stashes.
 
-IMPORTANT: Use directives to track HP, items, quests. Ammo and food are survival resources — track them carefully.`,
+IMPORTANT: Use directives (SCENE, HP, ITEM, QUEST, COMBAT, SKILL_CHECK, DICE, MP, XP, LOOT) to track HP, items, quests. Ammo and food are survival resources — track them carefully.`,
+    mainQuest: [
+      { id: "mq1", name: "Radio Contact", description: "Jake needs help fixing the radio to contact rescue.", roomId: "safehouse", objectives: ["Talk to Radio Operator Jake", "Find Radio Parts"] },
+      { id: "mq2", name: "Medical Emergency", description: "A survivor at the hospital needs antibiotics.", roomId: "hospital", objectives: ["Reach the hospital", "Find Dr. Chen", "Secure antibiotics"] },
+      { id: "mq3", name: "The Arms Cache", description: "The police station weapons lockup could turn the tide.", roomId: "police_station", objectives: ["Break into the police station", "Find the weapons cache", "Deal with Cruz"] },
+      { id: "mq4", name: "Wheels Up", description: "Find a working vehicle in the parking garage.", roomId: "parking_garage", objectives: ["Find Mechanic Rosa", "Locate a working vehicle", "Get fuel"] },
+      { id: "mq5", name: "The Last Stand", description: "Hold the extraction point until the helicopter arrives.", roomId: "extraction", objectives: ["Reach the extraction point", "Survive the zombie horde", "Board the helicopter"] },
+    ],
+    itemTable: [
+      { name: "First Aid Kit", type: "consumable", rarity: "common", description: "Restores 30 HP", effect: "Heals 30 HP", buyPrice: 20 },
+      { name: "Stim Pack", type: "consumable", rarity: "uncommon", description: "Restores 20 MP and boosts next attack", effect: "Restores 20 MP", buyPrice: 30 },
+      { name: "Pistol Ammo", type: "consumable", rarity: "common", description: "+5 ammo for pistol", effect: "+5 ammo", buyPrice: 10 },
+      { name: "Shotgun", type: "weapon", rarity: "uncommon", description: "Close range devastation", stats: { attack: 8 }, buyPrice: 80 },
+      { name: "Crowbar", type: "weapon", rarity: "common", description: "Reliable melee weapon and tool", stats: { attack: 4 }, buyPrice: 15 },
+      { name: "Tactical Vest", type: "armor", rarity: "uncommon", description: "Military-grade protection", stats: { defense: 5 }, buyPrice: 60 },
+      { name: "Canned Food", type: "consumable", rarity: "common", description: "Restores 15 HP", effect: "Heals 15 HP", buyPrice: 5 },
+      { name: "Radio Parts", type: "quest", rarity: "rare", description: "Components to fix the radio" },
+      { name: "Car Battery", type: "quest", rarity: "rare", description: "Power source for vehicles" },
+      { name: "Antibiotics", type: "quest", rarity: "rare", description: "Powerful medicine against infection" },
+    ],
+    enemyTable: [
+      { name: "Zombie Horde", hp: 40, attack: 8, defense: 3, xpReward: 20, goldReward: 5 },
+      { name: "Crawler", hp: 20, attack: 12, defense: 2, xpReward: 15, goldReward: 3 },
+      { name: "Bloater", hp: 60, attack: 15, defense: 5, xpReward: 35, goldReward: 10 },
+      { name: "Screamer", hp: 15, attack: 6, defense: 2, xpReward: 25, goldReward: 5 },
+      { name: "Zombie Dog Pack", hp: 25, attack: 10, defense: 3, xpReward: 20, goldReward: 5 },
+      { name: "Infected Survivor", hp: 45, attack: 11, defense: 6, xpReward: 30, goldReward: 15 },
+      { name: "Zombie Brute", hp: 100, attack: 18, defense: 10, xpReward: 60, goldReward: 30, loot: [{ item: "Reinforced Armor", rarity: "rare", chance: 0.3 }] },
+    ],
   },
   {
     id: "isekai-academy",
@@ -154,7 +216,33 @@ ROOM BEHAVIOR:
 - boss: Dramatic magical battles with multi-phase encounters.
 - mystery: Investigation, puzzle-solving, forbidden knowledge.
 
-IMPORTANT: Use directives. Mana = HP equivalent. Spells = skills. Academy badges = quest items.`,
+IMPORTANT: Use directives (SCENE, HP, ITEM, QUEST, COMBAT, SKILL_CHECK, DICE, MP, XP, LOOT). Mana = HP equivalent. Spells = skills. Academy badges = quest items.`,
+    mainQuest: [
+      { id: "mq1", name: "Enrollment", description: "Meet the Dean and receive your first assignment.", roomId: "entrance_hall", objectives: ["Speak with Dean Aldwin", "Get your Academy Badge", "Meet Spirit Guide Lumi"] },
+      { id: "mq2", name: "Combat Training", description: "Prove yourself in the training hall.", roomId: "classroom", objectives: ["Defeat a Training Golem", "Learn your first combat spell"] },
+      { id: "mq3", name: "The Forbidden Section", description: "Strange books are appearing. Investigate.", roomId: "restricted_section", objectives: ["Gain access to the restricted section", "Find the Forbidden Tome", "Report to Librarian Void"] },
+      { id: "mq4", name: "The Dark Professor", description: "Someone is conducting forbidden experiments.", roomId: "underground_lab", objectives: ["Discover the sealed laboratory", "Confront the corrupted students", "Find evidence"] },
+      { id: "mq5", name: "The Void Gate", description: "Close the rift before it consumes the academy.", roomId: "void_gate", objectives: ["Reach the Void Gate", "Defeat the Dark Professor", "Seal the rift"] },
+    ],
+    itemTable: [
+      { name: "Mana Potion", type: "consumable", rarity: "common", description: "Restores 25 MP", effect: "Restores 25 MP", buyPrice: 15 },
+      { name: "Healing Herb", type: "consumable", rarity: "common", description: "Restores 20 HP", effect: "Heals 20 HP", buyPrice: 10 },
+      { name: "Crystal Wand", type: "weapon", rarity: "uncommon", description: "Focuses magical energy", stats: { attack: 5, intelligence: 2 }, buyPrice: 60 },
+      { name: "Enchanted Textbook", type: "accessory", rarity: "uncommon", description: "Boosts spell power", stats: { intelligence: 3 }, buyPrice: 45 },
+      { name: "Academy Badge", type: "quest", rarity: "uncommon", description: "Proof of enrollment" },
+      { name: "Spell Scroll", type: "consumable", rarity: "rare", description: "Teaches a random spell", effect: "Learn a new skill", buyPrice: 100 },
+      { name: "Starfall Charm", type: "accessory", rarity: "epic", description: "Imbued with starlight", stats: { intelligence: 5, charisma: 3 } },
+      { name: "Forbidden Tome", type: "quest", rarity: "epic", description: "Contains dangerous knowledge" },
+      { name: "Memory Orb", type: "quest", rarity: "rare", description: "Stores a memory" },
+    ],
+    enemyTable: [
+      { name: "Training Golem", hp: 30, attack: 6, defense: 8, xpReward: 15, goldReward: 5 },
+      { name: "Shadow Familiar", hp: 20, attack: 10, defense: 3, xpReward: 20, goldReward: 8 },
+      { name: "Corrupted Student", hp: 40, attack: 12, defense: 6, xpReward: 30, goldReward: 15 },
+      { name: "Void Beast", hp: 55, attack: 14, defense: 7, xpReward: 40, goldReward: 20, loot: [{ item: "Void Essence", rarity: "rare", chance: 0.25 }] },
+      { name: "Crystal Guardian", hp: 80, attack: 16, defense: 12, xpReward: 60, goldReward: 30, loot: [{ item: "Crystal Core", rarity: "epic", chance: 0.2 }] },
+      { name: "Dark Professor", hp: 120, attack: 20, defense: 10, xpReward: 100, goldReward: 50, loot: [{ item: "Staff of Corruption", rarity: "legendary", chance: 0.5 }] },
+    ],
   },
   {
     id: "cyberpunk-netrun",
@@ -197,7 +285,35 @@ ROOM BEHAVIOR:
 - mystery: Hacking puzzles, surveillance evasion, data analysis, corporate espionage.
 - shop: Black market deals. Upgrades, weapons, information. Everything has a price in credits.
 
-IMPORTANT: Use directives. Credits = gold. Augments = skills. Data Chips = quest items.`,
+IMPORTANT: Use directives (SCENE, HP, ITEM, QUEST, COMBAT, SKILL_CHECK, DICE, MP, XP, LOOT). Credits = gold. Augments = skills. Data Chips = quest items.`,
+    mainQuest: [
+      { id: "mq1", name: "The Job", description: "Fixer Zero has a job that could change everything.", roomId: "hideout", objectives: ["Talk to Fixer Zero", "Gather intel on Nexus Corp", "Prepare for the run"] },
+      { id: "mq2", name: "Club Contacts", description: "Corp Executive Tanaka has information to trade.", roomId: "club_void", objectives: ["Gain VIP access", "Meet Tanaka", "Extract the data"] },
+      { id: "mq3", name: "The Breach", description: "Hack into the corporate network from the sewers.", roomId: "sewer_access", objectives: ["Navigate the sewer network", "Find the access point", "Upload the virus"] },
+      { id: "mq4", name: "Tower Assault", description: "Infiltrate the Nexus Corp Tower.", roomId: "corp_tower", objectives: ["Bypass security", "Reach the server farm", "Download the evidence"] },
+      { id: "mq5", name: "Net Core Showdown", description: "The rogue AI must be stopped.", roomId: "net_core", objectives: ["Jack into the Net Core", "Defeat the AI", "Choose: destroy or control"] },
+    ],
+    itemTable: [
+      { name: "Stim Pack", type: "consumable", rarity: "common", description: "Restores 25 HP", effect: "Heals 25 HP", buyPrice: 20 },
+      { name: "Neural Booster", type: "consumable", rarity: "uncommon", description: "Restores 30 MP", effect: "Restores 30 MP", buyPrice: 30 },
+      { name: "EMP Grenade", type: "consumable", rarity: "uncommon", description: "Stuns electronic enemies", effect: "Stuns for 1 turn", buyPrice: 40 },
+      { name: "Plasma Pistol", type: "weapon", rarity: "uncommon", description: "Energy-based sidearm", stats: { attack: 6 }, buyPrice: 70 },
+      { name: "Hacking Deck", type: "weapon", rarity: "rare", description: "Advanced netrunning hardware", stats: { attack: 8, intelligence: 3 }, buyPrice: 150 },
+      { name: "Cybernetic Arm", type: "accessory", rarity: "rare", description: "Enhanced strength augmentation", stats: { strength: 4, attack: 2 }, buyPrice: 200 },
+      { name: "Stealth Cloak", type: "armor", rarity: "rare", description: "Light-bending fabric", stats: { defense: 3, agility: 3 }, buyPrice: 180 },
+      { name: "Data Chip", type: "quest", rarity: "rare", description: "Contains encrypted corporate data" },
+      { name: "Cred Stick", type: "material", rarity: "common", description: "Anonymous credit transfer" },
+      { name: "Neural Virus", type: "quest", rarity: "epic", description: "Weapon against the rogue AI" },
+    ],
+    enemyTable: [
+      { name: "Street Gang", hp: 30, attack: 8, defense: 4, xpReward: 15, goldReward: 20 },
+      { name: "Corporate Security Drone", hp: 40, attack: 10, defense: 8, xpReward: 25, goldReward: 15 },
+      { name: "Rogue AI", hp: 50, attack: 14, defense: 6, xpReward: 35, goldReward: 25 },
+      { name: "Cyborg Enforcer", hp: 70, attack: 16, defense: 10, xpReward: 45, goldReward: 35, loot: [{ item: "Cybernetic Parts", rarity: "uncommon", chance: 0.3 }] },
+      { name: "Security Mech", hp: 90, attack: 18, defense: 14, xpReward: 55, goldReward: 40, loot: [{ item: "Mech Core", rarity: "rare", chance: 0.2 }] },
+      { name: "Net Ghost", hp: 60, attack: 20, defense: 5, xpReward: 50, goldReward: 30 },
+      { name: "Corporate Assassin", hp: 100, attack: 22, defense: 12, xpReward: 80, goldReward: 50, loot: [{ item: "Plasma Katana", rarity: "epic", chance: 0.3 }] },
+    ],
   },
 ];
 

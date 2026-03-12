@@ -85,6 +85,8 @@ interface ChannelListProps {
   currentRoomId?: string;
   /** Navigate to a different room in the world. */
   onNavigateRoom?: (roomId: string) => void;
+  /** Set of visited room IDs for showing visited/unvisited state. */
+  visitedRoomIds?: string[];
 }
 
 export function ChannelList({ 
@@ -114,6 +116,7 @@ export function ChannelList({
   worldRooms = [],
   currentRoomId,
   onNavigateRoom,
+  visitedRoomIds = [],
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
@@ -142,6 +145,11 @@ export function ChannelList({
           <div className="px-2 pb-2">
             {worldRooms.map((room) => {
               const isCurrent = room.id === currentRoomId;
+              const isVisited = visitedRoomIds.includes(room.id) || isCurrent;
+              const roomTypeHint: Record<string, string> = {
+                hub: "🏠", combat: "⚔️", quest: "📜", shop: "🛒", boss: "💀", mystery: "🔍",
+              };
+              const typeIcon = roomTypeHint[room.room_type] || "📍";
               return (
                 <button
                   key={room.id}
@@ -150,13 +158,20 @@ export function ChannelList({
                   className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
                     isCurrent
                       ? "bg-amber-500/15 text-amber-300 cursor-default"
-                      : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300 cursor-pointer"
+                      : isVisited
+                      ? "text-zinc-300 hover:bg-zinc-700/30 hover:text-zinc-200 cursor-pointer"
+                      : "text-zinc-500 hover:bg-zinc-700/30 hover:text-zinc-400 cursor-pointer"
                   }`}
                 >
                   <span className="text-base flex-shrink-0">{room.icon}</span>
                   <span className="truncate flex-1 text-left">{room.name}</span>
-                  {isCurrent && (
+                  {isCurrent ? (
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold flex-shrink-0">HERE</span>
+                  ) : (
+                    <span className="text-[10px] flex-shrink-0 opacity-60" title={room.room_type}>{typeIcon}</span>
+                  )}
+                  {!isVisited && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-zinc-600 flex-shrink-0" title="Not visited" />
                   )}
                 </button>
               );
