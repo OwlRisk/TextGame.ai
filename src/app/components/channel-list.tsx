@@ -1,5 +1,4 @@
-import { Hash, Users, Lock, Trash2, Link2, BookOpen, FileText, Package, Map } from "lucide-react";
-import Link from "next/link";
+import { Hash, Users, Lock, Trash2, Link2, BookOpen, FileText, Package } from "lucide-react";
 import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -77,16 +76,6 @@ interface ChannelListProps {
   myBoardHasUpdate?: boolean;
   /** Custom label for the My Board entry. Defaults to "My Board". */
   playerBoardLabel?: string;
-  /** If the game is part of a world, show a "World Map" link. */
-  worldId?: string | null;
-  /** Rooms in the world for navigation. */
-  worldRooms?: Array<{ id: string; name: string; icon: string; room_type: string }>;
-  /** Current room ID (this game) within the world. */
-  currentRoomId?: string;
-  /** Navigate to a different room in the world. */
-  onNavigateRoom?: (roomId: string) => void;
-  /** Set of visited room IDs for showing visited/unvisited state. */
-  visitedRoomIds?: string[];
 }
 
 export function ChannelList({ 
@@ -112,11 +101,6 @@ export function ChannelList({
   hasMyBoard,
   myBoardHasUpdate,
   playerBoardLabel = "My Board",
-  worldId,
-  worldRooms = [],
-  currentRoomId,
-  onNavigateRoom,
-  visitedRoomIds = [],
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
@@ -133,52 +117,6 @@ export function ChannelList({
       <div className="h-14 px-3 flex items-center justify-between border-b border-zinc-900/50 shadow-sm gap-1">
         <h2 className="font-semibold text-base text-white truncate flex-1 pl-2">{gameName}</h2>
       </div>
-
-      {worldId && worldRooms.length > 0 && (
-        <div className="border-b border-zinc-700/50">
-          <div className="px-4 pt-3 pb-1">
-            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Map className="h-3.5 w-3.5 text-amber-400/70" />
-              Locations
-            </span>
-          </div>
-          <div className="px-2 pb-2">
-            {worldRooms.map((room) => {
-              const isCurrent = room.id === currentRoomId;
-              const isVisited = visitedRoomIds.includes(room.id) || isCurrent;
-              const roomTypeHint: Record<string, string> = {
-                hub: "🏠", combat: "⚔️", quest: "📜", shop: "🛒", boss: "💀", mystery: "🔍",
-              };
-              const typeIcon = roomTypeHint[room.room_type] || "📍";
-              return (
-                <button
-                  key={room.id}
-                  onClick={() => !isCurrent && onNavigateRoom?.(room.id)}
-                  disabled={isCurrent}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                    isCurrent
-                      ? "bg-amber-500/15 text-amber-300 cursor-default"
-                      : isVisited
-                      ? "text-zinc-300 hover:bg-zinc-700/30 hover:text-zinc-200 cursor-pointer"
-                      : "text-zinc-500 hover:bg-zinc-700/30 hover:text-zinc-400 cursor-pointer"
-                  }`}
-                >
-                  <span className="text-base flex-shrink-0">{room.icon}</span>
-                  <span className="truncate flex-1 text-left">{room.name}</span>
-                  {isCurrent ? (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold flex-shrink-0">HERE</span>
-                  ) : (
-                    <span className="text-[10px] flex-shrink-0 opacity-60" title={room.room_type}>{typeIcon}</span>
-                  )}
-                  {!isVisited && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-zinc-600 flex-shrink-0" title="Not visited" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3">

@@ -15,14 +15,6 @@ export interface Game {
   isActive: boolean;
   /** ISO date string; used for sorting the list by last update */
   updatedAt: string;
-  /** If this game is a room within a world, the world's UUID. */
-  worldId?: string | null;
-  /** Room type for world rooms: hub, combat, quest, shop, boss, mystery */
-  roomType?: string | null;
-  /** Connected room IDs + names for navigation */
-  roomConnections?: Array<{ roomId: string; name: string }> | null;
-  /** AI-generated one-line room description */
-  roomDescription?: string | null;
 }
 
 interface GameContextType {
@@ -39,7 +31,7 @@ interface GameContextType {
   gamesLoading: boolean;
 }
 
-function rowToGame(row: { id: string; name: string; icon: string; color: string; config: unknown; is_active: boolean; updated_at?: string; world_id?: string | null; room_type?: string | null; room_connections?: unknown; room_description?: string | null }): Game {
+function rowToGame(row: { id: string; name: string; icon: string; color: string; config: unknown; is_active: boolean; updated_at?: string }): Game {
   return {
     id: row.id,
     name: row.name,
@@ -48,10 +40,6 @@ function rowToGame(row: { id: string; name: string; icon: string; color: string;
     config: (row.config ?? {}) as GameConfig,
     isActive: row.is_active,
     updatedAt: row.updated_at ?? new Date().toISOString(),
-    worldId: row.world_id ?? null,
-    roomType: row.room_type ?? null,
-    roomConnections: (row.room_connections as Array<{ roomId: string; name: string }>) ?? null,
-    roomDescription: row.room_description ?? null,
   };
 }
 
@@ -139,13 +127,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const addGame = useCallback((game: Game) => {
     const withTime = { ...game, updatedAt: game.updatedAt ?? new Date().toISOString() };
-    setGames((prev) => {
-      if (prev.some((g) => g.id === game.id)) {
-        return prev.map((g) => (g.id === game.id ? { ...g, ...withTime } : g));
-      }
-      return sortGamesByUpdatedAt([withTime, ...prev]);
-    });
-    if (user && !game.worldId) {
+    setGames((prev) => sortGamesByUpdatedAt([withTime, ...prev]));
+    if (user) {
       createGame({
         id: game.id,
         user_id: user.id,

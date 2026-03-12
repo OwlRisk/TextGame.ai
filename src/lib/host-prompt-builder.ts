@@ -23,20 +23,6 @@ export interface HostPromptOpts {
   hostPersonality?: string;
   /** AI-generated behavioral instructions for this specific host (from generatedHost.systemPrompt) */
   hostCustomSystemPrompt?: string;
-  /** World context for RPG rooms — injected into the prompt for world-aware GM behavior */
-  worldContext?: {
-    worldName: string;
-    theme: string;
-    roomName: string;
-    roomType: string;
-    roomDescription: string;
-    connectedRooms: Array<{ name: string; roomType: string }>;
-    partyState: Record<string, unknown>;
-    gmContext: string;
-    mainQuest?: Array<{ id: string; name: string; description: string; roomId: string; objectives: string[] }>;
-    enemyTable?: Array<{ name: string; hp: number; attack: number; defense: number; xpReward: number; goldReward: number }>;
-    itemTable?: Array<{ name: string; type: string; rarity: string; description: string; buyPrice?: number }>;
-  };
 }
 
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
@@ -294,77 +280,6 @@ ${eventLogSummary}
 Private Board (already sent — do not repeat publicly):
 ${boardSummary}
 
-${opts.worldContext ? `## WORLD CONTEXT — OPEN-WORLD RPG
-World: ${opts.worldContext.worldName} (Theme: ${opts.worldContext.theme})
-Current Location: ${opts.worldContext.roomName} (${opts.worldContext.roomType})
-${opts.worldContext.roomDescription}
-
-Connected Locations: ${opts.worldContext.connectedRooms.map((r) => `${r.name} (${r.roomType})`).join(", ")}
-
-Party State: ${JSON.stringify(opts.worldContext.partyState, null, 2)}
-
-${opts.worldContext.gmContext}
-
-ROOM NAVIGATION: When the party wants to move to a connected location, emit SCENE: <location name> in your directives. The system will handle the actual room transition. Do NOT refuse movement — if players want to go somewhere connected, let them.
-
-## COMBAT RULES (Light Mechanics — simulate dice)
-- Initiative: Each combatant rolls d20 + agility modifier. Higher goes first.
-- Attack: Roll d20 + strength (melee) or agility (ranged). Compare to enemy defense.
-  - >= defense: Hit. Damage = weapon_base + strength_mod + d6.
-  - < defense: Miss.
-  - Natural 20: Critical hit (double damage).
-  - Natural 1: Critical miss (fumble, describe consequence).
-- Skills: Cost MP. Auto-hit but may have reduced effect if target resists.
-- Defense: Reduce incoming damage by armor value.
-- Healing: Restore HP equal to skill power + intelligence modifier.
-- Flee: d20 + agility >= 12 to escape. Failure = enemy gets free attack.
-
-Emit directives after each resolution:
-  DICE: <CharName> | d20 | <roll> | +<modifier> | = <total> | <context>
-  HP: <CharName> | <+/-amount>
-  MP: <CharName> | <-amount>
-  COMBAT: start | <EnemyName> | hp:<amount> | atk:<amount> | def:<amount>
-  COMBAT: end
-  XP: <amount> | <reason>
-  LOOT: <ItemName> | <rarity: common/uncommon/rare/epic/legendary> | <description>
-  LEVEL_UP: <CharName> | <newLevel>
-  SHOP: open | <item1:price1, item2:price2, ...>
-  SHOP: close
-  EQUIP: <CharName> | <ItemName> | <slot: weapon/armor/accessory>
-  WORLD_EVENT: <eventId> | <description>
-
-${opts.worldContext!.mainQuest ? `## MAIN QUEST LINE
-${opts.worldContext!.mainQuest.map((q, i) => `${i + 1}. "${q.name}" (${q.roomId}) — ${q.description}\n   Objectives: ${q.objectives.join(", ")}`).join("\n")}
-Use QUEST directives to track progress through these stages. Introduce side quests dynamically.
-` : ''}
-${opts.worldContext!.enemyTable ? `## ENEMY REFERENCE (use these stats in COMBAT: start directives)
-${opts.worldContext!.enemyTable.map((e) => `- ${e.name}: HP:${e.hp} ATK:${e.attack} DEF:${e.defense} → ${e.xpReward}XP, ${e.goldReward}g`).join("\n")}
-` : ''}
-${opts.worldContext!.itemTable ? `## ITEM REFERENCE (use for LOOT drops and SHOP inventories)
-${opts.worldContext!.itemTable.filter((i) => i.buyPrice).map((i) => `- ${i.name} (${i.rarity} ${i.type}): ${i.description} — ${i.buyPrice}g`).join("\n")}
-` : ''}
-## SESSION CONTEXT
-${(() => {
-  const ps = opts.worldContext!.partyState as Record<string, unknown>;
-  const visited = Array.isArray(ps.visitedRoomIds) ? ps.visitedRoomIds as string[] : [];
-  const activeQuests = Array.isArray(ps.activeQuests) ? ps.activeQuests as Array<{ name: string; description?: string }> : [];
-  const lastPlayed = ps.lastPlayedAt as string | undefined;
-  const isResume = lastPlayed && (Date.now() - new Date(lastPlayed).getTime()) > 60000;
-  const isRevisit = visited.length > 1;
-  let ctx = "";
-  if (isResume) {
-    ctx += `The party is RESUMING their adventure. `;
-    if (activeQuests.length > 0) ctx += `Active quests: ${activeQuests.map((q) => q.name).join(", ")}. `;
-    ctx += `Current location: ${opts.worldContext!.roomName}. Welcome them back briefly.\n`;
-  }
-  if (isRevisit) {
-    ctx += `The player is RETURNING to ${opts.worldContext!.roomName}. Reflect changes from previous visits: completed quests, defeated enemies, new developments. NPCs remember the party.`;
-  } else {
-    ctx += `This is the player's FIRST VISIT to ${opts.worldContext!.roomName}. Generate: 1-2 interactable NPCs with names and personalities, a discovery or environmental detail, and optionally a side quest hook. These become persistent — remember them for future visits.`;
-  }
-  return ctx;
-})()}
-
-` : ''}## GAME RULES (enforce only, do not modify)
+## GAME RULES (enforce only, do not modify)
 ${rulesText || "No specific rules defined."}`.trim();
 }

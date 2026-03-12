@@ -342,8 +342,8 @@ describe('Pool API query parameter handling', () => {
 // ─── 7. VALID_STYLES set operations ───────────────────────────────────────────
 
 describe('VALID_STYLES set completeness', () => {
-  it('has exactly 6 styles', () => {
-    expect(VALID_STYLES).toHaveLength(6);
+  it('has exactly 5 styles', () => {
+    expect(VALID_STYLES).toHaveLength(5);
   });
 
   it('contains semi-realistic as the default', () => {
@@ -352,7 +352,7 @@ describe('VALID_STYLES set completeness', () => {
   });
 
   it('contains all expected style values', () => {
-    const expected = ['toon3d', 'semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'];
+    const expected = ['semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'];
     for (const s of expected) {
       expect(VALID_STYLES).toContain(s);
     }
@@ -362,7 +362,7 @@ describe('VALID_STYLES set completeness', () => {
     expect(new Set(VALID_STYLES).size).toBe(VALID_STYLES.length);
   });
 
-  it('DEFAULT_STYLE is included in VALID_STYLES', () => {
-    expect(VALID_STYLES).toContain(DEFAULT_STYLE);
+  it('DEFAULT_STYLE is the first element', () => {
+    expect(VALID_STYLES[0]).toBe(DEFAULT_STYLE);
   });
 });

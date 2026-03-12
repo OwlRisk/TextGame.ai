@@ -41,8 +41,6 @@ interface Game {
   icon: string;
   color: string;
   config?: { rules?: string; template?: string };
-  worldId?: string | null;
-  roomType?: string | null;
 }
 
 interface GameSidebarProps {
@@ -238,7 +236,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
         {user && (
           <ScrollArea className="flex-1 min-h-0 w-full">
             <div className="flex flex-col items-center gap-2 px-3">
-              {games.filter((g) => !g.worldId).map((game) => (
+              {games.map((game) => (
                 <ContextMenu key={game.id}>
                   <ContextMenuTrigger>
                     <Tooltip>

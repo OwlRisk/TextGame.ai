@@ -103,10 +103,6 @@ export interface Database {
           created_at: string;
           updated_at: string;
           share_token: string | null;
-          world_id: string | null;
-          room_type: string | null;
-          room_connections: any | null;
-          room_description: string | null;
         };
         Insert: {
           id?: string;
@@ -119,10 +115,6 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           share_token?: string | null;
-          world_id?: string | null;
-          room_type?: string | null;
-          room_connections?: any | null;
-          room_description?: string | null;
         };
         Update: {
           id?: string;
@@ -135,10 +127,6 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           share_token?: string | null;
-          world_id?: string | null;
-          room_type?: string | null;
-          room_connections?: any | null;
-          room_description?: string | null;
         };
       };
       game_drafts: {
@@ -181,47 +169,6 @@ export interface Database {
           game_id?: string;
           user_id?: string;
           state?: any;
-          updated_at?: string;
-        };
-      };
-      worlds: {
-        Row: {
-          id: string;
-          user_id: string;
-          name: string;
-          theme: string;
-          icon: string;
-          color: string;
-          config: any;
-          party_state: any;
-          is_active: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          name: string;
-          theme: string;
-          icon?: string;
-          color?: string;
-          config?: any;
-          party_state?: any;
-          is_active?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          name?: string;
-          theme?: string;
-          icon?: string;
-          color?: string;
-          config?: any;
-          party_state?: any;
-          is_active?: boolean;
-          created_at?: string;
           updated_at?: string;
         };
       };

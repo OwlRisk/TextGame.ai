@@ -1,5 +1,5 @@
 import { useState, useCallback, memo } from "react";
-import { Volume2, VolumeX, User, Info, UserPlus, UserMinus, RefreshCw, Backpack, Scroll, Swords } from "lucide-react";
+import { Volume2, VolumeX, User, Info, UserPlus, UserMinus, RefreshCw } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -54,16 +54,6 @@ interface PlayerPanelWithBoardProps {
   onAssignGuest?: (memberId: string, playerId: string | null) => void;
   /** Force-regenerate a player avatar with DALL-E 3 (costs tokens). */
   onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
-  /** RPG mode: current human player (for showing their inventory/skills) */
-  rpgHumanPlayer?: Player | null;
-  /** RPG mode: active quests list */
-  rpgQuests?: Array<{ id: string; name: string; status: "active" | "completed" | "failed"; description?: string }>;
-  /** RPG mode: whether currently in combat */
-  rpgInCombat?: boolean;
-  /** RPG mode: name of current combat enemy */
-  rpgCombatEnemy?: string;
-  /** RPG mode: current scene display name */
-  rpgCurrentScene?: string;
 }
 
 export function PlayerPanelWithBoard({ 
@@ -82,11 +72,6 @@ export function PlayerPanelWithBoard({
   guestMembers = [],
   onAssignGuest,
   onRegenerateAvatar,
-  rpgHumanPlayer,
-  rpgQuests,
-  rpgInCombat,
-  rpgCombatEnemy,
-  rpgCurrentScene,
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -95,8 +80,6 @@ export function PlayerPanelWithBoard({
     setProfilePlayer(p);
     setProfileOpen(true);
   }, []);
-
-  const isRpgMode = rpgHumanPlayer?.hp !== undefined;
 
   return (
     <div className="w-80 flex-shrink-0 bg-gradient-to-b from-zinc-900/95 via-[#120820]/95 to-zinc-900/95 flex flex-col border-l border-violet-900/20 h-full overflow-hidden backdrop-blur-sm">
@@ -109,27 +92,12 @@ export function PlayerPanelWithBoard({
         onAvatarUrlLoaded={onAvatarUrlLoaded}
         humanGameIdentity={humanGameIdentity}
       />
-
-      {/* Combat banner */}
-      {rpgInCombat && (
-        <div className="px-4 py-2 bg-red-950/60 border-b border-red-800/40 flex items-center gap-2">
-          <Swords className="h-4 w-4 text-red-400 animate-pulse" />
-          <span className="text-sm font-bold text-red-300">COMBAT</span>
-          {rpgCombatEnemy && <span className="text-xs text-red-400/80 truncate">vs {rpgCombatEnemy}</span>}
-        </div>
-      )}
-
       <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
         <div className="flex items-center gap-2 text-zinc-300">
           <User className="h-4 w-4" />
-          <span className="text-sm font-semibold">Party</span>
+          <span className="text-sm font-semibold">Players</span>
           <span className="text-xs text-zinc-500">({players.length + guestMembers.length})</span>
         </div>
-        {rpgCurrentScene && (
-          <span className="ml-auto text-[10px] text-amber-400/80 font-medium truncate max-w-[100px]" title={rpgCurrentScene}>
-            📍 {rpgCurrentScene}
-          </span>
-        )}
       </div>
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3 space-y-3">
@@ -158,21 +126,6 @@ export function PlayerPanelWithBoard({
               <GuestCard key={g.id} guest={g} />
             ))}
           </div>
-
-          {/* RPG Inventory */}
-          {isRpgMode && rpgHumanPlayer?.inventory && rpgHumanPlayer.inventory.length > 0 && (
-            <RpgInventoryPanel items={rpgHumanPlayer.inventory} />
-          )}
-
-          {/* RPG Skills */}
-          {isRpgMode && rpgHumanPlayer?.skills && rpgHumanPlayer.skills.length > 0 && (
-            <RpgSkillsPanel skills={rpgHumanPlayer.skills} />
-          )}
-
-          {/* RPG Quests */}
-          {isRpgMode && rpgQuests && rpgQuests.length > 0 && (
-            <RpgQuestPanel quests={rpgQuests} />
-          )}
         </div>
       </ScrollArea>
     </div>
@@ -320,22 +273,6 @@ const PlayerCard = memo(function PlayerCard({
               ? <div className="text-xs text-violet-300 font-medium">{player.role}</div>
               : null
           )}
-          {player.hp !== undefined && player.maxHp && (
-            <div className="mt-1 flex items-center gap-1.5">
-              <div className="flex-1 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    player.hp / player.maxHp > 0.5 ? "bg-green-500" :
-                    player.hp / player.maxHp > 0.25 ? "bg-yellow-500" : "bg-red-500"
-                  }`}
-                  style={{ width: `${Math.max(0, (player.hp / player.maxHp) * 100)}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-zinc-400 font-mono tabular-nums whitespace-nowrap">
-                {player.hp}/{player.maxHp}
-              </span>
-            </div>
-          )}
         </div>
         <div className="flex gap-1 flex-shrink-0 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
           {onRegenerateAvatar && player.isAI && (
@@ -447,69 +384,6 @@ const PlayerCard = memo(function PlayerCard({
     </div>
   );
 });
-
-function RpgInventoryPanel({ items }: { items: string[] }) {
-  return (
-    <div className="border-t border-violet-900/20 pt-3">
-      <div className="flex items-center gap-1.5 mb-2">
-        <Backpack className="h-3.5 w-3.5 text-amber-400" />
-        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Inventory</span>
-        <span className="text-[10px] text-zinc-500">({items.length})</span>
-      </div>
-      <div className="flex flex-wrap gap-1">
-        {items.map((item, i) => (
-          <span key={`${item}-${i}`} className="text-[11px] px-2 py-0.5 bg-amber-900/20 text-amber-300 border border-amber-800/30 rounded-md">
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RpgSkillsPanel({ skills }: { skills: Array<{ name: string; level: number }> }) {
-  return (
-    <div className="border-t border-violet-900/20 pt-3">
-      <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Skills</span>
-      </div>
-      <div className="space-y-1">
-        {skills.map((skill) => (
-          <div key={skill.name} className="flex items-center justify-between text-[11px]">
-            <span className="text-zinc-300">{skill.name}</span>
-            <span className="text-violet-400 font-mono">Lv.{skill.level}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RpgQuestPanel({ quests }: { quests: Array<{ id: string; name: string; status: "active" | "completed" | "failed"; description?: string }> }) {
-  const activeQuests = quests.filter(q => q.status === "active");
-  const completedQuests = quests.filter(q => q.status === "completed");
-  return (
-    <div className="border-t border-violet-900/20 pt-3">
-      <div className="flex items-center gap-1.5 mb-2">
-        <Scroll className="h-3.5 w-3.5 text-emerald-400" />
-        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Quests</span>
-      </div>
-      <div className="space-y-1.5">
-        {activeQuests.map((q) => (
-          <div key={q.id} className="text-[11px] p-1.5 rounded bg-emerald-950/30 border border-emerald-800/20">
-            <div className="font-medium text-emerald-300">{q.name}</div>
-            {q.description && <div className="text-zinc-400 mt-0.5">{q.description}</div>}
-          </div>
-        ))}
-        {completedQuests.map((q) => (
-          <div key={q.id} className="text-[11px] p-1.5 rounded bg-zinc-800/30 border border-zinc-700/20 opacity-60">
-            <div className="font-medium text-zinc-400 line-through">{q.name}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 const GuestCard = memo(function GuestCard({ guest }: { guest: GuestEntry }) {
   const initial = guest.nickname?.charAt(0)?.toUpperCase() || "?";

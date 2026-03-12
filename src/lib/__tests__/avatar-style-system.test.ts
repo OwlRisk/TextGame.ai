@@ -20,8 +20,8 @@ import {
 // ─── 1. Constants contract ────────────────────────────────────────────────────
 
 describe('VALID_STYLES', () => {
-  it('contains exactly 6 style packs', () => {
-    expect(VALID_STYLES).toHaveLength(6);
+  it('contains exactly 5 style packs', () => {
+    expect(VALID_STYLES).toHaveLength(5);
   });
 
   it('includes all expected style names', () => {

@@ -7,8 +7,6 @@ import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
 import { isDatabaseConfigured } from '@/lib/db-ready';
 
-export const maxDuration = 60;
-
 const GAME_ICON_BUCKET = 'avatars';
 const GAME_ICON_SIZE = 128;
 

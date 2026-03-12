@@ -3,12 +3,10 @@
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Users, Clock, Play, Crown, Search, Sparkles, ChevronRight } from "lucide-react";
+import { Users, Clock, Play, Crown, Search, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { toast } from "sonner";
 import {
   type DiscoverPreset,
   type GameTemplate,
@@ -28,7 +26,6 @@ interface DiscoverPageProps {
 }
 
 export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
-  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -235,8 +232,6 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             </div>
           </div>
         )}
-
-        {/* Open World RPG - hidden from discover, available at /worlds */}
 
         {/* Category Tabs + Search */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">

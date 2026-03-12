@@ -65,12 +65,6 @@ import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { supabase } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
 
-const ActionBar = dynamic(() => import("@/app/components/action-bar").then(m => m.ActionBar), { ssr: false });
-const CombatUI = dynamic(() => import("@/app/components/combat-ui").then(m => m.CombatUI), { ssr: false });
-const DiceRollNotifications = dynamic(() => import("@/app/components/dice-roll").then(m => m.DiceRollNotifications), { ssr: false });
-const CharacterSheet = dynamic(() => import("@/app/components/character-sheet").then(m => m.CharacterSheet), { ssr: false });
-const QuestLog = dynamic(() => import("@/app/components/quest-log").then(m => m.QuestLog), { ssr: false });
-
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
   "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7",
@@ -125,8 +119,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameOverSummary,
     setGameOverSummary,
     addReaction,
-    gamePhaseState,
-    setGamePhaseState,
   } = useGameRoomContext();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -136,31 +128,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [inviteCopied, setInviteCopied] = useState(false);
   const { roomMembers, refreshMembers } = useRoomMembers(gameId);
 
-  // ─── World / RPG room state ──────────────────────────────────────────────
-  const [worldData, setWorldData] = useState<{ id: string; name: string; theme: string; config: Record<string, unknown>; party_state: Record<string, unknown> } | null>(null);
-  const [worldRooms, setWorldRooms] = useState<Array<{ id: string; name: string; icon: string; room_type: string; room_connections: Array<{ roomId: string; name: string }> | null; room_description: string }>>([]);
-  const isWorldRoom = !!(games.find((g) => g.id === gameId)?.worldId);
-  const [showCharSheet, setShowCharSheet] = useState(false);
-  const [showQuestLog, setShowQuestLog] = useState(false);
-
   // Guest player: arrived via /join/[inviteCode] with guestId URL param
   const [guestId, setGuestId] = useState<string | null>(null);
   const [guestMemberId, setGuestMemberId] = useState<string | null>(null);
   const [guestNickname, setGuestNickname] = useState<string | null>(null);
-  // Load world data for RPG rooms
-  useEffect(() => {
-    const game = games.find((g) => g.id === gameId);
-    if (!game?.worldId) return;
-    fetch(`/api/worlds/${game.worldId}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data) {
-          setWorldData(data.world);
-          setWorldRooms(data.rooms || []);
-        }
-      });
-  }, [gameId, games]);
-
   // Presence: owner/guest online status via Supabase Presence
   const { onlineGuestPresences, isOwnerOnline } = useGameRoomPresence({
     gameId,
@@ -365,27 +336,30 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // If game is not in my list, try two fallbacks:
   // 1. Guest view: verify guestId membership and load game data (for invite-joined players)
-  // 2. Fallback game loader: if the game is not in GameContext after initial load,
-  // fetch it from the server. This covers world RPG rooms (created server-side),
-  // page refreshes, and direct links.
+  // 2. Public/shared view: load game via share token (for /play/[token] links)
+  // Wait until gamesLoading is done before deciding the game is truly absent (avoids spurious 404 for owners).
   const [sharedLoadPending, setSharedLoadPending] = useState(false);
   const sharedLoadTriedRef = useRef(false);
   useEffect(() => {
     if (gamesLoading || currentGame || !gameId || sharedLoadTriedRef.current) return;
 
+    // Prefer guest-view endpoint when a guestId is available.
     const urlGuestId = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("guestId")
       : null;
     const guestIdForLoad = urlGuestId ?? guestId ?? (typeof window !== "undefined" ? localStorage.getItem(`guestId_${gameId}`) : null);
+
+    // Authenticated users who own the game don't need the public/guest endpoint.
+    // Their game will arrive via the GameProvider's own fetch. Only proceed for
+    // actual guests (have a guestId) or truly unauthenticated visitors.
+    if (!guestIdForLoad && session?.user?.id) return;
 
     sharedLoadTriedRef.current = true;
     setSharedLoadPending(true);
 
     const url = guestIdForLoad
       ? `/api/games/${gameId}/guest-view?guestId=${encodeURIComponent(guestIdForLoad)}`
-      : session?.user?.id
-        ? `/api/games/${gameId}`
-        : `/api/games/${gameId}/public`;
+      : `/api/games/${gameId}/public`;
 
     fetch(url)
       .then((res) => (res.ok ? res.json() : null))
@@ -397,17 +371,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             icon: row.icon,
             color: row.color,
             config: row.config ?? {},
-            isActive: row.is_active ?? true,
+            isActive: true,
             updatedAt: row.updated_at ?? new Date().toISOString(),
-            worldId: row.world_id ?? null,
-            roomType: row.room_type ?? null,
-            roomConnections: row.room_connections ?? null,
-            roomDescription: row.room_description ?? null,
           });
         }
       })
       .catch((e) => {
-        console.error('[game] Failed to load game:', e);
+        console.error('[game] Failed to load game for guest:', e);
         toast.error("Could not load game data");
       })
       .finally(() => setSharedLoadPending(false));
@@ -706,54 +676,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       );
     }
 
-    // Initialize RPG stats for exploration games (both old cursed-kingdom and new world rooms)
-    const isExplorationRpg = config.template === "cursed-kingdom" || config.template === "exploration";
-    if (isExplorationRpg) {
-      type SavedPartyMember = { id: string; name: string; hp: number; maxHp: number; mp?: number; maxMp?: number; class?: string; level?: number; xp?: number; xpToNext?: number; gold?: number; inventory?: string[]; skills?: Array<{ name: string; level: number }>; equipment?: { weapon?: string; armor?: string; accessory?: string }; attributes?: { strength: number; agility: number; intelligence: number; charisma: number; constitution: number } };
-      const worldParty = worldData?.party_state as { characters?: SavedPartyMember[]; party?: SavedPartyMember[]; activeQuests?: Array<{ id: string; name: string; status: string; description?: string }>; quests?: Array<{ id: string; name: string; status: string; description?: string }>; currentRoomId?: string; visitedRoomIds?: string[]; gold?: number } | undefined;
-      const savedMembers = worldParty?.characters || worldParty?.party;
-      if (savedMembers && savedMembers.length > 0) {
-        setPlayers((prev) =>
-          prev.map((p) => {
-            if (p.isGameMaster) return p;
-            const saved = savedMembers.find((wp) => wp.name === p.name || wp.id === p.id);
-            if (saved) {
-              return { ...p, hp: saved.hp, maxHp: saved.maxHp, mp: saved.mp ?? 50, maxMp: saved.maxMp ?? 50, characterClass: saved.class, level: saved.level ?? 1, xp: saved.xp ?? 0, xpToNext: saved.xpToNext ?? 100, gold: saved.gold ?? 50, inventory: saved.inventory || [], skills: saved.skills || [], equipment: saved.equipment, attributes: saved.attributes };
-            }
-            return { ...p, hp: 100, maxHp: 100, mp: 50, maxMp: 50, level: 1, xp: 0, xpToNext: 100, gold: 50, inventory: [], skills: [] };
-          })
-        );
-        const quests = worldParty?.activeQuests || worldParty?.quests;
-        if (quests) {
-          setGamePhaseState((prev) => ({
-            ...prev,
-            quests: quests as Array<{ id: string; name: string; status: "active" | "completed" | "failed"; description?: string }>,
-          }));
-        }
-      } else {
-        setPlayers((prev) =>
-          prev.map((p) => {
-            if (p.isGameMaster) return p;
-            const partyRoleIndex = prev.filter((pp) => !pp.isGameMaster).indexOf(p);
-            const themeRoles = (currentGame.config as unknown as Record<string, unknown>).partyRoles as string[] | undefined;
-            const assignedClass = themeRoles?.[partyRoleIndex] || "Fighter";
-            return { ...p, hp: 100, maxHp: 100, mp: 50, maxMp: 50, characterClass: assignedClass, level: 1, xp: 0, xpToNext: 100, gold: 50, inventory: [], skills: [] };
-          })
-        );
-      }
-
-      const roomName = currentGame.name || "Unknown Location";
-      setGamePhaseState((prev) => ({
-        ...prev,
-        currentScene: gameId,
-        currentSceneName: roomName,
-        visitedScenes: Array.from(new Set([...(prev.visitedScenes || []), gameId])),
-        inCombat: false,
-        quests: prev.quests || [],
-      }));
-      setPhaseLabel(roomName);
-    }
-
       // Cancel any in-flight seed from a prior (interrupted) start attempt
       seedCancelledRef.current = true;
       await new Promise((r) => setTimeout(r, 0));
@@ -945,29 +867,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         hostName: generatedHost?.name ?? "Game Master",
         hostPersonality: generatedHost?.personality ?? undefined,
         hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
-        worldContext: (() => {
-          const game = games.find((g) => g.id === gameId);
-          if (!game?.worldId || !worldData) return undefined;
-          const thisRoom = worldRooms.find((r) => r.id === gameId);
-          const connectedRooms = (game.roomConnections || []).map((c: { roomId: string; name: string }) => {
-            const cr = worldRooms.find((r) => r.id === c.roomId);
-            return { name: c.name, roomType: cr?.room_type || "unknown" };
-          });
-          const themeConfig = worldData.config as { gmContext?: string; mainQuest?: Array<{ id: string; name: string; description: string; roomId: string; objectives: string[] }>; enemyTable?: Array<{ name: string; hp: number; attack: number; defense: number; xpReward: number; goldReward: number }>; itemTable?: Array<{ name: string; type: string; rarity: string; description: string; buyPrice?: number }> };
-          return {
-            worldName: worldData.name,
-            theme: worldData.theme,
-            roomName: game.name,
-            roomType: game.roomType || thisRoom?.room_type || "hub",
-            roomDescription: game.roomDescription || thisRoom?.room_description || "",
-            connectedRooms,
-            partyState: worldData.party_state,
-            gmContext: themeConfig?.gmContext || "",
-            mainQuest: themeConfig?.mainQuest,
-            enemyTable: themeConfig?.enemyTable,
-            itemTable: themeConfig?.itemTable,
-          };
-        })(),
       });
 
       const applyHostRoleAssignments = (content: string): string => {
@@ -1097,240 +996,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             if (targetMsg) addReaction(targetMsg.id, a.emoji, gmName);
           } else if (a.type === "engagement") {
             latestEngagementScore = a.score;
-          } else if (a.type === "scene_change") {
-            const sceneId = a.sceneId;
-            const sceneName = a.sceneName || sceneId;
-
-            const game = games.find((g) => g.id === gameId);
-            if (game?.worldId && game.roomConnections) {
-              const targetConn = game.roomConnections.find(
-                (c: { roomId: string; name: string }) =>
-                  c.name.toLowerCase() === sceneName.toLowerCase() ||
-                  c.roomId === sceneId
-              );
-              if (targetConn) {
-                const currentPartyState = {
-                  ...worldData?.party_state,
-                  characters: currentPlayers.filter((p) => !p.isGameMaster).map((p) => ({
-                    id: p.id, name: p.name, hp: p.hp ?? 100, maxHp: p.maxHp ?? 100,
-                    mp: p.mp ?? 50, maxMp: p.maxMp ?? 50,
-                    class: p.characterClass, level: p.level ?? 1, xp: p.xp ?? 0, xpToNext: p.xpToNext ?? 100,
-                    gold: p.gold ?? 50, role: (p as unknown as { role?: string }).role,
-                    inventory: p.inventory || [], skills: p.skills || [],
-                    equipment: p.equipment, attributes: p.attributes,
-                  })),
-                  activeQuests: gamePhaseState.quests?.filter((q) => q.status === "active") || [],
-                  completedQuests: gamePhaseState.quests?.filter((q) => q.status === "completed").map((q) => q.id) || [],
-                  visitedRoomIds: [...(gamePhaseState.visitedScenes || []), gameId],
-                  currentRoomId: targetConn.roomId,
-                };
-                fetch(`/api/worlds/${game.worldId}/navigate`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ targetRoomId: targetConn.roomId, partyState: currentPartyState }),
-                }).then(() => {
-                  router.push(`/game/${targetConn.roomId}`);
-                });
-                break;
-              }
-            }
-
-            setGamePhaseState((prev) => ({
-              ...prev,
-              currentScene: sceneId,
-              currentSceneName: sceneName,
-              visitedScenes: Array.from(new Set([...(prev.visitedScenes || []), sceneId])),
-            }));
-            setPhaseLabel(sceneName);
-            const sectionId = `scene_${sceneId}`;
-            setSections((prev) => {
-              if (prev.some((s) => s.id === sectionId)) return prev;
-              return [...prev, { id: sectionId, name: sceneName, content: "" }];
-            });
-            setSelectedChannelId(sectionId);
-            const sceneAnn = `📍 Moved to: ${sceneName}`;
-            if (!seenAnnouncements.has(sceneAnn.toLowerCase())) {
-              seenAnnouncements.add(sceneAnn.toLowerCase());
-              addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#f59e0b", content: sceneAnn, isAI: false, isAnnouncement: true });
-            }
-          } else if (a.type === "hp_change") {
-            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
-            if (pid) {
-              setPlayers((prev) => prev.map((p) => {
-                if (p.id !== pid) return p;
-                const curMax = a.maxHp ?? p.maxHp ?? 100;
-                const curHp = Math.max(0, Math.min(curMax, (p.hp ?? curMax) + a.delta));
-                return { ...p, hp: curHp, maxHp: curMax };
-              }));
-            }
-          } else if (a.type === "item_change") {
-            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
-            if (pid) {
-              setPlayers((prev) => prev.map((p) => {
-                if (p.id !== pid) return p;
-                const inv = [...(p.inventory || [])];
-                if (a.action === "add") {
-                  inv.push(a.item);
-                } else {
-                  const idx = inv.indexOf(a.item);
-                  if (idx >= 0) inv.splice(idx, 1);
-                }
-                return { ...p, inventory: inv };
-              }));
-            }
-          } else if (a.type === "combat") {
-            setGamePhaseState((prev) => ({
-              ...prev,
-              inCombat: a.action === "start",
-              combatEnemy: a.action === "start" ? (a.enemy || "Unknown Enemy") : undefined,
-              combatEnemyStats: a.action === "start" && a.hp ? { name: a.enemy || "Unknown Enemy", hp: a.hp, maxHp: a.hp, attack: a.atk ?? 10, defense: a.def ?? 5 } : a.action === "end" ? null : prev.combatEnemyStats,
-            }));
-            if (a.action === "start") {
-              setMood("dark");
-              const combatAnnounce = `⚔️ Combat started${a.enemy ? ` — ${a.enemy}` : ""}!`;
-              if (!seenAnnouncements.has(combatAnnounce.toLowerCase())) {
-                seenAnnouncements.add(combatAnnounce.toLowerCase());
-                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#ef4444", content: combatAnnounce, isAI: false, isAnnouncement: true });
-              }
-            } else {
-              setMood("neutral");
-              const endAnnounce = "🏆 Combat ended!";
-              if (!seenAnnouncements.has(endAnnounce.toLowerCase())) {
-                seenAnnouncements.add(endAnnounce.toLowerCase());
-                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#22c55e", content: endAnnounce, isAI: false, isAnnouncement: true });
-              }
-            }
-          } else if (a.type === "quest_update") {
-            setGamePhaseState((prev) => {
-              const quests = [...(prev.quests || [])];
-              const existing = quests.findIndex((q) => q.id === a.questId);
-              const statusMap: Record<string, "active" | "completed" | "failed"> = {
-                start: "active", progress: "active", complete: "completed", fail: "failed",
-              };
-              if (existing >= 0) {
-                quests[existing] = { ...quests[existing], status: statusMap[a.status], description: a.description || quests[existing].description };
-              } else {
-                quests.push({ id: a.questId, name: a.questId, status: statusMap[a.status], description: a.description });
-              }
-              return { ...prev, quests };
-            });
-            if (a.status === "start") {
-              const qAnn = `📜 New quest: ${a.questId}`;
-              if (!seenAnnouncements.has(qAnn.toLowerCase())) {
-                seenAnnouncements.add(qAnn.toLowerCase());
-                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#10b981", content: qAnn, isAI: false, isAnnouncement: true });
-              }
-            } else if (a.status === "complete") {
-              const qAnn = `✅ Quest completed: ${a.questId}`;
-              if (!seenAnnouncements.has(qAnn.toLowerCase())) {
-                seenAnnouncements.add(qAnn.toLowerCase());
-                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#10b981", content: qAnn, isAI: false, isAnnouncement: true });
-              }
-            }
-          } else if (a.type === "skill_check") {
-            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
-            if (pid) {
-              setPlayers((prev) => prev.map((p) => {
-                if (p.id !== pid) return p;
-                const skills = [...(p.skills || [])];
-                if (!skills.some((s) => s.name === a.skill)) {
-                  skills.push({ name: a.skill, level: 1 });
-                }
-                return { ...p, skills };
-              }));
-            }
-          } else if (a.type === "dice_roll") {
-            setGamePhaseState((prev) => ({
-              ...prev,
-              recentDiceRolls: [
-                ...(prev.recentDiceRolls || []).slice(-4),
-                { character: a.character, diceType: a.diceType, roll: a.roll, modifier: a.modifier, total: a.total, context: a.context, isCritical: a.roll === 20, isFumble: a.roll === 1 },
-              ],
-            }));
-          } else if (a.type === "mp_change") {
-            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
-            if (pid) {
-              setPlayers((prev) => prev.map((p) => {
-                if (p.id !== pid) return p;
-                const curMax = p.maxMp ?? 50;
-                const curMp = Math.max(0, Math.min(curMax, (p.mp ?? curMax) + a.delta));
-                return { ...p, mp: curMp, maxMp: curMax };
-              }));
-            }
-          } else if (a.type === "xp_gain") {
-            setPlayers((prev) => prev.map((p) => {
-              if (p.isGameMaster || !p.hp) return p;
-              const newXp = (p.xp ?? 0) + a.amount;
-              const xpToNext = p.xpToNext ?? 100;
-              if (newXp >= xpToNext) {
-                const newLevel = (p.level ?? 1) + 1;
-                return { ...p, xp: newXp - xpToNext, xpToNext: Math.floor(xpToNext * 1.5), level: newLevel, maxHp: (p.maxHp ?? 100) + 10, hp: (p.maxHp ?? 100) + 10, maxMp: (p.maxMp ?? 50) + 5, mp: (p.maxMp ?? 50) + 5 };
-              }
-              return { ...p, xp: newXp };
-            }));
-            const xpAnn = `⭐ +${a.amount} XP${a.reason ? ` — ${a.reason}` : ""}`;
-            if (!seenAnnouncements.has(xpAnn.toLowerCase())) {
-              seenAnnouncements.add(xpAnn.toLowerCase());
-              addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#f59e0b", content: xpAnn, isAI: false, isAnnouncement: true });
-            }
-          } else if (a.type === "loot_drop") {
-            setGamePhaseState((prev) => ({
-              ...prev,
-              recentLoot: [...(prev.recentLoot || []).slice(-4), { name: a.itemName, rarity: a.rarity as import("@/lib/rpg-types").ItemRarity, description: a.description, timestamp: Date.now() }],
-            }));
-            const lootAnn = `🎁 Loot: ${a.itemName} (${a.rarity})`;
-            if (!seenAnnouncements.has(lootAnn.toLowerCase())) {
-              seenAnnouncements.add(lootAnn.toLowerCase());
-              addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#a855f7", content: lootAnn, isAI: false, isAnnouncement: true });
-            }
-            setPlayers((prev) => prev.map((p) => {
-              if (p.isGameMaster || p.isAI) return p;
-              return { ...p, inventory: [...(p.inventory || []), a.itemName] };
-            }));
-          } else if (a.type === "level_up") {
-            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
-            if (pid) {
-              setPlayers((prev) => prev.map((p) => {
-                if (p.id !== pid) return p;
-                return { ...p, level: a.newLevel, xp: 0, xpToNext: Math.floor(100 * Math.pow(1.5, a.newLevel - 1)) };
-              }));
-              const lvlAnn = `🎉 Level Up! ${a.playerRef} reached level ${a.newLevel}!`;
-              if (!seenAnnouncements.has(lvlAnn.toLowerCase())) {
-                seenAnnouncements.add(lvlAnn.toLowerCase());
-                addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#f59e0b", content: lvlAnn, isAI: false, isAnnouncement: true });
-              }
-            }
-          } else if (a.type === "shop") {
-            if (a.action === "open") {
-              const shopItems: Array<import("@/lib/rpg-types").Item & { price: number }> = [];
-              if (a.items) {
-                for (const entry of a.items.split(",")) {
-                  const [name, priceStr] = entry.split(":").map((s) => s.trim());
-                  if (name) shopItems.push({ id: `shop_${name}`, name, type: "consumable", rarity: "common", description: "", price: parseInt(priceStr, 10) || 10 });
-                }
-              }
-              setGamePhaseState((prev) => ({ ...prev, shopOpen: true, shopItems }));
-            } else {
-              setGamePhaseState((prev) => ({ ...prev, shopOpen: false, shopItems: undefined }));
-            }
-          } else if (a.type === "equip") {
-            const pid = resolvePlayerRefToId(a.playerRef, currentPlayers, userId, humanGameIdentity?.name);
-            if (pid) {
-              setPlayers((prev) => prev.map((p) => {
-                if (p.id !== pid) return p;
-                const eq = { ...(p.equipment || {}) };
-                if (a.slot === "weapon" || a.slot === "armor" || a.slot === "accessory") {
-                  eq[a.slot] = a.item;
-                }
-                return { ...p, equipment: eq };
-              }));
-            }
-          } else if (a.type === "world_event") {
-            const evtAnn = `🌍 ${a.description}`;
-            if (!seenAnnouncements.has(evtAnn.toLowerCase())) {
-              seenAnnouncements.add(evtAnn.toLowerCase());
-              addMessage({ senderId: "system", senderName: "Announcement", senderAvatar: "#6366f1", content: evtAnn, isAI: false, isAnnouncement: true });
-            }
           }
         }
         return cleanContent;
@@ -1593,34 +1258,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       setLastFailedSendContent(content);
     } finally {
       setIsRoundInProgress(false);
+      // Immediately flush state to DB so other room members see updates via Realtime
       saveNow();
-
-      // Auto-save world party state for RPG persistence
-      const game = games.find((g) => g.id === gameId);
-      if (game?.worldId && worldData) {
-        const worldPartyState = {
-          characters: playersRef.current.filter((p) => !p.isGameMaster).map((p) => ({
-            id: p.id, name: p.name, hp: p.hp ?? 100, maxHp: p.maxHp ?? 100,
-            mp: p.mp ?? 50, maxMp: p.maxMp ?? 50,
-            class: p.characterClass, level: p.level ?? 1, xp: p.xp ?? 0, xpToNext: p.xpToNext ?? 100,
-            gold: p.gold ?? 50,
-            inventory: p.inventory || [], skills: p.skills || [],
-            equipment: p.equipment, attributes: p.attributes,
-          })),
-          activeQuests: gamePhaseState.quests?.filter((q) => q.status === "active") || [],
-          completedQuests: gamePhaseState.quests?.filter((q) => q.status === "completed").map((q) => q.id) || [],
-          currentRoomId: gameId,
-          visitedRoomIds: Array.from(new Set([...(gamePhaseState.visitedScenes || []), gameId])),
-          worldEvents: (worldData.party_state as Record<string, unknown>).worldEvents as string[] || [],
-          gold: playersRef.current.find((p) => !p.isAI && !p.isGameMaster)?.gold ?? 50,
-          lastPlayedAt: new Date().toISOString(),
-        };
-        fetch(`/api/worlds/${game.worldId}/navigate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetRoomId: gameId, partyState: worldPartyState }),
-        }).catch(() => {});
-      }
     }
   };
 
@@ -1983,35 +1622,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     hasMyBoard: gamePhase !== "lobby",
     myBoardHasUpdate,
     playerBoardLabel: currentGame?.config?.playerBoardLabel,
-    worldId: currentGame?.worldId,
-    worldRooms: worldRooms.map((r) => ({ id: r.id, name: r.name, icon: r.icon || "📍", room_type: r.room_type })),
-    currentRoomId: gameId,
-    visitedRoomIds: gamePhaseState.visitedScenes || [],
-    onNavigateRoom: (roomId: string) => {
-      const game = games.find((g) => g.id === gameId);
-      if (!game?.worldId) return;
-      const currentPartyState = {
-        ...worldData?.party_state,
-        characters: players.filter((p) => !p.isGameMaster).map((p) => ({
-          id: p.id, name: p.name, hp: p.hp ?? 100, maxHp: p.maxHp ?? 100,
-          mp: p.mp ?? 50, maxMp: p.maxMp ?? 50,
-          class: p.characterClass, level: p.level ?? 1, xp: p.xp ?? 0, xpToNext: p.xpToNext ?? 100,
-          gold: p.gold ?? 50, role: (p as unknown as { role?: string }).role,
-          inventory: p.inventory || [], skills: p.skills || [],
-          equipment: p.equipment, attributes: p.attributes,
-        })),
-        activeQuests: gamePhaseState.quests?.filter((q) => q.status === "active") || [],
-        visitedRoomIds: [...(gamePhaseState.visitedScenes || []), gameId],
-        currentRoomId: roomId,
-      };
-      fetch(`/api/worlds/${game.worldId}/navigate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetRoomId: roomId, partyState: currentPartyState }),
-      }).then(() => {
-        router.push(`/game/${roomId}`);
-      });
-    },
     onDeleteChannel: (id: string | undefined) => {
       if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
     },
@@ -2268,50 +1878,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             }}
           />
         ) : null)}
-        {/* RPG Action Bar + Combat UI — shown below the chat for exploration RPG games */}
-        {isWorldRoom && gamePhase === "active" && isGameChannel && !isGuestPlayer && (
-          <>
-            {gamePhaseState.inCombat && (
-              <CombatUI
-                enemy={gamePhaseState.combatEnemyStats || null}
-                enemyName={gamePhaseState.combatEnemy || ""}
-                inCombat={true}
-                onAction={handleSendMessage}
-                playerSkills={players.find((p) => p.id === userId)?.rpgSkills}
-                playerInventory={players.find((p) => p.id === userId)?.inventory}
-              />
-            )}
-            {!gamePhaseState.inCombat && (
-              <ActionBar
-                mode={gamePhaseState.shopOpen ? "shop" : "exploration"}
-                onAction={handleSendMessage}
-                disabled={isRoundInProgress}
-                connectedRooms={(() => {
-                  const game = games.find((g) => g.id === gameId);
-                  return (game?.roomConnections || []).map((c: { roomId: string; name: string }) => {
-                    const cr = worldRooms.find((r) => r.id === c.roomId);
-                    return { name: c.name, roomType: cr?.room_type || "unknown" };
-                  });
-                })()}
-              />
-            )}
-          </>
-        )}
       </div>
       </ErrorBoundary>
-
-      {/* RPG Dice Roll Notifications */}
-      {gamePhaseState.recentDiceRolls && gamePhaseState.recentDiceRolls.length > 0 && (
-        <DiceRollNotifications
-          rolls={gamePhaseState.recentDiceRolls}
-          onDismiss={(index) => {
-            setGamePhaseState((prev) => ({
-              ...prev,
-              recentDiceRolls: (prev.recentDiceRolls || []).filter((_, i) => i !== index),
-            }));
-          }}
-        />
-      )}
 
       {/* Player panel: desktop visible, right Sheet on mobile */}
             <div className="hidden md:block flex-shrink-0 w-80">
@@ -2325,11 +1893,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 viewerIsGuest={isGuestPlayer}
                 guestMembers={enrichedGuestMembers}
                 onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
-                rpgHumanPlayer={players.find((p) => p.id === userId && p.hp !== undefined) || null}
-                rpgQuests={gamePhaseState.quests}
-                rpgInCombat={gamePhaseState.inCombat}
-                rpgCombatEnemy={gamePhaseState.combatEnemy}
-                rpgCurrentScene={gamePhaseState.currentSceneName}
               />
             </div>
 
@@ -2345,11 +1908,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   viewerIsGuest={isGuestPlayer}
                   guestMembers={enrichedGuestMembers}
                   onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
-                  rpgHumanPlayer={players.find((p) => p.id === userId && p.hp !== undefined) || null}
-                  rpgQuests={gamePhaseState.quests}
-                  rpgInCombat={gamePhaseState.inCombat}
-                  rpgCombatEnemy={gamePhaseState.combatEnemy}
-                  rpgCurrentScene={gamePhaseState.currentSceneName}
                 />
               </SheetContent>
             </Sheet>
