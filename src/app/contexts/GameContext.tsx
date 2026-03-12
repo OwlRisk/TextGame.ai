@@ -139,8 +139,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const addGame = useCallback((game: Game) => {
     const withTime = { ...game, updatedAt: game.updatedAt ?? new Date().toISOString() };
-    setGames((prev) => sortGamesByUpdatedAt([withTime, ...prev]));
-    if (user) {
+    setGames((prev) => {
+      if (prev.some((g) => g.id === game.id)) {
+        return prev.map((g) => (g.id === game.id ? { ...g, ...withTime } : g));
+      }
+      return sortGamesByUpdatedAt([withTime, ...prev]);
+    });
+    if (user && !game.worldId) {
       createGame({
         id: game.id,
         user_id: user.id,

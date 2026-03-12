@@ -7,6 +7,7 @@ import { Globe, Loader2, ArrowLeft, Play, Trash2, Clock, MapPin } from "lucide-r
 import { trackEvent } from "@/lib/analytics";
 import { Badge } from "@/app/components/ui/badge";
 import { WORLD_THEMES } from "@/data/world-themes";
+import { useGameContext } from "@/app/contexts/GameContext";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -28,6 +29,7 @@ interface SavedWorld {
 
 export default function WorldsPage() {
   const router = useRouter();
+  const { addGame } = useGameContext();
   const [creatingWorldId, setCreatingWorldId] = useState<string | null>(null);
   const [savedWorlds, setSavedWorlds] = useState<SavedWorld[]>([]);
   const [loadingWorlds, setLoadingWorlds] = useState(true);
@@ -52,13 +54,37 @@ export default function WorldsPage() {
       if (!res.ok) throw new Error("Failed to create world");
       const data = await res.json();
       trackEvent("world_created", { theme: themeId });
+
+      const theme = WORLD_THEMES.find((t) => t.id === themeId);
+      const startRoom = data.rooms?.find((r: { id: string }) => r.id === data.startRoomId) || data.rooms?.[0];
+      const allConnections = data.rooms?.map((r: { id: string; name: string }) => ({ roomId: r.id, name: r.name })) || [];
+
+      addGame({
+        id: data.startRoomId,
+        name: startRoom?.name || theme?.name || "RPG World",
+        icon: startRoom?.icon || theme?.icon || "⚔️",
+        color: theme?.color || "#7c2d12",
+        config: {
+          template: "exploration",
+          rules: "",
+          name: startRoom?.name || theme?.name || "RPG World",
+          playerCount: 4,
+          hostId: "gm",
+        },
+        isActive: true,
+        updatedAt: new Date().toISOString(),
+        worldId: data.worldId,
+        roomType: startRoom?.roomType || "hub",
+        roomConnections: allConnections,
+      });
+
       router.push(`/game/${data.startRoomId}`);
     } catch {
       toast.error("Failed to create world. Please try again.");
     } finally {
       setCreatingWorldId(null);
     }
-  }, [router]);
+  }, [router, addGame]);
 
   const handleResumeWorld = useCallback((world: SavedWorld) => {
     const roomId = world.party_state?.currentRoomId;

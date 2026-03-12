@@ -365,30 +365,27 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // If game is not in my list, try two fallbacks:
   // 1. Guest view: verify guestId membership and load game data (for invite-joined players)
-  // 2. Public/shared view: load game via share token (for /play/[token] links)
-  // Wait until gamesLoading is done before deciding the game is truly absent (avoids spurious 404 for owners).
+  // 2. Fallback game loader: if the game is not in GameContext after initial load,
+  // fetch it from the server. This covers world RPG rooms (created server-side),
+  // page refreshes, and direct links.
   const [sharedLoadPending, setSharedLoadPending] = useState(false);
   const sharedLoadTriedRef = useRef(false);
   useEffect(() => {
     if (gamesLoading || currentGame || !gameId || sharedLoadTriedRef.current) return;
 
-    // Prefer guest-view endpoint when a guestId is available.
     const urlGuestId = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("guestId")
       : null;
     const guestIdForLoad = urlGuestId ?? guestId ?? (typeof window !== "undefined" ? localStorage.getItem(`guestId_${gameId}`) : null);
-
-    // Authenticated users who own the game don't need the public/guest endpoint.
-    // Their game will arrive via the GameProvider's own fetch. Only proceed for
-    // actual guests (have a guestId) or truly unauthenticated visitors.
-    if (!guestIdForLoad && session?.user?.id) return;
 
     sharedLoadTriedRef.current = true;
     setSharedLoadPending(true);
 
     const url = guestIdForLoad
       ? `/api/games/${gameId}/guest-view?guestId=${encodeURIComponent(guestIdForLoad)}`
-      : `/api/games/${gameId}/public`;
+      : session?.user?.id
+        ? `/api/games/${gameId}`
+        : `/api/games/${gameId}/public`;
 
     fetch(url)
       .then((res) => (res.ok ? res.json() : null))
@@ -400,13 +397,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             icon: row.icon,
             color: row.color,
             config: row.config ?? {},
-            isActive: true,
+            isActive: row.is_active ?? true,
             updatedAt: row.updated_at ?? new Date().toISOString(),
+            worldId: row.world_id ?? null,
+            roomType: row.room_type ?? null,
+            roomConnections: row.room_connections ?? null,
+            roomDescription: row.room_description ?? null,
           });
         }
       })
       .catch((e) => {
-        console.error('[game] Failed to load game for guest:', e);
+        console.error('[game] Failed to load game:', e);
         toast.error("Could not load game data");
       })
       .finally(() => setSharedLoadPending(false));

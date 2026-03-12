@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create world" }, { status: 500 });
   }
 
-  const createdRooms: Array<{ id: string; themeRoomId: string; name: string; roomType: string }> = [];
+  const createdRooms: Array<{ id: string; themeRoomId: string; name: string; roomType: string; icon: string }> = [];
   const failedRooms: string[] = [];
 
   for (const room of theme.rooms) {
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       console.error(`[worlds/generate] Failed to create room "${room.name}":`, roomErr);
       failedRooms.push(room.name);
     } else {
-      createdRooms.push({ id: roomUuid, themeRoomId: room.id, name: room.name, roomType: room.roomType });
+      createdRooms.push({ id: roomUuid, themeRoomId: room.id, name: room.name, roomType: room.roomType, icon: room.icon });
     }
   }
 
