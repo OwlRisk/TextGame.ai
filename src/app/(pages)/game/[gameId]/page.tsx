@@ -60,6 +60,7 @@ import {
   runSpeakerQueue as runSpeakerQueueFn,
   runPrivateChannelConversation as runPrivateChannelConversationFn,
 } from "@/lib/speaker-queue";
+import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { supabase } from "@/lib/supabase";
@@ -676,6 +677,25 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       );
     }
 
+    // GM pre-briefing for AI players: inject concise, role-aware execution notes.
+    // This gives each AI a clear "how to play this game" guideline from turn 1.
+    {
+      const briefingByPlayerId: Record<string, string> = {};
+      for (const p of aiPlayers) {
+        const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1], 10) - 1 : -1;
+        const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
+        const note = buildAiPlayerBriefing({
+          gameTemplate: config.template,
+          role: cp?.role,
+          word: cp?.word,
+        });
+        if (note) briefingByPlayerId[p.id] = note;
+      }
+      if (Object.keys(briefingByPlayerId).length > 0) {
+        setPlayerNotes((prev) => ({ ...prev, ...briefingByPlayerId }));
+      }
+    }
+
       // Cancel any in-flight seed from a prior (interrupted) start attempt
       seedCancelledRef.current = true;
       await new Promise((r) => setTimeout(r, 0));
@@ -718,7 +738,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     } finally {
       gameStartingRef.current = false;
     }
-  }, [currentGame, gamePhase, session?.access_token, buildHostPlayer, addMessage, setPlayers, setGamePhase, gameId]);
+  }, [currentGame, gamePhase, session?.access_token, buildHostPlayer, addMessage, setPlayers, setPlayerNotes, setGamePhase, gameId]);
 
   const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
