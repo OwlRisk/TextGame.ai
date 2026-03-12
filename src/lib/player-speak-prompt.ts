@@ -64,6 +64,8 @@ export const OUTPUT_SHAPE_RULE = `OUTPUT SHAPE (HARD RULES):
 - No stage-direction metadata like "Early lean:", "Suspicion:", "Thought:" in the spoken line.
 - Keep private memory ONLY inside [MY_NOTES]...[/MY_NOTES], never in the spoken line itself.`;
 
+import { getGameTemplate } from "./game-templates";
+
 function narrativeModeForTemplate(gameTemplate: string | undefined): string {
   switch (gameTemplate) {
     case 'werewolf':
@@ -88,22 +90,37 @@ function narrativeModeForTemplate(gameTemplate: string | undefined): string {
 - Fast, playful, competitive table banter.
 - Short claim + quick reasoning + reaction to others' guesses.
 - Celebrate, doubt, tease — keep it punchy.`;
-    case 'roleplay':
-    case 'adventure':
-      return `NARRATIVE MODE — IN-CHARACTER SCENE PLAY:
-- Speak as your character in-scene, present tense when possible.
-- Push the scene forward with one intent, action, or emotional beat.
-- Avoid out-of-world analysis; stay inside the fiction.`;
     case '20-questions':
       return `NARRATIVE MODE — RAPID GUESS LOOP:
 - React quickly, then ask one decisive yes/no question.
 - Treat each turn as narrowing the search tree under time pressure.
 - Keep rhythm brisk: no speeches, no planning monologue.`;
-    default:
+    default: {
+      const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
+      const cat = tmpl?.category;
+      if (cat === "deduction") {
+        return `NARRATIVE MODE — SOCIAL DEDUCTION:
+- Sound like a player at a tense game table. Accusations, defenses, reads.
+- One concrete observation or suspicion per turn.
+- Prioritize trust shifts and vote momentum over lore.`;
+      }
+      if (cat === "cooperative") {
+        return `NARRATIVE MODE — TEAM PUZZLE:
+- Suggest, build on others' ideas, and stay focused on the shared goal.
+- One clear contribution per turn: a clue, a hypothesis, or an action.
+- Keep it collaborative — celebrate progress, troubleshoot setbacks.`;
+      }
+      if (cat === "party") {
+        return `NARRATIVE MODE — PARTY ENERGY:
+- Light, playful, spontaneous. React fast, keep it fun.
+- One punchy contribution per turn — a joke, a vote, a reaction.
+- Match the group energy; don't overthink it.`;
+      }
       return `NARRATIVE MODE — GAME TABLE CHAT:
 - Conversational, specific, and reactive to the last line.
 - One clear contribution per turn (read, guess, doubt, or push).
 - Prioritize game momentum over decorative prose.`;
+    }
   }
 }
 
@@ -297,16 +314,49 @@ ${MY_NOTES_SECTION}`;
     }
 
     default: {
-      return `${base} You're a real person at a game table. You have opinions. You're watching the other players, reading the room, trying to figure out what's really going on.
+      const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
+      const cat = tmpl?.category;
+      const hasHidden = tmpl?.hasHiddenRoles ?? false;
 
-${NARRATIVE_MODE}
-
-HOW TO ENGAGE:
+      let intro: string;
+      let howTo: string;
+      if (cat === "deduction") {
+        intro = `${base} You're at a game table with friends playing a social deduction game. Speak casually and directly—like a real player, not a movie villain.`;
+        howTo = hasHidden
+          ? `HOW TO ENGAGE:
+- React to what was JUST SAID — name the person and give a concrete reason.
+- If you have a hidden role, blend in — deflect subtly, never reveal yourself.
+- If you're on the good side, pressure vague players with specific observations.
+- Have a current suspicion and defend it. Changing your mind is fine, but commit.`
+          : `HOW TO ENGAGE:
+- React to the last action — agree, doubt, or counter with your own strategy.
+- Name people and reference their moves. Be specific.`;
+      } else if (cat === "cooperative") {
+        intro = `${base} You're part of a team working together toward a shared goal.`;
+        howTo = `HOW TO ENGAGE:
+- Suggest, build on others' ideas, and stay focused on the objective.
+- Offer one concrete action or observation per turn.
+- Celebrate team progress; troubleshoot setbacks.`;
+      } else if (cat === "party") {
+        intro = `${base} You're playing a lighthearted party game with friends.`;
+        howTo = `HOW TO ENGAGE:
+- Be spontaneous, playful, and reactive.
+- Match the group energy — one fun contribution per turn.
+- React to others: laugh, challenge, tease, or build on what they said.`;
+      } else {
+        intro = `${base} You're a real person at a game table. You have opinions. You're watching the other players, reading the room.`;
+        howTo = `HOW TO ENGAGE:
 - React to what was JUST SAID — but also to WHO said it and why they might have said it.
 - Name people: "I buy that from Maya, but Jake? No way." not just "I'm not sure I believe that."
 - Have a current suspicion, theory, or preference — and let it color how you respond.
-- If nothing interesting just happened, say the thing you've been holding back. A doubt, a hunch, a challenge.
-- Silence is only for when you are truly, genuinely, 100% irrelevant to the moment. Before going silent, ask: "could my character react emotionally?" If yes, do that instead.
+- Silence is only for when you are truly irrelevant to the moment. Before going silent, ask: "could my character react emotionally?" If yes, do that instead.`;
+      }
+
+      return `${intro}
+
+${NARRATIVE_MODE}
+
+${howTo}
 
 ${PARTICIPATION_RULE}
 

@@ -1,44 +1,11 @@
-export type TemplateControlMode = "deduction" | "quiz" | "open" | "hybrid";
+import { getGameTemplate, type GameTemplate } from "./game-templates";
 
-const DEDUCTION_TEMPLATES = new Set([
-  "werewolf",
-  "mafia",
-  "undercover",
-  "avalon",
-  "secret-hitler",
-  "spyfall",
-  "resistance",
-  "clue",
-  "detective-mystery",
-  "vampire-court",
-  "space-mutiny",
-  "kingdom-intrigue",
-  "two-rooms",
-]);
-
-const QUIZ_TEMPLATES = new Set([
-  "trivia",
-  "20-questions",
-]);
-
-const OPEN_TEMPLATES = new Set([
-  "tarot",
-  "storyteller",
-  "improv-comedy",
-  "custom",
-]);
-
-function normalize(templateId?: string): string {
-  return (templateId ?? "").trim().toLowerCase();
-}
+export type TemplateControlMode = "deduction" | "quiz" | "cooperative" | "party" | "open";
 
 export function getTemplateControlMode(templateId?: string): TemplateControlMode {
-  const id = normalize(templateId);
-  if (!id) return "hybrid";
-  if (DEDUCTION_TEMPLATES.has(id)) return "deduction";
-  if (QUIZ_TEMPLATES.has(id)) return "quiz";
-  if (OPEN_TEMPLATES.has(id)) return "open";
-  return "hybrid";
+  if (!templateId) return "open";
+  const t = getGameTemplate(templateId);
+  return t?.category ?? "open";
 }
 
 export function buildTemplatePromptPolicy(templateId?: string): string {
@@ -67,21 +34,32 @@ Keep rounds crisp and objective.
 `.trim();
   }
 
-  if (mode === "open") {
+  if (mode === "cooperative") {
     return `
-## MOMENTUM RULE (OPEN NARRATIVE GAMES)
-Preserve creative freedom, but avoid dead air.
-- Do not over-constrain with rigid phase logic.
-- If momentum drops, inject one concrete hook (choice, obstacle, reveal, or consequence) and assign a speaker.
-- Keep mechanics lightweight; prioritize roleplay flow.
+## MOMENTUM RULE (COOPERATIVE GAMES)
+Keep the team moving toward the objective.
+- Nudge with clues or consequences if players stall.
+- Rotate speaker turns so everyone contributes; avoid one player dominating.
+- Inject time pressure or new obstacles if pace drops.
+`.trim();
+  }
+
+  if (mode === "party") {
+    return `
+## MOMENTUM RULE (PARTY GAMES)
+Keep energy high and rounds snappy.
+- Move to the next prompt or round quickly after each vote or answer.
+- Do not over-moderate; let natural group dynamics flow.
+- Inject variety — change topics, formats, or speakers to prevent monotony.
 `.trim();
   }
 
   return `
-## MOMENTUM RULE (HYBRID GAMES)
-Balance freedom with progression.
-- Let players explore briefly, then convert to a concrete next step.
-- If conversation loops, transition with one clear host action.
+## MOMENTUM RULE (OPEN / CUSTOM GAMES)
+Preserve creative freedom, but avoid dead air.
+- Do not over-constrain with rigid phase logic.
+- If momentum drops, inject one concrete hook (choice, obstacle, reveal, or consequence) and assign a speaker.
+- Keep mechanics lightweight; prioritize roleplay flow.
 `.trim();
 }
 
@@ -96,7 +74,7 @@ export function buildRuntimeProgressionGuard(
   if (mode === "quiz" && recentNonHostTurns >= 3) {
     return "[System progression guard: quiz pacing is lagging. Force adjudication or ask the next question NOW. Do not drift into open-ended discussion.]";
   }
-  if (mode === "hybrid" && recentNonHostTurns >= 6) {
+  if ((mode === "cooperative" || mode === "party") && recentNonHostTurns >= 6) {
     return "[System progression guard: momentum is stalling. Transition to a concrete next beat now.]";
   }
   return "";

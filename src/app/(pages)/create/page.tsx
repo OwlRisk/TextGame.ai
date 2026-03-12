@@ -59,18 +59,8 @@ function CreateGamePageContent() {
     toast.loading("Creating game...", { id: toastId });
 
     try {
-      // Use a default emoji immediately — the real AI icon will be generated
-      // in the background after entering the game room to avoid blocking navigation.
-      const gameIcon =
-        config.template === "werewolf"
-          ? "🐺"
-          : config.template === "undercover"
-          ? "🕵️"
-          : config.template === "mafia"
-          ? "🎭"
-          : config.template === "tarot"
-          ? "🃏"
-          : "🎮";
+      const tmpl = GAME_TEMPLATES.find(t => t.id === config.template);
+      const gameIcon = tmpl?.icon ?? "🎮";
 
       // Generate players via LLM if not configured
       let finalConfig = config;

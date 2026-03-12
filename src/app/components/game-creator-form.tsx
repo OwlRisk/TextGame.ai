@@ -18,13 +18,42 @@ interface GameCreatorFormProps {
 
 import { GameTemplate, GAME_TEMPLATES } from "@/lib/game-templates";
 
-const PLAYER_COUNT_OPTIONS = [
-  { value: 0, label: "Let GM decide", description: "AI chooses based on rules" },
-  { value: 4, label: "Small (4 AI players)", description: "Quick & intimate" },
-  { value: 6, label: "Medium (6 AI players)", description: "Balanced & fun" },
-  { value: 8, label: "Large (8 AI players)", description: "Epic & chaotic" },
-  { value: 10, label: "Massive (10 AI players)", description: "Maximum chaos" },
-];
+function buildPlayerCountOptions(template: GameTemplate | null) {
+  if (!template) {
+    return [{ value: 0, label: "Let GM decide", description: "AI chooses based on rules", isRecommended: false }];
+  }
+  const minAI = Math.max(template.minPlayers - 1, 0);
+  const maxAI = template.maxPlayers - 1;
+  const rec = template.recommendedAICount;
+
+  const opts: { value: number; label: string; description: string; isRecommended: boolean }[] = [
+    { value: 0, label: "Let GM decide", description: "AI chooses based on rules", isRecommended: false },
+  ];
+
+  if (maxAI <= 0) return opts;
+
+  const candidates = new Set<number>();
+  candidates.add(minAI);
+  if (rec > 0) candidates.add(rec);
+  const mid = Math.round((minAI + maxAI) / 2);
+  if (mid !== minAI && mid !== maxAI) candidates.add(mid);
+  candidates.add(maxAI);
+
+  const sorted = [...candidates].filter((v) => v >= minAI && v <= maxAI).sort((a, b) => a - b);
+
+  for (const v of sorted) {
+    const total = v + 1;
+    const sizeLabel =
+      v === minAI ? "Minimum" : v === maxAI ? "Maximum" : v === rec ? "Recommended" : `${total} players`;
+    opts.push({
+      value: v,
+      label: `${sizeLabel} (${v} AI)`,
+      description: `${total} total players`,
+      isRecommended: v === rec,
+    });
+  }
+  return opts;
+}
 
 const TONE_OPTIONS = [
   { id: "serious", name: "Serious & Strategic", description: "Intense gameplay focused on logic", icon: Zap, color: "from-gray-600 to-slate-600" },
@@ -48,12 +77,10 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
     return getDefaultHost().id;
   });
   
-  // Update host when template changes (use recommended host for the template)
   useEffect(() => {
     if (selectedTemplate) {
+      setPlayerCount(selectedTemplate.recommendedAICount);
       const lastHostId = getLastSelectedHostId();
-      // If user has a saved preference and it's still valid, keep it
-      // Otherwise, use recommended host for this template
       if (!lastHostId || !HOST_PERSONALITIES.find(h => h.id === lastHostId)) {
         const recommendedHost = getDefaultHostForTemplate(selectedTemplate.id);
         setSelectedHostId(recommendedHost.id);
@@ -70,8 +97,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
       case "game-type":
         return selectedTemplate !== null;
       case "player-count":
-        if (playerCount === 0) return true;
-        return playerCount >= (selectedTemplate?.minPlayers || 2) - 1;
+        return true;
       case "tone":
         return selectedTone !== "";
       case "rules":
@@ -114,7 +140,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
       rules: finalRules + toneInstruction,
       customRoles: selectedTemplate.roles,
       hostId: selectedHostId,
-      hideRolesInPlayerList: selectedTemplate.id === "werewolf" || selectedTemplate.id === "mafia"
+      hideRolesInPlayerList: selectedTemplate.hasHiddenRoles
     });
   };
 
@@ -253,38 +279,31 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {PLAYER_COUNT_OPTIONS.map((option) => {
-                  const isValid = option.value === 0
-                    ? true
-                    : selectedTemplate
-                      ? option.value >= selectedTemplate.minPlayers - 1 && option.value <= selectedTemplate.maxPlayers - 1
-                      : true;
-                  
-                  return (
-                    <button
-                      key={option.value}
-                      onClick={() => isValid && setPlayerCount(option.value)}
-                      disabled={!isValid}
-                      className={`relative bg-white/5 backdrop-blur-xl border-2 rounded-2xl p-6 transition-all duration-300 text-left ${
-                        playerCount === option.value
-                          ? 'border-violet-500/50 bg-white/10'
-                          : isValid
-                          ? 'border-white/10 hover:border-violet-500/30 hover:scale-105'
-                          : 'border-white/5 opacity-50 cursor-not-allowed'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="text-3xl font-black text-white">{option.value === 0 ? "?" : option.value + 1}</div>
+                {buildPlayerCountOptions(selectedTemplate).map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setPlayerCount(option.value)}
+                    className={`relative bg-white/5 backdrop-blur-xl border-2 rounded-2xl p-6 transition-all duration-300 text-left ${
+                      playerCount === option.value
+                        ? 'border-violet-500/50 bg-white/10'
+                        : 'border-white/10 hover:border-violet-500/30 hover:scale-105'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-3xl font-black text-white">{option.value === 0 ? "?" : option.value + 1}</div>
+                      <div className="flex items-center gap-2">
+                        {option.isRecommended && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">Recommended</span>
+                        )}
                         {playerCount === option.value && (
                           <CheckCircle2 className="h-5 w-5 text-violet-400" />
                         )}
                       </div>
-                      <h3 className="text-lg font-bold text-white mb-1">{option.label}</h3>
-                      <p className="text-sm text-zinc-400">{option.description}</p>
-                      <p className="text-xs text-zinc-500 mt-2">{option.value === 0 ? "GM chooses based on rules" : `Total: You + ${option.value} AI`}</p>
-                    </button>
-                  );
-                })}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-1">{option.label}</h3>
+                    <p className="text-sm text-zinc-400">{option.description}</p>
+                  </button>
+                ))}
               </div>
             </div>
           )}

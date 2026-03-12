@@ -1,15 +1,10 @@
-/** Fallback AI count when GM/API hasn't decided—based on template midpoint */
+import { getGameTemplate } from "./game-templates";
+
+/** Fallback AI count when GM/API hasn't decided — uses the template's recommendedAICount. */
 export function getDefaultAICountForTemplate(template?: string): number {
-  switch (template) {
-    case "werewolf":
-      return 7;
-    case "undercover":
-      return 6;
-    case "mafia":
-      return 9;
-    default:
-      return 6;
-  }
+  if (!template) return 4;
+  const t = getGameTemplate(template);
+  return t?.recommendedAICount ?? 4;
 }
 
 export const AI_COLORS = [

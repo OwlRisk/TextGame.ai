@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     type Body = {
       messages?: unknown;
       hostPersonality?: { name?: string; description?: string; personality?: string };
-      gameContext?: { template?: string; playerCount?: number; gameName?: string; conversationState?: string; rules?: string };
+      gameContext?: { template?: string; playerCount?: number; gameName?: string; conversationState?: string; rules?: string; minPlayers?: number; maxPlayers?: number; recommendedAICount?: number; category?: string; hasHiddenRoles?: boolean; hasElimination?: boolean };
       maxCompletionTokens?: number;
       systemPrompt?: string;
       preferredModel?: string;
@@ -96,15 +96,30 @@ export async function POST(request: NextRequest) {
       // When hostPersonality is absent: this is the Game Master chat (design phase only)—neutral identity, no named host.
       systemMessage = hostPersonality
       ? `You are the game Host: ${hostPersonality.name}. ${hostPersonality.description || ''}${hostPersonality.personality ? ` Personality: ${hostPersonality.personality}` : ''} Run the game, narrate phases, and manage turns. Never break character.`
-      : `You are the Game Master for a social deduction game platform. Your role is to help the user design the game (rules, template, player count) in this chat. Introduce yourself only as "Game Master"—do not use a character name or Host persona. The Host who will run the game (e.g. Echo, Nova) is chosen separately when they start the game. Be friendly, concise, and helpful.`;
+      : `You are the Game Master for a text-based game platform (social deduction, trivia, cooperative, party, and custom games). Your role is to help the user design the game (rules, template, player count) in this chat. Introduce yourself only as "Game Master"—do not use a character name or Host persona. The Host who will run the game (e.g. Echo, Nova) is chosen separately when they start the game. Be friendly, concise, and helpful.`;
 
     if (gameContext) {
       systemMessage += `\n\nGame Context:\n`;
       if (gameContext.template) {
         systemMessage += `- Game Template: ${gameContext.template}\n`;
       }
+      if (gameContext.category) {
+        systemMessage += `- Game Category: ${gameContext.category}\n`;
+      }
       if (gameContext.playerCount) {
-        systemMessage += `- Player Count: ${gameContext.playerCount}\n`;
+        systemMessage += `- Player Count: ${gameContext.playerCount} AI players\n`;
+      }
+      if (gameContext.minPlayers != null && gameContext.maxPlayers != null) {
+        systemMessage += `- Player Range: ${gameContext.minPlayers}–${gameContext.maxPlayers} total (${gameContext.minPlayers - 1}–${gameContext.maxPlayers - 1} AI)\n`;
+      }
+      if (gameContext.recommendedAICount != null) {
+        systemMessage += `- Recommended AI Count: ${gameContext.recommendedAICount}\n`;
+      }
+      if (gameContext.hasHiddenRoles != null) {
+        systemMessage += `- Hidden Roles: ${gameContext.hasHiddenRoles ? "yes" : "no"}\n`;
+      }
+      if (gameContext.hasElimination != null) {
+        systemMessage += `- Player Elimination: ${gameContext.hasElimination ? "yes" : "no"}\n`;
       }
       if (gameContext.gameName) {
         systemMessage += `- Game Name: ${gameContext.gameName}\n`;
@@ -239,7 +254,7 @@ export async function POST(request: NextRequest) {
       systemMessage += `IMPORTANT: In the game room, there is always an AI Host character (the narrator/game master) in addition to the players. The Host is NOT counted in N.\n`;
       systemMessage += `So the game room will show: 1 Host + N AI players + 1 user = N+2 total characters.\n`;
       systemMessage += `When communicating to the user, always mention the Host. E.g. "I'll configure 8 total players (you + 7 AI), plus the Host who runs the game."\n`;
-      systemMessage += `- When a game template is selected, use the template's recommended range (e.g. Werewolf 4-11 AI, Undercover 3-9 AI, Custom 1-19).\n`;
+      systemMessage += `- When a game template is selected, use the template's Player Range and Recommended AI Count from the Game Context above.\n`;
       systemMessage += `- When user says "you decide", "how many?", "recommend", or "up to you", output this tag with your chosen N.\n`;
       systemMessage += `- The tag is invisible to the user; your message should still clearly state the breakdown.\n`;
       systemMessage += `- Example: "I think 8 works great for Werewolf! That's you + 7 AI players, plus the Host. <SET_PLAYER_COUNT>7</SET_PLAYER_COUNT>"\n\n`;
@@ -253,7 +268,7 @@ export async function POST(request: NextRequest) {
       systemMessage += `Use: <CONFIG_CHANNELS>[{"id":"general","name":"General","roomType":"public"},{"id":"werewolves-only","name":"Werewolves only","roomType":"decision"}]</CONFIG_CHANNELS>\n`;
       systemMessage += `- id: lowercase, hyphenated (e.g. general, werewolves-only, mafia-only). name: display name.\n`;
       systemMessage += `- Always include at least one "public" room (e.g. General) for everyone.\n`;
-      systemMessage += `- For werewolf/mafia/social deduction: add a "decision" room for the faction (e.g. "Werewolves only", "Mafia only") so they can secretly pick targets.\n`;
+      systemMessage += `- For deduction games with hidden roles (check "Hidden Roles" in Game Context): add a "decision" room for the hidden faction so they can secretly coordinate.\n`;
       systemMessage += `- For custom games: read the rules and add rooms if the game has teams or private phases. If no teams, one "General" room is enough.\n`;
       systemMessage += `- Output CONFIG_CHANNELS when rules are set (e.g. with EDIT_RULES or when confirming setup). The tag is invisible to the user.\n\n`;
       systemMessage += `GAME BACKGROUND (merged into Rules):\n`;

@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
     const openai = getOpenAI();
     const randomSeed = Math.random().toString(36).substring(7);
 
-    const needsRoles = gameTemplate === 'werewolf' || gameTemplate === 'mafia';
+    const { getGameTemplate } = await import('@/lib/game-templates');
+    const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
+    const needsRoles = tmpl?.hasHiddenRoles ?? false;
     const needsWords = gameTemplate === 'undercover';
 
     let decideCompletion: OpenAI.Chat.Completions.ChatCompletion | null = null;

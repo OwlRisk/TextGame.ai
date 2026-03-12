@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app
 import { Badge } from "@/app/components/ui/badge";
 import { FileText, Trash2, Clock, Edit, Play, Archive } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
+import { getGameTemplate } from "@/lib/game-templates";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -186,19 +187,9 @@ export function DraftsPage({ onEditDraft, onCreateFromDraft }: DraftsPageProps) 
                         <div className="flex items-center gap-2">
                           <Badge
                             variant="outline"
-                            className={`text-xs ${
-                              draft.config.template === "werewolf"
-                                ? "bg-purple-500/10 border-purple-500/30 text-purple-300"
-                                : draft.config.template === "undercover"
-                                ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
-                                : "bg-pink-500/10 border-pink-500/30 text-pink-300"
-                            }`}
+                            className="text-xs bg-white/5 border-white/10 text-zinc-300"
                           >
-                            {draft.config.template === "werewolf"
-                              ? "🐺 Werewolf"
-                              : draft.config.template === "undercover"
-                              ? "🕵️ Undercover"
-                              : "🎮 Custom"}
+                            {(getGameTemplate(draft.config.template)?.icon ?? "🎮") + " " + (getGameTemplate(draft.config.template)?.name ?? draft.config.template)}
                           </Badge>
                           <Badge variant="outline" className="bg-white/5 border-white/10 text-zinc-400 text-xs">
                             {draft.config.playerCount} players

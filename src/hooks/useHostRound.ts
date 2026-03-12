@@ -14,6 +14,7 @@ import {
 } from "@/lib/game-host-utils";
 import { getPreferredModel } from "@/lib/model-prefs";
 import { buildRuntimeProgressionGuard } from "@/lib/game-template-driver";
+import { getTemplateHexColor } from "@/lib/game-templates";
 import {
   MAX_AUTO_ADVANCES,
   HOST_CONTEXT_WINDOW,
@@ -181,11 +182,7 @@ export function useHostRound({
               .join("\n");
 
       const gmName = currentGame?.config?.generatedHost?.name || "Game Master";
-      const gmColor = currentGame?.config?.template === "werewolf"
-        ? "#7c3aed"
-        : currentGame?.config?.template === "undercover"
-          ? "#0ea5e9"
-          : "#ec4899";
+      const gmColor = currentGame?.config?.generatedHost?.color || getTemplateHexColor(currentGame?.config?.template || "custom");
 
       const channelPermsForAiOnly = channelPermissions[channelId];
       const freshPlayers = playersRef.current;

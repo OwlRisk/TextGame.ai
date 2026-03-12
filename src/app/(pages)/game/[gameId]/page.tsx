@@ -698,6 +698,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           avatarImageUrls={avatarImageUrls}
           onAvatarUrlLoaded={onAvatarUrlLoaded}
           currentUserId={userId}
+          isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
           viewerIsGuest={isGuestPlayer}
           guestMembers={enrichedGuestMembers}
           onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
@@ -713,6 +714,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
             currentUserId={userId}
+            isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
             viewerIsGuest={isGuestPlayer}
             guestMembers={enrichedGuestMembers}
             onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}

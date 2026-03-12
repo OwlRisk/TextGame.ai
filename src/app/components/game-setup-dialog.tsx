@@ -214,15 +214,14 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
           );
         }
       } else if (conversationState === "player-count") {
-        // Tarot: only 0 AI players; accept "ok", "let's go", "0"
-        if (selectedTemplate?.id === "tarot" && (
+        if (selectedTemplate?.maxPlayers === 1 && (
           lowerInput.includes("ok") || lowerInput.includes("let's go") || lowerInput.includes("lets go") ||
           lowerInput.includes("go") || lowerInput.includes("yes") || /^0$/.test(userInput.trim())
         )) {
           setPlayerCount(0);
           setConversationState("rules-discussion");
           addGMMessage(
-            "Perfect! Tarot Reading is just you and the Host—no other players. Here are the rules:\n\n" +
+            `Perfect! ${selectedTemplate!.name} is just you and the Host—no other players. Here are the rules:\n\n` +
             `${selectedTemplate!.defaultRules}\n\n` +
             "Would you like to **keep these rules** (say \"yes\" or \"keep\"), or **modify** something?"
           );
@@ -278,13 +277,12 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             lowerInput.includes("ok") || lowerInput.includes("good") || lowerInput.includes("fine")) {
           setCustomRules(selectedTemplate!.defaultRules);
           setConversationState("confirmation");
-          setHideRolesInPlayerList(selectedTemplate!.id === "werewolf" || selectedTemplate!.id === "mafia");
-          // Show host selector immediately when entering confirmation
+          setHideRolesInPlayerList(selectedTemplate!.hasHiddenRoles ?? false);
           setShowHostSelector(true);
           addGMMessage(
             `Excellent! Let me summarize your game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
+            `**Total Players:** ${selectedTemplate!.maxPlayers === 1 ? "Just you + Host" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:** Standard ${selectedTemplate!.name} rules\n\n` +
             `**Important:** Once we start, these rules are locked and cannot be changed. This ensures fair gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`
@@ -318,14 +316,13 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
         
         if (lowerInput.includes("summarize") || lowerInput.includes("done") || lowerInput.includes("finalize")) {
           setConversationState("confirmation");
-          setHideRolesInPlayerList(selectedTemplate!.id === "werewolf" || selectedTemplate!.id === "mafia");
+          setHideRolesInPlayerList(selectedTemplate!.hasHiddenRoles ?? false);
           const finalRules = customRules || selectedTemplate!.defaultRules;
-          // Show host selector immediately when entering confirmation
           setShowHostSelector(true);
           addGMMessage(
             `Perfect! Here's your complete game setup:\n\n` +
             `**Game Type:** ${selectedTemplate!.name}\n` +
-            `**Total Players:** ${selectedTemplate!.id === "tarot" ? "Just you + Host (Tarot reading)" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
+            `**Total Players:** ${selectedTemplate!.maxPlayers === 1 ? "Just you + Host" : playerCount === 0 ? "GM decides (based on rules)" : `${playerCount + 1} (${playerCount} AI + you)`}\n` +
             `**Rules:**\n${finalRules}\n\n` +
             `**⚠️ Important:** These rules are now locked and cannot be changed during gameplay.\n\n` +
             `Now, choose your guide for this adventure! Each host has a unique personality that will shape your experience. Once you've selected a host, say "create game" to begin!`

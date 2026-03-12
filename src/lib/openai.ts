@@ -28,6 +28,12 @@ export interface ChatRequest {
     gameName?: string;
     rules?: string;
     conversationState?: string;
+    minPlayers?: number;
+    maxPlayers?: number;
+    recommendedAICount?: number;
+    category?: string;
+    hasHiddenRoles?: boolean;
+    hasElimination?: boolean;
   };
 }
 

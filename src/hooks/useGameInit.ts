@@ -10,6 +10,7 @@ import { assignVoicesForRoom, pickVoiceForSpeaker, INWORLD_VOICE_META } from "@/
 import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { trackEvent } from "@/lib/analytics";
+import { getGameTemplate, getTemplateHexColor } from "@/lib/game-templates";
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -82,13 +83,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
   }, [gameId]);
 
   const buildHostPlayer = useCallback((config: any) => {
-    const hostColor = config.generatedHost?.color || (config.template === "werewolf"
-      ? "#7c3aed"
-      : config.template === "undercover"
-      ? "#0ea5e9"
-      : config.template === "tarot"
-      ? "#b45309"
-      : "#ec4899");
+    const hostColor = config.generatedHost?.color || getTemplateHexColor(config.template || "custom");
     const hostName = (config.generatedHost?.name || "Game Master").trim() || "Game Master";
     const hostPersonality = config.generatedHost?.personality || "A mysterious game master";
     return {
@@ -143,7 +138,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       name: userName,
       avatar: userProfileAvatar,
       role: undefined as string | undefined,
-      stats: config.template === "werewolf" || config.template === "mafia" ? { Status: "Alive" } : undefined,
+      stats: getGameTemplate(config.template || "")?.hasElimination ? { Status: "Alive" } : undefined,
       isAI: false,
       isMuted: false,
       status: "online" as const,
@@ -210,8 +205,10 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       game_name: kickoff.gameName,
     });
 
-    const hostGreeting = kickoff.gameTemplate === "tarot"
-      ? `The cards are ready. Share a question or an area of your life you'd like insight on - or say you'd like a general reading.`
+    const tmplMeta = getGameTemplate(kickoff.gameTemplate || "custom");
+    const isSoloGame = tmplMeta?.maxPlayers === 1;
+    const hostGreeting = isSoloGame
+      ? `Welcome! I'm ready to begin whenever you are. What would you like to explore?`
       : `The game begins now. Day One starts - make your first read and pressure your top suspect.`;
     const greetingId = `start-greeting-${gameId}-${Date.now()}`;
     addMessage(
@@ -294,7 +291,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
             if (!cp) return p;
             const role = cp.role || undefined;
             const stats = { ...p.stats };
-            if (role && (config.template === "werewolf" || config.template === "mafia")) {
+            if (role && getGameTemplate(config.template || "")?.hasElimination) {
               stats.Status = "Alive";
             }
             if ((cp as any).word && config.template === "undercover") {
@@ -344,7 +341,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         ),
       };
 
-      if (config.template === "tarot") {
+      const startTmpl = getGameTemplate(config.template || "custom");
+      if (startTmpl?.maxPlayers === 1) {
         await launchOpeningRound(kickoffState);
         return;
       }

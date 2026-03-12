@@ -32,6 +32,14 @@ export interface GameTemplate {
   color: string;
   /** Estimated session duration shown in UI. */
   estimatedTime: string;
+  /** Recommended number of AI players (excluding the human). Used as the default in game creation. */
+  recommendedAICount: number;
+  /** Does this game have hidden roles that must not be shown to other players? */
+  hasHiddenRoles: boolean;
+  /** Does this game eliminate/kill players during play? */
+  hasElimination: boolean;
+  /** Game category — drives AI prompting, progression policy, and narrative tone. */
+  category: "deduction" | "quiz" | "cooperative" | "party" | "open";
 }
 
 export const GAME_TEMPLATES: GameTemplate[] = [
@@ -41,11 +49,20 @@ export const GAME_TEMPLATES: GameTemplate[] = [
     description: "A classic social deduction game where villagers try to find the werewolves among them.",
     minPlayers: 5,
     maxPlayers: 12,
+    recommendedAICount: 5,
+    hasHiddenRoles: true,
+    hasElimination: true,
+    category: "deduction",
     icon: "🐺",
     color: "from-purple-600 to-indigo-600",
     estimatedTime: "30–45 min",
     roles: ["Villager", "Werewolf", "Seer", "Doctor"],
     defaultRules: `SETTING: A village haunted by werewolves. Neighbors by day, predators by night. Find them before the town falls.
+
+PLAYERS: 5–12. Recommended: 6–8.
+- 5–6 players: 1 Werewolf, 1 Seer, 1 Doctor, rest Villagers.
+- 7–8 players: 2 Werewolves, 1 Seer, 1 Doctor, rest Villagers.
+- 9–12 players: 3 Werewolves, 1 Seer, 1 Doctor, rest Villagers.
 
 OBJECTIVE: Villagers eliminate all Werewolves. Werewolves eliminate enough Villagers to equal or outnumber the town.
 
@@ -73,11 +90,20 @@ HOW THE STORY ENDS:
     description: "An intense game of lies and deception. Can the town survive the Mafia?",
     minPlayers: 6,
     maxPlayers: 15,
+    recommendedAICount: 7,
+    hasHiddenRoles: true,
+    hasElimination: true,
+    category: "deduction",
     icon: "🎭",
     color: "from-red-600 to-pink-600",
     estimatedTime: "45–60 min",
     roles: ["Town Member", "Mafia", "Detective", "Doctor"],
     defaultRules: `SETTING: A town has been infiltrated by organized crime. Citizens debate and vote by day; the Mafia strikes by night. Trust no one.
+
+PLAYERS: 6–15. Recommended: 7–10.
+- 6–8 players: 1–2 Mafia, 1 Detective, 1 Doctor, rest Town.
+- 9–11 players: 2–3 Mafia, 1 Detective, 1 Doctor, rest Town.
+- 12–15 players: 3–4 Mafia, 1 Detective, 1 Doctor, rest Town.
 
 OBJECTIVE: Town eliminates all Mafia. Mafia eliminates enough Town members to match or outnumber them.
 
@@ -94,8 +120,6 @@ PHASES:
 4. Vote — Majority vote eliminates one suspect. Their role is then revealed.
 5. Repeat from Night.
 
-MAFIA COUNT: 1–2 for 6–8 players; 2–3 for 9–11; 3–4 for 12–15.
-
 HOW THE STORY ENDS:
 - The town is safe: All Mafia members are exposed and eliminated.
 - The Mafia takes control: Mafia equal or outnumber remaining Town members.`,
@@ -107,11 +131,19 @@ HOW THE STORY ENDS:
     description: "Find the undercover agent who has a different word while blending in with the group.",
     minPlayers: 4,
     maxPlayers: 10,
+    recommendedAICount: 5,
+    hasHiddenRoles: true,
+    hasElimination: true,
+    category: "deduction",
     icon: "🕵️",
     color: "from-blue-600 to-cyan-600",
     estimatedTime: "15–20 min",
     roles: ["Civilian", "Undercover", "Mr. White"],
     defaultRules: `SETTING: Everyone has a secret word — but one player has a subtly different word and is trying to blend in without getting caught.
+
+PLAYERS: 4–10. Recommended: 5–7.
+- 4–6 players: 1 Undercover, rest Civilians. Mr. White optional for 5+.
+- 7–10 players: 1–2 Undercover, 1 Mr. White (optional), rest Civilians.
 
 ROLES:
 - Civilian: Receives the common word. Describe it clearly enough to prove you belong — but not so obviously you give the Undercover a free pass.
@@ -141,6 +173,10 @@ HOW THE STORY ENDS:
     description: "A reflective Tarot reading with the Host as reader. Ask a question and receive card-based guidance.",
     minPlayers: 1,
     maxPlayers: 1,
+    recommendedAICount: 0,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "open",
     icon: "🃏",
     color: "from-amber-700 to-yellow-600",
     estimatedTime: "10–20 min",
@@ -171,11 +207,17 @@ TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflectio
     description: "Two teams race to contact all their agents using one-word clues.",
     minPlayers: 4,
     maxPlayers: 12,
+    recommendedAICount: 5,
+    hasHiddenRoles: true,
+    hasElimination: false,
+    category: "deduction",
     icon: "🔍",
     color: "from-orange-600 to-red-600",
     estimatedTime: "15–25 min",
     roles: ["Spymaster", "Field Operative"],
     defaultRules: `SETTING: Two spy agencies race to contact all their field agents hidden among 25 code words — before the other team does.
+
+PLAYERS: 4–12. Recommended: 6–8 (split evenly into two teams, each with 1 Spymaster + Operatives).
 
 SETUP:
 - 25 word cards are laid out in a 5×5 grid.
@@ -209,11 +251,20 @@ HOW THE STORY ENDS:
     description: "Knights of the Round Table must complete quests, but Mordred's agents hide among them.",
     minPlayers: 5,
     maxPlayers: 10,
+    recommendedAICount: 5,
+    hasHiddenRoles: true,
+    hasElimination: false,
+    category: "deduction",
     icon: "⚔️",
     color: "from-blue-700 to-indigo-800",
     estimatedTime: "30–40 min",
     roles: ["Merlin", "Percival", "Servant of Arthur", "Assassin", "Mordred", "Minion of Mordred"],
     defaultRules: `SETTING: Camelot is in peril. Loyal knights of the Round Table must complete quests to save the realm — but agents of Mordred hide among them.
+
+PLAYERS: 5–10. Recommended: 6–8.
+- 5–6 players: 2 Evil (Assassin + Minion), rest Good (Merlin + Servants, optionally Percival).
+- 7–8 players: 3 Evil (Assassin + Mordred + Minion), rest Good (Merlin + Percival + Servants).
+- 9–10 players: 4 Evil, rest Good.
 
 ROLES:
 Good team:
@@ -249,11 +300,20 @@ HOW THE STORY ENDS:
     description: "Political intrigue in 1930s Germany. Liberals vs Fascists. Stop Hitler from rising to power.",
     minPlayers: 5,
     maxPlayers: 10,
+    recommendedAICount: 6,
+    hasHiddenRoles: true,
+    hasElimination: true,
+    category: "deduction",
     icon: "🎩",
     color: "from-gray-700 to-red-800",
     estimatedTime: "30–45 min",
     roles: ["Liberal", "Fascist", "Hitler"],
     defaultRules: `SETTING: 1930s Germany. Liberals and Fascists battle for political control. One Fascist is secretly Hitler — if Hitler becomes Chancellor after enough Fascist policies pass, all is lost.
+
+PLAYERS: 5–10. Recommended: 6–8.
+- 5–6 players: 1 Fascist + Hitler vs 3–4 Liberals.
+- 7–8 players: 2 Fascists + Hitler vs 4–5 Liberals.
+- 9–10 players: 3 Fascists + Hitler vs 5–6 Liberals.
 
 ROLES:
 - Liberal: No special knowledge. Pass liberal policies and expose Fascists to win.
@@ -283,11 +343,17 @@ HOW THE STORY ENDS:
     description: "Everyone knows the location except the spy. Find the spy — or bluff your way to victory.",
     minPlayers: 3,
     maxPlayers: 8,
+    recommendedAICount: 4,
+    hasHiddenRoles: true,
+    hasElimination: false,
+    category: "deduction",
     icon: "🌍",
     color: "from-green-600 to-teal-600",
     estimatedTime: "15–20 min",
     roles: ["Regular Player", "Spy"],
     defaultRules: `SETTING: Players are all at the same secret location — except one: the Spy, who has no idea where they are.
+
+PLAYERS: 3–8. Recommended: 5–6. Always exactly 1 Spy, rest are Regular Players.
 
 ROLES:
 - Regular Player: Knows the secret location. Ask and answer questions that prove your knowledge without revealing too much to the Spy.
@@ -313,11 +379,20 @@ HOW THE STORY ENDS:
     description: "Rebel operatives fight to complete missions while Imperial Spies sabotage from within.",
     minPlayers: 5,
     maxPlayers: 10,
+    recommendedAICount: 5,
+    hasHiddenRoles: true,
+    hasElimination: false,
+    category: "deduction",
     icon: "🤐",
     color: "from-indigo-700 to-purple-700",
     estimatedTime: "30–40 min",
     roles: ["Resistance", "Spy"],
     defaultRules: `SETTING: A rebel resistance movement fights against a tyrannical Empire. But Imperial Spies have infiltrated the team.
+
+PLAYERS: 5–10. Recommended: 6–8.
+- 5–6 players: 2 Spies, rest Resistance.
+- 7–8 players: 3 Spies, rest Resistance.
+- 9–10 players: 3–4 Spies, rest Resistance.
 
 ROLES:
 - Resistance: Loyal operatives. Do not know who the Spies are. Must complete 3 missions to win.
@@ -349,11 +424,17 @@ HOW THE STORY ENDS:
     description: "Solve intricate cases by gathering clues, interrogating suspects, and catching culprits.",
     minPlayers: 3,
     maxPlayers: 8,
+    recommendedAICount: 4,
+    hasHiddenRoles: true,
+    hasElimination: false,
+    category: "deduction",
     icon: "🔎",
     color: "from-amber-600 to-orange-600",
     estimatedTime: "30–40 min",
     roles: ["Detective", "Suspect", "Witness"],
     defaultRules: `SETTING: A murder has been committed. Suspects have secrets. Detectives must piece together clues, interrogate witnesses, and name the killer before it's too late.
+
+PLAYERS: 3–8. Recommended: 4–6 (1–2 Detectives, 2–3 Suspects, 1 Witness).
 
 SETUP:
 - The Host generates a unique case: one Culprit, 3–5 Suspects, multiple evidence clues, and a crime scene.
@@ -387,11 +468,17 @@ HOW THE STORY ENDS:
     description: "Classic whodunit. Deduce the suspect, room, and weapon to solve the mansion murder.",
     minPlayers: 3,
     maxPlayers: 6,
+    recommendedAICount: 4,
+    hasHiddenRoles: false,
+    hasElimination: true,
+    category: "deduction",
     icon: "🔪",
     color: "from-purple-700 to-indigo-700",
     estimatedTime: "30–45 min",
     roles: ["Investigator"],
     defaultRules: `SETTING: A murder has been committed in the mansion. Deduce the Suspect, Room, and Weapon — before anyone else does.
+
+PLAYERS: 3–6. Recommended: 5–6 (more players = more cards in play = better deduction).
 
 SETUP:
 - The Host secretly draws one Suspect card, one Room card, and one Weapon card. These form the solution.
@@ -421,11 +508,17 @@ HOW THE STORY ENDS:
     description: "Solve interconnected puzzles and escape the room before time runs out.",
     minPlayers: 2,
     maxPlayers: 6,
+    recommendedAICount: 3,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "cooperative",
     icon: "🚪",
     color: "from-green-600 to-emerald-600",
     estimatedTime: "40–60 min",
     roles: ["Explorer"],
     defaultRules: `SETTING: You are trapped inside a room filled with interconnected puzzles, locked mechanisms, and hidden clues. Work together to solve them all and escape before time runs out.
+
+PLAYERS: 2–6. Recommended: 3–4 (cooperative — all players are Explorers).
 
 SETUP:
 - The Host describes the room, its visible contents, and your starting position.
@@ -460,11 +553,17 @@ HOW THE STORY ENDS:
     description: "Test your knowledge across history, science, pop culture, and more.",
     minPlayers: 2,
     maxPlayers: 10,
+    recommendedAICount: 3,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "quiz",
     icon: "💡",
     color: "from-yellow-600 to-orange-600",
     estimatedTime: "20–30 min",
     roles: ["Contestant"],
     defaultRules: `SETTING: A competitive knowledge championship hosted by the AI. Players answer questions across chosen topics to score points.
+
+PLAYERS: 2–10. Recommended: 4–6 (all Contestants).
 
 SETUP:
 1. Players choose topics (history, science, movies, sports, pop culture, food, geography, music, etc.).
@@ -496,11 +595,17 @@ HOW THE STORY ENDS:
     description: "Argue your assigned position on philosophical, ethical, or absurd topics. Best argument wins.",
     minPlayers: 2,
     maxPlayers: 8,
+    recommendedAICount: 3,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "party",
     icon: "⚖️",
     color: "from-indigo-600 to-purple-600",
     estimatedTime: "25–35 min",
     roles: ["Debater"],
     defaultRules: `SETTING: A structured debate where players argue assigned positions — whether they personally agree with them or not — on philosophical, ethical, political, or deliberately absurd topics.
+
+PLAYERS: 2–8. Recommended: 4–6 (even numbers work best for For/Against format).
 
 SETUP:
 - Host announces the debate topic and assigns positions (For / Against, or specific stances in multi-player debates).
@@ -529,11 +634,17 @@ HOW THE STORY ENDS:
     description: "Collaborative storytelling where each player adds to an evolving narrative adventure.",
     minPlayers: 3,
     maxPlayers: 8,
+    recommendedAICount: 3,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "cooperative",
     icon: "📖",
     color: "from-violet-600 to-purple-600",
     estimatedTime: "30–50 min",
     roles: ["Author"],
     defaultRules: `SETTING: A collaborative adventure where every player is both author and character. Together you build a story that surprises even its creators.
+
+PLAYERS: 3–8. Recommended: 4–5 (all Authors — cooperative).
 
 SETUP:
 1. Choose a genre or theme: fantasy, sci-fi, mystery, horror, romance — or let the Host surprise you.
@@ -563,11 +674,17 @@ THE GOAL: Cooperative by default — creating a memorable story together is the 
     description: "Spontaneous scenes, random characters, and maximum laughs with the AI as director.",
     minPlayers: 3,
     maxPlayers: 10,
+    recommendedAICount: 4,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "party",
     icon: "🎭",
     color: "from-fuchsia-600 to-pink-600",
     estimatedTime: "20–40 min",
     roles: ["Performer"],
     defaultRules: `SETTING: A spontaneous comedy performance. Players react in real time to random scenarios, characters, and curveballs thrown by the Host.
+
+PLAYERS: 3–10. Recommended: 4–6 (all Performers).
 
 CORE RULE — "Yes, And": Always accept what your scene partner establishes, and add to it. Never deny, block, or ignore what has already been said.
 
@@ -596,11 +713,17 @@ No formal win condition. The goal is spontaneous creativity and shared laughter.
     description: "Vote on who in your group is most likely to do hilarious scenarios.",
     minPlayers: 3,
     maxPlayers: 12,
+    recommendedAICount: 4,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "party",
     icon: "🤔",
     color: "from-pink-600 to-rose-600",
     estimatedTime: "10–20 min",
     roles: ["Player"],
     defaultRules: `SETTING: A lighthearted group game where players vote on who among them is most likely to do something outrageous, embarrassing, or hilarious.
+
+PLAYERS: 3–12. Recommended: 5–7 (all Players — more people = more fun).
 
 GAMEPLAY:
 1. The Host reads a "Most Likely to…" prompt (e.g., "Most likely to accidentally send a text to the wrong person").
@@ -623,11 +746,17 @@ No hard win condition — the goal is laughter. Optional: play to a point total,
     description: "Think of something, and let others guess it in 20 yes-or-no questions.",
     minPlayers: 2,
     maxPlayers: 10,
+    recommendedAICount: 3,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "quiz",
     icon: "❓",
     color: "from-blue-500 to-cyan-500",
     estimatedTime: "10–15 min",
     roles: ["Thinker", "Guesser"],
     defaultRules: `SETTING: One player secretly thinks of a person, place, animal, or object. Everyone else has 20 yes-or-no questions to figure out what it is.
+
+PLAYERS: 2–10. Recommended: 3–5 (1 Thinker, rest Guessers).
 
 ROLES:
 - The Thinker: Secretly chooses a target and answers questions honestly with Yes, No, or Sometimes.
@@ -666,11 +795,17 @@ Rotate the Thinker role after each round.`,
     description: "Share three statements about yourself. Others guess which one is false.",
     minPlayers: 3,
     maxPlayers: 12,
+    recommendedAICount: 4,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "party",
     icon: "🤥",
     color: "from-green-500 to-emerald-500",
     estimatedTime: "15–25 min",
     roles: ["Player"],
     defaultRules: `SETTING: A social icebreaker where players share personal statements — two true, one false — and the group tries to spot the lie.
+
+PLAYERS: 3–12. Recommended: 4–6 (all Players).
 
 GAMEPLAY:
 1. The active player prepares two true facts about themselves and one believable lie.
@@ -696,11 +831,17 @@ HOW THE STORY ENDS: Most points after all players have taken a turn. Or play coo
     description: "Split into two rooms. Keep the President and Bomber apart — or bring them together.",
     minPlayers: 6,
     maxPlayers: 20,
+    recommendedAICount: 7,
+    hasHiddenRoles: true,
+    hasElimination: false,
+    category: "deduction",
     icon: "💣",
     color: "from-red-700 to-orange-700",
     estimatedTime: "20–30 min",
     roles: ["President", "Bomber", "Supporter"],
     defaultRules: `SETTING: Players split into two groups across two rooms. A bomb is about to go off — one team must keep the President and Bomber apart; the other must bring them together.
+
+PLAYERS: 6–20. Recommended: 8–12 (split evenly into Blue and Red teams).
 
 TEAMS:
 - Blue Team: Protect the President. The Bomber must NOT end up in the President's room.
@@ -731,11 +872,19 @@ HOW THE STORY ENDS:
     description: "A gothic social deduction game. One vampire hides among nobles — vote to banish the threat.",
     minPlayers: 4,
     maxPlayers: 8,
+    recommendedAICount: 4,
+    hasHiddenRoles: true,
+    hasElimination: true,
+    category: "deduction",
     icon: "🧛",
     color: "from-violet-900 to-purple-900",
     estimatedTime: "25–35 min",
     roles: ["Noble", "Vampire", "Van Helsing", "Thrall"],
     defaultRules: `SETTING: A lavish masquerade ball in a gothic royal court. One or more guests are Vampires. By night they feed; by day the court votes to banish the threat.
+
+PLAYERS: 4–8. Recommended: 5–6.
+- 4–5 players: 1 Vampire, 0–1 Thrall, optionally Van Helsing, rest Nobles.
+- 6–8 players: 1–2 Vampires, 1 Thrall, 1 Van Helsing, rest Nobles.
 
 OBJECTIVE: Nobles eliminate all Vampires before they gain equal footing. Vampires survive long enough to claim the court.
 
@@ -763,11 +912,17 @@ HOW THE STORY ENDS:
     description: "A starship is 72 hours from Earth. One crew member is a saboteur. Complete repairs before it's too late.",
     minPlayers: 3,
     maxPlayers: 6,
+    recommendedAICount: 3,
+    hasHiddenRoles: true,
+    hasElimination: false,
+    category: "deduction",
     icon: "🚀",
     color: "from-slate-700 to-blue-900",
     estimatedTime: "20–30 min",
     roles: ["Crew Member", "Saboteur"],
     defaultRules: `SETTING: A starship is 72 hours from Earth. One crew member has been compromised by an enemy agent. Complete critical ship repairs before the Saboteur causes catastrophic failure.
+
+PLAYERS: 3–6. Recommended: 4–5 (1 Saboteur, rest Crew Members).
 
 ROLES:
 - Crew Member: Loyal to the mission. Nominate teams, complete repairs, identify the Saboteur.
@@ -799,11 +954,17 @@ HOW THE STORY ENDS:
     description: "Scheme for the throne in a medieval court — forge alliances, spread rumors, and outwit rivals.",
     minPlayers: 5,
     maxPlayers: 10,
+    recommendedAICount: 5,
+    hasHiddenRoles: false,
+    hasElimination: true,
+    category: "deduction",
     icon: "🏰",
     color: "from-amber-800 to-yellow-900",
     estimatedTime: "30–45 min",
     roles: ["Noble"],
     defaultRules: `SETTING: The aging king has no heir. Every noble in court is scheming — through whispers, alliances, and betrayal — to claim the throne.
+
+PLAYERS: 5–10. Recommended: 6–8 (all Nobles with secret agendas).
 
 SETUP:
 - Each player is assigned a Noble character with a secret personal agenda (e.g., "Become Chancellor," "Expose the traitor in House Varen," "Forge alliances with two other Houses").
@@ -832,6 +993,10 @@ HOW THE STORY ENDS:
     description: "Create your own game with custom rules and roles.",
     minPlayers: 2,
     maxPlayers: 20,
+    recommendedAICount: 4,
+    hasHiddenRoles: false,
+    hasElimination: false,
+    category: "open",
     icon: "✨",
     color: "from-violet-600 to-fuchsia-600",
     estimatedTime: "Varies",
@@ -843,4 +1008,20 @@ HOW THE STORY ENDS:
 /** Helper: look up a template by id (returns undefined if not found). */
 export function getGameTemplate(id: string): GameTemplate | undefined {
   return GAME_TEMPLATES.find((t) => t.id === id);
+}
+
+const TAILWIND_HEX: Record<string, string> = {
+  purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
+  blue: "#2563eb", cyan: "#06b6d4", amber: "#d97706", yellow: "#ca8a04",
+  green: "#16a34a", teal: "#14b8a6", orange: "#ea580c", emerald: "#059669",
+  violet: "#7c3aed", fuchsia: "#d946ef", rose: "#f43f5e", gray: "#6b7280",
+  slate: "#64748b",
+};
+
+/** Extract a hex fallback color from a template's Tailwind gradient class (e.g. "from-purple-600 to-indigo-600" → "#9333ea"). */
+export function getTemplateHexColor(templateId: string): string {
+  const t = getGameTemplate(templateId);
+  if (!t) return "#7c3aed";
+  const m = t.color.match(/from-(\w+)/);
+  return (m && TAILWIND_HEX[m[1]]) || "#7c3aed";
 }

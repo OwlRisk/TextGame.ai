@@ -522,7 +522,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         playerCount: playerCount,
         gameName: gameName || undefined,
         rules: customRules || selectedTemplate?.defaultRules || undefined,
-        conversationState: conversationState
+        conversationState: conversationState,
+        minPlayers: selectedTemplate?.minPlayers,
+        maxPlayers: selectedTemplate?.maxPlayers,
+        recommendedAICount: selectedTemplate?.recommendedAICount,
+        category: selectedTemplate?.category,
+        hasHiddenRoles: selectedTemplate?.hasHiddenRoles,
+        hasElimination: selectedTemplate?.hasElimination,
       };
 
       // Stream AI response
@@ -829,7 +835,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       // Otherwise, fetch the whole batch from the pool.
       toast.loading("Setting up players...", { id: startToastId });
       try {
-        const needCount = finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers.length : (playerCount || 6);
+        const needCount = finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers.length : (playerCount || selectedTemplate?.recommendedAICount || 4);
         const excludeNames = finalConfiguredPlayers.map((p) => p.name).join(",");
         const poolRes = await fetch(
           `/api/characters/pool?count=${needCount}&exclude=${encodeURIComponent(excludeNames)}&style=${encodeURIComponent(typeof window !== 'undefined' ? (localStorage.getItem('avatar_style_pack') ?? 'semi-realistic') : 'semi-realistic')}`,
@@ -927,29 +933,23 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       setCreatingStep("Setting up game room…");
       toast.dismiss(startToastId);
       const tid = selectedTemplate?.id || "custom";
-      const defaultChannelsByTemplate: Record<string, NonNullable<GameConfig["channels"]>> = {
-        werewolf: [
-          { id: "general", name: "General", roomType: "public" },
-          { id: "werewolves-only", name: "Werewolves only", roomType: "decision" },
-        ],
-        mafia: [
-          { id: "general", name: "General", roomType: "public" },
-          { id: "mafia-only", name: "Mafia only", roomType: "decision" },
-        ],
-        undercover: [{ id: "general", name: "General", roomType: "public" }],
-        custom: [{ id: "general", name: "General", roomType: "public" }],
-      };
+      const defaultChannels: NonNullable<GameConfig["channels"]> = [{ id: "general", name: "General", roomType: "public" }];
+      if (selectedTemplate?.hasHiddenRoles && selectedTemplate.category === "deduction") {
+        const factionName = selectedTemplate.name.split(/[:(]/)[0].trim();
+        defaultChannels.push({ id: `${tid}-faction`, name: `${factionName} faction`, roomType: "decision" });
+      }
+      const fallbackPlayerCount = selectedTemplate?.recommendedAICount ?? 4;
       const gameConfig: GameConfig = {
-        template: tid as "werewolf" | "undercover" | "custom",
-        playerCount: finalPlayerCount || playerCount || (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6),
+        template: tid,
+        playerCount: finalPlayerCount || playerCount || fallbackPlayerCount,
         rules: customRules,
         name: gameName || selectedTemplate?.name || "Custom Game",
         hostId: selectedHostId,
         tone: "balanced",
-        hideRolesInPlayerList: tid === "werewolf" || tid === "mafia",
+        hideRolesInPlayerList: selectedTemplate?.hasHiddenRoles ?? false,
         configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
         generatedHost: generatedHostData || undefined,
-        channels: (gmChannels && gmChannels.length > 0) ? gmChannels : (defaultChannelsByTemplate[tid] ?? defaultChannelsByTemplate.custom),
+        channels: (gmChannels && gmChannels.length > 0) ? gmChannels : defaultChannels,
       };
       await onCreateGame(gameConfig);
     } finally {
