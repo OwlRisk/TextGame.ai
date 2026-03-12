@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
 import { getWorldThemeById } from "@/data/world-themes";
 
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
   if (!user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
