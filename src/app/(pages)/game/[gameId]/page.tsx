@@ -530,8 +530,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           </ScrollArea>
         ) : selectedChannelId === BOARD_CHANNEL_ID ? (
           <ScrollArea className="flex-1 min-h-0">
-            <div className="max-w-2xl p-6">
-              <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#1a0f0a]/40 to-zinc-900/50 p-5 shadow-lg backdrop-blur-sm">
+            <div className="w-full max-w-5xl p-6">
+              <div className="min-h-[260px] rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#1a0f0a]/40 to-zinc-900/50 p-6 md:p-7 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-amber-500/20">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
                     <Info className="h-4 w-4" />
@@ -544,7 +544,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                     dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-500">
+                  <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-500">
                     <p className="text-sm font-medium">Nothing here yet.</p>
                     <p className="text-xs mt-1">The Game Master will update your board as the game progresses.</p>
                   </div>
