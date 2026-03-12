@@ -657,6 +657,20 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     // Assign roles from config if available (werewolf/mafia/undercover)
     const configuredPlayers = config.configuredPlayers || [];
+    const aiPlayersWithOpeningState = aiPlayers.map((p) => {
+      const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1], 10) - 1 : -1;
+      const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
+      const mergedStats: Record<string, string | number> = { ...(p.stats ?? {}) };
+      if ((cp as { word?: string } | null)?.word && config.template === "undercover") {
+        mergedStats.Word = (cp as { word: string }).word;
+      }
+      return {
+        ...p,
+        role: (cp?.role as string | undefined) ?? p.role,
+        stats: mergedStats,
+      };
+    });
+
     if (configuredPlayers.length > 0) {
       setPlayers((prev) =>
         prev.map((p) => {
@@ -681,7 +695,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     // This gives each AI a clear "how to play this game" guideline from turn 1.
     {
       const briefingByPlayerId: Record<string, string> = {};
-      for (const p of aiPlayers) {
+      for (const p of aiPlayersWithOpeningState) {
         const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1], 10) - 1 : -1;
         const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
         const note = buildAiPlayerBriefing({
@@ -723,9 +737,21 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       channelId: defaultChannelId,
       hostName,
       hostContent: hostGreeting,
-      aiPlayers,
+      aiPlayers: aiPlayersWithOpeningState,
+      humanPlayerName: humanName,
+      gameTemplate: config.template,
       gameName: currentGame.name,
       rules: config.rules,
+      playerNotesById: Object.fromEntries(
+        aiPlayersWithOpeningState.map((p) => [
+          p.id,
+          buildAiPlayerBriefing({
+            gameTemplate: config.template,
+            role: p.role,
+            word: typeof p.stats?.Word === "string" ? p.stats.Word : undefined,
+          }),
+        ])
+      ),
       addStreamingMessage,
       updateStreamingMessage,
       setTypingUsers,

@@ -11,6 +11,7 @@ export interface SeedPlayerInfo {
   name: string;
   avatar?: string;
   role?: string;
+  stats?: Record<string, string | number>;
   personality?: string;
   background?: string;
 }
@@ -20,8 +21,11 @@ export interface SeedInitialRepliesOpts {
   hostName: string;
   hostContent: string;
   aiPlayers: SeedPlayerInfo[];
+  humanPlayerName?: string;
+  gameTemplate?: string;
   gameName: string;
   rules?: string;
+  playerNotesById?: Record<string, string>;
   addStreamingMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; isAI: boolean }, channelId?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
   setTypingUsers?: (users: { name: string; avatar: string }[]) => void;
@@ -32,7 +36,7 @@ export interface SeedInitialRepliesOpts {
 /** After host greeting, have a few AI players reply so the room feels active from the start. */
 export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
   const {
-    channelId, hostName, hostContent, aiPlayers, gameName, rules,
+    channelId, hostName, hostContent, aiPlayers, humanPlayerName, gameTemplate, gameName, rules, playerNotesById,
     addStreamingMessage: addStream, updateStreamingMessage: updateStream,
     setTypingUsers, sessionToken, isCancelled,
   } = opts;
@@ -63,8 +67,21 @@ export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
         body: JSON.stringify({
           gameName,
+          gameTemplate,
+          gamePhase: "opening",
           rules: rules ?? "",
-          player: { name: player.name, role: player.role, personality: player.personality, background: player.background },
+          player: {
+            name: player.name,
+            role: player.role,
+            personality: player.personality,
+            background: player.background,
+            ...(typeof player.stats?.Word === "string" ? { boardContent: `Your secret word: ${player.stats.Word}` } : {}),
+          },
+          playerNotes: playerNotesById?.[player.id],
+          playerRoster: [
+            ...(humanPlayerName ? [{ name: humanPlayerName, isHuman: true }] : []),
+            ...aiPlayers.map((p) => ({ name: p.name, isHuman: false })),
+          ],
           recentMessages: recent,
           preferredModel: getPreferredModel(),
           isSeedGreeting: true,

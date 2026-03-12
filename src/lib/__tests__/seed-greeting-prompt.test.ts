@@ -26,7 +26,12 @@ function buildUserContent(opts: {
   lines.push(`Recent conversation:\n${recentText || "(No messages yet)"}`);
   lines.push("");
   if (isSeedGreeting) {
-    lines.push(`The game just started. Say something brief and in-character as ${playerName}—a casual greeting, a comment, or a reaction. IMPORTANT: Do NOT repeat what others already said. Be unique: if someone asked a question, don't ask the same thing. Show YOUR personality. Keep it short (1-2 sentences).`);
+    lines.push(`OPENING TURN (game has just started):
+- Do NOT introduce yourself or restate your bio/name.
+- Speak like you're already in the match.
+- Give one short in-game move: a read, a push, a question, or a reaction to the host opening.
+- For social deduction templates, prioritize pressure/suspicion language over chatter.
+- Keep it 1 sentence preferred, 2 max.`);
   } else {
     lines.push(`Your turn. Reply as ${playerName}.`);
   }
@@ -34,17 +39,17 @@ function buildUserContent(opts: {
 }
 
 describe("seed greeting prompt", () => {
-  it("includes diversity instruction when isSeedGreeting is true", () => {
+  it("includes opening-turn gameplay instruction when isSeedGreeting is true", () => {
     const content = buildUserContent({
       gameName: "Codenames",
       playerName: "Maya",
       isSeedGreeting: true,
       recentMessages: [{ senderName: "GM", content: "Welcome!" }],
     });
-    expect(content).toContain("Do NOT repeat what others already said");
-    expect(content).toContain("Be unique");
-    expect(content).toContain("Show YOUR personality");
-    expect(content).toContain("1-2 sentences");
+    expect(content).toContain("Do NOT introduce yourself");
+    expect(content).toContain("already in the match");
+    expect(content).toContain("one short in-game move");
+    expect(content).toContain("1 sentence preferred, 2 max");
     expect(content).not.toContain("Your turn. Reply as");
   });
 
@@ -56,7 +61,7 @@ describe("seed greeting prompt", () => {
       recentMessages: [{ senderName: "GM", content: "Welcome!" }],
     });
     expect(content).toContain("Your turn. Reply as Maya.");
-    expect(content).not.toContain("Do NOT repeat");
+    expect(content).not.toContain("Do NOT introduce yourself");
   });
 
   it("uses standard prompt when isSeedGreeting is undefined", () => {
@@ -81,7 +86,7 @@ describe("seed greeting prompt", () => {
     });
     expect(content).toContain("Maya: Hey, excited to play!");
     expect(content).toContain("Jae: Let's get started!");
-    expect(content).toContain("Do NOT repeat");
+    expect(content).toContain("already in the match");
   });
 
   it("includes personality and background in seed greeting", () => {
@@ -111,7 +116,7 @@ describe("seed greeting — prompt structure", () => {
     });
     const gameIdx = content.indexOf("Game: Blood Moon");
     const typeIdx = content.indexOf("Type: werewolf");
-    const seedIdx = content.indexOf("The game just started");
+    const seedIdx = content.indexOf("OPENING TURN");
     expect(gameIdx).toBeLessThan(typeIdx);
     expect(typeIdx).toBeLessThan(seedIdx);
   });
@@ -124,7 +129,7 @@ describe("seed greeting — prompt structure", () => {
       recentMessages: [{ senderName: "GM", content: "Hello" }],
     });
     const recentIdx = content.indexOf("Recent conversation:");
-    const seedIdx = content.indexOf("The game just started");
+    const seedIdx = content.indexOf("OPENING TURN");
     expect(recentIdx).toBeLessThan(seedIdx);
   });
 });

@@ -174,7 +174,12 @@ export async function POST(request: NextRequest) {
     lines.push('');
 
     if (isSeedGreeting) {
-      lines.push(`The game just started. Introduce yourself or react as ${player.name} — make it unmistakably YOU. Do NOT repeat what others already said (read the recent messages above carefully). Your personality, background, and way of seeing the world should be obvious from just these 1-2 sentences. Maybe you're sizing someone up, maybe you're cracking a joke, maybe you're already suspicious of someone — show it.`);
+      lines.push(`OPENING TURN (game has just started):
+- Do NOT introduce yourself or restate your bio/name.
+- Speak like you're already in the match.
+- Give one short in-game move: a read, a push, a question, or a reaction to the host opening.
+- For social deduction templates, prioritize pressure/suspicion language over chatter.
+- Keep it 1 sentence preferred, 2 max.`);
     } else if (gameTemplate === '20-questions') {
       // Inject structured Q&A history so the model can reason from confirmed facts
       const allMessages = recentMessages;

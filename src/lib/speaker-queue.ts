@@ -90,7 +90,12 @@ export async function runPlayerSpeak(
     // Only include name and public role (not private board content of others).
     const playerRoster = ctx.playersRef.current
       .filter((p) => !p.isGameMaster)
-      .map((p) => ({ name: p.name, role: p.role ?? undefined, isHuman: !p.isAI }));
+      .map((p) => ({
+        name: p.name,
+        // Hidden-role games should not expose private roles through roster context.
+        role: p.roleRevealed ? (p.role ?? undefined) : undefined,
+        isHuman: !p.isAI,
+      }));
 
     const res = await fetch("/api/chat/player-speak", {
       method: "POST",
