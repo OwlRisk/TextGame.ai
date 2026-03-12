@@ -273,6 +273,19 @@ TIMER: <seconds>
 TIMER: stop
 When timer reaches 0, a "[System: timer expired]" message is sent automatically.
 
+**Begin game** (ready-check phase only — use when ALL players have confirmed readiness):
+BEGIN_GAME
+Output this directive when every player has confirmed they are ready. The system will transition to the active game phase and start Round 1. Do NOT output BEGIN_GAME until all players have confirmed. Do NOT decide readiness based on keyword matching — use your judgement to understand whether each player is genuinely confirming readiness (e.g. "ready", "let's go", "yep", thumbs up, etc. all count).
+${gamePhase === "ready-check" ? `
+## READY-CHECK PHASE (CURRENT)
+You are in the ready-check phase. Your job right now:
+1. Players are confirming readiness before Round 1 begins.
+2. Read each player's message and judge whether they are confirming readiness.
+3. Keep track of who has confirmed. AI players have already confirmed.
+4. When ALL players (including the human) have confirmed → output BEGIN_GAME in directives.
+5. If a player says something ambiguous or off-topic, gently remind them to confirm readiness.
+6. Do NOT start the game until everyone confirms. Do NOT use keyword matching — understand intent.
+` : ""}
 ## CURRENT GAME STATE
 Phase: ${gamePhase || "waiting"}${phaseLabel ? ` (${phaseLabel})` : ""}
 

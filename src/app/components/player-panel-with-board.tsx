@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
-import { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";

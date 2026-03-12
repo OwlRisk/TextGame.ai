@@ -6,7 +6,7 @@ import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
-import { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import { useChatTTS } from "@/hooks/use-chat-tts";
 import { trackEvent } from "@/lib/analytics";
 import { stripPrivateNotes } from "@/lib/chat-utils";

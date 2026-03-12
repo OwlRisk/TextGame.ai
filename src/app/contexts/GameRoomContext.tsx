@@ -5,7 +5,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { getGameRoomState, saveGameRoomState } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { Message } from "@/app/components/chat-area";
-import { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import {
   type GamePhaseState,
   type GameMood,

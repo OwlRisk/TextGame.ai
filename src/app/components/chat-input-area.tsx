@@ -8,7 +8,7 @@ import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { useVoiceInput } from "@/lib/voice";
 import { VoiceWaveform } from "@/app/components/voice-waveform";
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 
 export interface ChatInputAreaProps {
   channelName: string;

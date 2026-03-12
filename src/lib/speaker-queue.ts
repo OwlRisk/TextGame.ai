@@ -1,4 +1,4 @@
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import type { SpeakerQueueItem } from "@/lib/host-output-parser";
 import type { ConversationMode, StreamMsgMeta } from "@/lib/game-pace";
 import { parseHostActions } from "@/lib/host-actions";

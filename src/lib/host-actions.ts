@@ -41,6 +41,8 @@ export type HostAction =
   | { type: "react"; emoji: string; targetSender?: string }
   /** Engagement score for the last message (1-5), controls passive AI reactions */
   | { type: "engagement"; score: number }
+  /** BEGIN_GAME: AI Host decides all players are ready; code should transition to active phase. */
+  | { type: "begin_game" }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -214,6 +216,10 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
         type: "engagement",
         score: Math.max(1, Math.min(5, parseInt(m[1], 10))),
       }),
+    },
+    {
+      regex: /^BEGIN_GAME\s*$/gim,
+      parse: () => ({ type: "begin_game" }),
     },
   ];
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
-import { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { User, Sparkles, BookOpen } from "lucide-react";

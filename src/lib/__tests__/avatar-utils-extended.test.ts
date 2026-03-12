@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getAvatarPropsForPlayer } from "../avatar-utils";
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 
 function mkPlayer(overrides: Partial<Player> & { id: string; name: string; isAI: boolean }): Player {
   return { avatar: "#8b5cf6", ...overrides } as Player;

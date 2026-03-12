@@ -3,7 +3,7 @@
  * Role design: see docs/ROLES.md (Game Master, Host, AI Player, User).
  */
 
-import { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import { AvatarStyle } from "./avatar-style-constants";
 
 /**

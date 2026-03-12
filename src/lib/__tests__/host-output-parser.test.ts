@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseRoleAssignments, parseHostResult } from "../host-output-parser";
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 
 // ─── Test Fixtures ─────────────────────────────────────────────────────────
 

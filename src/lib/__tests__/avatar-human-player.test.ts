@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { getAvatarPropsForPlayer } from '../avatar-utils';
-import type { Player } from '@/app/components/player-panel';
+import type { Player } from '@/types/player';
 import { VALID_STYLES, DEFAULT_STYLE, type AvatarStyle } from '../avatar-style-constants';
 
 function makePlayer(overrides: Partial<Player> = {}): Player {

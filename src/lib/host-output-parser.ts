@@ -1,4 +1,4 @@
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import { resolveChannelByName as resolveChannelByNameUtil } from "@/lib/game-host-utils";
 
 // ─── SpeakerQueueItem ──────────────────────────────────────────────────────

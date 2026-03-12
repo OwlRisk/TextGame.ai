@@ -9,7 +9,7 @@ import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { formatMessageTime, stripEmotionTags, stripPrivateNotes } from "@/lib/chat-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 
 // ─── Cursor injection ─────────────────────────────────────────────────────
 /** Append a trailing node (blinking cursor) inside the last line of formatted content. */

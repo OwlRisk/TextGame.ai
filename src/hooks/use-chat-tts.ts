@@ -5,7 +5,7 @@ import { useInworldTTS } from "@/lib/voice";
 import { ttsBroadcast } from "@/lib/tts-broadcast";
 import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 import { extractTTSSentences, MAX_TTS_CHARS_HOST, MAX_TTS_CHARS_PLAYER, stripPrivateNotes } from "@/lib/chat-utils";
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 
 interface TTSMessage {
   id: string;

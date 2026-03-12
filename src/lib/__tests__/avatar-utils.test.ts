@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getAvatarPropsForPlayer } from '../avatar-utils';
-import type { Player } from '@/app/components/player-panel';
+import type { Player } from '@/types/player';
 import { VALID_STYLES, type AvatarStyle } from '../avatar-style-constants';
 
 // Minimal player factory to reduce repetition

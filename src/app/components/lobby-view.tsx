@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Play, UserPlus, Plus, X, Sparkles, Users, Crown, Bot, User, Volume2, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 import { cn } from "@/app/components/ui/utils";
 import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 

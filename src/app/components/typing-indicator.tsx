@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
-import type { Player } from "@/app/components/player-panel";
+import type { Player } from "@/types/player";
 
 export interface TypingUser {
   name: string;
