@@ -79,6 +79,12 @@ interface ChannelListProps {
   playerBoardLabel?: string;
   /** If the game is part of a world, show a "World Map" link. */
   worldId?: string | null;
+  /** Rooms in the world for navigation. */
+  worldRooms?: Array<{ id: string; name: string; icon: string; room_type: string }>;
+  /** Current room ID (this game) within the world. */
+  currentRoomId?: string;
+  /** Navigate to a different room in the world. */
+  onNavigateRoom?: (roomId: string) => void;
 }
 
 export function ChannelList({ 
@@ -105,6 +111,9 @@ export function ChannelList({
   myBoardHasUpdate,
   playerBoardLabel = "My Board",
   worldId,
+  worldRooms = [],
+  currentRoomId,
+  onNavigateRoom,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
@@ -122,14 +131,38 @@ export function ChannelList({
         <h2 className="font-semibold text-base text-white truncate flex-1 pl-2">{gameName}</h2>
       </div>
 
-      {worldId && (
-        <Link
-          href={`/world/${worldId}`}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-amber-400 hover:bg-amber-500/10 border-b border-zinc-700/50 transition-colors"
-        >
-          <Map className="h-4 w-4" />
-          <span className="font-semibold">World Map</span>
-        </Link>
+      {worldId && worldRooms.length > 0 && (
+        <div className="border-b border-zinc-700/50">
+          <div className="px-4 pt-3 pb-1">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Map className="h-3.5 w-3.5 text-amber-400/70" />
+              Locations
+            </span>
+          </div>
+          <div className="px-2 pb-2">
+            {worldRooms.map((room) => {
+              const isCurrent = room.id === currentRoomId;
+              return (
+                <button
+                  key={room.id}
+                  onClick={() => !isCurrent && onNavigateRoom?.(room.id)}
+                  disabled={isCurrent}
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    isCurrent
+                      ? "bg-amber-500/15 text-amber-300 cursor-default"
+                      : "text-zinc-400 hover:bg-zinc-700/30 hover:text-zinc-300 cursor-pointer"
+                  }`}
+                >
+                  <span className="text-base flex-shrink-0">{room.icon}</span>
+                  <span className="truncate flex-1 text-left">{room.name}</span>
+                  {isCurrent && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold flex-shrink-0">HERE</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       <ScrollArea className="flex-1 min-h-0">

@@ -45,7 +45,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
       if (!res.ok) throw new Error("Failed to create world");
       const data = await res.json();
       trackEvent("world_created", { theme: themeId });
-      router.push(`/world/${data.worldId}`);
+      router.push(`/game/${data.startRoomId}`);
     } catch {
       toast.error("Failed to create world. Please try again.");
     } finally {

@@ -132,7 +132,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // ─── World / RPG room state ──────────────────────────────────────────────
   const [worldData, setWorldData] = useState<{ id: string; name: string; theme: string; config: Record<string, unknown>; party_state: Record<string, unknown> } | null>(null);
-  const [worldRooms, setWorldRooms] = useState<Array<{ id: string; name: string; room_type: string; room_connections: Array<{ roomId: string; name: string }> | null; room_description: string }>>([]);
+  const [worldRooms, setWorldRooms] = useState<Array<{ id: string; name: string; icon: string; room_type: string; room_connections: Array<{ roomId: string; name: string }> | null; room_description: string }>>([]);
   const isWorldRoom = !!(games.find((g) => g.id === gameId)?.worldId);
 
   // Guest player: arrived via /join/[inviteCode] with guestId URL param
@@ -1843,6 +1843,28 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     myBoardHasUpdate,
     playerBoardLabel: currentGame?.config?.playerBoardLabel,
     worldId: currentGame?.worldId,
+    worldRooms: worldRooms.map((r) => ({ id: r.id, name: r.name, icon: r.icon || "📍", room_type: r.room_type })),
+    currentRoomId: gameId,
+    onNavigateRoom: (roomId: string) => {
+      const game = games.find((g) => g.id === gameId);
+      if (!game?.worldId) return;
+      const currentPartyState = {
+        ...worldData?.party_state,
+        party: players.filter((p) => !p.isGameMaster).map((p) => ({
+          id: p.id, name: p.name, hp: p.hp ?? 100, maxHp: p.maxHp ?? 100,
+          role: (p as unknown as { role?: string }).role,
+          inventory: p.inventory || [], skills: p.skills || [],
+        })),
+        currentRoomId: roomId,
+      };
+      fetch(`/api/worlds/${game.worldId}/navigate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetRoomId: roomId, partyState: currentPartyState }),
+      }).then(() => {
+        router.push(`/game/${roomId}`);
+      });
+    },
     onDeleteChannel: (id: string | undefined) => {
       if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
     },
