@@ -648,6 +648,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
     const currentPlayers = playersRef.current;
     const aiPlayers = currentPlayers.filter((p) => p.isAI && !p.isGameMaster);
+    const openingHumanName =
+      humanGameIdentity?.name ||
+      currentPlayers.find((p) => !p.isAI && !p.isGameMaster)?.name ||
+      "You";
 
     const hasHumanPlayers = currentPlayers.some((p) => !p.isAI && !p.isGameMaster);
     if (aiPlayers.length === 0 && !hasHumanPlayers) {
@@ -738,7 +742,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       hostName,
       hostContent: hostGreeting,
       aiPlayers: aiPlayersWithOpeningState,
-      humanPlayerName: humanName,
+      humanPlayerName: openingHumanName,
       gameTemplate: config.template,
       gameName: currentGame.name,
       rules: config.rules,
@@ -764,7 +768,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     } finally {
       gameStartingRef.current = false;
     }
-  }, [currentGame, gamePhase, session?.access_token, buildHostPlayer, addMessage, setPlayers, setPlayerNotes, setGamePhase, gameId]);
+  }, [currentGame, gamePhase, session?.access_token, buildHostPlayer, addMessage, setPlayers, setPlayerNotes, setGamePhase, gameId, humanGameIdentity?.name]);
 
   const handleSendMessage = async (content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => {
     if (!content.trim()) return;
