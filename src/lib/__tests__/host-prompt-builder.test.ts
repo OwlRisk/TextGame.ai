@@ -102,6 +102,18 @@ describe("buildHostSystemPrompt", () => {
       const output = buildHostSystemPrompt(opts);
       expect(output).toContain("No specific rules defined.");
     });
+
+    it("injects deduction progression policy for deduction templates", () => {
+      const opts = defaultOpts({ gameTemplate: "werewolf" });
+      const output = buildHostSystemPrompt(opts);
+      expect(output).toContain("HARD RULE FOR DEDUCTION GAMES");
+    });
+
+    it("injects quiz progression policy for quiz templates", () => {
+      const opts = defaultOpts({ gameTemplate: "trivia" });
+      const output = buildHostSystemPrompt(opts);
+      expect(output).toContain("QUIZ / Q&A GAMES");
+    });
   });
 
   describe("voting phase", () => {

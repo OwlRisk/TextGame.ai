@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getPreferredModel } from "@/lib/model-prefs";
+import { buildRuntimeProgressionGuard } from "@/lib/game-template-driver";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
 import { assignVoicesForRoom, pickVoiceForSpeaker, INWORLD_VOICE_META } from "@/lib/inworld-voices";
 import { safeMarked } from "@/lib/safe-marked";
@@ -905,6 +906,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       const generatedHost = currentGame?.config?.generatedHost as { name?: string; personality?: string; systemPrompt?: string } | undefined;
       const hostSystemPrompt = buildHostSystemPrompt({
         gameName: currentGame?.name ?? "",
+        gameTemplate: tmpl,
         humanName,
         nonHostPlayerNames: nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)),
         hasVotingPhase,
@@ -1235,6 +1237,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       });
 
       const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
+      const recentNonHostTurns = channelMessagesForRecent
+        .slice(-12)
+        .filter((m) => !m.isSystemMessage && m.senderName !== gmName).length;
+      const progressionGuardCore = buildRuntimeProgressionGuard(currentGame?.config?.template, recentNonHostTurns);
+      const progressionGuard = progressionGuardCore ? `${progressionGuardCore}\n\n` : "";
       // Inject any queued decision summaries from previous private-channel conversations
       // so the HOST is aware of what was decided before this turn began.
       const decisionSummaryPrefix = pendingDecisionSummariesRef.current.length > 0
@@ -1242,7 +1249,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         : "";
       pendingDecisionSummariesRef.current = [];
 
-      const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
+      const firstUserContent = `${decisionSummaryPrefix}${progressionGuard}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       const isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {

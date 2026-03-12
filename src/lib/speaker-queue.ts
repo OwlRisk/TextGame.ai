@@ -293,7 +293,9 @@ export async function runSpeakerQueue(
         }
       }
       ctx.setTypingUsers([]);
-      return true;
+      // "Everyone" means open-table chatter, not "hand control back to human now".
+      // Let outer auto-advance logic continue and decide whether to trigger the next beat.
+      continue;
     }
 
     if (night) continue;

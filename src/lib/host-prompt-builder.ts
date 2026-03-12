@@ -1,3 +1,5 @@
+import { buildTemplatePromptPolicy } from "@/lib/game-template-driver";
+
 export interface ChannelInfo {
   name: string;
   roomType?: string;
@@ -5,6 +7,7 @@ export interface ChannelInfo {
 
 export interface HostPromptOpts {
   gameName: string;
+  gameTemplate?: string;
   humanName: string;
   nonHostPlayerNames: string[];
   hasVotingPhase: boolean;
@@ -27,7 +30,7 @@ export interface HostPromptOpts {
 
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
   const {
-    gameName, humanName, nonHostPlayerNames,
+    gameName, gameTemplate, humanName, nonHostPlayerNames,
     hasVotingPhase, hasNightPhase, hasMultipleRooms,
     channels, gamePhase, phaseLabel,
     playerRoster, eventLogSummary, boardSummary, rulesText,
@@ -35,6 +38,7 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
   } = opts;
 
   const playerNamesList = nonHostPlayerNames.join(", ");
+  const templatePolicySection = buildTemplatePromptPolicy(gameTemplate);
 
   let roomSection = "";
   if (hasMultipleRooms) {
@@ -155,6 +159,7 @@ IMPORTANT: Even on silent turns you MUST always include a NEXT_SPEAKER directive
 
 ## PACING
 When the user says "Continue", "Ready", or "What's next?", advance to the next phase in ONE sentence max and assign the next speaker. Never dwell on the same beat twice. Never re-explain rules mid-game. Never ask for confirmation on something already established.
+${templatePolicySection}
 
 ## HOST VOICE — HOW TO WRITE PUBLIC MESSAGES
 You are a host, not a narrator. Be brief — but never be absent.
