@@ -15,6 +15,7 @@ export interface WorldTheme {
   description: string;
   icon: string;
   color: string;
+  cover: string;
   coverGradient: string;
   setting: string;
   monsterPool: string[];
@@ -33,6 +34,7 @@ export const WORLD_THEMES: WorldTheme[] = [
     description: "A dark fantasy kingdom fallen under a mysterious curse. Explore villages, forests, and dungeons to uncover the truth.",
     icon: "⚔️",
     color: "#7c2d12",
+    cover: "/games/game-cover-cursed-kingdom.webp",
     coverGradient: "from-amber-900 to-red-950",
     setting: "The Kingdom of Valdris has fallen under a dark curse. Villages wither, monsters roam the roads, and the once-great capital lies shrouded in shadow.",
     monsterPool: ["Wolf Pack", "Giant Spiders", "Forest Troll", "Bandits", "Skeletons", "Undead Soldiers", "Rock Golem", "Shadow Wraith"],
@@ -76,6 +78,7 @@ IMPORTANT: Use directives (SCENE, HP, ITEM, QUEST, COMBAT, SKILL_CHECK) to updat
     description: "The dead are rising. Survive in a city overrun by zombies. Scavenge, fortify, and fight your way out.",
     icon: "🧟",
     color: "#1a2e05",
+    cover: "/games/game-cover-zombie-siege.webp",
     coverGradient: "from-green-950 to-zinc-900",
     setting: "A viral outbreak has turned the city of Haven into a death trap. The living are few, the dead are many. Your group must survive, find supplies, and escape before the military quarantine seals the city forever.",
     monsterPool: ["Zombie Horde", "Crawler", "Bloater", "Screamer", "Zombie Dog Pack", "Infected Survivor", "Zombie Brute"],
@@ -116,6 +119,7 @@ IMPORTANT: Use directives to track HP, items, quests. Ammo and food are survival
     description: "Transported to a fantasy world, you enroll in a magic academy. Master spells, make allies, and uncover a dark conspiracy.",
     icon: "✨",
     color: "#4c1d95",
+    cover: "/games/game-cover-isekai-academy.webp",
     coverGradient: "from-violet-950 to-indigo-900",
     setting: "You've been summoned to the world of Aetheria and enrolled in the prestigious Starfall Academy — a school for heroes from other worlds. But something sinister lurks beneath the academy's gleaming towers.",
     monsterPool: ["Training Golem", "Shadow Familiar", "Corrupted Student", "Void Beast", "Crystal Guardian", "Dark Professor"],
@@ -158,6 +162,7 @@ IMPORTANT: Use directives. Mana = HP equivalent. Spells = skills. Academy badges
     description: "Hack, fight, and survive in a neon-drenched megacity ruled by corporations. Jack in to the Net, run the streets, take down the corps.",
     icon: "🤖",
     color: "#0e7490",
+    cover: "/games/game-cover-cyberpunk-netrun.webp",
     coverGradient: "from-cyan-950 to-zinc-900",
     setting: "Neo-Kyoto, 2087. Megacorporations own the government. The Net is a virtual battlefield. Augmented mercenaries run the streets. Your crew operates from the shadows, taking jobs that nobody else will touch.",
     monsterPool: ["Corporate Security Drone", "Street Gang", "Rogue AI", "Cyborg Enforcer", "Security Mech", "Net Ghost", "Corporate Assassin", "Mutant Rat Pack"],

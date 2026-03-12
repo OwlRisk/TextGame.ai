@@ -268,26 +268,32 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             <p className="text-sm text-zinc-400 mb-4">
               Explore multi-room worlds with AI companions. Each location is a living room with NPCs, quests, and encounters.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {WORLD_THEMES.map((theme) => (
                 <button
                   key={theme.id}
                   disabled={creatingWorldId !== null}
                   onClick={() => handleCreateWorld(theme.id)}
-                  className="group relative text-left bg-zinc-900/60 border border-zinc-800 hover:border-amber-500/40 rounded-xl p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                  className="group relative text-left bg-zinc-900/60 border border-zinc-800 hover:border-amber-500/40 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer"
                 >
-                  <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${theme.coverGradient} opacity-10 group-hover:opacity-20 transition-opacity`} />
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-3xl">{theme.icon}</span>
-                      <div>
-                        <h3 className="font-bold text-white">{theme.name}</h3>
-                        <span className="text-[10px] text-zinc-500">{theme.rooms.length} locations</span>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-amber-400 ml-auto transition-colors" />
+                  {/* Cover image */}
+                  <div className="relative h-36 overflow-hidden">
+                    <Image
+                      src={theme.cover}
+                      alt={theme.name}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="font-bold text-white text-lg drop-shadow-lg">{theme.name}</h3>
+                      <span className="text-[11px] text-zinc-300/80">{theme.rooms.length} locations</span>
                     </div>
-                    <p className="text-xs text-zinc-400 line-clamp-2">{theme.description}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-3">
+                  </div>
+                  {/* Info */}
+                  <div className="p-4">
+                    <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{theme.description}</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {theme.partyRoles.map((role) => (
                         <span key={role} className="text-[10px] px-2 py-0.5 bg-violet-500/10 text-violet-300 border border-violet-500/20 rounded-full">{role}</span>
                       ))}
