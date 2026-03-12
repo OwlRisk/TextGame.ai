@@ -79,10 +79,10 @@ function getAvatarPropsForPlayer(
 describe('getInitialUrl from avatarImageUrls', () => {
   it('returns styled key URL when present', () => {
     const map: AvatarMap = {
-      'Alice|player|anime': 'https://anime/alice.jpg',
+      'Alice|player|toon3d': 'https://toon3d/alice.jpg',
       'Alice|player': 'https://sr/alice.jpg',
     };
-    expect(getInitialUrl(map, 'Alice', 'player', 'anime')).toBe('https://anime/alice.jpg');
+    expect(getInitialUrl(map, 'Alice', 'player', 'toon3d')).toBe('https://toon3d/alice.jpg');
   });
 
   it('falls back to base key when styled key is missing', () => {
@@ -90,28 +90,28 @@ describe('getInitialUrl from avatarImageUrls', () => {
       'Alice|player': 'https://sr/alice.jpg',
     };
     // Styled key miss → base key hit (may be stale, but avoids blank flicker)
-    expect(getInitialUrl(map, 'Alice', 'player', 'anime')).toBe('https://sr/alice.jpg');
+    expect(getInitialUrl(map, 'Alice', 'player', 'toon3d')).toBe('https://sr/alice.jpg');
   });
 
   it('returns undefined when neither key is present', () => {
     const map: AvatarMap = {};
-    expect(getInitialUrl(map, 'Zara', 'player', 'pixel')).toBeUndefined();
+    expect(getInitialUrl(map, 'Zara', 'player', 'toon3d')).toBeUndefined();
   });
 
   it('styled key always wins over base key even if base key was written last', () => {
     const map: AvatarMap = {
       'Alice|player': 'https://old/alice.jpg', // stale base key
-      'Alice|player|anime': 'https://anime/alice.jpg', // correct styled key
+      'Alice|player|toon3d': 'https://toon3d/alice.jpg', // correct styled key
     };
-    expect(getInitialUrl(map, 'Alice', 'player', 'anime')).toBe('https://anime/alice.jpg');
+    expect(getInitialUrl(map, 'Alice', 'player', 'toon3d')).toBe('https://toon3d/alice.jpg');
   });
 
   it('host type uses its own keyspace', () => {
     const map: AvatarMap = {
-      'Echo|host|anime': 'https://anime/echo.jpg',
+      'Echo|host|toon3d': 'https://toon3d/echo.jpg',
       'Echo|player': 'https://sr/echo-player.jpg', // should not be returned
     };
-    expect(getInitialUrl(map, 'Echo', 'host', 'anime')).toBe('https://anime/echo.jpg');
+    expect(getInitialUrl(map, 'Echo', 'host', 'toon3d')).toBe('https://toon3d/echo.jpg');
   });
 });
 
@@ -121,11 +121,11 @@ describe('avatarImageUrls map growth', () => {
   it('grows as players join and their avatars load', () => {
     const map: AvatarMap = {};
     const players = ['Alice', 'Bob', 'Carol', 'Dan'];
-    const style: AvatarStyle = 'anime';
+    const style: AvatarStyle = 'toon3d';
 
     players.forEach((name, i) => {
-      map[avatarCacheKey(name, 'player', style)] = `https://anime/${i}.jpg`;
-      map[avatarCacheKey(name, 'player')] = `https://anime/${i}.jpg`;
+      map[avatarCacheKey(name, 'player', style)] = `https://toon3d/${i}.jpg`;
+      map[avatarCacheKey(name, 'player')] = `https://toon3d/${i}.jpg`;
     });
 
     expect(Object.keys(map)).toHaveLength(players.length * 2);
@@ -134,7 +134,7 @@ describe('avatarImageUrls map growth', () => {
   it('clearing the map resets to empty', () => {
     const map: AvatarMap = {
       'Alice|player': 'https://sr/alice.jpg',
-      'Alice|player|anime': 'https://anime/alice.jpg',
+      'Alice|player|toon3d': 'https://toon3d/alice.jpg',
       'Echo|host': 'https://sr/echo.jpg',
     };
     const cleared: AvatarMap = {};
@@ -143,14 +143,14 @@ describe('avatarImageUrls map growth', () => {
 
   it('regenerating an avatar overwrites the existing URL for the same key', () => {
     const map: AvatarMap = {
-      'Alice|player|anime': 'https://anime/alice-old.jpg',
-      'Alice|player': 'https://anime/alice-old.jpg',
+      'Alice|player|toon3d': 'https://toon3d/alice-old.jpg',
+      'Alice|player': 'https://toon3d/alice-old.jpg',
     };
     // Regeneration writes new URL to both keys
-    map['Alice|player|anime'] = 'https://anime/alice-new.jpg';
-    map['Alice|player'] = 'https://anime/alice-new.jpg';
+    map['Alice|player|toon3d'] = 'https://toon3d/alice-new.jpg';
+    map['Alice|player'] = 'https://toon3d/alice-new.jpg';
 
-    expect(getInitialUrl(map, 'Alice', 'player', 'anime')).toBe('https://anime/alice-new.jpg');
+    expect(getInitialUrl(map, 'Alice', 'player', 'toon3d')).toBe('https://toon3d/alice-new.jpg');
   });
 });
 
@@ -171,13 +171,13 @@ describe('style change lifecycle', () => {
     };
     // Style changed → clear
     map = {};
-    // Hook fetches anime
-    map['Alice|player|anime'] = 'https://anime/alice.jpg';
-    map['Alice|player'] = 'https://anime/alice.jpg';
+    // Hook fetches toon3d
+    map['Alice|player|toon3d'] = 'https://toon3d/alice.jpg';
+    map['Alice|player'] = 'https://toon3d/alice.jpg';
 
-    expect(getInitialUrl(map, 'Alice', 'player', 'anime')).toBe('https://anime/alice.jpg');
+    expect(getInitialUrl(map, 'Alice', 'player', 'toon3d')).toBe('https://toon3d/alice.jpg');
     expect(getInitialUrl(map, 'Alice', 'player', 'semi-realistic')).toBe(
-      'https://anime/alice.jpg', // base key fallback; stale is gone
+      'https://toon3d/alice.jpg', // base key fallback; stale is gone
     );
   });
 
@@ -187,8 +187,8 @@ describe('style change lifecycle', () => {
       dispatchEvent: (e: Event) => { dispatched.push(e as CustomEvent); },
     });
 
-    window.dispatchEvent(new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: 'pixel' }));
-    expect(dispatched[0].detail).toBe('pixel');
+    window.dispatchEvent(new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: 'toon3d' }));
+    expect(dispatched[0].detail).toBe('toon3d');
 
     vi.unstubAllGlobals();
   });
@@ -220,8 +220,8 @@ describe('getAvatarPropsForPlayer with style param', () => {
   };
 
   it('includes style in returned props when provided', () => {
-    const props = getAvatarPropsForPlayer(player, 'anime');
-    expect(props?.style).toBe('anime');
+    const props = getAvatarPropsForPlayer(player, 'toon3d');
+    expect(props?.style).toBe('toon3d');
   });
 
   it('style is undefined in props when not provided', () => {
@@ -230,15 +230,15 @@ describe('getAvatarPropsForPlayer with style param', () => {
   });
 
   it('returns null for undefined player', () => {
-    expect(getAvatarPropsForPlayer(undefined, 'anime')).toBeNull();
+    expect(getAvatarPropsForPlayer(undefined, 'toon3d')).toBeNull();
   });
 
   it('returns null for null player', () => {
-    expect(getAvatarPropsForPlayer(null, 'pixel')).toBeNull();
+    expect(getAvatarPropsForPlayer(null, 'toon3d')).toBeNull();
   });
 
   it('passes through all player fields correctly', () => {
-    const props = getAvatarPropsForPlayer(player, 'pixel');
+    const props = getAvatarPropsForPlayer(player, 'toon3d');
     expect(props?.name).toBe('Silas Grey');
     expect(props?.type).toBe('player');
     expect(props?.role).toBe('Villager');
@@ -271,7 +271,7 @@ describe('ghost / stale URL detection', () => {
     const map: AvatarMap = {
       'Alice|player': 'https://sr/alice.jpg', // ghost from previous style
     };
-    const styledUrl = map['Alice|player|anime']; // undefined → re-fetch
+    const styledUrl = map['Alice|player|toon3d']; // undefined → re-fetch
     const baseUrl = map['Alice|player']; // placeholder (may be stale)
 
     expect(styledUrl).toBeUndefined();
@@ -283,11 +283,11 @@ describe('ghost / stale URL detection', () => {
       'Alice|player': 'https://sr/alice.jpg', // ghost
     };
     // After fetch completes
-    map['Alice|player|anime'] = 'https://anime/alice.jpg';
-    map['Alice|player'] = 'https://anime/alice.jpg'; // ghost overwritten
+    map['Alice|player|toon3d'] = 'https://toon3d/alice.jpg';
+    map['Alice|player'] = 'https://toon3d/alice.jpg'; // ghost overwritten
 
-    expect(map['Alice|player|anime']).toBe('https://anime/alice.jpg');
-    expect(map['Alice|player']).toBe('https://anime/alice.jpg');
+    expect(map['Alice|player|toon3d']).toBe('https://toon3d/alice.jpg');
+    expect(map['Alice|player']).toBe('https://toon3d/alice.jpg');
   });
 
   it('after map clear, the ghost URL is gone — no stale placeholder', () => {
@@ -298,7 +298,7 @@ describe('ghost / stale URL detection', () => {
     map = {};
 
     expect(map['Alice|player']).toBeUndefined();
-    expect(map['Alice|player|anime']).toBeUndefined();
+    expect(map['Alice|player|toon3d']).toBeUndefined();
   });
 });
 
@@ -325,16 +325,16 @@ describe('regenerateAvatar must forward the active style', () => {
   it('includes the style in the payload', () => {
     const payload = buildRegeneratePayload(
       { name: 'Alice', gender: 'female', role: 'Witch' },
-      'anime',
+      'toon3d',
       'game-123',
     );
-    expect(payload.style).toBe('anime');
+    expect(payload.style).toBe('toon3d');
   });
 
   it('includes all player fields in the payload', () => {
     const payload = buildRegeneratePayload(
       { name: 'Bob', gender: 'male', personality: 'stoic', role: 'Villager' },
-      'pixel',
+      'toon3d',
       'game-456',
     );
     expect(payload.name).toBe('Bob');
@@ -356,8 +356,8 @@ describe('regenerateAvatar must forward the active style', () => {
 
 describe('coerceStyle guards server prefs before setState', () => {
   it('coerces a valid server pref correctly', () => {
-    expect(coerceStyle('anime')).toBe('anime');
-    expect(coerceStyle('pixel')).toBe('pixel');
+    expect(coerceStyle('toon3d')).toBe('toon3d');
+    expect(coerceStyle('semi-realistic')).toBe('semi-realistic');
   });
 
   it('coerces an invalid server pref to DEFAULT_STYLE', () => {

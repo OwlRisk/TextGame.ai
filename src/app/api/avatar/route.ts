@@ -42,7 +42,7 @@ const AVATAR_BUCKET = 'avatars';
 const AVATAR_OUTPUT_SIZE = 128;
 const POOL_OUTPUT_SIZE = 256;
 
-import { VALID_STYLES, isValidStyle, DEFAULT_STYLE, type AvatarStyle } from '@/lib/avatar-style-constants';
+import { isValidStyle, DEFAULT_STYLE, type AvatarStyle } from '@/lib/avatar-style-constants';
 
 /** Minimum pool size (initial seed); kept for test compatibility. */
 const MIN_POOL_SIZE = 30;

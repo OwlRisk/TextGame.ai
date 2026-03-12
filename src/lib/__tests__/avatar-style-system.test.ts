@@ -1,6 +1,6 @@
 /**
  * Tests for the avatar style system:
- *  - avatar-style-constants: VALID_STYLES, isValidStyle, coerceStyle, AVATAR_STYLE_PACKS
+ *  - avatar-style-constants: VALID_STYLES, isValidStyle, coerceStyle
  *  - useAvatarStyle hook: localStorage reading, CustomEvent reactivity, storage event reactivity
  *  - Style extensibility contract
  */
@@ -11,7 +11,6 @@ import {
   DEFAULT_STYLE,
   AVATAR_STYLE_STORAGE_KEY,
   AVATAR_STYLE_CHANGED_EVENT,
-  AVATAR_STYLE_PACKS,
   isValidStyle,
   coerceStyle,
   type AvatarStyle,
@@ -20,16 +19,13 @@ import {
 // ─── 1. Constants contract ────────────────────────────────────────────────────
 
 describe('VALID_STYLES', () => {
-  it('contains exactly 6 style packs', () => {
-    expect(VALID_STYLES).toHaveLength(6);
+  it('contains exactly 2 style packs', () => {
+    expect(VALID_STYLES).toHaveLength(2);
   });
 
   it('includes all expected style names', () => {
     expect(VALID_STYLES).toContain('semi-realistic');
-    expect(VALID_STYLES).toContain('anime');
-    expect(VALID_STYLES).toContain('painted');
-    expect(VALID_STYLES).toContain('pixel');
-    expect(VALID_STYLES).toContain('cyberpunk');
+    expect(VALID_STYLES).toContain('toon3d');
   });
 
   it('is a readonly tuple (does not include any unknown values)', () => {
@@ -60,32 +56,6 @@ describe('AVATAR_STYLE_CHANGED_EVENT', () => {
   });
 });
 
-describe('AVATAR_STYLE_PACKS', () => {
-  it('has one entry per valid style', () => {
-    expect(AVATAR_STYLE_PACKS).toHaveLength(VALID_STYLES.length);
-  });
-
-  it('every pack value is a valid style', () => {
-    for (const pack of AVATAR_STYLE_PACKS) {
-      expect(isValidStyle(pack.value)).toBe(true);
-    }
-  });
-
-  it('every valid style has a corresponding pack entry', () => {
-    const packValues = AVATAR_STYLE_PACKS.map((p) => p.value);
-    for (const style of VALID_STYLES) {
-      expect(packValues).toContain(style);
-    }
-  });
-
-  it('every pack has a non-empty label and description', () => {
-    for (const pack of AVATAR_STYLE_PACKS) {
-      expect(pack.label.length).toBeGreaterThan(0);
-      expect(pack.description.length).toBeGreaterThan(0);
-    }
-  });
-});
-
 // ─── 2. isValidStyle ─────────────────────────────────────────────────────────
 
 describe('isValidStyle', () => {
@@ -98,8 +68,15 @@ describe('isValidStyle', () => {
   it('returns false for unknown strings', () => {
     expect(isValidStyle('watercolor')).toBe(false);
     expect(isValidStyle('')).toBe(false);
-    expect(isValidStyle('Semi-Realistic')).toBe(false); // case-sensitive
-    expect(isValidStyle('ANIME')).toBe(false);
+    expect(isValidStyle('Semi-Realistic')).toBe(false);
+    expect(isValidStyle('TOON3D')).toBe(false);
+  });
+
+  it('returns false for legacy styles', () => {
+    expect(isValidStyle('anime')).toBe(false);
+    expect(isValidStyle('painted')).toBe(false);
+    expect(isValidStyle('pixel')).toBe(false);
+    expect(isValidStyle('cyberpunk')).toBe(false);
   });
 });
 
@@ -107,15 +84,20 @@ describe('isValidStyle', () => {
 
 describe('coerceStyle', () => {
   it('returns the input when it is valid', () => {
-    expect(coerceStyle('anime')).toBe('anime');
-    expect(coerceStyle('pixel')).toBe('pixel');
-    expect(coerceStyle('cyberpunk')).toBe('cyberpunk');
+    expect(coerceStyle('semi-realistic')).toBe('semi-realistic');
+    expect(coerceStyle('toon3d')).toBe('toon3d');
   });
 
   it('falls back to DEFAULT_STYLE for invalid input', () => {
     expect(coerceStyle('watercolor')).toBe(DEFAULT_STYLE);
     expect(coerceStyle('')).toBe(DEFAULT_STYLE);
-    expect(coerceStyle('ANIME')).toBe(DEFAULT_STYLE);
+    expect(coerceStyle('TOON3D')).toBe(DEFAULT_STYLE);
+  });
+
+  it('falls back to DEFAULT_STYLE for legacy styles', () => {
+    expect(coerceStyle('anime')).toBe(DEFAULT_STYLE);
+    expect(coerceStyle('pixel')).toBe(DEFAULT_STYLE);
+    expect(coerceStyle('cyberpunk')).toBe(DEFAULT_STYLE);
   });
 
   it('falls back to DEFAULT_STYLE for null and undefined', () => {
@@ -147,8 +129,8 @@ describe('useAvatarStyle logic (pure, without React)', () => {
   });
 
   it('reads the stored value correctly when set', () => {
-    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'anime');
-    expect(coerceStyle(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY))).toBe('anime');
+    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'toon3d');
+    expect(coerceStyle(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY))).toBe('toon3d');
   });
 
   it('coerces a corrupted localStorage value to DEFAULT_STYLE', () => {
@@ -156,10 +138,15 @@ describe('useAvatarStyle logic (pure, without React)', () => {
     expect(coerceStyle(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY))).toBe(DEFAULT_STYLE);
   });
 
+  it('coerces legacy style value to DEFAULT_STYLE', () => {
+    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'anime');
+    expect(coerceStyle(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY))).toBe(DEFAULT_STYLE);
+  });
+
   it('CustomEvent detail is coerced to AvatarStyle', () => {
-    const e = new CustomEvent<string>(AVATAR_STYLE_CHANGED_EVENT, { detail: 'pixel' });
+    const e = new CustomEvent<string>(AVATAR_STYLE_CHANGED_EVENT, { detail: 'toon3d' });
     const style: AvatarStyle = coerceStyle((e as CustomEvent<string>).detail);
-    expect(style).toBe('pixel');
+    expect(style).toBe('toon3d');
   });
 
   it('CustomEvent with invalid detail falls back to DEFAULT_STYLE', () => {
@@ -168,7 +155,7 @@ describe('useAvatarStyle logic (pure, without React)', () => {
   });
 });
 
-// ─── 5. setAvatarStyleGlobal writes to localStorage and dispatches event ─────
+// ─── 5. setAvatarStyleGlobal side-effects ────────────────────────────────────
 
 describe('setAvatarStyleGlobal side-effects', () => {
   let storage: Record<string, string>;
@@ -192,20 +179,20 @@ describe('setAvatarStyleGlobal side-effects', () => {
   });
 
   it('writes the style to localStorage', () => {
-    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'cyberpunk');
-    expect(storage[AVATAR_STYLE_STORAGE_KEY]).toBe('cyberpunk');
+    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'toon3d');
+    expect(storage[AVATAR_STYLE_STORAGE_KEY]).toBe('toon3d');
   });
 
   it('dispatched event carries the new style as detail', () => {
-    const style: AvatarStyle = 'painted';
+    const style: AvatarStyle = 'toon3d';
     const evt = new CustomEvent<AvatarStyle>(AVATAR_STYLE_CHANGED_EVENT, { detail: style });
     window.dispatchEvent(evt);
     expect(dispatchedEvents.length).toBe(1);
-    expect((dispatchedEvents[0] as CustomEvent<AvatarStyle>).detail).toBe('painted');
+    expect((dispatchedEvents[0] as CustomEvent<AvatarStyle>).detail).toBe('toon3d');
   });
 
   it('dispatched event type matches AVATAR_STYLE_CHANGED_EVENT', () => {
-    const evt = new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: 'anime' });
+    const evt = new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: 'semi-realistic' });
     window.dispatchEvent(evt);
     expect(dispatchedEvents[0].type).toBe(AVATAR_STYLE_CHANGED_EVENT);
   });
@@ -213,34 +200,25 @@ describe('setAvatarStyleGlobal side-effects', () => {
 
 // ─── 6. Extensibility contract ───────────────────────────────────────────────
 
-describe('Extensibility: adding a new style', () => {
-  it('VALID_STYLES and AVATAR_STYLE_PACKS stay in sync (same length)', () => {
-    expect(AVATAR_STYLE_PACKS).toHaveLength(VALID_STYLES.length);
-  });
-
+describe('Extensibility: style validation', () => {
   it('isValidStyle uses VALID_STYLES as the single source of truth', () => {
-    // If VALID_STYLES grows, isValidStyle accepts the new value without any other changes.
-    // We verify the inverse: a style NOT in VALID_STYLES is always rejected.
     const hypotheticalNewStyle = 'watercolor';
     const isInValidStyles = (VALID_STYLES as readonly string[]).includes(hypotheticalNewStyle);
     expect(isValidStyle(hypotheticalNewStyle)).toBe(isInValidStyles);
   });
 
   it('coerceStyle falls back to DEFAULT_STYLE for any value not in VALID_STYLES', () => {
-    const unknowns = ['', 'watercolor', 'oil', 'sketch', 'cartoon'];
+    const unknowns = ['', 'watercolor', 'oil', 'sketch', 'cartoon', 'anime', 'pixel'];
     for (const u of unknowns) {
       expect(coerceStyle(u)).toBe(DEFAULT_STYLE);
     }
   });
 
   it('all API-facing style validation can be done with isValidStyle alone', () => {
-    // The pool and avatar APIs use isValidStyle(rawStyle) ? rawStyle : DEFAULT_STYLE.
-    // Verify that pattern works for all valid styles.
     for (const style of VALID_STYLES) {
       const resolved = isValidStyle(style) ? style : DEFAULT_STYLE;
       expect(resolved).toBe(style);
     }
-    // And for invalid input:
     expect(isValidStyle('bad') ? 'bad' : DEFAULT_STYLE).toBe(DEFAULT_STYLE);
   });
 });
@@ -259,8 +237,8 @@ describe('Style-aware cache key patterns', () => {
   });
 
   it('with style → base key + style segment', () => {
-    expect(styleCacheKey('Alice', 'player', 'anime')).toBe('Alice|player|anime');
-    expect(styleCacheKey('Echo', 'host', 'pixel')).toBe('Echo|host|pixel');
+    expect(styleCacheKey('Alice', 'player', 'toon3d')).toBe('Alice|player|toon3d');
+    expect(styleCacheKey('Echo', 'host', 'semi-realistic')).toBe('Echo|host|semi-realistic');
   });
 
   it('each valid style produces a unique cache key', () => {

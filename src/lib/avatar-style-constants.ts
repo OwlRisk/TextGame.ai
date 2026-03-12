@@ -1,20 +1,19 @@
 /**
  * Single source of truth for avatar style configuration.
  *
- * To add a new style:
- *  1. Append the style value to VALID_STYLES below.
- *  2. Add a corresponding entry to AVATAR_STYLE_PACKS (label + description).
- *  3. Run `node scripts/generate-avatars.js <newStyle>` to generate the images.
- *  No changes are required in API routes, hooks, or components.
+ * Two styles are kept: semi-realistic (for serious/deduction games) and toon3d
+ * (for party/quiz/open games). The style is auto-selected per game template via
+ * getAvatarStyleForTemplate() in game-templates.ts — there is no user-facing
+ * style picker.
+ *
+ * Legacy styles (anime, painted, pixel, cyberpunk) remain in the DB
+ * avatar_styles column for backward compatibility but are no longer generated
+ * or actively served.
  */
 
 export const VALID_STYLES = [
-  'toon3d',
   'semi-realistic',
-  'anime',
-  'painted',
-  'pixel',
-  'cyberpunk',
+  'toon3d',
 ] as const;
 
 export type AvatarStyle = (typeof VALID_STYLES)[number];
@@ -33,43 +32,5 @@ export function coerceStyle(s: string | null | undefined): AvatarStyle {
   return s && isValidStyle(s) ? s : DEFAULT_STYLE;
 }
 
-/** UI metadata for each style — consumed by settings-content.tsx and any preview components. */
-export const AVATAR_STYLE_PACKS: ReadonlyArray<{
-  value: AvatarStyle;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'toon3d',
-    label: '3D Animated',
-    description: 'Vibrant 3D animation studio style',
-  },
-  {
-    value: 'semi-realistic',
-    label: 'Semi-Realistic',
-    description: 'Painterly game art, Arcane-inspired',
-  },
-  {
-    value: 'anime',
-    label: 'Anime',
-    description: 'Japanese cel-shaded illustration',
-  },
-  {
-    value: 'painted',
-    label: 'Painted Portrait',
-    description: 'Oil-painting brush strokes',
-  },
-  {
-    value: 'pixel',
-    label: 'Pixel Art',
-    description: 'Retro 16-bit game sprites',
-  },
-  {
-    value: 'cyberpunk',
-    label: 'Cyberpunk',
-    description: 'Neon-noir sci-fi aesthetic',
-  },
-] as const;
-
-/** Custom event name dispatched when the user changes their avatar style. */
+/** Custom event name dispatched when the game room avatar style changes. */
 export const AVATAR_STYLE_CHANGED_EVENT = 'avatar-style-changed';

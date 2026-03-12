@@ -21,7 +21,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { toast } from "sonner";
 import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
-import { getGameTemplate } from "@/lib/game-templates";
+import { getGameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
 import { safeMarked } from "@/lib/safe-marked";
 import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 import { supabase } from "@/lib/supabase";
@@ -690,43 +690,44 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       </ErrorBoundary>
 
       {/* Player panel */}
-      <div className="hidden md:block flex-shrink-0 w-80">
-        <PlayerPanelWithBoard
-          players={playersForChannel}
-          gameId={gameId}
-          humanGameIdentity={humanGameIdentity}
-          avatarImageUrls={avatarImageUrls}
-          onAvatarUrlLoaded={onAvatarUrlLoaded}
-          currentUserId={userId}
+            <div className="hidden md:block flex-shrink-0 w-80">
+              <PlayerPanelWithBoard
+                players={playersForChannel}
+                gameId={gameId}
+                humanGameIdentity={humanGameIdentity}
+                avatarImageUrls={avatarImageUrls}
+                onAvatarUrlLoaded={onAvatarUrlLoaded}
+                currentUserId={userId}
           isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
-          viewerIsGuest={isGuestPlayer}
-          guestMembers={enrichedGuestMembers}
-          onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
-        />
-      </div>
+                viewerIsGuest={isGuestPlayer}
+                guestMembers={enrichedGuestMembers}
+                onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
+              />
+            </div>
 
-      <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
-        <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700 [&>button:last-child]:hidden">
-          <PlayerPanelWithBoard
-            players={playersForChannel}
-            gameId={gameId}
-            humanGameIdentity={humanGameIdentity}
-            avatarImageUrls={avatarImageUrls}
-            onAvatarUrlLoaded={onAvatarUrlLoaded}
-            currentUserId={userId}
+            <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
+              <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700 [&>button:last-child]:hidden">
+                <PlayerPanelWithBoard
+                  players={playersForChannel}
+                  gameId={gameId}
+                  humanGameIdentity={humanGameIdentity}
+                  avatarImageUrls={avatarImageUrls}
+                  onAvatarUrlLoaded={onAvatarUrlLoaded}
+                  currentUserId={userId}
             isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
-            viewerIsGuest={isGuestPlayer}
-            guestMembers={enrichedGuestMembers}
-            onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
-          />
-        </SheetContent>
-      </Sheet>
+                  viewerIsGuest={isGuestPlayer}
+                  guestMembers={enrichedGuestMembers}
+                  onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
+                />
+              </SheetContent>
+            </Sheet>
       </div>
 
       <CharacterBrowser
         open={showCharacterBrowser}
         onClose={() => setShowCharacterBrowser(false)}
         gameId={gameId}
+        style={getAvatarStyleForTemplate(currentGame?.config?.template || "custom")}
         onSelectCharacter={(char) => {
           const nonHostCount = players.filter((p) => !p.isGameMaster).length;
           if (nonHostCount >= lobbyMaxSeats) {

@@ -92,12 +92,12 @@ describe('API style validation', () => {
     expect(resolveRequestedStyle(null)).toBe(DEFAULT_STYLE);
     expect(resolveRequestedStyle(undefined)).toBe(DEFAULT_STYLE);
     expect(resolveRequestedStyle(42)).toBe(DEFAULT_STYLE);
-    expect(resolveRequestedStyle(['anime'])).toBe(DEFAULT_STYLE);
+    expect(resolveRequestedStyle(['toon3d'])).toBe(DEFAULT_STYLE);
   });
 
   it('is case-sensitive: uppercase style names are rejected', () => {
-    expect(resolveRequestedStyle('Anime')).toBe(DEFAULT_STYLE);
-    expect(resolveRequestedStyle('PIXEL')).toBe(DEFAULT_STYLE);
+    expect(resolveRequestedStyle('Toon3d')).toBe(DEFAULT_STYLE);
+    expect(resolveRequestedStyle('TOON3D')).toBe(DEFAULT_STYLE);
     expect(resolveRequestedStyle('Semi-Realistic')).toBe(DEFAULT_STYLE);
   });
 
@@ -106,8 +106,8 @@ describe('API style validation', () => {
   });
 
   it('does not accept extra whitespace around valid style names', () => {
-    expect(resolveRequestedStyle(' anime ')).toBe(DEFAULT_STYLE);
-    expect(resolveRequestedStyle('\tanime')).toBe(DEFAULT_STYLE);
+    expect(resolveRequestedStyle(' toon3d ')).toBe(DEFAULT_STYLE);
+    expect(resolveRequestedStyle('\ttoon3d')).toBe(DEFAULT_STYLE);
   });
 });
 
@@ -131,7 +131,7 @@ describe('coerceStyle helper', () => {
   });
 
   it('never returns an unknown string', () => {
-    const arbitrary = ['foo', 'bar', '', null, undefined, 'Pixel'] as const;
+    const arbitrary = ['foo', 'bar', '', null, undefined, 'Toon3d'] as const;
     for (const v of arbitrary) {
       const result = coerceStyle(v as string | null | undefined);
       expect(VALID_STYLES.includes(result as AvatarStyle)).toBe(true);
@@ -144,20 +144,20 @@ describe('coerceStyle helper', () => {
 describe('sortByStylePriority', () => {
   const characters: Array<{ name: string; avatar_styles?: Record<string, string> | null }> = [
     { name: 'Alice', avatar_styles: { 'semi-realistic': 'https://sr/alice.jpg' } },
-    { name: 'Bob', avatar_styles: { anime: 'https://anime/bob.jpg' } },
+    { name: 'Bob', avatar_styles: { toon3d: 'https://toon3d/bob.jpg' } },
     { name: 'Carol', avatar_styles: null },
-    { name: 'Dan', avatar_styles: { anime: 'https://anime/dan.jpg', 'semi-realistic': 'https://sr/dan.jpg' } },
+    { name: 'Dan', avatar_styles: { toon3d: 'https://toon3d/dan.jpg', 'semi-realistic': 'https://sr/dan.jpg' } },
     { name: 'Eve', avatar_styles: {} },
   ];
 
   it('characters with the requested style come first', () => {
-    const sorted = sortByStylePriority(characters, 'anime');
+    const sorted = sortByStylePriority(characters, 'toon3d');
     expect(sorted[0].name).toBe('Bob');
     expect(sorted[1].name).toBe('Dan');
   });
 
   it('characters without the requested style come after', () => {
-    const sorted = sortByStylePriority(characters, 'anime');
+    const sorted = sortByStylePriority(characters, 'toon3d');
     const names = sorted.map((c) => c.name);
     const bobIdx = names.indexOf('Bob');
     const carolIdx = names.indexOf('Carol');
@@ -165,9 +165,15 @@ describe('sortByStylePriority', () => {
   });
 
   it('characters without avatar_styles are sorted last', () => {
-    const sorted = sortByStylePriority(characters, 'pixel');
-    // None have pixel → order is stable among no-priority group
-    expect(sorted.every((c) => !c.avatar_styles?.['pixel'])).toBe(true);
+    const charsNoToon: { name: string; avatar_styles: Record<string, string> | null }[] = [
+      { name: 'Alice', avatar_styles: { 'semi-realistic': 'https://sr/alice.jpg' } },
+      { name: 'Bob', avatar_styles: { 'semi-realistic': 'https://sr/bob.jpg' } },
+      { name: 'Carol', avatar_styles: null },
+      { name: 'Eve', avatar_styles: {} },
+    ];
+    const sorted = sortByStylePriority(charsNoToon, 'toon3d');
+    // None have toon3d → order is stable among no-priority group
+    expect(sorted.every((c) => !c.avatar_styles?.['toon3d'])).toBe(true);
   });
 
   it('characters with multiple styles are still prioritized if they have the requested one', () => {
@@ -181,7 +187,7 @@ describe('sortByStylePriority', () => {
 
   it('does not mutate the original array', () => {
     const original = [...characters];
-    sortByStylePriority(characters, 'anime');
+    sortByStylePriority(characters, 'toon3d');
     expect(characters.map((c) => c.name)).toEqual(original.map((c) => c.name));
   });
 });
@@ -191,16 +197,16 @@ describe('sortByStylePriority', () => {
 describe('resolveAvatarUrl fallback chain', () => {
   it('returns the exact styled URL when style matches', () => {
     const char = {
-      avatar_styles: { anime: 'https://anime/alice.jpg', 'semi-realistic': 'https://sr/alice.jpg' },
+      avatar_styles: { toon3d: 'https://toon3d/alice.jpg', 'semi-realistic': 'https://sr/alice.jpg' },
     };
-    expect(resolveAvatarUrl(char, 'anime')).toBe('https://anime/alice.jpg');
+    expect(resolveAvatarUrl(char, 'toon3d')).toBe('https://toon3d/alice.jpg');
   });
 
   it('falls back to another style URL when requested style is missing', () => {
     const char = {
       avatar_styles: { 'semi-realistic': 'https://sr/alice.jpg' },
     };
-    const url = resolveAvatarUrl(char, 'anime');
+    const url = resolveAvatarUrl(char, 'toon3d');
     expect(url).toBe('https://sr/alice.jpg');
   });
 
@@ -209,7 +215,7 @@ describe('resolveAvatarUrl fallback chain', () => {
       avatar_styles: null,
       image_url: 'https://legacy/alice.jpg',
     };
-    expect(resolveAvatarUrl(char, 'anime')).toBe('https://legacy/alice.jpg');
+    expect(resolveAvatarUrl(char, 'toon3d')).toBe('https://legacy/alice.jpg');
   });
 
   it('falls back to image_url when avatar_styles is empty', () => {
@@ -217,33 +223,31 @@ describe('resolveAvatarUrl fallback chain', () => {
       avatar_styles: {},
       image_url: 'https://legacy/alice.jpg',
     };
-    expect(resolveAvatarUrl(char, 'pixel')).toBe('https://legacy/alice.jpg');
+    expect(resolveAvatarUrl(char, 'toon3d')).toBe('https://legacy/alice.jpg');
   });
 
   it('returns null when no URL is available', () => {
     const char = { avatar_styles: null };
-    expect(resolveAvatarUrl(char, 'anime')).toBeNull();
+    expect(resolveAvatarUrl(char, 'toon3d')).toBeNull();
   });
 
   it('resolveAvatarUrl fallback is deterministic (respects VALID_STYLES order)', () => {
-    // All styles except 'pixel' and 'cyberpunk' are present
+    // Request 'toon3d' but char only has 'semi-realistic' → falls back to first in VALID_STYLES
     const char = {
       avatar_styles: {
         'semi-realistic': 'https://sr/alice.jpg',
-        anime: 'https://anime/alice.jpg',
-        painted: 'https://painted/alice.jpg',
       },
     };
-    const url = resolveAvatarUrl(char, 'pixel');
+    const url = resolveAvatarUrl(char, 'toon3d');
     // Should return the first available style in VALID_STYLES order
     expect(url).toBe(resolveAvatarUrl(char, VALID_STYLES[0]));
   });
 
   it('host-type characters resolve the same way as player-type', () => {
     const char = {
-      avatar_styles: { anime: 'https://anime/echo.jpg' },
+      avatar_styles: { toon3d: 'https://toon3d/echo.jpg' },
     };
-    expect(resolveAvatarUrl(char, 'anime')).toBe('https://anime/echo.jpg');
+    expect(resolveAvatarUrl(char, 'toon3d')).toBe('https://toon3d/echo.jpg');
   });
 });
 
@@ -309,12 +313,12 @@ describe('Pool API query parameter handling', () => {
   }
 
   it('defaults limit to 5 when omitted', () => {
-    const { limit } = extractPoolParams({ style: 'anime' });
+    const { limit } = extractPoolParams({ style: 'toon3d' });
     expect(limit).toBe(5);
   });
 
   it('caps limit at 20', () => {
-    const { limit } = extractPoolParams({ style: 'anime', limit: '100' });
+    const { limit } = extractPoolParams({ style: 'toon3d', limit: '100' });
     expect(limit).toBe(20);
   });
 
@@ -334,7 +338,7 @@ describe('Pool API query parameter handling', () => {
   });
 
   it('handles NaN limit gracefully', () => {
-    const { limit } = extractPoolParams({ style: 'anime', limit: 'abc' });
+    const { limit } = extractPoolParams({ style: 'toon3d', limit: 'abc' });
     expect(limit).toBe(5);
   });
 });
@@ -342,8 +346,8 @@ describe('Pool API query parameter handling', () => {
 // ─── 7. VALID_STYLES set operations ───────────────────────────────────────────
 
 describe('VALID_STYLES set completeness', () => {
-  it('has exactly 6 styles', () => {
-    expect(VALID_STYLES).toHaveLength(6);
+  it('has exactly 2 styles', () => {
+    expect(VALID_STYLES).toHaveLength(2);
   });
 
   it('contains semi-realistic as the default', () => {
@@ -352,7 +356,7 @@ describe('VALID_STYLES set completeness', () => {
   });
 
   it('contains all expected style values', () => {
-    const expected = ['toon3d', 'semi-realistic', 'anime', 'painted', 'pixel', 'cyberpunk'];
+    const expected = ['semi-realistic', 'toon3d'];
     for (const s of expected) {
       expect(VALID_STYLES).toContain(s);
     }

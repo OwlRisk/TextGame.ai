@@ -61,8 +61,8 @@ describe('avatarCacheKey', () => {
   });
 
   it('styled key = name|type|style', () => {
-    expect(avatarCacheKey('Alice', 'player', 'anime')).toBe('Alice|player|anime');
-    expect(avatarCacheKey('Echo', 'host', 'pixel')).toBe('Echo|host|pixel');
+    expect(avatarCacheKey('Alice', 'player', 'toon3d')).toBe('Alice|player|toon3d');
+    expect(avatarCacheKey('Echo', 'host', 'toon3d')).toBe('Echo|host|toon3d');
   });
 
   it('undefined style returns base key (no trailing pipe)', () => {
@@ -87,8 +87,8 @@ describe('avatarCacheKey', () => {
   });
 
   it('names with spaces and special chars are preserved verbatim', () => {
-    expect(avatarCacheKey('Hearthwarden Liora Voss', 'host', 'anime'))
-      .toBe('Hearthwarden Liora Voss|host|anime');
+    expect(avatarCacheKey('Hearthwarden Liora Voss', 'host', 'toon3d'))
+      .toBe('Hearthwarden Liora Voss|host|toon3d');
   });
 });
 
@@ -97,10 +97,10 @@ describe('avatarCacheKey', () => {
 describe('onAvatarLoaded dual-key write', () => {
   it('writes BOTH styled and base key when style is present', () => {
     const map: Record<string, string> = {};
-    writeAvatarLoaded(map, 'Alice', 'player', 'anime', 'https://cdn/anime/alice.jpg');
+    writeAvatarLoaded(map, 'Alice', 'player', 'toon3d', 'https://cdn/toon3d/alice.jpg');
 
-    expect(map['Alice|player|anime']).toBe('https://cdn/anime/alice.jpg');
-    expect(map['Alice|player']).toBe('https://cdn/anime/alice.jpg');
+    expect(map['Alice|player|toon3d']).toBe('https://cdn/toon3d/alice.jpg');
+    expect(map['Alice|player']).toBe('https://cdn/toon3d/alice.jpg');
   });
 
   it('writes only base key when style is absent', () => {
@@ -114,28 +114,28 @@ describe('onAvatarLoaded dual-key write', () => {
   it('second style write updates both keys to the new URL', () => {
     const map: Record<string, string> = {};
     writeAvatarLoaded(map, 'Alice', 'player', 'semi-realistic', 'https://cdn/sr/alice.jpg');
-    writeAvatarLoaded(map, 'Alice', 'player', 'anime', 'https://cdn/anime/alice.jpg');
+    writeAvatarLoaded(map, 'Alice', 'player', 'toon3d', 'https://cdn/toon3d/alice.jpg');
 
-    expect(map['Alice|player']).toBe('https://cdn/anime/alice.jpg');
-    expect(map['Alice|player|anime']).toBe('https://cdn/anime/alice.jpg');
+    expect(map['Alice|player']).toBe('https://cdn/toon3d/alice.jpg');
+    expect(map['Alice|player|toon3d']).toBe('https://cdn/toon3d/alice.jpg');
     expect(map['Alice|player|semi-realistic']).toBe('https://cdn/sr/alice.jpg');
   });
 
   it('base key lookup always returns the most recently written URL', () => {
     const map: Record<string, string> = {};
-    for (const style of ['semi-realistic', 'anime', 'pixel'] as AvatarStyle[]) {
+    for (const style of ['semi-realistic', 'toon3d'] as AvatarStyle[]) {
       writeAvatarLoaded(map, 'Zara', 'player', style, `https://cdn/${style}/zara.jpg`);
     }
-    expect(map['Zara|player']).toBe('https://cdn/pixel/zara.jpg');
+    expect(map['Zara|player']).toBe('https://cdn/toon3d/zara.jpg');
   });
 
   it('styled key is independent from other styles', () => {
     const map: Record<string, string> = {};
-    writeAvatarLoaded(map, 'Alice', 'player', 'anime', 'https://anime/alice.jpg');
-    writeAvatarLoaded(map, 'Alice', 'player', 'pixel', 'https://pixel/alice.jpg');
+    writeAvatarLoaded(map, 'Alice', 'player', 'semi-realistic', 'https://sr/alice.jpg');
+    writeAvatarLoaded(map, 'Alice', 'player', 'toon3d', 'https://toon3d/alice.jpg');
 
-    expect(map['Alice|player|anime']).toBe('https://anime/alice.jpg');
-    expect(map['Alice|player|pixel']).toBe('https://pixel/alice.jpg');
+    expect(map['Alice|player|semi-realistic']).toBe('https://sr/alice.jpg');
+    expect(map['Alice|player|toon3d']).toBe('https://toon3d/alice.jpg');
   });
 
   it('onAvatarUrlLoaded guard rejects non-http URLs', () => {
@@ -162,8 +162,8 @@ describe('onAvatarLoaded dual-key write', () => {
 describe('avatarImageUrls map lifecycle', () => {
   it('starts empty; populating with a URL makes it queryable', () => {
     const map: Record<string, string> = {};
-    writeAvatarLoaded(map, 'Silas Grey', 'player', 'anime', 'https://anime/silas.jpg');
-    expect(map['Silas Grey|player']).toBe('https://anime/silas.jpg');
+    writeAvatarLoaded(map, 'Silas Grey', 'player', 'toon3d', 'https://toon3d/silas.jpg');
+    expect(map['Silas Grey|player']).toBe('https://toon3d/silas.jpg');
   });
 
   it('clearing the map (style change) removes all URLs', () => {
@@ -185,25 +185,25 @@ describe('avatarImageUrls map lifecycle', () => {
     };
     // Style changed → clear
     map = {};
-    // Hook fetches anime URL → onAvatarLoaded called
-    writeAvatarLoaded(map, 'Alice', 'player', 'anime', 'https://anime/alice.jpg');
+    // Hook fetches toon3d URL → onAvatarLoaded called
+    writeAvatarLoaded(map, 'Alice', 'player', 'toon3d', 'https://toon3d/alice.jpg');
 
-    expect(map['Alice|player']).toBe('https://anime/alice.jpg');
-    expect(map['Alice|player|anime']).toBe('https://anime/alice.jpg');
+    expect(map['Alice|player']).toBe('https://toon3d/alice.jpg');
+    expect(map['Alice|player|toon3d']).toBe('https://toon3d/alice.jpg');
   });
 
   it('multiple characters each get their own entries', () => {
     const map: Record<string, string> = {};
     const players = ['Silas Grey', 'Gideon Blackwood', 'Claire Novak', 'Albert Kingston'];
     players.forEach((name, i) => {
-      writeAvatarLoaded(map, name, 'player', 'anime', `https://anime/${i}.jpg`);
+      writeAvatarLoaded(map, name, 'player', 'toon3d', `https://toon3d/${i}.jpg`);
     });
 
     // Each player has their own base and styled key
     expect(Object.keys(map)).toHaveLength(players.length * 2);
     players.forEach((name, i) => {
-      expect(map[`${name}|player`]).toBe(`https://anime/${i}.jpg`);
-      expect(map[`${name}|player|anime`]).toBe(`https://anime/${i}.jpg`);
+      expect(map[`${name}|player`]).toBe(`https://toon3d/${i}.jpg`);
+      expect(map[`${name}|player|toon3d`]).toBe(`https://toon3d/${i}.jpg`);
     });
   });
 
@@ -213,15 +213,15 @@ describe('avatarImageUrls map lifecycle', () => {
     writeAvatarLoaded(map, 'Alice', 'player', 'semi-realistic', 'https://sr/alice.jpg');
     expect(map['Alice|player']).toBe('https://sr/alice.jpg');
 
-    // Style changes → map cleared → hook fetches anime
+    // Style changes → map cleared → hook fetches toon3d
     Object.keys(map).forEach((k) => delete map[k]);
-    writeAvatarLoaded(map, 'Alice', 'player', 'anime', 'https://anime/alice.jpg');
-    expect(map['Alice|player']).toBe('https://anime/alice.jpg');
+    writeAvatarLoaded(map, 'Alice', 'player', 'toon3d', 'https://toon3d/alice.jpg');
+    expect(map['Alice|player']).toBe('https://toon3d/alice.jpg');
 
-    // Style changes again → map cleared → hook fetches pixel
+    // Style changes again → map cleared → hook fetches semi-realistic
     Object.keys(map).forEach((k) => delete map[k]);
-    writeAvatarLoaded(map, 'Alice', 'player', 'pixel', 'https://pixel/alice.jpg');
-    expect(map['Alice|player']).toBe('https://pixel/alice.jpg');
+    writeAvatarLoaded(map, 'Alice', 'player', 'semi-realistic', 'https://sr/alice.jpg');
+    expect(map['Alice|player']).toBe('https://sr/alice.jpg');
   });
 });
 
@@ -242,13 +242,13 @@ describe('AVATAR_STYLE_CHANGED_EVENT dispatch and listen', () => {
   });
 
   it('dispatching the event records the style as detail', () => {
-    window.dispatchEvent(new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: 'anime' }));
+    window.dispatchEvent(new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: 'toon3d' }));
     expect(dispatched).toHaveLength(1);
-    expect(dispatched[0].detail).toBe('anime');
+    expect(dispatched[0].detail).toBe('toon3d');
   });
 
   it('dispatching multiple times records all events', () => {
-    const styles: AvatarStyle[] = ['anime', 'pixel', 'cyberpunk'];
+    const styles: AvatarStyle[] = ['semi-realistic', 'toon3d'];
     for (const s of styles) {
       window.dispatchEvent(new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: s }));
     }
@@ -256,7 +256,7 @@ describe('AVATAR_STYLE_CHANGED_EVENT dispatch and listen', () => {
   });
 
   it('each style change triggers a dispatch (simulating GameRoomContext clear)', () => {
-    const styles: AvatarStyle[] = ['anime', 'pixel'];
+    const styles: AvatarStyle[] = ['semi-realistic', 'toon3d'];
     for (const s of styles) {
       window.dispatchEvent(new CustomEvent(AVATAR_STYLE_CHANGED_EVENT, { detail: s }));
     }
@@ -285,28 +285,28 @@ describe('localStorage style-aware avatar cache (gm_avatar_ prefix)', () => {
 
   it('styled key is stored separately from base key', () => {
     storage[PREFIX + 'Alice|player'] = 'https://sr/alice.jpg';
-    storage[PREFIX + 'Alice|player|anime'] = 'https://anime/alice.jpg';
+    storage[PREFIX + 'Alice|player|toon3d'] = 'https://toon3d/alice.jpg';
 
     expect(localStorage.getItem(PREFIX + 'Alice|player')).toBe('https://sr/alice.jpg');
-    expect(localStorage.getItem(PREFIX + 'Alice|player|anime')).toBe('https://anime/alice.jpg');
+    expect(localStorage.getItem(PREFIX + 'Alice|player|toon3d')).toBe('https://toon3d/alice.jpg');
   });
 
   it('changing style looks up a new key — does not return the old-style URL', () => {
     storage[PREFIX + 'Alice|player|semi-realistic'] = 'https://sr/alice.jpg';
 
     // After style change → hook uses new key
-    const animeUrl = localStorage.getItem(PREFIX + 'Alice|player|anime');
-    expect(animeUrl).toBeNull(); // Not cached yet → API call will happen
+    const toon3dUrl = localStorage.getItem(PREFIX + 'Alice|player|toon3d');
+    expect(toon3dUrl).toBeNull(); // Not cached yet → API call will happen
   });
 
   it('base key cache is separate from styled key cache', () => {
     storage[PREFIX + 'Alice|player'] = 'https://old/alice.jpg';
 
     // styled key is empty → forces API call even though base key is warm
-    expect(localStorage.getItem(PREFIX + 'Alice|player|anime')).toBeNull();
+    expect(localStorage.getItem(PREFIX + 'Alice|player|toon3d')).toBeNull();
   });
 
-  it('invalidating all style variants removes semi-realistic, anime, painted, pixel, cyberpunk', () => {
+  it('invalidating all style variants removes semi-realistic and toon3d', () => {
     const name = 'Alice';
     const type = 'player';
     const baseKey = `${name}|${type}`;
@@ -347,8 +347,8 @@ describe('In-flight deduplication (avatar.ts pattern)', () => {
 
     // Two simultaneous fetches for the same key
     const [url1, url2] = await Promise.all([
-      mockFetch('Alice|player|anime'),
-      mockFetch('Alice|player|anime'),
+      mockFetch('Alice|player|toon3d'),
+      mockFetch('Alice|player|toon3d'),
     ]);
 
     expect(url1).toBe(url2);
@@ -370,9 +370,9 @@ describe('In-flight deduplication (avatar.ts pattern)', () => {
     }
 
     await Promise.all([
-      mockFetch('Alice|player|anime'),
-      mockFetch('Alice|player|pixel'),
-      mockFetch('Bob|player|anime'),
+      mockFetch('Alice|player|semi-realistic'),
+      mockFetch('Alice|player|toon3d'),
+      mockFetch('Bob|player|semi-realistic'),
     ]);
 
     expect(fetched).toHaveLength(3);
@@ -416,14 +416,14 @@ describe('AVATAR_STYLE_STORAGE_KEY contract', () => {
   afterEach(() => { vi.unstubAllGlobals(); });
 
   it('writing a style to AVATAR_STYLE_STORAGE_KEY persists it', () => {
-    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'anime');
-    expect(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY)).toBe('anime');
+    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'toon3d');
+    expect(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY)).toBe('toon3d');
   });
 
   it('overwriting style replaces the previous value', () => {
     localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'semi-realistic');
-    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'pixel');
-    expect(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY)).toBe('pixel');
+    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'toon3d');
+    expect(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY)).toBe('toon3d');
   });
 
   it('storage key matches the constant exactly', () => {

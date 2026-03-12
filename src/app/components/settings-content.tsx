@@ -16,13 +16,6 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
 import type { SubscriptionTier } from '@/lib/subscription';
-import {
-  AVATAR_STYLE_PACKS,
-  AVATAR_STYLE_STORAGE_KEY,
-  coerceStyle,
-  type AvatarStyle,
-} from '@/lib/avatar-style-constants';
-import { setAvatarStyleGlobal } from '@/lib/use-avatar-style';
 
 const TTS_MODELS = [
   { value: 'inworld-tts-1.5-max', label: 'Inworld TTS 1.5 Max', description: 'Highest quality' },
@@ -46,12 +39,7 @@ export function SettingsContent() {
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
   const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));
   const [imageGenEnabled, setImageGenEnabled] = useState<boolean>(() => ls('image_gen_enabled', 'true') !== 'false');
-  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>(() => ls(AVATAR_STYLE_STORAGE_KEY, 'semi-realistic') as AvatarStyle);
   const [saving, setSaving] = useState(false);
-  const [stylePreviewUrls, setStylePreviewUrls] = useState<Record<string, string | null>>({});
-
-  // Use the canonical style list from constants — no local copy needed.
-  const AVATAR_STYLES = AVATAR_STYLE_PACKS;
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -79,10 +67,6 @@ export function SettingsContent() {
           setImageGenEnabled(prefs.image_gen_enabled);
           localStorage.setItem('image_gen_enabled', String(prefs.image_gen_enabled));
         }
-        if (typeof prefs.avatar_style_pack === 'string') {
-          setAvatarStyle(coerceStyle(prefs.avatar_style_pack));
-          localStorage.setItem('avatar_style_pack', prefs.avatar_style_pack);
-        }
         if (typeof prefs.tts_model === 'string') {
           setTtsModel(prefs.tts_model);
           localStorage.setItem('tts_model', prefs.tts_model);
@@ -102,15 +86,6 @@ export function SettingsContent() {
       })
       .catch(() => {});
   }, [session?.access_token]);
-
-  useEffect(() => {
-    fetch('/api/characters/style-preview')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.previews) setStylePreviewUrls(data.previews);
-      })
-      .catch(() => {});
-  }, []);
 
   const isPaid = currentPlan !== 'free';
 
@@ -419,64 +394,6 @@ export function SettingsContent() {
             )}
           </div>
 
-          {/* Avatar Style Pack */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
-                <ImageIcon className="h-5 w-5 text-orange-400" />
-              </div>
-              <div>
-                <h2 className="text-white font-semibold text-lg mb-0.5">Avatar Style</h2>
-                <p className="text-zinc-400 text-sm">Art style for AI character portraits in the game room</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-              {AVATAR_STYLES.map((style) => {
-                const previewUrl = stylePreviewUrls[style.value];
-                return (
-                  <button
-                    key={style.value}
-                    type="button"
-                    onClick={() => {
-                      setAvatarStyle(style.value);
-                      setAvatarStyleGlobal(style.value);
-                      toast.success(`Avatar style: ${style.label}`);
-                    }}
-                    className={`relative flex flex-col items-center gap-2 rounded-xl border transition-all text-center overflow-hidden ${
-                      avatarStyle === style.value
-                        ? 'border-orange-500 ring-2 ring-orange-500/40 text-white'
-                        : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
-                    }`}
-                  >
-                    {avatarStyle === style.value && (
-                      <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-orange-400 z-10 ring-2 ring-zinc-900" />
-                    )}
-                    {previewUrl ? (
-                      <div className="w-full aspect-square bg-zinc-800">
-                        <img
-                          src={previewUrl}
-                          alt={style.label}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-square bg-zinc-800 flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-full bg-zinc-700 animate-pulse" />
-                      </div>
-                    )}
-                    <div className="px-2 pb-2.5 pt-0.5">
-                      <p className="text-xs font-semibold leading-tight">{style.label}</p>
-                      <p className="text-[10px] text-zinc-500 mt-0.5 leading-tight">{style.description}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-zinc-600 text-xs">
-              Takes effect for new games. Same character, different art styles.
-            </p>
-          </div>
-
           {/* Save */}
           <div className="flex justify-end pt-2">
             <Button
@@ -486,10 +403,6 @@ export function SettingsContent() {
                 try {
                   localStorage.setItem('ai_model', aiModel);
                   localStorage.setItem('image_gen_enabled', String(imageGenEnabled));
-                  // Use setAvatarStyleGlobal to also dispatch the change event
-                  // so any mounted GeneratedAvatar components update immediately.
-                  setAvatarStyleGlobal(avatarStyle);
-                  // Persist to server when logged in
                   if (session?.access_token) {
                     await fetch('/api/user/settings', {
                       method: 'PUT',
@@ -497,7 +410,7 @@ export function SettingsContent() {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${session.access_token}`,
                       },
-                      body: JSON.stringify({ ai_model: aiModel, image_gen_enabled: imageGenEnabled, avatar_style_pack: avatarStyle }),
+                      body: JSON.stringify({ ai_model: aiModel, image_gen_enabled: imageGenEnabled }),
                     });
                   }
                   toast.success('Settings saved!');

@@ -10,7 +10,7 @@ import { assignVoicesForRoom, pickVoiceForSpeaker, INWORLD_VOICE_META } from "@/
 import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { trackEvent } from "@/lib/analytics";
-import { getGameTemplate, getTemplateHexColor } from "@/lib/game-templates";
+import { getGameTemplate, getTemplateHexColor, getAvatarStyleForTemplate } from "@/lib/game-templates";
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -177,9 +177,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       }
     }
     if (roomPlayersNeedingAvatar.length > 0) {
-      const avatarStyle = typeof window !== 'undefined'
-        ? (localStorage.getItem('avatar_style_pack') ?? 'semi-realistic')
-        : 'semi-realistic';
+      const avatarStyle = getAvatarStyleForTemplate(config.template || "custom");
       fetchAvatarsForRoom(roomPlayersNeedingAvatar, gameId, avatarStyle).then((urlMap) => {
         for (const [key, url] of Object.entries(urlMap)) {
           onAvatarUrlLoaded(key, url);

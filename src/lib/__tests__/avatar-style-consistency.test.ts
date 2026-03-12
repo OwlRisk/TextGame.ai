@@ -42,8 +42,8 @@ function enrichWithPoolAvatar(
 describe('configuredPlayers enrichment: pool avatar priority', () => {
   it('pool avatar overrides a pre-existing avatar_url so style is applied', () => {
     const cp = { name: 'Alice', avatar_url: 'https://old/semi-realistic/alice.jpg' };
-    const poolChar = { avatar_url: 'https://pool/pixel/alice.jpg' };
-    expect(enrichWithPoolAvatar(cp, poolChar)).toBe('https://pool/pixel/alice.jpg');
+    const poolChar = { avatar_url: 'https://pool/toon3d/alice.jpg' };
+    expect(enrichWithPoolAvatar(cp, poolChar)).toBe('https://pool/toon3d/alice.jpg');
   });
 
   it('falls back to cp.avatar_url when pool has no entry for that index', () => {
@@ -64,23 +64,22 @@ describe('configuredPlayers enrichment: pool avatar priority', () => {
       { name: 'Carol', avatar_url: 'https://old/carol.jpg' },
     ];
     const poolChars = [
-      { avatar_url: 'https://pixel/alice.jpg' },
-      { avatar_url: 'https://pixel/bob.jpg' },
-      // Carol missing
+      { avatar_url: 'https://toon3d/alice.jpg' },
+      { avatar_url: 'https://toon3d/bob.jpg' },
     ];
     const result = configuredPlayers.map((cp, i) => ({
       ...cp,
       avatar_url: enrichWithPoolAvatar(cp, poolChars[i]),
     }));
-    expect(result[0].avatar_url).toBe('https://pixel/alice.jpg');
-    expect(result[1].avatar_url).toBe('https://pixel/bob.jpg');
-    expect(result[2].avatar_url).toBe('https://old/carol.jpg');  // fallback
+    expect(result[0].avatar_url).toBe('https://toon3d/alice.jpg');
+    expect(result[1].avatar_url).toBe('https://toon3d/bob.jpg');
+    expect(result[2].avatar_url).toBe('https://old/carol.jpg');
   });
 
   it('when cp has no avatar_url and pool has one, pool avatar is used', () => {
     const cp = { name: 'Dave', avatar_url: undefined };
-    const poolChar = { avatar_url: 'https://pixel/dave.jpg' };
-    expect(enrichWithPoolAvatar(cp, poolChar)).toBe('https://pixel/dave.jpg');
+    const poolChar = { avatar_url: 'https://toon3d/dave.jpg' };
+    expect(enrichWithPoolAvatar(cp, poolChar)).toBe('https://toon3d/dave.jpg');
   });
 
   it('returns undefined when both cp and pool have no avatar', () => {
@@ -98,8 +97,8 @@ describe('style-scoped cache keys', () => {
   });
 
   it('cache key with style appends style as third segment', () => {
-    expect(styleCacheKey('Echo', 'host', 'pixel')).toBe('Echo|host|pixel');
-    expect(styleCacheKey('Alice', 'player', 'anime')).toBe('Alice|player|anime');
+    expect(styleCacheKey('Echo', 'host', 'toon3d')).toBe('Echo|host|toon3d');
+    expect(styleCacheKey('Alice', 'player', 'semi-realistic')).toBe('Alice|player|semi-realistic');
   });
 
   it('different styles produce different cache keys for same character', () => {
@@ -109,17 +108,16 @@ describe('style-scoped cache keys', () => {
     expect(unique.size).toBe(VALID_STYLES.length);
   });
 
-  it('switching from semi-realistic to pixel uses a different cache key', () => {
+  it('switching from semi-realistic to toon3d uses a different cache key', () => {
     const key1 = styleCacheKey('Echo', 'host', 'semi-realistic');
-    const key2 = styleCacheKey('Echo', 'host', 'pixel');
+    const key2 = styleCacheKey('Echo', 'host', 'toon3d');
     expect(key1).not.toBe(key2);
   });
 
   it('result key (name|type) is always the base regardless of style', () => {
     const resultKey = identityCacheKey('Echo', 'host');
     expect(resultKey).toBe('Echo|host');
-    // style-scoped cache key contains the result key as prefix
-    expect(styleCacheKey('Echo', 'host', 'anime').startsWith(resultKey)).toBe(true);
+    expect(styleCacheKey('Echo', 'host', 'toon3d').startsWith(resultKey)).toBe(true);
   });
 });
 
@@ -130,29 +128,33 @@ describe('avatar style resolution (pool API)', () => {
     avatar_url: 'https://pool/semi-realistic/alice.jpg',
     avatar_styles: {
       'semi-realistic': 'https://styles/semi/alice.jpg',
-      anime: 'https://styles/anime/alice.jpg',
-      painted: 'https://styles/painted/alice.jpg',
+      toon3d: 'https://styles/toon3d/alice.jpg',
     },
   };
 
   it('returns the exact style URL when available', () => {
-    expect(resolveAvatarStyle(char, 'anime')).toBe('https://styles/anime/alice.jpg');
-    expect(resolveAvatarStyle(char, 'painted')).toBe('https://styles/painted/alice.jpg');
+    expect(resolveAvatarStyle(char, 'toon3d')).toBe('https://styles/toon3d/alice.jpg');
+    expect(resolveAvatarStyle(char, 'semi-realistic')).toBe('https://styles/semi/alice.jpg');
   });
 
   it('falls back to semi-realistic when requested style is missing', () => {
-    expect(resolveAvatarStyle(char, 'pixel')).toBe('https://styles/semi/alice.jpg');
-    expect(resolveAvatarStyle(char, 'cyberpunk')).toBe('https://styles/semi/alice.jpg');
+    const charWithoutToon3d = {
+      avatar_url: 'https://pool/alice.jpg',
+      avatar_styles: {
+        'semi-realistic': 'https://styles/semi/alice.jpg',
+      },
+    };
+    expect(resolveAvatarStyle(charWithoutToon3d, 'toon3d')).toBe('https://styles/semi/alice.jpg');
   });
 
   it('falls back to avatar_url when avatar_styles is empty', () => {
     const bare = { avatar_url: 'https://pool/bare.jpg', avatar_styles: {} };
-    expect(resolveAvatarStyle(bare, 'pixel')).toBe('https://pool/bare.jpg');
+    expect(resolveAvatarStyle(bare, 'toon3d')).toBe('https://pool/bare.jpg');
   });
 
   it('returns null when both avatar_styles and avatar_url are absent', () => {
     const empty = { avatar_url: null, avatar_styles: {} };
-    expect(resolveAvatarStyle(empty, 'anime')).toBeNull();
+    expect(resolveAvatarStyle(empty, 'toon3d')).toBeNull();
   });
 
   it('semi-realistic always resolves to itself', () => {
@@ -161,25 +163,26 @@ describe('avatar style resolution (pool API)', () => {
 });
 
 // ─── Section 4: VALID_STYLES contract ────────────────────────────────────────
-// These tests use the imported VALID_STYLES from avatar-style-constants.ts —
-// they serve as a contract test ensuring the real constant has the expected values.
 
 describe('VALID_STYLES (imported from avatar-style-constants)', () => {
-  it('contains exactly 6 style packs', () => {
-    expect(VALID_STYLES).toHaveLength(6);
+  it('contains exactly 2 style packs', () => {
+    expect(VALID_STYLES).toHaveLength(2);
   });
 
   it('includes all expected style names', () => {
     expect(VALID_STYLES).toContain('semi-realistic');
-    expect(VALID_STYLES).toContain('anime');
-    expect(VALID_STYLES).toContain('painted');
-    expect(VALID_STYLES).toContain('pixel');
-    expect(VALID_STYLES).toContain('cyberpunk');
+    expect(VALID_STYLES).toContain('toon3d');
   });
 
   it('rejects unknown style as invalid', () => {
     const unknown = 'watercolor';
     expect((VALID_STYLES as readonly string[]).includes(unknown)).toBe(false);
+  });
+
+  it('rejects legacy styles', () => {
+    for (const legacy of ['anime', 'painted', 'pixel', 'cyberpunk']) {
+      expect((VALID_STYLES as readonly string[]).includes(legacy)).toBe(false);
+    }
   });
 });
 
@@ -191,8 +194,8 @@ describe('pool request URL construction', () => {
   }
 
   it('includes style in query params', () => {
-    const url = buildPoolUrl(6, [], 'pixel');
-    expect(url).toContain('style=pixel');
+    const url = buildPoolUrl(6, [], 'toon3d');
+    expect(url).toContain('style=toon3d');
   });
 
   it('encodes style values correctly', () => {
@@ -201,12 +204,12 @@ describe('pool request URL construction', () => {
   });
 
   it('excludes specified character names', () => {
-    const url = buildPoolUrl(5, ['Alice', 'Bob'], 'anime');
+    const url = buildPoolUrl(5, ['Alice', 'Bob'], 'toon3d');
     expect(url).toContain('exclude=Alice%2CBob');
-    expect(url).toContain('style=anime');
+    expect(url).toContain('style=toon3d');
   });
 
-  it('defaults to semi-realistic when localStorage is empty', () => {
+  it('defaults to semi-realistic when no template context', () => {
     const style = 'semi-realistic';
     const url = buildPoolUrl(6, [], style);
     expect(url).toContain('style=semi-realistic');

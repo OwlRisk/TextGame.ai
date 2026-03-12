@@ -34,12 +34,15 @@ interface CharacterBrowserProps {
     avatar_url?: string | null;
   }) => void;
   gameId?: string;
+  /** Avatar style to use for pool fetch (auto-selected by game template). */
+  style?: string;
 }
 
 export function CharacterBrowser({
   open,
   onClose,
   onSelectCharacter,
+  style: styleProp,
 }: CharacterBrowserProps) {
   const [characters, setCharacters] = useState<PoolCharacter[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,10 +52,7 @@ export function CharacterBrowser({
   const fetchPool = useCallback(async () => {
     setLoading(true);
     try {
-      const style =
-        typeof window !== "undefined"
-          ? localStorage.getItem("avatar_style_pack") ?? "semi-realistic"
-          : "semi-realistic";
+      const style = styleProp ?? "semi-realistic";
       const res = await fetch(
         `/api/characters/pool?count=200&sort=name&style=${encodeURIComponent(style)}`
       );

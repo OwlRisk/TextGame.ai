@@ -163,23 +163,23 @@ describe('getAvatarPropsForPlayer – style parameter', () => {
   });
 
   it('forwards style for human player', () => {
-    const props = getAvatarPropsForPlayer(makePlayer({ isAI: false }), 'anime');
-    expect(props.style).toBe('anime');
+    const props = getAvatarPropsForPlayer(makePlayer({ isAI: false }), 'toon3d');
+    expect(props.style).toBe('toon3d');
   });
 
   it('forwards style for AI player', () => {
-    const props = getAvatarPropsForPlayer(makePlayer({ isAI: true }), 'pixel');
-    expect(props.style).toBe('pixel');
+    const props = getAvatarPropsForPlayer(makePlayer({ isAI: true }), 'toon3d');
+    expect(props.style).toBe('toon3d');
   });
 
   it('forwards style for host (isGameMaster)', () => {
-    const props = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), 'cyberpunk');
-    expect(props.style).toBe('cyberpunk');
+    const props = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), 'semi-realistic');
+    expect(props.style).toBe('semi-realistic');
   });
 
   it('forwards style for null player', () => {
-    const props = getAvatarPropsForPlayer(null, 'painted');
-    expect(props.style).toBe('painted');
+    const props = getAvatarPropsForPlayer(null, 'semi-realistic');
+    expect(props.style).toBe('semi-realistic');
   });
 
   it('all valid styles are forwarded correctly', () => {
@@ -190,7 +190,7 @@ describe('getAvatarPropsForPlayer – style parameter', () => {
   });
 
   it('human, AI, and host all return the same style value', () => {
-    const style: AvatarStyle = 'painted';
+    const style: AvatarStyle = 'toon3d';
     const human = getAvatarPropsForPlayer(makePlayer({ isAI: false }), style).style;
     const ai = getAvatarPropsForPlayer(makePlayer({ isAI: true }), style).style;
     const host = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), style).style;

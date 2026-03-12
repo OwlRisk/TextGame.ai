@@ -26,9 +26,9 @@ describe('getAvatarPropsForPlayer – human player with style', () => {
   it('returns the passed style for human player', () => {
     const props = getAvatarPropsForPlayer(
       makePlayer({ isAI: false, name: 'Evelyn Hart' }),
-      'anime',
+      'toon3d',
     );
-    expect(props.style).toBe('anime');
+    expect(props.style).toBe('toon3d');
   });
 
   it('forwards any valid style', () => {
@@ -48,8 +48,8 @@ describe('getAvatarPropsForPlayer – human player with style', () => {
 
 describe('getAvatarPropsForPlayer – AI player with style', () => {
   it('returns the passed style for AI player', () => {
-    const props = getAvatarPropsForPlayer(makePlayer({ isAI: true }), 'pixel');
-    expect(props.style).toBe('pixel');
+    const props = getAvatarPropsForPlayer(makePlayer({ isAI: true }), 'toon3d');
+    expect(props.style).toBe('toon3d');
   });
 
   it('style is undefined when not passed', () => {
@@ -64,9 +64,9 @@ describe('getAvatarPropsForPlayer – host with style', () => {
   it('returns the passed style for host', () => {
     const props = getAvatarPropsForPlayer(
       makePlayer({ isGameMaster: true, isAI: true }),
-      'cyberpunk',
+      'semi-realistic',
     );
-    expect(props.style).toBe('cyberpunk');
+    expect(props.style).toBe('semi-realistic');
     expect(props.type).toBe('host');
   });
 });
@@ -75,8 +75,8 @@ describe('getAvatarPropsForPlayer – host with style', () => {
 
 describe('getAvatarPropsForPlayer – null/undefined with style', () => {
   it('still returns style even for null player', () => {
-    const props = getAvatarPropsForPlayer(null, 'painted');
-    expect(props.style).toBe('painted');
+    const props = getAvatarPropsForPlayer(null, 'semi-realistic');
+    expect(props.style).toBe('semi-realistic');
     expect(props.name).toBeUndefined();
   });
 
@@ -123,21 +123,21 @@ describe('getAvatarPropsForPlayer – prop shape', () => {
   const requiredKeys = ['name', 'type', 'background', 'personality', 'role', 'gender', 'style'];
 
   it('human player result has all required keys', () => {
-    const props = getAvatarPropsForPlayer(makePlayer({ isAI: false }), 'anime');
+    const props = getAvatarPropsForPlayer(makePlayer({ isAI: false }), 'toon3d');
     for (const key of requiredKeys) {
       expect(props).toHaveProperty(key);
     }
   });
 
   it('AI player result has all required keys', () => {
-    const props = getAvatarPropsForPlayer(makePlayer({ isAI: true }), 'pixel');
+    const props = getAvatarPropsForPlayer(makePlayer({ isAI: true }), 'toon3d');
     for (const key of requiredKeys) {
       expect(props).toHaveProperty(key);
     }
   });
 
   it('host result has type "host"', () => {
-    const props = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), 'painted');
+    const props = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), 'semi-realistic');
     expect(props.type).toBe('host');
   });
 
@@ -156,7 +156,7 @@ describe('getAvatarPropsForPlayer – prop shape', () => {
 
 describe('Style parity across player types', () => {
   it('human, AI, and host all receive the same style when passed', () => {
-    const style: AvatarStyle = 'anime';
+    const style: AvatarStyle = 'toon3d';
     const humanProps = getAvatarPropsForPlayer(makePlayer({ isAI: false }), style);
     const aiProps = getAvatarPropsForPlayer(makePlayer({ isAI: true, isGameMaster: false }), style);
     const hostProps = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true }), style);
@@ -202,9 +202,9 @@ describe('Avatar style resolution (pool API logic)', () => {
   it('returns exact match when available', () => {
     const char = {
       avatar_url: 'https://pool/alice.jpg',
-      avatar_styles: { 'semi-realistic': 'https://sr/alice.jpg', anime: 'https://anime/alice.jpg' },
+      avatar_styles: { 'semi-realistic': 'https://sr/alice.jpg', toon3d: 'https://toon3d/alice.jpg' },
     };
-    expect(resolveAvatarStyle(char, 'anime')).toBe('https://anime/alice.jpg');
+    expect(resolveAvatarStyle(char, 'toon3d')).toBe('https://toon3d/alice.jpg');
   });
 
   it('falls back to DEFAULT_STYLE when requested style missing', () => {
@@ -212,17 +212,17 @@ describe('Avatar style resolution (pool API logic)', () => {
       avatar_url: 'https://pool/alice.jpg',
       avatar_styles: { 'semi-realistic': 'https://sr/alice.jpg' },
     };
-    expect(resolveAvatarStyle(char, 'pixel')).toBe('https://sr/alice.jpg');
+    expect(resolveAvatarStyle(char, 'toon3d')).toBe('https://sr/alice.jpg');
   });
 
   it('falls back to avatar_url when avatar_styles is empty', () => {
     const char = { avatar_url: 'https://pool/alice.jpg', avatar_styles: {} };
-    expect(resolveAvatarStyle(char, 'anime')).toBe('https://pool/alice.jpg');
+    expect(resolveAvatarStyle(char, 'toon3d')).toBe('https://pool/alice.jpg');
   });
 
   it('returns null when both are absent', () => {
     const char = { avatar_url: null, avatar_styles: {} };
-    expect(resolveAvatarStyle(char, 'painted')).toBeNull();
+    expect(resolveAvatarStyle(char, 'semi-realistic')).toBeNull();
   });
 
   it('works for all valid styles', () => {

@@ -56,7 +56,7 @@ import {
 import { parseGMResponseTags, applyRulesUpdates, applyBackgroundToRules, clampPlayerCount } from "@/lib/gm-rules-parser";
 import { formatGMMessage as formatMessage } from "@/lib/gm-format-message";
 import { useSplitPanel } from "@/hooks/useSplitPanel";
-import { GameTemplate } from "@/lib/game-templates";
+import { GameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
 import { getPreferredModel } from "@/lib/model-prefs";
 
 export type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, ChannelRoomType };
@@ -838,7 +838,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         const needCount = finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers.length : (playerCount || selectedTemplate?.recommendedAICount || 4);
         const excludeNames = finalConfiguredPlayers.map((p) => p.name).join(",");
         const poolRes = await fetch(
-          `/api/characters/pool?count=${needCount}&exclude=${encodeURIComponent(excludeNames)}&style=${encodeURIComponent(typeof window !== 'undefined' ? (localStorage.getItem('avatar_style_pack') ?? 'semi-realistic') : 'semi-realistic')}`,
+          `/api/characters/pool?count=${needCount}&exclude=${encodeURIComponent(excludeNames)}&style=${encodeURIComponent(getAvatarStyleForTemplate(selectedTemplate?.id || "custom"))}`,
           { signal: abortCtrl.signal }
         );
         if (poolRes.ok) {

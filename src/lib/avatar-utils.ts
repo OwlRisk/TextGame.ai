@@ -35,13 +35,17 @@ export function getAvatarPropsForPlayer(
   // Current user: use player.name (game identity when set, e.g. "Evelyn Hart") so chat and panel show the same avatar
   if (!player.isAI) {
     const name = (player.name && player.name.trim() && player.name !== "You") ? player.name.trim() : "You";
+    const normalizedGender = player.gender?.trim().toLowerCase() || undefined;
+    const gender = normalizedGender === 'male' || normalizedGender === 'female' || normalizedGender === 'other'
+      ? normalizedGender
+      : undefined;
     return {
       name,
       type: "player" as const,
       background: undefined,
       personality: undefined,
       role: undefined,
-      gender: undefined,
+      gender,
       style,
     };
   }
