@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createWorld, getWorlds, createGame } from "@/lib/db";
+import { createWorld, getWorlds, createGameAdmin } from "@/lib/db";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
 
 export async function GET(request: NextRequest) {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   if (rooms && Array.isArray(rooms)) {
     for (const room of rooms) {
       const roomId = crypto.randomUUID();
-      const { error: roomErr } = await createGame({
+      const { error: roomErr } = await createGameAdmin({
         id: roomId,
         user_id: user.id,
         name: room.name || "Unknown Room",

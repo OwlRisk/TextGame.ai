@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createWorld, createGame } from "@/lib/db";
+import { createWorld, createGameAdmin } from "@/lib/db";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
 import { getWorldThemeById } from "@/data/world-themes";
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     const roomRules = buildRoomRules(theme, room);
 
-    const { error: roomErr } = await createGame({
+    const { error: roomErr } = await createGameAdmin({
       id: roomUuid,
       user_id: user.id,
       name: room.name,

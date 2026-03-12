@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseAdmin } from './supabase';
 import type { Database } from './supabase';
 
 /** Log Supabase/PostgREST error with message, code, details (avoids empty {} in console). */
@@ -167,6 +167,19 @@ export async function updateGame(gameId: string, updates: GameUpdate) {
   return { data, error: null };
 }
 
+/** Server-side game creation (bypasses RLS). Used by world generation API routes. */
+export async function createGameAdmin(game: GameInsert) {
+  const db = supabaseAdmin ?? supabase;
+  const { data, error } = await db
+    .from('games')
+    .insert(game)
+    .select()
+    .single();
+
+  if (error) { logDbError('createGameAdmin', error); return { data: null, error }; }
+  return { data, error: null };
+}
+
 /** Only bumps updated_at — used when the player sends a message so the game rises in sidebar order. */
 export async function touchGame(gameId: string) {
   const { error } = await supabase
@@ -312,11 +325,15 @@ export async function addGameMember(member: {
 }
 
 // ─── Worlds (open-world RPG) ────────────────────────────────────────────────────
+// World operations are called from server-side API routes that already verify auth,
+// so we use supabaseAdmin (service role) to bypass RLS.
 type WorldInsert = Database['public']['Tables']['worlds']['Insert'];
 type WorldUpdate = Database['public']['Tables']['worlds']['Update'];
 
+const worldDb = supabaseAdmin ?? supabase;
+
 export async function getWorlds(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await worldDb
     .from('worlds')
     .select('*')
     .eq('user_id', userId)
@@ -327,7 +344,7 @@ export async function getWorlds(userId: string) {
 }
 
 export async function getWorld(worldId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await worldDb
     .from('worlds')
     .select('*')
     .eq('id', worldId)
@@ -338,7 +355,7 @@ export async function getWorld(worldId: string) {
 }
 
 export async function createWorld(world: WorldInsert) {
-  const { data, error } = await supabase
+  const { data, error } = await worldDb
     .from('worlds')
     .insert(world)
     .select()
@@ -349,7 +366,7 @@ export async function createWorld(world: WorldInsert) {
 }
 
 export async function updateWorld(worldId: string, updates: WorldUpdate) {
-  const { data, error } = await supabase
+  const { data, error } = await worldDb
     .from('worlds')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', worldId)
@@ -361,7 +378,7 @@ export async function updateWorld(worldId: string, updates: WorldUpdate) {
 }
 
 export async function updateWorldPartyState(worldId: string, partyState: Record<string, unknown>) {
-  const { error } = await supabase
+  const { error } = await worldDb
     .from('worlds')
     .update({ party_state: partyState, updated_at: new Date().toISOString() })
     .eq('id', worldId);
@@ -371,7 +388,7 @@ export async function updateWorldPartyState(worldId: string, partyState: Record<
 }
 
 export async function getWorldRooms(worldId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await worldDb
     .from('games')
     .select('id, name, icon, color, config, is_active, room_type, room_connections, room_description, world_id')
     .eq('world_id', worldId)
@@ -382,7 +399,7 @@ export async function getWorldRooms(worldId: string) {
 }
 
 export async function deleteWorld(worldId: string, userId: string) {
-  const { error } = await supabase
+  const { error } = await worldDb
     .from('worlds')
     .delete()
     .eq('id', worldId)
