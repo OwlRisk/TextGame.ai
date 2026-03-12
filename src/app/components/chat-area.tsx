@@ -9,6 +9,7 @@ import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { Player } from "@/app/components/player-panel";
 import { useChatTTS } from "@/hooks/use-chat-tts";
 import { trackEvent } from "@/lib/analytics";
+import { stripPrivateNotes } from "@/lib/chat-utils";
 import { ChatInputArea } from "@/app/components/chat-input-area";
 import { GameOverBanner } from "@/app/components/game-over-banner";
 import { TypingIndicator } from "@/app/components/typing-indicator";
@@ -415,7 +416,7 @@ export function ChatArea({
           {/* revealTick dependency triggers re-renders when TTS progress updates */}
           {void revealTick}
           {visibleMessages.map((message, index) => {
-            const rawContent = message.content ?? '';
+            const rawContent = stripPrivateNotes(message.content ?? '');
             const isTTSSynced = voiceEnabled && inworldTTSSupported && message.isAI && !message.isSystemMessage && !message.isPrivate;
             const syncedContent = isTTSSynced
                 ? (displayedContentRef.current.get(message.id) ?? '')

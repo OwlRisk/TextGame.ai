@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   formatMessageTime,
   stripEmotionTags,
+  stripPrivateNotes,
   extractTTSSentences,
   MAX_TTS_CHARS_HOST,
   MAX_TTS_CHARS_PLAYER,
@@ -120,6 +121,18 @@ describe("stripEmotionTags", () => {
     const result = stripEmotionTags("[Happy] world");
     expect(result).not.toContain("[");
     expect(result).toContain("world");
+  });
+});
+
+describe("stripPrivateNotes", () => {
+  it("removes full MY_NOTES block", () => {
+    const input = "Public line.\n[MY_NOTES]\n- secret\n[/MY_NOTES]\nAfter";
+    expect(stripPrivateNotes(input)).toBe("Public line.\n\nAfter");
+  });
+
+  it("removes orphan MY_NOTES tags", () => {
+    const input = "Hello [MY_NOTES] world [/MY_NOTES]";
+    expect(stripPrivateNotes(input)).toBe("Hello");
   });
 });
 

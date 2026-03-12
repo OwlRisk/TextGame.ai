@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useInworldTTS } from "@/lib/voice";
 import { ttsBroadcast } from "@/lib/tts-broadcast";
 import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
-import { extractTTSSentences, MAX_TTS_CHARS_HOST, MAX_TTS_CHARS_PLAYER } from "@/lib/chat-utils";
+import { extractTTSSentences, MAX_TTS_CHARS_HOST, MAX_TTS_CHARS_PLAYER, stripPrivateNotes } from "@/lib/chat-utils";
 import type { Player } from "@/app/components/player-panel";
 
 interface TTSMessage {
@@ -28,6 +28,8 @@ interface UseChatTTSOpts {
 }
 
 export function useChatTTS({ messages, players, gameId, channelId, channelName, isOwner }: UseChatTTSOpts) {
+  const sanitizePublicText = useCallback((text: string) => stripPrivateNotes((text ?? "").trim()), []);
+
   // ─── TTS Broadcast ────────────────────────────────────────────────────
   useEffect(() => {
     if (!gameId || isOwner === undefined) {
@@ -86,16 +88,16 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
       for (const m of messages) {
         ttsQueuedRef.current.add(m.id);
         ttsCompletedRef.current.add(m.id);
-        ttsProgressRef.current.set(m.id, (m.content || '').length);
+        ttsProgressRef.current.set(m.id, sanitizePublicText(m.content || '').length);
         if (m.isAI && !m.isSystemMessage && !m.isPrivate) {
-          displayedContentRef.current.set(m.id, (m.content || '').trim());
+          displayedContentRef.current.set(m.id, sanitizePublicText(m.content || ''));
         }
       }
       setRevealTick((t) => t + 1);
     }
     prevVoiceEnabledRef.current = voiceEnabled;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceEnabled]);
+  }, [voiceEnabled, messages, sanitizePublicText]);
 
   const revealSentence = useCallback((messageId: string, sentence: string) => {
     const cur = displayedContentRef.current.get(messageId) ?? '';
@@ -132,7 +134,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
         if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
         ttsQueuedRef.current.add(m.id);
         ttsCompletedRef.current.add(m.id);
-        displayedContentRef.current.set(m.id, (m.content || '').trim());
+        displayedContentRef.current.set(m.id, sanitizePublicText(m.content || ''));
       }
       setRevealTick((t) => t + 1);
       return;
@@ -146,7 +148,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
           if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
           ttsQueuedRef.current.add(m.id);
           ttsCompletedRef.current.add(m.id);
-          displayedContentRef.current.set(m.id, (m.content || '').trim());
+          displayedContentRef.current.set(m.id, sanitizePublicText(m.content || ''));
         }
         setRevealTick((t) => t + 1);
         return;
@@ -159,12 +161,12 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
       if (ttsCompletedRef.current.has(m.id)) continue;
       if (ttsQueuedRef.current.has(m.id)) return;
 
-      const content = (m.content || '').trim();
+      const content = sanitizePublicText(m.content || '');
       if (!content) continue;
 
       if (m.isStreaming) {
-        displayedContentRef.current.set(m.id, content);
-        setRevealTick((t) => t + 1);
+        // Keep hidden while the AI is still streaming. We only reveal once
+        // the full reply is complete so text and voice can start together.
         return;
       }
 
@@ -183,8 +185,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
           if (alreadyShown) {
             playInworldTTS(s, voiceId, () => {});
           } else {
-            revealSentence(m.id, s);
-            playInworldTTS(s, voiceId, () => {});
+            playInworldTTS(s, voiceId, () => revealSentence(m.id, s));
           }
         });
         fromChar = newOffset;
@@ -194,8 +195,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
         if (alreadyShown) {
           playInworldTTS(remaining, voiceId, () => {});
         } else {
-          revealSentence(m.id, remaining);
-          playInworldTTS(remaining, voiceId, () => {});
+          playInworldTTS(remaining, voiceId, () => revealSentence(m.id, remaining));
         }
       }
 
@@ -215,7 +215,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
     for (const id of ttsProgressRef.current.keys()) {
       if (!liveIds.has(id)) ttsProgressRef.current.delete(id);
     }
-  }, [voiceEnabled, inworldTTSSupported, messages, ttsProcessingTick, voiceIdForMessage, playInworldTTS, queueDeferredTTS]);
+  }, [voiceEnabled, inworldTTSSupported, messages, ttsProcessingTick, voiceIdForMessage, playInworldTTS, queueDeferredTTS, revealSentence, sanitizePublicText, players]);
 
   // ─── Cleanup when voice disabled ──────────────────────────────────────
   useEffect(() => {
@@ -237,7 +237,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
     const liveIds = new Set(messages.map((m) => m.id));
     for (const m of messages) {
       if (!m.isAI || m.isSystemMessage || m.isPrivate) continue;
-      const raw = (m.content ?? '').trim();
+      const raw = sanitizePublicText(m.content ?? '');
       if (!raw) continue;
       const displayed = displayedContentRef.current.get(m.id) ?? '';
       if (displayed.length >= raw.length) {
@@ -265,7 +265,7 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
       if (!liveIds.has(id)) { clearTimeout(t); timeouts.delete(id); }
     }
     return () => {};
-  }, [voiceEnabled, inworldTTSSupported, messages, revealTick]);
+  }, [voiceEnabled, inworldTTSSupported, messages, revealTick, sanitizePublicText]);
 
   return {
     voiceEnabled,

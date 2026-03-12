@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/app/components/ui/popover";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
-import { formatMessageTime, stripEmotionTags } from "@/lib/chat-utils";
+import { formatMessageTime, stripEmotionTags, stripPrivateNotes } from "@/lib/chat-utils";
 import { parseInlineFormatting } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/app/components/player-panel";
@@ -118,7 +118,7 @@ function formatMessageUncached(content: string): React.JSX.Element {
 
 // ─── Message content resolver (handles TTS sync) ─────────────────────────
 function resolveContent(syncedContent: string, rawContent: string, voiceEnabled: boolean, inworldTTSSupported: boolean, isAI: boolean) {
-  const clean = (s: string) => stripDirectiveLines(stripEmotionTags(s));
+  const clean = (s: string) => stripDirectiveLines(stripEmotionTags(stripPrivateNotes(s)));
   if (syncedContent.trim()) {
     const c = clean(syncedContent);
     return c ? formatMessage(c) : null;
@@ -238,8 +238,10 @@ export const ChatMessage = React.memo(function ChatMessage({
 
   const contentBlock = (() => {
     let formatted: React.ReactNode = null;
-    if (syncedContent.trim()) formatted = formatMessage(stripEmotionTags(syncedContent));
-    else if (rawContent.trim()) formatted = formatMessage(stripEmotionTags(rawContent));
+    const cleanSynced = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(syncedContent)));
+    const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
+    if (cleanSynced.trim()) formatted = formatMessage(cleanSynced);
+    else if (cleanRaw.trim()) formatted = formatMessage(cleanRaw);
     else if (!message.isAI && !message.imageUrl && !message.isStreaming) formatted = <span className="italic text-zinc-500">(No content)</span>;
 
     const body = cursor ? withCursor(formatted, cursor) : formatted;

@@ -323,7 +323,7 @@ export const INWORLD_VOICE_IDS = [
 
 interface TTSQueueItem {
   audioPromise: Promise<string | null>; // pre-fetched base64 audio
-  /** Called the moment this sentence begins playing (or is skipped on error). */
+  /** Called when playback starts (or immediately if skipped on error). */
   onPlay?: () => void;
 }
 
@@ -427,11 +427,11 @@ export function useInworldTTS() {
       audio.playbackRate = Math.min(1.5, Math.max(0.5, storedSpeed));
       audioRef.current = audio;
       await new Promise<void>((resolve, reject) => {
+        // Keep text reveal in sync with the moment audio starts.
+        next.onPlay?.();
         audio.onended = () => {
           currentBlobUrlRef.current = null;
           URL.revokeObjectURL(blobUrl);
-          // Reveal text only after this sentence has finished playing (progressive reveal)
-          next.onPlay?.();
           resolve();
         };
         audio.onerror = () => {

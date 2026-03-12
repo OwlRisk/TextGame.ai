@@ -42,6 +42,25 @@ export function stripEmotionTags(text: string): string {
     .trim();
 }
 
+/**
+ * Remove private note blocks that should never be rendered publicly.
+ * Handles both well-formed tags and common malformed leaks.
+ */
+export function stripPrivateNotes(text: string): string {
+  if (!text) return "";
+  let out = text;
+  // Well-formed [MY_NOTES] ... [/MY_NOTES]
+  out = out.replace(/\[MY_NOTES\][\s\S]*?\[\/MY_NOTES\]/gi, "");
+  // Orphan tags
+  out = out.replace(/\[\/?MY_NOTES\]/gi, "");
+  // Fallback leaked inline note tail: " ... - note ... [/MY_NOTES]"
+  out = out.replace(/ - [\s\S]*?\[\/MY_NOTES\]/gi, "");
+  // Fallback bullet note tail ending with closing tag
+  out = out.replace(/\n[-*•][\s\S]*?\[\/MY_NOTES\]/gi, "");
+  // Compact extra blank lines left by removals
+  return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 /** Max characters TTS will read for the Host narrator (~2-3 sentences, ~20-30s). */
 export const MAX_TTS_CHARS_HOST = 300;
 /** Max characters TTS will read for AI players (~1 sentence, ~10s). */
