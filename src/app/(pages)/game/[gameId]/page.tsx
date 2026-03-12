@@ -530,26 +530,22 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           </ScrollArea>
         ) : selectedChannelId === BOARD_CHANNEL_ID ? (
           <ScrollArea className="flex-1 min-h-0">
-            <div className="w-full min-h-full p-6 flex">
-              <div className="flex-1 min-h-[260px] rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#1a0f0a]/40 to-zinc-900/50 p-6 md:p-7 shadow-lg backdrop-blur-sm">
-                <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-amber-500/20">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
-                    <Info className="h-4 w-4" />
-                  </span>
-                  <h2 className="text-lg font-semibold text-amber-200">{currentGame?.config?.playerBoardLabel || "My Board"}</h2>
-                </div>
-                {boardContentForViewer.trim() ? (
-                  <div
-                    className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-strong:text-white prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs"
-                    dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-500">
-                    <p className="text-sm font-medium">Nothing here yet.</p>
-                    <p className="text-xs mt-1">The Game Master will update your board as the game progresses.</p>
-                  </div>
-                )}
+            <div className="max-w-2xl p-6">
+              <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-zinc-700/50">
+                <Info className="h-5 w-5 text-amber-400" />
+                <h2 className="text-lg font-semibold text-white">{currentGame?.config?.playerBoardLabel || "My Board"}</h2>
               </div>
+              {boardContentForViewer.trim() ? (
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
+                  dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
+                  <p className="text-sm font-medium">Nothing here yet.</p>
+                  <p className="text-xs mt-1">The Game Master will update your board as the game progresses.</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         ) : gamePhase === "lobby" ? (
