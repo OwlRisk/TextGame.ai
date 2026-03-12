@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createWorld, createGameAdmin } from "@/lib/db";
+import { createWorld, createGameAdmin, deleteWorld } from "@/lib/db";
+import { supabaseAdmin } from "@/lib/supabase";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
 import { getWorldThemeById } from "@/data/world-themes";
 
 export async function POST(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
   if (!user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!supabaseAdmin) {
+    console.error("[worlds/generate] SUPABASE_SERVICE_ROLE_KEY is not configured — cannot create worlds");
+    return NextResponse.json({ error: "Server misconfiguration: service role key missing" }, { status: 500 });
+  }
 
   const body = await request.json();
   const { themeId, worldName } = body;
@@ -50,10 +56,12 @@ export async function POST(request: NextRequest) {
   });
 
   if (worldErr || !world) {
+    console.error("[worlds/generate] Failed to create world:", worldErr);
     return NextResponse.json({ error: "Failed to create world" }, { status: 500 });
   }
 
   const createdRooms: Array<{ id: string; themeRoomId: string; name: string; roomType: string }> = [];
+  const failedRooms: string[] = [];
 
   for (const room of theme.rooms) {
     const roomUuid = roomIdMap.get(room.id)!;
@@ -84,14 +92,28 @@ export async function POST(request: NextRequest) {
       room_description: room.description,
     });
 
-    if (!roomErr) {
+    if (roomErr) {
+      console.error(`[worlds/generate] Failed to create room "${room.name}":`, roomErr);
+      failedRooms.push(room.name);
+    } else {
       createdRooms.push({ id: roomUuid, themeRoomId: room.id, name: room.name, roomType: room.roomType });
     }
   }
 
+  if (createdRooms.length === 0) {
+    console.error(`[worlds/generate] All ${theme.rooms.length} rooms failed to create. Cleaning up world ${worldId}.`);
+    await deleteWorld(worldId, user.id);
+    return NextResponse.json(
+      { error: `Failed to create game rooms (0/${theme.rooms.length} succeeded). Check server logs.` },
+      { status: 500 },
+    );
+  }
+
+  const actualStartRoom = createdRooms.find((r) => r.id === startRoomUuid) || createdRooms[0];
+
   return NextResponse.json({
     worldId,
-    startRoomId: startRoomUuid,
+    startRoomId: actualStartRoom.id,
     rooms: createdRooms,
   });
 }
