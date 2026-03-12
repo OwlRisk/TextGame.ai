@@ -98,7 +98,7 @@ export default function WorldHubPage({ params }: { params: Promise<{ worldId: st
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-zinc-950">
+      <div className="flex items-center justify-center h-full bg-zinc-950">
         <div className="animate-pulse text-zinc-400">Loading world...</div>
       </div>
     );
@@ -106,7 +106,7 @@ export default function WorldHubPage({ params }: { params: Promise<{ worldId: st
 
   if (!world) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-zinc-950 gap-4">
+      <div className="flex flex-col items-center justify-center h-full bg-zinc-950 gap-4">
         <p className="text-zinc-400">World not found</p>
         <Link href="/discover"><Button variant="outline">Back to Discover</Button></Link>
       </div>
@@ -118,7 +118,7 @@ export default function WorldHubPage({ params }: { params: Promise<{ worldId: st
   const activeQuests = quests.filter((q) => q.status === "active");
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="h-full overflow-y-auto bg-zinc-950 text-white">
       {/* Header */}
       <div className={`bg-gradient-to-r ${world.color ? `from-[${world.color}]/20` : "from-amber-900/20"} to-zinc-950 border-b border-zinc-800`}>
         <div className="max-w-5xl mx-auto px-6 py-8">
@@ -135,7 +135,7 @@ export default function WorldHubPage({ params }: { params: Promise<{ worldId: st
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-5xl mx-auto px-6 py-8 pb-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main: Room Map */}
         <div className="lg:col-span-2">
           {/* World Map Visualization */}
