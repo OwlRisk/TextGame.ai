@@ -165,8 +165,8 @@ describe('avatar style resolution (pool API)', () => {
 // they serve as a contract test ensuring the real constant has the expected values.
 
 describe('VALID_STYLES (imported from avatar-style-constants)', () => {
-  it('contains exactly 5 style packs', () => {
-    expect(VALID_STYLES).toHaveLength(5);
+  it('contains exactly 6 style packs', () => {
+    expect(VALID_STYLES).toHaveLength(6);
   });
 
   it('includes all expected style names', () => {
