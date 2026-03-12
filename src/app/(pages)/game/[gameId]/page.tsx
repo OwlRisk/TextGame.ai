@@ -530,7 +530,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           </ScrollArea>
         ) : selectedChannelId === BOARD_CHANNEL_ID ? (
           <ScrollArea className="flex-1 min-h-0">
-            <div className="max-w-2xl p-6">
+            <div className="p-6">
               <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#1a0f0a]/40 to-zinc-900/50 p-5 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-amber-500/20">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
