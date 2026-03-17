@@ -202,7 +202,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           It&apos;s your turn to speak
         </div>
       )}
-      {!canSend && !isEliminated && isGameActive && !isRecording && (
+      {!canSend && !isEliminated && isGameActive && (
         <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
           <AlertCircle className="h-3.5 w-3.5" />
           Wait for your turn to speak
