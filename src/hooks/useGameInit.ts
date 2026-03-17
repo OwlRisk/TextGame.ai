@@ -339,51 +339,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         ),
       };
 
-      const startTmpl = getGameTemplate(config.template || "custom");
-      if (startTmpl?.maxPlayers === 1) {
-        await launchOpeningRound(kickoffState);
-        return;
-      }
-
-      const nonHostPlayers = currentPlayers.filter((p) => !p.isGameMaster);
-      readyKickoffRef.current = kickoffState;
-      setGamePhase("ready-check");
-      setCurrentSpeakerId(null);
-
-      addMessage(
-        {
-          id: `ready-check-${gameId}-${Date.now()}`,
-          senderId: "gm-1",
-          senderName: hostName,
-          senderAvatar: hostColor,
-          content: `Before we begin Round 1, everyone confirm by replying "ready". Once all players are ready, I will start the first round immediately.`,
-          isAI: true,
-        },
-        defaultChannelId
-      );
-
-      const readyLines = ["Ready.", "Ready to begin.", "Ready."];
-      aiPlayersWithOpeningState.forEach((p, idx) => {
-        setTimeout(() => {
-          if (seedCancelledRef.current) return;
-          addMessage(
-            {
-              senderId: p.id,
-              senderName: p.name,
-              senderAvatar: p.avatar ?? AI_COLOR_PALETTE[idx % AI_COLOR_PALETTE.length],
-              content: readyLines[idx % readyLines.length],
-              isAI: true,
-            },
-            defaultChannelId
-          );
-        }, 220 * (idx + 1));
-      });
-
-      const humanPlayers = nonHostPlayers.filter((p) => !p.isAI);
-      if (humanPlayers.length === 0) {
-        await launchOpeningRound(kickoffState);
-        return;
-      }
+      await launchOpeningRound(kickoffState);
     } finally {
       gameStartingRef.current = false;
     }
