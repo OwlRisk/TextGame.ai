@@ -17,7 +17,7 @@ export function BlogLayoutClient({ children }: { children: React.ReactNode }) {
       games={games}
       selectedGameId={selectedGameId}
       onSelectGame={(gameId) => selectGame(gameId)}
-      onCreateGame={user && !loading ? () => router.push("/create") : () => router.push("/signin")}
+      onCreateGame={user && !loading ? () => router.push("/discover") : () => router.push("/signin")}
       onOpenProfile={user && !loading ? () => router.push("/profile") : () => router.push("/signin")}
       onUpdateGame={updateGame}
     >

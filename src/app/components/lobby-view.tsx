@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, UserPlus, Plus, X, Sparkles, Users, Crown, Bot, User, Volume2, Loader2 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Play, Plus, X, Sparkles, Users, Crown, Bot, User } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import type { Player } from "@/types/player";
 import { cn } from "@/app/components/ui/utils";
-import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
 
 interface LobbyViewProps {
   gameName: string;
@@ -19,8 +18,6 @@ interface LobbyViewProps {
   onStartGame: () => void;
   onAddCharacter: () => void;
   onRemovePlayer: (playerId: string) => void;
-  onInvite?: () => void;
-  inviteJustCopied?: boolean;
   maxSeats?: number;
 }
 
@@ -35,22 +32,9 @@ export function LobbyView({
   onStartGame,
   onAddCharacter,
   onRemovePlayer,
-  onInvite,
-  inviteJustCopied,
   maxSeats = 12,
 }: LobbyViewProps) {
   const [startingGame, setStartingGame] = useState(false);
-  const [testingVoice, setTestingVoice] = useState<string | null>(null);
-  const testAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (testAudioRef.current) {
-        testAudioRef.current.pause();
-        testAudioRef.current = null;
-      }
-    };
-  }, []);
 
   const host = players.find((p) => p.isGameMaster);
   const nonHost = players.filter((p) => !p.isGameMaster);
@@ -65,67 +49,6 @@ export function LobbyView({
       setStartingGame(false);
     }
   }, [onStartGame]);
-
-  const handleVoiceTest = useCallback(async (player: Player) => {
-    if (testingVoice) {
-      testAudioRef.current?.pause();
-      testAudioRef.current = null;
-      setTestingVoice(null);
-      return;
-    }
-
-    setTestingVoice(player.id);
-    try {
-      // Fast path: play pre-generated voice sample from CDN if available
-      if (player.voiceSampleUrl) {
-        const audio = new Audio(player.voiceSampleUrl);
-        testAudioRef.current = audio;
-        audio.onended = () => { setTestingVoice(null); testAudioRef.current = null; };
-        audio.onerror = () => { setTestingVoice(null); testAudioRef.current = null; };
-        await audio.play();
-        return;
-      }
-
-      // Slow path: generate greeting + TTS on the fly
-      const greetRes = await fetch('/api/characters/greet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: player.name,
-          personality: player.personality,
-          background: player.background,
-          isHost: !!player.isGameMaster,
-        }),
-      });
-      let sampleText = `Hello, I'm ${player.name}.`;
-      if (greetRes.ok) {
-        const greetData = await greetRes.json();
-        if (greetData.greeting) sampleText = greetData.greeting;
-      }
-
-      const voiceHint = [player.personality, player.background].filter(Boolean).join('. ') || undefined;
-      const voiceId = player.voiceId || pickVoiceForSpeaker(player.gender, voiceHint, undefined, player.name);
-      const modelId = (typeof window !== 'undefined' ? localStorage.getItem('tts_model') : null) ?? 'inworld-tts-1.5-max';
-      const res = await fetch('/api/inworld-tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: sampleText, voiceId, modelId }),
-      });
-      if (!res.ok) { setTestingVoice(null); return; }
-      const data = await res.json();
-      if (!data.audioBase64) { setTestingVoice(null); return; }
-      const bytes = Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: 'audio/mpeg' });
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      testAudioRef.current = audio;
-      audio.onended = () => { URL.revokeObjectURL(url); setTestingVoice(null); testAudioRef.current = null; };
-      audio.onerror = () => { URL.revokeObjectURL(url); setTestingVoice(null); testAudioRef.current = null; };
-      await audio.play();
-    } catch {
-      setTestingVoice(null);
-    }
-  }, [testingVoice]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -171,23 +94,6 @@ export function LobbyView({
                 </div>
                 <p className="text-xs text-zinc-400 mt-0.5 truncate">{host.background || "Game Host"}</p>
               </div>
-              <button
-                onClick={() => handleVoiceTest(host)}
-                className={cn(
-                  "flex-shrink-0 p-2 rounded-lg transition-colors",
-                  testingVoice === host.id
-                    ? "bg-violet-600/30 text-violet-300"
-                    : "text-zinc-500 hover:text-violet-300 hover:bg-violet-900/30"
-                )}
-                title="Test voice"
-                aria-label={`Test voice for ${host.name}`}
-              >
-                {testingVoice === host.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Volume2 className="h-4 w-4" />
-                )}
-              </button>
             </div>
           )}
 
@@ -235,25 +141,6 @@ export function LobbyView({
                     )}
                   </div>
                   <div className="absolute top-2 right-2 flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {player.isAI && (
-                      <button
-                        onClick={() => handleVoiceTest(player)}
-                        className={cn(
-                          "p-1 rounded-md transition-colors",
-                          testingVoice === player.id
-                            ? "bg-violet-600/30 text-violet-300"
-                            : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700/50"
-                        )}
-                        title="Test voice"
-                        aria-label={`Test voice for ${player.name}`}
-                      >
-                        {testingVoice === player.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Volume2 className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                    )}
                     {isOwner && player.isAI && (
                       <button
                         onClick={() => onRemovePlayer(player.id)}
@@ -286,17 +173,6 @@ export function LobbyView({
       {/* Bottom action bar */}
       <div className="flex-shrink-0 p-4 border-t border-zinc-800/60 bg-zinc-900/80 backdrop-blur">
         <div className="flex items-center gap-3">
-          {onInvite && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onInvite}
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-            >
-              <UserPlus className="h-4 w-4 mr-1.5" />
-              {inviteJustCopied ? "Copied!" : "Invite"}
-            </Button>
-          )}
           <div className="flex-1" />
           {isOwner && (
             <Button

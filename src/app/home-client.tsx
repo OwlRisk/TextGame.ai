@@ -22,7 +22,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   useEffect(() => {
     if (!loading && user) {
       setHidden(true);
-      router.replace("/create");
+      router.replace("/discover");
       return;
     }
     selectGame("home");
@@ -30,7 +30,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
 
   const handleCreateGame = (presetId?: string) => {
     trackEvent("cta_click", { label: presetId ? `play_${presetId}` : "create_game", source: "landing" });
-    const target = presetId ? `/create?preset=${presetId}` : "/create";
+    const target = presetId ? `/discover` : "/discover";
     if (!user && !loading) {
       router.push(`/signin?returnUrl=${encodeURIComponent(target)}`);
     } else {
@@ -46,7 +46,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   const handleSignIn = async () => {
     trackEvent("cta_click", { label: "sign_in", source: "landing" });
     try {
-      await signInWithGoogle("/create");
+      await signInWithGoogle("/discover");
     } catch {
       toast.error("Sign-in failed. Please try again.");
     }
@@ -55,7 +55,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   const handleSignInFacebook = async () => {
     trackEvent("cta_click", { label: "sign_in_facebook", source: "landing" });
     try {
-      await signInWithFacebook("/create");
+      await signInWithFacebook("/discover");
     } catch {
       toast.error("Sign-in failed. Please try again.");
     }

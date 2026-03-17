@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { User, Volume2, VolumeX, ArrowDown, Timer } from "lucide-react";
+import { User, ArrowDown, Timer } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import type { Player } from "@/types/player";
-import { useChatTTS } from "@/hooks/use-chat-tts";
-import { trackEvent } from "@/lib/analytics";
 import { stripPrivateNotes } from "@/lib/chat-utils";
 import { ChatInputArea } from "@/app/components/chat-input-area";
 import { GameOverBanner } from "@/app/components/game-over-banner";
@@ -193,15 +191,10 @@ export function ChatArea({
   const useGeneratedAvatarForUser = !!(gameId && humanPlayer);
   const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
 
-  // TTS (text-to-speech) — extracted to dedicated hook
-  const { voiceEnabled, setVoiceEnabled, stopInworldTTS, isTTSPlaying, inworldTTSSupported, displayedContentRef, revealTick } = useChatTTS({
-    messages, players, gameId, channelId, channelName, isOwner,
-  });
-
-  // Follow scroll when new content appears: new messages, last message content/streaming, TTS reveal,
+  // Follow scroll when new content appears: new messages, last message content/streaming,
   // or quick replies expanding (which grow the input area and hide the last message).
   const scrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const lastScrollStateRef = useRef<{ count: number; lastContentLength: number; revealTick: number; typingCount: number }>({ count: 0, lastContentLength: 0, revealTick: 0, typingCount: 0 });
+  const lastScrollStateRef = useRef<{ count: number; lastContentLength: number; typingCount: number }>({ count: 0, lastContentLength: 0, typingCount: 0 });
   const typingCount = typingUsers?.length ?? 0;
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -214,15 +207,14 @@ export function ChatArea({
       const prev = lastScrollStateRef.current;
       const countChanged = messages.length !== prev.count;
       const contentGrew = messages.length > 0 && lastContentLength !== prev.lastContentLength;
-      const ttsRevealChanged = revealTick !== prev.revealTick;
       const typingChanged = typingCount !== prev.typingCount;
-      if (scrollRef.current && (countChanged || contentGrew || ttsRevealChanged || typingChanged)) {
-        lastScrollStateRef.current = { count: messages.length, lastContentLength, revealTick, typingCount };
+      if (scrollRef.current && (countChanged || contentGrew || typingChanged)) {
+        lastScrollStateRef.current = { count: messages.length, lastContentLength, typingCount };
         scrollRef.current.scrollIntoView({ behavior: lastFromUser ? "auto" : "smooth", block: "end" });
       }
     }, lastFromUser ? 50 : 150);
     return () => { if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current); };
-  }, [messages, typingUsers, userId, revealTick, typingCount]);
+  }, [messages, typingUsers, userId, typingCount]);
 
   // When input area height changes (quick replies, hints, etc.), scroll to keep last message visible.
   const inputAreaRef = useRef<HTMLDivElement>(null);
@@ -346,26 +338,6 @@ export function ChatArea({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {inworldTTSSupported && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const next = !voiceEnabled;
-                setVoiceEnabled(next);
-                localStorage.setItem('voice_enabled', String(next));
-                trackEvent("tts_toggle", { enabled: next });
-                if (!next) stopInworldTTS();
-              }}
-              className={voiceEnabled ? "hover:bg-zinc-700 text-violet-400 hover:text-violet-300" : "hover:bg-zinc-700 text-zinc-400 hover:text-white"}
-              title={voiceEnabled ? "Turn off dialogue voice" : "Turn on dialogue voice (Inworld TTS)"}
-              aria-label={voiceEnabled ? "Turn off dialogue voice" : "Turn on dialogue voice"}
-            >
-              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              <span className="ml-1.5 hidden sm:inline">{voiceEnabled ? "Sound on" : "Sound off"}</span>
-              {isTTSPlaying && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />}
-            </Button>
-          )}
           {onOpenPlayerBoard && (
             <Button
               variant="ghost"
@@ -413,38 +385,17 @@ export function ChatArea({
               </div>
             </div>
           )}
-          {/* revealTick dependency triggers re-renders when TTS progress updates */}
-          {void revealTick}
           {visibleMessages.map((message, index) => {
             const rawContent = stripPrivateNotes(message.content ?? '');
-            const isTTSSynced = voiceEnabled && inworldTTSSupported && message.isAI && !message.isSystemMessage && !message.isPrivate;
-            const syncedContent = isTTSSynced
-                ? (displayedContentRef.current.get(message.id) ?? '')
-                : rawContent;
-
-            if (isTTSSynced && rawContent !== '' && !syncedContent) {
-              return null;
-            }
-
-            let showAvatar = true;
-            for (let pi = index - 1; pi >= 0; pi--) {
-              const prev = visibleMessages[pi];
-              const prevRaw = prev.content ?? '';
-              const prevIsTTS = voiceEnabled && inworldTTSSupported && prev.isAI && !prev.isSystemMessage && !prev.isPrivate;
-              const prevSynced = prevIsTTS ? (displayedContentRef.current.get(prev.id) ?? '') : prevRaw;
-              if (prevIsTTS && prevRaw !== '' && !prevSynced) continue;
-              showAvatar = prev.senderId !== message.senderId;
-              break;
-            }
-
-            const isShowingCursor = !!(message.isStreaming || (voiceEnabled && inworldTTSSupported && message.isAI && syncedContent.length > 0 && syncedContent.length < rawContent.trim().length));
+            const showAvatar = index === 0 || visibleMessages[index - 1].senderId !== message.senderId;
+            const isShowingCursor = !!message.isStreaming;
 
             return (
               <ChatMessage
                 key={message.id}
                 message={message}
                 showAvatar={showAvatar}
-                syncedContent={syncedContent}
+                syncedContent={rawContent}
                 rawContent={rawContent}
                 isShowingCursor={isShowingCursor}
                 userId={userId}
@@ -452,7 +403,7 @@ export function ChatArea({
                 useGeneratedAvatarForUser={useGeneratedAvatarForUser}
                 humanPlayer={humanPlayer}
                 userAvatarName={userAvatarName}
-                                gameId={gameId}
+                gameId={gameId}
                 players={players}
                 avatarImageUrls={avatarImageUrls ?? {}}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}

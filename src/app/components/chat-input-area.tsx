@@ -2,12 +2,10 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
-import { Send, AlertCircle, Mic, X, Check, ChevronDown, ChevronUp, Vote } from "lucide-react";
+import { Send, AlertCircle, ChevronDown, ChevronUp, Vote } from "lucide-react";
 import type { ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
-import { useVoiceInput } from "@/lib/voice";
-import { VoiceWaveform } from "@/app/components/voice-waveform";
 import type { Player } from "@/types/player";
 
 export interface ChatInputAreaProps {
@@ -70,18 +68,6 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   const sendingLockRef = useRef(false);
   const composingRef = useRef(false);
 
-  const voice = useVoiceInput();
-  const {
-    isRecording,
-    isTranscribing,
-    transcript: voiceTranscript,
-    error: voiceError,
-    start: voiceStart,
-    cancel: voiceCancel,
-    confirm: voiceConfirm,
-    supported: voiceSupported,
-  } = voice;
-
   useEffect(() => {
     if (!popupRef.current) return;
     const active = popupRef.current.querySelector<HTMLElement>('[data-selected="true"]');
@@ -132,18 +118,12 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   );
 
   useEffect(() => {
-    if (isRecording && voiceTranscript) {
-      requestAnimationFrame(() => resizeInput());
-    }
-  }, [voiceTranscript, isRecording, resizeInput]);
-
-  useEffect(() => {
     if (inputRef.current) resizeInput();
   }, [resizeInput]);
 
   useEffect(() => {
     const handleFocusInput = () => {
-      if (inputRef.current && !isRecording) {
+      if (inputRef.current) {
         inputRef.current.focus();
         inputRef.current.classList.add("outline", "outline-2", "outline-amber-500", "outline-offset-2");
         setTimeout(() => {
@@ -153,7 +133,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
     };
     window.addEventListener("focusGameInput", handleFocusInput);
     return () => window.removeEventListener("focusGameInput", handleFocusInput);
-  }, [isRecording]);
+  }, []);
 
   const handleSendRef = useRef<(override?: string) => void>(undefined);
   handleSendRef.current = (override?: string) => {
@@ -241,27 +221,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           </Button>
         </div>
       )}
-      {voiceError && (
-        <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-red-500/30 px-3 py-2 backdrop-blur-sm">
-          <span className="text-xs text-red-300">{voiceError}</span>
-          <div className="flex gap-1">
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-red-300 hover:bg-red-500/20" onClick={voiceCancel}>
-              Close
-            </Button>
-            <Button
-              size="sm"
-              className="h-7 px-2 bg-red-600 hover:bg-red-500"
-              onClick={() => {
-                voiceCancel();
-                setTimeout(voiceStart, 100);
-              }}
-            >
-              Retry
-            </Button>
-          </div>
-        </div>
-      )}
-      {introYourTurnHint && canSend && !isRecording && (
+      {introYourTurnHint && canSend && (
         <div className="mb-2 flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 backdrop-blur-sm">
           <span className="text-sm text-amber-200">{introYourTurnHint}</span>
           {introYourTurnReply && (
@@ -276,12 +236,12 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
-      {introEveryoneSpokenHint && canSend && !isRecording && (
+      {introEveryoneSpokenHint && canSend && (
         <div className="mb-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 text-sm text-emerald-200 backdrop-blur-sm">
           {introEveryoneSpokenHint}
         </div>
       )}
-      {aiSuggestedPrompts.length > 0 && canSend && !isRecording && (
+      {aiSuggestedPrompts.length > 0 && canSend && (
         <div className="mb-2 rounded-lg border border-zinc-700/60 bg-zinc-800/50 overflow-hidden backdrop-blur-sm">
           <button
             type="button"
@@ -314,7 +274,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
-      {(quickRepliesLoading || quickReplies.length > 0) && canSend && !isRecording && (
+      {(quickRepliesLoading || quickReplies.length > 0) && canSend && (
         <div className="mb-2">
           {quickRepliesLoading && quickReplies.length === 0 && (
             <div className="flex items-center gap-1.5 px-0.5 text-xs text-zinc-600">
@@ -347,167 +307,105 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
-      {(isRecording || isTranscribing) && !voiceError ? (
-        <div className="relative w-full px-1">
-          <div
-            className="flex items-center gap-2 w-full rounded-full bg-zinc-800/90 border border-violet-900/30 px-2 py-2 shadow-lg backdrop-blur-md"
-            style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.4)" }}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="flex-shrink-0 h-10 w-10 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-700/60 transition-colors"
-              onClick={voiceCancel}
-              disabled={isTranscribing}
-              title="Cancel"
-              aria-label="Cancel voice recording"
+      <div className="flex gap-2 items-end">
+        <div className="relative flex-1 min-w-0">
+          {showPopup && (
+            <div
+              ref={popupRef}
+              className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-y-auto shadow-2xl z-50 max-h-52"
             >
-              <X className="h-5 w-5" />
-            </Button>
-            <div className="flex-1 min-w-0 relative flex items-center h-10 px-3">
-              <VoiceWaveform
-                analyser={voice.liveAnalyser}
-                duration={voice.duration}
-                className="w-full h-full"
-                waveColor="rgba(255, 255, 255, 0.85)"
-              />
+              {mentionMatches.map((player, i) => (
+                <button
+                  key={player.id}
+                  type="button"
+                  data-selected={i === popupIndex ? "true" : undefined}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    applyMention(player);
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? "bg-violet-600 text-white" : "text-zinc-200 hover:bg-zinc-800"}`}
+                >
+                  <span className="text-violet-300 font-bold text-xs w-4 shrink-0">@</span>
+                  <span className="font-medium truncate">{player.name}</span>
+                  {player.role && (
+                    <span className={`ml-auto text-xs shrink-0 ${i === popupIndex ? "text-violet-200" : "text-zinc-500"}`}>
+                      {player.role}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-            <Button
-              type="button"
-              size="icon"
-              className="flex-shrink-0 h-10 w-10 rounded-full bg-white hover:bg-zinc-100 text-zinc-900 disabled:opacity-40 shadow-lg transition-all"
-              disabled={isTranscribing}
-              title="Finish and insert"
-              aria-label="Finish and insert voice recording"
-              onClick={async () => {
-                const t = await voiceConfirm();
-                if (t) {
-                  setInput(t);
-                  requestAnimationFrame(() => {
-                    inputRef.current?.focus();
-                    resizeInput();
-                  });
-                }
-              }}
-            >
-              <Check className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex gap-2 items-end">
-          <div className="relative flex-1 min-w-0">
-            {showPopup && (
-              <div
-                ref={popupRef}
-                className="absolute bottom-full mb-1.5 left-0 right-0 bg-zinc-900 border border-zinc-700 rounded-xl overflow-y-auto shadow-2xl z-50 max-h-52"
-              >
-                {mentionMatches.map((player, i) => (
-                  <button
-                    key={player.id}
-                    type="button"
-                    data-selected={i === popupIndex ? "true" : undefined}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      applyMention(player);
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${i === popupIndex ? "bg-violet-600 text-white" : "text-zinc-200 hover:bg-zinc-800"}`}
-                  >
-                    <span className="text-violet-300 font-bold text-xs w-4 shrink-0">@</span>
-                    <span className="font-medium truncate">{player.name}</span>
-                    {player.role && (
-                      <span className={`ml-auto text-xs shrink-0 ${i === popupIndex ? "text-violet-200" : "text-zinc-500"}`}>
-                        {player.role}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-            <Textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => {
-                const val = e.target.value;
-                const cursor = e.target.selectionStart ?? val.length;
-                setInput(val);
-                requestAnimationFrame(() => resizeInput());
-                const beforeCursor = val.slice(0, cursor);
-                const mentionMatch = beforeCursor.match(/@([^@\s]*)$/);
-                if (mentionMatch) {
-                  setMentionQuery(mentionMatch[1]);
-                  setMentionAnchor(mentionMatch.index!);
-                  setPopupIndex(0);
-                } else {
-                  setMentionQuery(null);
-                }
-              }}
-              onCompositionStart={() => { composingRef.current = true; }}
-              onCompositionEnd={() => { composingRef.current = false; }}
-              onKeyDown={(e) => {
-                if (composingRef.current) return;
-                if (showPopup) {
-                  if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    setPopupIndex((i) => (i - 1 + mentionMatches.length) % mentionMatches.length);
-                    return;
-                  }
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setPopupIndex((i) => (i + 1) % mentionMatches.length);
-                    return;
-                  }
-                  if (e.key === "Enter" || e.key === "Tab") {
-                    e.preventDefault();
-                    if (mentionMatches[popupIndex]) applyMention(mentionMatches[popupIndex]);
-                    return;
-                  }
-                  if (e.key === "Escape") {
-                    setMentionQuery(null);
-                    return;
-                  }
-                }
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (!sendDisabled) handleSend();
-                }
-              }}
-              placeholder={isRoundInProgress ? "Host & AI replying…" : `Message #${channelName}`}
-              className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
-              style={{ minHeight: `${MIN_INPUT_HEIGHT}px`, maxHeight: `${MAX_INPUT_HEIGHT}px` }}
-              disabled={sendDisabled}
-              rows={1}
-            />
-          </div>
-          {voiceSupported && (
-            <Button
-              size="icon"
-              className="h-10 w-10 flex-shrink-0 bg-zinc-700/80 hover:bg-zinc-600 backdrop-blur-sm border border-violet-900/20 focus-visible:ring-2 focus-visible:ring-amber-500/50"
-              disabled={sendDisabled}
-              onClick={voiceStart}
-              title="Voice input"
-              aria-label="Voice input"
-            >
-              <Mic className="h-4 w-4 text-zinc-300" />
-            </Button>
           )}
-          <Button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || sendDisabled}
-            size="icon"
-            className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-            title={isRoundInProgress ? "Host & AI replying…" : isSending ? "Sending…" : "Send"}
-            aria-label={isRoundInProgress ? "Host and AI replying" : isSending ? "Sending" : "Send message"}
-          >
-            {isSending || isRoundInProgress ? (
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+          <Textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => {
+              const val = e.target.value;
+              const cursor = e.target.selectionStart ?? val.length;
+              setInput(val);
+              requestAnimationFrame(() => resizeInput());
+              const beforeCursor = val.slice(0, cursor);
+              const mentionMatch = beforeCursor.match(/@([^@\s]*)$/);
+              if (mentionMatch) {
+                setMentionQuery(mentionMatch[1]);
+                setMentionAnchor(mentionMatch.index!);
+                setPopupIndex(0);
+              } else {
+                setMentionQuery(null);
+              }
+            }}
+            onCompositionStart={() => { composingRef.current = true; }}
+            onCompositionEnd={() => { composingRef.current = false; }}
+            onKeyDown={(e) => {
+              if (composingRef.current) return;
+              if (showPopup) {
+                if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setPopupIndex((i) => (i - 1 + mentionMatches.length) % mentionMatches.length);
+                  return;
+                }
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setPopupIndex((i) => (i + 1) % mentionMatches.length);
+                  return;
+                }
+                if (e.key === "Enter" || e.key === "Tab") {
+                  e.preventDefault();
+                  if (mentionMatches[popupIndex]) applyMention(mentionMatches[popupIndex]);
+                  return;
+                }
+                if (e.key === "Escape") {
+                  setMentionQuery(null);
+                  return;
+                }
+              }
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!sendDisabled) handleSend();
+              }
+            }}
+            placeholder={isRoundInProgress ? "Host & AI replying…" : `Message #${channelName}`}
+            className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
+            style={{ minHeight: `${MIN_INPUT_HEIGHT}px`, maxHeight: `${MAX_INPUT_HEIGHT}px` }}
+            disabled={sendDisabled}
+            rows={1}
+          />
         </div>
-      )}
+        <Button
+          onClick={() => handleSend()}
+          disabled={!input.trim() || sendDisabled}
+          size="icon"
+          className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
+          title={isRoundInProgress ? "Host & AI replying…" : isSending ? "Sending…" : "Send"}
+          aria-label={isRoundInProgress ? "Host and AI replying" : isSending ? "Sending" : "Send message"}
+        >
+          {isSending || isRoundInProgress ? (
+            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
     </div>
   );
 });

@@ -9,14 +9,12 @@ import { useAuth } from "@/app/contexts/AuthContext";
 const SIDEBAR_EXCLUDED_PATHS = ["/signin"];
 
 const PATHNAME_TO_TITLE: Record<string, string> = {
-  "/create": "Create Game",
   "/discover": "Discover",
   "/my-games": "My Games",
   "/profile": "Profile",
   "/usage": "Usage & Spending",
   "/subscription": "Subscription",
   "/help": "Help & Support",
-  "/settings": "Settings",
   "/recharge": "Subscription",
 };
 
@@ -53,7 +51,7 @@ export default function PagesLayout({
       games={games}
       selectedGameId={selectedGameId}
       onSelectGame={(gameId) => selectGame(gameId)}
-      onCreateGame={user && !loading ? () => router.push("/create") : () => router.push("/signin")}
+      onCreateGame={user && !loading ? () => router.push("/discover") : () => router.push("/signin")}
       onOpenProfile={user && !loading ? () => router.push("/profile") : () => router.push("/signin")}
       onUpdateGame={updateGame}
     >

@@ -452,7 +452,7 @@ export default function AiStorytellingGamesPage() {
             <BlogCTAButton href="/" source="ai-storytelling-games">
               Play Free Now
             </BlogCTAButton>
-            <BlogCTAButton href="/create" source="ai-storytelling-games-create" variant="secondary">
+            <BlogCTAButton href="/discover" source="ai-storytelling-games-create" variant="secondary">
               Create Your Own Game
             </BlogCTAButton>
           </div>

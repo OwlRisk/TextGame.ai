@@ -449,7 +449,7 @@ export default function Page() {
             <BlogCTAButton href="/" source="replika-alternatives">
               Try It Free
             </BlogCTAButton>
-            <BlogCTAButton href="/create" source="replika-alternatives-create" variant="secondary">
+            <BlogCTAButton href="/discover" source="replika-alternatives-create" variant="secondary">
               Create Your Own World
             </BlogCTAButton>
           </div>

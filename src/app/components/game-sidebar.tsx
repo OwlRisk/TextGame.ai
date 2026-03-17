@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, Settings, RefreshCw } from "lucide-react";
+import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, RefreshCw } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -143,7 +143,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 }`}
                 asChild
               >
-                <Link href={user ? "/create" : "/"} prefetch aria-label="Home" onClick={() => { onSelectGame("home"); onNavigate?.(); }}>
+                <Link href={user ? "/discover" : "/"} prefetch aria-label="Home" onClick={() => { onSelectGame("home"); onNavigate?.(); }}>
                   <Home className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "home" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
@@ -381,17 +381,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     >
                       <CreditCard className="mr-3 h-4 w-4 text-emerald-400 shrink-0" />
                       <span className="text-sm">Subscription</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/settings');
-                      }}
-                    >
-                      <Settings className="mr-3 h-4 w-4 text-zinc-400 shrink-0" />
-                      <span className="text-sm">Settings</span>
                     </Button>
                     <Button 
                       variant="ghost" 

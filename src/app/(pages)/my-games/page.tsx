@@ -64,7 +64,7 @@ export default function MyGamesPageRoute() {
           selectGame(gameId);
           router.push(`/game/${gameId}`);
         }}
-        onCreateGame={() => router.push("/create")}
+        onCreateGame={() => router.push("/discover")}
         onDeleteGame={(gameId) => removeGame(gameId)}
       />
       <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />

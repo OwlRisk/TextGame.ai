@@ -615,7 +615,7 @@ export default function CharacterAiAlternativesPage() {
             <BlogCTAButton href="/" source="character-ai-alternatives">
               Try It Free
             </BlogCTAButton>
-            <BlogCTAButton href="/create" source="character-ai-alternatives-create" variant="secondary">
+            <BlogCTAButton href="/discover" source="character-ai-alternatives-create" variant="secondary">
               Create Your Own Game
             </BlogCTAButton>
           </div>

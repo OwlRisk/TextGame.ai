@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
@@ -23,18 +23,13 @@ import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getGameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
 import { safeMarked } from "@/lib/safe-marked";
-import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
-import { supabase } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
 
-import { useGameRoomPresence } from "@/hooks/useGameRoomPresence";
-import { useRoomMembers } from "@/hooks/useRoomMembers";
 import { useGameChannels } from "@/hooks/useGameChannels";
 import { useGameRoomLifecycle } from "@/hooks/useGameRoomLifecycle";
 import { useQuickReplies } from "@/hooks/useQuickReplies";
 import { useHostRound } from "@/hooks/useHostRound";
 import { useGameInit } from "@/hooks/useGameInit";
-import { useGuestPlayer } from "@/hooks/useGuestPlayer";
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -80,8 +75,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   } = useGameRoomContext();
 
   const [showCharacterBrowser, setShowCharacterBrowser] = useState(false);
-  const [inviteCopied, setInviteCopied] = useState(false);
-  const { roomMembers, refreshMembers } = useRoomMembers(gameId);
   const [channelPermissions, setChannelPermissions] = useState<Record<string, string[]>>({});
   const pathname = usePathname();
 
@@ -93,15 +86,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     if (!templateId) return 12;
     return getGameTemplate(templateId)?.maxPlayers ?? 12;
   }, [currentGame?.config?.template]);
-
-  // ─── Presence ──────────────────────────────────────────────────────────────
-  const { onlineGuestPresences, isOwnerOnline } = useGameRoomPresence({
-    gameId,
-    isOwner,
-    gamesLoading,
-    sessionUserId: session?.user?.id,
-    guestNickname: null,
-  });
 
   // ─── Channel management ───────────────────────────────────────────────────
   const {
@@ -143,42 +127,23 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameId,
     channelPermissions,
     setChannelPermissions,
-    roomMembers,
+    roomMembers: [],
     gameRoomEntries,
     defaultGameChannelId,
     readyKickoffRef,
     launchOpeningRound,
   });
 
-  // ─── Guest player logic ───────────────────────────────────────────────────
-  const {
-    guestId,
-    guestNickname,
-    isGuestPlayer,
-    enrichedGuestMembers,
-    boardContentForViewer,
-    handleGuestSendMessage,
-    handleAssignGuestToPlayer,
-  } = useGuestPlayer({
-    gameId,
-    isOwner,
-    isRoundInProgress,
-    handleSendMessageRef,
-    roomMembers,
-    refreshMembers,
-    onlineGuestPresences,
-  });
-
   // ─── My Board update indicator ────────────────────────────────────────────
   const [myBoardHasUpdate, setMyBoardHasUpdate] = useState(false);
   const prevBoardContentRef = useRef<string>("");
   useEffect(() => {
-    const trimmed = boardContentForViewer.trim();
+    const trimmed = (myBoardContent ?? "").trim();
     if (trimmed && trimmed !== prevBoardContentRef.current) {
       setMyBoardHasUpdate(true);
     }
     prevBoardContentRef.current = trimmed;
-  }, [boardContentForViewer]);
+  }, [myBoardContent]);
   useEffect(() => {
     if (selectedChannelId === "__my_board__") setMyBoardHasUpdate(false);
   }, [selectedChannelId]);
@@ -219,7 +184,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   useGameRoomLifecycle({
     gamePhase,
     isOwner,
-    isOwnerOnline,
+    isOwnerOnline: true,
     gameId,
     currentGameExists: !!currentGame,
     messagesLength: messages.length,
@@ -232,43 +197,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   });
 
   useEffect(() => { selectGame(gameId); }, [gameId, selectGame]);
-
-  // ─── Shared / guest game load ─────────────────────────────────────────────
-  const [sharedLoadPending, setSharedLoadPending] = useState(false);
-  const sharedLoadTriedRef = useRef(false);
-  useEffect(() => {
-    if (gamesLoading || currentGame || !gameId || sharedLoadTriedRef.current) return;
-    const urlGuestId = typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("guestId")
-      : null;
-    const guestIdForLoad = urlGuestId ?? guestId ?? (typeof window !== "undefined" ? localStorage.getItem(`guestId_${gameId}`) : null);
-    if (!guestIdForLoad && session?.user?.id) return;
-    sharedLoadTriedRef.current = true;
-    setSharedLoadPending(true);
-    const url = guestIdForLoad
-      ? `/api/games/${gameId}/guest-view?guestId=${encodeURIComponent(guestIdForLoad)}`
-      : `/api/games/${gameId}/public`;
-    fetch(url)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((row) => {
-        if (row?.id) {
-          addGame({
-            id: row.id,
-            name: row.name,
-            icon: row.icon,
-            color: row.color,
-            config: row.config ?? {},
-            isActive: true,
-            updatedAt: row.updated_at ?? new Date().toISOString(),
-          });
-        }
-      })
-      .catch((e) => {
-        console.error('[game] Failed to load game for guest:', e);
-        toast.error("Could not load game data");
-      })
-      .finally(() => setSharedLoadPending(false));
-  }, [gamesLoading, currentGame, gameId, guestId, session?.user?.id, addGame]);
 
   // Channel migration (legacy "rules"/"progress"/"game-room" → first configured channel)
   useEffect(() => {
@@ -322,76 +250,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     sessionAccessToken: session?.access_token ?? null,
   });
 
-  // ─── Invite ───────────────────────────────────────────────────────────────
-  const copyToClipboard = async (text: string): Promise<boolean> => {
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      try { await navigator.clipboard.writeText(text); return true; } catch { /* fallthrough */ }
-    }
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    } catch { return false; }
-  };
-
-  const handleInvite = useCallback(async () => {
-    if (!gameId) return;
-    try {
-      const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "");
-      const existingCode = (currentGame as { invite_code?: string } | null)?.invite_code;
-      if (existingCode) {
-        const inviteUrl = `${base}/join/${existingCode}`;
-        const ok = await copyToClipboard(inviteUrl);
-        trackEvent("invite_shared", { template: currentGame?.config?.template || "custom" });
-        if (ok) {
-          toast.success("Invite link copied! Share it with players.");
-          setInviteCopied(true);
-          setTimeout(() => setInviteCopied(false), 2500);
-        } else {
-          toast.info(inviteUrl, { description: "Tap and hold to copy this link", duration: 10000 });
-        }
-        return;
-      }
-      let token = session?.access_token;
-      try {
-        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-        if (refreshed?.access_token) token = refreshed.access_token;
-      } catch { /* use existing token */ }
-      if (!token) return;
-      const res = await fetch(`/api/games/${gameId}/invite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) { toast.error("Failed to generate invite link"); return; }
-      const data = (await res.json()) as { inviteUrl: string };
-      trackEvent("invite_shared", { template: currentGame?.config?.template || "custom" });
-      const ok = await copyToClipboard(data.inviteUrl);
-      if (ok) {
-        toast.success("Invite link copied! Share it with players.");
-        setInviteCopied(true);
-        setTimeout(() => setInviteCopied(false), 2500);
-      } else {
-        toast.info(data.inviteUrl, { description: "Tap and hold to copy this link", duration: 10000 });
-      }
-    } catch (e) {
-      console.error("[invite]", e);
-      toast.error("Failed to generate invite link");
-    }
-  }, [gameId, session?.access_token, currentGame]);
-
   // ─── Render ───────────────────────────────────────────────────────────────
 
   if (!currentGame) {
     return (
       <div className="h-[100dvh] flex items-center justify-center bg-zinc-900 text-white">
         <div className="text-center">
-          {gamesLoading || sharedLoadPending ? (
+          {gamesLoading ? (
             <>
               <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-violet-500 border-t-transparent mb-4" aria-hidden />
               <p className="text-zinc-400">Loading game…</p>
@@ -416,7 +281,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     games,
     selectedGameId,
     onSelectGame: (id: string) => selectGame(id),
-    onCreateGame: () => router.push("/create"),
+    onCreateGame: () => router.push("/discover"),
     onOpenProfile: () => router.push("/profile"),
     onUpdateGame: updateGame,
   };
@@ -424,11 +289,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    onInvite: isOwner ? handleInvite : undefined,
-    inviteJustCopied: inviteCopied,
     gameSectionLabel: "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
-    gameUserDisplayName: humanGameIdentity?.name || guestNickname || null,
+    gameUserDisplayName: humanGameIdentity?.name || null,
     gameId,
     avatarImageUrls,
     onAvatarUrlLoaded,
@@ -487,27 +350,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         {isRoomLoading && (
           <div className="flex-shrink-0 px-4 py-1.5 bg-violet-950/40 border-b border-violet-800/30 text-center text-xs text-violet-300">Loading room from cloud…</div>
         )}
-        {isGuestPlayer && guestNickname && (
-          <div className="flex-shrink-0 px-4 py-2 bg-violet-950/30 border-b border-violet-800/20 flex items-center justify-between">
-            <span className="text-xs text-violet-300">Playing as <span className="font-semibold text-white">{guestNickname}</span> · Guest</span>
-            <span className="text-xs text-zinc-500">AI responses are managed by the host</span>
-          </div>
-        )}
-        {isGuestPlayer && isOwnerOnline === false && (
-          <div className="flex-shrink-0 px-4 py-2 bg-amber-950/40 border-b border-amber-700/30 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
-            <span className="text-xs text-amber-300">Host is offline — your messages are saved and will be answered when they return.</span>
-          </div>
-        )}
-        {onlineGuestPresences.length > 0 && (
-          <div className="flex-shrink-0 px-4 py-1.5 bg-emerald-950/30 border-b border-emerald-800/20 flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-            <span className="text-xs text-emerald-300">
-              {onlineGuestPresences.length + (isOwnerOnline !== false ? 1 : 0)} players in room:{" "}
-              {onlineGuestPresences.map((m) => m.nickname).join(", ")}
-            </span>
-          </div>
-        )}
         {selectedChannelId === RULES_CHANNEL_ID ? (
           <ScrollArea className="flex-1 min-h-0">
             <div className="max-w-2xl p-6">
@@ -535,10 +377,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 <Info className="h-5 w-5 text-amber-400" />
                 <h2 className="text-lg font-semibold text-white">{currentGame?.config?.playerBoardLabel || "My Board"}</h2>
               </div>
-              {boardContentForViewer.trim() ? (
+              {(myBoardContent ?? "").trim() ? (
                 <div
                   className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
-                  dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
+                  dangerouslySetInnerHTML={{ __html: safeMarked(myBoardContent!) }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
@@ -569,8 +411,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             onRemovePlayer={(playerId) => {
               setPlayers((prev) => prev.filter((p) => p.id !== playerId));
             }}
-            onInvite={isOwner ? handleInvite : undefined}
-            inviteJustCopied={inviteCopied}
             maxSeats={lobbyMaxSeats}
           />
         ) : (() => {
@@ -599,19 +439,19 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             channelId={selectedChannelId ?? undefined}
             messages={messagesForChannel}
             players={playersForChannel}
-            onSendMessage={isGuestPlayer ? handleGuestSendMessage : handleSendMessage}
+            onSendMessage={handleSendMessage}
             isGameActive={gamePhase !== "ended"}
             currentSpeakerId={currentSpeakerId}
             typingUsers={typingUsers}
-            userId={isGuestPlayer ? (guestId ?? userId) : userId}
+            userId={userId}
             gameId={gameId}
-            quickReplies={isGuestPlayer ? [] : quickReplies}
-            quickRepliesLoading={isGuestPlayer ? false : quickRepliesLoading}
+            quickReplies={quickReplies}
+            quickRepliesLoading={quickRepliesLoading}
             introYourTurnHint={gamePhase === "ready-check" ? "Confirm you're ready to begin. The host will start Round 1 once everyone is set." : undefined}
             introYourTurnReply={gamePhase === "ready-check" ? "Ready" : undefined}
-            lastFailedSendContent={isGuestPlayer ? null : lastFailedSendContent}
+            lastFailedSendContent={lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
-            isRoundInProgress={isGuestPlayer ? false : isRoundInProgress}
+            isRoundInProgress={isRoundInProgress}
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
             onOpenPlayerBoard={() => {
@@ -619,7 +459,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               setMobileLeftDrawer(null);
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
-            isOwner={isGuestPlayer ? false : (isOwner ? true : undefined)}
+            isOwner={isOwner ? true : undefined}
             gamePhaseLabel={phaseLabel || undefined}
             gameOverSummary={gameOverSummary || undefined}
             onResumeGame={gameOverSummary && isOwner ? () => {
@@ -636,8 +476,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               });
             } : undefined}
             onNewGame={gameOverSummary ? () => {
-              const preset = currentGame?.config?.template;
-              router.push(preset ? `/create?preset=${preset}` : "/create");
+              router.push("/discover");
             } : undefined}
             onSaveCharacters={gameOverSummary && isOwner && session?.access_token ? async () => {
               const aiPlayers = players.filter((p) => p.isAI && !p.isGameMaster);
@@ -663,15 +502,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               toast.success(`Saved ${saved} character${saved !== 1 ? "s" : ""} to your collection`);
             } : undefined}
             isEliminated={(() => {
-              if (isGuestPlayer) return false;
               const me = players.find(p => p.id === userId || p.name === humanGameIdentity?.name);
               return me ? isPlayerEliminated(me) : false;
             })()}
             mood={mood}
             activeVote={activeVote}
             onVote={activeVote ? (choice: string) => {
-              const fn = isGuestPlayer ? handleGuestSendMessage : handleSendMessage;
-              fn(`I vote for ${choice}`);
+              handleSendMessage(`I vote for ${choice}`);
               setActiveVote(null);
             } : undefined}
             timerEndsAt={timerEndsAt}
@@ -694,10 +531,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
                 currentUserId={userId}
-          isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
-                viewerIsGuest={isGuestPlayer}
-                guestMembers={enrichedGuestMembers}
-                onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
+                isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
               />
             </div>
 
@@ -710,10 +544,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
                   currentUserId={userId}
-            isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
-                  viewerIsGuest={isGuestPlayer}
-                  guestMembers={enrichedGuestMembers}
-                  onAssignGuest={isOwner ? handleAssignGuestToPlayer : undefined}
+                  isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
                 />
               </SheetContent>
             </Sheet>
@@ -735,7 +566,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             return isNaN(n) ? 0 : n;
           });
           const nextIndex = existingAiIds.length > 0 ? Math.max(...existingAiIds) + 1 : 1;
-          const voiceHint = [char.personality, char.background].filter(Boolean).join('. ') || undefined;
           const newPlayer = {
             id: `ai-${nextIndex}`,
             name: char.name,
@@ -748,8 +578,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             background: char.background,
             gender: char.gender as "male" | "female" | "other" | undefined,
             status: "online" as const,
-            voiceId: pickVoiceForSpeaker(char.gender, voiceHint, undefined, char.name),
-            voiceSampleUrl: char.voice_sample_url ?? undefined,
           };
           setPlayers((prev) => {
             const humanIdx = prev.findIndex((p) => !p.isAI && !p.isGameMaster);

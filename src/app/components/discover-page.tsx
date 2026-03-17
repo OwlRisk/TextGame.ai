@@ -151,7 +151,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
             20+ AI-powered templates — or create your own. Pick one and start playing in seconds.
           </p>
-          <Link href="/create">
+          <Link href="/discover">
             <Button variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white font-bold">
               <Sparkles className="h-4 w-4 mr-2" />
               Create Custom Game

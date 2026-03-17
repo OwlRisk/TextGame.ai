@@ -190,7 +190,7 @@ export default function GamesPage() {
             Create any game from scratch — describe the rules and the AI host takes it from there.
           </p>
           <Link
-            href="/create"
+            href="/discover"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-colors"
           >
             Create a Custom Game
