@@ -446,10 +446,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             typingUsers={typingUsers}
             userId={userId}
             gameId={gameId}
-            quickReplies={quickReplies}
-            quickRepliesLoading={quickRepliesLoading}
-            introYourTurnHint={gamePhase === "ready-check" ? "Confirm you're ready to begin. The host will start Round 1 once everyone is set." : undefined}
-            introYourTurnReply={gamePhase === "ready-check" ? "Ready" : undefined}
+            quickReplies={[]}
+            quickRepliesLoading={false}
             lastFailedSendContent={lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
             isRoundInProgress={isRoundInProgress}
