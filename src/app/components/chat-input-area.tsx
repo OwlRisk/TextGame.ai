@@ -274,39 +274,6 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
-      {(quickRepliesLoading || quickReplies.length > 0) && canSend && (
-        <div className="mb-2">
-          {quickRepliesLoading && quickReplies.length === 0 && (
-            <div className="flex items-center gap-1.5 px-0.5 text-xs text-zinc-600">
-              <span className="inline-block w-2.5 h-2.5 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
-              <span>Suggesting…</span>
-            </div>
-          )}
-          {quickReplies.length > 0 && (
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-              {quickReplies.slice(0, 3).map((text) => {
-                const label = text.length > 38 ? text.slice(0, 37) + "…" : text;
-                return (
-                  <button
-                    key={text}
-                    type="button"
-                    title={text}
-                    disabled={sendDisabled}
-                    onClick={() => {
-                      setInput(text);
-                      inputRef.current?.focus();
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs leading-none whitespace-nowrap shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <span className="text-amber-500/60 text-[10px]">⚡</span>
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
       <div className="flex gap-2 items-end">
         <div className="relative flex-1 min-w-0">
           {showPopup && (
