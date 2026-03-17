@@ -109,7 +109,7 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
     let roleInstructions = '';
     if (needsRoles) {
       roleInstructions = `
-6. ROLE ASSIGNMENT (required): Based on the game rules above, assign each player exactly one role. The rules define which roles exist (e.g. Villager, Werewolf, Seer, Doctor). Distribute roles fairly: most should be Villagers/Town, a few special roles as defined in rules, and Werewolves/Mafia as appropriate. Ensure the distribution makes the game balanced. Output each player's "role" in the JSON.`;
+6. ROLE ASSIGNMENT (required): There will be ${playerCount} AI players plus 1 human player (${playerCount + 1} total). Based on the game rules above, distribute roles among ALL ${playerCount + 1} players fairly: most should be Villagers/Town, a few special roles as defined in rules, and Werewolves/Mafia as appropriate. Assign ${playerCount} roles to the AI players in the JSON array, and output the remaining 1 role for the human player as a top-level "humanRole" field. The human can be ANY role (including Werewolf/Mafia) — make it random and balanced.`;
     }
 
     let wordInstructions = '';
@@ -147,7 +147,7 @@ Output ONLY valid JSON:${outputFormat}${wordPairFormat ? `
 
 Top-level structure: { "players": [ ... ], "civilianWord": "...", "undercoverWord": "..." }` : `
 
-Top-level structure: { "players": [ ... ] }`}`;
+Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleName"' : ''} }`}`;
 
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
@@ -186,10 +186,13 @@ Top-level structure: { "players": [ ... ] }`}`;
         throw new Error('No valid players generated');
       }
 
-      const result: { players: any[]; count: number; civilianWord?: string; undercoverWord?: string } = {
+      const result: { players: any[]; count: number; civilianWord?: string; undercoverWord?: string; humanRole?: string } = {
         players: validPlayers,
         count: validPlayers.length
       };
+      if (needsRoles && parsed.humanRole) {
+        result.humanRole = parsed.humanRole;
+      }
       if (needsWords && parsed.civilianWord && parsed.undercoverWord) {
         result.civilianWord = parsed.civilianWord;
         result.undercoverWord = parsed.undercoverWord;

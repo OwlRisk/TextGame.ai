@@ -10,7 +10,17 @@ import { assignVoicesForRoom, pickVoiceForSpeaker, INWORLD_VOICE_META } from "@/
 import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { trackEvent } from "@/lib/analytics";
-import { getGameTemplate, getTemplateHexColor, getAvatarStyleForTemplate } from "@/lib/game-templates";
+import { getGameTemplate, getTemplateHexColor, getAvatarStyleForTemplate, type GameTemplate } from "@/lib/game-templates";
+
+function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string): string {
+  if (!tmpl) return `**Your Role: ${role}**`;
+  const rulesText = tmpl.defaultRules || "";
+  const roleRegex = new RegExp(`-\\s*${role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^\\n]+)`, "i");
+  const match = rulesText.match(roleRegex);
+  const desc = match?.[1]?.trim();
+  if (desc) return `**Your Role: ${role}**\n\n${desc}`;
+  return `**Your Role: ${role}**`;
+}
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -66,6 +76,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     addMessage,
     addStreamingMessage,
     updateStreamingMessage,
+    setMyBoardContent,
   } = useGameRoomContext();
 
   const currentGame = games.find((g) => g.id === gameId);
@@ -205,9 +216,14 @@ export function useGameInit(gameId: string): UseGameInitReturn {
 
     const tmplMeta = getGameTemplate(kickoff.gameTemplate || "custom");
     const isSoloGame = tmplMeta?.maxPlayers === 1;
-    const hostGreeting = isSoloGame
-      ? `Welcome! I'm ready to begin whenever you are. What would you like to explore?`
-      : `The game begins now. Day One starts - make your first read and pressure your top suspect.`;
+    let hostGreeting: string;
+    if (isSoloGame) {
+      hostGreeting = `Welcome! I'm ready to begin whenever you are. What would you like to explore?`;
+    } else if (tmplMeta?.hasHiddenRoles) {
+      hostGreeting = `Roles have been secretly assigned — check "My Board" for your identity. The game begins now. Night falls...`;
+    } else {
+      hostGreeting = `The game begins now. Let's get started!`;
+    }
     const greetingId = `start-greeting-${gameId}-${Date.now()}`;
     addMessage(
       {
@@ -280,16 +296,24 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         };
       });
 
-      if (configuredPlayers.length > 0) {
+      const tmpl = getGameTemplate(config.template || "");
+      const humanRole = config.humanRole || (tmpl?.hasHiddenRoles ? (tmpl.roles?.[0] ?? undefined) : undefined);
+
+      if (configuredPlayers.length > 0 || humanRole) {
         setPlayers((prev) =>
           prev.map((p) => {
             if (p.isGameMaster) return p;
+            if (!p.isAI && !p.isGameMaster && humanRole) {
+              const stats = { ...p.stats };
+              if (tmpl?.hasElimination) stats.Status = "Alive";
+              return { ...p, role: humanRole, stats };
+            }
             const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1]) - 1 : -1;
             const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
             if (!cp) return p;
             const role = cp.role || undefined;
             const stats = { ...p.stats };
-            if (role && getGameTemplate(config.template || "")?.hasElimination) {
+            if (role && tmpl?.hasElimination) {
               stats.Status = "Alive";
             }
             if ((cp as any).word && config.template === "undercover") {
@@ -298,6 +322,11 @@ export function useGameInit(gameId: string): UseGameInitReturn {
             return { ...p, role, stats };
           })
         );
+      }
+
+      if (humanRole) {
+        const roleDesc = buildRoleBoardContent(tmpl, humanRole);
+        setMyBoardContent((prev) => ({ ...prev, [userId]: roleDesc }));
       }
 
       {
@@ -343,7 +372,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     } finally {
       gameStartingRef.current = false;
     }
-  }, [currentGame, gamePhase, buildHostPlayer, setPlayers, setPlayerNotes, setGamePhase, gameId, humanGameIdentity?.name, launchOpeningRound, setCurrentSpeakerId, userId, addMessage]);
+  }, [currentGame, gamePhase, buildHostPlayer, setPlayers, setPlayerNotes, setGamePhase, gameId, humanGameIdentity?.name, launchOpeningRound, setCurrentSpeakerId, userId, addMessage, setMyBoardContent]);
 
   // Initialize game room: wait for room state to load, then set up lobby if fresh
   const humanIdentityFetchedRef = useRef<string | null>(null);

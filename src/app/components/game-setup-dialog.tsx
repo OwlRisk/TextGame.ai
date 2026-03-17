@@ -43,6 +43,8 @@ export interface GameConfig {
   /** When true, only each player sees their own role in the player list; Host decides at game creation. */
   hideRolesInPlayerList?: boolean;
   configuredPlayers?: ConfiguredPlayer[];
+  /** Role pre-assigned to the human player (for hidden-role games like Werewolf). */
+  humanRole?: string;
   generatedHost?: {
     name: string;
     personality: string;

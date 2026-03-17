@@ -58,6 +58,7 @@ export default function DiscoverView() {
       const host = getDefaultHostForTemplate(preset.templateId);
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
+      let humanRole: string | undefined;
       try {
         toast.loading("Setting up players...", { id: toastId });
         const playersRes = await fetch("/api/generate-players", {
@@ -74,6 +75,7 @@ export default function DiscoverView() {
         if (playersRes.ok) {
           const data = await playersRes.json();
           if (data.players) configuredPlayers = data.players;
+          if (data.humanRole) humanRole = data.humanRole;
         }
       } catch (err) {
         console.warn("Failed to generate players:", err);
@@ -92,6 +94,7 @@ export default function DiscoverView() {
           hostId: host.id,
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
+          humanRole,
           generatedHost: {
             name: host.name,
             personality: host.personality || host.description || "",
