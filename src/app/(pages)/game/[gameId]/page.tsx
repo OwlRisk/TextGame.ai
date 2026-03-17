@@ -135,15 +135,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   });
 
   // ─── My Board update indicator ────────────────────────────────────────────
+  const boardContentForViewer = myBoardContent[userId] ?? "";
   const [myBoardHasUpdate, setMyBoardHasUpdate] = useState(false);
   const prevBoardContentRef = useRef<string>("");
   useEffect(() => {
-    const trimmed = (myBoardContent ?? "").trim();
+    const trimmed = boardContentForViewer.trim();
     if (trimmed && trimmed !== prevBoardContentRef.current) {
       setMyBoardHasUpdate(true);
     }
     prevBoardContentRef.current = trimmed;
-  }, [myBoardContent]);
+  }, [boardContentForViewer]);
   useEffect(() => {
     if (selectedChannelId === "__my_board__") setMyBoardHasUpdate(false);
   }, [selectedChannelId]);
@@ -377,10 +378,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 <Info className="h-5 w-5 text-amber-400" />
                 <h2 className="text-lg font-semibold text-white">{currentGame?.config?.playerBoardLabel || "My Board"}</h2>
               </div>
-              {(myBoardContent ?? "").trim() ? (
+              {boardContentForViewer.trim() ? (
                 <div
                   className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
-                  dangerouslySetInnerHTML={{ __html: safeMarked(myBoardContent!) }}
+                  dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
