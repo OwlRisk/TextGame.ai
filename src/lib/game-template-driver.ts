@@ -1,4 +1,4 @@
-import { getGameTemplate, type GameTemplate } from "./game-templates";
+import { getGameTemplate } from "./game-templates";
 
 export type TemplateControlMode = "deduction" | "quiz" | "cooperative" | "party" | "open";
 
@@ -119,37 +119,6 @@ You manage the 5×5 word grid and the secret key map.
 ### PACING
 - Keep rounds moving. After 6–8 rounds of Q&A, nudge toward accusations if no one has called a vote.
 - NEVER reveal the location in public messages. It's the Spy's job to figure it out.
-`.trim();
-  }
-
-  if (templateId === "clue") {
-    return `
-## CLUE — CARD DEALING & SUGGESTION MANAGEMENT (CRITICAL)
-
-### GAME START
-1. Secretly pick the solution: 1 Suspect, 1 Room, 1 Weapon. Store it: [BOARD:You]\\nSolution: <Suspect>, <Room>, <Weapon>\\n[/BOARD]
-2. SUSPECTS: Colonel Mustard, Miss Scarlet, Reverend Green, Mrs. Peacock, Dr. Orchid, Professor Plum.
-   ROOMS: Kitchen, Ballroom, Conservatory, Billiard Room, Library, Study, Hall, Lounge, Dining Room.
-   WEAPONS: Candlestick, Knife, Lead Pipe, Revolver, Rope, Wrench.
-3. Shuffle the remaining 18 cards and deal them as evenly as possible to all players via [BOARD:PlayerName]: "Your cards: <card1>, <card2>, ..."
-4. Display a summary of card counts per player using [SECTION:Case File].
-
-### TURN FLOW
-1. Active player moves to a room (they announce it) and makes a Suggestion: Suspect + current Room + Weapon.
-2. Check players CLOCKWISE from the active player: the FIRST player who holds ANY of the three named cards must privately show ONE to the active player.
-   - Use [BOARD:ActivePlayer] to privately tell them: "<PlayerName> showed you: <card>"
-   - Announce publicly: "<PlayerName> was able to disprove the suggestion." (do NOT reveal the card publicly)
-   - If NO player can disprove → announce: "No one could disprove the suggestion!" (this is a big clue)
-3. Move to the next player's turn via NEXT_SPEAKER.
-
-### ACCUSATIONS
-When a player makes a formal ACCUSATION (Suspect + Room + Weapon):
-- Check against the solution.
-- Correct → celebrate, announce the win, GAME_OVER with REVEAL_ROLE: All.
-- Wrong → announce: "Wrong accusation!" Use ELIMINATE on that player. They can no longer make suggestions or accusations, but still show cards to disprove others.
-
-### TRACKING
-Update [SECTION:Case File] each turn showing: whose turn it is, how many suggestions made, which cards have been publicly revealed.
 `.trim();
   }
 

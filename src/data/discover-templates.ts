@@ -304,21 +304,21 @@ export const PARTY_GAMES: GameTemplate[] = [  {
     duration: "10-15 min",
     style: "Casual",
     color: "from-blue-500 to-cyan-500",
-    rules: `SETTING: One player secretly thinks of a person, place, animal, or object. Everyone else has 20 yes-or-no questions to figure out what it is.
+    rules: `SETTING: The Host secretly thinks of a person, place, animal, or object. All players are Guessers with 20 yes-or-no questions to figure out what it is.
 
 ROLES:
-- The Thinker: Secretly chooses a target and answers questions honestly with Yes, No, or Sometimes.
-- The Guessers: Ask questions to narrow down the target within 20 questions.
+- The Host (Thinker): Secretly chooses a target and answers questions honestly with Yes, No, or Sometimes.
+- All Players (Guessers): Ask questions to narrow down the target within 20 questions.
 
 GAMEPLAY:
-1. The Thinker announces a category: Person, Place, Animal, or Thing (or lets others guess the category too).
+1. The Host announces a category: Person, Place, Animal, or Thing (or lets others guess the category too).
 2. Players take turns asking yes-or-no questions (e.g., "Is it alive?" "Is it smaller than a shoe?").
-3. The Thinker may only answer: Yes / No / Sometimes / I don't know.
+3. The Host may only answer: Yes / No / Sometimes / I don't know.
 4. A player may use their turn to make a direct guess instead of asking a question.
 5. The game ends after 20 questions total — or a correct direct guess.
 
 HOT/COLD HINTS (the fun twist!):
-After every 5th question (Q5, Q10, Q15), the Thinker must give a warmth rating on how close the group's thinking is:
+After every 5th question (Q5, Q10, Q15), the Host gives a warmth rating on how close the group's thinking is:
   🧊 Ice Cold — totally off track
   ❄️ Cold — wrong direction
   🌤️ Warm — getting closer
@@ -333,8 +333,7 @@ GOOD QUESTION STRATEGY:
 
 WIN CONDITIONS:
 - Guessers win: Correctly identify the target within 20 questions.
-- Thinker wins: The target is not guessed after 20 questions. Thinker then reveals the answer.
-Rotate the Thinker role after each round.`,
+- Host wins: The target is not guessed after 20 questions. The Host then reveals the answer.`,
   },
   {
     id: "two-truths-lie",

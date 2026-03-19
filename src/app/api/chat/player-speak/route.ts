@@ -223,14 +223,6 @@ Ask or answer questions to prove you belong — but don't give too much away to 
 - If someone seems suspicious, consider calling an accusation vote.`);
       }
       lines.push(`After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
-    } else if (gameTemplate === 'clue') {
-      lines.push('');
-      lines.push(`Your turn as ${player.name} (INVESTIGATOR).
-On your turn: make a SUGGESTION ("I suggest Colonel Mustard, in the Library, with the Knife") or discuss deductions.
-- Use your private cards and what you've learned to narrow down the solution.
-- When confident, make a formal ACCUSATION (this is final — wrong = eliminated).
-- React to new information: "Nobody could disprove that? Interesting..."
-After your spoken reply (and only after), append [MY_NOTES] to track which cards you've seen.`);
     } else if (gameTemplate === 'detective-mystery') {
       const roleLower = player.role?.toLowerCase() ?? '';
       lines.push('');

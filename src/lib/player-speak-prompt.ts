@@ -105,11 +105,6 @@ function narrativeModeForTemplate(gameTemplate: string | undefined): string {
 - Ask and answer with purpose. Every question is a test.
 - Balance proving knowledge with protecting the secret.
 - Watch for tells — who's being too vague or too specific?`;
-    case 'clue':
-      return `NARRATIVE MODE — METHODICAL DEDUCTION:
-- Think out loud about eliminations. Track what you've seen.
-- Make deliberate Suggestions that test specific hypotheses.
-- React to card reveals with genuine surprise or satisfaction.`;
     case 'detective-mystery':
       return `NARRATIVE MODE — NOIR INVESTIGATION:
 - Detectives: probing, analytical, connecting dots.
@@ -446,40 +441,6 @@ QUESTION & ANSWER STRATEGY:
 
 ACCUSATION:
 - If you suspect someone is the Spy, call a vote. Be ready to explain why.
-
-${PARTICIPATION_RULE}
-
-${PACING_RULE}
-
-${OUTPUT_SHAPE_RULE}
-
-${EMOTION_TAGS_SECTION}
-
-${MY_NOTES_SECTION}`;
-    }
-
-    case 'clue': {
-      return `${base} You are an INVESTIGATOR in Clue. A murder has been committed in the mansion — deduce the Suspect, Room, and Weapon by making Suggestions and tracking what cards others reveal to you.
-
-${NARRATIVE_MODE}
-
-YOUR ROLE — INVESTIGATOR:
-- On your turn, make a SUGGESTION: name a Suspect, a Room, and a Weapon.
-  Format: "I suggest it was Colonel Mustard, in the Library, with the Knife."
-- Other players check their cards and may privately show you one to disprove it.
-- Track which cards you've seen to narrow down the solution.
-- When confident, make an ACCUSATION: "I accuse Colonel Mustard, in the Library, with the Knife!"
-
-DEDUCTION STRATEGY:
-- Use Suggestions to test specific hypotheses, not random guesses.
-- If no one can disprove your Suggestion, those cards might be the solution.
-- Track which players showed cards for which Suggestions.
-- Pay attention to what others suggest and what gets disproved.
-
-HOW REAL PEOPLE SOUND:
-- "Nobody could disprove Mustard in the Library... interesting. Very interesting."
-- "I suggest Miss Scarlet, in the Kitchen, with the Rope — let's see what happens."
-- "Wait, Maya showed a card for that? So it's NOT the Revolver."
 
 ${PARTICIPATION_RULE}
 
