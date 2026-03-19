@@ -414,7 +414,7 @@ export function useHostRound({
               preferredModel: getPreferredModel(),
             }),
           });
-          if (!res.ok || !res.body) {
+          if (!res.ok) {
             setTypingUsers([]);
             if (res.status === 402) {
               toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
@@ -422,40 +422,8 @@ export function useHostRound({
             }
             return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
           }
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          let acc = "";
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split(/\n/);
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const payload = line.slice(6);
-                if (payload === "[DONE]") continue;
-                try {
-                  const data = JSON.parse(payload) as { content?: string };
-                  if (typeof data.content === "string") {
-                    acc += data.content;
-                    const visible = getStreamingDisplay(acc);
-                    if (visible && !messageId) {
-                      setTypingUsers([]);
-                      messageId = addStreamingMessage(
-                        { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
-                        chId,
-                        visible,
-                      );
-                    } else if (visible && messageId) {
-                      updateStreamingMessage(messageId, visible, false);
-                    }
-                  }
-                } catch {
-                  // ignore parse
-                }
-              }
-            }
-          }
+          const resData = await res.json() as { content?: string };
+          const acc = resData.content ?? "";
           const { message: rawSplitMessage, directives } = splitHostOutput(acc);
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
           const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(directives);
@@ -493,38 +461,10 @@ export function useHostRound({
                 preferredModel: getPreferredModel(),
               }),
             });
-            if (!retryRes.ok || !retryRes.body) throw new Error("retry failed");
-            const retryReader = retryRes.body.getReader();
-            const retryDecoder = new TextDecoder();
-            let retryAcc = "";
+            if (!retryRes.ok) throw new Error("retry failed");
+            const retryData = await retryRes.json() as { content?: string };
+            const retryAcc = retryData.content ?? "";
             let retryMsgId: string | null = null;
-            while (true) {
-              const { done, value } = await retryReader.read();
-              if (done) break;
-              const chunk = retryDecoder.decode(value, { stream: true });
-              for (const line of chunk.split(/\n/)) {
-                if (line.startsWith("data: ")) {
-                  const payload = line.slice(6);
-                  if (payload === "[DONE]") continue;
-                  try {
-                    const data = JSON.parse(payload) as { content?: string };
-                    if (typeof data.content === "string") {
-                      retryAcc += data.content;
-                      const visible = getStreamingDisplay(retryAcc);
-                      if (visible && !retryMsgId) {
-                        retryMsgId = addStreamingMessage(
-                          { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
-                          chId,
-                          visible,
-                        );
-                      } else if (visible && retryMsgId) {
-                        updateStreamingMessage(retryMsgId, visible, false);
-                      }
-                    }
-                  } catch { /* ignore */ }
-                }
-              }
-            }
             const { message: rawRetryMsg, directives: retryDir } = splitHostOutput(retryAcc);
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
             const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDir);

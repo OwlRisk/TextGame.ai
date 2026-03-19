@@ -142,7 +142,7 @@ export async function streamAIChatResponse(
       });
 
       if (!response.ok) {
-        let errorMessage = 'Failed to stream AI response';
+        let errorMessage = 'Failed to get AI response';
         let errorCode: string | undefined;
         try {
           const error = await response.json();
@@ -156,26 +156,23 @@ export async function streamAIChatResponse(
             } else {
               errorMessage = text || errorMessage;
             }
-          } catch (textError) {
+          } catch {
             // Fallback to default message
           }
         }
 
-        // Credits exhausted — throw a distinctly identifiable error
         if (response.status === 402 || errorCode === 'INSUFFICIENT_TOKENS') {
           const err = new Error('INSUFFICIENT_TOKENS') as Error & { code: string };
           err.code = 'INSUFFICIENT_TOKENS';
           throw err;
         }
 
-        // Log original for debugging (warn for connection/network, error for auth/server)
         const isConnectionError = /connection|network|timeout|refused|fetch failed/i.test(errorMessage);
         if (isConnectionError) {
           console.warn(`[OpenAI] Connection/network issue (${response.status}):`, errorMessage);
         } else {
           console.error(`[OpenAI] API error (${response.status}):`, errorMessage);
         }
-        // User-friendly messages by type
         if (response.status === 401 || /invalid.*api.*key|incorrect.*api.*key|authentication/i.test(errorMessage)) {
           errorMessage = 'OpenAI API key is invalid or expired. Please check OPENAI_API_KEY in your .env file.';
         } else if (response.status === 429 || /rate limit|too many requests/i.test(errorMessage)) {
@@ -187,47 +184,15 @@ export async function streamAIChatResponse(
         } else if (isConnectionError) {
           errorMessage = 'Unable to connect. Please check your network and OpenAI API key, then try again.';
         }
-        // Otherwise keep the server's error message (often helpful)
         throw new Error(errorMessage);
       }
 
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-
-    if (!reader) {
-      throw new Error('No response body');
-    }
-
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) {
-          onComplete?.();
-          return; // Success, exit retry loop
-        }
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') {
-              onComplete?.();
-              return; // Success, exit retry loop
-            }
-            
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.content) {
-                onChunk(parsed.content);
-              }
-            } catch (e) {
-              // Ignore parse errors
-            }
-          }
-        }
+      const data = await response.json();
+      if (data.content) {
+        onChunk(data.content);
       }
+      onComplete?.();
+      return;
     } catch (error: any) {
       lastError = error;
       console.error(`Error streaming AI response (attempt ${attempt + 1}/${retries}):`, error);
