@@ -2,8 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Users, Clock, Play, Crown, Search, Sparkles } from "lucide-react";
+import { Users, Clock, Play, Crown, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -149,14 +148,8 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             Discover <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Games</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
-            AI-powered game templates — or create your own. Pick one and start playing in seconds.
+            AI-powered game templates. Pick one and start playing in seconds.
           </p>
-          <Link href="/discover">
-            <Button variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white font-bold">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Create Custom Game
-            </Button>
-          </Link>
         </div>
 
         {/* Featured Template — only show on "all" tab with no search */}
