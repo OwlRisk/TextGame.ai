@@ -19,7 +19,7 @@ export const VALID_STYLES = [
 
 export type AvatarStyle = (typeof VALID_STYLES)[number];
 
-export const DEFAULT_STYLE: AvatarStyle = 'valorant';
+export const DEFAULT_STYLE: AvatarStyle = 'semi-realistic';
 
 export const AVATAR_STYLE_STORAGE_KEY = 'avatar_style_pack';
 
