@@ -325,7 +325,7 @@ export async function runPrivateChannelConversation(
   ctx: SpeakerQueueContext,
   targetChannelId: string,
   goal: string | null,
-  maxRounds = 3,
+  maxRounds = 2,
 ): Promise<void> {
   const perms = ctx.channelPermissions[targetChannelId];
   if (!perms || perms.includes("*")) return;

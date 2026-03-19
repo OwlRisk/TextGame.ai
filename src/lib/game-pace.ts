@@ -1,9 +1,9 @@
-/** Base delay (ms) between Host/AI messages so the pace feels human, not instant AI. */
-export const HOST_PACE_BASE_MS = 1000;
+/** Base delay (ms) between Host/AI messages — fast but not jarring. */
+export const HOST_PACE_BASE_MS = 400;
 /** Extra delay per 50 characters of message content */
-export const HOST_PACE_PER_50_CHARS_MS = 800;
+export const HOST_PACE_PER_50_CHARS_MS = 200;
 /** Maximum gap between messages */
-export const HOST_PACE_MAX_MS = 4000;
+export const HOST_PACE_MAX_MS = 1500;
 
 // ─── Conversation mode: structured (turn-based) vs freeform (narrative/social) ──
 export type ConversationMode = "structured" | "freeform";
@@ -45,12 +45,10 @@ export function dynamicPace(textLength: number, personality?: string, mode: Conv
 }
 export const hostPace = () => dynamicPace(0);
 
-/** Pre-thinking delay before typing indicator appears, simulating "reading & thinking". */
-export function thinkingDelay(queueIndex: number, mode: ConversationMode): Promise<void> {
-  const base = mode === "freeform"
-    ? 500 + Math.random() * 1500
-    : 300 + Math.random() * 500;
-  const positionalFactor = queueIndex === 0 ? 1.0 : Math.max(0.5, 1.0 - queueIndex * 0.15);
+/** Brief thinking delay before typing indicator. */
+export function thinkingDelay(queueIndex: number, _mode: ConversationMode): Promise<void> {
+  const base = 150 + Math.random() * 250;
+  const positionalFactor = queueIndex === 0 ? 1.0 : Math.max(0.4, 1.0 - queueIndex * 0.2);
   return new Promise<void>((r) => setTimeout(r, Math.round(base * positionalFactor)));
 }
 
