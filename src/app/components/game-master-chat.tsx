@@ -976,7 +976,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         const factionName = selectedTemplate.name.split(/[:(]/)[0].trim();
         defaultChannels.push({ id: `${tid}-faction`, name: `${factionName} faction`, roomType: "decision" });
       }
-      const fallbackPlayerCount = selectedTemplate?.recommendedAICount ?? 4;
+      const fallbackPlayerCount = (selectedTemplate && selectedTemplate.maxPlayers > 1 ? selectedTemplate.maxPlayers - 1 : selectedTemplate?.recommendedAICount) ?? 4;
       const gameConfig: GameConfig = {
         template: tid,
         playerCount: finalPlayerCount || playerCount || fallbackPlayerCount,
