@@ -105,15 +105,17 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
   /** Label for the player's private panel Tab. Defaults to "My Board". */
   const [playerBoardLabel, setPlayerBoardLabel] = useState("");
   
-  // Update host when template changes (use recommended host for the template)
+  // Update host and default player count when template changes
   useEffect(() => {
     if (selectedTemplate) {
       const lastHostId = getLastSelectedHostId();
-      // If user has a saved preference and it's still valid, keep it
-      // Otherwise, use recommended host for this template
       if (!lastHostId || !HOST_PERSONALITIES.find(h => h.id === lastHostId)) {
         const recommendedHost = getDefaultHostForTemplate(selectedTemplate.id);
         setSelectedHostId(recommendedHost.id);
+      }
+      // Default to max players (maxPlayers - 1 AI, leaving 1 seat for the human)
+      if (selectedTemplate.maxPlayers > 1) {
+        setPlayerCount(selectedTemplate.maxPlayers - 1);
       }
     }
   }, [selectedTemplate]);

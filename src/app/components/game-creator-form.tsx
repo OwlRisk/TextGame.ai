@@ -79,7 +79,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
   
   useEffect(() => {
     if (selectedTemplate) {
-      setPlayerCount(selectedTemplate.recommendedAICount);
+      setPlayerCount(selectedTemplate.maxPlayers > 1 ? selectedTemplate.maxPlayers - 1 : selectedTemplate.recommendedAICount);
       const lastHostId = getLastSelectedHostId();
       if (!lastHostId || !HOST_PERSONALITIES.find(h => h.id === lastHostId)) {
         const recommendedHost = getDefaultHostForTemplate(selectedTemplate.id);
