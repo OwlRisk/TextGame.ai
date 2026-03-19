@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
-    const system = buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background);
+    const system = buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role);
 
     // Build user content: game context + private knowledge + recent chat
     const lines: string[] = [];
@@ -189,6 +189,66 @@ RULES:
 4. No strategies, no "we should ask...", just play.
 5. If you truly have nothing new, output an emoji reaction: REACT: 🤔
 After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
+    } else if (gameTemplate === 'codenames') {
+      const isSpymaster = player.role?.toLowerCase() === 'spymaster';
+      lines.push('');
+      if (isSpymaster) {
+        lines.push(`Your turn as ${player.name} (SPYMASTER).
+Give exactly ONE clue: a single word + a number (e.g., "Ocean: 3").
+- The word must NOT be any word currently on the board.
+- The number = how many board words relate to your clue.
+- After giving the clue, say NOTHING else. Your team will discuss.
+- Check your private board for the key map — avoid clues that lead to the Assassin!`);
+      } else {
+        lines.push(`Your turn as ${player.name} (FIELD OPERATIVE).
+Discuss the Spymaster's clue with your team and guess ONE word from the board.
+- Say the exact word you want to guess, or say "pass" to end your team's turn.
+- React to the last reveal (correct/wrong) before making your next guess.`);
+      }
+      lines.push(`After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
+    } else if (gameTemplate === 'spyfall') {
+      const isSpy = player.role?.toLowerCase() === 'spy';
+      lines.push('');
+      if (isSpy) {
+        lines.push(`Your turn as ${player.name} (SPY — you do NOT know the location).
+Listen to others' answers to figure out the location. Ask or answer questions — blend in!
+- If asked: give a vague but plausible answer.
+- If asking: pick a question that helps you narrow down the location without revealing you don't know.
+- If you think you know the location, you can reveal yourself and guess it to win.`);
+      } else {
+        lines.push(`Your turn as ${player.name} (REGULAR PLAYER — you know the location).
+Ask or answer questions to prove you belong — but don't give too much away to the Spy.
+- If asked: reference something that fits the location without being too specific.
+- If asking: pick a question that the Spy would struggle to answer convincingly.
+- If someone seems suspicious, consider calling an accusation vote.`);
+      }
+      lines.push(`After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
+    } else if (gameTemplate === 'clue') {
+      lines.push('');
+      lines.push(`Your turn as ${player.name} (INVESTIGATOR).
+On your turn: make a SUGGESTION ("I suggest Colonel Mustard, in the Library, with the Knife") or discuss deductions.
+- Use your private cards and what you've learned to narrow down the solution.
+- When confident, make a formal ACCUSATION (this is final — wrong = eliminated).
+- React to new information: "Nobody could disprove that? Interesting..."
+After your spoken reply (and only after), append [MY_NOTES] to track which cards you've seen.`);
+    } else if (gameTemplate === 'detective-mystery') {
+      const roleLower = player.role?.toLowerCase() ?? '';
+      lines.push('');
+      if (roleLower === 'detective') {
+        lines.push(`Your turn as ${player.name} (DETECTIVE).
+Ask ONE character ONE pointed question, or share your theory with other detectives.
+- Build on what you've learned. Connect the evidence.
+- In the accusation phase, submit: Culprit + Motive + Method.`);
+      } else if (roleLower === 'witness') {
+        lines.push(`Your turn as ${player.name} (WITNESS).
+Answer based on what you saw/heard (shown in your private info). Be helpful but honest about the limits of what you know.`);
+      } else {
+        lines.push(`Your turn as ${player.name} (SUSPECT).
+Answer questions IN CHARACTER based on your private backstory. Stay consistent.
+- If innocent: defend yourself, but you may still have minor secrets.
+- If guilty: deflect, provide plausible explanations, don't confess easily.`);
+      }
+      lines.push(`After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
     } else {
       lines.push(`Your turn as ${player.name}.
 SPOKEN REPLY: 1–2 sentences MAX — this is a game, not an essay. Short, punchy, in-character.
