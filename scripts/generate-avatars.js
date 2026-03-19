@@ -88,6 +88,15 @@ const STYLE_PROMPTS = {
     const ageStr = ageLabel ? `Age: ${ageLabel}.` : '';
     return `3D animated feature film character portrait, vibrant CGI render. A ${gStr}. ${nationalityStr} ${ageStr} ${traits}. Large expressive eyes with bright subtle catchlights, perfectly smooth luminous skin with natural healthy warmth, genuine expression that matches the character's personality and occupation. Tight head-and-shoulders portrait, face centered and filling approximately 60% of the frame height, subject looking toward camera. Soft warm cinematic lighting with gentle bokeh background. High-quality 3D animation studio render — bright, vibrant, full of personality. One character only. No text, no watermark. Suitable for all ages.`;
   },
+  'valorant': (name, gender, personality, background, inworldData) => {
+    const gStr = gender === 'female' ? 'woman' : gender === 'male' ? 'man' : 'person';
+    const traits = [personality, background].filter(Boolean).join(' ').slice(0, 180);
+    const nationality = inworldData?.langCode ? (LANG_TO_NATIONALITY[inworldData.langCode] || null) : null;
+    const ageLabel = inworldData?.ageGroup ? (AGE_GROUP_LABEL[inworldData.ageGroup] || null) : null;
+    const nationalityStr = nationality ? `Nationality: ${nationality}.` : `Use the name "${name}" to infer likely ethnicity.`;
+    const ageStr = ageLabel ? `Age: ${ageLabel}.` : '';
+    return `Clean semi-realistic digital illustration, Valorant / Riot Games concept art style. Portrait of a ${gStr}. ${nationalityStr} ${ageStr} ${traits}. Sharp confident linework with subtle cel-shading, bold silhouette, strong facial features. Saturated but grounded color palette — not neon. Matte skin rendering with minimal specular highlights, clearly defined eyes and hair with crisp edges. Close-up bust portrait, face and shoulders filling approximately 60% of the frame, subject looking toward camera with a composed expression. Solid desaturated color or soft radial gradient background. Clean composition, strong graphic design sensibility. One character only. No text, no watermark, no borders. Suitable for all ages.`;
+  },
 };
 
 const ALL_STYLES = Object.keys(STYLE_PROMPTS);

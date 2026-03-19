@@ -1026,11 +1026,7 @@ export function getTemplateHexColor(templateId: string): string {
   return (m && TAILWIND_HEX[m[1]]) || "#7c3aed";
 }
 
-/** Avatar style auto-selected by game category. Serious games get semi-realistic; lighter games get toon3d. */
-export function getAvatarStyleForTemplate(templateId: string): "semi-realistic" | "toon3d" {
-  const t = getGameTemplate(templateId);
-  if (!t) return "semi-realistic";
-  return (t.category === "party" || t.category === "quiz" || t.category === "open")
-    ? "toon3d"
-    : "semi-realistic";
+/** Avatar style auto-selected by game category. All templates now use "valorant" by default. */
+export function getAvatarStyleForTemplate(_templateId: string): "valorant" | "semi-realistic" | "toon3d" {
+  return "valorant";
 }

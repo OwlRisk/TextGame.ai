@@ -12,13 +12,14 @@
  */
 
 export const VALID_STYLES = [
+  'valorant',
   'semi-realistic',
   'toon3d',
 ] as const;
 
 export type AvatarStyle = (typeof VALID_STYLES)[number];
 
-export const DEFAULT_STYLE: AvatarStyle = 'semi-realistic';
+export const DEFAULT_STYLE: AvatarStyle = 'valorant';
 
 export const AVATAR_STYLE_STORAGE_KEY = 'avatar_style_pack';
 
