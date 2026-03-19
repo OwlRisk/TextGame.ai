@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
-    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini';
+    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
     const usage = completion.usage;
     const promptTokens = usage?.prompt_tokens ?? 0;
     const completionTokens = usage?.completion_tokens ?? 0;
-    const model = (completion as { model?: string }).model ?? 'gpt-5.4-mini';
+    const model = (completion as { model?: string }).model ?? 'gpt-5.3-chat-latest';
     const coinsToDeduct = gptUsageToCoins(model, promptTokens, completionTokens);
     await deductTokens(
       user.id,
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
 
     let message = error.message || 'Failed to get AI response';
     if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
-      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.4-mini in .env if the default model fails.';
+      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.3-chat-latest in .env if the default model fails.';
     }
     return NextResponse.json(
       { error: message },

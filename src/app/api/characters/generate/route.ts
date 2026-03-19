@@ -40,7 +40,7 @@ Randomness seed: ${seed}`;
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.4-mini",
+      model: "gpt-5.3-chat-latest",
       messages: [
         { role: "system", content: "You generate creative game characters. Return only valid JSON arrays." },
         { role: "user", content: prompt },

@@ -72,7 +72,7 @@ IMPORTANT: Be creative with the name — avoid reusing common/obvious choices. E
 Randomness seed: ${seed}`;
 
     const estimatedTokens = estimateTokensFromText(systemPrompt) + estimateTokensFromText(userPrompt) + 500;
-    const estimatedCoins = estimatedTokensToCoins(estimatedTokens, 'gpt-5.4-mini');
+    const estimatedCoins = estimatedTokensToCoins(estimatedTokens, 'gpt-5.3-chat-latest');
     if (!(await hasTokens(user.id, estimatedCoins))) {
       return NextResponse.json(
         {
@@ -87,7 +87,7 @@ Randomness seed: ${seed}`;
     logger.log(`[Generate Host] Generating host for game: ${gameName || "Unknown"}`);
 
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini',
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest',
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -104,7 +104,7 @@ Randomness seed: ${seed}`;
     const usage = completion.usage;
     const promptTokens = usage?.prompt_tokens ?? 0;
     const completionTokens = usage?.completion_tokens ?? 0;
-    const model = (completion as { model?: string }).model ?? 'gpt-5.4-mini';
+    const model = (completion as { model?: string }).model ?? 'gpt-5.3-chat-latest';
     const coinsToDeduct = gptUsageToCoins(model, promptTokens, completionTokens);
     await deductTokens(
       user.id,

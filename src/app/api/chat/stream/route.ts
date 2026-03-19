@@ -375,7 +375,7 @@ export async function POST(request: NextRequest) {
     }
     let message = error.message || 'Failed to stream AI response';
     if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
-      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.4-mini in .env if the default model fails.';
+      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.3-chat-latest in .env if the default model fails.';
     }
     return new Response(
       JSON.stringify({ error: message }),

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       playerCount = 0;
     }
 
-    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini';
+    const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';
     const minCoinsNeeded = estimatedTokensToCoins(1500, chatModel);
     if (!(await hasTokens(user.id, minCoinsNeeded))) {
       return NextResponse.json(
@@ -75,7 +75,7 @@ ${rules || 'No specific rules provided.'}
 Consider: game balance, role distribution, pacing. Output ONLY a single number between ${minAI} and ${maxAI}, nothing else.`;
 
       decideCompletion = await openai.chat.completions.create({
-        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini',
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest',
         messages: [
           { role: 'system', content: 'You decide optimal player count for games. Output only a number.' },
           { role: 'user', content: decideCountPrompt }
@@ -150,7 +150,7 @@ Top-level structure: { "players": [ ... ], "civilianWord": "...", "undercoverWor
 Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleName"' : ''} }`}`;
 
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini',
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest',
       messages: [
         {
           role: 'system',

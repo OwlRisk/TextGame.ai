@@ -173,7 +173,7 @@ export async function generateDynamicTraits(name: string, role?: string): Promis
       if (!apiKey) throw new Error('OPENAI_API_KEY not set');
       const openai = new OpenAI({ apiKey });
       const completion = await openai.chat.completions.create({
-        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini',
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest',
         max_tokens: 300,
         temperature: 1.1,
         response_format: { type: 'json_object' },

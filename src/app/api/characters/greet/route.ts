@@ -28,7 +28,7 @@ Say a single short greeting (1 sentence, under 15 words) introducing yourself in
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.4-mini",
+      model: "gpt-5.3-chat-latest",
       messages: [
         { role: "system", content: "Output ONLY the greeting line. No quotes, no stage directions, no asterisks." },
         { role: "user", content: prompt },
