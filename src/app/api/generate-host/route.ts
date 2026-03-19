@@ -92,7 +92,6 @@ Randomness seed: ${seed}`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 1.0, // High creativity for diverse hosts
       max_completion_tokens: 500,
     });
 

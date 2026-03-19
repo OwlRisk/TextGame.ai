@@ -128,6 +128,13 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   /** Channels (game rooms) decided by the GM via <CONFIG_CHANNELS>. null = use template default. */
   const [gmChannels, setGmChannels] = useState<{ id: string; name: string; roomType?: ChannelRoomType }[] | null>(null);
 
+  // Default player count to max when template is selected
+  useEffect(() => {
+    if (selectedTemplate && selectedTemplate.maxPlayers > 1) {
+      setPlayerCount(selectedTemplate.maxPlayers - 1);
+    }
+  }, [selectedTemplate]);
+
   // Host personality - try last selected, then default
   const [selectedHostId, setSelectedHostId] = useState<string>(() => {
     const lastHostId = getLastSelectedHostId();

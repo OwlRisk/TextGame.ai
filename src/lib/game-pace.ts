@@ -60,7 +60,7 @@ const TYPEWRITER_CHARS_PER_TICK = 3;
 export type StreamMsgMeta = { senderId: string; senderName: string; senderAvatar: string; isAI: boolean };
 
 /**
- * Display text with a typewriter animation via addStreamingMessage + updateStreamingMessage.
+ * Display text immediately via addStreamingMessage + updateStreamingMessage.
  * Returns a promise that resolves with the message ID when the full text is shown.
  */
 export function typewriterReveal(
@@ -69,28 +69,11 @@ export function typewriterReveal(
   updateStreamFn: (messageId: string, content: string, isComplete?: boolean) => void,
   msgMeta: StreamMsgMeta,
   channelId?: string,
-  charsPerTick: number = TYPEWRITER_CHARS_PER_TICK,
-  cancelled?: () => boolean,
+  _charsPerTick?: number,
+  _cancelled?: () => boolean,
 ): Promise<string> {
-  return new Promise((resolve) => {
-    let idx = Math.min(charsPerTick, text.length);
-    const done = idx >= text.length;
-    const messageId = addStreamFn(msgMeta, channelId, text.slice(0, idx));
-    if (!messageId) { resolve(""); return; }
-    if (done) { updateStreamFn(messageId, text, true); resolve(messageId); return; }
-    let rafId = requestAnimationFrame(step);
-    function step() {
-      if (cancelled?.()) {
-        cancelAnimationFrame(rafId);
-        updateStreamFn(messageId, text, true);
-        resolve(messageId);
-        return;
-      }
-      idx = Math.min(idx + charsPerTick, text.length);
-      const finished = idx >= text.length;
-      updateStreamFn(messageId, text.slice(0, idx), finished);
-      if (finished) { resolve(messageId); return; }
-      rafId = requestAnimationFrame(step);
-    }
-  });
+  const messageId = addStreamFn(msgMeta, channelId, text);
+  if (!messageId) return Promise.resolve("");
+  updateStreamFn(messageId, text, true);
+  return Promise.resolve(messageId);
 }

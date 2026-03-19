@@ -167,7 +167,6 @@ export async function POST(request: NextRequest) {
           { role: 'user', content: userPrompt },
         ],
         max_completion_tokens: 150,
-        temperature: 0.8,
       });
       aiConcept = completion.choices?.[0]?.message?.content?.trim() || '';
     } catch (_conceptErr) {

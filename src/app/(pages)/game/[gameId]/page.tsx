@@ -157,15 +157,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setMobileRightDrawer(false);
   }, [pathname]);
 
-  // ─── Auto-start: kick off immediately when owner enters lobby ────────────
-  const autoStartedRef = useRef(false);
-  useEffect(() => {
-    if (gamePhase === "lobby" && isOwner && currentGame && !autoStartedRef.current) {
-      autoStartedRef.current = true;
-      startGame();
-    }
-  }, [gamePhase, isOwner, currentGame, startGame]);
-
   // ─── Analytics & lifecycle ────────────────────────────────────────────────
   const gameEnteredAtRef = useRef(Date.now());
   const gamePhaseRef = useRef(gamePhase);

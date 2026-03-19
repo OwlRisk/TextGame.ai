@@ -84,7 +84,6 @@ Suggest 1-3 quick replies for "${playerName}" to send next:`;
         { role: 'user', content: userPrompt },
       ],
       max_completion_tokens: 150,
-      temperature: 0.6,
     }, { signal: ac.signal });
     clearTimeout(timer);
 

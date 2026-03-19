@@ -80,7 +80,6 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
           { role: 'system', content: 'You decide optimal player count for games. Output only a number.' },
           { role: 'user', content: decideCountPrompt }
         ],
-        temperature: 0.7,
         max_completion_tokens: 10,
       });
       const countStr = (decideCompletion.choices[0]?.message?.content || '').trim().replace(/\D/g, '');
@@ -161,7 +160,6 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
           content: prompt
         }
       ],
-      temperature: 1.0,
       max_completion_tokens: 1200,
     });
 

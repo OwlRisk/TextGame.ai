@@ -45,7 +45,6 @@ Randomness seed: ${seed}`;
         { role: "system", content: "You generate creative game characters. Return only valid JSON arrays." },
         { role: "user", content: prompt },
       ],
-      temperature: 1.0,
       max_tokens: 1500,
     });
 

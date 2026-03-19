@@ -33,7 +33,6 @@ Say a single short greeting (1 sentence, under 15 words) introducing yourself in
         { role: "system", content: "Output ONLY the greeting line. No quotes, no stage directions, no asterisks." },
         { role: "user", content: prompt },
       ],
-      temperature: 1.0,
       max_tokens: 60,
     });
 

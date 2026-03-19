@@ -70,7 +70,6 @@ Return JSON with a "sections" array. Always include id "rules" and "progress"; a
         { role: 'user', content: userPrompt },
       ],
       max_completion_tokens: 300,
-      temperature: 0.4,
     });
 
     const raw = completion.choices?.[0]?.message?.content?.trim() || '';

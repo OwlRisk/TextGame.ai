@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
         { role: "system", content: INTRO_SYSTEM },
         ...recent,
       ],
-      temperature: 0.7,
       max_completion_tokens: 512,
     });
 

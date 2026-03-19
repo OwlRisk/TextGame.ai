@@ -52,7 +52,6 @@ Output only the suggestions, one per line. No numbering, no quotes, no extra tex
         { role: 'user', content: userPrompt },
       ],
       max_completion_tokens: 200,
-      temperature: 0.7,
     });
 
     const text = completion.choices?.[0]?.message?.content?.trim() || '';

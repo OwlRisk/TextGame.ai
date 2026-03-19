@@ -264,7 +264,6 @@ export async function POST(request: NextRequest) {
     const completion = await openai.chat.completions.create({
       model: chatModel,
       messages: formattedMessages,
-      temperature: 0.8,
       max_completion_tokens: maxTokens,
       stream: false,
     });

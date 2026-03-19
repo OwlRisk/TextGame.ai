@@ -224,7 +224,6 @@ After your spoken reply (and only after), append [MY_NOTES] if you have somethin
         { role: 'user', content: userContent },
       ],
       max_completion_tokens: PLAYER_SPEAK_HARD_LIMIT_TOKENS,
-      temperature: 0.85,
     }, { signal: ac.signal });
     clearTimeout(timer);
 

@@ -76,7 +76,6 @@ Rules:
         { role: "user", content: userPrompt },
       ],
       max_completion_tokens: 280,
-      temperature: 0.6,
     }, { signal: ac.signal });
     clearTimeout(timer);
 
