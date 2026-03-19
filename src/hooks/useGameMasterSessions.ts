@@ -220,7 +220,8 @@ export function useGameMasterSessions({
       setMessages(migratedMessages);
       setConversationState(session.conversationState);
       setSelectedTemplate(session.selectedTemplate);
-      setPlayerCount(session.playerCount);
+      const maxAI = session.selectedTemplate && session.selectedTemplate.maxPlayers > 1 ? session.selectedTemplate.maxPlayers - 1 : 0;
+      setPlayerCount(session.playerCount || maxAI);
       setCustomRules(session.customRules);
       setGameName(session.gameName);
       setSelectedHostId(session.selectedHostId);
@@ -257,7 +258,7 @@ export function useGameMasterSessions({
       messages: [staticWelcomeMessage],
       conversationState: "greeting",
       selectedTemplate: null,
-      playerCount: 6,
+      playerCount: 0,
       customRules: "",
       gameName: "",
       selectedHostId: defaultHostId,
@@ -272,7 +273,7 @@ export function useGameMasterSessions({
     setConversationState("greeting");
     setIsGMTyping(false);
     setSelectedTemplate(null);
-    setPlayerCount(6);
+    setPlayerCount(0);
     setCustomRules("");
     setGameName("");
     setSelectedHostId(defaultHostId);
@@ -324,7 +325,7 @@ export function useGameMasterSessions({
     (preset: DiscoverPreset) => {
       const resolvedTemplate =
         GAME_TEMPLATES.find((t) => t.id === (preset.templateId || "custom")) ?? null;
-      const nextPlayerCount = preset.playerCount ?? 0;
+      const nextPlayerCount = preset.playerCount ?? (resolvedTemplate && resolvedTemplate.maxPlayers > 1 ? resolvedTemplate.maxPlayers - 1 : 0);
       const nextRules = preset.rules?.trim() || resolvedTemplate?.defaultRules || "";
       const nextGameName = preset.name?.trim() || "";
       const recommendedHost = getDefaultHostForTemplate(resolvedTemplate?.id ?? null);
