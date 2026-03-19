@@ -114,9 +114,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
         setSelectedHostId(recommendedHost.id);
       }
       // Default to max players (maxPlayers - 1 AI, leaving 1 seat for the human)
-      if (selectedTemplate.maxPlayers > 1) {
-        setPlayerCount(selectedTemplate.maxPlayers - 1);
-      }
+      setPlayerCount(selectedTemplate.maxPlayers > 1 ? selectedTemplate.maxPlayers - 1 : selectedTemplate.recommendedAICount);
     }
   }, [selectedTemplate]);
   

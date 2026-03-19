@@ -842,7 +842,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       // Otherwise, fetch the whole batch from the pool.
       toast.loading("Setting up players...", { id: startToastId });
       try {
-        const needCount = finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers.length : (playerCount || selectedTemplate?.recommendedAICount || 4);
+        const maxAI = selectedTemplate && selectedTemplate.maxPlayers > 1 ? selectedTemplate.maxPlayers - 1 : null;
+        const needCount = finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers.length : (playerCount || maxAI || selectedTemplate?.recommendedAICount || 4);
         const excludeNames = finalConfiguredPlayers.map((p) => p.name).join(",");
         const poolRes = await fetch(
           `/api/characters/pool?count=${needCount}&exclude=${encodeURIComponent(excludeNames)}&style=${encodeURIComponent(getAvatarStyleForTemplate(selectedTemplate?.id || "custom"))}`,
@@ -854,23 +855,21 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
           if (finalConfiguredPlayers.length > 0) {
             // Enrich LLM-configured players with pool avatars/voices, matched by index.
-            // Pool avatar always wins over any pre-existing avatar_url so the selected
-            // style pack is consistently applied to every player.
             finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => ({
               ...cp,
               avatar_url: poolChars[i]?.avatar_url ?? cp.avatar_url,
               voice_id: cp.voice_id ?? poolChars[i]?.voice_id,
               voice_sample_url: poolChars[i]?.voice_sample_url ?? (cp as any).voice_sample_url,
             }));
-          } else if (poolChars.length > 0) {
-            // No LLM config: use pool characters directly
+          } else if (poolChars.length >= needCount) {
+            // Pool has enough characters — use them directly
             finalConfiguredPlayers = poolChars;
             finalPlayerCount = poolChars.length;
             setConfiguredPlayers(poolChars);
             if (playerCount === 0) setPlayerCount(finalPlayerCount);
           } else {
-            // Pool empty — fall back to LLM generation
-            throw new Error("Pool empty");
+            // Pool doesn't have enough characters — fall back to LLM generation
+            throw new Error(`Pool only returned ${poolChars.length}/${needCount} characters`);
           }
         } else {
           throw new Error(`Pool API ${poolRes.status}`);
@@ -885,7 +884,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               headers: { 'Content-Type': 'application/json' },
               signal: abortCtrl.signal,
               body: JSON.stringify({
-                playerCount: playerCount || 0,
+                playerCount: playerCount || (selectedTemplate && selectedTemplate.maxPlayers > 1 ? selectedTemplate.maxPlayers - 1 : 0),
                 gameTemplate: selectedTemplate?.id || "custom",
                 rules: customRules,
                 minPlayers: selectedTemplate?.minPlayers ?? 2,
