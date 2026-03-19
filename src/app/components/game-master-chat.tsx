@@ -836,6 +836,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     try {
       let finalConfiguredPlayers = configuredPlayers;
       let finalPlayerCount = configuredPlayers.length > 0 ? configuredPlayers.length : playerCount;
+      let humanRole: string | undefined;
 
       // Always try to use the character pool (pre-built avatars + voices = faster start).
       // If the GM chat already provided configuredPlayers, enrich them with pool data.
@@ -867,6 +868,36 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             finalPlayerCount = poolChars.length;
             setConfiguredPlayers(poolChars);
             if (playerCount === 0) setPlayerCount(finalPlayerCount);
+
+            // Pool characters don't have roles — call generate-players for role assignment
+            if (selectedTemplate?.hasHiddenRoles) {
+              try {
+                const roleRes = await fetch('/api/generate-players', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  signal: abortCtrl.signal,
+                  body: JSON.stringify({
+                    playerCount: finalPlayerCount,
+                    gameTemplate: selectedTemplate?.id || "custom",
+                    rules: customRules,
+                    minPlayers: selectedTemplate?.minPlayers ?? 2,
+                    maxPlayers: selectedTemplate?.maxPlayers ?? 20,
+                  }),
+                });
+                if (roleRes.ok) {
+                  const roleData = await roleRes.json();
+                  if (roleData.humanRole) humanRole = roleData.humanRole;
+                  if (roleData.players) {
+                    finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => ({
+                      ...cp,
+                      role: roleData.players[i]?.role ?? cp.role,
+                    }));
+                  }
+                }
+              } catch (roleErr) {
+                console.warn('[Game Master] Role assignment failed, roles will be assigned by Host:', roleErr);
+              }
+            }
           } else {
             // Pool doesn't have enough characters — fall back to LLM generation
             throw new Error(`Pool only returned ${poolChars.length}/${needCount} characters`);
@@ -895,6 +926,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               const data = await response.json();
               finalConfiguredPlayers = data.players;
               finalPlayerCount = data.players?.length ?? (selectedTemplate ? Math.round((selectedTemplate.minPlayers + selectedTemplate.maxPlayers) / 2) - 1 : 6);
+              if (data.humanRole) humanRole = data.humanRole;
               setConfiguredPlayers(data.players);
               if (playerCount === 0) setPlayerCount(finalPlayerCount);
             } else {
@@ -954,6 +986,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         tone: "balanced",
         hideRolesInPlayerList: selectedTemplate?.hasHiddenRoles ?? false,
         configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
+        humanRole,
         generatedHost: generatedHostData || undefined,
         channels: (gmChannels && gmChannels.length > 0) ? gmChannels : defaultChannels,
       };
