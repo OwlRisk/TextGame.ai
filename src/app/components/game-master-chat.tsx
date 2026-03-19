@@ -890,7 +890,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   if (roleData.players) {
                     finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => ({
                       ...cp,
-                      role: roleData.players[i]?.role ?? cp.role,
+                      role: roleData.players[i]?.role ?? (cp as any).role,
                     }));
                   }
                 }
