@@ -603,6 +603,29 @@ export function useHostRound({
         humanReached = await runSpeakerQueueFn(sqCtx, currentQueue);
       }
 
+      if (tmpl === "20-questions" && gamePhase !== "ended") {
+        const tail = recentForNextRef.current.slice(-6);
+        const lastHostIdx = tail.map(m => m.senderName).lastIndexOf(gmName);
+        const questionAfterHost = tail.slice(lastHostIdx + 1).some(m => m.content.includes("?"));
+        if (questionAfterHost) {
+          const recentSummary = recentForNextRef.current.slice(-10)
+            .map((m) => `${m.senderName}: ${m.content}`).join("\n");
+          const answerResult = await callHostStream(
+            `[System: There are unanswered yes/no questions from players. You are the Thinker — answer each one now (Q<n>: Yes/No/Sometimes). Then pick exactly ONE Guesser via NEXT_SPEAKER.]\n\nRecent messages:\n${recentSummary}`,
+            channelId
+          );
+          if (answerResult.hostContent) {
+            recentForNextRef.current = [
+              ...recentForNextRef.current,
+              { senderName: gmName, content: answerResult.hostContent },
+            ].slice(-30);
+          }
+          if (answerResult.speakerQueue.length > 0) {
+            await runSpeakerQueueFn(sqCtx, answerResult.speakerQueue);
+          }
+        }
+      }
+
       if (!humanReached) setCurrentSpeakerId((id) => (id === userId ? id : null));
     } catch (error) {
       console.error("Error getting AI response:", error);

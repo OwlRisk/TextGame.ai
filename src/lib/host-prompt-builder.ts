@@ -105,7 +105,7 @@ Leave the PUBLIC MESSAGE section EMPTY (nothing before ---) and output only dire
 - The message doesn't require any game-mechanical action from you
 - You already said the same thing in a recent message — do NOT repeat yourself
 - Players are already chasing someone to respond — let them handle it, do NOT pile on
-- A question is already in play and players are waiting for the answer — stay silent
+${gameTemplate === '20-questions' ? '- (EXCEPTION: In 20 Questions, you ARE the Thinker — you MUST answer every yes/no question. NEVER stay silent when a question is asked.)' : '- A question is already in play and players are waiting for the answer — stay silent'}
 - The situation is already resolved from a prior message of yours — do NOT re-confirm
 
 **ANTI-REPETITION (HARD RULE — SCAN BEFORE EVERY REPLY):**
