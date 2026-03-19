@@ -90,14 +90,14 @@ export function SettingsContent() {
   const isPaid = currentPlan !== 'free';
 
   const freeModels = [
-    { value: 'gpt-5.3-chat-latest', label: 'GPT-5.4 Mini', description: 'Default model' },
-    { value: 'gpt-5.4-nano', label: 'GPT-5.4 Nano', description: 'Fast & efficient' },
-    { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', description: 'Reliable & quick' },
+    { value: 'gpt-5.3-chat-latest', label: 'GPT-5.3 Chat', description: 'Default · Most human-like' },
+    { value: 'gpt-5.2-chat-latest', label: 'GPT-5.2 Chat', description: 'Natural & reliable' },
+    { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', description: 'Fast & lightweight' },
   ];
   const paidModels = [
     { value: 'gpt-5.4', label: 'GPT-5.4', description: 'Frontier · Highest reasoning' },
-    { value: 'gpt-5.3-chat-latest', label: 'GPT-5.4 Mini', description: 'Default model' },
-    { value: 'gpt-5.4-nano', label: 'GPT-5.4 Nano', description: 'Fast & efficient' },
+    { value: 'gpt-5.3-chat-latest', label: 'GPT-5.3 Chat', description: 'Default · Most human-like' },
+    { value: 'gpt-5.2-chat-latest', label: 'GPT-5.2 Chat', description: 'Natural & reliable' },
     { value: 'gpt-4.1', label: 'GPT-4.1', description: 'Fast & capable' },
     { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', description: 'Balanced & efficient' },
   ];
