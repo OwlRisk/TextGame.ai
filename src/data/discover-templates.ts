@@ -258,43 +258,7 @@ MAFIA COUNT: 1–2 for 6–8 players; 2–3 for 9–11; 3–4 for 12–15.
 WIN CONDITIONS:
 - Town wins: All Mafia are eliminated.
 - Mafia wins: Mafia equal or outnumber remaining Town members.`,
-  },
-  {
-    id: "secret-hitler",
-    name: "Secret Hitler",
-    cover: "/games/game-cover-secret-hitler.webp",
-    description: "Political intrigue in 1930s Germany. Liberals vs Fascists. Identify Hitler before it's too late.",
-    icon: "🎩",
-    category: "Social Deduction",
-    tags: ["Political", "Deception", "Team-based"],
-    players: "5-10",
-    duration: "30-45 min",
-    style: "Strategic",
-    color: "from-gray-700 to-red-800",
-    rules: `SETTING: 1930s Germany. Liberals and Fascists battle for political control. One Fascist is secretly Hitler — if Hitler becomes Chancellor after enough Fascist policies pass, all is lost.
-
-ROLES:
-- Liberal: No special knowledge. Pass liberal policies and expose Fascists to win.
-- Fascist: Know each other and Hitler. Protect Hitler; enact Fascist policies.
-- Hitler: In 5–6 player games, knows other Fascists. In 7+ player games, knows no one. Win by being elected Chancellor after 3 Fascist policies are enacted.
-
-PHASES:
-1. Presidential Candidate nominates a Chancellor.
-2. All players vote Ja!/Nein! — majority decides.
-3. If approved: President draws 3 policy tiles, discards 1, passes 2 to Chancellor. Chancellor discards 1 and enacts the remaining policy.
-4. If rejected: Presidency passes clockwise. After 3 consecutive rejections, the top policy is auto-enacted.
-
-SPECIAL PRESIDENTIAL POWERS (unlock as Fascist policies accumulate):
-- Investigate Loyalty: Examine one player's party card.
-- Special Election: Choose the next Presidential Candidate.
-- Policy Peek: View the top 3 policy tiles.
-- Execution: Kill one player. If Hitler is killed, Liberals win immediately.
-
-WIN CONDITIONS:
-- Liberals win: 5 Liberal policies enacted, OR Hitler is executed.
-- Fascists win: 6 Fascist policies enacted, OR Hitler is elected Chancellor after 3+ Fascist policies.`,
-  },
-  {
+  },  {
     id: "spyfall",
     name: "Spyfall",
     cover: "/games/game-cover-spyfall.webp",
@@ -324,82 +288,11 @@ TIMING: A round lasts approximately 8–10 minutes. After time expires, players 
 WIN CONDITIONS:
 - Non-Spy players win: They correctly vote out the Spy, AND the Spy does not correctly name the location.
 - Spy wins: Survives until time runs out, OR correctly names the secret location when accused.`,
-  },
-  {
-    id: "resistance",
-    name: "The Resistance",
-    cover: "/games/game-cover-resistance.webp",
-    description: "Rebels fight against the Empire. Complete missions while spies sabotage from within.",
-    icon: "🤐",
-    category: "Social Deduction",
-    tags: ["Team-based", "Missions", "Fast-paced"],
-    players: "5-10",
-    duration: "30-40 min",
-    style: "Strategic",
-    color: "from-indigo-700 to-purple-700",
-    rules: `SETTING: Rebel operatives fight to complete critical missions against a tyrannical Empire — but Imperial Spies have infiltrated the team.
-
-ROLES:
-- Resistance: Loyal operatives. Do not know who the Spies are. Must complete 3 missions to win.
-- Spy: Know each other's identities. Sabotage missions from within while appearing loyal.
-
-PHASES (5 mission rounds):
-1. Leader proposes a mission team (size varies by round and player count).
-2. All players vote Approve/Reject. Majority decides.
-   - If rejected: leadership passes clockwise. After 5 consecutive rejections, Spies win automatically.
-3. If approved: each team member secretly plays Success or Fail.
-   - Resistance members MUST play Success.
-   - Spies may choose either.
-   - Most rounds: 1 Fail = failed mission. Round 4 (7+ players): requires 2 Fails.
-4. Host announces result — not who voted what.
-
-TEAM SIZES by player count:
-- 5 players: 2, 3, 2, 3, 3
-- 6 players: 2, 3, 4, 3, 4
-- 7–10 players: Host adjusts accordingly.
-
-WIN CONDITIONS:
-- Resistance wins: 3 successful missions completed.
-- Spies win: 3 missions sabotaged, OR 5 consecutive team proposals rejected.`,
-  },
-];
+  },];
 
 // ── Party Games ─────────────────────────────────────────────────────────────
 
-export const PARTY_GAMES: GameTemplate[] = [
-  {
-    id: "who-most-likely",
-    name: "Who's Most Likely",
-    cover: "/games/game-cover-who-most-likely.webp",
-    description: "Vote on who's most likely to do hilarious scenarios. Perfect icebreaker!",
-    icon: "🤔",
-    category: "Party",
-    tags: ["Icebreaker", "Voting", "Funny"],
-    players: "3-12",
-    duration: "10-20 min",
-    style: "Casual",
-    color: "from-pink-600 to-rose-600",
-    rules: `SETTING: A lighthearted group game where players vote on who among them is most likely to do something outrageous, embarrassing, or hilarious.
-
-GAMEPLAY:
-1. The Host reads a "Most Likely to…" prompt (e.g., "Most likely to accidentally send a text to the wrong person").
-2. All players simultaneously name or point to the person they think fits best — including themselves.
-3. The player with the most votes receives a point (or a drink in party mode).
-4. If there is a tie, all tied players share the consequence.
-5. The Host generates a fresh prompt each round.
-
-VOTING RULES:
-- You may vote for yourself.
-- Players must commit to their vote before seeing others' choices.
-- Discussion happens after the vote is revealed, not before.
-
-CUSTOMIZATION:
-- Theme prompts: keep them to a specific theme (travel disasters, work awkwardness, childhood memories).
-- Challenge mode: the voted player must confirm or deny the scenario is true.
-
-No hard win condition — the goal is laughter. Optional: play to a point total, or just play until the group is done.`,
-  },
-  {
+export const PARTY_GAMES: GameTemplate[] = [  {
     id: "20-questions",
     name: "20 Questions",
     cover: "/games/game-cover-20-questions.webp",
@@ -476,44 +369,7 @@ VARIANTS:
 - Challenge mode: after the reveal, the active player must tell the full story behind one of their truths.
 
 WIN CONDITIONS: Most points after all players have taken one or more turns wins. Or play cooperatively for fun — no winner needed.`,
-  },
-  {
-    id: "two-rooms",
-    name: "Two Rooms and a Boom",
-    cover: "/games/game-cover-two-rooms.webp",
-    description: "Players split into two rooms. The President must survive, the Bomber must get close.",
-    icon: "💣",
-    category: "Party",
-    tags: ["Chaotic", "Negotiation", "Team-based"],
-    players: "6-20",
-    duration: "20-30 min",
-    style: "Strategic",
-    color: "from-red-700 to-orange-700",
-    rules: `SETTING: Players split into two groups across two rooms. A bomb is about to go off — one team must keep the President and Bomber apart; the other must bring them together.
-
-TEAMS:
-- Blue Team: Protect the President. The Bomber must NOT end up in the President's room.
-- Red Team: Get the Bomber into the same room as the President by the final round.
-
-KEY ROLES:
-- President (Blue): The most important Blue player. Must stay away from the Bomber.
-- Bomber (Red): Must end up in the President's room at the end of the game.
-- All other roles: Supporting characters with unique special abilities on each team.
-
-GAMEPLAY (3 rounds):
-1. Players are split into two rooms and secretly assigned roles.
-2. Each round, rooms exchange a set number of "hostages" — players who physically move to the other room.
-   - Round 1: Each room sends 1 hostage.
-   - Round 2: Each room sends 2 hostages.
-   - Round 3 (Final): Each room sends 3 hostages. No movement after this.
-3. Teams use negotiation, persuasion, and deception to control who moves where.
-4. Players may claim or deny roles to influence trades — but lying is allowed.
-
-WIN CONDITIONS:
-- Blue wins: The President and Bomber are in different rooms at the end of Round 3.
-- Red wins: The President and Bomber are in the same room at the end of Round 3.`,
-  },
-];
+  },];
 
 // ── Mystery Games ───────────────────────────────────────────────────────────
 
@@ -556,43 +412,7 @@ CLUE TYPES:
 WIN CONDITIONS:
 - Detectives win: At least one correct full accusation (all three elements must match).
 - Culprit wins: No detective correctly names all three elements.`,
-  },
-  {
-    id: "clue",
-    name: "Clue: Mansion Murder",
-    cover: "/games/game-cover-clue.webp",
-    description: "Classic whodunit. Was it Colonel Mustard in the Library with the Candlestick?",
-    icon: "🔪",
-    category: "Mystery",
-    tags: ["Classic", "Deduction", "Investigation"],
-    players: "3-6",
-    duration: "30-45 min",
-    style: "Casual",
-    color: "from-purple-700 to-indigo-700",
-    rules: `SETTING: A murder has been committed in the mansion. Deduce the Suspect, Room, and Weapon — before anyone else does.
-
-SETUP:
-- The Host secretly draws one Suspect card, one Room card, and one Weapon card. These form the solution.
-- All remaining cards are shuffled and dealt to players as private clue cards.
-
-SUSPECTS: Colonel Mustard, Miss Scarlet, Reverend Green, Mrs. Peacock, Dr. Orchid, Professor Plum
-ROOMS: Kitchen, Ballroom, Conservatory, Billiard Room, Library, Study, Hall, Lounge, Dining Room
-WEAPONS: Candlestick, Knife, Lead Pipe, Revolver, Rope, Wrench
-
-GAMEPLAY:
-1. On your turn, move to a room and make a Suggestion: name a Suspect, the current Room, and a Weapon.
-2. The next player clockwise checks their cards — if they hold any of the three named cards, they must privately show you one.
-3. If they hold none, the next player must check, and so on around the table.
-4. Record what you learn. Use elimination to narrow down the solution.
-5. When confident, make a formal Accusation: name Suspect + Room + Weapon.
-   - If all three match the hidden solution: you win.
-   - If wrong: you are eliminated but continue showing cards to others.
-
-WIN CONDITIONS:
-- First player to make a correct Accusation wins.
-- If all players are eliminated with wrong accusations, the Host reveals the solution.`,
-  },
-];
+  },];
 
 // ── Roleplay Games ──────────────────────────────────────────────────────────
 
@@ -629,43 +449,7 @@ SESSION FLOW:
 5. You may ask follow-up questions, request a deeper look at any card, or request a new spread.
 
 TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflection and perspective — not literal prediction. The reading respects your agency and free will.`,
-  },
-  {
-    id: "improv-comedy",
-    name: "Improv Comedy",
-    cover: "/games/game-cover-improv.webp",
-    description: "Take on random scenarios and characters. Make your friends laugh with spontaneous creativity!",
-    icon: "🎭",
-    category: "Creative",
-    tags: ["Comedy", "Roleplay", "Creative"],
-    players: "3-10",
-    duration: "20-40 min",
-    style: "Casual",
-    color: "from-fuchsia-600 to-pink-600",
-    rules: `SETTING: A spontaneous comedy performance. Players react in real time to random scenarios, characters, and curveballs thrown by the Host.
-
-CORE RULE — "Yes, And": Always accept what your scene partner establishes, and add to it. Never deny, block, or ignore what has already been said.
-
-GAMEPLAY:
-1. The Host sets a scene: announces a location, a starting situation, and optional character constraints or quirks.
-2. Players respond in character, building on what others say and do.
-3. The Host may interrupt at any time to introduce a twist:
-   - A new character enters the scene
-   - The setting suddenly changes
-   - A surprising event occurs
-   - A player must switch character mid-scene
-4. After each scene, the group votes for the funniest moment or line.
-5. Scenes rotate — each new scene gets a fresh setup.
-
-SCENE FORMATS:
-- Duo: Two players perform; others react and spectate.
-- Ensemble: All players share the scene.
-- Hot Seat: One player must justify an absurd premise while others question them.
-- Freeze: Any player may call "Freeze!" — the frozen player is replaced and the scene continues differently.
-
-No formal win condition. The goal is spontaneous creativity and shared laughter.`,
-  },
-  {
+  },  {
     id: "storyteller",
     name: "Epic Storyteller",
     cover: "/games/game-cover-storyteller.webp",
@@ -829,112 +613,7 @@ WIN CONDITIONS:
 
 // ── Extra Games ─────────────────────────────────────────────────────────────
 
-export const EXTRA_GAMES: GameTemplate[] = [
-  {
-    id: "vampire-court",
-    name: "Vampire Court",
-    cover: "/games/game-cover-vampire-court.webp",
-    description: "A gothic social deduction game. One vampire hides among nobles — vote to banish the threat before it's too late.",
-    icon: "🧛",
-    category: "Social Deduction",
-    tags: ["Gothic", "Hidden Roles", "Night/Day Cycle"],
-    players: "4-8",
-    duration: "25-35 min",
-    style: "Strategic",
-    color: "from-violet-900 to-purple-900",
-    rules: `SETTING: A lavish masquerade ball in a gothic royal court. One or more guests are Vampires. By night they feed; by day the court votes to banish the threat.
-
-OBJECTIVE: Nobles eliminate all Vampires before they gain equal footing. Vampires survive long enough to claim the court.
-
-PHASES:
-1. Night — The Vampire(s) secretly choose one Noble to eliminate.
-2. Morning — Host announces who was found drained overnight.
-3. Day — The court convenes. All living players debate, gossip, and make accusations. Anyone may claim any title.
-4. Vote — Majority vote banishes one suspect. Their true identity is then revealed.
-5. Repeat.
-
-ROLES:
-- Noble: An innocent courtier. Use observation and alliances to identify the Vampire among you.
-- Vampire: Feed each night to survive. Blend into court society by day. Deflect suspicion with charm.
-- Van Helsing (optional): Once per game, may secretly investigate one player's true nature.
-- Thrall (optional): A Noble secretly loyal to the Vampire. Votes to protect them; wins alongside the Vampire.
-
-WIN CONDITIONS:
-- Nobles win: All Vampires are banished from court.
-- Vampires win: Vampires equal or outnumber the remaining Nobles.`,
-  },
-  {
-    id: "space-mutiny",
-    name: "Space Mutiny",
-    cover: "/games/game-cover-space-mutiny.webp",
-    description: "A starship is 72 hours from Earth. One crew member is a saboteur. Complete repairs before it's too late.",
-    icon: "🚀",
-    category: "Social Deduction",
-    tags: ["Sci-Fi", "Hidden Traitor", "Missions"],
-    players: "3-6",
-    duration: "20-30 min",
-    style: "Strategic",
-    color: "from-slate-700 to-blue-900",
-    rules: `SETTING: A starship is 72 hours from Earth. One crew member has been compromised by an enemy agent. Complete critical ship repairs before the Saboteur causes catastrophic failure.
-
-ROLES:
-- Crew Member: Loyal to the mission. Nominate teams, complete repairs, identify the Saboteur through observation and deduction.
-- Saboteur: Secretly vote to fail repair missions when included on the team. Avoid being ejected.
-
-PHASES:
-1. Mission Briefing: The current Commander announces a repair task and nominates a team (size varies by round).
-2. Team Vote: All crew vote to Approve or Reject the proposed team. Majority decides.
-3. Repair Mission: Selected crew secretly vote Mission Success or Sabotage.
-   - Crew members MUST vote Success.
-   - The Saboteur may choose either.
-   - Even 1 Sabotage vote fails the mission.
-4. Debrief: Result announced (not individual votes). Crew may discuss and accuse.
-5. Emergency Vote: Any player may call an emergency vote to eject a suspect. Ejected player's role is revealed.
-
-MISSION TEAM SIZES (per round):
-- 4 players: 2 / 2 / 3 / 3 / 3
-- 5 players: 2 / 3 / 2 / 3 / 3
-- 6 players: 2 / 3 / 4 / 3 / 4
-
-WIN CONDITIONS:
-- Crew wins: 3 successful repair missions completed.
-- Saboteur wins: 3 missions sabotaged, OR the Saboteur is the last player remaining.`,
-  },
-  {
-    id: "kingdom-intrigue",
-    name: "Kingdom Intrigue",
-    cover: "/games/game-cover-kingdom-intrigue.webp",
-    description: "The king is dying and every noble is scheming. Forge alliances, spread rumors, and outwit rivals to claim the crown.",
-    icon: "🏰",
-    category: "Social Deduction",
-    tags: ["Medieval", "Strategy", "Political"],
-    players: "5-10",
-    duration: "30-45 min",
-    style: "Strategic",
-    color: "from-amber-800 to-yellow-900",
-    rules: `SETTING: The aging king has no heir. Every noble in court is scheming — through whispers, alliances, and betrayal — to claim the throne.
-
-SETUP:
-- Each player is assigned a Noble character with a secret personal agenda (e.g., "Become Chancellor," "Expose the traitor in House Varen," "Forge alliances with two other Houses").
-- All players begin with 3 Influence points.
-
-ACTIONS (each round, each player chooses one):
-- Forge Alliance: Privately offer an alliance to another player. If accepted, both gain 1 Influence.
-- Spread Rumor: Publicly accuse another player of treachery. If 2 others agree, that player loses 1 Influence.
-- Leverage Favor: Spend 2 Influence to force another player to partially reveal their agenda.
-- Seek Audience: Gain 1 Influence directly from the Crown.
-- Betray Ally: Break an existing alliance to immediately gain 2 Influence — but your reputation takes a hit.
-
-INFLUENCE: The currency of power. Reaching 0 means exile from court and elimination.
-
-COURT EVENTS: Each round, the Host announces a political event (e.g., "A foreign dignitary arrives," "The king's advisor is found dead") that shifts the power balance.
-
-WIN CONDITIONS:
-- The game ends after 6 rounds or when only 2 Nobles remain.
-- The Noble with the most Influence claims the throne and wins.
-- Ties broken by: most completed secret agendas → most active alliances → fewest betrayals.`,
-  },
-];
+export const EXTRA_GAMES: GameTemplate[] = [];
 
 // ── Aggregated & Derived ────────────────────────────────────────────────────
 

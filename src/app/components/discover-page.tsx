@@ -149,7 +149,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             Discover <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Games</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
-            20+ AI-powered templates — or create your own. Pick one and start playing in seconds.
+            AI-powered game templates — or create your own. Pick one and start playing in seconds.
           </p>
           <Link href="/discover">
             <Button variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white font-bold">

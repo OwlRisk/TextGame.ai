@@ -57,7 +57,35 @@ const STYLE_PROMPTS = {
   'semi-realistic': (name, gender, personality, background) => {
     const gStr = gender === 'female' ? 'Woman' : gender === 'male' ? 'Man' : 'Person';
     const traits = [personality, background].filter(Boolean).join(' ').slice(0, 150);
-    return `Semi-realistic digital painting, game concept art style inspired by Arcane and western RPG art. Portrait of ${gStr}: ${traits}. Close-up bust portrait, face and shoulders filling the upper two-thirds of the frame, both eyes clearly shown, one person only. Painterly brushstrokes, dramatic warm side lighting, rich color depth, atmospheric tavern or study background with soft bokeh. No text, no watermark, no borders. Suitable for all ages.`;
+    const bgs = [
+      'atmospheric tavern interior with warm candlelight',
+      'dimly lit stone corridor with flickering torches',
+      'moonlit forest clearing with mist',
+      'busy market street at golden hour',
+      'grand library with towering bookshelves',
+      'rain-soaked city rooftop at dusk',
+      'cozy firelit cabin interior',
+      'ancient temple ruins overgrown with vines',
+      'snowy mountain pass at dawn',
+      'harbor docks at sunset with ships',
+      'underground workshop with glowing forges',
+      'starlit desert camp with lanterns',
+      'royal court hall with stained glass',
+      'dark alleyway with neon-like magical signs',
+      'floating island garden above clouds',
+    ];
+    const lightings = [
+      'dramatic warm side lighting',
+      'cool blue rim lighting with amber fill',
+      'overhead golden hour glow',
+      'moody chiaroscuro with single light source',
+      'soft diffused twilight',
+      'backlit with warm halo edge light',
+      'campfire-style bottom-up warm glow',
+    ];
+    const bg = bgs[Math.floor(Math.random() * bgs.length)];
+    const light = lightings[Math.floor(Math.random() * lightings.length)];
+    return `Semi-realistic digital painting, game concept art style inspired by Arcane and western RPG art. Portrait of ${gStr}: ${traits}. Close-up bust portrait, face and shoulders filling the upper two-thirds of the frame, both eyes clearly shown, one person only. Painterly brushstrokes, ${light}, rich color depth, ${bg} with soft bokeh. No text, no watermark, no borders. Suitable for all ages.`;
   },
   'anime': (name, gender, personality, background) => {
     const gStr = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'androgynous';
