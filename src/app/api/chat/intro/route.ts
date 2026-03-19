@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const openai = getOpenAI();
-    const model = preferredModel || process.env.OPENAI_CHAT_MODEL || "gpt-5.2";
+    const model = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini';
 
     const completion = await openai.chat.completions.create({
       model,

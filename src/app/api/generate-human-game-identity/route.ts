@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const rulesSnippet = (rules || "").slice(0, 800);
 
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_CHAT_MODEL || "gpt-5.2",
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini',
       messages: [
         {
           role: "system",

@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       const userPrompt = `Game name: "${String(gameName).slice(0, 100)}".${gameTemplate ? ` Template: ${gameTemplate}.` : ''}${rulesSnippet ? ` Rules summary: ${rulesSnippet}` : ''}\n\nWrite one short DALL-E image prompt that captures this game.`;
 
       const completion = await openai.chat.completions.create({
-        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.2',
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.4-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },

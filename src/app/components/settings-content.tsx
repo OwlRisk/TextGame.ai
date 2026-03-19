@@ -33,7 +33,7 @@ export function SettingsContent() {
   const router = useRouter();
   const { session } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>('free');
-  const [aiModel, setAiModel] = useState<string>(() => ls('ai_model', 'gpt-5.2'));
+  const [aiModel, setAiModel] = useState<string>(() => ls('ai_model', 'gpt-5.4-mini'));
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'true') !== 'false');
   const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-max'));
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
@@ -90,15 +90,16 @@ export function SettingsContent() {
   const isPaid = currentPlan !== 'free';
 
   const freeModels = [
-    { value: 'gpt-5.2', label: 'GPT-5.2', description: 'Default model' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast & efficient' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Reliable & quick' },
+    { value: 'gpt-5.4-mini', label: 'GPT-5.4 Mini', description: 'Default model' },
+    { value: 'gpt-5.4-nano', label: 'GPT-5.4 Nano', description: 'Fast & efficient' },
+    { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', description: 'Reliable & quick' },
   ];
   const paidModels = [
     { value: 'gpt-5.4', label: 'GPT-5.4', description: 'Frontier · Highest reasoning' },
-    { value: 'gpt-5.2', label: 'GPT-5.2', description: 'Default model' },
-    { value: 'gpt-4o', label: 'GPT-4o', description: 'Fast & capable' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast & efficient' },
+    { value: 'gpt-5.4-mini', label: 'GPT-5.4 Mini', description: 'Default model' },
+    { value: 'gpt-5.4-nano', label: 'GPT-5.4 Nano', description: 'Fast & efficient' },
+    { value: 'gpt-4.1', label: 'GPT-4.1', description: 'Fast & capable' },
+    { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', description: 'Balanced & efficient' },
   ];
   const availableModels = isPaid ? paidModels : freeModels;
 
