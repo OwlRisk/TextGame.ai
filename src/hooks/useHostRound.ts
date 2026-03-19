@@ -523,11 +523,28 @@ export function useHostRound({
 
       const firstUserContent = `${decisionSummaryPrefix}${progressionGuard}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
-      const isSilentTurn = !hostContent && !firstImageUrl;
+      let isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
-        setCurrentSpeakerId(null);
-        setIsRoundInProgress(false);
-        return;
+        if (tmpl === "20-questions" && content.includes("?")) {
+          const retryResult = await callHostStream(
+            `[System: A player just asked a yes/no question. You are the Thinker — you MUST answer it now. Answer with "Q<n>: Yes/No/Sometimes" and then pick the next Guesser via NEXT_SPEAKER.]\n\nThe question: ${content}`,
+            channelId
+          );
+          if (retryResult.hostContent || retryResult.speakerQueue.length > 0) {
+            hostContent = retryResult.hostContent;
+            who = retryResult.who;
+            speakerQueue = retryResult.speakerQueue;
+            isSilentTurn = !hostContent;
+          } else {
+            setCurrentSpeakerId(null);
+            setIsRoundInProgress(false);
+            return;
+          }
+        } else {
+          setCurrentSpeakerId(null);
+          setIsRoundInProgress(false);
+          return;
+        }
       }
 
       const firstInQueue = speakerQueue[0];
@@ -567,8 +584,11 @@ export function useHostRound({
         await dynamicPace(lastBeatContentLen);
         const recentSummary = recentForNextRef.current.slice(-10)
           .map((m) => `${m.senderName}: ${m.content}`).join("\n");
+        const autoAdvanceHint = tmpl === "20-questions"
+          ? `[System: AI players have spoken. If any player asked a yes/no question, answer it immediately as the Thinker (Q<n>: Yes/No/Sometimes). Then pick the next Guesser. Do NOT repeat any announcement you already made.]`
+          : `[System: all pending AI actions in this beat are done — advance the game to the next beat automatically. Do NOT repeat any announcement or phase transition you already made.]`;
         const advanced = await callHostStream(
-          `[System: all pending AI actions in this beat are done — advance the game to the next beat automatically. Do NOT repeat any announcement or phase transition you already made.]\n\nRecent messages for context:\n${recentSummary}`,
+          `${autoAdvanceHint}\n\nRecent messages for context:\n${recentSummary}`,
           channelId
         );
         if (!advanced.hostContent && advanced.speakerQueue.length === 0) break;

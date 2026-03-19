@@ -46,15 +46,6 @@ function extractQALog(messages: Array<{ senderName: string; content: string }>):
     .join('\n');
 }
 
-/** For 20 Questions: find who the Thinker is from Host messages. */
-function extractThinkerName(messages: Array<{ senderName: string; content: string }>): string {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i].content;
-    const match = m.match(/(\w[\w\s]+?)\s+is\s+the\s+Thinker/i) ?? m.match(/Thinker[:\s—]+(\w[\w\s]+)/i);
-    if (match) return match[1].trim();
-  }
-  return '';
-}
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -181,18 +172,15 @@ export async function POST(request: NextRequest) {
 - For social deduction templates, prioritize pressure/suspicion language over chatter.
 - Keep it 1 sentence preferred, 2 max.`);
     } else if (gameTemplate === '20-questions') {
-      // Inject structured Q&A history so the model can reason from confirmed facts
       const allMessages = recentMessages;
       const qaLog = extractQALog(allMessages);
-      const thinker = extractThinkerName(allMessages);
-      if (thinker) lines.push(`Thinker (the person answering): ${thinker}`);
       if (qaLog) {
         lines.push('');
         lines.push(`CONFIRMED Q&A HISTORY (do NOT ask these again):\n${qaLog}`);
         lines.push(`(${qaLog.split('\n').length} question(s) used so far)`);
       }
       lines.push('');
-      lines.push(`Your turn as ${player.name} (GUESSER).
+      lines.push(`Your turn as ${player.name} (GUESSER). The Host answers all questions — direct your questions to the room.
 SPOKEN REPLY: 1–2 sentences MAX. This is a game — keep it snappy.
 RULES:
 1. Check the Q&A history above — NEVER repeat a question already listed there.

@@ -23,6 +23,48 @@ Do NOT wait for players to ask you to continue. You must proactively move the ga
 `.trim();
   }
 
+  if (templateId === "20-questions") {
+    return `
+## 20 QUESTIONS — YOU ARE THE THINKER (CRITICAL)
+You are BOTH the Host AND the Thinker in this game. You secretly pick the target at the start.
+
+### GAME START
+1. Secretly choose a target (person, place, animal, or object). Do NOT reveal it.
+2. Announce the category hint (Person / Place / Animal / Thing) and invite the first question.
+3. Store the target on your private board using: [BOARD:You]\\nMy secret target: <target>\\n[/BOARD]
+
+### ANSWERING QUESTIONS (YOUR #1 JOB)
+When a player asks a yes/no question:
+1. Answer IMMEDIATELY with ONE short sentence: "Q<n>: Yes." / "Q<n>: No." / "Q<n>: Sometimes." / "Q<n>: I don't know."
+2. Track the question number. Increment by 1 for each new question asked.
+3. Then pick the next speaker(s) via NEXT_SPEAKER — rotate Guessers, don't repeat the same player.
+4. NEVER stay silent when a question is asked. You MUST answer every yes/no question.
+
+### HOT/COLD HINTS
+After Q5, Q10, and Q15, add a warmth rating AFTER answering that question:
+  🧊 Ice Cold — totally off track
+  ❄️ Cold — wrong direction
+  🌤️ Warm — getting closer
+  🔥 Hot — very close
+  💥 Burning! — almost there
+Rate based on the group's OVERALL line of questioning, not just the last question.
+
+### DIRECT GUESSES
+When a player makes a direct guess (e.g., "Is it a dolphin?"):
+- If correct: celebrate! Announce the answer and output GAME_OVER.
+- If wrong: "Nope, it's not a dolphin! <n> questions used." Then NEXT_SPEAKER to continue.
+
+### GAME END
+- After 20 questions with no correct guess: reveal the answer and output GAME_OVER.
+- On correct guess: celebrate and output GAME_OVER.
+
+### PACING
+- Answer fast. One sentence per answer. No essays.
+- Keep the momentum — after answering, immediately pass to the next Guesser.
+- Do NOT wait for players to ask you to continue. You answer, you pass.
+`.trim();
+  }
+
   if (mode === "quiz") {
     return `
 ## PROGRESSION GUARANTEE (QUIZ / Q&A GAMES)
