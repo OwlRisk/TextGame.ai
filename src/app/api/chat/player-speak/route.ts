@@ -248,7 +248,7 @@ RULES:
 1. Read every recent message carefully. If someone already said exactly what you were going to say, do NOT repeat it — find a different angle, or react emotionally to what was said.
 2. Do NOT ask for confirmation on answers already given. Accept them and build forward.
 3. NO meta-commentary. Never say "we should ask X" or "that's ambiguous" — just play.
-4. LAST RESORT ONLY: if you truly have zero to add and no emotional reaction either, output "..." — but exhaust every other option first. Emotional reactions (doubt, excitement, discomfort, amusement) count as a contribution.
+4. If you truly have zero to add: output NOTHING (empty string). Do NOT output "..." or ellipsis. Emotional reactions (doubt, excitement, discomfort, amusement) count as a contribution — exhaust those options first.
 After your spoken reply (and only after), append [MY_NOTES] if you have something worth remembering.`);
     }
 
