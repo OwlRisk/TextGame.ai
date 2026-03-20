@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -41,6 +41,30 @@ interface Game {
   icon: string;
   color: string;
   config?: { rules?: string; template?: string };
+}
+
+const TEMPLATE_COVERS: Record<string, string> = {
+  werewolf:           "/games/game-cover-werewolf.webp",
+  mafia:              "/games/game-cover-mafia.webp",
+  undercover:         "/games/game-cover-undercover.webp",
+  tarot:              "/games/game-cover-tarot.webp",
+  codenames:          "/games/game-cover-codenames.webp",
+  avalon:             "/games/game-cover-avalon.webp",
+  spyfall:            "/games/game-cover-spyfall.webp",
+  "detective-mystery":"/games/game-cover-detective.webp",
+  "escape-room":      "/games/game-cover-escape-room.webp",
+  trivia:             "/games/game-cover-trivia.webp",
+  debate:             "/games/game-cover-debate.webp",
+  storyteller:        "/games/game-cover-storyteller.webp",
+  "20-questions":     "/games/game-cover-20-questions.webp",
+  "two-truths-lie":   "/games/game-cover-two-truths.webp",
+};
+
+function getGameCover(game: Game): string | null {
+  if (game.icon.startsWith("data:image") || game.icon.startsWith("http")) return game.icon;
+  const template = game.config?.template;
+  if (template && TEMPLATE_COVERS[template]) return TEMPLATE_COVERS[template];
+  return null;
 }
 
 interface GameSidebarProps {
@@ -100,16 +124,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
     }
   };
 
-  // Auto-generate AI icon in background for games that still use emoji (once per session)
-  useEffect(() => {
-    if (!onUpdateGame || iconGeneratingId !== null || !session?.access_token) return;
-    const needIcon = games.find(
-      (g) => !g.icon.startsWith("data:image") && !g.icon.startsWith("http") && !autoIconRequestedRef.current.has(g.id)
-    );
-    if (!needIcon) return;
-    autoIconRequestedRef.current.add(needIcon.id);
-    handleGenerateIcon(needIcon, true);
-  }, [games, onUpdateGame, iconGeneratingId, session?.access_token]);
+  // Auto-generation removed: sidebar now uses template cover images as defaults.
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -254,15 +269,15 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                             <Link href={`/game/${game.id}`} prefetch aria-label={game.name} onClick={() => { onSelectGame(game.id); onNavigate?.(); }}>
                               {iconGeneratingId === game.id ? (
                                 <Loader2 className="h-6 w-6 text-white animate-spin" />
-                              ) : (game.icon.startsWith('data:image') || game.icon.startsWith('http')) ? (
+                              ) : getGameCover(game) ? (
                                 <img
-                                  src={game.icon}
+                                  src={getGameCover(game)!}
                                   alt={game.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                                 />
                               ) : (
-                                <span className="text-xl leading-none">{game.icon}</span>
+                                <span className="text-lg font-bold text-white">{game.name.charAt(0)}</span>
                               )}
                             </Link>
                           </Button>
