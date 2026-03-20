@@ -42,13 +42,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get or create Stripe customer (DB failure is non-fatal)
+    // Get or create Stripe customer; re-create if stale/missing in Stripe
     let customerId: string | null = null;
     try {
       customerId = await getCustomerId(user.id);
     } catch (e) {
       console.warn('getCustomerId failed, will create new Stripe customer:', (e as Error)?.message);
     }
+
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch {
+        console.warn(`Stripe customer ${customerId} not found, will create a new one`);
+        customerId = null;
+      }
+    }
+
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email || undefined,
