@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Activity, Crown, Loader2 } from 'lucide-react';
+import { Activity, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 
@@ -65,16 +65,11 @@ export function UsageDisplay({ compact = false, refreshKey }: UsageDisplayProps)
 
   if (!balance) return null;
 
-  const node = balance.isPro ? (
-    <span className="flex items-center gap-1.5 text-amber-400">
-      <Crown className="w-4 h-4 shrink-0" />
-      <span className="text-sm font-medium">Pro</span>
-    </span>
-  ) : (
+  const node = (
     <span className="flex items-center gap-1.5 text-zinc-100">
       <Activity className="w-4 h-4 text-emerald-500 shrink-0" />
       <span className="font-semibold tabular-nums">{balance.tokens.toLocaleString()}</span>
-      {!compact && <span className="text-sm text-zinc-500">usage</span>}
+      {!compact && <span className="text-sm text-zinc-500">credits</span>}
     </span>
   );
 
