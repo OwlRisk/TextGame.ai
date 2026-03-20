@@ -122,7 +122,7 @@ export async function runPlayerSpeak(
     if (!res.ok) return null;
     const data = await res.json();
     const rawMessage = (data.message || "").trim();
-    if (!rawMessage) return null;
+    if (!rawMessage || /^\.{1,5}$|^\u2026$/.test(rawMessage)) return null;
 
     const { cleanContent, actions } = parseHostActions(rawMessage);
     const notesAction = actions.find((a) => a.type === "player_notes");

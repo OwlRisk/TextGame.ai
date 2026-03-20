@@ -95,7 +95,8 @@ export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
       }
       const data = (await res.json()) as { message?: string };
       const text = (data.message ?? "").trim();
-      if (text && !isCancelled?.()) {
+      const isSilent = !text || /^\.{1,5}$|^\u2026$/.test(text);
+      if (!isSilent && !isCancelled?.()) {
         const after = toReply.slice(i + 1).slice(0, 3).map(toTypingEntry);
         setTypingUsers?.(after);
         const speed = getTypewriterSpeed(player.personality);

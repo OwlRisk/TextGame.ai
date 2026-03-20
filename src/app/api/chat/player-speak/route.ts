@@ -277,7 +277,7 @@ After your spoken reply (and only after), append [MY_NOTES] if you have somethin
         .catch((e) => console.error('[player-speak] deduct error:', e));
     }
 
-    return NextResponse.json({ message: message || '...' });
+    return NextResponse.json({ message });
   } catch (e) {
     console.error('[player-speak]', e);
     return NextResponse.json(
