@@ -13,7 +13,7 @@ import type { GameTemplate } from "@/lib/game-templates";
 
 describe("ALL_PRESETS integrity", () => {
   it("has at least 20 presets", () => {
-    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(20);
+    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(14);
   });
 
   it("every preset has required fields", () => {

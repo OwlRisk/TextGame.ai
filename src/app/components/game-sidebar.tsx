@@ -61,7 +61,7 @@ const TEMPLATE_ICONS: Record<string, string> = {
 };
 
 function getGameIcon(game: Game): string | null {
-  if (game.icon.startsWith("http")) return game.icon;
+  if (game.icon && typeof game.icon === "string" && game.icon.startsWith("http")) return game.icon;
   const template = game.config?.template;
   if (template && TEMPLATE_ICONS[template]) return TEMPLATE_ICONS[template];
   return TEMPLATE_ICONS.custom ?? null;

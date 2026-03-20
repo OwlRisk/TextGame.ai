@@ -49,7 +49,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     id: t.id,
     name: t.name,
     rules: t.rules,
-    templateId: (t.templateId ?? "custom") as DiscoverPreset["templateId"],
+    templateId: t.templateId ?? "custom",
     playerCount: t.playerCount,
   });
 

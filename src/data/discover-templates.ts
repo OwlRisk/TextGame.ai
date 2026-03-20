@@ -13,7 +13,7 @@ export interface DiscoverPreset {
   id: string;
   name: string;
   rules: string;
-  templateId?: "werewolf" | "undercover" | "mafia" | "tarot" | "custom";
+  templateId?: string;
   playerCount?: number;
 }
 
@@ -33,7 +33,7 @@ export interface GameTemplate {
   badge?: string;
   features?: string[];
   rules: string;
-  templateId?: DiscoverPreset["templateId"];
+  templateId?: string;
   playerCount?: number;
 }
 
@@ -116,6 +116,7 @@ export const CORE_TEMPLATES: GameTemplate[] = [
     style: "Casual",
     color: "from-orange-600 to-red-600",
     badge: "🔥 Most Popular",
+    templateId: "codenames",
     rules: `SETTING: Two spy agencies race to contact all their field agents hidden among 25 code words — before the other team does.
 
 SETUP:
@@ -155,6 +156,7 @@ WIN CONDITIONS:
     style: "Strategic",
     color: "from-blue-700 to-indigo-800",
     badge: "⭐ Classic",
+    templateId: "avalon",
     rules: `SETTING: Camelot is in peril. Loyal knights of the Round Table must complete quests to save the realm — but agents of Mordred hide among them.
 
 ROLES:
@@ -270,6 +272,7 @@ WIN CONDITIONS:
     duration: "15-20 min",
     style: "Casual",
     color: "from-green-600 to-teal-600",
+    templateId: "spyfall",
     rules: `SETTING: Everyone has been briefed on the same secret location — except one player: the Spy. The Spy must figure out where they are from the conversation alone.
 
 SETUP:
@@ -304,6 +307,7 @@ export const PARTY_GAMES: GameTemplate[] = [  {
     duration: "10-15 min",
     style: "Casual",
     color: "from-blue-500 to-cyan-500",
+    templateId: "20-questions",
     rules: `SETTING: The Host secretly thinks of a person, place, animal, or object. All players are Guessers with 20 yes-or-no questions to figure out what it is.
 
 ROLES:
@@ -347,6 +351,7 @@ WIN CONDITIONS:
     duration: "15-25 min",
     style: "Casual",
     color: "from-green-500 to-emerald-500",
+    templateId: "two-truths-lie",
     rules: `SETTING: A social icebreaker where players share personal statements — two true, one false — and the group tries to spot the lie.
 
 GAMEPLAY:
@@ -385,6 +390,7 @@ export const MYSTERY_GAMES: GameTemplate[] = [
     duration: "30-40 min",
     style: "Strategic",
     color: "from-amber-600 to-orange-600",
+    templateId: "detective-mystery",
     rules: `SETTING: A murder has been committed. Suspects have secrets. Detectives must piece together clues, interrogate witnesses, and name the killer before it's too late.
 
 SETUP:
@@ -460,6 +466,7 @@ TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflectio
     duration: "30-50 min",
     style: "Casual",
     color: "from-violet-600 to-purple-600",
+    templateId: "storyteller",
     rules: `SETTING: A collaborative adventure where every player is both author and character. Together you build a story that surprises even its creators.
 
 SETUP:
@@ -503,6 +510,7 @@ export const EDUCATIONAL_GAMES: GameTemplate[] = [
     duration: "20-30 min",
     style: "Casual",
     color: "from-yellow-600 to-orange-600",
+    templateId: "trivia",
     rules: `SETTING: A competitive knowledge championship hosted by the AI. Players answer questions across chosen topics to score points.
 
 SETUP:
@@ -541,6 +549,7 @@ WIN CONDITIONS:
     duration: "25-35 min",
     style: "Strategic",
     color: "from-indigo-600 to-purple-600",
+    templateId: "debate",
     rules: `SETTING: A structured debate where players argue assigned positions — whether they agree with them or not — on philosophical, ethical, political, or deliberately absurd topics.
 
 SETUP:
@@ -580,6 +589,7 @@ WIN CONDITIONS:
     duration: "40-60 min",
     style: "Competitive",
     color: "from-green-600 to-emerald-600",
+    templateId: "escape-room",
     rules: `SETTING: You are trapped inside a room filled with interconnected puzzles, locked mechanisms, and hidden clues. Work together to solve them all and escape before time runs out.
 
 SETUP:
@@ -635,7 +645,7 @@ export function getPresetById(presetId: string | null): DiscoverPreset | null {
     id: t.id,
     name: t.name,
     rules: t.rules,
-    templateId: (t.templateId ?? "custom") as DiscoverPreset["templateId"],
+    templateId: t.templateId ?? "custom",
     playerCount: t.playerCount,
   };
 }
