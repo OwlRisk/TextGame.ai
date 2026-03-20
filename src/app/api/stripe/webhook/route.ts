@@ -77,17 +77,18 @@ export async function POST(request: NextRequest) {
           invalidateBalanceCache(userId);
           logger.log(`[Subscription] User ${userId} → ${status}`);
         } else if (session.mode === 'payment') {
+          const metaTokens = session.metadata?.tokens ? parseInt(session.metadata.tokens, 10) : 0;
           const amountCents = session.amount_total ?? 0;
-          const tokens = rechargeCoinsFromPayment(amountCents);
+          const tokens = metaTokens > 0 ? metaTokens : rechargeCoinsFromPayment(amountCents);
           if (tokens > 0) {
             await addTokens(
               userId,
               tokens,
               'purchase',
-              `Purchased ${tokens} usage`,
+              `Purchased ${tokens} credits`,
               session.payment_intent as string
             );
-            logger.log(`[Token Purchase] User ${userId} purchased ${tokens} usage (${amountCents}¢)`);
+            logger.log(`[Token Purchase] User ${userId} purchased ${tokens} credits (${amountCents}¢)`);
           }
         }
         break;

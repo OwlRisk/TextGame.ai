@@ -126,9 +126,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Formula: payment amount × GPT ratio → coins (e.g. $10 → 500 coins = $5 GPT credit)
+    // Use token count from checkout metadata (matches what the user saw on the recharge page);
+    // fall back to formula for legacy sessions that don't carry the metadata field.
+    const metaTokens = session.metadata?.tokens ? parseInt(session.metadata.tokens, 10) : 0;
     const amountCents = session.amount_total ?? 0;
-    const tokens = rechargeCoinsFromPayment(amountCents);
+    const tokens = metaTokens > 0 ? metaTokens : rechargeCoinsFromPayment(amountCents);
     if (tokens <= 0) {
       return NextResponse.json(
         { error: 'Invalid payment amount in session' },
@@ -146,7 +148,7 @@ export async function POST(request: NextRequest) {
       user.id,
       tokens,
       'purchase',
-      `Purchased ${tokens} usage`,
+      `Purchased ${tokens} credits`,
       paymentIntentId
     );
     invalidateBalanceCache(user.id);

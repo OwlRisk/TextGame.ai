@@ -4,17 +4,16 @@ import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server'
 import { getCustomerId, setCustomerId, getTokenPackages, rechargeCoinsFromPayment } from '@/lib/tokens';
 import { getStripePriceIdForTier } from '@/lib/subscription';
 
-/** Display-only package info; actual coins credited are calculated by rechargeCoinsFromPayment(price_cents) */
-const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number }> = {
-  starter:   { name: 'Starter',    price_cents: 500 },
-  popular:   { name: 'Popular',    price_cents: 1000 },
-  power:     { name: 'Power',      price_cents: 2500 },
-  ultimate:  { name: 'Ultimate',   price_cents: 5000 },
-  // Legacy IDs kept for backward compatibility
-  pro:       { name: 'Pro',        price_cents: 2500 },
-  mega:      { name: 'Mega',       price_cents: 10000 },
-  legendary: { name: 'Legendary',  price_cents: 20000 },
-  immortal:  { name: 'Immortal',   price_cents: 50000 },
+const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number; credits: number }> = {
+  starter:   { name: 'Starter',    price_cents: 500,   credits: 500 },
+  popular:   { name: 'Popular',    price_cents: 1000,  credits: 1200 },
+  power:     { name: 'Power',      price_cents: 2500,  credits: 3250 },
+  ultimate:  { name: 'Ultimate',   price_cents: 5000,  credits: 7000 },
+  // Legacy IDs — use formula fallback
+  pro:       { name: 'Pro',        price_cents: 2500,  credits: 0 },
+  mega:      { name: 'Mega',       price_cents: 10000, credits: 0 },
+  legendary: { name: 'Legendary',  price_cents: 20000, credits: 0 },
+  immortal:  { name: 'Immortal',   price_cents: 50000, credits: 0 },
 };
 
 export async function POST(request: NextRequest) {
@@ -128,7 +127,7 @@ export async function POST(request: NextRequest) {
     let selected = packages.find((pkg: { id: string }) => pkg.id === packageId);
     if (!selected && REFERENCE_PACKAGES[packageId]) {
       const ref = REFERENCE_PACKAGES[packageId];
-      selected = { id: packageId, name: ref.name, price_cents: ref.price_cents, bonus_percentage: 0 };
+      selected = { id: packageId, name: ref.name, price_cents: ref.price_cents, credits: ref.credits };
     }
     if (!selected) {
       return NextResponse.json(
@@ -138,7 +137,8 @@ export async function POST(request: NextRequest) {
     }
 
     const price_cents = selected.price_cents ?? (selected as { price_cents?: number }).price_cents;
-    const tokens = rechargeCoinsFromPayment(price_cents);
+    const ref = REFERENCE_PACKAGES[packageId];
+    const tokens = (ref?.credits && ref.credits > 0) ? ref.credits : rechargeCoinsFromPayment(price_cents);
     const name = selected.name ?? (selected as { name?: string }).name;
 
     const session = await stripe.checkout.sessions.create({
@@ -150,8 +150,8 @@ export async function POST(request: NextRequest) {
             currency: 'usd',
             unit_amount: price_cents,
             product_data: {
-              name: name ?? 'Usage',
-              description: `${Number(tokens).toLocaleString()} usage`,
+              name: name ?? 'Credits',
+              description: `${Number(tokens).toLocaleString()} credits`,
             },
           },
           quantity: 1,
