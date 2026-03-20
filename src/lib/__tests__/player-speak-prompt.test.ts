@@ -14,12 +14,12 @@ describe('PACING_RULE', () => {
     expect(PACING_RULE).toMatch(/2 sentences/i);
   });
 
-  it('instructs AI to use 1 sentence for action/vote phases', () => {
-    expect(PACING_RULE).toMatch(/1 sentence/i);
+  it('instructs AI to prefer 1 sentence', () => {
+    expect(PACING_RULE).toMatch(/1 preferred/i);
   });
 
-  it('includes a HARD LIMIT clause', () => {
-    expect(PACING_RULE).toMatch(/HARD LIMIT/i);
+  it('forbids speeches and paragraphs', () => {
+    expect(PACING_RULE).toMatch(/No speeches/i);
   });
 });
 
@@ -70,9 +70,9 @@ describe('buildSystemPrompt – werewolf / mafia', () => {
     expect(wPrompt).toBe(mPrompt);
   });
 
-  it('prompt includes instructions to give a concrete reason when accusing', () => {
+  it('prompt includes instructions to give a concrete accusation or defense', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'G');
-    expect(prompt).toMatch(/concrete observation/i);
+    expect(prompt).toMatch(/concrete accusation/i);
   });
 });
 

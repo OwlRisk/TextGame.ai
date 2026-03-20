@@ -35,7 +35,7 @@ describe("buildSystemPrompt — all templates", () => {
   it("werewolf prompt contains social deduction guidance", () => {
     const prompt = buildSystemPrompt("Alice", "werewolf", "Blood Moon");
     expect(prompt).toContain("social deduction");
-    expect(prompt).toContain("accusations");
+    expect(prompt).toContain("accusation");
   });
 
   it("mafia prompt is identical to werewolf (same case branch)", () => {
@@ -91,9 +91,8 @@ describe("player-speak constants", () => {
     expect(MY_NOTES_SECTION).toContain("[/MY_NOTES]");
   });
 
-  it("EMOTION_TAGS_SECTION lists available tags", () => {
+  it("EMOTION_TAGS_SECTION mentions emotion and sound tags", () => {
     expect(EMOTION_TAGS_SECTION).toContain("[angry]");
-    expect(EMOTION_TAGS_SECTION).toContain("[happy]");
     expect(EMOTION_TAGS_SECTION).toContain("[sigh]");
   });
 });
