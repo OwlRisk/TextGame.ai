@@ -271,14 +271,12 @@ export function UsageContent() {
                 <div className="flex items-center gap-2 text-zinc-400">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-              ) : balance?.isPro ? (
-                <div className="text-2xl font-bold text-amber-400">Pro</div>
               ) : balance ? (
                 <>
                   <div className="text-3xl font-black text-white mb-1 tabular-nums">
                     {balance.tokens.toLocaleString()}
                   </div>
-                  <div className="text-[10px] text-zinc-500">usage</div>
+                  <div className="text-[10px] text-zinc-500">credits</div>
                 </>
               ) : (
                 <div className="text-zinc-400 text-sm">—</div>
