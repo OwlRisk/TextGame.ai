@@ -13,7 +13,6 @@ import {
   sectionId as sectionIdUtil,
 } from "@/lib/game-host-utils";
 import { getPreferredModel } from "@/lib/model-prefs";
-import { buildRuntimeProgressionGuard } from "@/lib/game-template-driver";
 import { getTemplateHexColor } from "@/lib/game-templates";
 import {
   MAX_AUTO_ADVANCES,
@@ -241,6 +240,10 @@ export function useHostRound({
         /\bnight\s*(phase|action|round)?\b/i.test(rulesText);
       const hasMultipleRooms = gameRoomEntries.length > 1;
 
+      const recentNonHostTurns = channelMessages
+        .slice(-12)
+        .filter((m) => !m.isSystemMessage && m.senderName !== gmName).length;
+
       const generatedHost = currentGame?.config?.generatedHost as { name?: string; personality?: string; systemPrompt?: string } | undefined;
       const hostSystemPrompt = buildHostSystemPrompt({
         gameName: currentGame?.name ?? "",
@@ -263,6 +266,7 @@ export function useHostRound({
         hostName: generatedHost?.name ?? "Game Master",
         hostPersonality: generatedHost?.personality ?? undefined,
         hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
+        recentNonHostTurns,
       });
 
       const applyHostRoleAssignments = (roleContent: string): string => {
@@ -510,18 +514,12 @@ export function useHostRound({
         engagementScore: latestEngagementScore,
       });
 
-      const channelMessagesForRecent = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
-      const recentNonHostTurns = channelMessagesForRecent
-        .slice(-12)
-        .filter((m) => !m.isSystemMessage && m.senderName !== gmName).length;
-      const progressionGuardCore = buildRuntimeProgressionGuard(currentGame?.config?.template, recentNonHostTurns);
-      const progressionGuard = progressionGuardCore ? `${progressionGuardCore}\n\n` : "";
       const decisionSummaryPrefix = pendingDecisionSummariesRef.current.length > 0
         ? `[System: cross-channel decisions since last turn]\n${pendingDecisionSummariesRef.current.join("\n")}\n\n`
         : "";
       pendingDecisionSummariesRef.current = [];
 
-      const firstUserContent = `${decisionSummaryPrefix}${progressionGuard}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
+      const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       let isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
@@ -558,7 +556,7 @@ export function useHostRound({
 
       if (!isSilentTurn) await hostPace();
       const recentForNextRef = { current: [
-        ...channelMessagesForRecent.slice(-18).map((m) => ({
+        ...channelMessages.slice(-18).map((m) => ({
           senderName: m.senderName,
           content: m.reactions?.length
             ? `${m.content} [reactions: ${m.reactions.map((r: { emoji: string; from: string }) => `${r.emoji} ${r.from}`).join(", ")}]`
@@ -585,8 +583,8 @@ export function useHostRound({
         const recentSummary = recentForNextRef.current.slice(-10)
           .map((m) => `${m.senderName}: ${m.content}`).join("\n");
         const autoAdvanceHint = tmpl === "20-questions"
-          ? `[System: AI players have spoken. If any player asked a yes/no question, answer it immediately as the Thinker (Q<n>: Yes/No/Sometimes). Then pick the next Guesser. Do NOT repeat any announcement you already made.]`
-          : `[System: all pending AI actions in this beat are done — advance the game to the next beat automatically. Do NOT repeat any announcement or phase transition you already made.]`;
+          ? `[System: AI players have spoken. If a yes/no question was asked, answer it now. Do NOT repeat yourself.]`
+          : `[System: Advance to the next beat. Do NOT repeat any prior announcement.]`;
         const advanced = await callHostStream(
           `${autoAdvanceHint}\n\nRecent messages for context:\n${recentSummary}`,
           channelId

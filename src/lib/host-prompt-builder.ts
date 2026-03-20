@@ -1,4 +1,4 @@
-import { buildTemplatePromptPolicy } from "@/lib/game-template-driver";
+import { buildTemplateMechanics, buildProgressionPolicy } from "@/lib/game-template-driver";
 
 export interface ChannelInfo {
   name: string;
@@ -26,6 +26,8 @@ export interface HostPromptOpts {
   hostPersonality?: string;
   /** AI-generated behavioral instructions for this specific host (from generatedHost.systemPrompt) */
   hostCustomSystemPrompt?: string;
+  /** Recent non-host turns for dynamic progression urgency */
+  recentNonHostTurns?: number;
 }
 
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
@@ -35,10 +37,12 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
     channels, gamePhase, phaseLabel,
     playerRoster, eventLogSummary, boardSummary, rulesText,
     hostName, hostPersonality, hostCustomSystemPrompt,
+    recentNonHostTurns,
   } = opts;
 
   const playerNamesList = nonHostPlayerNames.join(", ");
-  const templatePolicySection = buildTemplatePromptPolicy(gameTemplate);
+  const templateMechanicsSection = buildTemplateMechanics(gameTemplate);
+  const progressionPolicySection = buildProgressionPolicy(gameTemplate, recentNonHostTurns ?? 0);
 
   let roomSection = "";
   if (hasMultipleRooms) {
@@ -157,9 +161,8 @@ NEXT_SPEAKER: ${humanName}
 Always output "---" even when there are no directives. When in doubt, prefer Example C/D/E (silent) over speaking.
 IMPORTANT: Even on silent turns you MUST always include a NEXT_SPEAKER directive so the conversation keeps flowing. Pick the most relevant AI player(s) to react, or "Everyone" for open discussion, or "${humanName}" to return control to the human.
 
-## PACING
-When the user says "Continue", "Ready", or "What's next?", advance to the next phase in ONE sentence max and assign the next speaker. Never dwell on the same beat twice. Never re-explain rules mid-game. Never ask for confirmation on something already established.
-${templatePolicySection}
+${templateMechanicsSection ? `${templateMechanicsSection}\n\n` : ''}## PACING & PROGRESSION
+${progressionPolicySection}
 
 ## HOST VOICE — HOW TO WRITE PUBLIC MESSAGES
 You are a host, not a narrator. Be brief — but never be absent.

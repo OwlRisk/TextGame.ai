@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildRuntimeProgressionGuard,
-  buildTemplatePromptPolicy,
+  buildTemplateMechanics,
+  buildProgressionPolicy,
   getTemplateControlMode,
 } from "../game-template-driver";
 
@@ -9,7 +9,7 @@ describe("game-template-driver", () => {
   describe("getTemplateControlMode", () => {
     it("classifies deduction templates", () => {
       expect(getTemplateControlMode("werewolf")).toBe("deduction");
-      expect(getTemplateControlMode("secret-hitler")).toBe("deduction");
+      expect(getTemplateControlMode("mafia")).toBe("deduction");
     });
 
     it("classifies quiz templates", () => {
@@ -32,34 +32,97 @@ describe("game-template-driver", () => {
     });
   });
 
-  describe("buildTemplatePromptPolicy", () => {
-    it("returns deduction-specific policy", () => {
-      const policy = buildTemplatePromptPolicy("mafia");
-      expect(policy).toContain("HARD RULE FOR DEDUCTION GAMES");
-      expect(policy).toContain("start vote");
+  describe("buildTemplateMechanics", () => {
+    it("returns 20-questions mechanics without pacing", () => {
+      const m = buildTemplateMechanics("20-questions");
+      expect(m).toContain("YOU ARE THE THINKER");
+      expect(m).toContain("ANSWERING QUESTIONS");
+      expect(m).not.toContain("### PACING");
     });
 
-    it("returns quiz-specific policy", () => {
-      const policy = buildTemplatePromptPolicy("trivia");
-      expect(policy).toContain("QUIZ / Q&A GAMES");
-      expect(policy).toContain("next question");
+    it("returns codenames mechanics", () => {
+      const m = buildTemplateMechanics("codenames");
+      expect(m).toContain("GRID & TURN MANAGEMENT");
+    });
+
+    it("returns spyfall mechanics without pacing", () => {
+      const m = buildTemplateMechanics("spyfall");
+      expect(m).toContain("LOCATION & SPY MANAGEMENT");
+      expect(m).not.toContain("### PACING");
+    });
+
+    it("returns detective-mystery mechanics without pacing", () => {
+      const m = buildTemplateMechanics("detective-mystery");
+      expect(m).toContain("CASE MANAGEMENT");
+      expect(m).not.toContain("### PACING");
+    });
+
+    it("returns empty for templates without special mechanics", () => {
+      expect(buildTemplateMechanics("werewolf")).toBe("");
+      expect(buildTemplateMechanics("mafia")).toBe("");
+      expect(buildTemplateMechanics("trivia")).toBe("");
+      expect(buildTemplateMechanics("custom")).toBe("");
+      expect(buildTemplateMechanics(undefined)).toBe("");
     });
   });
 
-  describe("buildRuntimeProgressionGuard", () => {
-    it("triggers deduction guard after threshold", () => {
-      const guard = buildRuntimeProgressionGuard("werewolf", 6);
-      expect(guard).toContain("deduction game pacing is lagging");
+  describe("buildProgressionPolicy", () => {
+    it("includes base pacing rules for any template", () => {
+      const p = buildProgressionPolicy("werewolf");
+      expect(p).toContain("Never dwell on the same beat twice");
+      expect(p).toContain("Never re-explain rules");
     });
 
-    it("triggers quiz guard after threshold", () => {
-      const guard = buildRuntimeProgressionGuard("trivia", 3);
-      expect(guard).toContain("quiz pacing is lagging");
+    it("includes deduction-specific rules for deduction games", () => {
+      const p = buildProgressionPolicy("werewolf");
+      expect(p).toContain("Force state changes");
+      expect(p).toContain("START_VOTE");
     });
 
-    it("does not trigger early", () => {
-      expect(buildRuntimeProgressionGuard("werewolf", 3)).toBe("");
-      expect(buildRuntimeProgressionGuard("trivia", 2)).toBe("");
+    it("includes quiz-specific rules for quiz games", () => {
+      const p = buildProgressionPolicy("trivia");
+      expect(p).toContain("Adjudicate quickly");
+    });
+
+    it("includes open-specific rules for open games", () => {
+      const p = buildProgressionPolicy("custom");
+      expect(p).toContain("Creative freedom");
+    });
+
+    it("adds template-specific hints for 20-questions", () => {
+      const p = buildProgressionPolicy("20-questions");
+      expect(p).toContain("one sentence per answer");
+    });
+
+    it("adds template-specific hints for spyfall", () => {
+      const p = buildProgressionPolicy("spyfall");
+      expect(p).toContain("nudge toward accusations");
+    });
+
+    it("adds template-specific hints for detective-mystery", () => {
+      const p = buildProgressionPolicy("detective-mystery");
+      expect(p).toContain("Investigation rounds");
+    });
+
+    it("triggers urgency alert for deduction after threshold", () => {
+      const p = buildProgressionPolicy("werewolf", 6);
+      expect(p).toContain("PROGRESSION ALERT");
+      expect(p).toContain("6 player turns");
+    });
+
+    it("triggers urgency alert for quiz after threshold", () => {
+      const p = buildProgressionPolicy("trivia", 3);
+      expect(p).toContain("PROGRESSION ALERT");
+    });
+
+    it("does not trigger urgency below threshold", () => {
+      expect(buildProgressionPolicy("werewolf", 3)).not.toContain("PROGRESSION ALERT");
+      expect(buildProgressionPolicy("trivia", 2)).not.toContain("PROGRESSION ALERT");
+      expect(buildProgressionPolicy("custom", 7)).not.toContain("PROGRESSION ALERT");
+    });
+
+    it("triggers urgency for open games at threshold 8", () => {
+      expect(buildProgressionPolicy("custom", 8)).toContain("PROGRESSION ALERT");
     });
   });
 });

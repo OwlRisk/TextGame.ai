@@ -8,11 +8,11 @@ export function getTemplateControlMode(templateId?: string): TemplateControlMode
   return t?.category ?? "open";
 }
 
-export function buildTemplatePromptPolicy(templateId?: string): string {
-  const mode = getTemplateControlMode(templateId);
-
-  /* ── Template-specific policies (checked before category fallbacks) ── */
-
+/**
+ * Game-specific mechanics only (no pacing rules).
+ * Returns empty string for templates without special mechanics.
+ */
+export function buildTemplateMechanics(templateId?: string): string {
   if (templateId === "20-questions") {
     return `
 ## 20 QUESTIONS — YOU ARE THE THINKER (CRITICAL)
@@ -54,11 +54,6 @@ When a player makes a direct guess (e.g., "Is it a dolphin?"):
 - This ensures you answer each question before the next one is asked.
 - Rotate through all Guessers fairly. End with the human player at natural pause points.
 - Example: NEXT_SPEAKER: Lena Brooks (just one name — not "Lena Brooks, Diego Alvarez")
-
-### PACING
-- Answer fast. One sentence per answer. No essays.
-- Keep the momentum — after answering, immediately pass to the next Guesser.
-- Do NOT wait for players to ask you to continue. You answer, you pass.
 `.trim();
   }
 
@@ -115,9 +110,6 @@ You manage the 5×5 word grid and the secret key map.
   - Accused WAS the Spy → Spy gets one chance to name the location. Correct = Spy wins. Wrong = group wins.
   - Accused was NOT the Spy → Spy wins immediately (wrong accusation).
 - The Spy can voluntarily reveal and guess the location at any time.
-
-### PACING
-- Keep rounds moving. After 6–8 rounds of Q&A, nudge toward accusations if no one has called a vote.
 - NEVER reveal the location in public messages. It's the Spy's job to figure it out.
 `.trim();
   }
@@ -150,81 +142,56 @@ Each round:
 1. Announce the Accusation Phase. Each Detective submits: Culprit + Motive + Method.
 2. After all accusations are in, reveal the correct answers.
 3. Announce who solved it (if anyone). GAME_OVER with full reveal.
-
-### PACING
-- Keep investigation rounds brisk — 2–3 questions per round, then move on.
-- Drop new evidence between rounds to keep momentum.
-- Do NOT let the investigation stall in open discussion for more than a few turns.
 `.trim();
   }
 
-  /* ── Category fallbacks ── */
-
-  if (mode === "deduction") {
-    return `
-## PROGRESSION GUARANTEE (HARD RULE FOR DEDUCTION GAMES)
-Do NOT wait for players to ask you to continue. You must proactively move the game forward.
-- If table discussion has run for a few turns, force a state change: start vote, resolve vote, or move to next phase.
-- Never keep the game in "open discussion" for too long without mechanical progress.
-- If a player asks for "more discussion", allow one short extension only, then still transition.
-- Prefer concrete progression directives over more chatter: START_VOTE / PHASE / ANNOUNCE / NEXT_SPEAKER.
-- If uncertain, choose momentum over delay.
-`.trim();
-  }
-
-  if (mode === "quiz") {
-    return `
-## PROGRESSION GUARANTEE (QUIZ / Q&A GAMES)
-Keep rounds crisp and objective.
-- After short discussion, force adjudication: confirm answer quality, then move to the next question/guess.
-- Avoid prolonged social chatter between prompts.
-- Prefer concrete directives: PHASE / ANNOUNCE / NEXT_SPEAKER / TIMER.
-- If players stall, immediately restate the active question and push for a final answer.
-`.trim();
-  }
-
-  if (mode === "cooperative") {
-    return `
-## MOMENTUM RULE (COOPERATIVE GAMES)
-Keep the team moving toward the objective.
-- Nudge with clues or consequences if players stall.
-- Rotate speaker turns so everyone contributes; avoid one player dominating.
-- Inject time pressure or new obstacles if pace drops.
-`.trim();
-  }
-
-  if (mode === "party") {
-    return `
-## MOMENTUM RULE (PARTY GAMES)
-Keep energy high and rounds snappy.
-- Move to the next prompt or round quickly after each vote or answer.
-- Do not over-moderate; let natural group dynamics flow.
-- Inject variety — change topics, formats, or speakers to prevent monotony.
-`.trim();
-  }
-
-  return `
-## MOMENTUM RULE (OPEN / CUSTOM GAMES)
-Preserve creative freedom, but avoid dead air.
-- Do not over-constrain with rigid phase logic.
-- If momentum drops, inject one concrete hook (choice, obstacle, reveal, or consequence) and assign a speaker.
-- Keep mechanics lightweight; prioritize roleplay flow.
-`.trim();
+  return "";
 }
 
-export function buildRuntimeProgressionGuard(
+const PROGRESSION_THRESHOLDS: Record<TemplateControlMode, number> = {
+  deduction: 5,
+  quiz: 3,
+  cooperative: 6,
+  party: 6,
+  open: 8,
+};
+
+/**
+ * Unified pacing & progression policy.
+ * Replaces the old three-layer system: template pacing sections,
+ * category fallback blocks, and buildRuntimeProgressionGuard.
+ */
+export function buildProgressionPolicy(
   templateId: string | undefined,
-  recentNonHostTurns: number,
+  recentNonHostTurns: number = 0,
 ): string {
   const mode = getTemplateControlMode(templateId);
-  if (mode === "deduction" && recentNonHostTurns >= 5) {
-    return "[System progression guard: deduction game pacing is lagging. Advance to a concrete next state NOW (start vote / resolve result / phase transition). Do not ask for more discussion and do not re-explain rules.]";
+
+  const lines: string[] = [
+    'On "Continue"/"Ready"/"What\'s next?": advance in ONE sentence, assign next speaker.',
+    "Never dwell on the same beat twice. Never re-explain rules. Never re-confirm established facts.",
+  ];
+
+  const modePacing: Record<TemplateControlMode, string> = {
+    deduction: "Force state changes (vote / phase transition) after a few discussion turns. Prefer directives (START_VOTE / PHASE) over more chatter.",
+    quiz: "Keep rounds crisp. Adjudicate quickly, then next question. No open-ended drift between prompts.",
+    cooperative: "Nudge with clues or consequences if stalled. Rotate speakers. Inject obstacles if pace drops.",
+    party: "Energy high, rounds snappy. Next prompt/round quickly after each answer/vote. Inject variety.",
+    open: "Creative freedom, but no dead air. Drop a concrete hook (choice, obstacle, reveal, consequence) if momentum fades.",
+  };
+  lines.push(modePacing[mode]);
+
+  if (templateId === "20-questions") {
+    lines.push("Answer fast — one sentence per answer, then pass to next Guesser immediately.");
+  } else if (templateId === "spyfall") {
+    lines.push("After 6–8 Q&A rounds, nudge toward accusations if no vote called.");
+  } else if (templateId === "detective-mystery") {
+    lines.push("Investigation rounds: 2–3 questions, then move on. New evidence between rounds.");
   }
-  if (mode === "quiz" && recentNonHostTurns >= 3) {
-    return "[System progression guard: quiz pacing is lagging. Force adjudication or ask the next question NOW. Do not drift into open-ended discussion.]";
+
+  if (recentNonHostTurns >= PROGRESSION_THRESHOLDS[mode]) {
+    lines.push(`⚠️ PROGRESSION ALERT: ${recentNonHostTurns} player turns since your last action. Advance NOW — start vote, transition phase, or force a decision. No more open discussion.`);
   }
-  if ((mode === "cooperative" || mode === "party") && recentNonHostTurns >= 6) {
-    return "[System progression guard: momentum is stalling. Transition to a concrete next beat now.]";
-  }
-  return "";
+
+  return lines.join("\n");
 }

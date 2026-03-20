@@ -59,45 +59,52 @@ export function getStyleColor(style: string) {
 
 export const FEATURED_TEMPLATE: GameTemplate = {
   id: "werewolf-classic",
-  name: "Werewolf: Blood Moon",
-  description: "The ultimate social deduction experience. Villagers must identify and eliminate werewolves hiding among them before it's too late.",
+  name: "Werewolf",
+  description: "Classic social deduction — villagers hunt werewolves by day while wolves strike at night. Bluff, deduce, survive.",
   longDescription:
-    "Step into a village plagued by werewolves. Each night, werewolves choose a victim. Each day, villagers vote to eliminate a suspect. Special roles like Seer, Doctor, and Hunter add strategic depth. Can you survive?",
+    "A village is plagued by hidden werewolves. Each night the wolves secretly eliminate a villager. Each day survivors debate and vote to execute a suspect. Special roles — Seer, Doctor, Hunter, Witch — add layers of strategy. Trust no one.",
   icon: "🐺",
   cover: "/games/game-cover-werewolf.webp",
   category: "Social Deduction",
   tags: ["Classic", "Strategy", "Deception", "Roleplay"],
-  players: "6-12",
-  duration: "30-45 min",
+  players: "5-12",
+  duration: "20-40 min",
   style: "Strategic",
   color: "from-purple-900 to-indigo-900",
   features: [
-    "8+ unique character roles",
+    "6 distinct roles with unique abilities",
     "Day/Night cycle gameplay",
-    "Democratic voting system",
-    "Group discussion phases",
+    "Democratic voting & elimination",
+    "Bluffing and deduction",
   ],
   templateId: "werewolf",
-  rules: `SETTING: A village haunted by werewolves. Neighbors by day, predators by night. Find them before the town falls.
+  rules: `SETTING: A village haunted by werewolves. Neighbors by day, predators by night.
 
-OBJECTIVE: Villagers eliminate all Werewolves. Werewolves eliminate enough Villagers to equal or outnumber the town.
+PLAYERS: 5–12. Scale roles by count:
+- 5–6: 1 Werewolf, 1 Seer, 1 Doctor, rest Villagers.
+- 7–8: 2 Werewolves, 1 Seer, 1 Doctor, 1 Hunter, rest Villagers.
+- 9–12: 3 Werewolves, 1 Seer, 1 Doctor, 1 Hunter, 1 Witch, rest Villagers.
 
-PHASES:
-1. Night — Werewolves secretly choose one victim. Seer investigates one player. Doctor protects one player.
-2. Morning — Host announces who was killed overnight (or that the Doctor saved someone). Role is NOT revealed yet.
-3. Day — All living players debate, accuse, and defend freely. Anyone may claim any role.
-4. Vote — Players vote to eliminate one suspect. Majority rules; ties result in no elimination.
-5. Reveal — Eliminated player's true role is shown. Repeat from Night.
+OBJECTIVE: Villagers eliminate all Werewolves. Werewolves reduce Villagers to equal or fewer than Wolves.
 
 ROLES:
-- Villager: No special power. Win through logic, persuasion, and reading people.
-- Werewolf: Each night, silently choose one player to eliminate. Act innocent by day.
-- Seer: Each night, learn one player's true alignment (Villager or Werewolf). Your knowledge is powerful — guard it.
-- Doctor: Each night, protect one player from elimination. You may protect yourself once per game.
+- Villager: No special power. Win through logic and persuasion.
+- Werewolf: Each night, wolves agree on one victim. Blend in by day.
+- Seer: Each night, learn one player's true alignment. Guard your intel.
+- Doctor: Each night, protect one player from death. Self-protect once per game.
+- Hunter: On death (night or vote), immediately shoot one player of your choice.
+- Witch: Has one heal potion (save tonight's victim) and one poison potion (kill any player). Each usable once per game, at night.
+
+PHASES (repeat until win condition):
+1. Night — Wolves choose a victim. Special roles act simultaneously. Host resolves conflicts (Doctor save > Wolf kill; Witch heal > Wolf kill; Witch poison is separate).
+2. Dawn — Host announces deaths (if any). Roles of the dead are NOT revealed yet.
+3. Day — All living players debate freely. Accuse, defend, claim roles, bluff.
+4. Vote — Players nominate and vote to eliminate one suspect. Majority required; tie = no elimination.
+5. Reveal — Eliminated player's true role is shown. If Hunter dies, they shoot immediately.
 
 WIN CONDITIONS:
-- Villagers win: All Werewolves are eliminated.
-- Werewolves win: Werewolves equal or outnumber the remaining Villagers.`,
+- Village wins: All Werewolves eliminated.
+- Wolves win: Wolves equal or outnumber remaining Villagers.`,
 };
 
 // ── Core Templates ──────────────────────────────────────────────────────────
