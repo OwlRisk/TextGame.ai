@@ -216,7 +216,7 @@ function getPresetById(presetId: string | null, allPresets: GameTemplate[]): Dis
 }
 
 const MOCK_PRESETS: GameTemplate[] = [
-  { id: 'werewolf-classic', name: 'Werewolf: Blood Moon', rules: 'Wolf rules...', templateId: 'werewolf', playerCount: 6 },
+  { id: 'werewolf-classic', name: 'Werewolf', rules: 'Wolf rules...', templateId: 'werewolf', playerCount: 6 },
   { id: 'codenames', name: 'Codenames', rules: 'Code rules...', playerCount: 4 },
   { id: 'detective-mystery', name: 'Detective Mystery', rules: 'Mystery rules...', playerCount: 3 },
   { id: 'tarot', name: 'Tarot Oracle', rules: 'Tarot rules...', templateId: 'tarot', playerCount: 1 },
@@ -234,7 +234,7 @@ describe('getPresetById', () => {
   it('returns the correct preset for werewolf-classic', () => {
     const p = getPresetById('werewolf-classic', MOCK_PRESETS);
     expect(p?.templateId).toBe('werewolf');
-    expect(p?.name).toBe('Werewolf: Blood Moon');
+    expect(p?.name).toBe('Werewolf');
   });
 
   it('defaults templateId to "custom" when not set (codenames)', () => {

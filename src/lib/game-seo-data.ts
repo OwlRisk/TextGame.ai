@@ -115,7 +115,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
     slug: "mafia",
     presetId: "mafia-night",
     name: "Mafia",
-    tagline: "Lies, deception, and survival in the city of shadows",
+    tagline: "Lies, deception, and survival — town vs organized crime",
     description:
       "The Mafia has infiltrated your town. By day, townsfolk debate and vote. By night, the Mafia strikes. Play the classic Mafia party game online with an AI host that manages all the roles, phases, and drama — no human moderator required.",
     metaDescription:
@@ -232,7 +232,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
   {
     slug: "avalon",
     presetId: "avalon",
-    name: "Avalon: Quest for Honor",
+    name: "Avalon",
     tagline: "Knights of the Round Table — trust no one",
     description:
       "The forces of Good must complete three quests to save Camelot, but the forces of Evil lurk among the Knights. Merlin knows who the traitors are — but if he's identified by the Assassin, all is lost. Play this Arthurian social deduction game online with a full AI host.",
@@ -356,7 +356,7 @@ export const GAME_SEO_DATA: GameSEOData[] = [
   {
     slug: "escape-room",
     presetId: "escape-room",
-    name: "Escape Room: The Time Vault",
+    name: "Escape Room",
     tagline: "Solve puzzles together before time runs out",
     description:
       "You're locked in a room filled with interconnected puzzles. Work as a team to decode clues, unlock hidden mechanisms, and escape before the clock hits zero. The AI host acts as the room's narrator — setting the scene, responding to your actions, and revealing new puzzles as you progress.",

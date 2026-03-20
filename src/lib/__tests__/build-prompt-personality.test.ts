@@ -12,7 +12,7 @@ import {
 
 describe("buildSystemPrompt — personality & background integration", () => {
   it("includes personality when provided", () => {
-    const prompt = buildSystemPrompt("Alice", "werewolf", "Blood Moon", "Calm and analytical");
+    const prompt = buildSystemPrompt("Alice", "werewolf", "Werewolf", "Calm and analytical");
     expect(prompt).toContain("Your personality: Calm and analytical.");
   });
 

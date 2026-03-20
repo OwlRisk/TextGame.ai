@@ -113,10 +113,10 @@ export const CORE_TEMPLATES: GameTemplate[] = [
   {
     id: "codenames",
     name: "Codenames",
-    description: "Two teams compete to identify their agents using one-word clues. Creative thinking required!",
+    description: "Two teams race to contact secret agents using one-word clues. One wrong guess and the Assassin ends it all.",
     icon: "🔍",
     cover: "/games/game-cover-codenames.webp",
-    category: "Party",
+    category: "Social Deduction",
     tags: ["Team Game", "Word Association", "Strategic"],
     players: "4-12",
     duration: "15-25 min",
@@ -152,8 +152,8 @@ WIN CONDITIONS:
   },
   {
     id: "avalon",
-    name: "Avalon: Quest for Honor",
-    description: "Knights of the Round Table must complete quests, but traitors hide among them.",
+    name: "Avalon",
+    description: "Loyal knights complete quests for Camelot — but Mordred's agents sabotage from within. Deduce, protect, betray.",
     icon: "⚔️",
     cover: "/games/game-cover-avalon.webp",
     category: "Social Deduction",
@@ -184,7 +184,13 @@ PHASES:
    - Evil players may choose either.
    - Most rounds: 1 Fail = failed quest. Round 4 (7+ players): 2 Fails required.
 
-QUEST TEAM SIZES (5/6/7 players): 2-3-2-3-3 / 2-3-4-3-4 / 2-3-3-4*-4 (*2 Fails)
+QUEST TEAM SIZES (quests 1–5):
+- 5 players: 2/3/2/3/3
+- 6 players: 2/3/4/3/4
+- 7 players: 2/3/3/4*/4
+- 8 players: 3/4/4/5*/5
+- 9–10 players: 3/4/4/5*/5
+(* = 2 Fails required to fail this quest)
 
 WIN CONDITIONS:
 - Good wins: 3 successful quests AND the Assassin fails to identify Merlin afterward.
@@ -192,11 +198,11 @@ WIN CONDITIONS:
   },
   {
     id: "undercover-party",
-    name: "Undercover Agent",
-    description: "Find the spy among you by describing secret words. Fast-paced word association game.",
+    name: "Undercover",
+    description: "Everyone describes their secret word — but one player has a different word. Find the spy before they blend in.",
     icon: "🕵️",
     cover: "/games/game-cover-undercover.webp",
-    category: "Party",
+    category: "Social Deduction",
     tags: ["Quick Play", "Word Game", "Beginner Friendly"],
     players: "4-10",
     duration: "15-20 min",
@@ -234,8 +240,8 @@ WIN CONDITIONS:
 export const SOCIAL_DEDUCTION: GameTemplate[] = [
   {
     id: "mafia-night",
-    name: "Mafia: City of Shadows",
-    description: "Complex game of lies and deception. Multiple factions, hidden agendas, and intense strategy.",
+    name: "Mafia",
+    description: "Town vs organized crime — debate by day, eliminate by night. Bluff, investigate, survive.",
     icon: "🎭",
     cover: "/games/game-cover-mafia.webp",
     category: "Social Deduction",
@@ -247,22 +253,25 @@ export const SOCIAL_DEDUCTION: GameTemplate[] = [
     templateId: "mafia",
     rules: `SETTING: A town has been infiltrated by organized crime. Citizens debate and vote by day; the Mafia strikes by night. Trust no one.
 
-OBJECTIVE: Town eliminates all Mafia. Mafia eliminates enough Town members to match or outnumber them.
+PLAYERS: 6–15. Scale Mafia count:
+- 6–8 players: 1–2 Mafia, 1 Detective, 1 Doctor, rest Town.
+- 9–11 players: 2–3 Mafia, 1 Detective, 1 Doctor, rest Town.
+- 12–15 players: 3–4 Mafia, 1 Detective, 1 Doctor, rest Town.
 
-PHASES:
-1. Night — Mafia silently choose one victim. Detective investigates one player. Doctor protects one player.
-2. Morning — Host announces who was killed overnight (saved players are noted too). Role not yet revealed.
-3. Day — All living players debate, accuse, and defend. Anyone may claim any role — true or false.
-4. Vote — Players vote to eliminate one suspect. Majority rules; their role is then revealed.
-5. Repeat from Night.
+OBJECTIVE: Town eliminates all Mafia. Mafia eliminates enough Town to match or outnumber them.
 
 ROLES:
-- Town Member: No special power. Wins through reasoning and social pressure.
+- Town Member: No special power. Win through reasoning and social pressure.
 - Mafia: Know each other. Each night, choose one Town Member to eliminate. Act innocent by day.
 - Detective: Each night, investigate one player — learn if they are Town or Mafia.
 - Doctor: Each night, protect one player from elimination. May protect self once per game.
 
-MAFIA COUNT: 1–2 for 6–8 players; 2–3 for 9–11; 3–4 for 12–15.
+PHASES:
+1. Night — Mafia silently choose one victim; Detective investigates one player; Doctor protects one player.
+2. Morning — Host announces who was killed (saved players noted too). Role not yet revealed.
+3. Day — All living players debate, accuse, and defend. Anyone may claim any role — true or false.
+4. Vote — Majority vote eliminates one suspect. Their role is then revealed.
+5. Repeat from Night.
 
 WIN CONDITIONS:
 - Town wins: All Mafia are eliminated.
@@ -586,7 +595,7 @@ WIN CONDITIONS:
   },
   {
     id: "escape-room",
-    name: "The Time Vault",
+    name: "Escape Room",
     description: "Work together to solve interconnected puzzles and escape before time runs out.",
     icon: "🚪",
     cover: "/games/game-cover-escape-room.webp",
@@ -594,7 +603,7 @@ WIN CONDITIONS:
     tags: ["Cooperative", "Logic", "Teamwork"],
     players: "2-6",
     duration: "40-60 min",
-    style: "Competitive",
+    style: "Casual",
     color: "from-green-600 to-emerald-600",
     templateId: "escape-room",
     rules: `SETTING: You are trapped inside a room filled with interconnected puzzles, locked mechanisms, and hidden clues. Work together to solve them all and escape before time runs out.

@@ -108,13 +108,13 @@ describe("seed greeting prompt", () => {
 describe("seed greeting — prompt structure", () => {
   it("game name and template come first", () => {
     const content = buildUserContent({
-      gameName: "Blood Moon",
+      gameName: "Werewolf",
       gameTemplate: "werewolf",
       playerName: "Alice",
       isSeedGreeting: true,
       recentMessages: [],
     });
-    const gameIdx = content.indexOf("Game: Blood Moon");
+    const gameIdx = content.indexOf("Game: Werewolf");
     const typeIdx = content.indexOf("Type: werewolf");
     const seedIdx = content.indexOf("OPENING TURN");
     expect(gameIdx).toBeLessThan(typeIdx);

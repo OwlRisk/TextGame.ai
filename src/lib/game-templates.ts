@@ -129,8 +129,8 @@ HOW THE STORY ENDS:
 
   {
     id: "undercover",
-    name: "Undercover (Who's the Spy)",
-    description: "Find the undercover agent who has a different word while blending in with the group.",
+    name: "Undercover",
+    description: "Everyone describes their secret word — but one player has a different word. Find the spy before they blend in.",
     minPlayers: 4,
     maxPlayers: 10,
     recommendedAICount: 5,
@@ -249,8 +249,8 @@ HOW THE STORY ENDS:
 
   {
     id: "avalon",
-    name: "Avalon: Quest for Honor",
-    description: "Knights of the Round Table must complete quests, but Mordred's agents hide among them.",
+    name: "Avalon",
+    description: "Loyal knights complete quests for Camelot — but Mordred's agents sabotage from within.",
     minPlayers: 5,
     maxPlayers: 10,
     recommendedAICount: 5,
@@ -286,10 +286,13 @@ PHASES:
    - Evil players may choose either.
    - Most rounds: 1 Fail = failed quest. Round 4 (7+ players): 2 Fails required.
 
-QUEST TEAM SIZES:
+QUEST TEAM SIZES (quests 1–5):
 - 5 players: 2 / 3 / 2 / 3 / 3
 - 6 players: 2 / 3 / 4 / 3 / 4
-- 7 players: 2 / 3 / 3 / 4* / 4  (*requires 2 Fails)
+- 7 players: 2 / 3 / 3 / 4* / 4
+- 8 players: 3 / 4 / 4 / 5* / 5
+- 9–10 players: 3 / 4 / 4 / 5* / 5
+(* = 2 Fails required to fail this quest)
 
 HOW THE STORY ENDS:
 - Camelot is saved: Good completes 3 quests AND the Assassin fails to identify Merlin.

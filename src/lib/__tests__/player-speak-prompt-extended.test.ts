@@ -33,7 +33,7 @@ describe("buildSystemPrompt — all templates", () => {
   }
 
   it("werewolf prompt contains social deduction guidance", () => {
-    const prompt = buildSystemPrompt("Alice", "werewolf", "Blood Moon");
+    const prompt = buildSystemPrompt("Alice", "werewolf", "Werewolf");
     expect(prompt).toContain("social deduction");
     expect(prompt).toContain("accusation");
   });
