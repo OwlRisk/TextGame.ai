@@ -173,16 +173,16 @@ describe('DALL-E 3 Token Costs', () => {
     expect(costDalle3).toBeGreaterThan(costDalle2);
   });
 
-  it('dall-e-3 cost is 12 coins', async () => {
+  it('dall-e-3 cost is 8 coins (2x markup)', async () => {
     const { imageGenCostToCoins } = await import('@/lib/tokens');
     const cost = imageGenCostToCoins('dall-e-3');
-    expect(cost).toBe(12);
+    expect(cost).toBe(8);
   });
 
-  it('dall-e-2 cost is 5 coins', async () => {
+  it('dall-e-2 cost is 4 coins (2x markup)', async () => {
     const { imageGenCostToCoins } = await import('@/lib/tokens');
     const cost = imageGenCostToCoins('dall-e-2');
-    expect(cost).toBe(5);
+    expect(cost).toBe(4);
   });
 
   it('pool avatars cost 0 (no token deduction for defaults)', () => {

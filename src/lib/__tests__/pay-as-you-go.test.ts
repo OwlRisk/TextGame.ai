@@ -180,11 +180,11 @@ describe('Routing — /recharge page is active', () => {
     expect(content).not.toContain("router.push('/subscription')");
   });
 
-  it('settings-content routes to /recharge', () => {
+  it('settings-content has no subscription or plan-gating links', () => {
     const p = path.resolve(__dirname, '../../app/components/settings-content.tsx');
     const content = fs.readFileSync(p, 'utf-8');
     expect(content).not.toContain("router.push('/subscription')");
-    expect(content).toContain("router.push('/recharge')");
+    expect(content).not.toContain('isPaid');
   });
 });
 

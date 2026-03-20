@@ -18,6 +18,5 @@ export function sanitizeModel(preferred?: string): string {
 }
 
 export function getPreferredModel(): string {
-  if (typeof window === 'undefined') return DEFAULT_AI_MODEL;
-  return localStorage.getItem('ai_model') || DEFAULT_AI_MODEL;
+  return DEFAULT_AI_MODEL;
 }

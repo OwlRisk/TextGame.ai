@@ -37,10 +37,10 @@ export const GPT_BUDGET_RATIO = 0.5;
 
 /**
  * Platform markup multiplier: actual API cost is multiplied by this factor when deducting.
- * Set to 3 means each 1 coin ($0.01 face value) only covers $0.01/3 ≈ $0.0033 of real API cost.
- * Profit margins per tier: Pro/Plus ≈ 67%, Ultra (with coupon) ≈ 33%.
+ * Set to 2 means each 1 coin ($0.01 face value) covers $0.01/2 = $0.005 of real API cost.
+ * Profit margin ≈ 50%.
  */
-export const PLATFORM_MARKUP = 3;
+export const PLATFORM_MARKUP = 2;
 
 /**
  * Calculate coins to credit based on actual payment amount (cents).

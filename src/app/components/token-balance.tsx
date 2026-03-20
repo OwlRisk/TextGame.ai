@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Button } from './ui/button';
-import { Coins, Crown, Loader2 } from 'lucide-react';
+import { Coins, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 
@@ -14,9 +14,7 @@ export interface Balance {
 }
 
 interface TokenBalanceProps {
-  /** compact: icon + count only, clickable to navigate to recharge; used in top bar / user menu */
   compact?: boolean;
-  /** External refresh trigger (e.g. after returning from recharge page) */
   refreshKey?: number | string;
 }
 
@@ -67,13 +65,7 @@ export function TokenBalance({ compact = false, refreshKey }: TokenBalanceProps)
 
   if (!balance) return null;
 
-  const tierLabel = balance.subscriptionStatus === 'ultra' ? 'Ultra' : balance.subscriptionStatus === 'plus' ? 'Plus' : 'Pro';
-  const balanceNode = balance.isPro ? (
-    <span className="flex items-center gap-1.5 text-amber-400">
-      <Crown className="w-4 h-4 shrink-0" />
-      <span className="text-sm font-medium">{tierLabel}</span>
-    </span>
-  ) : (
+  const balanceNode = (
     <span className="flex items-center gap-1.5 text-zinc-100">
       <Coins className="w-4 h-4 text-amber-500 shrink-0" />
       <span className="font-semibold tabular-nums">{balance.tokens.toLocaleString()}</span>

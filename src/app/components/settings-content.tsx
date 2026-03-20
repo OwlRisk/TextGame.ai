@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bot, Volume2, Image as ImageIcon, Sparkles, Info, Lock } from 'lucide-react';
+import { ArrowLeft, Volume2, Sparkles } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Switch } from '@/app/components/ui/switch';
 import { Label } from '@/app/components/ui/label';
@@ -15,7 +15,6 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/contexts/AuthContext';
-import type { SubscriptionTier } from '@/lib/subscription';
 
 const TTS_MODELS = [
   { value: 'inworld-tts-1.5-max', label: 'Inworld TTS 1.5 Max', description: 'Highest quality' },
@@ -32,41 +31,18 @@ function ls(key: string, fallback: string) {
 export function SettingsContent() {
   const router = useRouter();
   const { session } = useAuth();
-  const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>('free');
-  const [aiModel, setAiModel] = useState<string>(() => ls('ai_model', 'gpt-5.3-chat-latest'));
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'true') !== 'false');
   const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-max'));
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
   const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));
-  const [imageGenEnabled, setImageGenEnabled] = useState<boolean>(() => ls('image_gen_enabled', 'true') !== 'false');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!session?.access_token) return;
-    fetch('/api/user/balance', { headers: { Authorization: `Bearer ${session.access_token}` } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const status = data?.subscriptionStatus ?? 'free';
-        setCurrentPlan(status === 'cancelled' ? 'free' : (status as SubscriptionTier));
-      })
-      .catch(() => setCurrentPlan('free'));
-  }, [session?.access_token]);
-
-  // Load server-persisted settings and sync them into localStorage and local state.
   useEffect(() => {
     if (!session?.access_token) return;
     fetch('/api/user/settings', { headers: { Authorization: `Bearer ${session.access_token}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((prefs: Record<string, unknown> | null) => {
         if (!prefs) return;
-        if (typeof prefs.ai_model === 'string') {
-          setAiModel(prefs.ai_model);
-          localStorage.setItem('ai_model', prefs.ai_model);
-        }
-        if (typeof prefs.image_gen_enabled === 'boolean') {
-          setImageGenEnabled(prefs.image_gen_enabled);
-          localStorage.setItem('image_gen_enabled', String(prefs.image_gen_enabled));
-        }
         if (typeof prefs.tts_model === 'string') {
           setTtsModel(prefs.tts_model);
           localStorage.setItem('tts_model', prefs.tts_model);
@@ -87,22 +63,6 @@ export function SettingsContent() {
       .catch(() => {});
   }, [session?.access_token]);
 
-  const isPaid = currentPlan !== 'free';
-
-  const freeModels = [
-    { value: 'gpt-5.3-chat-latest', label: 'GPT-5.3 Chat', description: 'Default · Most human-like' },
-    { value: 'gpt-5.2-chat-latest', label: 'GPT-5.2 Chat', description: 'Natural & reliable' },
-    { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', description: 'Fast & lightweight' },
-  ];
-  const paidModels = [
-    { value: 'gpt-5.4', label: 'GPT-5.4', description: 'Frontier · Highest reasoning' },
-    { value: 'gpt-5.3-chat-latest', label: 'GPT-5.3 Chat', description: 'Default · Most human-like' },
-    { value: 'gpt-5.2-chat-latest', label: 'GPT-5.2 Chat', description: 'Natural & reliable' },
-    { value: 'gpt-4.1', label: 'GPT-4.1', description: 'Fast & capable' },
-    { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', description: 'Balanced & efficient' },
-  ];
-  const availableModels = isPaid ? paidModels : freeModels;
-
   return (
     <div className="flex-1 flex flex-col bg-[#0a0a0a] h-full overflow-y-auto">
       {/* Header */}
@@ -118,68 +78,13 @@ export function SettingsContent() {
           </Button>
           <div>
             <h1 className="text-xl font-bold text-white">Settings</h1>
-            <p className="text-xs text-zinc-500">Customize your gaming experience</p>
+            <p className="text-xs text-zinc-500">Customize your experience</p>
           </div>
         </div>
       </div>
 
       <div className="flex-1 px-6 py-8">
         <div className="max-w-3xl mx-auto space-y-6">
-
-          {/* Plan badge */}
-          <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-900/50">
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
-              <span>Current plan:</span>
-              <span className={`font-semibold ${isPaid ? 'text-violet-300' : 'text-zinc-300'}`}>
-                {currentPlan === 'free' ? 'Free' : currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/recharge')}
-              className="text-xs text-zinc-400 hover:text-white h-7 px-3"
-            >
-              Buy Credits →
-            </Button>
-          </div>
-
-          {/* AI Model */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                <Bot className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-white font-semibold text-lg mb-0.5">AI Model</h2>
-                <p className="text-zinc-400 text-sm">Which model powers the game Host and AI characters</p>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="ai-model" className="text-zinc-400 text-xs mb-2 block uppercase tracking-wide">Model</Label>
-              <Select value={aiModel} onValueChange={setAiModel}>
-                <SelectTrigger id="ai-model" className="bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  {availableModels.map((model) => (
-                    <SelectItem key={model.value} value={model.value} className="text-white hover:bg-zinc-700">
-                      <span className="font-medium">{model.label}</span>
-                      <span className="text-xs text-zinc-400 ml-2">{model.description}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {!isPaid && (
-              <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                <Info className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
-                <p className="text-amber-200/80 text-xs">
-                  Free plan supports basic models only. <button onClick={() => router.push('/recharge')} className="underline text-amber-300">Buy credits</button> for GPT-4o and Claude.
-                </p>
-              </div>
-            )}
-          </div>
 
           {/* AI Voice */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
@@ -345,56 +250,6 @@ export function SettingsContent() {
             )}
           </div>
 
-          {/* Image Generation */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-                <ImageIcon className="h-5 w-5 text-purple-400" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-white font-semibold text-lg mb-0.5">Image Generation</h2>
-                <p className="text-zinc-400 text-sm">Generate scene images during gameplay</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {!isPaid ? (
-                  <button
-                    onClick={() => router.push('/recharge')}
-                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-violet-300 transition-colors px-2 py-1 rounded-md hover:bg-violet-500/10"
-                  >
-                    <Lock className="h-3 w-3" />
-                    <span>Buy Credits</span>
-                  </button>
-                ) : (
-                  <span className={`text-xs font-medium tabular-nums transition-colors ${imageGenEnabled ? 'text-purple-400' : 'text-zinc-500'}`}>
-                    {imageGenEnabled ? 'On' : 'Off'}
-                  </span>
-                )}
-                <Switch
-                  checked={imageGenEnabled && isPaid}
-                  onCheckedChange={(checked) => {
-                    if (!isPaid) {
-                      router.push('/recharge');
-                      return;
-                    }
-                    setImageGenEnabled(checked);
-                    localStorage.setItem('image_gen_enabled', String(checked));
-                    toast.success(checked ? 'Image generation enabled' : 'Disabled');
-                  }}
-                  disabled={!isPaid}
-                  className="data-[state=checked]:bg-purple-500"
-                />
-              </div>
-            </div>
-            {!isPaid && (
-              <div className="flex items-start gap-2 p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
-                <Info className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
-                <p className="text-zinc-400 text-xs">
-                  Available with credits. <button onClick={() => router.push('/recharge')} className="text-violet-400 underline">Buy Credits →</button>
-                </p>
-              </div>
-            )}
-          </div>
-
           {/* Save */}
           <div className="flex justify-end pt-2">
             <Button
@@ -402,8 +257,6 @@ export function SettingsContent() {
               onClick={async () => {
                 setSaving(true);
                 try {
-                  localStorage.setItem('ai_model', aiModel);
-                  localStorage.setItem('image_gen_enabled', String(imageGenEnabled));
                   if (session?.access_token) {
                     await fetch('/api/user/settings', {
                       method: 'PUT',
@@ -411,7 +264,12 @@ export function SettingsContent() {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${session.access_token}`,
                       },
-                      body: JSON.stringify({ ai_model: aiModel, image_gen_enabled: imageGenEnabled }),
+                      body: JSON.stringify({
+                        tts_model: ttsModel,
+                        tts_enabled: ttsEnabled,
+                        tts_temperature: ttsTemperature,
+                        tts_speed: ttsSpeed,
+                      }),
                     });
                   }
                   toast.success('Settings saved!');

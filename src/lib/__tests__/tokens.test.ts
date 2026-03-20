@@ -21,7 +21,6 @@ import {
 
 describe('rechargeCoinsFromPayment', () => {
   it('$10 (1000 cents) → 500 coins', () => {
-    // 1000 / 100 * 0.5 / 0.01 = 500
     expect(rechargeCoinsFromPayment(1000)).toBe(500);
   });
 
@@ -42,9 +41,7 @@ describe('rechargeCoinsFromPayment', () => {
   });
 
   it('floors fractional coins', () => {
-    // 1 cent → 0.01 * 0.5 / 0.01 = 0.5 → floor → 0
     expect(rechargeCoinsFromPayment(1)).toBe(0);
-    // 3 cents → 0.03 * 0.5 / 0.01 = 1.5 → floor → 1
     expect(rechargeCoinsFromPayment(3)).toBe(1);
   });
 
@@ -58,26 +55,25 @@ describe('rechargeCoinsFromPayment', () => {
 // ─── usdToCoins ───────────────────────────────────────────────────────────
 
 describe('usdToCoins', () => {
-  it('PLATFORM_MARKUP is 3', () => {
-    expect(PLATFORM_MARKUP).toBe(3);
+  it('PLATFORM_MARKUP is 2', () => {
+    expect(PLATFORM_MARKUP).toBe(2);
   });
 
-  it('$0.01 API cost → 3 coins (3x markup)', () => {
-    // ceil(0.01 / 0.01 * 3) = 3
-    expect(usdToCoins(0.01)).toBe(3);
+  it('$0.01 API cost → 2 coins (2x markup)', () => {
+    expect(usdToCoins(0.01)).toBe(2);
   });
 
-  it('$0.10 API cost → 30 coins', () => {
-    expect(usdToCoins(0.10)).toBe(30);
+  it('$0.10 API cost → 20 coins', () => {
+    expect(usdToCoins(0.10)).toBe(20);
   });
 
-  it('$1.00 API cost → 300 coins', () => {
-    expect(usdToCoins(1.00)).toBe(300);
+  it('$1.00 API cost → 200 coins', () => {
+    expect(usdToCoins(1.00)).toBe(200);
   });
 
   it('ceils fractional coins after markup', () => {
-    // $0.005 → ceil(0.005 / 0.01 * 3) = ceil(1.5) = 2
-    expect(usdToCoins(0.005)).toBe(2);
+    // $0.005 → ceil(0.005 / 0.01 * 2) = ceil(1.0) = 1
+    expect(usdToCoins(0.005)).toBe(1);
   });
 
   it('zero or negative → minimum 1 coin', () => {
@@ -98,14 +94,14 @@ describe('usdToCoins', () => {
 // ─── gptUsageToCoins ──────────────────────────────────────────────────────
 
 describe('gptUsageToCoins', () => {
-  it('gpt-4o: 1M prompt + 1M completion tokens → correct coins (3x markup)', () => {
-    // input $2.5/1M + output $10/1M → usd = 12.5 → coins = ceil(12.5/0.01 * 3) = 3750
-    expect(gptUsageToCoins('gpt-4o', 1_000_000, 1_000_000)).toBe(3750);
+  it('gpt-4o: 1M prompt + 1M completion tokens → correct coins (2x markup)', () => {
+    // input $2.5/1M + output $10/1M → usd = 12.5 → coins = ceil(12.5/0.01 * 2) = 2500
+    expect(gptUsageToCoins('gpt-4o', 1_000_000, 1_000_000)).toBe(2500);
   });
 
-  it('gpt-4o-mini: 1M prompt + 1M completion → cheap model (3x markup)', () => {
-    // input $0.15/1M + output $0.6/1M → usd = 0.75 → coins = ceil(0.75/0.01 * 3) = 225
-    expect(gptUsageToCoins('gpt-4o-mini', 1_000_000, 1_000_000)).toBe(225);
+  it('gpt-4o-mini: 1M prompt + 1M completion → cheap model (2x markup)', () => {
+    // input $0.15/1M + output $0.6/1M → usd = 0.75 → coins = ceil(0.75/0.01 * 2) = 150
+    expect(gptUsageToCoins('gpt-4o-mini', 1_000_000, 1_000_000)).toBe(150);
   });
 
   it('gpt-5.2 costs more than gpt-4o (higher tier)', () => {
@@ -119,19 +115,19 @@ describe('gptUsageToCoins', () => {
     );
   });
 
-  it('gpt-5.2 uses $1.75 input / $14.00 output pricing (3x markup)', () => {
-    // 1M input + 1M output: 15.75 USD → ceil(15.75/0.01 * 3) = 4725
-    expect(gptUsageToCoins('gpt-5.2', 1_000_000, 1_000_000)).toBe(4725);
+  it('gpt-5.2 uses $1.75 input / $14.00 output pricing (2x markup)', () => {
+    // 1M input + 1M output: 15.75 USD → ceil(15.75/0.01 * 2) = 3150
+    expect(gptUsageToCoins('gpt-5.2', 1_000_000, 1_000_000)).toBe(3150);
   });
 
-  it('gpt-4.1 uses $2.00 input / $8.00 output pricing (3x markup)', () => {
-    // 10.00 USD → ceil(10/0.01 * 3) = 3000
-    expect(gptUsageToCoins('gpt-4.1', 1_000_000, 1_000_000)).toBe(3000);
+  it('gpt-4.1 uses $2.00 input / $8.00 output pricing (2x markup)', () => {
+    // 10.00 USD → ceil(10/0.01 * 2) = 2000
+    expect(gptUsageToCoins('gpt-4.1', 1_000_000, 1_000_000)).toBe(2000);
   });
 
-  it('gpt-4.1-mini uses $0.40 input / $1.60 output pricing (3x markup)', () => {
-    // 2.00 USD → ceil(2/0.01 * 3) = 600
-    expect(gptUsageToCoins('gpt-4.1-mini', 1_000_000, 1_000_000)).toBe(600);
+  it('gpt-4.1-mini uses $0.40 input / $1.60 output pricing (2x markup)', () => {
+    // 2.00 USD → ceil(2/0.01 * 2) = 400
+    expect(gptUsageToCoins('gpt-4.1-mini', 1_000_000, 1_000_000)).toBe(400);
   });
 
   it('gpt-5-nano is the cheapest supported model', () => {
@@ -145,7 +141,6 @@ describe('gptUsageToCoins', () => {
   });
 
   it('small real-world usage (1k prompt, 500 completion)', () => {
-    // gpt-4o: (1000/1M)*2.5 + (500/1M)*10 = 0.0025 + 0.005 = 0.0075 → ceil(0.75) = 1
     const coins = gptUsageToCoins('gpt-4o', 1000, 500);
     expect(coins).toBeGreaterThanOrEqual(1);
   });
@@ -201,8 +196,8 @@ describe('estimateTokensFromText', () => {
   });
 
   it('ceils partial tokens', () => {
-    expect(estimateTokensFromText('ab')).toBe(1);   // 2/3 → ceil = 1
-    expect(estimateTokensFromText('abcd')).toBe(2); // 4/3 → ceil = 2
+    expect(estimateTokensFromText('ab')).toBe(1);
+    expect(estimateTokensFromText('abcd')).toBe(2);
   });
 
   it('longer text produces proportionally more tokens', () => {
@@ -267,19 +262,16 @@ describe('IMAGE_GEN_PRICE_USD', () => {
 // ─── imageGenCostToCoins ──────────────────────────────────────────────────
 
 describe('imageGenCostToCoins', () => {
-  it('dall-e-2: $0.016 × 3x markup = ceil(0.016/0.01 * 3) = 5 coins', () => {
-    // ceil(1.6 * 3) = ceil(4.8) = 5
-    expect(imageGenCostToCoins('dall-e-2')).toBe(5);
+  it('dall-e-2: $0.016 × 2x markup = ceil(0.016/0.01 * 2) = 4 coins', () => {
+    expect(imageGenCostToCoins('dall-e-2')).toBe(4);
   });
 
-  it('dall-e-3: $0.04 × 3x markup = 12 coins', () => {
-    // ceil(4 * 3) = 12
-    expect(imageGenCostToCoins('dall-e-3')).toBe(12);
+  it('dall-e-3: $0.04 × 2x markup = 8 coins', () => {
+    expect(imageGenCostToCoins('dall-e-3')).toBe(8);
   });
 
-  it('dall-e-3-hd: $0.08 × 3x markup = 24 coins', () => {
-    // ceil(8 * 3) = 24
-    expect(imageGenCostToCoins('dall-e-3-hd')).toBe(24);
+  it('dall-e-3-hd: $0.08 × 2x markup = 16 coins', () => {
+    expect(imageGenCostToCoins('dall-e-3-hd')).toBe(16);
   });
 
   it('dall-e-3 costs more than dall-e-2', () => {
@@ -323,14 +315,12 @@ describe('ttsCostToCoins', () => {
     expect(ttsCostToCoins(-10, 'inworld-tts-1.5-mini')).toBe(0);
   });
 
-  it('inworld-tts-1.5-mini: 1M chars = 1500 coins ($5/1M × 3x markup)', () => {
-    // $5/1M / $0.01 * 3 = 1500
-    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-mini')).toBe(1500);
+  it('inworld-tts-1.5-mini: 1M chars = 1000 coins ($5/1M × 2x markup)', () => {
+    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-mini')).toBe(1000);
   });
 
-  it('inworld-tts-1.5-max: 1M chars = 3000 coins ($10/1M × 3x markup)', () => {
-    // $10/1M / $0.01 * 3 = 3000
-    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-max')).toBe(3000);
+  it('inworld-tts-1.5-max: 1M chars = 2000 coins ($10/1M × 2x markup)', () => {
+    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-max')).toBe(2000);
   });
 
   it('small text (100 chars) costs at least 1 coin', () => {
@@ -349,13 +339,13 @@ describe('ttsCostToCoins', () => {
   });
 
   it('typical message (200 chars) costs 1 coin with mini', () => {
-    // 200/1M * $5 = $0.001 → ceil(0.001/0.01 * 3) = ceil(0.3) = 1
+    // 200/1M * $5 = $0.001 → ceil(0.001/0.01 * 2) = ceil(0.2) = 1
     expect(ttsCostToCoins(200, 'inworld-tts-1.5-mini')).toBe(1);
   });
 
-  it('2000 chars with max costs 6 coins (3x markup)', () => {
-    // 2000/1M * $10 = $0.02 → ceil(0.02/0.01 * 3) = ceil(6) = 6
-    expect(ttsCostToCoins(2000, 'inworld-tts-1.5-max')).toBe(6);
+  it('2000 chars with max costs 4 coins (2x markup)', () => {
+    // 2000/1M * $10 = $0.02 → ceil(0.02/0.01 * 2) = ceil(4) = 4
+    expect(ttsCostToCoins(2000, 'inworld-tts-1.5-max')).toBe(4);
   });
 });
 

@@ -30,18 +30,10 @@ describe("getPreferredModel", () => {
     expect(getPreferredModel()).toBe(DEFAULT_AI_MODEL);
   });
 
-  it("returns localStorage value when set", () => {
+  it("always returns DEFAULT_AI_MODEL (model is now unified)", () => {
     vi.stubGlobal("window", {});
     vi.stubGlobal("localStorage", {
       getItem: vi.fn().mockReturnValue("gpt-4o"),
-    });
-    expect(getPreferredModel()).toBe("gpt-4o");
-  });
-
-  it("returns DEFAULT_AI_MODEL for empty string in localStorage", () => {
-    vi.stubGlobal("window", {});
-    vi.stubGlobal("localStorage", {
-      getItem: vi.fn().mockReturnValue(""),
     });
     expect(getPreferredModel()).toBe(DEFAULT_AI_MODEL);
   });
