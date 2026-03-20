@@ -209,23 +209,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
   }, [currentGame?.config?.channels, selectedChannelId, setSelectedChannelId]);
 
-  // Generate game icon in background
-  const iconGeneratedRef = useRef(false);
-  useEffect(() => {
-    if (!currentGame || iconGeneratedRef.current) return;
-    const icon = currentGame.icon ?? "";
-    if (icon.startsWith("http") || icon.startsWith("data:image")) return;
-    iconGeneratedRef.current = true;
-    const { name, config } = currentGame;
-    fetch("/api/generate-game-icon", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameName: name, gameTemplate: config?.template, rules: config?.rules }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data?.icon) updateGame(gameId, { icon: data.icon }); })
-      .catch(() => {});
-  }, [currentGame?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Game icons are now static per template; no DALL-E generation needed.
 
   // Rules viewed tracking
   const RULES_CHANNEL_ID = "__rules__";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Hash, Users, MessageSquare, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3, RefreshCw } from "lucide-react";
+import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -13,7 +13,6 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/app/components/ui/context-menu";
 import {
@@ -27,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -43,28 +42,29 @@ interface Game {
   config?: { rules?: string; template?: string };
 }
 
-const TEMPLATE_COVERS: Record<string, string> = {
-  werewolf:           "/games/game-cover-werewolf.webp",
-  mafia:              "/games/game-cover-mafia.webp",
-  undercover:         "/games/game-cover-undercover.webp",
-  tarot:              "/games/game-cover-tarot.webp",
-  codenames:          "/games/game-cover-codenames.webp",
-  avalon:             "/games/game-cover-avalon.webp",
-  spyfall:            "/games/game-cover-spyfall.webp",
-  "detective-mystery":"/games/game-cover-detective.webp",
-  "escape-room":      "/games/game-cover-escape-room.webp",
-  trivia:             "/games/game-cover-trivia.webp",
-  debate:             "/games/game-cover-debate.webp",
-  storyteller:        "/games/game-cover-storyteller.webp",
-  "20-questions":     "/games/game-cover-20-questions.webp",
-  "two-truths-lie":   "/games/game-cover-two-truths.webp",
+const TEMPLATE_ICONS: Record<string, string> = {
+  werewolf:           "/games/sidebar-icon-werewolf.webp",
+  mafia:              "/games/sidebar-icon-mafia.webp",
+  undercover:         "/games/sidebar-icon-undercover.webp",
+  tarot:              "/games/sidebar-icon-tarot.webp",
+  codenames:          "/games/sidebar-icon-codenames.webp",
+  avalon:             "/games/sidebar-icon-avalon.webp",
+  spyfall:            "/games/sidebar-icon-spyfall.webp",
+  "detective-mystery":"/games/sidebar-icon-detective.webp",
+  "escape-room":      "/games/sidebar-icon-escape-room.webp",
+  trivia:             "/games/sidebar-icon-trivia.webp",
+  debate:             "/games/sidebar-icon-debate.webp",
+  storyteller:        "/games/sidebar-icon-storyteller.webp",
+  "20-questions":     "/games/sidebar-icon-20-questions.webp",
+  "two-truths-lie":   "/games/sidebar-icon-two-truths.webp",
+  custom:             "/games/sidebar-icon-custom.webp",
 };
 
-function getGameCover(game: Game): string | null {
-  if (game.icon.startsWith("data:image") || game.icon.startsWith("http")) return game.icon;
+function getGameIcon(game: Game): string | null {
+  if (game.icon.startsWith("http")) return game.icon;
   const template = game.config?.template;
-  if (template && TEMPLATE_COVERS[template]) return TEMPLATE_COVERS[template];
-  return null;
+  if (template && TEMPLATE_ICONS[template]) return TEMPLATE_ICONS[template];
+  return TEMPLATE_ICONS.custom ?? null;
 }
 
 interface GameSidebarProps {
@@ -75,56 +75,16 @@ interface GameSidebarProps {
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
   onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
-  /** When used inside mobile drawer, close drawer after navigation */
   onNavigate?: () => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onUpdateGame, onNavigate }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onNavigate }: GameSidebarProps) {
   const router = useRouter();
   const { user, session, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [iconGeneratingId, setIconGeneratingId] = useState<string | null>(null);
-  const autoIconRequestedRef = useRef<Set<string>>(new Set());
-
-  const handleGenerateIcon = async (game: Game, silent = false) => {
-    if (!onUpdateGame) return;
-    setIconGeneratingId(game.id);
-    try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
-      const res = await fetch("/api/generate-game-icon", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          gameName: game.name,
-          gameTemplate: game.config?.template,
-          rules: game.config?.rules,
-          gameId: game.id,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to generate");
-      }
-      const data = await res.json();
-      if (data.icon) {
-        onUpdateGame(game.id, { icon: data.icon });
-        if (!silent) toast.success(`Icon updated for "${game.name}"`);
-      }
-    } catch (e) {
-      console.error("Generate game icon error:", e);
-      // On silent auto-generation failure, remove from requested set so it can retry next mount
-      if (silent) autoIconRequestedRef.current.delete(game.id);
-      if (!silent) toast.error(e instanceof Error ? e.message : "Failed to generate icon. Try again later.");
-    } finally {
-      setIconGeneratingId(null);
-    }
-  };
-
-  // Auto-generation removed: sidebar now uses template cover images as defaults.
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -167,7 +127,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              🏠 Home
+              Home
             </TooltipContent>
           </Tooltip>
 
@@ -193,7 +153,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              🎮 My Games
+              My Stories
             </TooltipContent>
           </Tooltip>
 
@@ -219,11 +179,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              🧭 Discover
+              Discover
             </TooltipContent>
           </Tooltip>
 
-          {/* Create Game – show when unauthenticated or no games yet */}
+          {/* Create Game */}
           {(!user || games.length === 0) && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -238,7 +198,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-                ✨ Create Game
+                New Story
               </TooltipContent>
             </Tooltip>
           )}
@@ -247,7 +207,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
 
         <div className="w-8 h-0.5 bg-zinc-700 rounded-full my-1" />
 
-        {/* Game List - Only show when user is logged in; min-h-0 allows flex children to shrink so the bottom user section isn't pushed off */}
+        {/* Game List */}
         {user && (
           <ScrollArea className="flex-1 min-h-0 w-full">
             <div className="flex flex-col items-center gap-2 px-3">
@@ -267,11 +227,9 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                             asChild
                           >
                             <Link href={`/game/${game.id}`} prefetch aria-label={game.name} onClick={() => { onSelectGame(game.id); onNavigate?.(); }}>
-                              {iconGeneratingId === game.id ? (
-                                <Loader2 className="h-6 w-6 text-white animate-spin" />
-                              ) : getGameCover(game) ? (
+                              {getGameIcon(game) ? (
                                 <img
-                                  src={getGameCover(game)!}
+                                  src={getGameIcon(game)!}
                                   alt={game.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -292,22 +250,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     </Tooltip>
                   </ContextMenuTrigger>
                   <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
-                    {onUpdateGame && (
-                      <ContextMenuItem
-                        className="cursor-pointer focus:bg-zinc-700"
-                        disabled={iconGeneratingId === game.id}
-                        onClick={() => handleGenerateIcon(game)}
-                      >
-                        {iconGeneratingId === game.id ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                        )}
-                        Regenerate Icon
-                      </ContextMenuItem>
-                    )}
-                    {onUpdateGame && <ContextMenuSeparator className="bg-zinc-700" />}
-                    <ContextMenuItem 
+                    <ContextMenuItem
                       className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                       onClick={() => {
                         setGameToDelete(game);
@@ -324,7 +267,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           </ScrollArea>
         )}
 
-        {/* User Profile - Bottom, fixed (does not shrink), prevents being pushed off by game list */}
+        {/* User Profile */}
         <div className="mt-auto flex-shrink-0">
           {loading ? (
             <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -348,7 +291,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 className="w-[min(320px,calc(100vw-1rem))] bg-zinc-900 border-zinc-800 text-white p-0 ml-2 rounded-xl overflow-hidden"
               >
                 <div className="p-4 space-y-4">
-                  {/* User Avatar & Info: avatar + name, bottom border */}
                   <div className="flex items-center gap-3 pb-3 border-b border-zinc-800">
                     <Avatar className="h-16 w-16 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-zinc-700/80">
                       <AvatarImage src={userAvatar} alt={username} />
@@ -362,15 +304,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     </div>
                   </div>
 
-                  {/* Menu items: order and icons */}
                   <div className="space-y-1">
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/profile');
-                      }}
+                      onClick={() => { setUserMenuOpen(false); router.push('/profile'); }}
                     >
                       <UserCircle className="mr-3 h-4 w-4 text-blue-400 shrink-0" />
                       <span className="text-sm">Edit Profile</span>
@@ -378,10 +316,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/usage');
-                      }}
+                      onClick={() => { setUserMenuOpen(false); router.push('/usage'); }}
                     >
                       <BarChart3 className="mr-3 h-4 w-4 text-violet-400 shrink-0" />
                       <span className="text-sm">Usage & Spending</span>
@@ -389,10 +324,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/recharge');
-                      }}
+                      onClick={() => { setUserMenuOpen(false); router.push('/recharge'); }}
                     >
                       <CreditCard className="mr-3 h-4 w-4 text-emerald-400 shrink-0" />
                       <span className="text-sm">Buy Credits</span>
@@ -400,10 +332,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/help');
-                      }}
+                      onClick={() => { setUserMenuOpen(false); router.push('/help'); }}
                     >
                       <HelpCircle className="mr-3 h-4 w-4 text-amber-400 shrink-0" />
                       <span className="text-sm">Help & Support</span>
@@ -454,7 +383,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Game</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete "{gameToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{gameToDelete?.name}&rdquo;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
