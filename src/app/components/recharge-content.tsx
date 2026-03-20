@@ -280,7 +280,7 @@ export function RechargeContent() {
             type="button"
             onClick={handlePurchase}
             disabled={isProcessing}
-            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none"
           >
             {isProcessing ? (
               <>
