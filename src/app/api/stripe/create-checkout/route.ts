@@ -6,13 +6,15 @@ import { getStripePriceIdForTier } from '@/lib/subscription';
 
 /** Display-only package info; actual coins credited are calculated by rechargeCoinsFromPayment(price_cents) */
 const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number }> = {
-  starter: { name: 'Starter', price_cents: 500 },
-  popular: { name: 'Popular', price_cents: 1000 },
-  pro: { name: 'Pro', price_cents: 2500 },
-  ultimate: { name: 'Ultimate', price_cents: 5000 },
-  mega: { name: 'Mega', price_cents: 10000 },
-  legendary: { name: 'Legendary', price_cents: 20000 },
-  immortal: { name: 'Immortal', price_cents: 50000 },
+  starter:   { name: 'Starter',    price_cents: 500 },
+  popular:   { name: 'Popular',    price_cents: 1000 },
+  power:     { name: 'Power',      price_cents: 2500 },
+  ultimate:  { name: 'Ultimate',   price_cents: 5000 },
+  // Legacy IDs kept for backward compatibility
+  pro:       { name: 'Pro',        price_cents: 2500 },
+  mega:      { name: 'Mega',       price_cents: 10000 },
+  legendary: { name: 'Legendary',  price_cents: 20000 },
+  immortal:  { name: 'Immortal',   price_cents: 50000 },
 };
 
 export async function POST(request: NextRequest) {

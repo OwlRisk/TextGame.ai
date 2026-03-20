@@ -3,130 +3,91 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Coins, Clock, Check, TrendingUp, Zap } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Check, ArrowRight, Sparkles, Shield, Infinity, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { setAuthCookie } from '@/lib/auth-cookie';
 import { supabase } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
 
-interface CoinPackage {
+interface CreditPackage {
   id: string;
   name: string;
   price: number;
-  coins: number;
+  credits: number;
   bonus: number;
-  popular?: boolean;
-  estimatedHours: string;
-  description: string;
+  perCredit: string;
+  badge?: string;
 }
 
-const PACKAGES: CoinPackage[] = [
+const PACKAGES: CreditPackage[] = [
   {
     id: 'starter',
-    name: 'Starter',
+    name: 'Try it out',
     price: 5,
-    coins: 500,
+    credits: 500,
     bonus: 0,
-    estimatedHours: '5-8 hours',
-    description: 'Perfect for trying out',
+    perCredit: '$0.010',
   },
   {
     id: 'popular',
-    name: 'Popular',
+    name: 'Most popular',
     price: 10,
-    coins: 1000,
+    credits: 1000,
     bonus: 200,
-    estimatedHours: '12-18 hours',
-    description: 'Best for casual gaming',
-    popular: true,
+    perCredit: '$0.008',
+    badge: 'Best value',
   },
   {
     id: 'power',
-    name: 'Power',
+    name: 'Power user',
     price: 25,
-    coins: 2500,
+    credits: 2500,
     bonus: 750,
-    estimatedHours: '35-50 hours',
-    description: 'For serious players',
+    perCredit: '$0.008',
   },
   {
     id: 'ultimate',
-    name: 'Ultimate',
+    name: 'Go all in',
     price: 50,
-    coins: 5000,
+    credits: 5000,
     bonus: 2000,
-    estimatedHours: '80-120 hours',
-    description: 'Maximum value',
-  },
-  {
-    id: 'mega',
-    name: 'Mega',
-    price: 100,
-    coins: 10000,
-    bonus: 5000,
-    estimatedHours: '180-250 hours',
-    description: 'For power users',
-  },
-  {
-    id: 'legendary',
-    name: 'Legendary',
-    price: 200,
-    coins: 20000,
-    bonus: 12000,
-    estimatedHours: '400-550 hours',
-    description: 'Ultimate package',
-  },
-  {
-    id: 'immortal',
-    name: 'Immortal',
-    price: 500,
-    coins: 50000,
-    bonus: 35000,
-    estimatedHours: '1000+ hours',
-    description: 'Unbeatable value',
+    perCredit: '$0.007',
   },
 ];
+
+const FEATURES = [
+  { icon: MessageSquare, text: 'Every AI message, voice, and image' },
+  { icon: Infinity, text: 'Credits never expire' },
+  { icon: Shield, text: 'No subscription, no recurring charges' },
+] as const;
 
 export function RechargeContent() {
   const { user, session } = useAuth();
   const searchParams = useSearchParams();
-  const [currentCoins, setCurrentCoins] = useState(0);
-  const [balanceStatus, setBalanceStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
-  const [selectedPackage, setSelectedPackage] = useState<CoinPackage>(PACKAGES[1]);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState('popular');
   const [isProcessing, setIsProcessing] = useState(false);
   const fulfillDoneRef = useRef(false);
   const balanceFetchingRef = useRef(false);
+
+  const selected = PACKAGES.find((p) => p.id === selectedId) ?? PACKAGES[1];
+  const totalCredits = selected.credits + selected.bonus;
 
   const fetchBalance = useCallback(() => {
     if (!session?.access_token) return;
     if (balanceFetchingRef.current) return;
     balanceFetchingRef.current = true;
-    setBalanceStatus('loading');
     fetch('/api/user/balance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken: session.access_token }),
       credentials: 'include',
     })
-      .then((res) => {
-        if (!res.ok) {
-          setBalanceStatus('error');
-          return;
-        }
-        return res.json();
-      })
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data != null) {
-          setCurrentCoins(data.tokens ?? 0);
-          setBalanceStatus('ok');
-        } else {
-          setBalanceStatus('error');
-        }
+        if (data != null) setBalance(data.tokens ?? 0);
       })
-      .catch(() => {
-        setBalanceStatus('error');
-      })
+      .catch(() => {})
       .finally(() => {
         balanceFetchingRef.current = false;
       });
@@ -136,7 +97,6 @@ export function RechargeContent() {
     fetchBalance();
   }, [fetchBalance]);
 
-  // Refresh balance when page becomes visible (e.g. returning from Stripe or other tab)
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible') fetchBalance();
@@ -145,7 +105,6 @@ export function RechargeContent() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [fetchBalance]);
 
-  // Fulfill coin credit when returning from Stripe success (fallback when webhook doesn't fire in local dev)
   useEffect(() => {
     const success = searchParams.get('success');
     const sessionId = searchParams.get('session_id');
@@ -160,7 +119,7 @@ export function RechargeContent() {
       .then((res) => res.json())
       .then((data) => {
         if (data.credited || data.tokens) {
-          trackEvent("purchase", { checkout_type: "recharge" });
+          trackEvent('purchase', { checkout_type: 'recharge' });
           return fetch('/api/user/balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -169,10 +128,9 @@ export function RechargeContent() {
           }).then((r) => (r.ok ? r.json() : { tokens: 0 }));
         }
       })
-      .then((balance) => {
-        if (balance != null) setCurrentCoins(balance.tokens ?? 0);
+      .then((b) => {
+        if (b != null) setBalance(b.tokens ?? 0);
         window.history.replaceState({}, '', '/recharge');
-        // Delay another fetch to avoid timing gap between fulfill and DB read
         setTimeout(() => fetchBalance(), 2000);
       })
       .catch(() => {
@@ -190,14 +148,11 @@ export function RechargeContent() {
       redirectToSignIn();
       return;
     }
-    // Fetch fresh session and write to cookie before request to avoid Header loss from extensions/environment
     let freshSession: { access_token?: string } | null = null;
     try {
       const { data } = await supabase.auth.getSession();
       freshSession = data.session;
-    } catch {
-      // AuthSessionMissingError etc. — treat as no session
-    }
+    } catch {}
     const accessToken = freshSession?.access_token ?? session?.access_token;
     if (!accessToken) {
       alert('Your session has expired. Please sign in again.');
@@ -206,19 +161,16 @@ export function RechargeContent() {
     }
     setAuthCookie(accessToken);
     setIsProcessing(true);
-    trackEvent("begin_checkout", {
-      item_name: selectedPackage.name,
-      checkout_type: "recharge",
-      value: selectedPackage.price,
+    trackEvent('begin_checkout', {
+      item_name: selected.name,
+      checkout_type: 'recharge',
+      value: selected.price,
     });
     try {
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          packageId: selectedPackage.id,
-          accessToken, // Pass token in body to avoid Header/Cookie being stripped by extensions
-        }),
+        body: JSON.stringify({ packageId: selected.id, accessToken }),
         credentials: 'include',
       });
       const text = await response.text();
@@ -246,190 +198,153 @@ export function RechargeContent() {
     }
   };
 
-  const totalCoins = selectedPackage.coins + selectedPackage.bonus;
-
   return (
-    <div className="bg-[#0a0a0a]">
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Buy credits</h1>
-            <p className="text-zinc-500">Buy credits and use them at your own pace. No subscription required.</p>
-          </div>
+    <div className="flex-1 min-h-0 overflow-auto bg-[#0a0a0a]">
+      <div className="max-w-3xl mx-auto px-5 py-10 sm:py-16">
 
-          <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3">
-            <Coins className="h-5 w-5 text-emerald-500 shrink-0" />
-            <div className="min-w-0">
-              <div className="text-xs text-zinc-500">Usage</div>
-              <div className="text-xl font-bold text-white">
-                {balanceStatus === 'ok' && currentCoins.toLocaleString()}
-                {balanceStatus === 'error' && (
-                  <span className="text-amber-400 font-normal text-sm">Failed to load</span>
-                )}
-                {balanceStatus !== 'ok' && balanceStatus !== 'error' && '\u00A0'}
-              </div>
-            </div>
-          </div>
+        {/* Hero */}
+        <div className="text-center mb-10 sm:mb-14">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
+            Buy credits
+          </h1>
+          <p className="text-zinc-500 text-base sm:text-lg max-w-md mx-auto leading-relaxed">
+            Pay as you go. No subscription needed.
+            {balance !== null && (
+              <span className="block mt-2 text-sm text-zinc-400">
+                You have <span className="text-white font-semibold tabular-nums">{balance.toLocaleString()}</span> credits
+              </span>
+            )}
+          </p>
         </div>
 
-        {/* Packages Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        {/* Package cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {PACKAGES.map((pkg) => {
-            const isSelected = selectedPackage.id === pkg.id;
-            const pkgTotal = pkg.coins + pkg.bonus;
-
+            const isActive = selectedId === pkg.id;
+            const total = pkg.credits + pkg.bonus;
             return (
-              <motion.button
+              <button
                 key={pkg.id}
-                onClick={() => setSelectedPackage(pkg)}
-                className={`relative bg-zinc-900 border-2 rounded-xl p-6 text-left transition-all ${
-                  isSelected
-                    ? 'border-violet-500 shadow-lg shadow-violet-500/20'
-                    : 'border-zinc-800 hover:border-zinc-700'
+                type="button"
+                onClick={() => setSelectedId(pkg.id)}
+                className={`relative flex flex-col rounded-2xl border-2 p-5 sm:p-6 text-left transition-all duration-200 ${
+                  isActive
+                    ? 'border-violet-500 bg-violet-500/5 shadow-lg shadow-violet-500/10'
+                    : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
                 }`}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.98 }}
               >
-                {/* Popular Badge */}
-                {pkg.popular && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                    <div className="bg-violet-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      POPULAR
-                    </div>
-                  </div>
-                )}
-
-                {/* Package Name & Price */}
-                <div className="mb-4">
-                  <div className="text-zinc-400 text-sm font-semibold mb-1">{pkg.name}</div>
-                  <div className="text-4xl font-black text-white mb-1">${pkg.price}</div>
-                  <div className="text-zinc-500 text-xs">{pkg.description}</div>
-                </div>
-
-                {/* Usage amount */}
-                <div className="bg-zinc-800/50 rounded-lg p-4 mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Coins className="h-5 w-5 text-emerald-500" />
-                    <span className="text-xs text-zinc-400 uppercase font-semibold tracking-wider">
-                      You get
+                {pkg.badge && (
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full whitespace-nowrap">
+                      {pkg.badge}
                     </span>
                   </div>
-                  <div className="text-3xl font-black text-white">
-                    {pkgTotal.toLocaleString()}
-                  </div>
-                  {pkg.bonus > 0 ? (
-                    <div className="text-xs text-zinc-500">
-                      {pkg.coins.toLocaleString()} + {pkg.bonus.toLocaleString()} usage
+                )}
+
+                <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-3">
+                  {pkg.name}
+                </span>
+
+                <span className="text-3xl sm:text-4xl font-black text-white mb-1">
+                  ${pkg.price}
+                </span>
+
+                <span className="text-lg sm:text-xl font-bold text-zinc-200 tabular-nums mb-1">
+                  {total.toLocaleString()}
+                </span>
+                <span className="text-[11px] text-zinc-500">
+                  credits{pkg.bonus > 0 && (
+                    <span className="text-emerald-400 ml-1">+{pkg.bonus.toLocaleString()} bonus</span>
+                  )}
+                </span>
+
+                <div className="mt-auto pt-4">
+                  {isActive ? (
+                    <div className="flex items-center justify-center gap-1.5 h-8 rounded-lg bg-violet-500/15 text-violet-400 text-xs font-semibold">
+                      <Check className="h-3.5 w-3.5" /> Selected
                     </div>
                   ) : (
-                    <div className="text-xs text-zinc-500">usage</div>
+                    <div className="h-8 rounded-lg border border-zinc-700/60 flex items-center justify-center text-zinc-500 text-xs font-medium">
+                      Select
+                    </div>
                   )}
                 </div>
-
-                {/* Estimated Play Time */}
-                <div className="flex items-center justify-between text-sm pb-4 border-b border-zinc-800 mb-4">
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <Clock className="h-4 w-4" />
-                    <span>Est. playtime</span>
-                  </div>
-                  <span className="text-white font-bold">{pkg.estimatedHours}</span>
-                </div>
-
-                {/* Selected Indicator */}
-                {isSelected ? (
-                  <div className="flex items-center justify-center gap-2 text-violet-400 text-sm font-semibold">
-                    <Check className="h-4 w-4" />
-                    Selected
-                  </div>
-                ) : (
-                  <div className="text-center text-zinc-600 text-sm font-semibold">
-                    Select
-                  </div>
-                )}
-              </motion.button>
+              </button>
             );
           })}
         </div>
 
-        {/* Purchase Section */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            {/* Left: Summary */}
-            <div>
-              <div className="text-zinc-400 text-sm mb-2">You&apos;re getting</div>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-16 w-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
-                  <Coins className="h-8 w-8 text-white" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-white">{totalCoins.toLocaleString()}</div>
-                  <div className="text-zinc-500 text-sm">usage • {selectedPackage.estimatedHours} of play</div>
-                </div>
-              </div>
+        {/* Purchase button */}
+        <div className="mb-12">
+          <button
+            type="button"
+            onClick={handlePurchase}
+            disabled={isProcessing}
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+          >
+            {isProcessing ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                Buy {totalCredits.toLocaleString()} credits for ${selected.price}
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+          <p className="text-center text-[11px] text-zinc-600 mt-3">
+            Secured by Stripe · Instant delivery · No recurring charges
+          </p>
+        </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-zinc-400">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>All game types unlocked</span>
+        {/* What credits cover */}
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8 mb-8">
+          <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-5">
+            What credits cover
+          </h2>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {FEATURES.map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-start gap-3">
+                <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-zinc-800 flex items-center justify-center">
+                  <Icon className="h-4 w-4 text-zinc-400" />
                 </div>
-                <div className="flex items-center gap-2 text-sm text-zinc-400">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>Unlimited AI characters</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-zinc-400">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>Premium AI quality</span>
-                </div>
+                <span className="text-sm text-zinc-300 leading-snug pt-1">{text}</span>
               </div>
-            </div>
-
-            {/* Right: Payment */}
-            <div>
-              <div className="bg-zinc-800/50 rounded-xl p-6 mb-4">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-zinc-400">Total</span>
-                  <span className="text-3xl font-black text-white">${selectedPackage.price}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handlePurchase}
-                  disabled={isProcessing}
-                  className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-base transition-opacity disabled:opacity-70 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Purchase Now'
-                  )}
-                </button>
-              </div>
-
-              <p className="text-xs text-zinc-600 text-center">
-                Secured by Stripe • Instant delivery
-              </p>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Info Banner */}
-        <div className="mt-8 bg-violet-500/10 border border-violet-500/20 rounded-xl p-6">
-          <div className="flex items-start gap-4">
-            <div className="h-10 w-10 bg-violet-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Zap className="h-5 w-5 text-violet-400" />
+        {/* FAQ */}
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8">
+          <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-5">
+            Common questions
+          </h2>
+          <dl className="space-y-5 text-sm">
+            <div>
+              <dt className="font-medium text-zinc-200 mb-1">How are credits used?</dt>
+              <dd className="text-zinc-500 leading-relaxed">
+                Every AI interaction costs a small number of credits — messages, character voices, and image generation. You can see exact costs in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
+              </dd>
             </div>
             <div>
-              <h3 className="text-white font-bold mb-1">How it works</h3>
-              <p className="text-zinc-400 text-sm leading-relaxed">
-                Credits are consumed by AI during gameplay — every message, voice line, and image costs a small amount. Buy what you need, use it anytime. View spending in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
-              </p>
+              <dt className="font-medium text-zinc-200 mb-1">Do credits expire?</dt>
+              <dd className="text-zinc-500 leading-relaxed">
+                No. Credits stay in your account until you use them.
+              </dd>
             </div>
-          </div>
+            <div>
+              <dt className="font-medium text-zinc-200 mb-1">Can I buy more later?</dt>
+              <dd className="text-zinc-500 leading-relaxed">
+                Yes. Come back anytime and add more credits to your balance.
+              </dd>
+            </div>
+          </dl>
         </div>
+
+        {/* Spacer at the bottom for mobile scroll */}
+        <div className="h-8" />
       </div>
     </div>
   );

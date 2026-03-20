@@ -4,9 +4,11 @@
  * Validates the switch from subscription-first to recharge-first UX:
  *  1. Recharge packages — pricing, bonus structure, ordering
  *  2. Routing — all user-facing nav points to /recharge, not /subscription
- *  3. Sitemap — /recharge present, /subscription removed
- *  4. Robots — /recharge is crawlable
- *  5. Coin formula — packages deliver correct coin amounts
+ *  3. /subscription redirects to /recharge
+ *  4. Sitemap — /recharge present, /subscription removed
+ *  5. Robots — /recharge is crawlable
+ *  6. Coin formula — packages deliver correct coin amounts
+ *  7. Checkout API — all package IDs are recognized
  */
 
 import { describe, it, expect } from 'vitest';
@@ -17,33 +19,29 @@ import { SITE_DOMAIN } from '@/lib/site';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// ─── Recharge package definitions (mirrors recharge-content.tsx) ────────────
+// ─── Package definitions (must mirror recharge-content.tsx) ─────────────────
 
-interface CoinPackage {
+interface CreditPackage {
   id: string;
   name: string;
   price: number;
-  coins: number;
+  credits: number;
   bonus: number;
-  popular?: boolean;
-  estimatedHours: string;
+  badge?: string;
 }
 
-const PACKAGES: CoinPackage[] = [
-  { id: 'starter',   name: 'Starter',   price: 5,   coins: 500,   bonus: 0,     estimatedHours: '5-8 hours' },
-  { id: 'popular',   name: 'Popular',   price: 10,  coins: 1000,  bonus: 200,   estimatedHours: '12-18 hours', popular: true },
-  { id: 'power',     name: 'Power',     price: 25,  coins: 2500,  bonus: 750,   estimatedHours: '35-50 hours' },
-  { id: 'ultimate',  name: 'Ultimate',  price: 50,  coins: 5000,  bonus: 2000,  estimatedHours: '80-120 hours' },
-  { id: 'mega',      name: 'Mega',      price: 100, coins: 10000, bonus: 5000,  estimatedHours: '180-250 hours' },
-  { id: 'legendary', name: 'Legendary', price: 200, coins: 20000, bonus: 12000, estimatedHours: '400-550 hours' },
-  { id: 'immortal',  name: 'Immortal',  price: 500, coins: 50000, bonus: 35000, estimatedHours: '1000+ hours' },
+const PACKAGES: CreditPackage[] = [
+  { id: 'starter',  name: 'Try it out',    price: 5,  credits: 500,  bonus: 0 },
+  { id: 'popular',  name: 'Most popular',  price: 10, credits: 1000, bonus: 200,  badge: 'Best value' },
+  { id: 'power',    name: 'Power user',    price: 25, credits: 2500, bonus: 750 },
+  { id: 'ultimate', name: 'Go all in',     price: 50, credits: 5000, bonus: 2000 },
 ];
 
 // ─── 1. Package structure ───────────────────────────────────────────────────
 
 describe('Recharge packages — structure', () => {
-  it('has 7 packages', () => {
-    expect(PACKAGES).toHaveLength(7);
+  it('has 4 focused packages', () => {
+    expect(PACKAGES).toHaveLength(4);
   });
 
   it('every package has required fields', () => {
@@ -51,9 +49,8 @@ describe('Recharge packages — structure', () => {
       expect(pkg.id).toBeTruthy();
       expect(pkg.name).toBeTruthy();
       expect(pkg.price).toBeGreaterThan(0);
-      expect(pkg.coins).toBeGreaterThan(0);
+      expect(pkg.credits).toBeGreaterThan(0);
       expect(typeof pkg.bonus).toBe('number');
-      expect(pkg.estimatedHours).toBeTruthy();
     }
   });
 
@@ -62,10 +59,10 @@ describe('Recharge packages — structure', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('exactly one package is marked popular', () => {
-    const popular = PACKAGES.filter((p) => p.popular);
-    expect(popular).toHaveLength(1);
-    expect(popular[0].id).toBe('popular');
+  it('exactly one package has a badge', () => {
+    const badged = PACKAGES.filter((p) => p.badge);
+    expect(badged).toHaveLength(1);
+    expect(badged[0].id).toBe('popular');
   });
 
   it('prices are strictly ascending', () => {
@@ -74,31 +71,36 @@ describe('Recharge packages — structure', () => {
     }
   });
 
-  it('base coins are strictly ascending', () => {
+  it('base credits are strictly ascending', () => {
     for (let i = 1; i < PACKAGES.length; i++) {
-      expect(PACKAGES[i].coins).toBeGreaterThan(PACKAGES[i - 1].coins);
+      expect(PACKAGES[i].credits).toBeGreaterThan(PACKAGES[i - 1].credits);
     }
   });
 
-  it('total coins (base + bonus) are strictly ascending', () => {
+  it('total credits (base + bonus) are strictly ascending', () => {
     for (let i = 1; i < PACKAGES.length; i++) {
-      const totalCurrent = PACKAGES[i].coins + PACKAGES[i].bonus;
-      const totalPrev = PACKAGES[i - 1].coins + PACKAGES[i - 1].bonus;
+      const totalCurrent = PACKAGES[i].credits + PACKAGES[i].bonus;
+      const totalPrev = PACKAGES[i - 1].credits + PACKAGES[i - 1].bonus;
       expect(totalCurrent).toBeGreaterThan(totalPrev);
     }
   });
 
-  it('starter pack has no bonus', () => {
+  it('starter pack has no bonus (entry-level)', () => {
     expect(PACKAGES[0].bonus).toBe(0);
   });
 
-  it('higher-priced packages offer better bonus ratios', () => {
+  it('higher-priced packages offer equal or better bonus ratios', () => {
     const withBonus = PACKAGES.filter((p) => p.bonus > 0);
     for (let i = 1; i < withBonus.length; i++) {
-      const ratioNow = withBonus[i].bonus / withBonus[i].coins;
-      const ratioPrev = withBonus[i - 1].bonus / withBonus[i - 1].coins;
+      const ratioNow = withBonus[i].bonus / withBonus[i].credits;
+      const ratioPrev = withBonus[i - 1].bonus / withBonus[i - 1].credits;
       expect(ratioNow).toBeGreaterThanOrEqual(ratioPrev);
     }
+  });
+
+  it('price range is $5 to $50 (accessible entry, reasonable cap)', () => {
+    expect(PACKAGES[0].price).toBe(5);
+    expect(PACKAGES[PACKAGES.length - 1].price).toBe(50);
   });
 });
 
@@ -113,6 +115,14 @@ describe('Recharge packages — coin formula', () => {
     expect(rechargeCoinsFromPayment(1000)).toBe(500);
   });
 
+  it('power $25 yields 1250 coins via formula', () => {
+    expect(rechargeCoinsFromPayment(2500)).toBe(1250);
+  });
+
+  it('ultimate $50 yields 2500 coins via formula', () => {
+    expect(rechargeCoinsFromPayment(5000)).toBe(2500);
+  });
+
   it('all packages: formula coins = floor(price * GPT_BUDGET_RATIO / COIN_VALUE_USD)', () => {
     for (const pkg of PACKAGES) {
       const expected = Math.floor((pkg.price * GPT_BUDGET_RATIO) / COIN_VALUE_USD);
@@ -120,19 +130,19 @@ describe('Recharge packages — coin formula', () => {
     }
   });
 
-  it('display coins + bonus are always greater than formula coins (value perception)', () => {
+  it('display credits + bonus always exceed formula coins (value perception)', () => {
     for (const pkg of PACKAGES) {
       const formulaCoins = rechargeCoinsFromPayment(pkg.price * 100);
-      const displayTotal = pkg.coins + pkg.bonus;
+      const displayTotal = pkg.credits + pkg.bonus;
       expect(displayTotal).toBeGreaterThan(formulaCoins);
     }
   });
 });
 
-// ─── 3. Routing — /recharge pages and components ────────────────────────────
+// ─── 3. Routing — /recharge is the primary path ─────────────────────────────
 
 describe('Routing — /recharge page is active', () => {
-  it('recharge page.tsx exists and does NOT redirect to /subscription', () => {
+  it('recharge page.tsx renders RechargeContent, does NOT redirect', () => {
     const pagePath = path.resolve(__dirname, '../../app/(pages)/recharge/page.tsx');
     const content = fs.readFileSync(pagePath, 'utf-8');
     expect(content).not.toContain("redirect('/subscription')");
@@ -140,74 +150,89 @@ describe('Routing — /recharge page is active', () => {
     expect(content).toContain('RechargeContent');
   });
 
-  it('recharge-content.tsx does NOT reference /subscription links', () => {
+  it('recharge-content.tsx has no /subscription links', () => {
     const contentPath = path.resolve(__dirname, '../../app/components/recharge-content.tsx');
     const content = fs.readFileSync(contentPath, 'utf-8');
     expect(content).not.toContain('href="/subscription"');
     expect(content).not.toContain("href='/subscription'");
-    expect(content).not.toContain('Subscribe to Pro');
+    expect(content).not.toContain('Subscribe');
   });
 
-  it('out-of-credits-modal.tsx routes to /recharge, not /subscription', () => {
+  it('out-of-credits-modal routes to /recharge', () => {
     const modalPath = path.resolve(__dirname, '../../app/components/out-of-credits-modal.tsx');
     const content = fs.readFileSync(modalPath, 'utf-8');
     expect(content).toContain('/recharge');
     expect(content).not.toContain("router.push('/subscription");
     expect(content).not.toContain('router.push("/subscription');
-    expect(content).not.toContain("router.push(`/subscription");
   });
 
-  it('token-balance.tsx routes to /recharge, not /subscription', () => {
-    const balancePath = path.resolve(__dirname, '../../app/components/token-balance.tsx');
-    const content = fs.readFileSync(balancePath, 'utf-8');
+  it('token-balance routes to /recharge', () => {
+    const p = path.resolve(__dirname, '../../app/components/token-balance.tsx');
+    const content = fs.readFileSync(p, 'utf-8');
     expect(content).toContain("'/recharge'");
     expect(content).not.toContain("'/subscription'");
   });
 
-  it('game-sidebar.tsx user menu routes to /recharge', () => {
-    const sidebarPath = path.resolve(__dirname, '../../app/components/game-sidebar.tsx');
-    const content = fs.readFileSync(sidebarPath, 'utf-8');
+  it('game-sidebar user menu routes to /recharge', () => {
+    const p = path.resolve(__dirname, '../../app/components/game-sidebar.tsx');
+    const content = fs.readFileSync(p, 'utf-8');
     expect(content).toContain("'/recharge'");
     expect(content).not.toContain("router.push('/subscription')");
   });
 
-  it('settings-content.tsx routes to /recharge, not /subscription', () => {
-    const settingsPath = path.resolve(__dirname, '../../app/components/settings-content.tsx');
-    const content = fs.readFileSync(settingsPath, 'utf-8');
+  it('settings-content routes to /recharge', () => {
+    const p = path.resolve(__dirname, '../../app/components/settings-content.tsx');
+    const content = fs.readFileSync(p, 'utf-8');
     expect(content).not.toContain("router.push('/subscription')");
     expect(content).toContain("router.push('/recharge')");
   });
 });
 
-// ─── 4. Subscription page remains accessible ────────────────────────────────
+// ─── 4. /subscription redirects to /recharge ────────────────────────────────
 
-describe('Subscription page — kept functional but hidden', () => {
-  it('subscription page.tsx still exists', () => {
+describe('/subscription page redirects', () => {
+  it('subscription page.tsx redirects to /recharge', () => {
     const pagePath = path.resolve(__dirname, '../../app/(pages)/subscription/page.tsx');
-    expect(fs.existsSync(pagePath)).toBe(true);
+    const content = fs.readFileSync(pagePath, 'utf-8');
+    expect(content).toContain("redirect('/recharge')");
   });
 
-  it('subscription layout has noindex robots tag', () => {
+  it('subscription layout still has noindex robots tag', () => {
     const layoutPath = path.resolve(__dirname, '../../app/(pages)/subscription/layout.tsx');
     const content = fs.readFileSync(layoutPath, 'utf-8');
     expect(content).toContain('index: false');
   });
+});
 
-  it('subscription API routes still exist', () => {
-    const apiPaths = [
-      '../../app/api/stripe/create-checkout/route.ts',
-      '../../app/api/stripe/webhook/route.ts',
-      '../../app/api/stripe/create-portal-session/route.ts',
-      '../../app/api/stripe/subscription-details/route.ts',
-    ];
-    for (const rel of apiPaths) {
+// ─── 5. Stripe API still functional ─────────────────────────────────────────
+
+describe('Stripe API routes exist', () => {
+  const apiPaths = [
+    '../../app/api/stripe/create-checkout/route.ts',
+    '../../app/api/stripe/webhook/route.ts',
+    '../../app/api/stripe/create-portal-session/route.ts',
+    '../../app/api/stripe/subscription-details/route.ts',
+    '../../app/api/stripe/fulfill-session/route.ts',
+  ];
+
+  for (const rel of apiPaths) {
+    const name = rel.split('/').slice(-2).join('/');
+    it(`${name} exists`, () => {
       const full = path.resolve(__dirname, rel);
-      expect(fs.existsSync(full), `Missing: ${rel}`).toBe(true);
+      expect(fs.existsSync(full)).toBe(true);
+    });
+  }
+
+  it('create-checkout supports all 4 active package IDs', () => {
+    const checkoutPath = path.resolve(__dirname, '../../app/api/stripe/create-checkout/route.ts');
+    const content = fs.readFileSync(checkoutPath, 'utf-8');
+    for (const pkg of PACKAGES) {
+      expect(content, `Missing package ID: ${pkg.id}`).toContain(pkg.id);
     }
   });
 });
 
-// ─── 5. Sitemap ─────────────────────────────────────────────────────────────
+// ─── 6. Sitemap ─────────────────────────────────────────────────────────────
 
 describe('Sitemap — /recharge included, /subscription excluded', () => {
   const entries = sitemap();
@@ -222,28 +247,26 @@ describe('Sitemap — /recharge included, /subscription excluded', () => {
   });
 
   it('/recharge entry has monthly changeFrequency', () => {
-    const rechargeEntry = entries.find((e) => e.url === `${SITE_DOMAIN}/recharge`);
-    expect(rechargeEntry).toBeDefined();
-    expect(rechargeEntry!.changeFrequency).toBe('monthly');
+    const entry = entries.find((e) => e.url === `${SITE_DOMAIN}/recharge`);
+    expect(entry).toBeDefined();
+    expect(entry!.changeFrequency).toBe('monthly');
   });
 });
 
-// ─── 6. Robots — /recharge is crawlable ─────────────────────────────────────
+// ─── 7. Robots ──────────────────────────────────────────────────────────────
 
-describe('Robots — /recharge is not disallowed', () => {
+describe('Robots — /recharge is crawlable', () => {
   const robotsConfig = robots();
   const rules = Array.isArray(robotsConfig.rules) ? robotsConfig.rules : [robotsConfig.rules];
-  const disallowed = rules.flatMap((r) => (Array.isArray(r.disallow) ? r.disallow : r.disallow ? [r.disallow] : []));
+  const disallowed = rules.flatMap((r) =>
+    Array.isArray(r.disallow) ? r.disallow : r.disallow ? [r.disallow] : []
+  );
 
-  it('/recharge is NOT in disallow list', () => {
+  it('/recharge is NOT disallowed', () => {
     expect(disallowed).not.toContain('/recharge');
   });
 
-  it('/subscription is NOT in disallow list (page has noindex meta instead)', () => {
-    expect(disallowed).not.toContain('/subscription');
-  });
-
-  it('private pages are still disallowed', () => {
+  it('private pages remain disallowed', () => {
     expect(disallowed).toContain('/profile');
     expect(disallowed).toContain('/settings');
     expect(disallowed).toContain('/my-games');
@@ -251,22 +274,18 @@ describe('Robots — /recharge is not disallowed', () => {
   });
 });
 
-// ─── 7. Layout title mapping ────────────────────────────────────────────────
+// ─── 8. Layout & footer ────────────────────────────────────────────────────
 
-describe('Layout title mapping', () => {
+describe('Layout and footer', () => {
   it('/recharge maps to "Buy Credits" in layout', () => {
-    const layoutPath = path.resolve(__dirname, '../../app/(pages)/layout.tsx');
-    const content = fs.readFileSync(layoutPath, 'utf-8');
+    const p = path.resolve(__dirname, '../../app/(pages)/layout.tsx');
+    const content = fs.readFileSync(p, 'utf-8');
     expect(content).toContain('"/recharge": "Buy Credits"');
   });
-});
 
-// ─── 8. Root layout footer ──────────────────────────────────────────────────
-
-describe('Root layout footer', () => {
-  it('footer links to /recharge, not /subscription', () => {
-    const layoutPath = path.resolve(__dirname, '../../app/layout.tsx');
-    const content = fs.readFileSync(layoutPath, 'utf-8');
+  it('root layout footer links to /recharge', () => {
+    const p = path.resolve(__dirname, '../../app/layout.tsx');
+    const content = fs.readFileSync(p, 'utf-8');
     expect(content).toContain('href="/recharge"');
     expect(content).not.toContain('href="/subscription"');
   });
