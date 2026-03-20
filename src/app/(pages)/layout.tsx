@@ -15,7 +15,7 @@ const PATHNAME_TO_TITLE: Record<string, string> = {
   "/usage": "Usage & Spending",
   "/subscription": "Subscription",
   "/help": "Help & Support",
-  "/recharge": "Subscription",
+  "/recharge": "Buy Credits",
 };
 
 function getMobileTitle(pathname: string): string {

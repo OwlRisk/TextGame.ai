@@ -39,7 +39,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...gamePages,
     { url: `${SITE_DOMAIN}/blog`,               lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
     ...blogPages,
-    { url: `${SITE_DOMAIN}/subscription`,       lastModified: SITE_LAUNCH, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_DOMAIN}/recharge`,            lastModified: SITE_LAUNCH, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_DOMAIN}/signin`,             lastModified: SITE_LAUNCH, changeFrequency: "yearly",  priority: 0.5 },
     { url: `${SITE_DOMAIN}/help`,               lastModified: SITE_LAUNCH, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE_DOMAIN}/terms`,              lastModified: SITE_LAUNCH, changeFrequency: "yearly",  priority: 0.3 },

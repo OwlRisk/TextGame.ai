@@ -54,8 +54,8 @@ describe("sitemap", () => {
     expect(urls).toContain(`${SITE_DOMAIN}/games`);
   });
 
-  it("includes /subscription", () => {
-    expect(urls).toContain(`${SITE_DOMAIN}/subscription`);
+  it("includes /recharge", () => {
+    expect(urls).toContain(`${SITE_DOMAIN}/recharge`);
   });
 
   it("includes legal pages", () => {

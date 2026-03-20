@@ -18,7 +18,7 @@ const PATHNAME_TO_TITLE: Record<string, string> = {
   "/subscription": "Subscription",
   "/help": "Help & Support",
   "/settings": "Settings",
-  "/recharge": "Subscription",
+  "/recharge": "Buy Credits",
 };
 
 function getMobileTitle(pathname: string): string {
@@ -50,7 +50,7 @@ describe("getMobileTitle", () => {
     expect(getMobileTitle("/subscription")).toBe("Subscription");
     expect(getMobileTitle("/help")).toBe("Help & Support");
     expect(getMobileTitle("/settings")).toBe("Settings");
-    expect(getMobileTitle("/recharge")).toBe("Subscription");
+    expect(getMobileTitle("/recharge")).toBe("Buy Credits");
   });
 
   it("returns 'Menu' for unknown paths", () => {

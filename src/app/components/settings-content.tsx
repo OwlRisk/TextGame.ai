@@ -137,10 +137,10 @@ export function SettingsContent() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push('/subscription')}
+              onClick={() => router.push('/recharge')}
               className="text-xs text-zinc-400 hover:text-white h-7 px-3"
             >
-              Manage →
+              Buy Credits →
             </Button>
           </div>
 
@@ -175,7 +175,7 @@ export function SettingsContent() {
               <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                 <Info className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                 <p className="text-amber-200/80 text-xs">
-                  Free plan supports basic models only. <button onClick={() => router.push('/subscription')} className="underline text-amber-300">Upgrade</button> for GPT-4o and Claude.
+                  Free plan supports basic models only. <button onClick={() => router.push('/recharge')} className="underline text-amber-300">Buy credits</button> for GPT-4o and Claude.
                 </p>
               </div>
             )}
@@ -358,11 +358,11 @@ export function SettingsContent() {
               <div className="flex items-center gap-2 shrink-0">
                 {!isPaid ? (
                   <button
-                    onClick={() => router.push('/subscription')}
+                    onClick={() => router.push('/recharge')}
                     className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-violet-300 transition-colors px-2 py-1 rounded-md hover:bg-violet-500/10"
                   >
                     <Lock className="h-3 w-3" />
-                    <span>Upgrade</span>
+                    <span>Buy Credits</span>
                   </button>
                 ) : (
                   <span className={`text-xs font-medium tabular-nums transition-colors ${imageGenEnabled ? 'text-purple-400' : 'text-zinc-500'}`}>
@@ -373,7 +373,7 @@ export function SettingsContent() {
                   checked={imageGenEnabled && isPaid}
                   onCheckedChange={(checked) => {
                     if (!isPaid) {
-                      router.push('/subscription');
+                      router.push('/recharge');
                       return;
                     }
                     setImageGenEnabled(checked);
@@ -389,7 +389,7 @@ export function SettingsContent() {
               <div className="flex items-start gap-2 p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
                 <Info className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
                 <p className="text-zinc-400 text-xs">
-                  Available on paid plans. <button onClick={() => router.push('/subscription')} className="text-violet-400 underline">Upgrade →</button>
+                  Available with credits. <button onClick={() => router.push('/recharge')} className="text-violet-400 underline">Buy Credits →</button>
                 </p>
               </div>
             )}

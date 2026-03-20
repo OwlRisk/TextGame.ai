@@ -95,7 +95,7 @@ describe("sitemap includes essential pages", () => {
     "/discover",
     "/games",
     "/blog",
-    "/subscription",
+    "/recharge",
     "/signin",
     "/help",
     "/terms",

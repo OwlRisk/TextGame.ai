@@ -1,6 +1,20 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-/** MVP: subscription only; one-time recharge redirects to subscription page */
+import { Suspense } from 'react';
+import { RechargeContent } from '@/app/components/recharge-content';
+
+function RechargeFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[200px] text-zinc-500 text-sm">
+      Loading…
+    </div>
+  );
+}
+
 export default function RechargePage() {
-  redirect('/subscription');
+  return (
+    <Suspense fallback={<RechargeFallback />}>
+      <RechargeContent />
+    </Suspense>
+  );
 }

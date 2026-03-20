@@ -255,7 +255,7 @@ export function RechargeContent() {
         <div className="flex items-center justify-between mb-12">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Buy credits</h1>
-            <p className="text-zinc-500">One-time purchase. Need monthly credits? <Link href="/subscription" className="text-violet-400 hover:underline">Subscribe to Pro</Link></p>
+            <p className="text-zinc-500">Buy credits and use them at your own pace. No subscription required.</p>
           </div>
 
           <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3">
@@ -425,7 +425,7 @@ export function RechargeContent() {
             <div>
               <h3 className="text-white font-bold mb-1">How it works</h3>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                Credits are consumed by AI during gameplay. This page is for one-time top-ups. For a monthly allowance, use <Link href="/subscription" className="text-violet-400 hover:underline">Pro subscription</Link>. View spending in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
+                Credits are consumed by AI during gameplay — every message, voice line, and image costs a small amount. Buy what you need, use it anytime. View spending in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
               </p>
             </div>
           </div>

@@ -85,9 +85,9 @@ export function TokenBalance({ compact = false, refreshKey }: TokenBalanceProps)
     return (
       <button
         type="button"
-        onClick={() => router.push('/subscription')}
+        onClick={() => router.push('/recharge')}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors"
-        aria-label="View balance and subscription"
+        aria-label="View balance and buy credits"
       >
         {balanceNode}
       </button>
@@ -101,11 +101,11 @@ export function TokenBalance({ compact = false, refreshKey }: TokenBalanceProps)
       </div>
       <Button
         size="sm"
-        onClick={() => router.push('/subscription')}
-        variant={balance.isPro ? 'outline' : 'default'}
-        className={balance.isPro ? '' : 'bg-amber-500 hover:bg-amber-600 text-zinc-900 border-0'}
+        onClick={() => router.push('/recharge')}
+        variant="default"
+        className="bg-amber-500 hover:bg-amber-600 text-zinc-900 border-0"
       >
-        {balance.isPro ? 'Manage' : 'Subscribe'}
+        Buy Credits
       </Button>
     </div>
   );

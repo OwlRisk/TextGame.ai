@@ -376,11 +376,11 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                       className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        router.push('/subscription');
+                        router.push('/recharge');
                       }}
                     >
                       <CreditCard className="mr-3 h-4 w-4 text-emerald-400 shrink-0" />
-                      <span className="text-sm">Subscription</span>
+                      <span className="text-sm">Buy Credits</span>
                     </Button>
                     <Button 
                       variant="ghost" 
