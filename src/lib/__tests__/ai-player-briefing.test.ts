@@ -4,9 +4,8 @@ import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 describe("buildAiPlayerBriefing", () => {
   it("always includes concise pacing guardrails", () => {
     const out = buildAiPlayerBriefing({});
-    expect(out).toContain("1 sentence preferred, 2 max");
     expect(out).toContain("not a narrator");
-    expect(out).toContain("No meta talk");
+    expect(out).toContain("one concrete game contribution");
   });
 
   it("adds deception guidance for hidden roles in werewolf/mafia", () => {

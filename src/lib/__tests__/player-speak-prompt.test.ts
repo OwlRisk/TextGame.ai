@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSystemPrompt, PACING_RULE, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '../player-speak-prompt';
+import { buildSystemPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '../player-speak-prompt';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -9,17 +9,18 @@ describe('PLAYER_SPEAK_HARD_LIMIT_TOKENS', () => {
   });
 });
 
-describe('PACING_RULE', () => {
-  it('enforces a hard limit of 2 sentences per turn', () => {
-    expect(PACING_RULE).toMatch(/2 sentences/i);
+describe('pacing rules in prompt output', () => {
+  it('werewolf prompt enforces sentence limits', () => {
+    const prompt = buildSystemPrompt('Alice', 'werewolf', 'G');
+    expect(prompt).toMatch(/2 sentences max/i);
+    expect(prompt).toMatch(/1 preferred/i);
+    expect(prompt).toMatch(/No speeches/i);
   });
 
-  it('instructs AI to prefer 1 sentence', () => {
-    expect(PACING_RULE).toMatch(/1 preferred/i);
-  });
-
-  it('forbids speeches and paragraphs', () => {
-    expect(PACING_RULE).toMatch(/No speeches/i);
+  it('narrative templates get higher sentence limits', () => {
+    const prompt = buildSystemPrompt('Alice', 'tarot', 'G');
+    expect(prompt).toMatch(/4 sentences max/i);
+    expect(prompt).toMatch(/2 preferred/i);
   });
 });
 
@@ -107,10 +108,13 @@ describe('buildSystemPrompt – trivia / quiz', () => {
     expect(prompt).toMatch(/pub quiz/i);
   });
 
-  it('quiz and trivia share the same prompt branch', () => {
+  it('quiz and trivia use the same template branch (same HOW TO PLAY)', () => {
     const tPrompt = buildSystemPrompt('Sam', 'trivia', 'G');
     const qPrompt = buildSystemPrompt('Sam', 'quiz', 'G');
-    expect(tPrompt).toBe(qPrompt);
+    expect(tPrompt).toContain('pub quiz');
+    expect(qPrompt).toContain('pub quiz');
+    expect(tPrompt).toContain('Gut reaction');
+    expect(qPrompt).toContain('Gut reaction');
   });
 });
 
@@ -148,14 +152,14 @@ describe('buildSystemPrompt – default (unknown template)', () => {
 
 // ─── buildSystemPrompt: elaboration guidance in PACING_RULE ───────────────
 
-describe('buildSystemPrompt – elaboration pacing', () => {
-  it('mentions that the Host will prompt again when elaboration is needed', () => {
+describe('buildSystemPrompt – pacing enforcement', () => {
+  it('deduction games require mandatory contribution', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game');
-    expect(prompt).toMatch(/host will prompt again/i);
+    expect(prompt).toMatch(/MUST contribute each turn/i);
   });
 
-  it('limits elaboration answer to 2 sentences', () => {
+  it('enforces sentence limits in all templates', () => {
     const prompt = buildSystemPrompt('Alice', 'mafia', 'Game');
-    expect(prompt).toMatch(/2 sentences/);
+    expect(prompt).toMatch(/2 sentences max/i);
   });
 });

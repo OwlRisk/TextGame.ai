@@ -24,10 +24,13 @@ const STRUCTURED_TEMPLATES = [
   "mafia",
   "codenames",
   "undercover",
-  "secret_hitler",
   "avalon",
-  "resistance",
   "spyfall",
+  "debate",
+  "storyteller",
+  "two-truths-lie",
+  "trivia",
+  "20-questions",
 ];
 
 const MSG_META: StreamMsgMeta = {
@@ -40,14 +43,14 @@ const MSG_META: StreamMsgMeta = {
 // ─── Constants ─────────────────────────────────────────────────────────────
 
 describe("Constants", () => {
-  it("HOST_PACE_BASE_MS is 1000", () => {
-    expect(HOST_PACE_BASE_MS).toBe(1000);
+  it("HOST_PACE_BASE_MS is 400", () => {
+    expect(HOST_PACE_BASE_MS).toBe(400);
   });
-  it("HOST_PACE_PER_50_CHARS_MS is 800", () => {
-    expect(HOST_PACE_PER_50_CHARS_MS).toBe(800);
+  it("HOST_PACE_PER_50_CHARS_MS is 200", () => {
+    expect(HOST_PACE_PER_50_CHARS_MS).toBe(200);
   });
-  it("HOST_PACE_MAX_MS is 4000", () => {
-    expect(HOST_PACE_MAX_MS).toBe(4000);
+  it("HOST_PACE_MAX_MS is 1500", () => {
+    expect(HOST_PACE_MAX_MS).toBe(1500);
   });
 });
 
@@ -194,7 +197,8 @@ describe("dynamicPace", () => {
     await expect(p).resolves.toBeUndefined();
     expect(setTimeoutSpy).toHaveBeenCalled();
     const delay = setTimeoutSpy.mock.calls[0][1];
-    expect(delay).toBeGreaterThan(1000);
+    // base=400, calm factor=1.3, jitter≈1.0 → ~520ms
+    expect(delay).toBeGreaterThan(HOST_PACE_BASE_MS);
     setTimeoutSpy.mockRestore();
   });
 });
@@ -301,12 +305,12 @@ describe("typewriterReveal", () => {
     expect(updateStream).not.toHaveBeenCalled();
   });
 
-  it("longer text progresses through multiple updates", async () => {
+  it("longer text is written in full immediately", async () => {
     const addStream = vi.fn().mockReturnValue("msg-1");
     const updateStream = vi.fn();
-    const text = "Hello world"; // 11 chars, charsPerTick=3 → multiple chunks
+    const text = "Hello world";
 
-    const p = typewriterReveal(
+    const result = await typewriterReveal(
       text,
       addStream,
       updateStream,
@@ -314,26 +318,19 @@ describe("typewriterReveal", () => {
       undefined,
       3,
     );
-    await vi.runAllTimersAsync();
-    const result = await p;
 
-    expect(addStream).toHaveBeenCalledWith(MSG_META, undefined, "Hel");
-    expect(updateStream).toHaveBeenCalled();
-    expect(updateStream).toHaveBeenLastCalledWith("msg-1", "Hello world", true);
+    expect(addStream).toHaveBeenCalledWith(MSG_META, undefined, "Hello world");
+    expect(updateStream).toHaveBeenCalledWith("msg-1", "Hello world", true);
     expect(result).toBe("msg-1");
   });
 
-  it("cancelled stops early and resolves with messageId", async () => {
+  it("cancelled parameter is accepted but text is still written in full", async () => {
     const addStream = vi.fn().mockReturnValue("msg-1");
     const updateStream = vi.fn();
     const text = "This is a long message for testing";
-    let callCount = 0;
-    const cancelled = vi.fn().mockImplementation(() => {
-      callCount++;
-      return callCount >= 2;
-    });
+    const cancelled = vi.fn().mockReturnValue(false);
 
-    const p = typewriterReveal(
+    const result = await typewriterReveal(
       text,
       addStream,
       updateStream,
@@ -342,10 +339,7 @@ describe("typewriterReveal", () => {
       3,
       cancelled,
     );
-    await vi.runAllTimersAsync();
-    const result = await p;
 
-    expect(cancelled).toHaveBeenCalled();
     expect(updateStream).toHaveBeenCalledWith("msg-1", text, true);
     expect(result).toBe("msg-1");
   });

@@ -2,8 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   buildSystemPrompt,
   PLAYER_SPEAK_HARD_LIMIT_TOKENS,
-  PACING_RULE,
-  MY_NOTES_SECTION,
   EMOTION_TAGS_SECTION,
 } from "@/lib/player-speak-prompt";
 
@@ -25,8 +23,7 @@ describe("buildSystemPrompt — all templates", () => {
 
       expect(prompt).toContain("TestPlayer");
       expect(prompt).toContain("TestGame");
-      expect(prompt).toContain(PACING_RULE);
-      expect(prompt).toContain(MY_NOTES_SECTION);
+      expect(prompt).toContain("PACING");
       expect(prompt).toContain(EMOTION_TAGS_SECTION);
       expect(prompt).not.toContain("undefined");
     });
@@ -82,13 +79,15 @@ describe("player-speak constants", () => {
     expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBeLessThan(500);
   });
 
-  it("PACING_RULE mentions sentence limits", () => {
-    expect(PACING_RULE).toContain("2 sentences");
+  it("prompts contain sentence limits", () => {
+    const prompt = buildSystemPrompt("Test", "werewolf", "G");
+    expect(prompt).toContain("2 sentences max");
   });
 
-  it("MY_NOTES_SECTION explains [MY_NOTES] format", () => {
-    expect(MY_NOTES_SECTION).toContain("[MY_NOTES]");
-    expect(MY_NOTES_SECTION).toContain("[/MY_NOTES]");
+  it("deduction prompts contain [MY_NOTES] section", () => {
+    const prompt = buildSystemPrompt("Test", "werewolf", "G");
+    expect(prompt).toContain("[MY_NOTES]");
+    expect(prompt).toContain("[/MY_NOTES]");
   });
 
   it("EMOTION_TAGS_SECTION mentions emotion and sound tags", () => {

@@ -57,10 +57,16 @@ describe("game-template-driver", () => {
       expect(m).not.toContain("### PACING");
     });
 
-    it("returns empty for templates without special mechanics", () => {
-      expect(buildTemplateMechanics("werewolf")).toBe("");
-      expect(buildTemplateMechanics("mafia")).toBe("");
-      expect(buildTemplateMechanics("trivia")).toBe("");
+    it("werewolf/mafia have dedicated mechanics", () => {
+      expect(buildTemplateMechanics("werewolf").length).toBeGreaterThan(50);
+      expect(buildTemplateMechanics("mafia").length).toBeGreaterThan(50);
+    });
+
+    it("trivia has dedicated mechanics", () => {
+      expect(buildTemplateMechanics("trivia").length).toBeGreaterThan(50);
+    });
+
+    it("returns empty for custom/unknown templates", () => {
       expect(buildTemplateMechanics("custom")).toBe("");
       expect(buildTemplateMechanics(undefined)).toBe("");
     });

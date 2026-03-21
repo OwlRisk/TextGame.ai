@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   buildSystemPrompt,
-  PACING_RULE,
-  MY_NOTES_SECTION,
   EMOTION_TAGS_SECTION,
 } from "@/lib/player-speak-prompt";
 
@@ -38,9 +36,7 @@ describe("buildSystemPrompt — personality & background integration", () => {
     expect(prompt).toContain("Dave");
     expect(prompt).toContain("Town");
     expect(prompt).not.toContain("Your personality:");
-    // Should still have all standard sections
-    expect(prompt).toContain(PACING_RULE);
-    expect(prompt).toContain(MY_NOTES_SECTION);
+    expect(prompt).toContain("PACING");
     expect(prompt).toContain(EMOTION_TAGS_SECTION);
   });
 
@@ -48,8 +44,7 @@ describe("buildSystemPrompt — personality & background integration", () => {
     const prompt = buildSystemPrompt("Eve", "werewolf", "Game", "Nervous", "Newcomer to town");
     const personalityIdx = prompt.indexOf("Your personality: Nervous.");
     const backgroundIdx = prompt.indexOf("Newcomer to town");
-    const pacingIdx = prompt.indexOf(PACING_RULE);
-    // Both should appear before the pacing rule
+    const pacingIdx = prompt.indexOf("PACING:");
     expect(personalityIdx).toBeLessThan(pacingIdx);
     expect(backgroundIdx).toBeLessThan(pacingIdx);
   });
@@ -80,11 +75,9 @@ describe("buildSystemPrompt — personality does not break template matching", (
       const withoutP = buildSystemPrompt("Test", tmpl, "Game");
       const withP = buildSystemPrompt("Test", tmpl, "Game", "Bold leader", "War veteran");
 
-      // The personality version should be longer (has extra text)
       expect(withP.length).toBeGreaterThan(withoutP.length);
-      // Both should contain standard sections
-      expect(withP).toContain(PACING_RULE);
-      expect(withP).toContain(MY_NOTES_SECTION);
+      expect(withP).toContain("PACING");
+      expect(withP).toContain(EMOTION_TAGS_SECTION);
     });
   }
 });
