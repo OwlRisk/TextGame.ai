@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { buildSystemPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '@/lib/player-speak-prompt';
+import { buildSystemPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
 import { deductTokens, estimatedTokensToCoins } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
@@ -129,8 +129,7 @@ export async function POST(request: NextRequest) {
       lines.push(`Your secret role: ${player.role}`);
     }
 
-    if (player.personality) lines.push(`Your personality: ${player.personality}`);
-    if (player.background) lines.push(`Your background: ${player.background}`);
+    // Personality and background are already in the system prompt — no need to repeat here
 
     // Player's own persistent notes from previous turns
     if (playerNotes?.trim()) {
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
       lines.push('');
       lines.push(`Your turn as ${player.name} (GUESSER). Ask ONE new yes/no question or make a final guess.`);
     } else {
-      lines.push(`Your turn as ${player.name}. 1-2 sentences, in-character.`);
+      lines.push(`Your turn as ${player.name}. Stay in-character.`);
     }
 
     const userContent = lines.join('\n');
@@ -189,7 +188,7 @@ export async function POST(request: NextRequest) {
         { role: 'system', content: system },
         { role: 'user', content: userContent },
       ],
-      max_completion_tokens: PLAYER_SPEAK_HARD_LIMIT_TOKENS,
+      max_completion_tokens: getPlayerTokenLimit(gameTemplate),
     }, { signal: ac.signal });
     clearTimeout(timer);
 

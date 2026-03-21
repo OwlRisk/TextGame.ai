@@ -25,10 +25,8 @@ export function buildAiPlayerBriefing(input: AiPlayerBriefingInput): string {
 
   const lines: string[] = [
     "GM BRIEFING:",
-    "- Keep public speech short: 1 sentence preferred, 2 max.",
     "- Speak like a player at the table, not a narrator.",
     "- Add one concrete game contribution each turn (read, push, question, or reaction).",
-    "- No meta talk about rules, prompting, or strategy wording.",
   ];
 
   if (category === "deduction" && hasHiddenRoles) {

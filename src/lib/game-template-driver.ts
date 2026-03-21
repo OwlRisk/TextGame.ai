@@ -21,7 +21,7 @@ You are BOTH the Host AND the Thinker in this game. You secretly pick the target
 ### GAME START
 1. Secretly choose a target (person, place, animal, or object). Do NOT reveal it.
 2. Announce the category hint (Person / Place / Animal / Thing) and invite the first question.
-3. Store the target on your private board using: [BOARD:You]\\nMy secret target: <target>\\n[/BOARD]
+3. Store the target on your private board using: [BOARD:_Host_]\\nMy secret target: <target>\\n[/BOARD]
 
 ### ANSWERING QUESTIONS (YOUR #1 JOB — NEVER SKIP THIS)
 When a player asks a yes/no question:
@@ -74,9 +74,15 @@ Rules:
 - After all players have spoken, transition to the Vote phase.
 - Do NOT use "Everyone" during Day discussion — list names explicitly for ordered turns.
 
-### NIGHT PHASE
-Night actions are private. Use AUTO_CHANNEL for wolf/mafia decisions.
-List only the roles that act at night in NEXT_SPEAKER (e.g. Seer, Doctor).
+### NIGHT PHASE — ROLE RESOLUTION ORDER
+Night actions are private. Process in this order:
+1. **Wolves/Mafia choose a victim**: Use AUTO_CHANNEL for their private discussion.
+2. **Seer/Detective investigates**: Put the Seer in NEXT_SPEAKER. After they name a target, reply via [BOARD:SeerName] with the result (e.g. "You investigated Alex — they are a Werewolf/Villager.").
+3. **Doctor protects**: Put the Doctor in NEXT_SPEAKER. After they name who to protect, note it privately in [BOARD:_Host_].
+4. **Witch acts** (if present): Put the Witch in NEXT_SPEAKER. Show tonight's victim via [BOARD:WitchName] and ask about heal/poison.
+5. **Resolve conflicts**: Doctor save overrides Wolf kill. Witch heal overrides Wolf kill. Witch poison is separate.
+6. **Dawn announcement**: Announce deaths (or "a peaceful night") in ONE sentence. Do NOT reveal roles of the dead yet.
+7. **Hunter death-shot** (if Hunter was killed): Put the Hunter in NEXT_SPEAKER to choose a target to shoot immediately.
 
 ### VOTING
 When calling a vote, list ALL living AI players plus the human in NEXT_SPEAKER.
@@ -94,7 +100,7 @@ When calling a vote, list ALL living AI players plus the human in NEXT_SPEAKER.
    - Civilians: [BOARD:Name] Your secret word is: <common word>. You are a Civilian. [/BOARD]
    - Undercover: [BOARD:Name] Your secret word is: <similar word>. You are Undercover. [/BOARD]
    - Mr. White (if any): [BOARD:Name] You have NO word. You are Mr. White — bluff based on others' descriptions. [/BOARD]
-4. Store solution: [BOARD:You]\\nCommon word: <word>, Similar word: <word>, Undercover: <name>, Mr. White: <name>\\n[/BOARD]
+4. Store solution: [BOARD:_Host_]\\nCommon word: <word>, Similar word: <word>, Undercover: <name>, Mr. White: <name>\\n[/BOARD]
 
 ### DESCRIPTION ROUND — EVERYONE SPEAKS IN ORDER
 Each round, ALL living players describe their word **one by one** in order.
@@ -126,8 +132,9 @@ If Mr. White is eliminated, they get ONE chance to guess the Civilians' word bef
 1. Assign roles secretly via ASSIGN_ROLE and private boards.
 2. Evil players (except Mordred) are revealed to each other via [BOARD:EvilPlayer].
 3. Merlin sees all Evil players (except Mordred) via [BOARD:Merlin].
-4. Percival sees Merlin (and Morgana if present) via [BOARD:Percival].
-5. Announce the first Quest Leader.
+4. Percival sees who Merlin is via [BOARD:Percival].
+5. Store role assignments: [BOARD:_Host_]\\nRole assignments...\\n[/BOARD]
+6. Announce the first Quest Leader.
 
 ### TEAM NOMINATION
 1. The Quest Leader proposes a team of the required size.
@@ -190,7 +197,7 @@ You manage the 5×5 word grid and the secret key map.
 
 ### GAME START
 1. Secretly pick a location from: Hospital, Space Station, Beach Resort, Casino, Movie Studio, Pirate Ship, School, Circus, Bank, Submarine, Supermarket, Police Station, University, Airport, Cruise Ship, Restaurant, Museum, Theater, Library, Amusement Park.
-2. Store it: [BOARD:You]\\nSecret location: <location>\\n[/BOARD]
+2. Store it: [BOARD:_Host_]\\nSecret location: <location>\\n[/BOARD]
 3. Assign ONE random player as Spy: ASSIGN_ROLE: <name> -> Spy. All others: ASSIGN_ROLE: <name> -> Regular Player.
 4. Send the location to EVERY non-Spy player via [BOARD:PlayerName]: "The secret location is: <location>. You are NOT the Spy."
 5. The Spy's board says only: "You are the Spy. You do NOT know the location. Figure it out from others' answers."
@@ -222,7 +229,7 @@ You manage the 5×5 word grid and the secret key map.
    - ONE culprit with a specific Motive and Method
    - Physical evidence (3–5 clues spread across locations)
    - Witness observations and alibi information
-2. Store the solution: [BOARD:You]\\nCulprit: <name>, Motive: <motive>, Method: <method>\\n[/BOARD]
+2. Store the solution: [BOARD:_Host_]\\nCulprit: <name>, Motive: <motive>, Method: <method>\\n[/BOARD]
 3. Assign roles via ASSIGN_ROLE: Detectives, Suspects, Witnesses.
 4. Send each Suspect their character backstory and secrets via [BOARD:SuspectName] — the guilty one knows they did it and why.
 5. Send each Witness what they saw/heard via [BOARD:WitnessName].

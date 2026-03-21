@@ -3,6 +3,7 @@ import type { SpeakerQueueItem } from "@/lib/host-output-parser";
 import type { ConversationMode, StreamMsgMeta } from "@/lib/game-pace";
 import { parseHostActions } from "@/lib/host-actions";
 import { getPreferredModel } from "@/lib/model-prefs";
+import { isPlayerEliminated } from "@/lib/player-badges";
 import {
   thinkingDelay,
   getTypewriterSpeed,
@@ -56,18 +57,23 @@ export function isNightPhase(phase: string | undefined): boolean {
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
 
-function clampSpokenReply(text: string): string {
+import { getPlayerSentenceLimit } from "@/lib/player-speak-prompt";
+
+function clampSpokenReply(text: string, template?: string): string {
   const normalized = (text || "").replace(/\s+/g, " ").trim();
   if (!normalized) return "";
 
+  const { max } = getPlayerSentenceLimit(template);
+  const charLimit = template && ["tarot", "detective-mystery", "escape-room", "storyteller", "roleplay", "adventure", "debate"].includes(template) ? 400 : 180;
+
   const sentenceMatches = normalized.match(/[^.!?]+[.!?]+/g) ?? [];
-  const firstTwo = sentenceMatches.slice(0, 2).join(" ").trim();
-  if (firstTwo) {
-    return firstTwo.length > 180 ? `${firstTwo.slice(0, 180).trimEnd()}…` : firstTwo;
+  const clamped = sentenceMatches.slice(0, max).join(" ").trim();
+  if (clamped) {
+    return clamped.length > charLimit ? `${clamped.slice(0, charLimit).trimEnd()}…` : clamped;
   }
 
-  if (normalized.length <= 180) return normalized;
-  const cut = normalized.slice(0, 180);
+  if (normalized.length <= charLimit) return normalized;
+  const cut = normalized.slice(0, charLimit);
   const lastSpace = cut.lastIndexOf(" ");
   const base = lastSpace > 90 ? cut.slice(0, lastSpace) : cut;
   return `${base.trimEnd()}…`;
@@ -79,8 +85,7 @@ export async function runPlayerSpeak(
   recent: Array<{ senderName: string; content: string }>,
   channelGoal?: string | null,
 ): Promise<string | null> {
-  const speakerStatus = (speaker.stats?.Status as string | undefined)?.toLowerCase();
-  if (speakerStatus === "eliminated" || speakerStatus === "dead") return null;
+  if (isPlayerEliminated(speaker)) return null;
 
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -146,7 +151,7 @@ export async function runPlayerSpeak(
       }
     }
 
-    const publicReply = clampSpokenReply(cleanContent);
+    const publicReply = clampSpokenReply(cleanContent, ctx.gameTemplate);
     return publicReply || null;
   } catch (err) {
     console.error("Error generating AI player reply:", err);
@@ -301,8 +306,7 @@ export async function runSpeakerQueue(
     if (night) continue;
 
     const freshPlayer = ctx.playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
-    const itemStatus = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
-    if (itemStatus === "eliminated" || itemStatus === "dead") continue;
+    if (isPlayerEliminated(freshPlayer)) continue;
     const upcomingAiPlayers: Player[] = [];
     for (let ni = qi + 1; ni < queue.length; ni++) {
       const next = queue[ni];
@@ -392,8 +396,7 @@ export async function runPrivateChannelConversation(
       if (earlyDecisionSummary) break;
       const player = channelAiPlayers[pi];
       const freshPlayer = ctx.playersRef.current.find((p) => p.id === player.id) ?? player;
-      const status = (freshPlayer.stats?.Status as string | undefined)?.toLowerCase();
-      if (status === "eliminated" || status === "dead") continue;
+      if (isPlayerEliminated(freshPlayer)) continue;
       ctx.setCurrentSpeakerId(freshPlayer.id);
       const upcoming = channelAiPlayers.slice(pi + 1).slice(0, 2)
         .map(p => ctx.playersRef.current.find(pp => pp.id === p.id) ?? p);

@@ -7,7 +7,7 @@ export const HOST_PACE_MAX_MS = 1500;
 
 // ─── Conversation mode: structured (turn-based) vs freeform (narrative/social) ──
 export type ConversationMode = "structured" | "freeform";
-const STRUCTURED_TEMPLATES = ["werewolf", "mafia", "codenames", "undercover", "avalon", "spyfall"];
+const STRUCTURED_TEMPLATES = ["werewolf", "mafia", "codenames", "undercover", "avalon", "spyfall", "debate", "storyteller", "two-truths-lie", "trivia", "20-questions"];
 
 export function getConversationMode(template?: string): ConversationMode {
   if (template && STRUCTURED_TEMPLATES.includes(template)) return "structured";

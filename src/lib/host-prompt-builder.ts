@@ -43,6 +43,8 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
   const playerNamesList = nonHostPlayerNames.join(", ");
   const ROUND_TABLE_TEMPLATES = ["werewolf", "mafia", "avalon", "undercover", "debate", "storyteller", "two-truths-lie", "trivia"];
   const isRoundTableGame = !!gameTemplate && ROUND_TABLE_TEMPLATES.includes(gameTemplate);
+  const NARRATIVE_TEMPLATES = ["tarot", "detective-mystery", "escape-room", "storyteller", "roleplay", "adventure"];
+  const isNarrativeGame = !!gameTemplate && NARRATIVE_TEMPLATES.includes(gameTemplate);
   const templateMechanicsSection = buildTemplateMechanics(gameTemplate);
   const progressionPolicySection = buildProgressionPolicy(gameTemplate, recentNonHostTurns ?? 0);
 
@@ -141,6 +143,9 @@ ASSIGN_ROLE: Mira Thorne -> Seer
 [BOARD:Mira Thorne]
 You are the Seer. Each night, secretly investigate one player.
 [/BOARD]
+[BOARD:_Host_]
+Seer: Mira Thorne, Werewolf: Juno
+[/BOARD]
 NEXT_SPEAKER: Mira Thorne
 
 Example B — no roles:
@@ -168,7 +173,7 @@ ${progressionPolicySection}
 
 ## HOST VOICE — HOW TO WRITE PUBLIC MESSAGES
 You are a host, not a narrator. Be brief — but never be absent.
-- ONE sentence max. No exceptions unless revealing multiple essential pieces of game info at once.
+- ${isNarrativeGame ? 'Keep it concise: 2–3 sentences when describing scenes, interpreting cards, or revealing clues. 1 sentence for phase transitions and simple responses.' : 'ONE sentence max. No exceptions unless revealing multiple essential pieces of game info at once.'}
 - Speak in your persona's voice on every line. Brief doesn't mean generic. "The vote is tied." hits different from "Tied." — write the version that sounds like *you*.
 - Record results clearly: "Q1: Yes, it's a mammal." Done. Do NOT add who's next — NEXT_SPEAKER handles that silently.
 - Phase transitions: one vivid line in character. Set the mood, don't just label it.
@@ -229,22 +234,16 @@ RECORD_EVENT: <one-line summary>
 Use after phase transitions, eliminations, or significant discoveries. These are injected back as your memory in future turns.
 
 **Private board** (content only one player sees):
-[BOARD:<exact name or "You">]
+[BOARD:<exact player name>]
 Private content here. Markdown supported.
 [/BOARD]
+For your OWN private notes (secrets only you the Host need to remember): [BOARD:_Host_]
 Multiple BOARD blocks per reply are fine. Never duplicate private info in the public message.
 ${roomSection}**Sidebar sections** (persistent notes visible to all players):
 [SECTION:<Title>]
 Markdown content here.
 [/SECTION]
 Reusing the same title updates it in place. Good for: vote logs, phase results, clue boards, player status.
-
-**Image reply** (when a visual would enhance the moment):
-<REPLY_TYPE>image</REPLY_TYPE>
-<IMAGE_SIZE>square|portrait|landscape</IMAGE_SIZE>
-<IMAGE_PROMPT>English description: subject, lighting, mood, style, composition. No text in image.</IMAGE_PROMPT>
-<CAPTION>optional caption</CAPTION>
-Size guide: square (general), portrait (character/card), landscape (scene/map). After these tags you may still add NEXT_SPEAKER.
 
 **Phase label** (update whenever the game phase changes):
 PHASE: <label>

@@ -210,7 +210,7 @@ TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflectio
     minPlayers: 4,
     maxPlayers: 12,
     recommendedAICount: 5,
-    hasHiddenRoles: true,
+    hasHiddenRoles: false,
     hasElimination: false,
     category: "deduction",
     icon: "🔍",

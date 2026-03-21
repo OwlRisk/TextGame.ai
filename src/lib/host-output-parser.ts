@@ -149,8 +149,7 @@ export function parseHostResult(
         speakerQueue.push({ type: "everyone" });
         break;
       } else {
-        const nameBase = name.split(",")[0].trim();
-        const player = players.find((p) => !p.isGameMaster && (p.name === name || p.name === nameBase));
+        const player = players.find((p) => !p.isGameMaster && p.name === name);
         if (player?.isAI) speakerQueue.push({ type: "ai", player });
       }
     }

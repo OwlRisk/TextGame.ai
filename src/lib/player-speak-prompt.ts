@@ -5,29 +5,57 @@
 
 import { getGameTemplate } from "./game-templates";
 
-/**
- * Hard limit: enforced by max_completion_tokens — the absolute ceiling per message.
- * 180 tokens gives enough room for a 2-3 sentence message PLUS the [MY_NOTES] block.
- */
+/** Default hard limit: enforced by max_completion_tokens. Per-template overrides below. */
 export const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 180;
 
-export const PACING_RULE = `PACING:
-- 2 sentences max. 1 preferred. No speeches, no paragraphs.
-- If the host asks you to elaborate, 2 sentences max; host will prompt again if needed.
-- Scan recent messages — never repeat what someone already said or asked.
-- No meta-commentary about game procedure or strategy planning. Just play.
-- If nothing new to add, output nothing (empty string). Do NOT output "...".`;
+const NARRATIVE_TEMPLATES = ["tarot", "detective-mystery", "escape-room", "storyteller", "roleplay", "adventure"];
+const DEDUCTION_TEMPLATES = ["werewolf", "mafia", "undercover", "avalon", "spyfall"];
+const NOTES_TEMPLATES = [...DEDUCTION_TEMPLATES, "detective-mystery", "codenames", "escape-room"];
 
-export const MY_NOTES_SECTION = `NOTES — append AFTER your spoken line:
+export function getPlayerTokenLimit(template?: string): number {
+  if (!template) return PLAYER_SPEAK_HARD_LIMIT_TOKENS;
+  if (NARRATIVE_TEMPLATES.includes(template)) return 300;
+  if (template === "debate") return 280;
+  return PLAYER_SPEAK_HARD_LIMIT_TOKENS;
+}
+
+export function getPlayerSentenceLimit(template?: string): { max: number; preferred: number } {
+  if (!template) return { max: 2, preferred: 1 };
+  if (NARRATIVE_TEMPLATES.includes(template)) return { max: 4, preferred: 2 };
+  if (template === "debate") return { max: 3, preferred: 2 };
+  return { max: 2, preferred: 1 };
+}
+
+function buildPacingRule(template?: string): string {
+  const { max, preferred } = getPlayerSentenceLimit(template);
+  const isDeduction = template && DEDUCTION_TEMPLATES.includes(template);
+  const strategyLine = isDeduction
+    ? '- No meta talk about prompting or game system mechanics. Strategy discussion and accusations ARE the game — go for it.'
+    : '- No meta-commentary about game procedure. Just play.';
+  const silenceLine = template && ["werewolf", "mafia", "undercover", "avalon", "debate", "trivia", "two-truths-lie"].includes(template)
+    ? '- Every player MUST contribute each turn. If you have nothing new, react to what someone else said.'
+    : '- If nothing new to add, output nothing (empty string). Do NOT output "...".';
+
+  return `PACING:
+- ${max} sentences max. ${preferred} preferred. No speeches, no paragraphs.
+- Scan recent messages — never repeat what someone already said or asked.
+${strategyLine}
+${silenceLine}`;
+}
+
+function buildNotesSection(template?: string): string {
+  if (template && !NOTES_TEMPLATES.includes(template)) return '';
+  return `\nNOTES — append AFTER your spoken line:
 [MY_NOTES]
 - one short bullet
 [/MY_NOTES]
 Include both tags. 1-2 bullets max. Skip on unimportant turns.`;
+}
 
 export const EMOTION_TAGS_SECTION = `EMOTION: Express through words, punctuation, rhythm — not labels like [angry] or [happy].
 Optional sound tags where natural: [sigh] [laugh] [cough]`;
 
-const OUTPUT_RULE = `OUTPUT: Only the spoken line. No name prefix, no labels, no stage directions. Notes in [MY_NOTES] only.`;
+const OUTPUT_RULE = `OUTPUT: Only the spoken line. No name prefix, no labels, no stage directions.`;
 
 /**
  * Build a game-type-aware system prompt for an AI player.
@@ -44,7 +72,7 @@ export function buildSystemPrompt(
   if (personality) base += ` Your personality: ${personality}.`;
   if (background) base += ` ${background}`;
 
-  const TAIL = `\n\n${PACING_RULE}\n\n${OUTPUT_RULE}\n\n${EMOTION_TAGS_SECTION}\n\n${MY_NOTES_SECTION}`;
+  const TAIL = `\n\n${buildPacingRule(gameTemplate)}\n\n${OUTPUT_RULE}\n\n${EMOTION_TAGS_SECTION}${buildNotesSection(gameTemplate)}`;
 
   switch (gameTemplate) {
     case 'werewolf':
@@ -95,13 +123,13 @@ HOW TO PLAY:
 - Ask ONE yes/no question per turn, building on confirmed facts. Or make a final guess if confident.
 - React briefly to the last answer before asking (1 sentence + 1 question max).
 - Never repeat a question from the Q&A history. Never ask "should we ask X?" — just ask it.
-- If nothing new to ask, use an emoji reaction: REACT: 🤔
+- If nothing new to ask, say something like "Hmm, let me think..." to pass.
+
+${buildPacingRule('20-questions')}
 
 ${OUTPUT_RULE}
 
-${EMOTION_TAGS_SECTION}
-
-${MY_NOTES_SECTION}`;
+${EMOTION_TAGS_SECTION}${buildNotesSection('20-questions')}`;
 
     case 'codenames': {
       const isSpymaster = role?.toLowerCase() === 'spymaster';

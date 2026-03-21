@@ -125,6 +125,9 @@ export function useHostRound({
   const messagesRef = useRef(messages);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
 
+  const gamePhaseRef = useRef(gamePhase);
+  useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
+
   const pendingDecisionSummariesRef = useRef<string[]>([]);
 
   const handleSendMessageRef = useRef<((content: string, options?: SendMessageOptions) => Promise<void>) | null>(null);
@@ -217,6 +220,7 @@ export function useHostRound({
       const boardEntries = Object.entries(myBoardContent)
         .map(([playerId, boardContent]) => {
           if (!boardContent?.trim()) return null;
+          if (playerId === "_host_") return `  [_Host_ (your private notes)]\n${boardContent.trim()}`;
           const p = players.find((pl) => pl.id === playerId);
           const name = p ? (p.id === userId ? humanName : p.name) : playerId;
           return `  [${name}]\n${boardContent.trim()}`;
@@ -232,12 +236,12 @@ export function useHostRound({
 
       const rulesText = currentGame?.config?.rules ?? "";
       const tmpl = currentGame?.config?.template ?? "";
-      const hasVotingPhase =
-        ["werewolf", "mafia"].includes(tmpl) ||
-        /\bvot(e|ing)\b/i.test(rulesText);
-      const hasNightPhase =
-        ["werewolf", "mafia"].includes(tmpl) ||
-        /\bnight\s*(phase|action|round)?\b/i.test(rulesText);
+      const VOTING_TEMPLATES = ["werewolf", "mafia", "undercover", "avalon", "spyfall"];
+      const NIGHT_TEMPLATES = ["werewolf", "mafia"];
+      const hasVotingPhase = VOTING_TEMPLATES.includes(tmpl) ||
+        /\bvot(e|ing)\b.*\b(eliminat|kill|remove|kick|expel)\b/i.test(rulesText);
+      const hasNightPhase = NIGHT_TEMPLATES.includes(tmpl) ||
+        /\bnight\s*(phase|action|round)\b/i.test(rulesText);
       const hasMultipleRooms = gameRoomEntries.length > 1;
 
       const recentNonHostTurns = channelMessages
@@ -245,35 +249,74 @@ export function useHostRound({
         .filter((m) => !m.isSystemMessage && m.senderName !== gmName).length;
 
       const generatedHost = currentGame?.config?.generatedHost as { name?: string; personality?: string; systemPrompt?: string } | undefined;
-      const hostSystemPrompt = buildHostSystemPrompt({
-        gameName: currentGame?.name ?? "",
-        gameTemplate: tmpl,
-        humanName,
-        nonHostPlayerNames: nonHostPlayers.map((p) => (p.id === userId ? humanName : p.name)),
-        hasVotingPhase,
-        hasNightPhase,
-        hasMultipleRooms,
-        channels: (currentGame?.config?.channels ?? gameRoomEntries).map((c: { name: string; roomType?: string }) => ({
-          name: c.name,
-          roomType: c.roomType,
-        })),
-        gamePhase: gamePhase || "waiting",
-        phaseLabel: phaseLabel ?? "",
-        playerRoster,
-        eventLogSummary,
-        boardSummary,
-        rulesText,
-        hostName: generatedHost?.name ?? "Game Master",
-        hostPersonality: generatedHost?.personality ?? undefined,
-        hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
-        recentNonHostTurns,
-      });
+
+      const buildFreshHostPrompt = () => {
+        const freshP = playersRef.current;
+        const freshNonHost = freshP.filter((p) => !p.isGameMaster);
+        const freshRoster = freshNonHost.map((p) => {
+          const isH = p.id === userId;
+          const n = isH ? humanName : p.name;
+          const r = p.role ? `Role: ${p.role}` : "Role: not assigned";
+          const s = (p.stats?.Status as string | undefined) ?? "alive";
+          if (isH) return `  • ${n} [YOU/HUMAN] | ${r} | Status: ${s}`;
+          const bg = roomMembers.find((m) => m.player_id === p.id && !m.is_owner);
+          const pers = p.personality ? `Personality: ${p.personality}` : "";
+          const back = p.background ? `Background: ${p.background}` : "";
+          const ex = [pers, back].filter(Boolean).join(" | ");
+          const tl = bg ? `GUEST: ${bg.nickname}` : "AI";
+          return `  • ${n} [${tl}] | ${r} | Status: ${s}${ex ? ` | ${ex}` : ""}`;
+        }).join("\n");
+
+        const freshBoard = Object.entries(myBoardContent)
+          .map(([pid, bc]) => {
+            if (!bc?.trim()) return null;
+            if (pid === "_host_") return `  [_Host_ (your private notes)]\n${bc.trim()}`;
+            const pl = freshP.find((pp) => pp.id === pid);
+            const nm = pl ? (pl.id === userId ? humanName : pl.name) : pid;
+            return `  [${nm}]\n${bc.trim()}`;
+          }).filter(Boolean);
+
+        const freshEvents = gameEvents.length > 0
+          ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
+          : "(No events recorded yet)";
+
+        return buildHostSystemPrompt({
+          gameName: currentGame?.name ?? "",
+          gameTemplate: tmpl,
+          humanName,
+          nonHostPlayerNames: freshNonHost.map((p) => (p.id === userId ? humanName : p.name)),
+          hasVotingPhase,
+          hasNightPhase,
+          hasMultipleRooms,
+          channels: (currentGame?.config?.channels ?? gameRoomEntries).map((c: { name: string; roomType?: string }) => ({
+            name: c.name,
+            roomType: c.roomType,
+          })),
+          gamePhase: gamePhaseRef.current || "waiting",
+          phaseLabel: phaseLabel ?? "",
+          playerRoster: freshRoster,
+          eventLogSummary: freshEvents,
+          boardSummary: freshBoard.length > 0 ? freshBoard.join("\n\n") : "(No private board content yet)",
+          rulesText,
+          hostName: generatedHost?.name ?? "Game Master",
+          hostPersonality: generatedHost?.personality ?? undefined,
+          hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
+          recentNonHostTurns,
+        });
+      };
+
+      let hostSystemPrompt = buildFreshHostPrompt();
 
       const applyHostRoleAssignments = (roleContent: string): string => {
         const result = parseRoleAssignments(roleContent, playersRef.current, userId, humanName, humanGameIdentity?.name ?? null);
         if (result.isGameOver) {
+          updateGame(gameId, { isActive: false });
           setGamePhase("ended");
           setGameOverSummary(result.gameOverSummary || "Game over!");
+          trackEvent("game_completed", {
+            template: currentGame?.config?.template || "custom",
+            messages_sent: msgCountRef.current,
+          });
         }
         if (result.roleUpdates.length > 0 || result.revealIds.length > 0 || result.eliminateIds.length > 0) {
           setPlayers((prev) =>
@@ -578,7 +621,8 @@ export function useHostRound({
         : await runSpeakerQueueFn(sqCtx, currentQueue);
 
       let lastBeatContentLen = hostContent?.length ?? 0;
-      for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhase !== "ended"; i++) {
+      for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhaseRef.current !== "ended"; i++) {
+        hostSystemPrompt = buildFreshHostPrompt();
         await dynamicPace(lastBeatContentLen);
         const recentSummary = recentForNextRef.current.slice(-10)
           .map((m) => `${m.senderName}: ${m.content}`).join("\n");

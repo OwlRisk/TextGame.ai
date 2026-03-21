@@ -259,6 +259,7 @@ export function resolvePlayerRefToId(
 ): string | null {
   const ref = playerRef.trim();
   if (!ref) return null;
+  if (ref.toLowerCase() === "_host_") return "_host_";
   if (ref.toLowerCase() === "you") return userId;
   const byName = players.find((p) => p.name === ref || p.name.trim() === ref);
   if (byName) return byName.id;
