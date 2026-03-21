@@ -856,12 +856,21 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
           if (finalConfiguredPlayers.length > 0) {
             // Enrich LLM-configured players with pool avatars/voices, matched by index.
-            finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => ({
-              ...cp,
-              avatar_url: poolChars[i]?.avatar_url ?? cp.avatar_url,
-              voice_id: cp.voice_id ?? poolChars[i]?.voice_id,
-              voice_sample_url: poolChars[i]?.voice_sample_url ?? (cp as any).voice_sample_url,
-            }));
+            // Deduplicate: track assigned avatar URLs to avoid giving two players the same image.
+            const assignedAvatarUrls = new Set<string>();
+            finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => {
+              let avatarUrl = poolChars[i]?.avatar_url ?? cp.avatar_url;
+              if (avatarUrl && assignedAvatarUrls.has(avatarUrl)) {
+                avatarUrl = undefined;
+              }
+              if (avatarUrl) assignedAvatarUrls.add(avatarUrl);
+              return {
+                ...cp,
+                avatar_url: avatarUrl,
+                voice_id: cp.voice_id ?? poolChars[i]?.voice_id,
+                voice_sample_url: poolChars[i]?.voice_sample_url ?? (cp as any).voice_sample_url,
+              };
+            });
           } else if (poolChars.length >= needCount) {
             // Pool has enough characters — use them directly
             finalConfiguredPlayers = poolChars;

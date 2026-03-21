@@ -34,6 +34,8 @@ import { useGameInit } from "@/hooks/useGameInit";
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
   "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7",
+  "#dc2626", "#d97706", "#059669", "#2563eb", "#7c3aed",
+  "#db2777", "#0d9488", "#ea580c", "#4f46e5", "#9333ea",
 ] as const;
 
 export default function GameRoomPage({ params }: { params: Promise<{ gameId: string }> }) {
@@ -542,6 +544,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           const nonHostCount = players.filter((p) => !p.isGameMaster).length;
           if (nonHostCount >= lobbyMaxSeats) {
             toast.info(`Lobby is full (max ${lobbyMaxSeats} players).`);
+            return;
+          }
+          if (players.some((p) => p.name === char.name)) {
+            toast.info(`${char.name} is already in the game.`);
             return;
           }
           const existingAiIds = players.filter((p) => p.isAI && !p.isGameMaster).map((p) => {

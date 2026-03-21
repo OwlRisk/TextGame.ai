@@ -250,30 +250,33 @@ export async function fetchAvatarsForRoom(
   // Pass 1: fetch all avatars in parallel
   await Promise.allSettled(players.map(p => fetchOne(p)));
 
-  // Pass 2: resolve collisions — if two players got the same pool URL, re-fetch with offset
-  const urlToKeys = new Map<string, string[]>();
-  for (const [resultKey, url] of Object.entries(results)) {
-    if (!url) continue;
-    const existing = urlToKeys.get(url) ?? [];
-    existing.push(resultKey);
-    urlToKeys.set(url, existing);
-  }
-
-  const collisionFixes: Promise<void>[] = [];
-  for (const [, keys] of urlToKeys) {
-    if (keys.length <= 1) continue;
-    // Keep the first player's avatar, re-fetch the rest with increasing offsets
-    for (let i = 1; i < keys.length; i++) {
-      const collidingResultKey = keys[i];
-      const player = players.find(p => identityCacheKey(p.name, (p.type ?? 'player') as AvatarType) === collidingResultKey);
-      if (!player) continue;
-      // Clear both cache key formats so the re-fetch hits the API
-      cache.delete(collidingResultKey);
-      if (style) cache.delete(`${collidingResultKey}|${style}`);
-      collisionFixes.push(fetchOne(player, { avatarOffset: i }));
+  // Iteratively resolve collisions — re-fetch with increasing offsets until unique
+  // (up to MAX_COLLISION_PASSES to avoid infinite loops with very small pools)
+  const MAX_COLLISION_PASSES = 3;
+  let globalOffset = 0;
+  for (let pass = 0; pass < MAX_COLLISION_PASSES; pass++) {
+    const urlToKeys = new Map<string, string[]>();
+    for (const [resultKey, url] of Object.entries(results)) {
+      if (!url) continue;
+      const existing = urlToKeys.get(url) ?? [];
+      existing.push(resultKey);
+      urlToKeys.set(url, existing);
     }
-  }
-  if (collisionFixes.length > 0) {
+
+    const collisionFixes: Promise<void>[] = [];
+    for (const [, keys] of urlToKeys) {
+      if (keys.length <= 1) continue;
+      for (let i = 1; i < keys.length; i++) {
+        globalOffset++;
+        const collidingResultKey = keys[i];
+        const player = players.find(p => identityCacheKey(p.name, (p.type ?? 'player') as AvatarType) === collidingResultKey);
+        if (!player) continue;
+        cache.delete(collidingResultKey);
+        if (style) cache.delete(`${collidingResultKey}|${style}`);
+        collisionFixes.push(fetchOne(player, { avatarOffset: globalOffset }));
+      }
+    }
+    if (collisionFixes.length === 0) break;
     await Promise.allSettled(collisionFixes);
   }
 

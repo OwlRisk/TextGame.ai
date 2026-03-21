@@ -25,6 +25,8 @@ function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string): st
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
   "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#a855f7",
+  "#dc2626", "#d97706", "#059669", "#2563eb", "#7c3aed",
+  "#db2777", "#0d9488", "#ea580c", "#4f46e5", "#9333ea",
 ] as const;
 
 export interface OpeningKickoffState {
@@ -173,6 +175,21 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     }
 
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
+
+    // Deduplicate pool avatar URLs before registering them.
+    // If two pool characters ended up with the same avatar_url, only the first
+    // keeps it; the rest are cleared so they go through fetchAvatarsForRoom
+    // which has proper collision resolution with offset re-fetches.
+    const seenAvatarUrls = new Set<string>();
+    for (const p of aiPlayers) {
+      if (p.avatar?.startsWith('http')) {
+        if (seenAvatarUrls.has(p.avatar)) {
+          p.avatar = AI_COLOR_PALETTE[parseInt(p.id.split('-')[1] || '0') % AI_COLOR_PALETTE.length];
+        } else {
+          seenAvatarUrls.add(p.avatar);
+        }
+      }
+    }
 
     const roomPlayersNeedingAvatar: RoomPlayerInfo[] = [
       { name: gameMaster.name, type: 'host', gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background },
