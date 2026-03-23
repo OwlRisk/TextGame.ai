@@ -130,9 +130,11 @@ const softwareAppJsonLd = {
   operatingSystem: "Web",
   description: SITE_DESCRIPTION,
   offers: {
-    "@type": "Offer",
-    price: "0",
+    "@type": "AggregateOffer",
+    lowPrice: "0",
+    highPrice: "50",
     priceCurrency: "USD",
+    offerCount: "4",
   },
 };
 

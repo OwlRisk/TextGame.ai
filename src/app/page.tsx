@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     "werewolf online",
     "AI host game",
     "multiplayer text game",
-    "free online games",
+    "play AI games online",
   ],
   alternates: { canonical: "/" },
   openGraph: {
