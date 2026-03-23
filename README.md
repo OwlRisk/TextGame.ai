@@ -1,221 +1,181 @@
-# GameMaster - AI Game Master Platform
+<p align="center">
+  <img src="public/icon.svg" width="80" alt="TextGame.ai logo" />
+</p>
 
-An AI-powered intelligent game master platform that supports various social deduction games (such as Werewolf, Undercover, etc.), providing an immersive gaming experience with personalized AI host characters.
+<h1 align="center">TextGame.ai</h1>
 
-## ✨ Features
+<p align="center">
+  <strong>AI-powered multiplayer text game platform</strong><br>
+  An AI Game Master hosts social deduction, RPG, and party games — so everyone can play, no human moderator needed.
+</p>
 
-### Core Features
-- 🤖 **AI Game Master System** - Intelligent AI hosts with multiple personalized characters
-- 🎮 **Multiple Game Templates** - Built-in classic game templates including Werewolf, Undercover, and more
-- 🎨 **Custom Game Creation** - Flexible game rule configuration and customization
-- 💬 **Real-time Chat Interaction** - Smooth conversational gaming experience
-- 🔊 **Voice Input Support** - Speech-to-text input capability
-- 👥 **Multi-player Management** - Complete player panel and role assignment system
-- 📊 **Game Session Management** - Support for saving, resuming, and managing multiple sessions
-- 🎭 **Personalized Hosts** - Multiple AI host characters to choose from, each with unique styles
+<p align="center">
+  <a href="https://textgame.ai">Live Site</a> · 
+  <a href="#features">Features</a> · 
+  <a href="#tech-stack">Tech Stack</a> · 
+  <a href="#architecture">Architecture</a> · 
+  <a href="#getting-started">Getting Started</a>
+</p>
 
-### UI Features
-- 🎨 **Modern UI Design** - Beautiful interface based on shadcn/ui
-- 📱 **Responsive Design** - Perfect adaptation to various device sizes
-- 🌙 **Dark Theme** - Immersive dark theme design
-- ✨ **Smooth Animations** - Rich interactive animation effects
+---
 
-## 🛠️ Tech Stack
+## Overview
 
-### Frontend Framework
-- **Next.js 16** - React framework using App Router
-- **React 19** - UI library
-- **TypeScript** - Type safety
+**TextGame.ai** is a full-stack AI game platform where an intelligent Game Master runs entire game sessions autonomously — assigning roles, managing phases, narrating the story, and driving AI characters that think and strategize alongside human players.
 
-### UI Component Library
-- **Radix UI** - Accessible component foundation
-- **shadcn/ui** - High-quality component library
-- **Tailwind CSS** - Utility-first CSS framework
-- **Lucide React** - Icon library
+Players can jump into 20+ built-in game templates (Werewolf, Mafia, Undercover, 20 Questions, Escape Room, Debate, and more), create custom games with their own rules, or play solo with a full table of AI opponents.
 
-### Other Dependencies
-- **Sonner** - Toast notifications
-- **React Hook Form** - Form management
-- **Motion** - Animation library
-- **Recharts** - Chart library
+**Live at [textgame.ai](https://textgame.ai)**
 
-## 🚀 Quick Start
+---
+
+## Features
+
+### AI Game Engine
+- **Autonomous Game Master** — Parses structured directives (`ASSIGN_ROLE`, `NEXT_SPEAKER`, `ELIMINATE`, `GAME_OVER`, etc.) to drive game state without manual intervention.
+- **AI Player Characters** — Each AI player has a unique personality, strategy style, and optional voice. They deliberate, bluff, vote, and react in real time.
+- **20+ Game Templates** — Werewolf, Mafia, Undercover, Spyfall, Codenames, 20 Questions, Escape Room, Debate, Improv Comedy, and more.
+- **Custom Game Creation** — Define your own rules, roles, phases, and win conditions.
+
+### Multiplayer & Social
+- **Real-time Multiplayer** — Invite friends via shareable links; mix human and AI players.
+- **Private Boards** — Per-player secret information (roles, notes) managed by the host.
+- **Channel System** — Separate rooms for game chat, rules, private boards, and custom sections.
+- **Guest Join** — No account required for invited players.
+
+### Voice & Media
+- **Speech-to-Text** — Voice input via OpenAI Whisper.
+- **Text-to-Speech** — AI characters speak with unique voices (Cartesia, Inworld.ai).
+- **AI Avatar Generation** — Character portraits via DALL-E or Replicate (Flux / Stable Diffusion).
+
+### Monetization
+- **Token System** — Pay-as-you-go credits with model-aware cost estimation.
+- **Subscription Plans** — Stripe-powered Pro/Plus/Ultra tiers.
+
+---
+
+## Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| **Framework** | Next.js 16 (App Router), React 19, TypeScript |
+| **UI** | shadcn/ui, Radix UI, Tailwind CSS, Motion (Framer), Tiptap |
+| **Backend** | Next.js API Routes (serverless), OpenAI API (GPT-4o / GPT-5.3, Whisper, DALL-E) |
+| **Database** | PostgreSQL via Supabase (Auth, RLS, Realtime, Storage) |
+| **Payments** | Stripe (subscriptions + one-time purchases) |
+| **Voice** | Cartesia TTS, Inworld.ai TTS |
+| **Monitoring** | Sentry, Vercel Analytics |
+| **Testing** | Vitest, Playwright, Storybook |
+
+---
+
+## Architecture
+
+```
+src/
+├── app/
+│   ├── (pages)/                  # Route groups
+│   │   ├── game/[gameId]/        # Game room — real-time play
+│   │   ├── discover/             # Browse & search templates
+│   │   ├── my-games/             # User's game library
+│   │   ├── profile/              # User profile & settings
+│   │   ├── subscription/         # Stripe subscription management
+│   │   └── recharge/             # Token purchase
+│   ├── api/                      # Serverless API routes
+│   │   ├── chat/                 #   Streaming AI chat & player-speak
+│   │   ├── characters/           #   Character CRUD & generation
+│   │   ├── games/[gameId]/       #   Multiplayer room management
+│   │   ├── stripe/               #   Payment webhooks & checkout
+│   │   └── voice/                #   Transcribe & TTS
+│   ├── components/               # React components (shadcn/ui based)
+│   └── config/                   # Host personalities, game phases, branding
+├── hooks/                        # Custom hooks (useHostRound, useGameInit, useChatTTS)
+├── lib/                          # Core logic
+│   ├── gm-system-prompt.ts       #   Game Master system prompt builder
+│   ├── host-prompt-builder.ts    #   Per-template prompt adaptation
+│   ├── game-templates.ts         #   20+ template definitions
+│   ├── game-template-driver.ts   #   Template-specific game mechanics
+│   └── __tests__/                #   Comprehensive unit tests
+├── contexts/                     # React contexts (Auth, Game, GameRoom)
+├── types/                        # TypeScript type definitions
+└── data/                         # Discovery templates, presets, SEO data
+```
+
+### Core Game Loop
+
+```
+Lobby → Host Intro → [Turn Cycle] → Game Over
+                         │
+              ┌──────────┼──────────┐
+              ▼          ▼          ▼
+          Host Turn  AI Turn   Human Turn
+         (stream)   (player-   (user input)
+                     speak)
+              │          │          │
+              └──────────┼──────────┘
+                         ▼
+              Parse Host Directives
+         (ASSIGN_ROLE, NEXT_SPEAKER,
+          ELIMINATE, GAME_OVER, ...)
+                         │
+                         ▼
+              Update Game State
+         (roles, boards, phase, votes)
+```
+
+The AI Game Master's output is parsed for structured directives that drive the entire game state machine — role assignments, speaker ordering, eliminations, private board updates, and game conclusion — all without manual intervention.
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- npm / pnpm / yarn
-- OpenAI API Key (for AI features)
-- PostgreSQL database (optional, for data persistence)
+- OpenAI API key
+- Supabase project (auth + database)
+- Stripe account (optional, for payments)
 
-### Installation Steps
-
-1. **Clone the repository**
+### Installation
 
 ```bash
-git clone <repository-url>
-cd GameMaster
-```
-
-2. **Install dependencies**
-
-```bash
+git clone https://github.com/BrookeMa/TextGame.ai.git
+cd TextGame.ai
 npm install
-# or
-pnpm install
-# or
-yarn install
 ```
 
-3. **Configure environment variables**
+### Environment Variables
 
-Create a `.env` file and add the necessary environment variables:
+Copy `.env.example` and fill in:
 
 ```env
-# OpenAI API configuration (required)
-OPENAI_API_KEY=your_openai_api_key
+# Required
+OPENAI_API_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
-# Database configuration (optional, for data persistence)
-DATABASE_URL=your_database_url
-DIRECT_URL=your_direct_database_url
+# Database
+DATABASE_URL=
+DIRECT_URL=
+
+# Optional
+STRIPE_SECRET_KEY=
+REPLICATE_API_TOKEN=
+INWORLD_BASIC_BASE64=
 ```
 
-4. **Start the development server**
+### Run
 
 ```bash
-npm run dev
+npm run dev          # Development server at localhost:3000
+npm run build        # Production build
+npm run test         # Run unit tests (Vitest)
+npm run test:e2e     # Run E2E tests (Playwright)
+npm run storybook    # Component playground
 ```
 
-5. **Access the application**
+---
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
+## License
 
-### Build for Production
-
-```bash
-# Build
-npm run build
-
-# Start production server
-npm start
-```
-
-### Deployment (Production)
-
-若部署后出现 `/api/user/balance`、`/api/stripe/subscription-details`、`/api/avatar`、`/api/chat/stream` 等返回 **503**，多为环境或数据库未配置：
-
-1. **数据库**：在部署环境设置 `DATABASE_URL`（或 `DIRECT_URL`），并在该数据库上执行一次：
-   ```bash
-   npm run db:setup
-   ```
-2. **必选环境变量**：`OPENAI_API_KEY`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`；订阅/支付需 `STRIPE_SECRET_KEY` 等；头像生成需 `OPENAI_API_KEY` 或 `REPLICATE_API_TOKEN`；语音 TTS 需 `INWORLD_BASIC_BASE64`。
-3. **503 响应体**会提示具体缺失项（如 "Database not configured"），便于排查。
-
-### Code Linting
-
-```bash
-npm run lint
-```
-
-## 📁 Project Structure
-
-```
-GameMaster/
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx                    # Root layout component
-│   │   ├── page.tsx                      # Main page
-│   │   ├── components/                   # Components directory
-│   │   │   ├── game-master-chat.tsx     # AI game master chat interface
-│   │   │   ├── game-creator-form.tsx    # Game creation form
-│   │   │   ├── game-setup-dialog.tsx    # Game setup dialog
-│   │   │   ├── my-games-page.tsx        # My games page
-│   │   │   ├── player-board.tsx         # Player panel
-│   │   │   ├── chat-area.tsx            # Chat area
-│   │   │   ├── welcome-page.tsx         # Welcome page
-│   │   │   ├── discover-page.tsx        # Discover page
-│   │   │   ├── host-selector.tsx        # Host selector
-│   │   │   └── ui/                      # UI component library (shadcn/ui)
-│   │   └── config/
-│   │       └── host-config.ts           # Host configuration file
-│   └── styles/                           # Style files
-│       ├── index.css                     # Main style file
-│       ├── tailwind.css                  # Tailwind styles
-│       └── theme.css                    # Theme styles
-├── public/                                # Static assets
-├── .env                                  # Environment variables (create yourself)
-├── package.json                          # Project configuration
-├── tailwind.config.js                    # Tailwind configuration
-├── tsconfig.json                         # TypeScript configuration
-└── README.md                             # Project documentation
-```
-
-## 🎮 Usage Guide
-
-### Creating a New Game
-
-1. Click the "Create New Game" button
-2. Select a game template (Werewolf, Undercover, or Custom)
-3. Configure game parameters (player count, rules, etc.)
-4. Choose an AI host character
-5. Start the game
-
-### Managing Games
-
-- **My Games** - View all created games
-- **Continue Game** - Resume unfinished game sessions
-- **View History** - Browse completed game records
-- **Delete Game** - Clean up unwanted games
-
-### AI Host Features
-
-- Intelligent conversational game guidance
-- Automatic game flow and phase management
-- Role assignment and rule explanation
-- Real-time game state updates
-
-## 🔧 Development Guide
-
-### Adding a New Game Template
-
-Add a new template to the `GAME_TEMPLATES` array in `src/app/components/game-master-chat.tsx`:
-
-```typescript
-{
-  id: "new-game",
-  name: "New Game",
-  description: "Game description",
-  minPlayers: 4,
-  maxPlayers: 10,
-  defaultRules: "Game rules...",
-  roles: ["Role1", "Role2"]
-}
-```
-
-### Adding a New Host Character
-
-Add a new character to the `HOST_PERSONALITIES` array in `src/app/config/host-config.ts`.
-
-### Style Customization
-
-The project uses Tailwind CSS. You can customize themes and styles in `tailwind.config.js`.
-
-## 📝 Design Reference
-
-This project is developed based on a Figma design:
-- [Game Platform Design](https://www.figma.com/design/MpzvYw3r2IcvwjJUNloup6/%E6%B8%B8%E6%88%8F%E5%B9%B3%E5%8F%B0%E8%AE%BE%E8%AE%A1)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit Issues and Pull Requests.
-
-## 📄 License
-
-This project is private.
-
-## 🔗 Related Links
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
-- [Radix UI Documentation](https://www.radix-ui.com)
+This project is proprietary. All rights reserved.
