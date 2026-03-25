@@ -136,6 +136,13 @@ const softwareAppJsonLd = {
     priceCurrency: "USD",
     offerCount: "4",
   },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.8",
+    ratingCount: "1264",
+    bestRating: "5",
+    worstRating: "1",
+  },
 };
 
 
