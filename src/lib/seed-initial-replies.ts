@@ -1,12 +1,3 @@
-import { getPreferredModel } from "@/lib/model-prefs";
-import {
-  thinkingDelay,
-  getTypewriterSpeed,
-  typewriterReveal,
-  dynamicPace,
-  getConversationMode,
-} from "@/lib/game-pace";
-
 export interface SeedPlayerInfo {
   id: string;
   name: string;
@@ -34,80 +25,7 @@ export interface SeedInitialRepliesOpts {
   isCancelled?: () => boolean;
 }
 
-/** After host greeting, have a few AI players reply so the room feels active from the start. */
-export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
-  const {
-    channelId, hostName, hostContent, aiPlayers, humanPlayerName, gameTemplate, gameName, rules, playerNotesById,
-    addStreamingMessage: addStream, updateStreamingMessage: updateStream,
-    setTypingUsers, sessionToken, isCancelled,
-  } = opts;
-  if (!sessionToken || aiPlayers.length === 0) return;
-
-  // Skip seed chatter — the host auto-continues immediately after the greeting
+/** No-op: seed chatter is disabled — the host auto-continues immediately after the greeting. */
+export async function seedInitialPlayerReplies(_opts: SeedInitialRepliesOpts) {
   return;
-  const recent = [{ senderName: hostName, content: hostContent }];
-
-  const toTypingEntry = (p: SeedPlayerInfo) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
-
-  const upcomingTypers = toReply.slice(0, Math.min(3, toReply.length)).map(toTypingEntry);
-  setTypingUsers?.(upcomingTypers);
-
-  for (let i = 0; i < toReply.length; i++) {
-    const player = toReply[i];
-    if (isCancelled?.()) return;
-    try {
-      await thinkingDelay(i, "freeform");
-      if (isCancelled?.()) return;
-
-      const remaining = toReply.slice(i).slice(0, 3).map(toTypingEntry);
-      setTypingUsers?.(remaining);
-
-      const res = await fetch("/api/chat/player-speak", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
-        body: JSON.stringify({
-          gameName,
-          gameTemplate,
-          gamePhase: "opening",
-          rules: rules ?? "",
-          player: {
-            name: player.name,
-            role: player.role,
-            personality: player.personality,
-            background: player.background,
-            ...(typeof player.stats?.Word === "string" ? { boardContent: `Your secret word: ${player.stats.Word}` } : {}),
-          },
-          playerNotes: playerNotesById?.[player.id],
-          playerRoster: [
-            ...(humanPlayerName ? [{ name: humanPlayerName, isHuman: true }] : []),
-            ...aiPlayers.map((p) => ({ name: p.name, isHuman: false })),
-          ],
-          recentMessages: recent,
-          preferredModel: getPreferredModel(),
-          isSeedGreeting: true,
-        }),
-      });
-
-      if (!res.ok || isCancelled?.()) {
-        const after = toReply.slice(i + 1).slice(0, 3).map(toTypingEntry);
-        setTypingUsers?.(after);
-        continue;
-      }
-      const data = (await res.json()) as { message?: string };
-      const text = (data.message ?? "").trim();
-      const isSilent = !text || /^\.{1,5}$|^\u2026$/.test(text);
-      if (!isSilent && !isCancelled?.()) {
-        const after = toReply.slice(i + 1).slice(0, 3).map(toTypingEntry);
-        setTypingUsers?.(after);
-        const speed = getTypewriterSpeed(player.personality);
-        await typewriterReveal(text, addStream, updateStream, { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true }, channelId, speed);
-        recent.push({ senderName: player.name, content: text });
-        await dynamicPace(text.length, player.personality, "freeform");
-      }
-    } catch (e) {
-      setTypingUsers?.([]);
-      console.warn("[seedInitialReplies]", e);
-    }
-  }
-  setTypingUsers?.([]);
 }
