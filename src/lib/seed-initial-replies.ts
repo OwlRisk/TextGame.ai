@@ -4,6 +4,7 @@ import {
   getTypewriterSpeed,
   typewriterReveal,
   dynamicPace,
+  getConversationMode,
 } from "@/lib/game-pace";
 
 export interface SeedPlayerInfo {
@@ -42,9 +43,8 @@ export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
   } = opts;
   if (!sessionToken || aiPlayers.length === 0) return;
 
-  const shuffled = [...aiPlayers].sort(() => Math.random() - 0.5);
-  const count = Math.min(shuffled.length, 2 + Math.floor(Math.random() * 3));
-  const toReply = shuffled.slice(0, count);
+  // Skip seed chatter — the host auto-continues immediately after the greeting
+  return;
   const recent = [{ senderName: hostName, content: hostContent }];
 
   const toTypingEntry = (p: SeedPlayerInfo) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });

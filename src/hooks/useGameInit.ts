@@ -56,6 +56,8 @@ export interface UseGameInitReturn {
   isInitialized: boolean;
   readyKickoffRef: React.MutableRefObject<OpeningKickoffState | null>;
   seedCancelledRef: React.MutableRefObject<boolean>;
+  /** Set this to handleSendMessageRef from useHostRound so the game auto-continues after seed replies */
+  afterSeedSendRef: React.MutableRefObject<((content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => Promise<void>) | null>;
 }
 
 export function useGameInit(gameId: string): UseGameInitReturn {
@@ -86,6 +88,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
   const seedCancelledRef = useRef(false);
   const readyKickoffRef = useRef<OpeningKickoffState | null>(null);
   const gameStartingRef = useRef(false);
+  const afterSeedSendRef = useRef<((content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => Promise<void>) | null>(null);
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
 
@@ -269,6 +272,11 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       setTypingUsers,
       sessionToken: session?.access_token,
       isCancelled: () => seedCancelledRef.current,
+    }).then(() => {
+      if (seedCancelledRef.current) return;
+      setTimeout(() => {
+        afterSeedSendRef.current?.("[Continue]", { skipAddMessage: true, channelId: kickoff.channelId });
+      }, 800);
     }).catch((e) => {
       console.warn("Initial player replies failed", e);
       toast.error("Some AI players failed to respond. You can still play normally.");
@@ -474,5 +482,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     isInitialized,
     readyKickoffRef,
     seedCancelledRef,
+    afterSeedSendRef,
   };
 }

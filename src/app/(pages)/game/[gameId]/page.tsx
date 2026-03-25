@@ -115,6 +115,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     launchOpeningRound,
     readyKickoffRef,
     seedCancelledRef,
+    afterSeedSendRef,
+    isInitialized,
   } = useGameInit(gameId);
 
   // ─── Host round (message handling) ────────────────────────────────────────
@@ -135,6 +137,25 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     readyKickoffRef,
     launchOpeningRound,
   });
+
+  // Keep the seed-completion callback in sync with the latest host round handler
+  useEffect(() => {
+    afterSeedSendRef.current = handleSendMessageRef.current;
+  });
+
+  // ─── Auto-start: begin the game as soon as lobby is ready ─────────────────
+  const autoStartFiredRef = useRef(false);
+  const [autoStarting, setAutoStarting] = useState(false);
+  useEffect(() => {
+    if (autoStartFiredRef.current) return;
+    if (!isInitialized || gamePhase !== "lobby") return;
+    const nonHostPlayers = players.filter((p) => !p.isGameMaster);
+    if (nonHostPlayers.length === 0) return;
+    autoStartFiredRef.current = true;
+    setAutoStarting(true);
+    const timer = setTimeout(() => { startGame(); }, 600);
+    return () => clearTimeout(timer);
+  }, [isInitialized, gamePhase, players, startGame]);
 
   // ─── My Board update indicator ────────────────────────────────────────────
   const boardContentForViewer = myBoardContent[userId] ?? "";
@@ -387,6 +408,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             avatarImageUrls={avatarImageUrls}
             onAvatarUrlLoaded={onAvatarUrlLoaded}
             onStartGame={startGame}
+            autoStarting={autoStarting}
             onAddCharacter={() => {
               const nonHostCount = players.filter((p) => !p.isGameMaster).length;
               if (nonHostCount >= lobbyMaxSeats) {

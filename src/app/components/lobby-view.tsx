@@ -19,6 +19,7 @@ interface LobbyViewProps {
   onAddCharacter: () => void;
   onRemovePlayer: (playerId: string) => void;
   maxSeats?: number;
+  autoStarting?: boolean;
 }
 
 export function LobbyView({
@@ -33,8 +34,10 @@ export function LobbyView({
   onAddCharacter,
   onRemovePlayer,
   maxSeats = 12,
+  autoStarting = false,
 }: LobbyViewProps) {
   const [startingGame, setStartingGame] = useState(false);
+  const isStarting = startingGame || autoStarting;
 
   const host = players.find((p) => p.isGameMaster);
   const nonHost = players.filter((p) => !p.isGameMaster);
@@ -172,33 +175,34 @@ export function LobbyView({
 
       {/* Bottom action bar */}
       <div className="flex-shrink-0 p-4 border-t border-zinc-800/60 bg-zinc-900/80 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <div className="flex-1" />
-          {isOwner && (
-            <Button
-              size="lg"
-              onClick={handleStart}
-              disabled={startingGame || nonHost.length === 0}
-              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold px-8 shadow-lg shadow-violet-900/30 disabled:opacity-50"
-            >
-              {startingGame ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  Starting…
-                </>
-              ) : (
-                <>
+        <div className="flex items-center justify-center gap-3">
+          {isStarting ? (
+            <div className="text-sm text-zinc-300 flex items-center gap-2">
+              <div className="h-4 w-4 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
+              <Sparkles className="h-4 w-4 text-violet-400" />
+              Preparing the game…
+            </div>
+          ) : (
+            <>
+              <div className="flex-1" />
+              {isOwner && (
+                <Button
+                  size="lg"
+                  onClick={handleStart}
+                  disabled={nonHost.length === 0}
+                  className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold px-8 shadow-lg shadow-violet-900/30 disabled:opacity-50"
+                >
                   <Play className="h-4 w-4 mr-2" />
                   Start Game
-                </>
+                </Button>
               )}
-            </Button>
-          )}
-          {!isOwner && (
-            <div className="text-sm text-zinc-400 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-violet-400" />
-              Waiting for host to start the game…
-            </div>
+              {!isOwner && (
+                <div className="text-sm text-zinc-400 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-violet-400" />
+                  Waiting for host to start the game…
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

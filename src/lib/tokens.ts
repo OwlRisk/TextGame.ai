@@ -231,11 +231,11 @@ export async function getUserBalance(userId: string): Promise<UserBalance> {
     );
     if (result.rows.length === 0) {
       await client.query(
-        'INSERT INTO user_profiles (user_id, tokens) VALUES ($1, 200) ON CONFLICT (user_id) DO NOTHING',
+        'INSERT INTO user_profiles (user_id, tokens) VALUES ($1, 100) ON CONFLICT (user_id) DO NOTHING',
         [userId]
       );
       return {
-        tokens: 200,
+        tokens: 100,
         isPro: false,
         subscriptionStatus: 'free',
       };
