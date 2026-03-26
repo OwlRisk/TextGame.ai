@@ -31,7 +31,7 @@ function ls(key: string, fallback: string) {
 export function SettingsContent() {
   const router = useRouter();
   const { session } = useAuth();
-  const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'true') !== 'false');
+  const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => ls('voice_enabled', 'false') === 'true');
   const [ttsModel, setTtsModel] = useState<string>(() => ls('tts_model', 'inworld-tts-1.5-max'));
   const [ttsTemperature, setTtsTemperature] = useState<string>(() => ls('tts_temperature', '1.1'));
   const [ttsSpeed, setTtsSpeed] = useState<string>(() => ls('tts_speed', '1.0'));

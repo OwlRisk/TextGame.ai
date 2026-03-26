@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { User, ArrowDown, Timer } from "lucide-react";
+import { User, ArrowDown, Timer, Volume2, VolumeOff } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -109,6 +109,16 @@ interface ChatAreaProps {
   timerEndsAt?: number | null;
   /** Called when user reacts with an emoji to a message */
   onReact?: (messageId: string, emoji: string) => void;
+  /** TTS voice enabled state */
+  voiceEnabled?: boolean;
+  /** Toggle voice on/off */
+  onToggleVoice?: () => void;
+  /** Whether Inworld TTS is available */
+  inworldTTSSupported?: boolean;
+  /** Ref to TTS-synced displayed content per message id */
+  displayedContentRef?: React.MutableRefObject<Map<string, string>>;
+  /** Tick counter that increments when displayed content updates */
+  revealTick?: number;
 }
 
 export function ChatArea({ 
@@ -154,6 +164,11 @@ export function ChatArea({
   onVote,
   timerEndsAt,
   onReact,
+  voiceEnabled = false,
+  onToggleVoice,
+  inworldTTSSupported = false,
+  displayedContentRef,
+  revealTick,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -338,6 +353,18 @@ export function ChatArea({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {onToggleVoice && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleVoice}
+              className="h-8 w-8 hover:bg-zinc-700 text-zinc-400 hover:text-white"
+              title={voiceEnabled ? "Mute voice" : "Enable voice"}
+              aria-label={voiceEnabled ? "Mute voice" : "Enable voice"}
+            >
+              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeOff className="h-4 w-4" />}
+            </Button>
+          )}
           {onOpenPlayerBoard && (
             <Button
               variant="ghost"
@@ -387,6 +414,9 @@ export function ChatArea({
           )}
           {visibleMessages.map((message, index) => {
             const rawContent = stripPrivateNotes(message.content ?? '');
+            const ttsSynced = (voiceEnabled && inworldTTSSupported && displayedContentRef)
+              ? (displayedContentRef.current.get(message.id) ?? '')
+              : rawContent;
             const showAvatar = index === 0 || visibleMessages[index - 1].senderId !== message.senderId;
             const isShowingCursor = !!message.isStreaming;
 
@@ -395,7 +425,7 @@ export function ChatArea({
                 key={message.id}
                 message={message}
                 showAvatar={showAvatar}
-                syncedContent={rawContent}
+                syncedContent={ttsSynced}
                 rawContent={rawContent}
                 isShowingCursor={isShowingCursor}
                 userId={userId}

@@ -30,6 +30,7 @@ import { useGameRoomLifecycle } from "@/hooks/useGameRoomLifecycle";
 import { useQuickReplies } from "@/hooks/useQuickReplies";
 import { useHostRound } from "@/hooks/useHostRound";
 import { useGameInit } from "@/hooks/useGameInit";
+import { useChatTTS } from "@/hooks/use-chat-tts";
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -256,6 +257,19 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     humanGameIdentity,
     players,
     sessionAccessToken: session?.access_token ?? null,
+  });
+
+  // ─── TTS (voice) — default off, user can toggle in header ─────────────────
+  const {
+    voiceEnabled, setVoiceEnabled, inworldTTSSupported,
+    displayedContentRef, revealTick,
+  } = useChatTTS({
+    messages: messagesForChannel,
+    players,
+    gameId,
+    channelId: selectedChannelId ?? undefined,
+    channelName: gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room",
+    isOwner: isOwner ? true : undefined,
   });
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -519,6 +533,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               setActiveVote(null);
             } : undefined}
             timerEndsAt={timerEndsAt}
+            voiceEnabled={voiceEnabled}
+            onToggleVoice={() => {
+              const next = !voiceEnabled;
+              setVoiceEnabled(next);
+              localStorage.setItem('voice_enabled', String(next));
+            }}
+            inworldTTSSupported={inworldTTSSupported}
+            displayedContentRef={displayedContentRef}
+            revealTick={revealTick}
             alivePlayers={players.filter(p => !isPlayerEliminated(p))}
             onReact={(messageId, emoji) => {
               const displayName = humanGameIdentity?.name || "You";

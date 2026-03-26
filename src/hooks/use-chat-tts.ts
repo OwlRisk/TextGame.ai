@@ -47,9 +47,9 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
 
   // ─── Voice enabled state ──────────────────────────────────────────────
   const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem('voice_enabled');
-    return stored === null ? true : stored !== 'false';
+    return stored === 'true';
   });
   const { play: playInworldTTS, stop: stopInworldTTS, queueDeferred: queueDeferredTTS, isPlaying: isTTSPlaying, supported: inworldTTSSupported } = useInworldTTS();
 
