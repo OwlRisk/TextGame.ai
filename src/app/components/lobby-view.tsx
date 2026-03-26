@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Play, Plus, X, Sparkles, Users, Crown, Bot, User } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { Play, Plus, X, Sparkles, Users, Crown, Bot, User, Volume2, Square, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import type { Player } from "@/types/player";
@@ -143,6 +143,11 @@ export function LobbyView({
                       <p className="text-xs text-zinc-500 mt-0.5 truncate">{player.personality}</p>
                     )}
                   </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {player.isAI && player.voiceSampleUrl && (
+                      <VoicePreviewBtn url={player.voiceSampleUrl} name={player.name} />
+                    )}
+                  </div>
                   <div className="absolute top-2 right-2 flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
                     {isOwner && player.isAI && (
                       <button
@@ -207,5 +212,56 @@ export function LobbyView({
         </div>
       </div>
     </div>
+  );
+}
+
+function VoicePreviewBtn({ url, name }: { url: string; name: string }) {
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggle = useCallback(async () => {
+    if (playing && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setPlaying(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      setPlaying(true);
+      audio.onended = () => { audioRef.current = null; setPlaying(false); };
+      audio.onerror = () => { audioRef.current = null; setPlaying(false); };
+      await audio.play();
+    } catch {
+      setPlaying(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [url, playing]);
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={loading}
+      className={cn(
+        "p-1.5 rounded-lg transition-colors",
+        playing
+          ? "bg-violet-600/20 text-violet-400 hover:bg-violet-600/30"
+          : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+      )}
+      title={playing ? `Stop ${name}'s voice` : `Preview ${name}'s voice`}
+      aria-label={playing ? `Stop ${name}'s voice` : `Preview ${name}'s voice`}
+    >
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : playing ? (
+        <Square className="h-3.5 w-3.5 fill-current" />
+      ) : (
+        <Volume2 className="h-3.5 w-3.5" />
+      )}
+    </button>
   );
 }
