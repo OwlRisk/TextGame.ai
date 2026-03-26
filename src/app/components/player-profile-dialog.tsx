@@ -55,7 +55,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
         <div className="space-y-4 pt-2">
           <div className="flex items-center gap-4">
             {isUser && !useGameAvatarForHuman ? (
-              <Avatar className="h-16 w-16 rounded-xl ring-2 ring-zinc-600">
+              <Avatar className="h-24 w-24 rounded-xl ring-2 ring-zinc-600">
                 {userAvatarUrl ? <AvatarImage src={userAvatarUrl} alt={player.name} className="object-cover" /> : null}
                 <AvatarFallback className="text-white text-lg" style={{ backgroundColor: player.avatar }}>
                   {player.name.substring(0, 2).toUpperCase()}
@@ -69,7 +69,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
                 enabled={true}
                 initialUrl={avatarImageUrls[avatarCacheKey(humanAvatarName, "player")]}
                 onAvatarLoaded={onAvatarUrlLoaded}
-                className="h-16 w-16 rounded-xl ring-2 ring-zinc-600"
+                className="h-24 w-24 rounded-xl ring-2 ring-zinc-600"
                 fallbackColor={player.avatar}
               />
             ) : (
@@ -82,7 +82,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
                     enabled={true}
                     initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
                     onAvatarLoaded={onAvatarUrlLoaded}
-                    className="h-16 w-16 rounded-xl ring-2 ring-zinc-600"
+                    className="h-24 w-24 rounded-xl ring-2 ring-zinc-600"
                     fallbackColor={player.avatar}
                   />
                 );

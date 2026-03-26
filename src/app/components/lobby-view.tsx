@@ -144,8 +144,8 @@ export function LobbyView({
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {player.isAI && player.voiceSampleUrl && (
-                      <VoicePreviewBtn url={player.voiceSampleUrl} name={player.name} />
+                    {player.isAI && (player.voiceSampleUrl || player.voiceId) && (
+                      <VoicePreviewBtn url={player.voiceSampleUrl} voiceId={player.voiceId} name={player.name} />
                     )}
                   </div>
                   <div className="absolute top-2 right-2 flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -215,10 +215,17 @@ export function LobbyView({
   );
 }
 
-function VoicePreviewBtn({ url, name }: { url: string; name: string }) {
+const SAMPLE_PHRASES: Record<string, string> = {
+  male: "Hey there! I'm ready to play. Let's have some fun!",
+  female: "Hi everyone! Excited to join the game. Let's go!",
+  default: "Hello! Looking forward to playing with you all!",
+};
+
+function VoicePreviewBtn({ url, voiceId, name }: { url?: string; voiceId?: string; name: string }) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   const toggle = useCallback(async () => {
     if (playing && audioRef.current) {
@@ -229,7 +236,27 @@ function VoicePreviewBtn({ url, name }: { url: string; name: string }) {
     }
     setLoading(true);
     try {
-      const audio = new Audio(url);
+      let audioSrc = url || blobUrlRef.current;
+
+      if (!audioSrc && voiceId) {
+        const phrase = SAMPLE_PHRASES.default;
+        const res = await fetch("/api/inworld-tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: phrase, voiceId }),
+        });
+        if (!res.ok) throw new Error("TTS failed");
+        const data = await res.json();
+        if (!data.audioBase64) throw new Error("No audio");
+        const bytes = Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: data.contentType || "audio/mpeg" });
+        audioSrc = URL.createObjectURL(blob);
+        blobUrlRef.current = audioSrc;
+      }
+
+      if (!audioSrc) { setLoading(false); return; }
+
+      const audio = new Audio(audioSrc);
       audioRef.current = audio;
       setPlaying(true);
       audio.onended = () => { audioRef.current = null; setPlaying(false); };
@@ -240,7 +267,7 @@ function VoicePreviewBtn({ url, name }: { url: string; name: string }) {
     } finally {
       setLoading(false);
     }
-  }, [url, playing]);
+  }, [url, voiceId, playing]);
 
   return (
     <button
