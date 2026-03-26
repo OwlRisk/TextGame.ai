@@ -147,12 +147,10 @@ export function LobbyView({
                     {player.isAI && (player.voiceSampleUrl || player.voiceId) && (
                       <VoicePreviewBtn url={player.voiceSampleUrl} voiceId={player.voiceId} name={player.name} />
                     )}
-                  </div>
-                  <div className="absolute top-2 right-2 flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
                     {isOwner && player.isAI && (
                       <button
                         onClick={() => onRemovePlayer(player.id)}
-                        className="p-1 rounded-md hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300"
+                        className="p-1 rounded-md hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity"
                         title="Remove player"
                         aria-label={`Remove ${player.name}`}
                       >
