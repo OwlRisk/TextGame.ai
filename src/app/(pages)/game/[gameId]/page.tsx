@@ -612,6 +612,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             background: char.background,
             gender: char.gender as "male" | "female" | "other" | undefined,
             status: "online" as const,
+            voiceId: char.voice_id ?? undefined,
+            voiceSampleUrl: char.voice_sample_url ?? undefined,
           };
           setPlayers((prev) => {
             const humanIdx = prev.findIndex((p) => !p.isAI && !p.isGameMaster);

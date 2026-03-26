@@ -30,6 +30,7 @@ interface CharacterBrowserProps {
     gender: string;
     personality: string;
     background: string;
+    voice_id?: string | null;
     voice_sample_url?: string | null;
     avatar_url?: string | null;
   }) => void;
@@ -95,6 +96,7 @@ export function CharacterBrowser({
         gender: char.gender,
         personality: char.personality || "",
         background: char.background || "",
+        voice_id: char.voice_id,
         voice_sample_url: char.voice_sample_url,
         avatar_url: char.avatar_url,
       });
