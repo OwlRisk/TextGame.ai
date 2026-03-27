@@ -302,6 +302,7 @@ export function useHostRound({
           hostPersonality: generatedHost?.personality ?? undefined,
           hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
           recentNonHostTurns,
+          quickGame: (() => { try { return !localStorage.getItem("tg_game_completed"); } catch { return false; } })(),
         });
       };
 
@@ -313,6 +314,7 @@ export function useHostRound({
           updateGame(gameId, { isActive: false });
           setGamePhase("ended");
           setGameOverSummary(result.gameOverSummary || "Game over!");
+          try { localStorage.setItem("tg_game_completed", "1"); } catch {}
           trackEvent("game_completed", {
             template: currentGame?.config?.template || "custom",
             messages_sent: msgCountRef.current,
@@ -389,6 +391,7 @@ export function useHostRound({
             updateGame(gameId, { isActive: false });
             setGameOverSummary(a.summary || "Game over!");
             setGamePhase("ended");
+            try { localStorage.setItem("tg_game_completed", "1"); } catch {}
             trackEvent("game_completed", {
               template: currentGame?.config?.template || "custom",
               messages_sent: msgCountRef.current,

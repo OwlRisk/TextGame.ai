@@ -260,7 +260,7 @@ export const FEATURED_GAMES: FeaturedGame[] = [
     cover: "/games/game-cover-mafia.webp",
     accent: "from-red-500/20 to-orange-500/10",
     border: "hover:border-red-500/50",
-    presetId: "mafia-classic",
+    presetId: "mafia-night",
   },
   {
     emoji: "🕵️",
@@ -271,14 +271,14 @@ export const FEATURED_GAMES: FeaturedGame[] = [
     cover: "/games/game-cover-undercover.webp",
     accent: "from-emerald-500/20 to-teal-500/10",
     border: "hover:border-emerald-500/50",
-    presetId: "undercover",
+    presetId: "undercover-party",
   },
 ];
 
 export const FAQ_ITEMS: FAQItem[] = [
   {
     question: "How do I create a game?",
-    answer: "Sign in with Google, then go to Create. You can either chat with the Game Master to describe your idea in plain English, or pick a template from Discover (e.g. Werewolf, Who's the Spy, Mafia, Tarot). Set player count and optional rules — no coding or complex setup. Your game is ready in about 2 minutes.",
+    answer: "Sign in with Google, then browse templates on Discover — pick a game like Werewolf, Who's the Spy, or Mafia. Click the template and you're in a game room within seconds. AI players are added automatically. No setup or coding needed.",
   },
   {
     question: "What is the Game Master and how does it work?",

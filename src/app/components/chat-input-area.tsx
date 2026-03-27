@@ -274,6 +274,29 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
+      {canSend && !isEliminated && (quickReplies.length > 0 || quickRepliesLoading) && (
+        <div className="mb-2 flex flex-wrap gap-2 items-center">
+          {quickRepliesLoading && quickReplies.length === 0 && (
+            <>
+              <div className="h-8 w-24 rounded-full bg-zinc-700/40 animate-pulse" />
+              <div className="h-8 w-32 rounded-full bg-zinc-700/40 animate-pulse" />
+              <div className="h-8 w-20 rounded-full bg-zinc-700/40 animate-pulse" />
+            </>
+          )}
+          {quickReplies.map((text) => (
+            <Button
+              key={text}
+              variant="outline"
+              size="sm"
+              className="h-8 px-3.5 text-sm rounded-full border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/25 text-violet-300 hover:text-white transition-all"
+              disabled={sendDisabled}
+              onClick={() => handleSend(text)}
+            >
+              {text}
+            </Button>
+          ))}
+        </div>
+      )}
       <div className="flex gap-2 items-end">
         <div className="relative flex-1 min-w-0">
           {showPopup && (

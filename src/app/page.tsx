@@ -44,7 +44,7 @@ const faqJsonLd = {
       name: "How do I create a game?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Sign in with Google, then go to Create. You can either chat with the Game Master to describe your idea in plain English, or pick a template from Discover (e.g. Werewolf, Who's the Spy, Mafia, Tarot). Set player count and optional rules — no coding or complex setup. Your game is ready in about 2 minutes.",
+        text: "Sign in with Google, then browse templates on Discover — pick a game like Werewolf, Who's the Spy, or Mafia. Click the template and you're in a game room within seconds. AI players are added automatically. No setup or coding needed.",
       },
     },
     {

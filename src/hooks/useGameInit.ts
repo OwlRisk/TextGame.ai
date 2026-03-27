@@ -236,13 +236,14 @@ export function useGameInit(gameId: string): UseGameInitReturn {
 
     const tmplMeta = getGameTemplate(kickoff.gameTemplate || "custom");
     const isSoloGame = tmplMeta?.maxPlayers === 1;
+    const playerCount = playersRef.current.filter((p) => !p.isGameMaster).length;
     let hostGreeting: string;
     if (isSoloGame) {
-      hostGreeting = `Welcome! I'm ready to begin whenever you are. What would you like to explore?`;
+      hostGreeting = `Welcome! I'm your host for this session. Just type your response below when it's your turn — you can also tap a suggested reply if you're not sure what to say. Let's begin!`;
     } else if (tmplMeta?.hasHiddenRoles) {
-      hostGreeting = `Roles have been secretly assigned — check "My Board" for your identity. The game begins now. Night falls...`;
+      hostGreeting = `Welcome, ${playerCount} players! Roles have been secretly assigned — check **"My Board"** on the left for your identity.\n\nWhen it's your turn, type your response below or tap a suggested reply. Night falls...`;
     } else {
-      hostGreeting = `The game begins now. Let's get started!`;
+      hostGreeting = `Welcome! The game begins now with ${playerCount} players. When you see **"It's your turn"**, type your response below — or tap a suggested reply to jump right in. Let's go!`;
     }
     const greetingId = `start-greeting-${gameId}-${Date.now()}`;
     addMessage(

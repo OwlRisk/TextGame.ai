@@ -28,6 +28,8 @@ export interface HostPromptOpts {
   hostCustomSystemPrompt?: string;
   /** Recent non-host turns for dynamic progression urgency */
   recentNonHostTurns?: number;
+  /** Quick game mode: instruct the GM to keep the game short (3-4 rounds) */
+  quickGame?: boolean;
 }
 
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
@@ -37,7 +39,7 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
     channels, gamePhase, phaseLabel,
     playerRoster, eventLogSummary, boardSummary, rulesText,
     hostName, hostPersonality, hostCustomSystemPrompt,
-    recentNonHostTurns,
+    recentNonHostTurns, quickGame,
   } = opts;
 
   const playerNamesList = nonHostPlayerNames.join(", ");
@@ -170,7 +172,14 @@ IMPORTANT: Even on silent turns you MUST always include a NEXT_SPEAKER directive
 
 ${templateMechanicsSection ? `${templateMechanicsSection}\n\n` : ''}## PACING & PROGRESSION
 ${progressionPolicySection}
-
+${quickGame ? `
+## QUICK GAME MODE
+This is an introductory quick game. Keep it SHORT — aim for 3-4 rounds maximum.
+- Compress the game arc: setup → one or two key moments → climax → resolution.
+- Skip optional phases or combine them where possible.
+- Drive toward a conclusion quickly. If the game naturally reaches a decisive point, call GAME_OVER.
+- Prioritize fun and a satisfying ending over completeness.
+` : ''}
 ## HOST VOICE — HOW TO WRITE PUBLIC MESSAGES
 You are a host, not a narrator. Be brief — but never be absent.
 - ${isNarrativeGame ? 'Keep it concise: 2–3 sentences when describing scenes, interpreting cards, or revealing clues. 1 sentence for phase transitions and simple responses.' : 'ONE sentence max. No exceptions unless revealing multiple essential pieces of game info at once.'}
