@@ -4,6 +4,7 @@ import { getAuthUserFromRequest } from '@/lib/auth-server';
 import {
   deductTokens,
   hasTokens,
+  gptUsageToCoins,
   estimatedTokensToCoins,
   estimateTokensFromText,
   estimateChatTokens,
@@ -131,12 +132,14 @@ export async function POST(request: NextRequest) {
 
     const content = completion.choices[0]?.message?.content ?? '';
     const usageData = completion.usage;
-    const actualCoins = usageData?.total_tokens
-      ? estimatedTokensToCoins(usageData.total_tokens, chatModel)
+    const promptTokens = usageData?.prompt_tokens ?? 0;
+    const completionTokens = usageData?.completion_tokens ?? 0;
+    const actualModel = (completion as { model?: string }).model ?? chatModel;
+    const actualCoins = (promptTokens + completionTokens) > 0
+      ? gptUsageToCoins(actualModel, promptTokens, completionTokens)
       : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(content.length / 3), chatModel);
-    deductTokens(user.id, Math.max(1, actualCoins), 'ai_chat',
-      usageData ? `Chat ${usageData.total_tokens} tokens (actual)` : `Chat ~${systemTokens + messagesTokens + Math.ceil(content.length / 3)} tokens (estimate)`)
-      .catch((e) => console.error('[chat] post-deduct error:', e));
+    await deductTokens(user.id, Math.max(1, actualCoins), 'ai_chat',
+      usageData ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModel})` : `Chat ~${systemTokens + messagesTokens + Math.ceil(content.length / 3)} tokens (estimate)`);
 
     return new Response(JSON.stringify({ content }), {
       headers: { 'Content-Type': 'application/json' },

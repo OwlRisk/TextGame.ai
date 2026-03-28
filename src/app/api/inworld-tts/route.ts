@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let body: { text?: string; voiceId?: string; modelId?: string };
+    let body: { text?: string; voiceId?: string; modelId?: string; source?: string };
     try {
       body = await request.json();
     } catch {
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
 
     const text = typeof body.text === 'string' ? body.text.trim() : '';
     const voiceId = typeof body.voiceId === 'string' ? body.voiceId.trim() : '';
+    const isPreview = body.source === 'lobby_preview';
 
     if (!text || !voiceId) {
       return NextResponse.json(
@@ -44,28 +45,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (text.length > MAX_TEXT_LENGTH) {
+    const previewMaxLen = 120;
+    const effectiveMax = isPreview ? previewMaxLen : MAX_TEXT_LENGTH;
+    const clampedText = isPreview ? text.slice(0, previewMaxLen) : text;
+
+    if (clampedText.length > effectiveMax) {
       return NextResponse.json(
-        { error: `text must be at most ${MAX_TEXT_LENGTH} characters` },
+        { error: `text must be at most ${effectiveMax} characters` },
         { status: 400 }
       );
     }
 
     const VALID_MODELS = ['inworld-tts-1.5-max', 'inworld-tts-1.5-mini', 'inworld-tts-1-max', 'inworld-tts-1'];
-    const modelId = VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-max';
+    const previewModel = 'inworld-tts-1.5-mini';
+    const modelId = isPreview ? previewModel : (VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-max');
 
-    // Check balance before calling upstream (deduct AFTER success)
-    const coinsRequired = ttsCostToCoins(text.length, modelId);
-    const balance = await getUserBalance(user.id);
-    if (balance.tokens < coinsRequired) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient tokens',
-          message: 'You need more tokens to continue. Please purchase tokens or upgrade to Pro.',
-          code: 'INSUFFICIENT_TOKENS',
-        },
-        { status: 402 }
-      );
+    if (!isPreview) {
+      const coinsRequired = ttsCostToCoins(clampedText.length, modelId);
+      const balance = await getUserBalance(user.id);
+      if (balance.tokens < coinsRequired) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient tokens',
+            message: 'You need more tokens to continue. Please purchase tokens or upgrade to Pro.',
+            code: 'INSUFFICIENT_TOKENS',
+          },
+          { status: 402 }
+        );
+      }
     }
 
     const controller = new AbortController();
@@ -78,7 +85,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Basic ${basic}`,
       },
       body: JSON.stringify({
-        text,
+        text: clampedText,
         voiceId,
         modelId,
         audioConfig: {
@@ -108,13 +115,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Deduct only after upstream success
-    await deductTokens(
-      user.id,
-      coinsRequired,
-      'tts',
-      `Inworld TTS ${modelId} — ${text.length} chars`
-    );
+    if (!isPreview) {
+      const coinsRequired = ttsCostToCoins(clampedText.length, modelId);
+      await deductTokens(
+        user.id,
+        coinsRequired,
+        'tts',
+        `Inworld TTS ${modelId} — ${clampedText.length} chars`
+      );
+    }
 
     return NextResponse.json({
       audioBase64,

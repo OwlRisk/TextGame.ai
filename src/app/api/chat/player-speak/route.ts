@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { buildSystemPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
-import { deductTokens, estimatedTokensToCoins } from '@/lib/tokens';
+import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins, estimateTokensFromText } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
@@ -106,6 +106,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'player.name and recentMessages array required' }, { status: 400 });
     }
 
+    const chatModel = sanitizeModel(preferredModel);
+    const estCoins = estimatedTokensToCoins(1500, chatModel);
+    if (!(await hasTokens(user.id, estCoins))) {
+      return NextResponse.json({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }, { status: 402 });
+    }
+
     const openai = getOpenAI();
     const recentText = recentMessages
       .slice(-50)
@@ -179,7 +185,6 @@ export async function POST(request: NextRequest) {
 
     const userContent = lines.join('\n');
 
-    const chatModel = sanitizeModel(preferredModel);
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 30_000);
     const completion = await openai.chat.completions.create({
@@ -194,12 +199,12 @@ export async function POST(request: NextRequest) {
 
     const message = (completion.choices[0]?.message?.content || '').trim();
 
-    // Deduct tokens after successful generation
-    const totalTokens = completion.usage?.total_tokens;
-    if (totalTokens && totalTokens > 0) {
-      const coins = estimatedTokensToCoins(totalTokens, chatModel);
-      deductTokens(user.id, Math.max(1, coins), 'ai_player_speak', `Player speak ${totalTokens} tokens`)
-        .catch((e) => console.error('[player-speak] deduct error:', e));
+    const promptTokens = completion.usage?.prompt_tokens ?? 0;
+    const completionTokens = completion.usage?.completion_tokens ?? 0;
+    const actualModel = (completion as { model?: string }).model ?? chatModel;
+    if (promptTokens + completionTokens > 0) {
+      const coins = gptUsageToCoins(actualModel, promptTokens, completionTokens);
+      await deductTokens(user.id, Math.max(1, coins), 'ai_player_speak', `Player speak ${promptTokens}+${completionTokens} tokens (${actualModel})`);
     }
 
     return NextResponse.json({ message });

@@ -241,7 +241,7 @@ function VoicePreviewBtn({ url, voiceId, name }: { url?: string; voiceId?: strin
         const res = await fetch("/api/inworld-tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: phrase, voiceId }),
+          body: JSON.stringify({ text: phrase, voiceId, source: "lobby_preview" }),
         });
         if (!res.ok) throw new Error("TTS failed");
         const data = await res.json();

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { sanitizeModel } from '@/lib/model-prefs';
-import { deductTokens, estimatedTokensToCoins } from '@/lib/tokens';
+import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins } from '@/lib/tokens';
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -39,6 +39,11 @@ export async function POST(request: NextRequest) {
       playerRole?: string;
       preferredModel?: string;
     };
+
+    const estCoins = estimatedTokensToCoins(800, sanitizeModel(preferredModel));
+    if (!(await hasTokens(user.id, estCoins))) {
+      return NextResponse.json({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }, { status: 402 });
+    }
 
     const openai = getOpenAI();
     const recentText = recentMessages
@@ -87,11 +92,12 @@ Suggest 1-3 quick replies for "${playerName}" to send next:`;
     }, { signal: ac.signal });
     clearTimeout(timer);
 
-    const totalTokens = completion.usage?.total_tokens;
-    if (totalTokens && totalTokens > 0) {
-      const coins = estimatedTokensToCoins(totalTokens, sanitizeModel(preferredModel));
-      deductTokens(user.id, Math.max(1, coins), 'suggest_quick_replies', `Quick replies ${totalTokens} tokens`)
-        .catch((e) => console.error('[suggest-quick-replies] deduct error:', e));
+    const promptTokens = completion.usage?.prompt_tokens ?? 0;
+    const completionTokens = completion.usage?.completion_tokens ?? 0;
+    const actualModel = (completion as { model?: string }).model ?? sanitizeModel(preferredModel);
+    if (promptTokens + completionTokens > 0) {
+      const coins = gptUsageToCoins(actualModel, promptTokens, completionTokens);
+      await deductTokens(user.id, Math.max(1, coins), 'suggest_quick_replies', `Quick replies ${promptTokens}+${completionTokens} tokens (${actualModel})`);
     }
 
     const text = completion.choices?.[0]?.message?.content?.trim() || '';

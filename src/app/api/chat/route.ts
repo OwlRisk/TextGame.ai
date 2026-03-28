@@ -7,7 +7,6 @@ import {
   gptUsageToCoins,
   estimatedTokensToCoins,
   estimateTokensFromText,
-  estimateChatTokens,
 } from '@/lib/tokens';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 import { buildGMSystemPrompt } from '@/lib/gm-system-prompt';
@@ -69,8 +68,14 @@ export async function POST(request: NextRequest) {
       : 500;
 
     const openai = getOpenAI();
+    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';
     const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext });
 
+    const estTokens = estimateTokensFromText(systemMessage) + messages.reduce((s: number, m: any) => s + estimateTokensFromText(m.content || ''), 0) + maxTokens;
+    const estCoins = estimatedTokensToCoins(estTokens, chatModel);
+    if (!(await hasTokens(user.id, estCoins))) {
+      return NextResponse.json({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }, { status: 402 });
+    }
 
     // Format messages for OpenAI
     const formattedMessages = [
@@ -80,8 +85,6 @@ export async function POST(request: NextRequest) {
         content: msg.content
       }))
     ];
-
-    const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
@@ -113,52 +116,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let imageUrl: string | undefined;
-
-    const replyTypeMatch = response.match(/<REPLY_TYPE>\s*image\s*<\/REPLY_TYPE>/i);
-    const imageSizeMatch = response.match(/<IMAGE_SIZE>\s*(\S+)\s*<\/IMAGE_SIZE>/i);
-    const imagePromptMatch = response.match(/<IMAGE_PROMPT>([\s\S]*?)<\/IMAGE_PROMPT>/i);
-    const captionMatch = response.match(/<CAPTION>([\s\S]*?)<\/CAPTION>/i);
-
-    const sizeMap: Record<string, '1024x1024' | '1024x1792' | '1792x1024'> = {
-      square: '1024x1024',
-      portrait: '1024x1792',
-      landscape: '1792x1024',
-    };
-    const imageSize = imageSizeMatch ? sizeMap[imageSizeMatch[1].toLowerCase()] ?? '1024x1024' : '1024x1024';
-
-    if (replyTypeMatch && imagePromptMatch) {
-      const imagePrompt = imagePromptMatch[1].trim().slice(0, 900);
-      if (imagePrompt) {
-        try {
-          const imgRes = await openai.images.generate({
-            model: 'dall-e-3',
-            prompt: imagePrompt,
-            size: imageSize,
-            quality: 'hd',
-            response_format: 'b64_json',
-            n: 1,
-          });
-          const b64 = imgRes.data?.[0]?.b64_json;
-          if (b64) imageUrl = `data:image/png;base64,${b64}`;
-        } catch (imgErr: unknown) {
-          console.error('[chat] Image generation failed:', imgErr);
-        }
-      }
-      response = response
-        .replace(/<REPLY_TYPE>\s*[\s\S]*?<\/REPLY_TYPE>/gi, '')
-        .replace(/<IMAGE_SIZE>\s*[\s\S]*?<\/IMAGE_SIZE>/gi, '')
-        .replace(/<IMAGE_PROMPT>[\s\S]*?<\/IMAGE_PROMPT>/gi, '')
-        .replace(/<CAPTION>[\s\S]*?<\/CAPTION>/gi, '')
-        .replace(/\n{2,}/g, '\n\n')
-        .trim();
-      if (captionMatch && captionMatch[1].trim()) response = captionMatch[1].trim();
-    }
-
     return NextResponse.json({ 
       message: response,
       usage: completion.usage,
-      ...(imageUrl && { imageUrl }),
     });
 
   } catch (error: any) {

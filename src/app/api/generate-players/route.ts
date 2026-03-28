@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { deductTokens, estimatedTokensToCoins, hasTokens } from '@/lib/tokens';
+import { deductTokens, gptUsageToCoins, estimatedTokensToCoins, hasTokens } from '@/lib/tokens';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
 const limiter = createRateLimiter('generate-players', { limit: 10, windowSeconds: 60 });
@@ -201,12 +201,14 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
         });
       }
 
-      // Deduct tokens for both API calls (count decision + player generation)
-      const totalTokens = (decideCompletion?.usage?.total_tokens ?? 0) + (completion.usage?.total_tokens ?? 0);
-      if (totalTokens > 0) {
-        const coins = estimatedTokensToCoins(totalTokens, chatModel);
-        deductTokens(user.id, Math.max(1, coins), 'generate_players', `Generate ${validPlayers.length} players, ${totalTokens} tokens`)
-          .catch((e) => console.error('[generate-players] deduct error:', e));
+      const dp = decideCompletion?.usage?.prompt_tokens ?? 0;
+      const dc = decideCompletion?.usage?.completion_tokens ?? 0;
+      const gp = completion.usage?.prompt_tokens ?? 0;
+      const gc = completion.usage?.completion_tokens ?? 0;
+      const actualModel = (completion as { model?: string }).model ?? chatModel;
+      const totalCoins = gptUsageToCoins(actualModel, dp + gp, dc + gc);
+      if (totalCoins > 0) {
+        await deductTokens(user.id, Math.max(1, totalCoins), 'generate_players', `Generate ${validPlayers.length} players ${dp + gp}+${dc + gc} tokens (${actualModel})`);
       }
 
       return NextResponse.json(result);
