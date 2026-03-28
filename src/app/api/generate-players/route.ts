@@ -92,7 +92,9 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
     "name": "Name or character title that fits the game",
     "gender": "male/female/other",
     "personality": "Unique personality (5-10 words)",
-    "background": "Unique background (5-10 words)"`;
+    "background": "Unique background (5-10 words)",
+    "speechStyle": "How they talk: e.g. blunt and sarcastic / poetic and flowery / nervous stammering / street slang / deadpan dry / overly formal",
+    "quirk": "A behavioral quirk: e.g. always uses food metaphors / interrupts others / asks rhetorical questions / speaks in short bursts / narrates own actions"`;
     if (needsRoles) {
       outputFormat += `,
     "role": "Role from rules"`;
@@ -140,7 +142,8 @@ Requirements:
 1. ${playerCount} completely unique, diverse players
 2. Mix genders naturally
 3. Each personality must be distinct and memorable
-4. Create backgrounds that enhance the game experience${roleInstructions}${wordInstructions}
+4. Create backgrounds that enhance the game experience
+5. CRITICAL — speechStyle and quirk: Every player MUST have a completely different speech style and quirk. These make each AI sound like a distinct person. Examples of speechStyle diversity: one player speaks in terse fragments, another is verbose and dramatic, another peppers in slang, another is painfully polite. Examples of quirk diversity: one always brings up their past, another deflects with humor, another gets paranoid easily, another trusts everyone too quickly.${roleInstructions}${wordInstructions}
 
 Output ONLY valid JSON:${outputFormat}${wordPairFormat ? `
 

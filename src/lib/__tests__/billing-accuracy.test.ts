@@ -132,8 +132,7 @@ describe('Realistic per-round cost (gpt-5.3-chat-latest)', () => {
   it('full round with 4 AI players costs ~7 coins (no TTS)', () => {
     const host = gptUsageToCoins(model, 2300, 200);
     const players = 4 * gptUsageToCoins(model, 2000, 100);
-    const quickReply = gptUsageToCoins(model, 600, 50);
-    const total = host + players + quickReply;
+    const total = host + players;
 
     expect(total).toBeGreaterThanOrEqual(5);
     expect(total).toBeLessThanOrEqual(10);
@@ -142,9 +141,8 @@ describe('Realistic per-round cost (gpt-5.3-chat-latest)', () => {
   it('full round with 4 AI players costs ~12 coins (with TTS)', () => {
     const host = gptUsageToCoins(model, 2300, 200);
     const players = 4 * gptUsageToCoins(model, 2000, 100);
-    const quickReply = gptUsageToCoins(model, 600, 50);
     const tts = 5 * ttsCostToCoins(100, 'inworld-tts-1.5-max');
-    const total = host + players + quickReply + tts;
+    const total = host + players + tts;
 
     expect(total).toBeGreaterThanOrEqual(10);
     expect(total).toBeLessThanOrEqual(18);
@@ -152,8 +150,7 @@ describe('Realistic per-round cost (gpt-5.3-chat-latest)', () => {
 
   it('$10 = 1000 coins lasts 100+ rounds without TTS', () => {
     const perRound = gptUsageToCoins(model, 2300, 200)
-      + 4 * gptUsageToCoins(model, 2000, 100)
-      + gptUsageToCoins(model, 600, 50);
+      + 4 * gptUsageToCoins(model, 2000, 100);
     const rounds = Math.floor(1000 / perRound);
     expect(rounds).toBeGreaterThanOrEqual(100);
   });
@@ -161,8 +158,7 @@ describe('Realistic per-round cost (gpt-5.3-chat-latest)', () => {
   it('late-game round (longer history) costs under 15 coins without TTS', () => {
     const host = gptUsageToCoins(model, 5000, 300);
     const players = 4 * gptUsageToCoins(model, 4000, 150);
-    const quickReply = gptUsageToCoins(model, 1200, 60);
-    const total = host + players + quickReply;
+    const total = host + players;
 
     expect(total).toBeLessThanOrEqual(15);
   });
@@ -228,7 +224,6 @@ describe('API routes use accurate billing (gptUsageToCoins)', () => {
     { path: 'chat/route.ts', name: '/api/chat' },
     { path: 'chat/stream/route.ts', name: '/api/chat/stream' },
     { path: 'chat/player-speak/route.ts', name: '/api/chat/player-speak' },
-    { path: 'suggest-quick-replies/route.ts', name: '/api/suggest-quick-replies' },
     { path: 'suggest-gm-replies/route.ts', name: '/api/suggest-gm-replies' },
     { path: 'generate-players/route.ts', name: '/api/generate-players' },
     { path: 'generate-host/route.ts', name: '/api/generate-host' },
@@ -253,12 +248,6 @@ describe('API routes use accurate billing (gptUsageToCoins)', () => {
     expect(deductBlock).toContain('gptUsageToCoins');
   });
 
-  it('/api/suggest-quick-replies does NOT use estimatedTokensToCoins for deduction', () => {
-    const content = readRoute('suggest-quick-replies/route.ts');
-    const deductBlock = content.slice(content.indexOf('gptUsageToCoins('));
-    expect(deductBlock).toContain('gptUsageToCoins');
-  });
-
   it('/api/suggest-gm-replies does NOT use estimatedTokensToCoins for deduction', () => {
     const content = readRoute('suggest-gm-replies/route.ts');
     const deductBlock = content.slice(content.indexOf('gptUsageToCoins('));
@@ -273,7 +262,6 @@ describe('API routes have balance pre-checks', () => {
     { path: 'chat/route.ts', name: '/api/chat' },
     { path: 'chat/stream/route.ts', name: '/api/chat/stream' },
     { path: 'chat/player-speak/route.ts', name: '/api/chat/player-speak' },
-    { path: 'suggest-quick-replies/route.ts', name: '/api/suggest-quick-replies' },
     { path: 'suggest-gm-replies/route.ts', name: '/api/suggest-gm-replies' },
     { path: 'generate-players/route.ts', name: '/api/generate-players' },
     { path: 'generate-host/route.ts', name: '/api/generate-host' },
@@ -301,7 +289,6 @@ describe('deductTokens calls are awaited (no fire-and-forget)', () => {
     'chat/route.ts',
     'chat/stream/route.ts',
     'chat/player-speak/route.ts',
-    'suggest-quick-replies/route.ts',
     'suggest-gm-replies/route.ts',
     'generate-players/route.ts',
     'generate-host/route.ts',
@@ -481,7 +468,6 @@ describe('Billing edge cases', () => {
   it('estimatedTokensToCoins is only used for pre-checks, not deduction', () => {
     const deductionRoutes = [
       'chat/player-speak/route.ts',
-      'suggest-quick-replies/route.ts',
       'suggest-gm-replies/route.ts',
       'chat/stream/route.ts',
     ];
@@ -549,30 +535,26 @@ describe('Cost regression guard — per-round must stay under budget', () => {
   it('4-player round without TTS costs at most 12 coins', () => {
     const host = gptUsageToCoins(model, 3000, 300);
     const players = 4 * gptUsageToCoins(model, 2500, 150);
-    const quickReply = gptUsageToCoins(model, 800, 60);
-    const total = host + players + quickReply;
+    const total = host + players;
     expect(total).toBeLessThanOrEqual(12);
   });
 
   it('6-player round without TTS costs at most 16 coins', () => {
     const host = gptUsageToCoins(model, 3000, 300);
     const players = 6 * gptUsageToCoins(model, 2500, 150);
-    const quickReply = gptUsageToCoins(model, 800, 60);
-    const total = host + players + quickReply;
+    const total = host + players;
     expect(total).toBeLessThanOrEqual(16);
   });
 
   it('$5 starter pack (500 coins) lasts 40+ rounds', () => {
     const perRound = gptUsageToCoins(model, 3000, 300)
-      + 4 * gptUsageToCoins(model, 2500, 150)
-      + gptUsageToCoins(model, 800, 60);
+      + 4 * gptUsageToCoins(model, 2500, 150);
     expect(Math.floor(500 / perRound)).toBeGreaterThanOrEqual(40);
   });
 
   it('$10 popular pack (1200 coins with bonus) lasts 100+ rounds', () => {
     const perRound = gptUsageToCoins(model, 3000, 300)
-      + 4 * gptUsageToCoins(model, 2500, 150)
-      + gptUsageToCoins(model, 800, 60);
+      + 4 * gptUsageToCoins(model, 2500, 150);
     expect(Math.floor(1200 / perRound)).toBeGreaterThanOrEqual(100);
   });
 });

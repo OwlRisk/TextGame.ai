@@ -6,13 +6,13 @@ export const MEMBERS_POLL_INTERVAL_MS = 15_000;
 export const MEMBERS_MAX_ERRORS = 3;
 
 /** Maximum autonomous Host→AI advance loops before waiting for human input */
-export const MAX_AUTO_ADVANCES = 4;
+export const MAX_AUTO_ADVANCES = 1;
 
 /** Game inactivity timeout (ms). If no message is added for this long, auto-end the game. */
 export const GAME_INACTIVITY_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 /** Number of recent messages to include in the Host context window */
-export const HOST_CONTEXT_WINDOW = 35;
+export const HOST_CONTEXT_WINDOW = 20;
 
 /** Server-side max token cap for the streaming response */
 export const MAX_STREAM_TOKENS = 4096;

@@ -118,6 +118,8 @@ export function useHostRound({
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const msgCountRef = useRef(0);
+  const pendingHumanMsgRef = useRef<string | null>(null);
+  const interruptRef = useRef(false);
 
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
@@ -134,8 +136,19 @@ export function useHostRound({
 
   const handleSendMessage = async (content: string, options?: SendMessageOptions) => {
     if (!content.trim()) return;
-    if (isRoundInProgress) return;
     if (gamePhase === "ended") return;
+
+    if (isRoundInProgress) {
+      pendingHumanMsgRef.current = content;
+      interruptRef.current = true;
+      if (!options?.skipAddMessage) {
+        addMessage(
+          { senderId: userId, senderName: humanGameIdentity?.name || "You", senderAvatar: "#6366f1", content, isAI: false },
+          options?.channelId ?? selectedChannelId ?? "game-room"
+        );
+      }
+      return;
+    }
 
     msgCountRef.current += 1;
     if (msgCountRef.current === 1) {
@@ -623,8 +636,10 @@ export function useHostRound({
         ? (() => { setCurrentSpeakerId(null); return true; })()
         : await runSpeakerQueueFn(sqCtx, currentQueue);
 
+      interruptRef.current = false;
+      pendingHumanMsgRef.current = null;
       let lastBeatContentLen = hostContent?.length ?? 0;
-      for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhaseRef.current !== "ended"; i++) {
+      for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhaseRef.current !== "ended" && !interruptRef.current; i++) {
         hostSystemPrompt = buildFreshHostPrompt();
         await dynamicPace(lastBeatContentLen);
         const recentSummary = recentForNextRef.current.slice(-10)
@@ -679,6 +694,13 @@ export function useHostRound({
     } finally {
       setIsRoundInProgress(false);
       saveNow();
+
+      const queued = pendingHumanMsgRef.current;
+      pendingHumanMsgRef.current = null;
+      interruptRef.current = false;
+      if (queued && gamePhaseRef.current !== "ended") {
+        setTimeout(() => handleSendMessageRef.current?.(queued, { skipAddMessage: true }), 100);
+      }
     }
   };
 

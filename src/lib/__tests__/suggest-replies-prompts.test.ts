@@ -2,56 +2,10 @@ import { describe, it, expect } from "vitest";
 
 /**
  * Tests for the prompt construction and response parsing logic
- * used by suggest-quick-replies and suggest-gm-replies API routes.
+ * used by suggest-gm-replies API route.
  *
  * We extract and test the pure functions: prompt assembly and response parsing.
  */
-
-// --- Quick reply suggestion parsing (from suggest-quick-replies/route.ts) ---
-function parseQuickReplySuggestions(text: string): string[] {
-  return text
-    .split("\n")
-    .map((s) => s.replace(/^[\d.)\-\s]+/, "").replace(/^["']|["']$/g, "").trim())
-    .filter((s) => s.length > 0 && s.length <= 120)
-    .slice(0, 3);
-}
-
-describe("parseQuickReplySuggestions", () => {
-  it("parses clean lines", () => {
-    expect(parseQuickReplySuggestions("I agree\nLet's vote\nI'm suspicious of Juno"))
-      .toEqual(["I agree", "Let's vote", "I'm suspicious of Juno"]);
-  });
-
-  it("strips numbered prefixes", () => {
-    expect(parseQuickReplySuggestions("1. First option\n2) Second option\n3 - Third"))
-      .toEqual(["First option", "Second option", "Third"]);
-  });
-
-  it("strips surrounding quotes", () => {
-    expect(parseQuickReplySuggestions('"I agree"\n\'Let\'s investigate\''))
-      .toEqual(["I agree", "Let's investigate"]);
-  });
-
-  it("filters out empty lines", () => {
-    expect(parseQuickReplySuggestions("Option A\n\n\nOption B"))
-      .toEqual(["Option A", "Option B"]);
-  });
-
-  it("limits to 3 suggestions", () => {
-    expect(parseQuickReplySuggestions("A\nB\nC\nD\nE").length).toBe(3);
-  });
-
-  it("filters lines exceeding 120 chars", () => {
-    const long = "x".repeat(121);
-    expect(parseQuickReplySuggestions(`Short\n${long}\nOK`))
-      .toEqual(["Short", "OK"]);
-  });
-
-  it("returns empty array for empty input", () => {
-    expect(parseQuickReplySuggestions("")).toEqual([]);
-    expect(parseQuickReplySuggestions("  \n  ")).toEqual([]);
-  });
-});
 
 // --- GM reply suggestion parsing (from suggest-gm-replies/route.ts) ---
 const MAX_SUGGESTIONS = 8;

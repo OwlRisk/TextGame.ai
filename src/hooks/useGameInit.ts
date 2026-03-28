@@ -133,6 +133,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       isMuted: false,
       personality: configPlayer.personality || "Friendly and observant",
       background: configPlayer.background || "A game enthusiast",
+      speechStyle: configPlayer.speechStyle || configPlayer.speech_style || undefined,
+      quirk: configPlayer.quirk || undefined,
       gender: configPlayer.gender as "male" | "female" | "other" | undefined,
       status: "online" as const,
       voiceId: (configPlayer.voice_id as string | undefined) ?? undefined,

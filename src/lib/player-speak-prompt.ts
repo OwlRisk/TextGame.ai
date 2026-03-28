@@ -67,10 +67,14 @@ export function buildSystemPrompt(
   personality?: string,
   background?: string,
   role?: string,
+  speechStyle?: string,
+  quirk?: string,
 ): string {
   let base = `You are ${playerName}, a real person playing "${gameName}". Never break character.`;
   if (personality) base += ` Your personality: ${personality}.`;
   if (background) base += ` ${background}`;
+  if (speechStyle) base += ` Speech style: ${speechStyle}.`;
+  if (quirk) base += ` Quirk: ${quirk}.`;
 
   const TAIL = `\n\n${buildPacingRule(gameTemplate)}\n\n${OUTPUT_RULE}\n\n${EMOTION_TAGS_SECTION}${buildNotesSection(gameTemplate)}`;
 

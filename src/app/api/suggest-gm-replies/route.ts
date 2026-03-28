@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
-import { sanitizeModel } from "@/lib/model-prefs";
+import { sanitizeModel, CHEAP_AI_MODEL } from "@/lib/model-prefs";
 import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins } from "@/lib/tokens";
 
 function getOpenAI() {
@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ suggestions: [] });
     }
 
-    const estCoins = estimatedTokensToCoins(800, sanitizeModel(preferredModel));
+    const model = CHEAP_AI_MODEL;
+    const estCoins = estimatedTokensToCoins(800, model);
     if (!(await hasTokens(user.id, estCoins))) {
       return NextResponse.json({ error: "Insufficient tokens", code: "INSUFFICIENT_TOKENS" }, { status: 402 });
     }
@@ -75,7 +76,7 @@ Rules:
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 15_000);
     const completion = await openai.chat.completions.create({
-      model: sanitizeModel(preferredModel),
+      model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -86,7 +87,7 @@ Rules:
 
     const promptTokens = completion.usage?.prompt_tokens ?? 0;
     const completionTokens = completion.usage?.completion_tokens ?? 0;
-    const actualModel = (completion as { model?: string }).model ?? sanitizeModel(preferredModel);
+    const actualModel = (completion as { model?: string }).model ?? model;
     if (promptTokens + completionTokens > 0) {
       const coins = gptUsageToCoins(actualModel, promptTokens, completionTokens);
       await deductTokens(user.id, Math.max(1, coins), "suggest_gm_replies", `GM replies ${promptTokens}+${completionTokens} tokens (${actualModel})`);

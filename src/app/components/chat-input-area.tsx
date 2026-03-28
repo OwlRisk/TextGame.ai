@@ -2,11 +2,12 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
-import { Send, AlertCircle, ChevronDown, ChevronUp, Vote } from "lucide-react";
+import { Send, ChevronDown, ChevronUp, Vote, Zap } from "lucide-react";
 import type { ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import type { Player } from "@/types/player";
+import type { GameAction } from "@/hooks/useGameActions";
 
 export interface ChatInputAreaProps {
   channelName: string;
@@ -17,8 +18,6 @@ export interface ChatInputAreaProps {
   currentSpeakerId?: string | null;
   isEliminated: boolean;
   isRoundInProgress: boolean;
-  quickReplies: string[];
-  quickRepliesLoading: boolean;
   introYourTurnHint?: string;
   introYourTurnReply?: string;
   introEveryoneSpokenHint?: string;
@@ -29,6 +28,7 @@ export interface ChatInputAreaProps {
   activeVote?: ActiveVote | null;
   onVote?: (choice: string) => void;
   alivePlayers: Player[];
+  gameActions?: GameAction[];
 }
 
 const MIN_INPUT_HEIGHT = 40;
@@ -43,8 +43,6 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   currentSpeakerId,
   isEliminated,
   isRoundInProgress,
-  quickReplies,
-  quickRepliesLoading,
   introYourTurnHint,
   introYourTurnReply,
   introEveryoneSpokenHint,
@@ -55,6 +53,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   activeVote,
   onVote,
   alivePlayers,
+  gameActions = [],
 }: ChatInputAreaProps) {
   const [input, setInput] = useState("");
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
@@ -62,6 +61,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionAnchor, setMentionAnchor] = useState(0);
   const [popupIndex, setPopupIndex] = useState(0);
+  const [pendingAction, setPendingAction] = useState<GameAction | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -160,9 +160,9 @@ export const ChatInputArea = React.memo(function ChatInputArea({
     [onSendMessage],
   );
 
-  const canSend = isGameActive && (!currentSpeakerId || currentSpeakerId === userId);
-  const inputDisabled = !isGameActive || isEliminated || isSending || isRoundInProgress;
-  const sendDisabled = !canSend || inputDisabled;
+  const canSend = isGameActive && (!currentSpeakerId || currentSpeakerId === userId || isRoundInProgress);
+  const inputDisabled = !isGameActive || isEliminated || isSending;
+  const sendDisabled = !isGameActive || isEliminated || isSending;
 
   return (
     <div className="p-5 border-t border-violet-900/20 bg-zinc-900">
@@ -202,10 +202,10 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           It&apos;s your turn to speak
         </div>
       )}
-      {!canSend && !isEliminated && isGameActive && (
-        <div className="mb-3 text-xs text-amber-400 flex items-center gap-1.5">
-          <AlertCircle className="h-3.5 w-3.5" />
-          Wait for your turn to speak
+      {isRoundInProgress && !isEliminated && isGameActive && (
+        <div className="mb-3 text-xs text-violet-400 flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+          AI players are responding — you can type ahead
         </div>
       )}
       {lastFailedSendContent && onRetryLastMessage && (
@@ -274,28 +274,64 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
-      {canSend && !isEliminated && (quickReplies.length > 0 || quickRepliesLoading) && (
-        <div className="mb-2 flex flex-wrap gap-2 items-center">
-          {quickRepliesLoading && quickReplies.length === 0 && (
-            <>
-              <div className="h-8 w-24 rounded-full bg-zinc-700/40 animate-pulse" />
-              <div className="h-8 w-32 rounded-full bg-zinc-700/40 animate-pulse" />
-              <div className="h-8 w-20 rounded-full bg-zinc-700/40 animate-pulse" />
-            </>
-          )}
-          {quickReplies.map((text) => (
-            <Button
-              key={text}
-              variant="outline"
-              size="sm"
-              className="h-8 px-3.5 text-sm rounded-full border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/25 text-violet-300 hover:text-white transition-all"
-              disabled={sendDisabled}
-              onClick={() => handleSend(text)}
-            >
-              {text}
-            </Button>
-          ))}
-        </div>
+      {gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && (
+        pendingAction?.needsTarget ? (
+          <div className="mb-2 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-xs font-medium text-amber-300">{pendingAction.label} — pick a target:</span>
+              <button type="button" className="ml-auto text-xs text-zinc-500 hover:text-zinc-300" onClick={() => setPendingAction(null)}>Cancel</button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {alivePlayers.filter(p => !p.isGameMaster && p.id !== userId).map((p) => (
+                <Button
+                  key={p.id}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2.5 text-xs border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/25 text-amber-200 hover:text-white"
+                  onClick={() => {
+                    const msg = pendingAction.template.replace(/\{player\}/g, p.name);
+                    setInput(msg);
+                    setPendingAction(null);
+                    requestAnimationFrame(() => {
+                      inputRef.current?.focus();
+                      inputRef.current?.setSelectionRange(msg.length, msg.length);
+                    });
+                  }}
+                >
+                  {p.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {gameActions.map((action) => (
+              <Button
+                key={action.label}
+                size="sm"
+                variant="outline"
+                className="h-7 px-2.5 text-xs border-zinc-600/60 bg-zinc-800/40 hover:bg-zinc-700/50 text-zinc-300 hover:text-white gap-1"
+                disabled={sendDisabled}
+                onClick={() => {
+                  if (action.needsTarget) {
+                    setPendingAction(action);
+                  } else {
+                    setInput(action.template);
+                    requestAnimationFrame(() => {
+                      inputRef.current?.focus();
+                      const len = action.template.length;
+                      inputRef.current?.setSelectionRange(len, len);
+                    });
+                  }
+                }}
+              >
+                {action.icon && <span className="text-xs">{action.icon}</span>}
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )
       )}
       <div className="flex gap-2 items-end">
         <div className="relative flex-1 min-w-0">

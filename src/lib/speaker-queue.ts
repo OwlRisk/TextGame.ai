@@ -115,6 +115,8 @@ export async function runPlayerSpeak(
           role: speaker.role,
           personality: speaker.personality,
           background: speaker.background,
+          speechStyle: speaker.speechStyle,
+          quirk: speaker.quirk,
           boardContent: ctx.myBoardContent[speaker.id] ?? undefined,
         },
         ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),

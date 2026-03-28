@@ -58,8 +58,6 @@ interface ChatAreaProps {
   isUserHost?: boolean;
   gamePhaseLabel?: string;
   alivePlayers?: Player[];
-  /** Quick reply chips shown above input (e.g. "Ready!" when Host asks) */
-  quickReplies?: string[];
   /** When it's user's turn in intro (host + others spoke, user hasn't), show this hint */
   introYourTurnHint?: string;
   /** One-click reply text shown next to intro your-turn hint (e.g. "Ready!") */
@@ -70,8 +68,6 @@ interface ChatAreaProps {
   aiSuggestedPrompts?: string[];
   /** Label for AI suggestions row (e.g. "AI suggestions") */
   aiSuggestionsLabel?: string;
-  /** True while quick replies are being fetched */
-  quickRepliesLoading?: boolean;
   /** When last send failed, show retry banner with this content */
   lastFailedSendContent?: string | null;
   /** Call to retry sending the last failed message */
@@ -119,6 +115,12 @@ interface ChatAreaProps {
   displayedContentRef?: React.MutableRefObject<Map<string, string>>;
   /** Tick counter that increments when displayed content updates */
   revealTick?: number;
+  /** Context-sensitive game actions */
+  gameActions?: import("@/hooks/useGameActions").GameAction[];
+  /** Game event log entries for game over recap */
+  gameEvents?: string[];
+  /** Human player display name */
+  humanName?: string;
 }
 
 export function ChatArea({ 
@@ -141,13 +143,11 @@ export function ChatArea({
   isUserHost = false,
   gamePhaseLabel,
   alivePlayers = [],
-  quickReplies = [],
   introYourTurnHint,
   introYourTurnReply,
   introEveryoneSpokenHint,
   aiSuggestedPrompts = [],
   aiSuggestionsLabel = 'AI suggestions',
-  quickRepliesLoading = false,
   lastFailedSendContent,
   onRetryLastMessage,
   isRoundInProgress = false,
@@ -169,6 +169,9 @@ export function ChatArea({
   inworldTTSSupported = false,
   displayedContentRef,
   revealTick,
+  gameActions = [],
+  gameEvents = [],
+  humanName,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -386,6 +389,11 @@ export function ChatArea({
           onResumeGame={onResumeGame}
           onNewGame={onNewGame}
           onSaveCharacters={onSaveCharacters}
+          players={players}
+          gameEvents={gameEvents}
+          messageCount={messages.length}
+          userId={userId}
+          humanName={humanName}
         />
       )}
 
@@ -486,8 +494,6 @@ export function ChatArea({
         currentSpeakerId={currentSpeakerId}
         isEliminated={isEliminated}
         isRoundInProgress={isRoundInProgress}
-        quickReplies={quickReplies}
-        quickRepliesLoading={quickRepliesLoading}
         introYourTurnHint={introYourTurnHint}
         introYourTurnReply={introYourTurnReply}
         introEveryoneSpokenHint={introEveryoneSpokenHint}
@@ -498,6 +504,7 @@ export function ChatArea({
         activeVote={activeVote}
         onVote={onVote}
         alivePlayers={alivePlayers}
+        gameActions={gameActions}
       />
       </div>
     </div>

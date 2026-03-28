@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
         role?: string;
         personality?: string;
         background?: string;
+        speechStyle?: string;
+        quirk?: string;
         /** Private My Board content the host wrote for this player (secret info they know). */
         boardContent?: string;
       };
@@ -114,11 +116,11 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI();
     const recentText = recentMessages
-      .slice(-50)
+      .slice(-15)
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
-    const system = buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role);
+    const system = buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk);
 
     // Build user content: game context + private knowledge + recent chat
     const lines: string[] = [];

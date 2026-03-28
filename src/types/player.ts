@@ -13,6 +13,10 @@ export interface Player {
   personality?: string;
   /** AI-only: backstory / context (e.g. "Former debate champion") */
   background?: string;
+  /** AI-only: how this character talks (e.g. "blunt and sarcastic", "poetic and flowery") */
+  speechStyle?: string;
+  /** AI-only: behavioral quirk (e.g. "always uses food metaphors", "gets paranoid easily") */
+  quirk?: string;
   /** Player gender (male, female, other) - used for avatar generation and TTS voice matching */
   gender?: string;
   /** Whether this player's role has been publicly revealed by the Host (via REVEAL_ROLE directive). */

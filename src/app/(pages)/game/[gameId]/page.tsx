@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useGameContext } from "@/app/contexts/GameContext";
@@ -27,10 +27,11 @@ import { trackEvent } from "@/lib/analytics";
 
 import { useGameChannels } from "@/hooks/useGameChannels";
 import { useGameRoomLifecycle } from "@/hooks/useGameRoomLifecycle";
-import { useQuickReplies } from "@/hooks/useQuickReplies";
 import { useHostRound } from "@/hooks/useHostRound";
 import { useGameInit } from "@/hooks/useGameInit";
 import { useChatTTS } from "@/hooks/use-chat-tts";
+import { GameEventOverlay, type GameEvent } from "@/app/components/game-event-overlay";
+import { useGameActions } from "@/hooks/useGameActions";
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -181,6 +182,39 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setMobileRightDrawer(false);
   }, [pathname]);
 
+  // ─── Game event overlay ──────────────────────────────────────────────────
+  const [currentGameEvent, setCurrentGameEvent] = useState<GameEvent | null>(null);
+  const prevPhaseLabelRef = useRef(phaseLabel);
+  useEffect(() => {
+    if (phaseLabel && phaseLabel !== prevPhaseLabelRef.current && gamePhase === "active") {
+      const lower = phaseLabel.toLowerCase();
+      const mood = /night/i.test(lower) ? "dark" as const : /day|dawn/i.test(lower) ? "light" as const : "neutral" as const;
+      setCurrentGameEvent({ id: `phase-${Date.now()}`, type: "phase", text: phaseLabel, mood });
+    }
+    prevPhaseLabelRef.current = phaseLabel;
+  }, [phaseLabel, gamePhase]);
+  useEffect(() => {
+    if (gameOverSummary) {
+      setCurrentGameEvent({ id: `gameover-${Date.now()}`, type: "game_over", text: "Game Over", subtext: gameOverSummary.slice(0, 120), mood: "victory" });
+    }
+  }, [gameOverSummary]);
+  const dismissGameEvent = useCallback(() => setCurrentGameEvent(null), []);
+  const prevEliminatedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const currentElim = new Set(players.filter(p => isPlayerEliminated(p)).map(p => p.id));
+    const newElim = [...currentElim].filter(id => !prevEliminatedRef.current.has(id));
+    if (newElim.length > 0 && gamePhase === "active") {
+      const names = newElim.map(id => players.find(p => p.id === id)?.name ?? "Someone");
+      setCurrentGameEvent({
+        id: `elim-${Date.now()}`,
+        type: "elimination",
+        text: names.length === 1 ? `${names[0]} Eliminated` : `${names.join(", ")} Eliminated`,
+        mood: "danger",
+      });
+    }
+    prevEliminatedRef.current = currentElim;
+  }, [players, gamePhase]);
+
   // ─── Analytics & lifecycle ────────────────────────────────────────────────
   const gameEnteredAtRef = useRef(Date.now());
   const gamePhaseRef = useRef(gamePhase);
@@ -268,19 +302,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     ? "It's your turn! Type a response in character, or tap a suggestion below."
     : undefined;
 
-  // Quick reply suggestions
-  const { quickReplies, quickRepliesLoading, setQuickReplies } = useQuickReplies({
-    currentGameConfig: currentGame?.config ? { name: currentGame.name, rules: currentGame.config.rules, template: currentGame.config.template } : null,
-    isGameChannel,
-    selectedChannelId,
-    messagesForChannel,
-    userId,
+  // Game actions (context-sensitive action buttons)
+  const humanPlayer = players.find((p) => p.id === userId);
+  const gameActions = useGameActions({
+    gameTemplate: currentGame?.config?.template,
     gamePhase,
-    isRoundInProgress,
-    currentSpeakerId,
-    humanGameIdentity,
+    phaseLabel,
     players,
-    sessionAccessToken: session?.access_token ?? null,
+    userId,
+    humanRole: humanPlayer?.role,
   });
 
   // ─── TTS (voice) — default off, user can toggle in header ─────────────────
@@ -481,6 +511,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           );
           return null;
         })() ?? (isGameChannel ? (
+          <div className="relative flex-1 flex flex-col min-h-0">
+          <GameEventOverlay event={currentGameEvent} onDismiss={dismissGameEvent} />
           <ChatArea
             channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room"}
             channelId={selectedChannelId ?? undefined}
@@ -492,8 +524,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             typingUsers={typingUsers}
             userId={userId}
             gameId={gameId}
-            quickReplies={quickReplies}
-            quickRepliesLoading={quickRepliesLoading}
+            gameActions={gameActions}
+            gameEvents={gameEvents}
+            humanName={humanGameIdentity?.name || undefined}
             introYourTurnHint={introYourTurnHint}
             lastFailedSendContent={lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
@@ -573,6 +606,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               addReaction(messageId, emoji, displayName);
             }}
           />
+          </div>
         ) : null)}
       </div>
       </ErrorBoundary>
