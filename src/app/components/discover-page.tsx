@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Users, Clock, Play, Crown, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Users, Clock, Play, Crown, Search, MessageSquarePlus } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -25,6 +26,7 @@ interface DiscoverPageProps {
 }
 
 export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -265,6 +267,27 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {filteredGames.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredGames.map((template) => renderGameCard(template))}
+
+            {/* Create Your Own card */}
+            <div
+              className="group relative rounded-xl overflow-hidden border-2 border-dashed border-zinc-700 hover:border-violet-500/50 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer bg-gradient-to-br from-zinc-900/80 via-violet-950/20 to-zinc-900/80"
+              onClick={() => { trackEvent("cta_click", { label: "create_custom_game", source: "discover" }); router.push("/create"); }}
+            >
+              <div className="flex flex-col items-center justify-center text-center px-6 py-10 min-h-[240px]">
+                <div className="h-14 w-14 rounded-2xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center mb-4 group-hover:bg-violet-600/30 transition-colors">
+                  <MessageSquarePlus className="h-7 w-7 text-violet-400" />
+                </div>
+                <h3 className="text-sm font-black text-white mb-1.5 group-hover:text-violet-300 transition-colors">
+                  Create Your Own Game
+                </h3>
+                <p className="text-xs text-zinc-500 leading-relaxed max-w-[200px]">
+                  Design a custom game by chatting with the AI Game Master
+                </p>
+                <span className="mt-4 text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Start Designing →
+                </span>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="text-center py-20 text-zinc-500">

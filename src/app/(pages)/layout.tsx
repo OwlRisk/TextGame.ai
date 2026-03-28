@@ -10,6 +10,7 @@ const SIDEBAR_EXCLUDED_PATHS = ["/signin"];
 
 const PATHNAME_TO_TITLE: Record<string, string> = {
   "/discover": "Discover",
+  "/create": "Create Game",
   "/my-games": "My Games",
   "/profile": "Profile",
   "/usage": "Usage & Spending",
@@ -51,7 +52,7 @@ export default function PagesLayout({
       games={games}
       selectedGameId={selectedGameId}
       onSelectGame={(gameId) => selectGame(gameId)}
-      onCreateGame={user && !loading ? () => router.push("/discover") : () => router.push("/signin")}
+      onCreateGame={user && !loading ? () => router.push("/create") : () => router.push("/signin")}
       onOpenProfile={user && !loading ? () => router.push("/profile") : () => router.push("/signin")}
       onUpdateGame={updateGame}
     >
