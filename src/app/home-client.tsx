@@ -38,7 +38,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   useEffect(() => {
     if (!loading && user) {
       setHidden(true);
-      router.replace("/discover");
+      router.replace("/create");
       return;
     }
     selectGame("home");
