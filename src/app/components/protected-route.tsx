@@ -22,10 +22,12 @@ function ProtectedRouteInner({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!loading && !user && !isGuestSession) {
-      const returnUrl = pathname ? `/signin?returnUrl=${encodeURIComponent(pathname)}` : "/signin";
+      const qs = searchParams.toString();
+      const fullPath = pathname ? (qs ? `${pathname}?${qs}` : pathname) : "";
+      const returnUrl = fullPath ? `/signin?returnUrl=${encodeURIComponent(fullPath)}` : "/signin";
       router.push(returnUrl);
     }
-  }, [user, loading, router, pathname, isGuestSession]);
+  }, [user, loading, router, pathname, searchParams, isGuestSession]);
 
   if (loading) {
     return (

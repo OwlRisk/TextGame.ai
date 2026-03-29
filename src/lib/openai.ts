@@ -106,7 +106,8 @@ export async function getAIChatResponse(
 }
 
 /**
- * Stream AI response from OpenAI API with retry logic
+ * Stream AI response via SSE from /api/chat/stream with retry logic.
+ * Calls onChunk incrementally as tokens arrive for real-time UI updates.
  */
 export async function streamAIChatResponse(
   request: ChatRequest,
@@ -148,7 +149,7 @@ export async function streamAIChatResponse(
           const error = await response.json();
           errorMessage = error.error || errorMessage;
           errorCode = error.code;
-        } catch (e) {
+        } catch {
           try {
             const text = await response.text();
             if (text.includes('OPENAI_API_KEY')) {
@@ -167,54 +168,68 @@ export async function streamAIChatResponse(
           throw err;
         }
 
-        const isConnectionError = /connection|network|timeout|refused|fetch failed/i.test(errorMessage);
-        if (isConnectionError) {
-          console.warn(`[OpenAI] Connection/network issue (${response.status}):`, errorMessage);
-        } else {
-          console.error(`[OpenAI] API error (${response.status}):`, errorMessage);
-        }
         if (response.status === 401 || /invalid.*api.*key|incorrect.*api.*key|authentication/i.test(errorMessage)) {
           errorMessage = 'OpenAI API key is invalid or expired. Please check OPENAI_API_KEY in your .env file.';
         } else if (response.status === 429 || /rate limit|too many requests/i.test(errorMessage)) {
           errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
         } else if (response.status >= 502 && response.status <= 504) {
           errorMessage = 'OpenAI service is temporarily unavailable. Please try again later.';
-        } else if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|socket hang up|fetch failed|network|^connection error\.?$/i.test(errorMessage)) {
-          errorMessage = 'Unable to connect. Please check your network and OpenAI API key, then try again.';
-        } else if (isConnectionError) {
-          errorMessage = 'Unable to connect. Please check your network and OpenAI API key, then try again.';
+        } else if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|socket hang up|fetch failed|network|connection/i.test(errorMessage)) {
+          errorMessage = 'Unable to connect. Please check your network and try again.';
         }
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
-      if (data.content) {
-        onChunk(data.content);
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Response body is not readable');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+          const payload = trimmed.slice(6);
+          if (payload === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.error) throw new Error(parsed.error);
+            if (parsed.content) onChunk(parsed.content);
+          } catch (parseErr) {
+            if (parseErr instanceof Error && parseErr.message !== payload) throw parseErr;
+          }
+        }
       }
+
       onComplete?.();
       return;
     } catch (error: any) {
       lastError = error;
       console.error(`Error streaming AI response (attempt ${attempt + 1}/${retries}):`, error);
       
-      // Don't retry on certain errors
-      if (error.message?.includes('API key') || error.message?.includes('authentication')) {
-        if (onError) {
-          onError(error);
-        } else {
-          throw error;
-        }
+      const noRetry = error.message?.includes('API key')
+        || error.message?.includes('authentication')
+        || error.message === 'INSUFFICIENT_TOKENS'
+        || error.code === 'INSUFFICIENT_TOKENS';
+      if (noRetry) {
+        if (onError) { onError(error); } else { throw error; }
         return;
       }
       
-      // Wait before retrying (exponential backoff)
       if (attempt < retries - 1) {
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
       }
     }
   }
   
-  // All retries failed
   if (onError) {
     onError(lastError);
   } else {

@@ -7,6 +7,7 @@ export interface ParsedGMTags {
   replaceInRules: Array<{ section: string; oldContent: string; newContent: string }>;
   updateRules: string | null;
   setPlayerCount: number | null;
+  setGameName: string | null;
   updateGeneral: string | null;
   configChannels: Array<{ id: string; name: string; roomType?: ChannelRoomType }> | null;
   configPlayers: Array<{ name: string; gender?: string; personality?: string; background?: string }> | null;
@@ -83,6 +84,14 @@ export function parseGMResponseTags(response: string): ParsedGMTags {
   }
   cleanedResponse = cleanedResponse.replace(/<SET_PLAYER_COUNT>\s*\d+\s*<\/SET_PLAYER_COUNT>/gi, '').trim();
 
+  // 5b. SET_GAME_NAME
+  let setGameName: string | null = null;
+  const gameNameMatch = response.match(/<SET_GAME_NAME>([\s\S]*?)<\/SET_GAME_NAME>/i);
+  if (gameNameMatch?.[1]?.trim()) {
+    setGameName = gameNameMatch[1].trim().slice(0, 100);
+  }
+  cleanedResponse = cleanedResponse.replace(/<SET_GAME_NAME>[\s\S]*?<\/SET_GAME_NAME>/gi, '').trim();
+
   // 6. UPDATE_GENERAL (background/story prepended to rules)
   let updateGeneral: string | null = null;
   const generalMatch = response.match(/<UPDATE_GENERAL>([\s\S]*?)<\/UPDATE_GENERAL>/i);
@@ -134,6 +143,7 @@ export function parseGMResponseTags(response: string): ParsedGMTags {
     replaceInRules,
     updateRules,
     setPlayerCount,
+    setGameName,
     updateGeneral,
     configChannels,
     configPlayers,

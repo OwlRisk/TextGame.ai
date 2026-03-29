@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
 import { sanitizeModel, CHEAP_AI_MODEL } from "@/lib/model-prefs";
 import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins } from "@/lib/tokens";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -10,18 +11,18 @@ function getOpenAI() {
   return new OpenAI({ apiKey });
 }
 
+const limiter = createRateLimiter("suggest-gm-replies", { limit: 40, windowSeconds: 60 });
 const MAX_SUGGESTIONS = 8;
 
-/**
- * POST /api/suggest-gm-replies
- * Body: { messages: { role: 'gm'|'user', content: string }[] }
- * Returns: { suggestions: string[] } — AI decides whether to show quick replies, how many, and their content; may be empty.
- */
 export async function POST(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const rl = limiter.check(user.id);
+  if (!rl.success) return rateLimitResponse(rl);
+
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(

@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const count = Math.min(Math.max(parseInt(searchParams.get("count") ?? "6", 10), 1), 200);
+  const rawCount = parseInt(searchParams.get("count") ?? "6", 10);
+  const count = Math.min(Math.max(Number.isNaN(rawCount) ? 6 : rawCount, 1), 200);
   const excludeParam = searchParams.get("exclude") ?? "";
   const excludeNames = excludeParam
     ? excludeParam.split(",").map((n) => n.trim()).filter(Boolean)

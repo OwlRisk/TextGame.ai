@@ -656,7 +656,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               }
             }
 
-            // 4. Handle SET_PLAYER_COUNT - GM decides number of AI players (real-time)
+            // 4. Handle SET_GAME_NAME - GM names the game (real-time)
+            const setGameNameMatch = fullResponse.match(/<SET_GAME_NAME>([\s\S]*?)<\/SET_GAME_NAME>/i);
+            if (setGameNameMatch?.[1]?.trim()) {
+              const tagKey = `SET_GAME_NAME_${setGameNameMatch.index}`;
+              if (!processedEditTags.has(tagKey)) {
+                processedEditTags.add(tagKey);
+                setGameName(setGameNameMatch[1].trim().slice(0, 100));
+              }
+            }
+
+            // 5. Handle SET_PLAYER_COUNT - GM decides number of AI players (real-time)
             const setPlayerCountMatches = Array.from(fullResponse.matchAll(/<SET_PLAYER_COUNT>\s*(\d+)\s*<\/SET_PLAYER_COUNT>/gi));
             for (const match of setPlayerCountMatches) {
               const tagKey = `SET_PLAYER_COUNT_${match.index}`;
@@ -725,6 +735,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           }
           if (parsed.setPlayerCount != null) {
             setPlayerCount(clampPlayerCount(parsed.setPlayerCount, selectedTemplate));
+          }
+          if (parsed.setGameName) {
+            setGameName(parsed.setGameName);
           }
 
           const hasRulesChange = parsed.editRules || parsed.addToRules.length > 0 || parsed.replaceInRules.length > 0 || parsed.updateRules;
@@ -820,6 +833,14 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   const checkRulesEmpty = (rules: string | undefined) =>
     !rules?.trim() || rules.trim() === "Custom game rules will be defined through conversation";
+
+  const handleCancelStartGame = () => {
+    startGameAbortRef.current?.abort();
+    startGameAbortRef.current = null;
+    setIsStartingGame(false);
+    setCreatingStep("");
+    toast.info("Game creation cancelled.");
+  };
 
   const handleStartGame = async () => {
     if (checkRulesEmpty(customRules)) {
@@ -1022,16 +1043,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   const handleQuickReply = async (reply: string) => {
     if (!isGMTyping && !isStreaming) {
-      setInput(reply);
-      setTimeout(async () => {
-        // Clear input immediately after showing the quick reply
-        setInput("");
-        requestAnimationFrame(() => resizeInput());
-        
-        // Then send message and get response
-        addUserMessage(reply);
-        await getGMResponse(reply);
-      }, 300);
+      addUserMessage(reply);
+      await getGMResponse(reply);
     }
   };
 
@@ -1239,18 +1252,34 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             const rulesEmpty = checkRulesEmpty(customRules);
             return (
               <div className="px-4 py-3 border-t border-white/10 flex-shrink-0 flex flex-col gap-1.5">
-                <Button
-                  onClick={() => { setMobileRulesOpen(false); handleStartGame(); }}
-                  disabled={isRulesBeingEdited || isStartingGame || rulesEmpty}
-                  className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isStartingGame ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
-                      Creating…
-                    </span>
-                  ) : "Create Room"}
-                </Button>
+                {isStartingGame ? (
+                  <div className="flex gap-2">
+                    <Button
+                      disabled
+                      className="flex-1 h-10 bg-violet-600 text-white text-sm font-medium rounded-[11px] opacity-80 cursor-default"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+                        Creating…
+                      </span>
+                    </Button>
+                    <Button
+                      onClick={() => { handleCancelStartGame(); setMobileRulesOpen(false); }}
+                      variant="ghost"
+                      className="h-10 px-4 text-sm text-zinc-400 hover:text-white hover:bg-white/10 rounded-[11px]"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => { setMobileRulesOpen(false); handleStartGame(); }}
+                    disabled={isRulesBeingEdited || rulesEmpty}
+                    className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Create Room
+                  </Button>
+                )}
                 {isStartingGame && creatingStep && (
                   <p className="text-xs text-violet-400/80 text-center animate-pulse">
                     {creatingStep} <span className="text-zinc-500">(~1–2 min)</span>
@@ -1334,21 +1363,24 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               </Button>
               {(() => {
                 const rulesEmpty = checkRulesEmpty(customRules);
-                return (
+                return isStartingGame ? (
+                  <Button
+                    size="sm"
+                    onClick={handleCancelStartGame}
+                    className="h-9 px-2.5 sm:px-3.5 rounded-[11px] bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-medium flex-shrink-0 gap-1.5"
+                  >
+                    <X className="h-3 w-3 flex-shrink-0" />
+                    <span>Cancel</span>
+                  </Button>
+                ) : (
                   <Button
                     size="sm"
                     onClick={handleStartGame}
-                    disabled={isRulesBeingEdited || isStartingGame || rulesEmpty}
+                    disabled={isRulesBeingEdited || rulesEmpty}
                     className="h-9 px-2.5 sm:px-3.5 rounded-[11px] bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 gap-1.5"
                   >
-                    {isStartingGame ? (
-                      <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
-                    ) : (
-                      <>
-                        <Play className="h-3 w-3 flex-shrink-0 sm:hidden" />
-                        <span>Create Room</span>
-                      </>
-                    )}
+                    <Play className="h-3 w-3 flex-shrink-0 sm:hidden" />
+                    <span>Create Room</span>
                   </Button>
                 );
               })()}
@@ -1595,18 +1627,34 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                   const rulesEmpty = checkRulesEmpty(customRules);
                   return (
                     <>
-                      <Button
-                        onClick={handleStartGame}
-                        disabled={isRulesBeingEdited || isStartingGame || rulesEmpty}
-                        className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isStartingGame ? (
-                          <span className="flex items-center gap-2">
-                            <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
-                            Creating…
-                          </span>
-                        ) : "Create Room"}
-                      </Button>
+                      {isStartingGame ? (
+                        <div className="ml-auto shrink-0 flex items-center gap-2">
+                          <Button
+                            disabled
+                            className="h-9 px-4 bg-violet-600 text-white text-sm font-medium rounded-[11px] opacity-80 cursor-default"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+                              Creating…
+                            </span>
+                          </Button>
+                          <Button
+                            onClick={handleCancelStartGame}
+                            variant="ghost"
+                            className="h-9 px-3 text-sm text-zinc-400 hover:text-white hover:bg-white/10 rounded-[11px]"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleStartGame}
+                          disabled={isRulesBeingEdited || rulesEmpty}
+                          className="ml-auto shrink-0 h-9 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Create Room
+                        </Button>
+                      )}
                       {isStartingGame && creatingStep && (
                         <p className="w-full text-xs text-violet-400/80 mt-1.5 text-right animate-pulse">
                           {creatingStep} <span className="text-zinc-500">(~1–2 min)</span>

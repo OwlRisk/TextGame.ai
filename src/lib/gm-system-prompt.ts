@@ -102,6 +102,8 @@ Prefer incremental edits (ADD/REPLACE) over full rewrites. Your chat message sho
 
 PLAYER COUNT: <SET_PLAYER_COUNT>N</SET_PLAYER_COUNT> where N = AI players. Game room = 1 Host + N AI + 1 user.
 
+GAME NAME: <SET_GAME_NAME>name</SET_GAME_NAME> — set or update the game's display name. Use when the user describes a new concept or when the template is applied.
+
 CHANNELS: <CONFIG_CHANNELS>[{"id":"general","name":"General","roomType":"public"}]</CONFIG_CHANNELS>
 Room types: "public" (everyone), "decision" (AI-only, consensus-driven), "private_ai" (AI discussion), "broadcast" (host-only). Include a "decision" room for hidden-role factions.
 

@@ -16,7 +16,6 @@ import { buildGMSystemPrompt } from '@/lib/gm-system-prompt';
 
 const limiter = createRateLimiter('chat-stream', { limit: 30, windowSeconds: 60 });
 
-// Lazy initialization to avoid errors at module load time
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -41,16 +40,10 @@ export async function POST(request: NextRequest) {
         { status: 503, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    // Check API key first
     if (!process.env.OPENAI_API_KEY) {
       return new Response(
-        JSON.stringify({ 
-          error: 'OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment variables.' 
-        }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment variables.' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -87,7 +80,6 @@ export async function POST(request: NextRequest) {
     }
 
     const openai = getOpenAI();
-
     const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext, customSystemPrompt });
 
     const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
@@ -112,7 +104,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Format messages for OpenAI
     const formattedMessages = [
       { role: 'system' as const, content: systemMessage },
       ...messages.map((msg: any) => ({
@@ -123,26 +114,65 @@ export async function POST(request: NextRequest) {
 
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 120_000);
-    const completion = await openai.chat.completions.create({
+
+    const stream = await openai.chat.completions.create({
       model: chatModel,
       messages: formattedMessages,
       max_completion_tokens: maxTokens,
+      stream: true,
+      stream_options: { include_usage: true },
     }, { signal: ac.signal });
-    clearTimeout(timer);
 
-    const content = completion.choices[0]?.message?.content ?? '';
-    const usageData = completion.usage;
-    const promptTokens = usageData?.prompt_tokens ?? 0;
-    const completionTokens = usageData?.completion_tokens ?? 0;
-    const actualModel = (completion as { model?: string }).model ?? chatModel;
-    const actualCoins = (promptTokens + completionTokens) > 0
-      ? gptUsageToCoins(actualModel, promptTokens, completionTokens)
-      : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(content.length / 3), chatModel);
-    await deductTokens(user.id, Math.max(1, actualCoins), 'ai_chat',
-      usageData ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModel})` : `Chat ~${systemTokens + messagesTokens + Math.ceil(content.length / 3)} tokens (estimate)`);
+    const userId = user.id;
+    const encoder = new TextEncoder();
 
-    return new Response(JSON.stringify({ content }), {
-      headers: { 'Content-Type': 'application/json' },
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        let promptTokens = 0;
+        let completionTokens = 0;
+        let fullContent = '';
+
+        try {
+          for await (const chunk of stream) {
+            const delta = chunk.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullContent += delta;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta })}\n\n`));
+            }
+            if (chunk.usage) {
+              promptTokens = chunk.usage.prompt_tokens ?? 0;
+              completionTokens = chunk.usage.completion_tokens ?? 0;
+            }
+          }
+
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+          clearTimeout(timer);
+
+          const actualModel = chatModel;
+          const actualCoins = (promptTokens + completionTokens) > 0
+            ? gptUsageToCoins(actualModel, promptTokens, completionTokens)
+            : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(fullContent.length / 3), chatModel);
+          deductTokens(userId, Math.max(1, actualCoins), 'ai_chat',
+            (promptTokens + completionTokens) > 0
+              ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModel})`
+              : `Chat ~${systemTokens + messagesTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`
+          ).catch((err) => console.error('[stream] deduct error:', err));
+        } catch (err) {
+          clearTimeout(timer);
+          const errMsg = err instanceof Error ? err.message : 'Stream interrupted';
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: errMsg })}\n\n`));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
   } catch (error: any) {
@@ -155,7 +185,7 @@ export async function POST(request: NextRequest) {
     }
     let message = error.message || 'Failed to stream AI response';
     if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
-      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.3-chat-latest in .env if the default model fails.';
+      message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY.';
     }
     return new Response(
       JSON.stringify({ error: message }),
