@@ -56,6 +56,8 @@ export interface UseGameInitReturn {
   startGame: () => Promise<void>;
   launchOpeningRound: (kickoff: OpeningKickoffState) => Promise<void>;
   isInitialized: boolean;
+  /** True only when the lobby was freshly created (not restored from saved state) */
+  isFreshLobby: boolean;
   readyKickoffRef: React.MutableRefObject<OpeningKickoffState | null>;
   seedCancelledRef: React.MutableRefObject<boolean>;
   /** Set this to handleSendMessageRef from useHostRound so the game auto-continues after seed replies */
@@ -87,6 +89,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
 
   const currentGame = games.find((g) => g.id === gameId);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isFreshLobby, setIsFreshLobby] = useState(false);
   const seedCancelledRef = useRef(false);
   const readyKickoffRef = useRef<OpeningKickoffState | null>(null);
   const gameStartingRef = useRef(false);
@@ -426,6 +429,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       try {
         initializeLobby();
         setIsInitialized(true);
+        setIsFreshLobby(true);
       } catch (err) {
         console.error("initializeLobby failed — will retry on next effect run:", err);
       }
@@ -484,6 +488,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     startGame,
     launchOpeningRound,
     isInitialized,
+    isFreshLobby,
     readyKickoffRef,
     seedCancelledRef,
     afterSeedSendRef,

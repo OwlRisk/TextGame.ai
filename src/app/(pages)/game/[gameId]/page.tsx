@@ -121,6 +121,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     seedCancelledRef,
     afterSeedSendRef,
     isInitialized,
+    isFreshLobby,
   } = useGameInit(gameId);
 
   // ─── Host round (message handling) ────────────────────────────────────────
@@ -147,19 +148,25 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     afterSeedSendRef.current = handleSendMessageRef.current;
   });
 
-  // ─── Auto-start: begin the game as soon as lobby is ready ─────────────────
+  // ─── Auto-start: begin the game as soon as a freshly-created lobby is ready ─
   const autoStartFiredRef = useRef(false);
   const [autoStarting, setAutoStarting] = useState(false);
   useEffect(() => {
     if (autoStartFiredRef.current) return;
-    if (!isInitialized || gamePhase !== "lobby") return;
+    if (!isInitialized || !isFreshLobby || gamePhase !== "lobby") return;
     const nonHostPlayers = players.filter((p) => !p.isGameMaster);
     if (nonHostPlayers.length === 0) return;
     autoStartFiredRef.current = true;
     setAutoStarting(true);
-    const timer = setTimeout(() => { startGame(); }, 600);
+    const timer = setTimeout(async () => {
+      try {
+        await startGame();
+      } finally {
+        setAutoStarting(false);
+      }
+    }, 600);
     return () => clearTimeout(timer);
-  }, [isInitialized, gamePhase, players, startGame]);
+  }, [isInitialized, isFreshLobby, gamePhase, players, startGame]);
 
   // ─── Auto-set channel permissions from template when game starts ──────────
   const channelPermsInitRef = useRef(false);

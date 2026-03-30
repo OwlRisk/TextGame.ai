@@ -766,7 +766,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             }
             return prev.map(msg =>
               msg.id === tempMessageId
-                ? { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, content: cleanedResponse }
+                ? { ...msg, content: cleanedResponse }
                 : msg
             );
           });
@@ -1404,7 +1404,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 return null;
               }
               const isUser = message.role === "user";
-              const isStreamingMsg = message.id.startsWith("msg-temp-");
+              const isStreamingMsg = isStreaming && message.id.startsWith("msg-temp-");
               return (
                 <div
                   key={message.id}
