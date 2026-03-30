@@ -32,6 +32,7 @@ import { useGameInit } from "@/hooks/useGameInit";
 import { useChatTTS } from "@/hooks/use-chat-tts";
 import { GameEventOverlay, type GameEvent } from "@/app/components/game-event-overlay";
 import { useGameActions } from "@/hooks/useGameActions";
+import { buildInitialChannelPermissions } from "@/lib/game-host-utils";
 
 const AI_COLOR_PALETTE = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6",
@@ -75,6 +76,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setTimerEndsAt,
     gameOverSummary,
     setGameOverSummary,
+    aiSuggestedPrompts,
     addReaction,
   } = useGameRoomContext();
 
@@ -159,6 +161,24 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return () => clearTimeout(timer);
   }, [isInitialized, gamePhase, players, startGame]);
 
+  // ─── Auto-set channel permissions from template when game starts ──────────
+  const channelPermsInitRef = useRef(false);
+  useEffect(() => {
+    if (channelPermsInitRef.current) return;
+    if (gamePhase !== "active") return;
+    const templateId = currentGame?.config?.template;
+    if (!templateId) return;
+    const tmpl = getGameTemplate(templateId);
+    if (!tmpl?.channels) return;
+
+    const initialPerms = buildInitialChannelPermissions(tmpl.channels, players);
+    channelPermsInitRef.current = true;
+    setChannelPermissions(prev => {
+      if (Object.keys(prev).length > 0) return prev;
+      return initialPerms;
+    });
+  }, [gamePhase, currentGame?.config?.template, players]);
+
   // ─── My Board update indicator ────────────────────────────────────────────
   const boardContentForViewer = myBoardContent[userId] ?? "";
   const [myBoardHasUpdate, setMyBoardHasUpdate] = useState(false);
@@ -198,6 +218,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       setCurrentGameEvent({ id: `gameover-${Date.now()}`, type: "game_over", text: "Game Over", subtext: gameOverSummary.slice(0, 120), mood: "victory" });
     }
   }, [gameOverSummary]);
+  const prevActiveVoteRef = useRef<typeof activeVote>(null);
+  useEffect(() => {
+    if (activeVote && !prevActiveVoteRef.current && gamePhase === "active") {
+      setCurrentGameEvent({ id: `vote-${Date.now()}`, type: "vote_start", text: activeVote.question || "Vote Now", mood: "neutral" });
+    } else if (!activeVote && prevActiveVoteRef.current && gamePhase === "active") {
+      setCurrentGameEvent({ id: `vote-end-${Date.now()}`, type: "vote_end", text: "Voting Closed", mood: "neutral" });
+    }
+    prevActiveVoteRef.current = activeVote;
+  }, [activeVote, gamePhase]);
   const dismissGameEvent = useCallback(() => setCurrentGameEvent(null), []);
   const prevEliminatedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
@@ -261,6 +290,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     timerEndsAt,
     addMessage,
     setTimerEndsAt,
+    setActiveVote: () => setActiveVote(null),
     setGameOverSummary,
     setGamePhase,
     updateGame,
@@ -545,6 +575,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             gameEvents={gameEvents}
             humanName={humanGameIdentity?.name || undefined}
             introYourTurnHint={introYourTurnHint}
+            aiSuggestedPrompts={aiSuggestedPrompts}
             lastFailedSendContent={lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
             isRoundInProgress={isRoundInProgress}
@@ -601,11 +632,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               const me = players.find(p => p.id === userId || p.name === humanGameIdentity?.name);
               return me ? isPlayerEliminated(me) : false;
             })()}
+            isInAfterlife={selectedChannelId === "afterlife"}
             mood={mood}
             activeVote={activeVote}
             onVote={activeVote ? (choice: string) => {
               handleSendMessage(`I vote for ${choice}`);
-              setActiveVote(null);
             } : undefined}
             timerEndsAt={timerEndsAt}
             voiceEnabled={voiceEnabled}

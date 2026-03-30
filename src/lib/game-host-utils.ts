@@ -2,6 +2,8 @@
  * Pure utility functions extracted from game/[gameId]/page.tsx for testability.
  */
 
+import type { TemplateChannel } from "./templates/types";
+
 /**
  * Fuzzy channel name resolver: exact match first, then partial containment.
  * Prevents AUTO_CHANNEL / ACCESS directives from silently failing when the
@@ -87,4 +89,35 @@ export function stripDirectiveLines(content: string): string {
  */
 export function sectionId(title: string): string {
   return "section-" + title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
+/**
+ * Build initial channel permissions from template channel definitions
+ * and the current player roster (after roles have been assigned).
+ * Returns a map of channelId -> list of player IDs who can see that channel.
+ *
+ * Non-public channels that nobody can access yet are initialized with `[]`
+ * so they stay hidden (useGameChannels treats missing perms as "public").
+ */
+export function buildInitialChannelPermissions(
+  templateChannels: ReadonlyArray<Pick<TemplateChannel, "id" | "roomType" | "accessByRole">> | undefined,
+  players: Array<{ id: string; role?: string; isGameMaster?: boolean }>,
+): Record<string, string[]> {
+  if (!templateChannels) return {};
+
+  const perms: Record<string, string[]> = {};
+  for (const ch of templateChannels) {
+    if (ch.roomType === "public") continue;
+
+    if (ch.accessByRole && ch.accessByRole.length > 0) {
+      const allowedRoles = new Set(ch.accessByRole.map(r => r.toLowerCase()));
+      const allowedPlayerIds = players
+        .filter(p => !p.isGameMaster && p.role && allowedRoles.has(p.role.toLowerCase()))
+        .map(p => p.id);
+      perms[ch.id] = allowedPlayerIds;
+    } else {
+      perms[ch.id] = [];
+    }
+  }
+  return perms;
 }

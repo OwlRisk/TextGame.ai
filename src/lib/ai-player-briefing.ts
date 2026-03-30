@@ -39,7 +39,7 @@ export function buildAiPlayerBriefing(input: AiPlayerBriefingInput): string {
     }
   }
 
-  if (gameTemplate === "undercover" && word) {
+  if (tmpl?.hasSecretWord && word) {
     if (/undercover/i.test(role ?? "")) {
       lines.push("- You are the Undercover: keep clues broad, mirror group wording, avoid over-specific details.");
     } else {
@@ -50,7 +50,7 @@ export function buildAiPlayerBriefing(input: AiPlayerBriefingInput): string {
 
   if (category === "quiz") {
     lines.push("- Keep quiz tempo: short answer + quick reason + brief reaction.");
-    if (gameTemplate === "20-questions") {
+    if (tmpl?.hostAnswersQuestions) {
       lines.push("- Ask exactly one yes/no question, or make one final guess if confidence is high.");
       lines.push("- Build on confirmed clues only; never repeat an already asked question.");
     }

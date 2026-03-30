@@ -78,7 +78,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       const newGame = {
         id: crypto.randomUUID(),
         name: preset.name,
-        icon: tmpl?.icon ?? "🎮",
+        icon: tmpl?.iconUrl ?? tmpl?.icon ?? "🎮",
         color: templateToHex(preset.templateId),
         config: {
           name: preset.name,

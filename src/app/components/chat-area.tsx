@@ -95,6 +95,8 @@ interface ChatAreaProps {
   onSaveCharacters?: () => void;
   /** True when this player has been eliminated (spectator mode) */
   isEliminated?: boolean;
+  /** Whether the eliminated player is viewing the afterlife/ghost chat channel */
+  isInAfterlife?: boolean;
   /** Chat area background mood driven by GM */
   mood?: GameMood;
   /** Structured vote from GM via START_VOTE */
@@ -159,6 +161,7 @@ export function ChatArea({
   onNewGame,
   onSaveCharacters,
   isEliminated = false,
+  isInAfterlife = false,
   mood = "neutral",
   activeVote,
   onVote,
@@ -493,6 +496,7 @@ export function ChatArea({
         isGameActive={isGameActive}
         currentSpeakerId={currentSpeakerId}
         isEliminated={isEliminated}
+        isInAfterlife={isInAfterlife}
         isRoundInProgress={isRoundInProgress}
         introYourTurnHint={introYourTurnHint}
         introYourTurnReply={introYourTurnReply}

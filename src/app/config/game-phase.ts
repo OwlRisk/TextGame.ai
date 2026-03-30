@@ -25,6 +25,8 @@ export interface GamePhaseState {
   timerEndsAt: number | null;
   /** Summary text from GAME_OVER directive */
   gameOverSummary: string;
+  /** Programmatic round counter, incremented on day/night transitions */
+  roundNumber: number;
 }
 
 export const DEFAULT_GAME_PHASE: GamePhaseState = {
@@ -34,4 +36,5 @@ export const DEFAULT_GAME_PHASE: GamePhaseState = {
   activeVote: null,
   timerEndsAt: null,
   gameOverSummary: "",
+  roundNumber: 0,
 };

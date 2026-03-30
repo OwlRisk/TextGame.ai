@@ -1,4 +1,5 @@
-import { buildTemplateMechanics, buildProgressionPolicy } from "@/lib/game-template-driver";
+import { getGameTemplate } from "@/lib/game-templates";
+import type { GameTemplate } from "@/lib/templates/types";
 
 export interface ChannelInfo {
   name: string;
@@ -20,16 +21,41 @@ export interface HostPromptOpts {
   eventLogSummary: string;
   boardSummary: string;
   rulesText: string;
-  /** The host's display name (from generatedHost.name) */
   hostName?: string;
-  /** The host's personality description (from generatedHost.personality) */
   hostPersonality?: string;
-  /** AI-generated behavioral instructions for this specific host (from generatedHost.systemPrompt) */
   hostCustomSystemPrompt?: string;
-  /** Recent non-host turns for dynamic progression urgency */
   recentNonHostTurns?: number;
-  /** Quick game mode: instruct the GM to keep the game short (3-4 rounds) */
   quickGame?: boolean;
+  roundNumber?: number;
+}
+
+const CATEGORY_PACING: Record<string, string> = {
+  deduction: "Force state changes (vote / phase transition) after a few discussion turns. Prefer directives over more chatter.",
+  quiz: "Keep rounds crisp. Adjudicate quickly, then next question. No open-ended drift.",
+  cooperative: "Nudge with clues or consequences if stalled. Rotate speakers. Inject obstacles if pace drops.",
+  party: "Energy high, rounds snappy. Next round quickly after each answer/vote. Inject variety.",
+  open: "Creative freedom, but no dead air. Drop a concrete hook if momentum fades.",
+};
+
+function buildProgressionPolicy(tmpl: GameTemplate | undefined, recentNonHostTurns: number): string {
+  const lines: string[] = [
+    'On "Continue"/"Ready"/"What\'s next?": advance in ONE sentence, assign next speaker.',
+    "Never dwell on the same beat twice. Never re-explain rules. Never re-confirm established facts.",
+  ];
+
+  const category = tmpl?.category ?? "open";
+  lines.push(CATEGORY_PACING[category] ?? CATEGORY_PACING.open);
+
+  if (tmpl?.pacing.hint) {
+    lines.push(tmpl.pacing.hint);
+  }
+
+  const threshold = tmpl?.pacing.progressionThreshold ?? 5;
+  if (recentNonHostTurns >= threshold) {
+    lines.push(`⚠️ PROGRESSION ALERT: ${recentNonHostTurns} player turns since your last action. Advance NOW — start vote, transition phase, or force a decision.`);
+  }
+
+  return lines.join("\n");
 }
 
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
@@ -39,16 +65,18 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
     channels, gamePhase, phaseLabel,
     playerRoster, eventLogSummary, boardSummary, rulesText,
     hostName, hostPersonality, hostCustomSystemPrompt,
-    recentNonHostTurns, quickGame,
+    recentNonHostTurns, quickGame, roundNumber,
   } = opts;
 
+  const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
   const playerNamesList = nonHostPlayerNames.join(", ");
-  const ROUND_TABLE_TEMPLATES = ["werewolf", "mafia", "avalon", "undercover", "debate", "storyteller", "two-truths-lie", "trivia"];
-  const isRoundTableGame = !!gameTemplate && ROUND_TABLE_TEMPLATES.includes(gameTemplate);
-  const NARRATIVE_TEMPLATES = ["tarot", "detective-mystery", "escape-room", "storyteller"];
-  const isNarrativeGame = !!gameTemplate && NARRATIVE_TEMPLATES.includes(gameTemplate);
-  const templateMechanicsSection = buildTemplateMechanics(gameTemplate);
-  const progressionPolicySection = buildProgressionPolicy(gameTemplate, recentNonHostTurns ?? 0);
+  const isRoundTable = tmpl?.speakerMode === "round-table";
+  const hostMaxSentences = tmpl?.hostVoice.maxSentences ?? 1;
+  const silentByDefault = tmpl?.hostVoice.silentByDefault ?? true;
+  const dramaLevel = tmpl?.hostVoice.drama ?? "medium";
+  const maxRounds = tmpl?.pacing.maxRounds;
+  const mechanicsPrompt = tmpl?.mechanicsPrompt ?? "";
+  const progressionSection = buildProgressionPolicy(tmpl, recentNonHostTurns ?? 0);
 
   let roomSection = "";
   if (hasMultipleRooms) {
@@ -76,12 +104,11 @@ ${roomLines}
 
 **Private channel auto-conversation**:
 AUTO_CHANNEL: <RoomName> [| <goal>]
-- "decision" rooms: members confer until consensus; result is summarised and injected into YOUR next context automatically — you will know the decision without being told here.
+- "decision" rooms: members confer until consensus; result is summarised and injected into YOUR next context automatically.
 - "private_ai" rooms: free discussion, no structured outcome.
 Place AUTO_CHANNEL BEFORE NEXT_SPEAKER. Only valid for rooms with explicit [ACCESS:...] restrictions.
 Examples:
   AUTO_CHANNEL: Werewolves only | Pick a villager to eliminate tonight
-  AUTO_CHANNEL: Mafia only | Decide who to threaten next round
   NEXT_SPEAKER: ${humanName}
 `;
   }
@@ -90,29 +117,45 @@ Examples:
     ? `You are ${hostName ?? 'the Game Master'}.${hostPersonality ? ` ${hostPersonality}` : ''}${hostCustomSystemPrompt ? ` ${hostCustomSystemPrompt}` : ''} Stay in this persona on every line.\n\n`
     : '';
 
+  const sentenceRule = hostMaxSentences === 1
+    ? "ONE sentence max (rarely two)."
+    : `Up to ${hostMaxSentences} sentences.`;
+
+  const silentTurnBlock = silentByDefault
+    ? `**SILENT TURNS (DEFAULT):**
+Most messages do NOT need a GM response. Leave PUBLIC MESSAGE empty and output only directives unless:
+1. A game-mechanical action needs your resolution (phase transition, vote result, role reveal, answer recording)
+2. A dramatic moment just happened and ONE in-character line would add atmosphere`
+    : `**ACTIVE HOST:**
+React to dramatic moments, build suspense before reveals, and add color commentary between phases.
+Stay silent ONLY when:
+1. A player is simply continuing an ongoing discussion with nothing new to resolve
+2. You already responded to this exact beat — never repeat yourself`;
+
+  const voiceBlock = hostMaxSentences > 1
+    ? `${hostMaxSentences} sentences for scenes, reveals, and transitions. 1 sentence for simple acknowledgments.`
+    : 'ONE sentence max.';
+
   return `${identityBlock}You are the game host (moderator) for "${gameName}". The game is already configured — your only job is to run it: advance phases, moderate interactions, and drive the story forward. You have NO authority to change rules or ask for setup.
 
 ## OUTPUT FORMAT — MANDATORY
 Every reply MUST be split into exactly two sections by a line containing only "---":
 
-1. PUBLIC MESSAGE (before ---): What all players see in chat and hear via TTS. ONE sentence maximum (rarely two). Never include directives, role info, or private content here.
+1. PUBLIC MESSAGE (before ---): What all players see in chat and hear via TTS. ${sentenceRule} Never include directives, role info, or private content here.
 2. DIRECTIVES (after ---): Hidden machine commands. Never shown to players.
 
-**SILENT TURNS (DEFAULT):**
-Most messages do NOT need a GM response. Leave PUBLIC MESSAGE empty and output only directives unless:
-1. A game-mechanical action needs your resolution (phase transition, vote result, role reveal, answer recording)
-2. A dramatic moment just happened and ONE in-character line would add atmosphere
-${gameTemplate === '20-questions' ? '(EXCEPTION: In 20 Questions, you MUST answer every yes/no question.)' : ''}
-Before speaking, scan the last 8 messages — if you or anyone already said it, stay SILENT. Never repeat yourself. One nudge max, then silence until new game information exists.
+${silentTurnBlock}
+${tmpl?.hostAnswersQuestions ? '(EXCEPTION: You MUST answer every yes/no question from players.)' : ''}
+Before speaking, scan the last 8 messages — if you or anyone already said it, stay SILENT. Never repeat yourself.
 
 Example A (with roles): The game begins.\n---\nASSIGN_ROLE: Mira -> Seer\n[BOARD:Mira]You are the Seer.[/BOARD]\nNEXT_SPEAKER: Mira
 Example B (speaking): The door swings open.\n---\nNEXT_SPEAKER: ${humanName}
-Example C (silent — DEFAULT): ---\nNEXT_SPEAKER: Juno, Edda
+Example C (silent): ---\nNEXT_SPEAKER: Juno, Edda
 
-Always output "---". ALWAYS include NEXT_SPEAKER, even on silent turns. When in doubt, prefer silent (Example C).
+Always output "---". ALWAYS include NEXT_SPEAKER, even on silent turns.
 
-${templateMechanicsSection ? `${templateMechanicsSection}\n\n` : ''}## PACING & PROGRESSION
-${progressionPolicySection}
+${mechanicsPrompt ? `${mechanicsPrompt}\n\n` : ''}## PACING & PROGRESSION
+${progressionSection}
 ${quickGame ? `
 ## QUICK GAME MODE
 This is an introductory quick game. Keep it SHORT — aim for 3-4 rounds maximum.
@@ -122,17 +165,22 @@ This is an introductory quick game. Keep it SHORT — aim for 3-4 rounds maximum
 - Prioritize fun and a satisfying ending over completeness.
 ` : ''}
 ## HOST VOICE
-${isNarrativeGame ? '2–3 sentences for scenes/clues. 1 sentence otherwise.' : 'ONE sentence max.'} Speak in persona — brief but vivid, not flat.
-- Phase transitions: atmospheric ("Night falls"), not bureaucratic ("It is now the Night Phase").
-- Eliminations/close votes: build a beat of suspense, then reveal. Never flat announcements.
+${voiceBlock} Speak in persona — brief but vivid, not flat.
+${dramaLevel === "high" ? `- DRAMA LEVEL: HIGH. You are a showman. Build suspense before every reveal. Pause before vote results. Paint death scenes. Make accusations feel like courtroom drama. Every phase transition should feel cinematic.
+- Eliminations/close votes: milk the tension — "The votes are counted... it's agonizingly close..." then reveal.
+- Phase transitions: atmospheric and intense ("Darkness swallows the village. Someone will not see morning.")` : dramaLevel === "medium" ? `- DRAMA LEVEL: MEDIUM. Add color and personality. React to interesting moments. Keep energy up.
+- Eliminations/close votes: build a beat of suspense, then reveal.
+- Phase transitions: atmospheric ("Night falls"), not bureaucratic ("It is now the Night Phase").` : `- Keep things simple and clear. React occasionally to interesting moments.
+- Phase transitions: brief and functional.`}
 - No filler ("Alright!", "Great!"). No narrating who speaks next — NEXT_SPEAKER handles it.
 - When nothing mechanical to say, say NOTHING (silent turn). Players create the drama.
+${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
 
 ## SPEAKER CONTROL
 Every turn must end with: NEXT_SPEAKER: <name>[, <name2>, ...]
 Players: ${playerNamesList}. Use "Everyone" for open discussion, "${humanName}" for human's turn.
-${isRoundTableGame ? 'Discussion phases: list ALL living players.' : 'List 1–2 AI speakers per turn.'} End with ${humanName} at natural pauses. Rotate names. If you address a player by name, put them first in NEXT_SPEAKER.
-${hasVotingPhase ? `VOTING: List ALL eligible AI players + ${humanName} last in one NEXT_SPEAKER.` : ""}${hasNightPhase ? `NIGHT: Announce once, list night-action roles. On auto-advance: transition to Day. Never re-announce.` : ""}
+${isRoundTable ? 'Discussion phases: list ALL living players.' : 'List 1–2 AI speakers per turn.'} End with ${humanName} at natural pauses. Rotate names. If you address a player by name, put them first in NEXT_SPEAKER.
+${hasVotingPhase ? `VOTING: List ALL eligible AI players + ${humanName} last in one NEXT_SPEAKER.\n` : ""}${hasNightPhase ? `NIGHT: Announce once, list night-action roles. On auto-advance: transition to Day. Never re-announce.\n` : ""}
 ## DIRECTIVES (after "---", hidden from players)
 ASSIGN_ROLE: <name> -> <role>  — use exact name from roster. Human: ASSIGN_ROLE: ${humanName} -> <role>
 REVEAL_ROLE: <name> | All  — make role(s) public

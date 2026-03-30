@@ -60,7 +60,7 @@ function CreateGamePageContent() {
 
     try {
       const tmpl = GAME_TEMPLATES.find(t => t.id === config.template);
-      const gameIcon = tmpl?.icon ?? "🎮";
+      const gameIcon = tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
 
       let finalConfig = config;
       if (!config.configuredPlayers || config.configuredPlayers.length === 0) {
@@ -85,6 +85,13 @@ function CreateGamePageContent() {
         } catch (err) {
           console.warn("Failed to generate players:", err);
         }
+      }
+
+      if (!finalConfig.channels && tmpl?.channels) {
+        finalConfig = {
+          ...finalConfig,
+          channels: tmpl.channels.map(c => ({ id: c.id, name: c.name, roomType: c.roomType })),
+        };
       }
 
       const newGame = {

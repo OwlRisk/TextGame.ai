@@ -45,6 +45,8 @@ export interface OpeningKickoffState {
     stats?: Record<string, string | number>;
     personality?: string;
     background?: string;
+    speechStyle?: string;
+    quirk?: string;
   }>;
   playerNotesById: Record<string, string>;
 }
@@ -309,12 +311,13 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         return;
       }
 
+      const tmpl = getGameTemplate(config.template || "");
       const configuredPlayers = config.configuredPlayers || [];
       const aiPlayersWithOpeningState = aiPlayers.map((p) => {
         const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1], 10) - 1 : -1;
         const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
         const mergedStats: Record<string, string | number> = { ...(p.stats ?? {}) };
-        if ((cp as { word?: string } | null)?.word && config.template === "undercover") {
+        if ((cp as { word?: string } | null)?.word && tmpl?.hasSecretWord) {
           mergedStats.Word = (cp as { word: string }).word;
         }
         return {
@@ -323,8 +326,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
           stats: mergedStats,
         };
       });
-
-      const tmpl = getGameTemplate(config.template || "");
       const humanRole = config.humanRole || (tmpl?.hasHiddenRoles ? (tmpl.roles?.[0] ?? undefined) : undefined);
 
       if (configuredPlayers.length > 0 || humanRole) {
@@ -344,7 +345,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
             if (role && tmpl?.hasElimination) {
               stats.Status = "Alive";
             }
-            if ((cp as any).word && config.template === "undercover") {
+            if ((cp as any).word && tmpl?.hasSecretWord) {
               stats.Word = (cp as any).word;
             }
             return { ...p, role, stats };

@@ -42,29 +42,16 @@ interface Game {
   config?: { rules?: string; template?: string };
 }
 
-const TEMPLATE_ICONS: Record<string, string> = {
-  werewolf:           "/games/sidebar-icon-werewolf.webp",
-  mafia:              "/games/sidebar-icon-mafia.webp",
-  undercover:         "/games/sidebar-icon-undercover.webp",
-  tarot:              "/games/sidebar-icon-tarot.webp",
-  codenames:          "/games/sidebar-icon-codenames.webp",
-  avalon:             "/games/sidebar-icon-avalon.webp",
-  spyfall:            "/games/sidebar-icon-spyfall.webp",
-  "detective-mystery":"/games/sidebar-icon-detective.webp",
-  "escape-room":      "/games/sidebar-icon-escape-room.webp",
-  trivia:             "/games/sidebar-icon-trivia.webp",
-  debate:             "/games/sidebar-icon-debate.webp",
-  storyteller:        "/games/sidebar-icon-storyteller.webp",
-  "20-questions":     "/games/sidebar-icon-20-questions.webp",
-  "two-truths-lie":   "/games/sidebar-icon-two-truths.webp",
-  custom:             "/games/sidebar-icon-custom.webp",
-};
+import { getGameTemplate } from "@/lib/game-templates";
 
 function getGameIcon(game: Game): string | null {
   if (game.icon && typeof game.icon === "string" && game.icon.startsWith("http")) return game.icon;
   const template = game.config?.template;
-  if (template && TEMPLATE_ICONS[template]) return TEMPLATE_ICONS[template];
-  return TEMPLATE_ICONS.custom ?? null;
+  if (template) {
+    const tmpl = getGameTemplate(template);
+    if (tmpl?.iconUrl) return tmpl.iconUrl;
+  }
+  return "/games/sidebar-icon-custom.webp";
 }
 
 interface GameSidebarProps {

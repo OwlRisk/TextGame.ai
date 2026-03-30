@@ -1001,10 +1001,17 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       setCreatingStep("Setting up game room…");
       toast.dismiss(startToastId);
       const tid = selectedTemplate?.id || "custom";
-      const defaultChannels: NonNullable<GameConfig["channels"]> = [{ id: "general", name: "General", roomType: "public" }];
-      if (selectedTemplate?.hasHiddenRoles && selectedTemplate.category === "deduction") {
-        const factionName = selectedTemplate.name.split(/[:(]/)[0].trim();
-        defaultChannels.push({ id: `${tid}-faction`, name: `${factionName} faction`, roomType: "decision" });
+      let resolvedChannels: NonNullable<GameConfig["channels"]>;
+      if (gmChannels && gmChannels.length > 0) {
+        resolvedChannels = gmChannels;
+      } else if (selectedTemplate?.channels && selectedTemplate.channels.length > 0) {
+        resolvedChannels = selectedTemplate.channels.map(c => ({ id: c.id, name: c.name, roomType: c.roomType }));
+      } else {
+        resolvedChannels = [{ id: "general", name: "General", roomType: "public" }];
+        if (selectedTemplate?.hasHiddenRoles && selectedTemplate.category === "deduction") {
+          const factionName = selectedTemplate.name.split(/[:(]/)[0].trim();
+          resolvedChannels.push({ id: `${tid}-faction`, name: `${factionName} faction`, roomType: "decision" });
+        }
       }
       const fallbackPlayerCount = (selectedTemplate && selectedTemplate.maxPlayers > 1 ? selectedTemplate.maxPlayers - 1 : selectedTemplate?.recommendedAICount) ?? 4;
       const gameConfig: GameConfig = {
@@ -1018,7 +1025,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         configuredPlayers: finalConfiguredPlayers.length > 0 ? finalConfiguredPlayers : undefined,
         humanRole,
         generatedHost: generatedHostData || undefined,
-        channels: (gmChannels && gmChannels.length > 0) ? gmChannels : defaultChannels,
+        channels: resolvedChannels,
       };
       await onCreateGame(gameConfig);
     } finally {

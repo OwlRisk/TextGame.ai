@@ -60,6 +60,8 @@ interface GameRoomContextType {
   timerEndsAt: number | null;
   /** Summary text from GAME_OVER directive */
   gameOverSummary: string;
+  /** Programmatic round counter */
+  roundNumber: number;
 
   // Actions - Messages
   addMessage: (msg: Omit<Message, "id" | "timestamp"> & { id?: string }, channelId?: string) => string | undefined;
@@ -98,6 +100,7 @@ interface GameRoomContextType {
   setActiveVote: React.Dispatch<React.SetStateAction<ActiveVote | null>>;
   setTimerEndsAt: React.Dispatch<React.SetStateAction<number | null>>;
   setGameOverSummary: React.Dispatch<React.SetStateAction<string>>;
+  setRoundNumber: React.Dispatch<React.SetStateAction<number>>;
 
   // Utility
   resetGame: () => void;
@@ -140,6 +143,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [activeVote, setActiveVote] = useState<ActiveVote | null>(null);
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
   const [gameOverSummary, setGameOverSummary] = useState("");
+  const [roundNumber, setRoundNumber] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveTrigger, setSaveTrigger] = useState(0);
 
@@ -257,6 +261,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (typeof state.phaseLabel === "string") setPhaseLabel(state.phaseLabel);
       if (state.mood === "dark" || state.mood === "light" || state.mood === "neutral") setMood(state.mood);
       if (typeof state.gameOverSummary === "string") setGameOverSummary(state.gameOverSummary);
+      if (typeof state.roundNumber === "number") setRoundNumber(state.roundNumber);
     }
 
     if (user?.id) {
@@ -321,6 +326,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const phaseLabelRef = useRef(phaseLabel);
   const moodRef = useRef(mood);
   const gameOverSummaryRef = useRef(gameOverSummary);
+  const roundNumberRef = useRef(roundNumber);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
   useEffect(() => { gamePhaseStateRef.current = gamePhaseState; }, [gamePhaseState]);
@@ -335,6 +341,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   useEffect(() => { phaseLabelRef.current = phaseLabel; }, [phaseLabel]);
   useEffect(() => { moodRef.current = mood; }, [mood]);
   useEffect(() => { gameOverSummaryRef.current = gameOverSummary; }, [gameOverSummary]);
+  useEffect(() => { roundNumberRef.current = roundNumber; }, [roundNumber]);
 
   // Synchronously save to localStorage on page close to prevent state loss
   useEffect(() => {
@@ -366,6 +373,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           phaseLabel: phaseLabelRef.current || undefined,
           mood: moodRef.current !== "neutral" ? moodRef.current : undefined,
           gameOverSummary: gameOverSummaryRef.current || undefined,
+          roundNumber: roundNumberRef.current || undefined,
           savedAt: new Date().toISOString(),
           clientId: clientIdRef.current,
         };
@@ -395,6 +403,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     privateMessages,
     humanGameIdentity,
     avatarImageUrls,
+    phaseLabel,
+    roundNumber,
   ]);
 
   // Save game room state: fixed dependency array to satisfy React strict rules
@@ -436,6 +446,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       phaseLabel: phaseLabel || undefined,
       mood: mood !== "neutral" ? mood : undefined,
       gameOverSummary: gameOverSummary || undefined,
+      roundNumber: roundNumber || undefined,
       savedAt: new Date().toISOString(),
       // Per-session ID so Realtime subscribers can skip their own echoes
       clientId: clientIdRef.current as string,
@@ -539,6 +550,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (typeof remoteState.phaseLabel === "string") setPhaseLabel(remoteState.phaseLabel);
     if (remoteState.mood === "dark" || remoteState.mood === "light" || remoteState.mood === "neutral") setMood(remoteState.mood);
     if (typeof remoteState.gameOverSummary === "string") setGameOverSummary(remoteState.gameOverSummary);
+    if (typeof remoteState.roundNumber === "number") setRoundNumber(remoteState.roundNumber);
     // NOTE: humanGameIdentity is intentionally NOT synced from remote state.
     // It is a per-user concept — the owner's identity must not overwrite the
     // guest's identity (guestNickname) when Realtime/polling delivers state.
@@ -737,6 +749,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setActiveVote(null);
     setTimerEndsAt(null);
     setGameOverSummary("");
+    setRoundNumber(0);
   }, []);
 
   const contextValue = useMemo(() => ({
@@ -764,6 +777,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     activeVote,
     timerEndsAt,
     gameOverSummary,
+    roundNumber,
     onAvatarUrlLoaded,
     regenerateAvatar,
     addMessage,
@@ -794,6 +808,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setActiveVote,
     setTimerEndsAt,
     setGameOverSummary,
+    setRoundNumber,
     resetGame,
     saveNow,
     userId,
@@ -803,7 +818,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     myBoardContent, playerNotes, sections, sectionsLoading, gameEvents,
     gameEnded, gameResult, aiSuggestedPrompts, humanGameIdentity,
     avatarImageUrls, isHydrated, phaseLabel, mood, activeVote, timerEndsAt,
-    gameOverSummary, onAvatarUrlLoaded, regenerateAvatar, addMessage,
+    gameOverSummary, roundNumber, onAvatarUrlLoaded, regenerateAvatar, addMessage,
     addStreamingMessage, updateStreamingMessage, addEventNotification,
     addPrivateMessage, addReaction, updatePlayer, resetGame, saveNow, userId,
   ]);

@@ -13,7 +13,7 @@ import {
   sectionId as sectionIdUtil,
 } from "@/lib/game-host-utils";
 import { getPreferredModel } from "@/lib/model-prefs";
-import { getTemplateHexColor } from "@/lib/game-templates";
+import { getTemplateHexColor, getGameTemplate } from "@/lib/game-templates";
 import {
   MAX_AUTO_ADVANCES,
   HOST_CONTEXT_WINDOW,
@@ -36,8 +36,10 @@ import {
   type SpeakerQueueContext,
   runSpeakerQueue as runSpeakerQueueFn,
   runPrivateChannelConversation as runPrivateChannelConversationFn,
+  isNightPhase,
 } from "@/lib/speaker-queue";
 import { trackEvent } from "@/lib/analytics";
+import { AFTERLIFE_CHANNEL_ID } from "@/lib/templates/types";
 import type { Player } from "@/types/player";
 
 export interface SendMessageOptions {
@@ -110,6 +112,8 @@ export function useHostRound({
     setActiveVote,
     setTimerEndsAt,
     setGameOverSummary,
+    roundNumber,
+    setRoundNumber,
     addReaction,
   } = useGameRoomContext();
 
@@ -129,6 +133,9 @@ export function useHostRound({
 
   const gamePhaseRef = useRef(gamePhase);
   useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
+
+  const phaseLabelRef = useRef(phaseLabel);
+  useEffect(() => { phaseLabelRef.current = phaseLabel; }, [phaseLabel]);
 
   const pendingDecisionSummariesRef = useRef<string[]>([]);
 
@@ -248,12 +255,11 @@ export function useHostRound({
         : "(No events recorded yet)";
 
       const rulesText = currentGame?.config?.rules ?? "";
-      const tmpl = currentGame?.config?.template ?? "";
-      const VOTING_TEMPLATES = ["werewolf", "mafia", "undercover", "avalon", "spyfall"];
-      const NIGHT_TEMPLATES = ["werewolf", "mafia"];
-      const hasVotingPhase = VOTING_TEMPLATES.includes(tmpl) ||
+      const tmplId = currentGame?.config?.template ?? "";
+      const tmplDef = getGameTemplate(tmplId);
+      const hasVotingPhase = tmplDef?.hasVotingPhase ??
         /\bvot(e|ing)\b.*\b(eliminat|kill|remove|kick|expel)\b/i.test(rulesText);
-      const hasNightPhase = NIGHT_TEMPLATES.includes(tmpl) ||
+      const hasNightPhase = tmplDef?.hasNightPhase ??
         /\bnight\s*(phase|action|round)\b/i.test(rulesText);
       const hasMultipleRooms = gameRoomEntries.length > 1;
 
@@ -295,7 +301,7 @@ export function useHostRound({
 
         return buildHostSystemPrompt({
           gameName: currentGame?.name ?? "",
-          gameTemplate: tmpl,
+          gameTemplate: tmplId,
           humanName,
           nonHostPlayerNames: freshNonHost.map((p) => (p.id === userId ? humanName : p.name)),
           hasVotingPhase,
@@ -316,6 +322,7 @@ export function useHostRound({
           hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
           recentNonHostTurns,
           quickGame: (() => { try { return !localStorage.getItem("tg_game_completed"); } catch { return false; } })(),
+          roundNumber,
         });
       };
 
@@ -346,6 +353,25 @@ export function useHostRound({
               return Object.keys(updates).length ? { ...p, ...updates } : p;
             })
           );
+        }
+        if (result.eliminateIds.length > 0) {
+          const tmplDef = getGameTemplate(currentGame?.config?.template || "");
+          const hasAfterlife = tmplDef?.channels?.some(c => c.id === AFTERLIFE_CHANNEL_ID);
+          if (hasAfterlife) {
+            setChannelPermissions((prev) => {
+              const next = { ...prev };
+              const afterlifeList = new Set(prev[AFTERLIFE_CHANNEL_ID] ?? []);
+              for (const eid of result.eliminateIds) {
+                afterlifeList.add(eid);
+                for (const [chId, members] of Object.entries(next)) {
+                  if (chId === AFTERLIFE_CHANNEL_ID) continue;
+                  next[chId] = members.filter(id => id !== eid);
+                }
+              }
+              next[AFTERLIFE_CHANNEL_ID] = [...afterlifeList];
+              return next;
+            });
+          }
         }
         if (result.newEvents.length > 0) {
           setGameEvents((prev) => [...prev, ...result.newEvents]);
@@ -410,6 +436,12 @@ export function useHostRound({
               messages_sent: msgCountRef.current,
             });
           } else if (a.type === "phase") {
+            const prevLabel = phaseLabelRef.current;
+            const nextIsNight = isNightPhase(a.label);
+            if (prevLabel && !isNightPhase(prevLabel) && nextIsNight) {
+              setRoundNumber(n => n + 1);
+            }
+            phaseLabelRef.current = a.label;
             setPhaseLabel(a.label);
           } else if (a.type === "announce") {
             const key = a.text.trim().toLowerCase();
@@ -557,6 +589,7 @@ export function useHostRound({
         gameTemplate: currentGame?.config?.template,
         gameRules: currentGame?.config?.rules,
         gamePhase,
+        phaseLabel: phaseLabel ?? "",
         myBoardContent,
         playerNotes,
         sessionToken: session?.access_token,
@@ -582,7 +615,7 @@ export function useHostRound({
       let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       let isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
-        if (tmpl === "20-questions" && content.includes("?")) {
+        if (tmplDef?.hostAnswersQuestions && content.includes("?")) {
           const retryResult = await callHostStream(
             `[System: A player just asked a yes/no question. You are the Thinker — you MUST answer it now. Answer with "Q<n>: Yes/No/Sometimes" and then pick the next Guesser via NEXT_SPEAKER.]\n\nThe question: ${content}`,
             channelId
@@ -627,9 +660,23 @@ export function useHostRound({
 
       const sqCtx = buildSpeakerCtx(recentForNextRef);
 
+      // Auto-trigger template-defined private conversations when night phase begins
+      const autoTriggerTemplateChannels = async (explicitAutoChannelId: string | null) => {
+        const tmplDef = getGameTemplate(tmplId || "");
+        if (!tmplDef?.channels || !isNightPhase(phaseLabelRef.current ?? "")) return;
+        for (const ch of tmplDef.channels) {
+          if (!ch.autoConverse) continue;
+          if (ch.id === explicitAutoChannelId) continue;
+          const perms = channelPermissions[ch.id];
+          if (!perms || perms.includes("*")) continue;
+          await runPrivateChannelConversationFn(sqCtx, ch.id, ch.autoConverse.goal, ch.autoConverse.maxRounds);
+        }
+      };
+
       if (firstAutoChannelId) {
         await runPrivateChannelConversationFn(sqCtx, firstAutoChannelId, firstAutoChannelGoal);
       }
+      await autoTriggerTemplateChannels(firstAutoChannelId);
 
       let currentQueue = speakerQueue;
       let humanReached = currentQueue.length === 0
@@ -644,14 +691,14 @@ export function useHostRound({
         await dynamicPace(lastBeatContentLen);
         const recentSummary = recentForNextRef.current.slice(-10)
           .map((m) => `${m.senderName}: ${m.content}`).join("\n");
-        const autoAdvanceHint = tmpl === "20-questions"
+        const autoAdvanceHint = tmplDef?.hostAnswersQuestions
           ? `[System: AI players have spoken. If a yes/no question was asked, answer it now. Do NOT repeat yourself.]`
           : `[System: Advance to the next beat. Do NOT repeat any prior announcement.]`;
         const advanced = await callHostStream(
           `${autoAdvanceHint}\n\nRecent messages for context:\n${recentSummary}`,
           channelId
         );
-        if (!advanced.hostContent && advanced.speakerQueue.length === 0) break;
+        if (!advanced.hostContent && advanced.speakerQueue.length === 0 && !advanced.autoChannelId) break;
         if (advanced.hostContent) {
           lastBeatContentLen = advanced.hostContent.length;
           recentForNextRef.current = [
@@ -659,11 +706,15 @@ export function useHostRound({
             { senderName: gmName, content: advanced.hostContent },
           ].slice(-30);
         }
+        if (advanced.autoChannelId) {
+          await runPrivateChannelConversationFn(sqCtx, advanced.autoChannelId, advanced.autoChannelGoal);
+        }
+        await autoTriggerTemplateChannels(advanced.autoChannelId);
         currentQueue = advanced.speakerQueue;
         humanReached = await runSpeakerQueueFn(sqCtx, currentQueue);
       }
 
-      if (tmpl === "20-questions" && gamePhase !== "ended") {
+      if (tmplDef?.hostAnswersQuestions && gamePhase !== "ended") {
         const tail = recentForNextRef.current.slice(-6);
         const lastHostIdx = tail.map(m => m.senderName).lastIndexOf(gmName);
         const questionAfterHost = tail.slice(lastHostIdx + 1).some(m => m.content.includes("?"));

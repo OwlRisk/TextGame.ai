@@ -233,7 +233,9 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
                   <div className={`absolute inset-0 bg-gradient-to-br ${template.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
                   
                   <div className="relative z-10">
-                    <div className="text-4xl mb-4">{template.icon}</div>
+                    <div className="w-12 h-12 mb-4 rounded-lg overflow-hidden">
+                      <img src={template.iconUrl} alt={template.name} className="w-full h-full object-cover" />
+                    </div>
                     <h3 className="text-xl font-bold text-white mb-2">{template.name}</h3>
                     <p className="text-sm text-zinc-400 mb-4">{template.description}</p>
                     

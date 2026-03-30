@@ -26,6 +26,8 @@ export interface SpeakerQueueContext {
   gameTemplate?: string;
   gameRules?: string;
   gamePhase: string;
+  /** Current phase label set by the host (e.g. "Night Phase", "Day 2") */
+  phaseLabel: string;
   myBoardContent: Record<string, string>;
   playerNotes: Record<string, string>;
   sessionToken?: string;
@@ -50,21 +52,21 @@ export interface SpeakerQueueContext {
   engagementScore?: number;
 }
 
-export function isNightPhase(phase: string | undefined): boolean {
-  if (!phase) return false;
-  return /\bnight\b/i.test(phase);
+export function isNightPhase(phaseLabel: string | undefined): boolean {
+  if (!phaseLabel) return false;
+  return /\bnight\b/i.test(phaseLabel);
 }
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
 
-import { getPlayerSentenceLimit } from "@/lib/player-speak-prompt";
+import { getPlayerSentenceLimit, getPlayerCharLimit } from "@/lib/player-speak-prompt";
 
 function clampSpokenReply(text: string, template?: string): string {
   const normalized = (text || "").replace(/\s+/g, " ").trim();
   if (!normalized) return "";
 
   const { max } = getPlayerSentenceLimit(template);
-  const charLimit = template && ["tarot", "detective-mystery", "escape-room", "storyteller", "roleplay", "adventure", "debate"].includes(template) ? 400 : 180;
+  const charLimit = getPlayerCharLimit(template);
 
   const sentenceMatches = normalized.match(/[^.!?]+[.!?]+/g) ?? [];
   const clamped = sentenceMatches.slice(0, max).join(" ").trim();
@@ -277,7 +279,7 @@ export async function runSpeakerQueue(
   ctx: SpeakerQueueContext,
   queue: SpeakerQueueItem[],
 ): Promise<boolean> {
-  const night = isNightPhase(ctx.gamePhase);
+  const night = isNightPhase(ctx.phaseLabel);
 
   for (let qi = 0; qi < queue.length; qi++) {
     const item = queue[qi];

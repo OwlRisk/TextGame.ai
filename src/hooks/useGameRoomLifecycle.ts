@@ -18,6 +18,7 @@ interface UseGameRoomLifecycleParams {
     isSystemMessage: boolean;
   }) => void;
   setTimerEndsAt: (v: number | null) => void;
+  setActiveVote: (v: null) => void;
   setGameOverSummary: (v: string) => void;
   setGamePhase: (v: string) => void;
   updateGame: (id: string, data: { isActive: boolean }) => void;
@@ -33,6 +34,7 @@ export function useGameRoomLifecycle({
   timerEndsAt,
   addMessage,
   setTimerEndsAt,
+  setActiveVote,
   setGameOverSummary,
   setGamePhase,
   updateGame,
@@ -60,6 +62,7 @@ export function useGameRoomLifecycle({
         isSystemMessage: true,
       });
       setTimerEndsAt(null);
+      setActiveVote(null);
     };
     if (remaining <= 0) {
       fire();

@@ -6,11 +6,16 @@ export const HOST_PACE_PER_50_CHARS_MS = 200;
 export const HOST_PACE_MAX_MS = 1500;
 
 // ─── Conversation mode: structured (turn-based) vs freeform (narrative/social) ──
+import { getGameTemplate } from "./game-templates";
+
 export type ConversationMode = "structured" | "freeform";
-const STRUCTURED_TEMPLATES = ["werewolf", "mafia", "codenames", "undercover", "avalon", "spyfall", "debate", "storyteller", "two-truths-lie", "trivia", "20-questions"];
 
 export function getConversationMode(template?: string): ConversationMode {
-  if (template && STRUCTURED_TEMPLATES.includes(template)) return "structured";
+  if (!template) return "freeform";
+  const tmpl = getGameTemplate(template);
+  if (!tmpl) return "freeform";
+  if (tmpl.speakerMode === "round-table") return "structured";
+  if (tmpl.category === "deduction" || tmpl.category === "quiz" || tmpl.category === "party") return "structured";
   return "freeform";
 }
 

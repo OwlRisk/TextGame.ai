@@ -17,6 +17,8 @@ export interface ChatInputAreaProps {
   isGameActive: boolean;
   currentSpeakerId?: string | null;
   isEliminated: boolean;
+  /** Whether the eliminated player is viewing the afterlife/ghost chat channel */
+  isInAfterlife?: boolean;
   isRoundInProgress: boolean;
   introYourTurnHint?: string;
   introYourTurnReply?: string;
@@ -26,7 +28,7 @@ export interface ChatInputAreaProps {
   lastFailedSendContent?: string | null;
   onRetryLastMessage?: () => void;
   activeVote?: ActiveVote | null;
-  onVote?: (choice: string) => void;
+  onVote?: (choice: string) => void | Promise<void>;
   alivePlayers: Player[];
   gameActions?: GameAction[];
 }
@@ -42,6 +44,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   isGameActive,
   currentSpeakerId,
   isEliminated,
+  isInAfterlife = false,
   isRoundInProgress,
   introYourTurnHint,
   introYourTurnReply,
@@ -62,6 +65,9 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   const [mentionAnchor, setMentionAnchor] = useState(0);
   const [popupIndex, setPopupIndex] = useState(0);
   const [pendingAction, setPendingAction] = useState<GameAction | null>(null);
+  const [myVoteChoice, setMyVoteChoice] = useState<string | null>(null);
+
+  useEffect(() => { if (!activeVote) setMyVoteChoice(null); }, [activeVote]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -161,15 +167,22 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   );
 
   const canSend = isGameActive && (!currentSpeakerId || currentSpeakerId === userId || isRoundInProgress);
-  const inputDisabled = !isGameActive || isEliminated || isSending;
-  const sendDisabled = !isGameActive || isEliminated || isSending;
+  const effectivelyEliminated = isEliminated && !isInAfterlife;
+  const inputDisabled = !isGameActive || effectivelyEliminated || isSending;
+  const sendDisabled = !isGameActive || effectivelyEliminated || isSending;
 
   return (
     <div className="p-5 border-t border-violet-900/20 bg-zinc-900">
-      {isEliminated && (
+      {isEliminated && !isInAfterlife && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800/80 border border-zinc-600/40 text-zinc-400">
           <span className="text-lg">👁️</span>
-          <span className="text-sm font-medium">You&apos;ve been eliminated — watching as spectator</span>
+          <span className="text-sm font-medium">You&apos;ve been eliminated — watching as spectator. Switch to Afterlife to chat with other ghosts.</span>
+        </div>
+      )}
+      {isEliminated && isInAfterlife && (
+        <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-violet-900/30 border border-violet-500/30 text-violet-300">
+          <span className="text-lg">👻</span>
+          <span className="text-sm font-medium">Ghost chat — only eliminated players can see this</span>
         </div>
       )}
       {activeVote && onVote && !isEliminated && (
@@ -182,17 +195,26 @@ export const ChatInputArea = React.memo(function ChatInputArea({
             {(activeVote.options === "players"
               ? alivePlayers.filter((p) => !p.isGameMaster).map((p) => p.name)
               : activeVote.options
-            ).map((option) => (
+            ).map((option) => {
+              const isMyChoice = myVoteChoice === option;
+              return (
               <Button
                 key={option}
                 size="sm"
                 variant="outline"
-                className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/25 text-violet-300 hover:text-white"
-                onClick={() => onVote(option)}
+                className={isMyChoice
+                  ? "border-emerald-400/60 bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-400/40"
+                  : "border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/25 text-violet-300 hover:text-white"}
+                disabled={!!myVoteChoice}
+                onClick={() => {
+                  setMyVoteChoice(option);
+                  Promise.resolve(onVote(option)).catch(() => setMyVoteChoice(null));
+                }}
               >
-                {option}
+                {isMyChoice ? `${option} ✓` : option}
               </Button>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

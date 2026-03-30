@@ -189,7 +189,8 @@ export function DraftsPage({ onEditDraft, onCreateFromDraft }: DraftsPageProps) 
                             variant="outline"
                             className="text-xs bg-white/5 border-white/10 text-zinc-300"
                           >
-                            {(getGameTemplate(draft.config.template)?.icon ?? "🎮") + " " + (getGameTemplate(draft.config.template)?.name ?? draft.config.template)}
+                            <img src={getGameTemplate(draft.config.template)?.iconUrl ?? "/games/sidebar-icon-custom.webp"} alt="" className="w-4 h-4 rounded inline-block mr-1" />
+                            {getGameTemplate(draft.config.template)?.name ?? draft.config.template}
                           </Badge>
                           <Badge variant="outline" className="bg-white/5 border-white/10 text-zinc-400 text-xs">
                             {draft.config.playerCount} players
