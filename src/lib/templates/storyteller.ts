@@ -62,12 +62,13 @@ TONE:
   },
 
   quickActions: [
-    { label: "Add to story", template: "And then... ", icon: "✍️" },
-    { label: "Twist", template: "But suddenly... ", icon: "🌀" },
+    { label: "Add to story", template: "And then... ", icon: "✍️", actionType: "social" },
+    { label: "Twist", template: "But suddenly... ", icon: "🌀", actionType: "social" },
     {
       label: "Describe",
       template: "The scene felt like... ",
       icon: "🎨",
+      actionType: "social",
     },
   ],
 

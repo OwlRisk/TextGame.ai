@@ -111,6 +111,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     messages,
     selectedChannelId,
     players,
+    phaseLabel,
   });
 
   // ─── Game initialization ──────────────────────────────────────────────────
@@ -365,6 +366,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     players,
     userId,
     humanRole: humanPlayer?.role,
+    configQuickActions: currentGame?.config?.quickActions,
   });
 
   // ─── TTS (voice) — default off, user can toggle in header ─────────────────

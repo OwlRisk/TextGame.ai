@@ -132,12 +132,12 @@ HOW TO PLAY:
   },
 
   quickActions: [
-    { label: "Accuse", template: "I think {player} is suspicious because ", needsTarget: true, icon: "👉", phase: "day" },
-    { label: "Defend", template: "I'm not Mafia — here's why: ", icon: "🛡️", phase: "day" },
-    { label: "Trust", template: "I believe {player} is on our side because ", needsTarget: true, icon: "🤝", phase: "day" },
-    { label: "Vote", template: "I vote to eliminate {player}", needsTarget: true, icon: "🗳️", phase: "vote" },
-    { label: "Investigate", template: "I want to investigate {player}", needsTarget: true, icon: "🔍", phase: "night", role: "detective" },
-    { label: "Protect", template: "I choose to protect {player}", needsTarget: true, icon: "🛡️", phase: "night", role: "doctor" },
-    { label: "Target", template: "Let's target {player} tonight", needsTarget: true, icon: "🎯", phase: "night", role: "mafia" },
+    { label: "Accuse", template: "I think {player} is suspicious because ", needsTarget: true, icon: "👉", phase: "day", actionType: "social" },
+    { label: "Defend", template: "I'm not Mafia — here's why: ", icon: "🛡️", phase: "day", actionType: "defend" },
+    { label: "Trust", template: "I believe {player} is on our side because ", needsTarget: true, icon: "🤝", phase: "day", actionType: "social" },
+    { label: "Vote", template: "I vote to eliminate {player}", needsTarget: true, icon: "🗳️", phase: "vote", actionType: "vote" },
+    { label: "Investigate", template: "I want to investigate {player}", needsTarget: true, icon: "🔍", phase: "night", role: "detective", actionType: "investigate" },
+    { label: "Protect", template: "I choose to protect {player}", needsTarget: true, icon: "🛡️", phase: "night", role: "doctor", actionType: "defend" },
+    { label: "Target", template: "Let's target {player} tonight", needsTarget: true, icon: "🎯", phase: "night", role: "mafia", actionType: "attack" },
   ],
 });

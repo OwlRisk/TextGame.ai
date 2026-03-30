@@ -1,13 +1,37 @@
+/** Standardised action categories — drives UI color hints and Host interpretation. */
+export type ActionType =
+  | "attack"       // negative effect on target (damage, poison, eliminate)
+  | "defend"       // protect self or ally
+  | "support"      // positive effect (heal, buff, trade)
+  | "investigate"  // gather information (search, detect, inspect)
+  | "move"         // scene / location transition
+  | "social"       // persuasion, accusation, negotiation
+  | "vote"         // formal vote / decision
+  | "use"          // use item, cast spell, play card
+  | "meta";        // inventory check, rest, ask for hint
+
+/** What kind of target the action picker should present. */
+export type TargetType =
+  | "player"       // pick from alive player list
+  | "enemy"        // pick from Host-announced enemies (future)
+  | "location"     // pick from available locations (future)
+  | "item"         // pick from inventory (future)
+  | "none";        // no target needed
+
 export interface QuickAction {
   label: string;
   /** Message template — `{player}` gets replaced with a picked target */
   template: string;
   icon: string;
   needsTarget?: boolean;
-  /** Only show during this phase (day/night/vote). Omit = always show. */
+  /** Only show during this phase (day/night/vote/combat/exploration/rest/social). Omit = always show. */
   phase?: string;
   /** Only show for this role (lowercase). Omit = show for all roles. */
   role?: string;
+  /** Standardised action category for UI styling and Host interpretation. */
+  actionType?: ActionType;
+  /** What target picker to show. Defaults to "player" when needsTarget is true, "none" otherwise. */
+  targetType?: TargetType;
 }
 
 export interface TemplateChannel {
@@ -100,10 +124,10 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     playerLimits: { tokenLimit: 220, sentenceMax: 3, sentencePreferred: 2, charLimit: 280, mustContribute: true },
     pacing: { progressionThreshold: 3, hint: "Force state changes (vote / phase transition) after a few discussion turns." },
     quickActions: [
-      { label: "Accuse", template: "I think {player} is suspicious — ", needsTarget: true, icon: "🔍", phase: "day" },
-      { label: "Defend", template: "I'm innocent, here's why: ", icon: "🛡️", phase: "day" },
-      { label: "Question", template: "{player}, what do you think about ", needsTarget: true, icon: "❓", phase: "day" },
-      { label: "Vote", template: "I vote for {player}", needsTarget: true, icon: "🗳️", phase: "vote" },
+      { label: "Accuse", template: "I think {player} is suspicious — ", needsTarget: true, icon: "🔍", phase: "day", actionType: "social" },
+      { label: "Defend", template: "I'm innocent, here's why: ", icon: "🛡️", phase: "day", actionType: "defend" },
+      { label: "Question", template: "{player}, what do you think about ", needsTarget: true, icon: "❓", phase: "day", actionType: "social" },
+      { label: "Vote", template: "I vote for {player}", needsTarget: true, icon: "🗳️", phase: "vote", actionType: "vote" },
     ],
   },
   quiz: {
@@ -114,8 +138,8 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     playerLimits: { tokenLimit: 180, sentenceMax: 2, sentencePreferred: 1, charLimit: 180, mustContribute: true },
     pacing: { progressionThreshold: 2, hint: "Keep rounds crisp. Adjudicate quickly, then next question." },
     quickActions: [
-      { label: "Answer", template: "My answer is ", icon: "✋" },
-      { label: "Guess", template: "I'll guess ", icon: "🤔" },
+      { label: "Answer", template: "My answer is ", icon: "✋", actionType: "use" },
+      { label: "Guess", template: "I'll guess ", icon: "🤔", actionType: "use" },
     ],
   },
   cooperative: {
@@ -126,8 +150,8 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     playerLimits: { tokenLimit: 300, sentenceMax: 4, sentencePreferred: 2, charLimit: 350, mustContribute: false },
     pacing: { progressionThreshold: 4, hint: "Nudge with clues or consequences if stalled. Inject obstacles if pace drops." },
     quickActions: [
-      { label: "Suggest", template: "What if we try ", icon: "💡" },
-      { label: "Examine", template: "Let me look at ", icon: "🔍" },
+      { label: "Suggest", template: "What if we try ", icon: "💡", actionType: "social" },
+      { label: "Examine", template: "Let me look at ", icon: "🔍", actionType: "investigate" },
     ],
   },
   party: {
@@ -138,8 +162,8 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     playerLimits: { tokenLimit: 220, sentenceMax: 3, sentencePreferred: 1, charLimit: 250, mustContribute: true },
     pacing: { progressionThreshold: 3, hint: "Energy high, rounds snappy. Next round quickly after each answer/vote." },
     quickActions: [
-      { label: "Respond", template: "@{player} ", needsTarget: true, icon: "💬" },
-      { label: "React", template: "That's ", icon: "😮" },
+      { label: "Respond", template: "@{player} ", needsTarget: true, icon: "💬", actionType: "social" },
+      { label: "React", template: "That's ", icon: "😮", actionType: "social" },
     ],
   },
   open: {
@@ -150,8 +174,8 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     playerLimits: { tokenLimit: 300, sentenceMax: 4, sentencePreferred: 2, charLimit: 350, mustContribute: false },
     pacing: { progressionThreshold: 6, hint: "Creative freedom, but no dead air. Drop a hook if momentum fades." },
     quickActions: [
-      { label: "Continue", template: "Let's keep going — ", icon: "▶️" },
-      { label: "React", template: "That's ", icon: "😮" },
+      { label: "Continue", template: "Let's keep going — ", icon: "▶️", actionType: "meta" },
+      { label: "React", template: "That's ", icon: "😮", actionType: "social" },
     ],
   },
 };
@@ -181,6 +205,7 @@ const ICON_URLS: Record<string, string> = {
   storyteller: "/games/sidebar-icon-storyteller.webp",
   "20-questions": "/games/sidebar-icon-20-questions.webp",
   "two-truths-lie": "/games/sidebar-icon-two-truths.webp",
+  "rpg-dungeon": "/games/game-cover-rpg-dungeon.webp",
   custom: "/games/sidebar-icon-custom.webp",
 };
 

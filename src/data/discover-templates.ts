@@ -509,6 +509,57 @@ Players vote for:
 
 WIN CONDITIONS: Cooperative by default — creating a memorable story together is the goal. Voting is optional and light-hearted.`,
   },
+  {
+    id: "rpg-dungeon",
+    name: "Dungeon Crawl",
+    description: "Cooperative fantasy RPG — assemble a party of adventurers, explore a dark dungeon, fight monsters, and defeat the final boss together.",
+    longDescription: "A turn-based cooperative RPG where each player takes on a class (Warrior, Mage, Rogue, or Healer) with unique abilities. Explore rooms, disarm traps, battle enemies, collect loot, and face an epic boss fight. The AI Dungeon Master creates a unique adventure every time.",
+    icon: "⚔️",
+    cover: "/games/game-cover-rpg-dungeon.webp",
+    category: "Creative",
+    tags: ["RPG", "Cooperative", "Fantasy", "Combat"],
+    players: "3-6",
+    duration: "30-50 min",
+    style: "Strategic",
+    color: "from-amber-600 to-red-600",
+    badge: "New",
+    templateId: "rpg-dungeon",
+    playerCount: 4,
+    features: [
+      "Class-based abilities (Warrior, Mage, Rogue, Healer)",
+      "Turn-based combat with d20 rolls",
+      "Dungeon exploration with traps and loot",
+      "Boss fight finale",
+    ],
+    rules: `SETTING: A dark dungeon filled with monsters, traps, and treasure. A party of adventurers must fight their way to the final boss.
+
+PLAYERS: 3–6. Each player is assigned a class by the Host.
+
+CLASSES:
+- Warrior: High HP (120). Melee specialist. Can Shield Bash to stun. Defends allies.
+- Mage: Medium HP (80). Casts offensive and utility spells. Can Detect Magic to reveal hidden things.
+- Rogue: Medium HP (90). Fast and sneaky. Can Backstab for bonus damage and Disarm Traps.
+- Healer: Medium HP (85). Restores HP to allies. Can revive knocked-out players.
+
+COMBAT:
+- Turn-based. Each player picks an action per turn (Attack, Defend, Cast Spell, etc.).
+- The Host controls enemies and resolves damage using simple d20-style rolls.
+- Defend halves incoming damage for one round.
+- Knocked out at 0 HP. Healer can revive with 30 HP.
+
+EXPLORATION:
+- Party moves room to room. Players can Search, Open doors/chests, or Disarm Traps.
+- Hidden treasure, secret passages, and ambushes are possible.
+- Mage's Detect Magic reveals magical items and hidden doors.
+
+STRUCTURE:
+- 4–5 rooms of increasing difficulty, culminating in a boss fight.
+- Rest points between some rooms allow healing and inventory management.
+
+GOAL: Defeat the dungeon boss together. If all players are knocked out, the dungeon wins.
+
+ITEMS: Players can find and use items (potions, scrolls, weapons). Items are tracked on player boards.`,
+  },
 ];
 
 // ── Educational Games ───────────────────────────────────────────────────────

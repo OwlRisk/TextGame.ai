@@ -127,6 +127,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   }>>([]);
   /** Channels (game rooms) decided by the GM via <CONFIG_CHANNELS>. null = use template default. */
   const [gmChannels, setGmChannels] = useState<{ id: string; name: string; roomType?: ChannelRoomType }[] | null>(null);
+  /** Action buttons decided by the GM via <CONFIG_ACTIONS>. null = use template default. */
+  const [gmActions, setGmActions] = useState<NonNullable<GameConfig["quickActions"]> | null>(null);
 
   // Default player count to max when template is selected
   useEffect(() => {
@@ -733,6 +735,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           if (parsed.configChannels) {
             setGmChannels(parsed.configChannels);
           }
+          if (parsed.configActions && parsed.configActions.length > 0) {
+            setGmActions(parsed.configActions);
+          }
           if (parsed.setPlayerCount != null) {
             setPlayerCount(clampPlayerCount(parsed.setPlayerCount, selectedTemplate));
           }
@@ -1026,6 +1031,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         humanRole,
         generatedHost: generatedHostData || undefined,
         channels: resolvedChannels,
+        ...(gmActions && gmActions.length > 0 && { quickActions: gmActions }),
       };
       await onCreateGame(gameConfig);
     } finally {

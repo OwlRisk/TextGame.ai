@@ -63,12 +63,12 @@ DRAMA:
   },
 
   quickActions: [
-    { label: "Ask question", template: "Ask {player} a question about the location", icon: "❓", needsTarget: true, phase: "day" },
-    { label: "Accuse", template: "I accuse {player} of being the Spy!", icon: "🔍", needsTarget: true, phase: "day" },
-    { label: "Second", template: "I second that accusation!", icon: "✋", phase: "day" },
-    { label: "Guess location", template: "I think the location is ", icon: "📍", role: "spy" },
-    { label: "Vote guilty", template: "I vote that they ARE the Spy.", icon: "✅", phase: "vote" },
-    { label: "Vote innocent", template: "I vote that they are NOT the Spy.", icon: "❌", phase: "vote" },
+    { label: "Ask question", template: "Ask {player} a question about the location", icon: "❓", needsTarget: true, phase: "day", actionType: "investigate" },
+    { label: "Accuse", template: "I accuse {player} of being the Spy!", icon: "🔍", needsTarget: true, phase: "day", actionType: "social" },
+    { label: "Second", template: "I second that accusation!", icon: "✋", phase: "day", actionType: "social" },
+    { label: "Guess location", template: "I think the location is ", icon: "📍", role: "spy", actionType: "investigate" },
+    { label: "Vote guilty", template: "I vote that they ARE the Spy.", icon: "✅", phase: "vote", actionType: "vote" },
+    { label: "Vote innocent", template: "I vote that they are NOT the Spy.", icon: "❌", phase: "vote", actionType: "vote" },
   ],
 
   defaultRules: `SETTING: A secret location has been chosen — everyone knows it except the Spy. Ask questions, give careful answers, and figure out who's faking it.

@@ -323,6 +323,7 @@ export function useHostRound({
           recentNonHostTurns,
           quickGame: (() => { try { return !localStorage.getItem("tg_game_completed"); } catch { return false; } })(),
           roundNumber,
+          configQuickActions: currentGame?.config?.quickActions ?? undefined,
         });
       };
 
@@ -517,8 +518,49 @@ export function useHostRound({
             }
             return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
           }
-          const resData = await res.json() as { content?: string };
-          const acc = resData.content ?? "";
+
+          // Read SSE stream and accumulate full content
+          const reader = res.body?.getReader();
+          if (!reader) throw new Error("No response body");
+          const decoder = new TextDecoder();
+          let sseBuffer = '';
+          let acc = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            sseBuffer += decoder.decode(value, { stream: true });
+            const lines = sseBuffer.split('\n');
+            sseBuffer = lines.pop() ?? '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || !trimmed.startsWith('data: ')) continue;
+              const payload = trimmed.slice(6);
+              if (payload === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(payload);
+                if (parsed.error) throw new Error(parsed.error);
+                if (parsed.content) {
+                  acc += parsed.content;
+                  const preview = getStreamingDisplay(acc);
+                  if (preview && messageId) {
+                    updateStreamingMessage(messageId, preview, false);
+                  } else if (preview && !messageId) {
+                    setTypingUsers([]);
+                    messageId = addStreamingMessage(
+                      { senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true },
+                      chId,
+                      preview,
+                    );
+                  }
+                }
+              } catch (parseErr) {
+                if (parseErr instanceof Error && parseErr.message !== payload) throw parseErr;
+              }
+            }
+          }
+
+          // Full directive parsing on the complete response
           const { message: rawSplitMessage, directives } = splitHostOutput(acc);
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
           const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(directives);
@@ -557,22 +599,38 @@ export function useHostRound({
               }),
             });
             if (!retryRes.ok) throw new Error("retry failed");
-            const retryData = await retryRes.json() as { content?: string };
-            const retryAcc = retryData.content ?? "";
-            let retryMsgId: string | null = null;
+            const retryReader = retryRes.body?.getReader();
+            if (!retryReader) throw new Error("No retry body");
+            const retryDecoder = new TextDecoder();
+            let retrySSEBuf = '';
+            let retryAcc = '';
+            while (true) {
+              const { done, value } = await retryReader.read();
+              if (done) break;
+              retrySSEBuf += retryDecoder.decode(value, { stream: true });
+              const retryLines = retrySSEBuf.split('\n');
+              retrySSEBuf = retryLines.pop() ?? '';
+              for (const rl of retryLines) {
+                const rt = rl.trim();
+                if (!rt || !rt.startsWith('data: ')) continue;
+                const rp = rt.slice(6);
+                if (rp === '[DONE]') continue;
+                try { const rj = JSON.parse(rp); if (rj.content) retryAcc += rj.content; } catch {}
+              }
+            }
             const { message: rawRetryMsg, directives: retryDir } = splitHostOutput(retryAcc);
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
             const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDir);
             const retryAfterActions = applyHostActionsAndClean(retryClean);
             const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
             const retryDisplay = retryMsg || retryAfterRoles;
-            if (retryDisplay && retryMsgId) {
-              updateStreamingMessage(retryMsgId, retryDisplay, true);
-            } else if (retryDisplay && !retryMsgId) {
-              retryMsgId = addStreamingMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true }, chId, retryDisplay);
-              updateStreamingMessage(retryMsgId, retryDisplay, true);
-            } else if (retryMsgId) {
-              setMessages((prev) => prev.filter((m) => m.id !== retryMsgId));
+            if (retryDisplay && messageId) {
+              updateStreamingMessage(messageId, retryDisplay, true);
+            } else if (retryDisplay && !messageId) {
+              messageId = addStreamingMessage({ senderId: "gm-1", senderName: gmName, senderAvatar: gmColor, isAI: true }, chId, retryDisplay);
+              updateStreamingMessage(messageId, retryDisplay, true);
+            } else if (messageId) {
+              setMessages((prev) => prev.filter((m) => m.id !== messageId));
             }
             return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal };
           } catch {

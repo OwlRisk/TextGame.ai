@@ -28,6 +28,20 @@ interface UseGameChannelsParams<
   messages: M[];
   selectedChannelId: string | null;
   players: P[];
+  /** Current PHASE label — scene name after "—" overrides the default channel display name. */
+  phaseLabel?: string;
+}
+
+/**
+ * Extract a scene/location name from a PHASE label like "Combat — The Goblin Den".
+ * Returns the part after "—" / "–" / "-" if present, otherwise null.
+ */
+function extractSceneName(phaseLabel: string | undefined): string | null {
+  if (!phaseLabel) return null;
+  const sep = phaseLabel.match(/\s[—–-]\s/);
+  if (!sep) return null;
+  const after = phaseLabel.slice(sep.index! + sep[0].length).trim();
+  return after.length > 0 ? after : null;
 }
 
 export function useGameChannels<
@@ -41,14 +55,20 @@ export function useGameChannels<
   messages,
   selectedChannelId,
   players,
+  phaseLabel,
 }: UseGameChannelsParams<M, P>) {
   const channelsCacheKey = channelConfigs?.map((c) => c.id).join(",") ?? "";
+  const sceneName = extractSceneName(phaseLabel);
   const gameRoomEntries: GameRoomEntry[] = useMemo(() => {
-    return channelConfigs?.length
+    const entries = channelConfigs?.length
       ? channelConfigs.map((c) => ({ id: c.id, name: c.name, type: "game" as const }))
       : [{ id: "game-room", name: "game-room", type: "game" as const }];
+    if (sceneName && entries.length > 0) {
+      entries[0] = { ...entries[0], name: sceneName };
+    }
+    return entries;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channelsCacheKey]);
+  }, [channelsCacheKey, sceneName]);
 
   const defaultGameChannelId = gameRoomEntries[0].id;
 

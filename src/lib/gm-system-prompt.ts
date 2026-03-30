@@ -109,6 +109,16 @@ Room types: "public" (everyone), "decision" (AI-only, consensus-driven), "privat
 
 PLAYER CONFIG: <CONFIG_PLAYERS>[{"name":"...","gender":"...","personality":"...","background":"..."}]</CONFIG_PLAYERS>
 
+ACTION BUTTONS: <CONFIG_ACTIONS>[{"label":"Attack","template":"I attack {player}!","icon":"⚔️","actionType":"attack","needsTarget":true,"phase":"combat"},...]</CONFIG_ACTIONS>
+Action buttons appear at the bottom of the chat. Players tap them instead of typing. Design actions that fit the game.
+- actionType: "attack" | "defend" | "support" | "investigate" | "move" | "social" | "vote" | "use" | "meta"
+- targetType: "player" (default when needsTarget) | "enemy" | "location" | "item" | "none" (default otherwise)
+- phase: only show during this phase (day/night/vote/combat/exploration/rest/social). Omit = always show.
+- role: only show for this role (lowercase). Omit = all roles.
+- {player} in template is replaced with the chosen target name.
+Design 4–8 actions. Include at least one needsTarget action and one non-target action. Match the game's theme.
+When using a known template (werewolf, mafia, etc.), the template already has actions — only output CONFIG_ACTIONS if customizing.
+
 BACKGROUND: <UPDATE_GENERAL>[world/story premise]</UPDATE_GENERAL> — for narrative games only. Skip for trivia/party.
 
 PACING: Always set concrete times in rules (e.g. "45s per question", "2 min per round").`;

@@ -1,4 +1,4 @@
-export type { GameTemplate, QuickAction, PartialTemplate, TemplateChannel } from "./types";
+export type { GameTemplate, QuickAction, PartialTemplate, TemplateChannel, ActionType, TargetType } from "./types";
 export { withDefaults, AFTERLIFE_CHANNEL_ID } from "./types";
 
 import { werewolf } from "./werewolf";
@@ -15,6 +15,7 @@ import { debate } from "./debate";
 import { storyteller } from "./storyteller";
 import { twentyQuestions } from "./twenty-questions";
 import { twoTruthsLie } from "./two-truths-lie";
+import { rpgDungeon } from "./rpg-dungeon";
 import { custom } from "./custom";
 import type { GameTemplate } from "./types";
 
@@ -33,6 +34,7 @@ export const GAME_TEMPLATES: GameTemplate[] = [
   storyteller,
   twentyQuestions,
   twoTruthsLie,
+  rpgDungeon,
   custom,
 ];
 

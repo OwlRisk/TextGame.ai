@@ -116,8 +116,8 @@ HOW TO PLAY:
   },
 
   quickActions: [
-    { label: "Describe", template: "My word makes me think of ", icon: "💬", phase: "day" },
-    { label: "Suspect", template: "I think {player} has a different word because ", needsTarget: true, icon: "🔍", phase: "day" },
-    { label: "Vote", template: "I vote to eliminate {player}", needsTarget: true, icon: "🗳️", phase: "vote" },
+    { label: "Describe", template: "My word makes me think of ", icon: "💬", phase: "day", actionType: "social" },
+    { label: "Suspect", template: "I think {player} has a different word because ", needsTarget: true, icon: "🔍", phase: "day", actionType: "social" },
+    { label: "Vote", template: "I vote to eliminate {player}", needsTarget: true, icon: "🗳️", phase: "vote", actionType: "vote" },
   ],
 });

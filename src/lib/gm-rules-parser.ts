@@ -1,6 +1,17 @@
 import type { ChannelRoomType } from "@/types/game-master";
 import { addContentToSection, replaceContentInSection, toRoomType } from "@/lib/game-master-utils";
 
+export interface ParsedQuickAction {
+  label: string;
+  template: string;
+  icon: string;
+  needsTarget?: boolean;
+  phase?: string;
+  role?: string;
+  actionType?: string;
+  targetType?: string;
+}
+
 export interface ParsedGMTags {
   editRules: string | null;
   addToRules: Array<{ section: string; content: string }>;
@@ -11,6 +22,7 @@ export interface ParsedGMTags {
   updateGeneral: string | null;
   configChannels: Array<{ id: string; name: string; roomType?: ChannelRoomType }> | null;
   configPlayers: Array<{ name: string; gender?: string; personality?: string; background?: string }> | null;
+  configActions: ParsedQuickAction[] | null;
   cleanedResponse: string;
 }
 
@@ -137,6 +149,24 @@ export function parseGMResponseTags(response: string): ParsedGMTags {
   cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*?<\/CONFIG_PLAYERS>/gi, '').trim();
   cleanedResponse = cleanedResponse.replace(/<CONFIG_PLAYERS>[\s\S]*$/i, '').trim();
 
+  // 9. CONFIG_ACTIONS
+  let configActions: ParsedGMTags["configActions"] = null;
+  const actionsMatch = response.match(/<CONFIG_ACTIONS>([\s\S]*?)<\/CONFIG_ACTIONS>/i);
+  if (actionsMatch?.[1]) {
+    try {
+      const arr = JSON.parse(actionsMatch[1].trim()) as ParsedQuickAction[];
+      if (Array.isArray(arr) && arr.length > 0) {
+        const valid = arr.filter(
+          (a): a is ParsedQuickAction =>
+            a && typeof a === 'object' && typeof a.label === 'string' && typeof a.template === 'string' && typeof a.icon === 'string',
+        );
+        if (valid.length > 0) configActions = valid;
+      }
+    } catch { /* ignore parse errors */ }
+  }
+  cleanedResponse = cleanedResponse.replace(/<CONFIG_ACTIONS>[\s\S]*?<\/CONFIG_ACTIONS>/gi, '').trim();
+  cleanedResponse = cleanedResponse.replace(/<CONFIG_ACTIONS>[\s\S]*$/i, '').trim();
+
   return {
     editRules,
     addToRules,
@@ -147,6 +177,7 @@ export function parseGMResponseTags(response: string): ParsedGMTags {
     updateGeneral,
     configChannels,
     configPlayers,
+    configActions,
     cleanedResponse,
   };
 }

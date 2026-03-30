@@ -61,8 +61,8 @@ ENDGAME:
   },
 
   quickActions: [
-    { label: "Yes/No?", template: "Is it ", icon: "❓" },
-    { label: "Guess", template: "I think it's ", icon: "🎯" },
+    { label: "Yes/No?", template: "Is it ", icon: "❓", actionType: "investigate" },
+    { label: "Guess", template: "I think it's ", icon: "🎯", actionType: "use" },
   ],
 
   defaultRules: `SETTING: The Host secretly thinks of a person, place, animal, or object. All players are Guessers with 20 yes-or-no questions to figure out what it is.

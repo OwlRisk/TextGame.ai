@@ -92,9 +92,9 @@ HOW TO ENGAGE:
   },
 
   quickActions: [
-    { label: "Ask about...", template: "I'd like to ask about ", icon: "🔮" },
-    { label: "Draw another card", template: "Can you draw another card?", icon: "🃏" },
-    { label: "Tell me more", template: "Tell me more about that card — ", icon: "✨" },
-    { label: "New spread", template: "Let's try a different spread — ", icon: "🌙" },
+    { label: "Ask about...", template: "I'd like to ask about ", icon: "🔮", actionType: "investigate" },
+    { label: "Draw another card", template: "Can you draw another card?", icon: "🃏", actionType: "use" },
+    { label: "Tell me more", template: "Tell me more about that card — ", icon: "✨", actionType: "investigate" },
+    { label: "New spread", template: "Let's try a different spread — ", icon: "🌙", actionType: "use" },
   ],
 });

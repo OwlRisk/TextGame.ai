@@ -27,6 +27,8 @@ export interface HostPromptOpts {
   recentNonHostTurns?: number;
   quickGame?: boolean;
   roundNumber?: number;
+  /** Custom action buttons from GameConfig (overrides template). */
+  configQuickActions?: Array<{ label: string; template: string; icon: string; needsTarget?: boolean; phase?: string; role?: string; actionType?: string; targetType?: string }>;
 }
 
 const CATEGORY_PACING: Record<string, string> = {
@@ -58,6 +60,39 @@ function buildProgressionPolicy(tmpl: GameTemplate | undefined, recentNonHostTur
   return lines.join("\n");
 }
 
+type ActionEntry = { label: string; icon: string; needsTarget?: boolean; phase?: string; role?: string; actionType?: string };
+
+function buildActionsSection(
+  configActions: HostPromptOpts["configQuickActions"],
+  tmpl: GameTemplate | undefined,
+): string {
+  const source: ActionEntry[] = configActions && configActions.length > 0
+    ? configActions
+    : tmpl?.quickActions ?? [];
+  if (source.length === 0) return "";
+
+  const grouped = new Map<string, ActionEntry[]>();
+  for (const a of source) {
+    const key = a.phase ?? "always";
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(a);
+  }
+
+  let section = "## PLAYER ACTION BUTTONS\nPlayers see context-sensitive buttons below the chat. When a player taps a button, their message follows the template text. Resolve actions per game rules.\n";
+  for (const [phase, actions] of grouped) {
+    const phaseLabel = phase === "always" ? "Always available" : `Phase: ${phase}`;
+    section += `\n**${phaseLabel}:**\n`;
+    for (const a of actions) {
+      const target = a.needsTarget ? " → picks a target" : "";
+      const role = a.role ? ` (${a.role} only)` : "";
+      const type = a.actionType ? ` [${a.actionType}]` : "";
+      section += `- ${a.icon} ${a.label}${target}${role}${type}\n`;
+    }
+  }
+  section += "\nWhen you change PHASE, the buttons update automatically. Use PHASE labels that match action phases (e.g. \"Combat — ...\", \"Exploration — ...\", \"Rest — ...\").\n\n";
+  return section;
+}
+
 export function buildHostSystemPrompt(opts: HostPromptOpts): string {
   const {
     gameName, gameTemplate, humanName, nonHostPlayerNames,
@@ -66,6 +101,7 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
     playerRoster, eventLogSummary, boardSummary, rulesText,
     hostName, hostPersonality, hostCustomSystemPrompt,
     recentNonHostTurns, quickGame, roundNumber,
+    configQuickActions,
   } = opts;
 
   const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
@@ -198,7 +234,7 @@ START_VOTE: <question> [| options]  — omit options to use alive players. END_V
 TIMER: <seconds>|stop
 BEGIN_GAME  — only in ready-check, when ALL players confirmed ready (interpret intent, not keywords).
 ${gamePhase === "ready-check" ? `\n## READY-CHECK (CURRENT)\nAI players already confirmed. When the human confirms readiness (interpret intent) → output BEGIN_GAME. Don't start until confirmed.\n` : ""}
-## CURRENT GAME STATE
+${buildActionsSection(configQuickActions, tmpl)}## CURRENT GAME STATE
 Phase: ${gamePhase || "waiting"}${phaseLabel ? ` (${phaseLabel})` : ""}
 
 Players:

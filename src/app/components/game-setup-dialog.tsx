@@ -69,6 +69,17 @@ export interface GameConfig {
   }[];
   /** Custom label for the player's private panel Tab (defaults to "My Board"). E.g. "Briefing", "Role Card", "Intel". */
   playerBoardLabel?: string;
+  /** GM-defined action buttons. Overrides template quickActions when present. */
+  quickActions?: Array<{
+    label: string;
+    template: string;
+    icon: string;
+    needsTarget?: boolean;
+    phase?: string;
+    role?: string;
+    actionType?: string;
+    targetType?: string;
+  }>;
 }
 
 interface ChatMessage {

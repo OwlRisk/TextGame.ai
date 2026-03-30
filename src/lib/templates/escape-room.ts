@@ -60,12 +60,12 @@ DRAMA:
   },
 
   quickActions: [
-    { label: "Examine", template: "Let me examine ", icon: "🔍" },
-    { label: "Try", template: "I want to try ", icon: "🧪" },
-    { label: "Combine", template: "What if we combine ", icon: "🔗" },
-    { label: "Ask for hint", template: "We're stuck — can we get a hint?", icon: "💡" },
-    { label: "Search", template: "I search around ", icon: "👀" },
-    { label: "Use item", template: "I use the ", icon: "🎒" },
+    { label: "Examine", template: "Let me examine ", icon: "🔍", actionType: "investigate" },
+    { label: "Try", template: "I want to try ", icon: "🧪", actionType: "use" },
+    { label: "Combine", template: "What if we combine ", icon: "🔗", actionType: "use" },
+    { label: "Ask for hint", template: "We're stuck — can we get a hint?", icon: "💡", actionType: "meta" },
+    { label: "Search", template: "I search around ", icon: "👀", actionType: "investigate" },
+    { label: "Use item", template: "I use the ", icon: "🎒", actionType: "use" },
   ],
 
   defaultRules: `SETTING: You and your team are locked in a mysterious room. Solve the puzzles, find the clues, and escape before time runs out.

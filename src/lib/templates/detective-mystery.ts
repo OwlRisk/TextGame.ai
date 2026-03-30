@@ -66,12 +66,12 @@ DRAMA:
   },
 
   quickActions: [
-    { label: "Ask", template: "{player}, tell me about ", icon: "❓", needsTarget: true, role: "detective" },
-    { label: "Examine", template: "I want to examine ", icon: "🔍", role: "detective" },
-    { label: "Accuse", template: "I believe {player} is the culprit because ", icon: "⚖️", needsTarget: true, role: "detective" },
-    { label: "Alibi", template: "I was at ", icon: "🛡️" },
-    { label: "Point out", template: "That's strange — {player} said ", icon: "👉", needsTarget: true },
-    { label: "Confess info", template: "There's something I haven't mentioned… ", icon: "💬" },
+    { label: "Ask", template: "{player}, tell me about ", icon: "❓", needsTarget: true, role: "detective", actionType: "investigate" },
+    { label: "Examine", template: "I want to examine ", icon: "🔍", role: "detective", actionType: "investigate" },
+    { label: "Accuse", template: "I believe {player} is the culprit because ", icon: "⚖️", needsTarget: true, role: "detective", actionType: "social" },
+    { label: "Alibi", template: "I was at ", icon: "🛡️", actionType: "defend" },
+    { label: "Point out", template: "That's strange — {player} said ", icon: "👉", needsTarget: true, actionType: "social" },
+    { label: "Confess info", template: "There's something I haven't mentioned… ", icon: "💬", actionType: "social" },
   ],
 
   defaultRules: `SETTING: A crime has been committed. One detective must unravel the truth. Suspects have alibis, witnesses have fragments of the truth, and the culprit hides in plain sight.

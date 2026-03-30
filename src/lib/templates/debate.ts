@@ -49,13 +49,14 @@ DRAMA:
   },
 
   quickActions: [
-    { label: "Argue", template: "I disagree because ", icon: "⚔️" },
-    { label: "Support", template: "Good point — and also ", icon: "🤝" },
+    { label: "Argue", template: "I disagree because ", icon: "⚔️", actionType: "attack" },
+    { label: "Support", template: "Good point — and also ", icon: "🤝", actionType: "support" },
     {
       label: "Challenge",
       template: "{player}, but what about ",
       icon: "🎯",
       needsTarget: true,
+      actionType: "social",
     },
   ],
 

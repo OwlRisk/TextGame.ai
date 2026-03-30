@@ -61,11 +61,11 @@ DRAMA:
   },
 
   quickActions: [
-    { label: "Answer", template: "My answer is ", icon: "✋" },
-    { label: "Guess", template: "I'll guess ", icon: "🤔" },
-    { label: "Steal", template: "I'll steal — my answer is ", icon: "🏴‍☠️" },
-    { label: "Wager", template: "I wager ", icon: "🎰" },
-    { label: "Pick category", template: "I want the category: ", icon: "📂" },
+    { label: "Answer", template: "My answer is ", icon: "✋", actionType: "use" },
+    { label: "Guess", template: "I'll guess ", icon: "🤔", actionType: "use" },
+    { label: "Steal", template: "I'll steal — my answer is ", icon: "🏴‍☠️", actionType: "attack" },
+    { label: "Wager", template: "I wager ", icon: "🎰", actionType: "use" },
+    { label: "Pick category", template: "I want the category: ", icon: "📂", actionType: "meta" },
   ],
 
   defaultRules: `SETTING: Welcome to Trivia Night! Grab a drink, rally your brain cells, and compete for the title of Quiz Champion.

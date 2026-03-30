@@ -51,13 +51,14 @@ SCORING:
   },
 
   quickActions: [
-    { label: "Lie is #", template: "I think the lie is #", icon: "🎯" },
+    { label: "Lie is #", template: "I think the lie is #", icon: "🎯", actionType: "vote" },
     {
       label: "Suspicious!",
       template: "That one sounds suspicious! ",
       icon: "🤔",
+      actionType: "social",
     },
-    { label: "Tell more", template: "Tell us more about #", icon: "🔍" },
+    { label: "Tell more", template: "Tell us more about #", icon: "🔍", actionType: "investigate" },
   ],
 
   defaultRules: `SETTING: A social icebreaker where players share personal statements — two true, one false — and the group tries to spot the lie.

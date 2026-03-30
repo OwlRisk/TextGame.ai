@@ -104,8 +104,9 @@ export default function DiscoverView() {
       if (hostResult.status === "fulfilled" && hostResult.value?.name) {
         const h = hostResult.value;
         const g = typeof h.gender === "string" && ["male", "female", "other"].includes(h.gender) ? h.gender as 'male' | 'female' | 'other' : undefined;
-        generatedHost = { ...h, gender: g };
+        generatedHost = { name: h.name, personality: h.personality ?? "", voiceStyle: h.voiceStyle ?? "", systemPrompt: h.systemPrompt ?? "", icon: h.icon ?? "🎭", color: h.color ?? "#7c3aed", gender: g, voice_id: h.voice_id };
       } else {
+        const fg = typeof fallbackHost.gender === "string" && ["male", "female", "other"].includes(fallbackHost.gender) ? fallbackHost.gender as 'male' | 'female' | 'other' : undefined;
         generatedHost = {
           name: fallbackHost.name,
           personality: fallbackHost.personality || fallbackHost.description || "",
@@ -113,7 +114,7 @@ export default function DiscoverView() {
           systemPrompt: fallbackHost.systemPrompt,
           icon: fallbackHost.icon,
           color: fallbackHost.color,
-          gender: fallbackHost.gender,
+          gender: fg,
         };
       }
 
