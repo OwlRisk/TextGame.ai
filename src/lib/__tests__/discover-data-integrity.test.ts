@@ -9,8 +9,8 @@ import {
 describe("Discover page data integrity", () => {
   // ── ALL_PRESETS ──────────────────────────────────────────────────────────────
 
-  it("ALL_PRESETS contains at least 20 templates", () => {
-    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(20);
+  it("ALL_PRESETS contains at least 10 templates", () => {
+    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(10);
   });
 
   it("every template has a unique id", () => {

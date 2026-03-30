@@ -176,7 +176,7 @@ export default function PolyBuzzAlternativesPage() {
                 <td className="py-3 pr-4 font-semibold text-violet-400">TextGame.ai</td>
                 <td className="py-3 pr-4">✓ Real-time</td>
                 <td className="py-3 pr-4">✓ Per-character TTS</td>
-                <td className="py-3 pr-4">✓ 20+ templates</td>
+                <td className="py-3 pr-4">✓ 10+ templates</td>
                 <td className="py-3">✓ Free credits</td>
               </tr>
               <tr className="border-b border-zinc-800/60">
@@ -315,7 +315,7 @@ export default function PolyBuzzAlternativesPage() {
           <div>
             <H3>Can I play social deduction games with AI instead of just chatting?</H3>
             <P>
-              Yes — TextGame.ai supports Werewolf, Mafia, Secret Hitler, and 20+ other game templates. An AI Game Master runs every session with full rules, voting phases, and dynamic narration.
+              Yes — TextGame.ai supports Werewolf, Mafia, Secret Hitler, and 10+ other game templates. An AI Game Master runs every session with full rules, voting phases, and dynamic narration.
             </P>
           </div>
         </div>

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
+
+const limiter = createRateLimiter("char-generate", { limit: 10, windowSeconds: 60 });
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -11,6 +14,9 @@ function getOpenAI() {
 export async function POST(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = limiter.check(user.id);
+  if (!rl.success) return rateLimitResponse(rl);
 
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
@@ -74,6 +80,6 @@ Randomness seed: ${seed}`;
     return NextResponse.json({ characters: valid });
   } catch (err: any) {
     console.error("[characters/generate] error:", err);
-    return NextResponse.json({ error: err.message || "Generation failed" }, { status: 500 });
+    return NextResponse.json({ error: "Character generation failed" }, { status: 500 });
   }
 }

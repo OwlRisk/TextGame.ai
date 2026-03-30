@@ -363,7 +363,7 @@ export default function BestSocialDeductionGamesPage() {
         <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">Play Social Deduction Games with AI</h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            20+ games. AI Game Master. AI players that bluff and strategize. Free to start.
+            10+ games. AI Game Master. AI players that bluff and strategize. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <BlogCTAButton href="/discover" source="best-social-deduction-games">

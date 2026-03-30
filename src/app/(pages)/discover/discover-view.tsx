@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DiscoverPage, type DiscoverPreset } from "@/app/components/discover-page";
 import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getDefaultHostForTemplate } from "@/app/config/host-config";
+import { getPresetById } from "@/data/discover-templates";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -29,9 +30,11 @@ function templateToHex(templateId: string | undefined): string {
 
 export default function DiscoverView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { selectGame, addGame } = useGameContext();
   const { user, loading } = useAuth();
   const [creating, setCreating] = useState(false);
+  const autoCreateFiredRef = useRef(false);
 
   useEffect(() => {
     selectGame("discover");
@@ -125,6 +128,16 @@ export default function DiscoverView() {
       setCreating(false);
     }
   };
+
+  useEffect(() => {
+    if (autoCreateFiredRef.current || loading || !user || creating) return;
+    const presetParam = searchParams.get("preset");
+    if (!presetParam) return;
+    const preset = getPresetById(presetParam);
+    if (!preset) return;
+    autoCreateFiredRef.current = true;
+    handleCreateGame(preset);
+  }, [loading, user, creating, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>

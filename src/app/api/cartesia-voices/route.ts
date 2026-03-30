@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const apiKey = process.env.CARTESIA_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'CARTESIA_API_KEY not set' },
+      { error: 'Voice service unavailable' },
       { status: 500 }
     );
   }
@@ -33,9 +33,10 @@ export async function GET(request: NextRequest) {
     ]);
 
     if (!maleRes.ok || !femaleRes.ok) {
-      const err = !maleRes.ok ? await maleRes.text() : await femaleRes.text();
+      const errText = !maleRes.ok ? await maleRes.text() : await femaleRes.text();
+      console.error('[cartesia-voices] upstream error:', errText);
       return NextResponse.json(
-        { error: err || 'Failed to fetch voices' },
+        { error: 'Voice service unavailable' },
         { status: maleRes.ok ? femaleRes.status : maleRes.status }
       );
     }
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     console.error('[cartesia-voices]', e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Failed to fetch voices' },
+      { error: 'Voice service unavailable' },
       { status: 500 }
     );
   }

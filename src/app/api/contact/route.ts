@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
       emailStatus = 'sent';
     } catch (emailErr: any) {
       console.error('[contact] Email send error:', emailErr);
-      emailStatus = `failed: ${emailErr?.message || emailErr}`;
+      emailStatus = 'failed';
     }
 
     return NextResponse.json({ ok: true, emailStatus });

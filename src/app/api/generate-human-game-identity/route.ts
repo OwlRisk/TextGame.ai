@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
+
+const limiter = createRateLimiter("human-identity", { limit: 15, windowSeconds: 60 });
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -17,6 +20,9 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const rl = limiter.check(user.id);
+    if (!rl.success) return rateLimitResponse(rl);
 
     const body = await request.json().catch(() => ({}));
     const { gameName = "Custom Game", rules = "" } = body as { gameName?: string; rules?: string };
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     console.error("[generate-human-game-identity]", e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed to generate identity" },
+      { error: "Generation failed" },
       { status: 500 }
     );
   }

@@ -290,7 +290,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What templates or game types are available?",
-    answer: "We include 20+ templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, Murder Mystery, Secret Hitler, and Tarot Reading. Browse them in Discover for one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
+    answer: "We include 10+ templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, Murder Mystery, Secret Hitler, and Tarot Reading. Browse them in Discover for one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
   },
   {
     question: "Do I need to sign in? Is it free?",
@@ -302,7 +302,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "Can I create any type of game?",
-    answer: "Absolutely! While we offer 20+ templates for popular games, you have complete freedom to design custom games with unique rules, roles, and victory conditions. Just describe your idea to the Game Master in plain English.",
+    answer: "Absolutely! While we offer 10+ templates for popular games, you have complete freedom to design custom games with unique rules, roles, and victory conditions. Just describe your idea to the Game Master in plain English.",
   },
   {
     question: "How much does it cost?",

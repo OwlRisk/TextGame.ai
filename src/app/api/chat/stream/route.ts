@@ -153,11 +153,15 @@ export async function POST(request: NextRequest) {
           const actualCoins = (promptTokens + completionTokens) > 0
             ? gptUsageToCoins(actualModel, promptTokens, completionTokens)
             : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(fullContent.length / 3), chatModel);
-          deductTokens(userId, Math.max(1, actualCoins), 'ai_chat',
-            (promptTokens + completionTokens) > 0
-              ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModel})`
-              : `Chat ~${systemTokens + messagesTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`
-          ).catch((err) => console.error('[stream] deduct error:', err));
+          try {
+            await deductTokens(userId, Math.max(1, actualCoins), 'ai_chat',
+              (promptTokens + completionTokens) > 0
+                ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModel})`
+                : `Chat ~${systemTokens + messagesTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`
+            );
+          } catch (deductErr) {
+            console.error('[stream] CRITICAL deduct error — user received content without paying:', deductErr, { userId, coins: actualCoins });
+          }
         } catch (err) {
           clearTimeout(timer);
           const errMsg = err instanceof Error ? err.message : 'Stream interrupted';

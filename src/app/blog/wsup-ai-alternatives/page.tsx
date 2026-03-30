@@ -146,7 +146,7 @@ export default function WsupAiAlternativesPage() {
           session, assigning roles, enforcing rules, and narrating the story while AI characters bluff, strategize, and interact alongside human players.
         </P>
         <P>
-          Where Wsup AI focuses on one-on-one conversation, TextGame.ai lets you play Werewolf, Mafia, Murder Mystery, and 20+ other games with a mix of friends and AI. Each AI character has a unique personality and TTS voice. You can also create entirely custom games by describing your rules in plain English.
+          Where Wsup AI focuses on one-on-one conversation, TextGame.ai lets you play Werewolf, Mafia, Murder Mystery, and 10+ other games with a mix of friends and AI. Each AI character has a unique personality and TTS voice. You can also create entirely custom games by describing your rules in plain English.
         </P>
         <ul className="list-disc list-inside space-y-2 text-zinc-300 text-sm mb-6 ml-2">
           <li><strong className="text-white">Multiplayer</strong> — invite friends via link, AI fills empty seats</li>

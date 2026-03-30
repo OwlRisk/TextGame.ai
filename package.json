@@ -1,12 +1,12 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "textgame-ai",
   "private": true,
   "version": "0.0.1",
   "scripts": {
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && npx eslint src/",
     "test": "vitest run",
     "test:watch": "vitest",
     "analyze": "ANALYZE=true next build",

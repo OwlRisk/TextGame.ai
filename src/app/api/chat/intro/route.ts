@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
+
+const limiter = createRateLimiter("chat-intro", { limit: 5, windowSeconds: 60 });
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -21,6 +24,10 @@ Keep replies short (a few sentences for simple questions; a bit more only when e
 
 export async function POST(request: NextRequest) {
   try {
+    const ipKey = request.headers.get("x-forwarded-for") || "anon";
+    const rl = limiter.check(ipKey);
+    if (!rl.success) return rateLimitResponse(rl);
+
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: "Chat is not configured. Please set OPENAI_API_KEY." },
@@ -73,9 +80,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message });
   } catch (error: unknown) {
     console.error("[intro-chat]", error);
-    const msg = error instanceof Error ? error.message : "Failed to get reply.";
     return NextResponse.json(
-      { error: msg },
+      { error: "AI response failed" },
       { status: 500 }
     );
   }

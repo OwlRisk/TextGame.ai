@@ -355,7 +355,7 @@ export default function CharacterAiAlternativesPage() {
             "Real-time multiplayer — invite friends with a link, no sign-up needed for guests",
             "AI Game Master runs every session: assigns roles, manages phases, narrates the story",
             "AI characters fill every seat with unique personalities, voices, and strategies",
-            "20+ templates (Werewolf, Mafia, Secret Hitler, Murder Mystery, etc.)",
+            "10+ templates (Werewolf, Mafia, Secret Hitler, Murder Mystery, etc.)",
             "Create any custom game by describing your rules in plain English",
             "AI characters have unique voices via text-to-speech",
             "Free tier with starting credits",
@@ -581,7 +581,7 @@ export default function CharacterAiAlternativesPage() {
             <Heading3>Can I play Werewolf or Mafia with AI characters?</Heading3>
             <Para>
               Yes — <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">TextGame.ai</TrackedGameLink> has
-              ready-to-play Werewolf, Mafia, and 20+ other templates with full game rules. An AI Game Master
+              ready-to-play Werewolf, Mafia, and 10+ other templates with full game rules. An AI Game Master
               runs the phases and AI characters make strategic decisions. You can play solo or invite friends.
             </Para>
           </div>

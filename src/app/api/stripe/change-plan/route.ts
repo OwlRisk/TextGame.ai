@@ -32,8 +32,9 @@ export async function POST(request: NextRequest) {
 
     const priceId = getStripePriceIdForTier(tier);
     if (!priceId || !priceId.startsWith('price_')) {
+      console.error(`[change-plan] Stripe price not configured for ${tier}`);
       return NextResponse.json(
-        { error: `Stripe price not configured for ${tier}` },
+        { error: 'Payment processing failed' },
         { status: 500 }
       );
     }
@@ -113,9 +114,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[change-plan]', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to change plan', details: message },
+      { error: 'Payment processing failed' },
       { status: 500 }
     );
   }

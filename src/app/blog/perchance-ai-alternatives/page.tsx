@@ -164,7 +164,7 @@ export default function PerchanceAlternativesPage() {
           Instead of interacting with a static generator, you enter a dynamic game room. The AI Game Master assigns roles, manages turns and phases, and narrates the story. Multiple AI characters play alongside you with distinct personalities and strategies. You can invite friends to join via a link — any mix of human and AI players.
         </P>
         <P>
-          Choose from 20+ game templates (Werewolf, Mafia, murder mystery, trivia, RPG quests) or describe your own game idea in plain English. The AI builds the rules, victory conditions, and character dynamics automatically. Each AI character speaks with a unique voice via TTS.
+          Choose from 10+ game templates (Werewolf, Mafia, murder mystery, trivia, RPG quests) or describe your own game idea in plain English. The AI builds the rules, victory conditions, and character dynamics automatically. Each AI character speaks with a unique voice via TTS.
         </P>
         <P>
           For Perchance users who want structured, replayable experiences instead of one-off text generation, TextGame.ai is the biggest upgrade. Free tier includes starting credits — no credit card, no API keys.

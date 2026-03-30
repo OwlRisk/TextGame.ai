@@ -63,8 +63,16 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
       <div
         key={template.id}
         data-testid="game-card"
+        role="button"
+        tabIndex={0}
         className="group relative bg-zinc-900/40 border border-zinc-800 hover:border-violet-500/40 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer"
         onClick={() => handleSelect(template)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleSelect(template);
+          }
+        }}
       >
         {/* Cover */}
         <div className="relative h-36 overflow-hidden">
@@ -162,7 +170,15 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
 
             <div
               className="relative group rounded-2xl overflow-hidden border border-zinc-800 hover:border-violet-500/50 transition-all cursor-pointer"
+              role="button"
+              tabIndex={0}
               onClick={() => handleSelect(FEATURED_TEMPLATE)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelect(FEATURED_TEMPLATE);
+                }
+              }}
             >
               {FEATURED_TEMPLATE.cover && (
                 <div className="absolute inset-0">

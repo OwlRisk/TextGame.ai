@@ -34,15 +34,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portal.url) {
-      return NextResponse.json({ error: 'Stripe portal URL is empty' }, { status: 500 });
+      console.error('[create-portal-session] Stripe portal URL is empty');
+      return NextResponse.json({ error: 'Payment processing failed' }, { status: 500 });
     }
 
     return NextResponse.json({ url: portal.url });
   } catch (error) {
     console.error('[create-portal-session] error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to create billing portal session', details: message },
+      { error: 'Payment processing failed' },
       { status: 500 }
     );
   }

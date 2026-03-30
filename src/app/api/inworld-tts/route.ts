@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { env } from '@/lib/env';
-import { deductTokens, ttsCostToCoins, getUserBalance } from '@/lib/tokens';
+import { addTokens, deductTokens, ttsCostToCoins, getUserBalance } from '@/lib/tokens';
 
 const INWORLD_TTS_URL = 'https://api.inworld.ai/tts/v1/voice';
 const MAX_TEXT_LENGTH = 2000;
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     const previewModel = 'inworld-tts-1.5-mini';
     const modelId = isPreview ? previewModel : (VALID_MODELS.includes(body.modelId ?? '') ? body.modelId! : 'inworld-tts-1.5-max');
 
+    let preDeductedCoins = 0;
     if (!isPreview) {
       const coinsRequired = ttsCostToCoins(clampedText.length, modelId);
       const balance = await getUserBalance(user.id);
@@ -73,6 +74,8 @@ export async function POST(request: NextRequest) {
           { status: 402 }
         );
       }
+      await deductTokens(user.id, coinsRequired, 'tts', `Inworld TTS ${modelId} — ${clampedText.length} chars`);
+      preDeductedCoins = coinsRequired;
     }
 
     const controller = new AbortController();
@@ -100,8 +103,11 @@ export async function POST(request: NextRequest) {
     if (!res.ok) {
       const errText = await res.text();
       console.warn('[inworld-tts] upstream error', res.status, errText);
+      if (preDeductedCoins > 0) {
+        await addTokens(user.id, preDeductedCoins, 'refund', 'Refund: TTS upstream failed').catch(() => {});
+      }
       return NextResponse.json(
-        { error: 'TTS synthesis failed', details: errText.slice(0, 200) },
+        { error: 'TTS synthesis failed' },
         { status: 502 }
       );
     }
@@ -115,26 +121,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isPreview) {
-      const coinsRequired = ttsCostToCoins(clampedText.length, modelId);
-      await deductTokens(
-        user.id,
-        coinsRequired,
-        'tts',
-        `Inworld TTS ${modelId} — ${clampedText.length} chars`
-      );
-    }
-
     return NextResponse.json({
       audioBase64,
       contentType: 'audio/mpeg',
     });
   } catch (e) {
     console.error('[inworld-tts]', e);
-    const msg = e instanceof Error ? e.message : 'TTS failed';
     const status = e instanceof Error && e.name === 'AbortError' ? 504 : 500;
     return NextResponse.json(
-      { error: status === 504 ? 'TTS request timed out' : msg },
+      { error: status === 504 ? 'TTS request timed out' : 'TTS failed' },
       { status }
     );
   }

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     if (!env.INWORLD_BASIC_BASE64) {
       return NextResponse.json(
-        { error: 'INWORLD_BASIC_BASE64 not configured' },
+        { error: 'Voice service unavailable' },
         { status: 503 }
       );
     }
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     console.error('[inworld-voices]', e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'List voices failed' },
+      { error: 'Voice service unavailable' },
       { status: 500 }
     );
   }

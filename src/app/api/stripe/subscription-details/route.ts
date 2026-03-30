@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!isDatabaseConfigured()) {
       return NextResponse.json(
-        { error: 'Database not configured. Set DATABASE_URL and run npm run db:setup.' },
+        { error: 'Service temporarily unavailable' },
         { status: 503 }
       );
     }

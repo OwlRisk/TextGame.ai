@@ -3,6 +3,9 @@ import { writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import OpenAI from "openai";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
+
+const limiter = createRateLimiter("hero-image", { limit: 2, windowSeconds: 3600 });
 
 const HERO_PROMPT =
   "A friendly fantasy game master character, warm and welcoming, standing beside a glowing tabletop game board with dice and cards, soft ambient lighting, cozy tavern atmosphere, digital illustration style, no text, suitable for a game creation app hero image.";
@@ -29,6 +32,10 @@ export async function GET(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const rl = limiter.check(user.id);
+  if (!rl.success) return rateLimitResponse(rl);
+
   try {
     const heroPath = getHeroPath();
     const publicUrl = getPublicUrl();
@@ -67,7 +74,7 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     console.error("[generate-hero-image]", e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed to generate hero image" },
+      { error: "Failed to generate hero image" },
       { status: 500 }
     );
   }

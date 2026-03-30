@@ -105,7 +105,7 @@ Rules:
   } catch (e) {
     console.error("[suggest-gm-replies]", e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed to generate suggestions" },
+      { error: "Generation failed" },
       { status: 500 }
     );
   }

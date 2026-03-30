@@ -197,7 +197,7 @@ export default async function RootLayout({
             <p>
               Create and play multiplayer text-based games with an AI Game Master and AI characters.
               The best Character.AI alternative for roleplay, social deduction, and RPG games.
-              Design custom games or choose from 20+ templates — Werewolf, Mafia, Murder Mystery, and more.
+              Design custom games or choose from 10+ templates — Werewolf, Mafia, Murder Mystery, and more.
             </p>
             <h2>AI Game Master &amp; AI Dungeon Master</h2>
             <p>

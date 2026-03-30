@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
+import { deductTokens, hasTokens } from "@/lib/tokens";
+
+const limiter = createRateLimiter("transcribe", { limit: 10, windowSeconds: 60 });
+const TRANSCRIBE_COST_COINS = 3;
 
 /**
  * POST /api/transcribe
@@ -11,11 +16,22 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const rl = limiter.check(user.id);
+  if (!rl.success) return rateLimitResponse(rl);
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "OPENAI_API_KEY is not configured" },
+      { error: "Server configuration error" },
       { status: 500 }
+    );
+  }
+
+  if (!(await hasTokens(user.id, TRANSCRIBE_COST_COINS))) {
+    return NextResponse.json(
+      { error: "Insufficient tokens", code: "INSUFFICIENT_TOKENS" },
+      { status: 402 }
     );
   }
 
@@ -51,21 +67,20 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const err = await response.text();
-      const message = err || "Transcription failed";
-      try {
-        const parsed = JSON.parse(err);
-        if (parsed?.error?.message) return NextResponse.json({ error: parsed.error.message }, { status: response.status });
-      } catch (_) {}
-      return NextResponse.json({ error: message }, { status: response.status });
+      console.error("[transcribe] upstream error:", response.status, err);
+      return NextResponse.json({ error: "Transcription failed" }, { status: 502 });
     }
 
     const data = (await response.json()) as { text?: string };
     const text = typeof data?.text === "string" ? data.text.trim() : "";
+
+    await deductTokens(user.id, TRANSCRIBE_COST_COINS, "transcription", "Whisper transcription").catch(() => {});
+
     return NextResponse.json({ text });
   } catch (e) {
     console.error("Transcribe error:", e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Transcription failed" },
+      { error: "Transcription failed" },
       { status: 500 }
     );
   }

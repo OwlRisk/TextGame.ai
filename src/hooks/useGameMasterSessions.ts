@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 const STATIC_WELCOME_CONTENT =
   "Hey, I'm your **Game Master**. Describe any game idea and I'll design the rules, roles, and setup for you.\n\n" +
-  "Or pick a **ready-made template** — hit the Templates button to browse 20+ games.\n\n" +
+  "Or pick a **ready-made template** — hit the Templates button to browse 10+ games.\n\n" +
   "You can always **edit the Game Document** directly, or just **tell me** what to change. When you're happy, hit **Create Room**!";
 
 export interface UseGameMasterSessionsParams {

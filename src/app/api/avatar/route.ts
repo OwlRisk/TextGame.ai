@@ -487,7 +487,7 @@ export async function POST(request: NextRequest) {
     if (forceRegenerate) {
       if (!hasOpenAI) {
         return NextResponse.json(
-          { error: 'Avatar service unavailable', details: 'OPENAI_API_KEY is not configured' },
+          { error: 'Avatar generation failed' },
           { status: 503 }
         );
       }
@@ -549,7 +549,7 @@ export async function POST(request: NextRequest) {
     if (generateAndPool) {
       if (!hasOpenAI) {
         return NextResponse.json(
-          { error: 'Avatar service unavailable', details: 'OPENAI_API_KEY is not configured' },
+          { error: 'Avatar generation failed' },
           { status: 503 }
         );
       }
@@ -744,25 +744,10 @@ export async function POST(request: NextRequest) {
       );
     }
     const err = e as { status?: number; message?: string; error?: { message?: string } };
-    
-    // Extract detailed error message
-    let errorMessage = 'Failed to generate avatar';
-    if (err.message) {
-      errorMessage = err.message;
-    } else if (err.error?.message) {
-      errorMessage = err.error.message;
-    } else if (typeof e === 'object' && e !== null) {
-      const errorObj = e as { message?: string; error?: { message?: string } };
-      errorMessage = errorObj.message || errorObj.error?.message || errorMessage;
-    }
-    
     const statusCode = err.status ?? 500;
-    const details = statusCode === 400
-      ? 'Bad request - check prompt length and format'
-      : (statusCode === 503 ? 'Service unavailable - check OPENAI_API_KEY or Replicate token' : undefined);
-    logger.error('[Avatar API] responding', statusCode, errorMessage, details ?? '');
+    logger.error('[Avatar API] responding', statusCode, err.message || err.error?.message || e);
     return NextResponse.json(
-      { error: errorMessage, details },
+      { error: 'Avatar generation failed' },
       { status: statusCode }
     );
   }

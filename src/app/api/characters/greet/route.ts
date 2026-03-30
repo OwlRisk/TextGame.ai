@@ -44,6 +44,6 @@ Say a single short greeting (1 sentence, under 15 words) introducing yourself in
     return NextResponse.json({ greeting });
   } catch (err: any) {
     console.error("[characters/greet]", err);
-    return NextResponse.json({ error: err.message || "Generation failed" }, { status: 500 });
+    return NextResponse.json({ error: "Character generation failed" }, { status: 500 });
   }
 }

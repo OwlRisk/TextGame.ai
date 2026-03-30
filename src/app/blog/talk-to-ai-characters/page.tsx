@@ -218,7 +218,7 @@ export default function TalkToAiCharactersPage() {
               </tr>
             </thead>
             <tbody className="text-zinc-300">
-              <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-violet-400">TextGame.ai</td><td className="py-3 pr-4">✓ Per-character voices</td><td className="py-3 pr-4">✓ 20+ templates</td><td className="py-3 pr-4">✓ Real-time</td><td className="py-3">✓</td></tr>
+              <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-violet-400">TextGame.ai</td><td className="py-3 pr-4">✓ Per-character voices</td><td className="py-3 pr-4">✓ 10+ templates</td><td className="py-3 pr-4">✓ Real-time</td><td className="py-3">✓</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Replika</td><td className="py-3 pr-4">✓ Voice calls</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3">✓ Limited</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Talkie AI</td><td className="py-3 pr-4">✓ Voice calls</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3">✓</td></tr>
               <tr className="border-b border-zinc-800/60"><td className="py-3 pr-4 font-semibold text-white">Character.AI</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3 pr-4">✗</td><td className="py-3">✓</td></tr>

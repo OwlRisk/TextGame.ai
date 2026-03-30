@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
+import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+
+const limiter = createRateLimiter('suggest-prompts', { limit: 15, windowSeconds: 60 });
 
 function getOpenAI() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -18,6 +21,8 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const rl = limiter.check(user.id);
+  if (!rl.success) return rateLimitResponse(rl);
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
@@ -65,7 +70,7 @@ Output only the suggestions, one per line. No numbering, no quotes, no extra tex
   } catch (e) {
     console.error('[suggest-prompts]', e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Failed to generate suggestions' },
+      { error: 'Generation failed' },
       { status: 500 }
     );
   }

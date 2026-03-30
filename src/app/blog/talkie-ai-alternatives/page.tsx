@@ -164,7 +164,7 @@ export default function TalkieAiAlternativesPage() {
           <Link href="/" className="text-violet-400 hover:underline font-semibold">TextGame.ai</Link> turns AI characters into actual game players. Instead of chatting with one character, you get a full game room: an AI Game Master hosts the session, assigns roles, runs voting phases, and narrates the story while multiple AI characters play strategically alongside you.
         </P>
         <P>
-          The multiplayer angle is what sets it apart from every Talkie AI alternative on this list. Share a link and friends join instantly — any mix of human and AI players works. Templates include Werewolf, Mafia, Secret Hitler, murder mysteries, and 20+ more. You can also describe a completely custom game and the AI builds it.
+          The multiplayer angle is what sets it apart from every Talkie AI alternative on this list. Share a link and friends join instantly — any mix of human and AI players works. Templates include Werewolf, Mafia, Secret Hitler, murder mysteries, and 10+ more. You can also describe a completely custom game and the AI builds it.
         </P>
         <P>
           Each AI character has a distinct personality and voice via text-to-speech, so you still get that audio immersion Talkie users love — but embedded in actual gameplay. Free tier includes starting credits with no credit card required.

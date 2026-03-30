@@ -94,7 +94,7 @@ export default function TownOfSalemAlternativePage() {
           <TrackedGameLink href="/games/secret-hitler" className="text-violet-400 hover:underline">Secret Hitler</TrackedGameLink>,{" "}
           <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">Avalon</TrackedGameLink>, and more — all free in the browser.
         </P>
-        <Pros items={["Free browser-based play — like old Town of Salem", "AI Game Master handles all game logic", "AI fills empty seats — no waiting for players", "20+ social deduction and party games", "Play with friends via invite link", "Custom game creation"]} />
+        <Pros items={["Free browser-based play — like old Town of Salem", "AI Game Master handles all game logic", "AI fills empty seats — no waiting for players", "10+ social deduction and party games", "Play with friends via invite link", "Custom game creation"]} />
         <Cons items={["Text-based (no visual avatars)", "Smaller community than Town of Salem at its peak"]} />
 
         <ChatPreviewWidget gameSlug="mafia" ctaLabel="Try TextGame.ai free" />
@@ -143,7 +143,7 @@ export default function TownOfSalemAlternativePage() {
             </tr></thead>
             <tbody className="text-zinc-300">
               {[
-                [SITE_NAME, "✓", "✓", "✓", "20+"], ["Wolvesville", "✗", "✓", "✗", "1"], ["Among Us", "✗", "Free/Paid", "✗", "1"],
+                [SITE_NAME, "✓", "✓", "✓", "10+"], ["Wolvesville", "✗", "✓", "✗", "1"], ["Among Us", "✗", "Free/Paid", "✗", "1"],
                 ["EpicMafia", "✓", "✓", "✗", "1"], ["Blood on Clocktower", "✗", "Paid", "✗", "1"],
               ].map(([n, b, f, ai, g]) => (
                 <tr key={n} className="border-b border-zinc-800/60">
@@ -158,7 +158,7 @@ export default function TownOfSalemAlternativePage() {
         <H2 id="faq">Frequently Asked Questions</H2>
         <div className="space-y-6 mb-12">
           <div><H3>Is Town of Salem still free?</H3><P>No. The original free browser version was shut down. Town of Salem 2 is available on Steam for a one-time purchase.</P></div>
-          <div><H3>What is the closest free alternative to Town of Salem?</H3><P>{SITE_NAME} offers the most similar experience — browser-based social deduction with roles, night/day phases, and discussion-based gameplay. Unlike Town of Salem, it includes an AI Game Master and 20+ games.</P></div>
+          <div><H3>What is the closest free alternative to Town of Salem?</H3><P>{SITE_NAME} offers the most similar experience — browser-based social deduction with roles, night/day phases, and discussion-based gameplay. Unlike Town of Salem, it includes an AI Game Master and 10+ games.</P></div>
           <div><H3>Can I play social deduction games without downloading anything?</H3><P>Yes. Both {SITE_NAME} and EpicMafia work entirely in the browser with no downloads needed.</P></div>
         </div>
 

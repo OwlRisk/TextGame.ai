@@ -242,7 +242,7 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
     }
 
     return NextResponse.json(
-      { error: error.message || 'Failed to generate players' },
+      { error: 'Character generation failed' },
       { status: 500 }
     );
   }

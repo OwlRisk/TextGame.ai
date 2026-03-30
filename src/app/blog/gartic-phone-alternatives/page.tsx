@@ -77,12 +77,12 @@ export default function GarticPhoneAlternativesPage() {
         <P>
           If your group loves Gartic Phone for the laughs and social dynamics — but wants a break from
           drawing — <Link href="/discover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> offers
-          20+ text-based party games with an AI host.{" "}
+          10+ text-based party games with an AI host.{" "}
           <TrackedGameLink href="/games/improv-comedy" className="text-violet-400 hover:underline">Improv Comedy</TrackedGameLink> and{" "}
           <TrackedGameLink href="/games/storyteller" className="text-violet-400 hover:underline">Epic Storyteller</TrackedGameLink> generate
           similar laugh-out-loud moments through creative prompts instead of drawings.
         </P>
-        <Pros items={["AI generates unlimited unique scenarios", "20+ games beyond drawing", "AI fills empty seats", "Free browser play"]} />
+        <Pros items={["AI generates unlimited unique scenarios", "10+ games beyond drawing", "AI fills empty seats", "Free browser play"]} />
         <Cons items={["Text-based — no drawing mechanics", "Different experience than visual games"]} />
 
         <H3>4. Drawful 2 (Jackbox)</H3>
@@ -134,7 +134,7 @@ export default function GarticPhoneAlternativesPage() {
 
         <div className="bg-gradient-to-br from-pink-600/20 to-violet-600/20 border border-pink-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">Want party games beyond drawing?</h2>
-          <p className="text-zinc-300 mb-6 max-w-lg mx-auto">20+ AI-hosted games — social deduction, trivia, improv, and more. Free in your browser.</p>
+          <p className="text-zinc-300 mb-6 max-w-lg mx-auto">10+ AI-hosted games — social deduction, trivia, improv, and more. Free in your browser.</p>
           <Link href="/discover" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">Browse All Games</Link>
         </div>
 

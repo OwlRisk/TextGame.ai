@@ -668,7 +668,7 @@ export function getTemplateHexColor(templateId: string): string {
   return (m && TAILWIND_HEX[m[1]]) || "#7c3aed";
 }
 
-/** Avatar style auto-selected by game category. All templates use semi-realistic by default. */
-export function getAvatarStyleForTemplate(_templateId: string): "valorant" | "semi-realistic" | "toon3d" {
+/** Avatar style — all templates currently use semi-realistic. */
+export function getAvatarStyleForTemplate(_templateId?: string): "valorant" | "semi-realistic" | "toon3d" {
   return "semi-realistic";
 }

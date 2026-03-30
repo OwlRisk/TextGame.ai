@@ -6,4 +6,4 @@ export const SITE_DOMAIN = "https://textgame.ai";
 export const SITE_TITLE =
   "TextGame.ai — Play AI Text Games Online with Friends";
 export const SITE_DESCRIPTION =
-  "Play Werewolf, Mafia, RPG and 20+ AI-powered text games in your browser. No download needed — an AI Game Master hosts every game. Create custom games or pick a template. The best Character.AI alternative for multiplayer roleplay.";
+  "Play Werewolf, Mafia, RPG and 10+ AI-powered text games in your browser. No download needed — an AI Game Master hosts every game. Create custom games or pick a template. The best Character.AI alternative for multiplayer roleplay.";

@@ -133,7 +133,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameId,
     channelPermissions,
     setChannelPermissions,
-    roomMembers: [],
+    roomMembers: players,
     gameRoomEntries,
     defaultGameChannelId,
     readyKickoffRef,
@@ -215,6 +215,14 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     prevEliminatedRef.current = currentElim;
   }, [players, gamePhase]);
 
+  // ─── Owner online state (based on page visibility) ──────────────────────
+  const [isPageVisible, setIsPageVisible] = useState(true);
+  useEffect(() => {
+    const handler = () => setIsPageVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, []);
+
   // ─── Analytics & lifecycle ────────────────────────────────────────────────
   const gameEnteredAtRef = useRef(Date.now());
   const gamePhaseRef = useRef(gamePhase);
@@ -246,7 +254,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   useGameRoomLifecycle({
     gamePhase,
     isOwner,
-    isOwnerOnline: true,
+    isOwnerOnline: isPageVisible,
     gameId,
     currentGameExists: !!currentGame,
     messagesLength: messages.length,
@@ -296,9 +304,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     return () => clearTimeout(timer);
   }, [gamePhase]);
 
-  // Intro hint: show guidance on first turn until user sends their first message
-  const hasUserSentMessage = msgCountRef.current > 0;
-  const introYourTurnHint = !hasUserSentMessage && gamePhase === "active" && currentSpeakerId === userId
+  // Track first message sent (state-driven so the hint disappears reactively)
+  const [hasUserSentFirstMsg, setHasUserSentFirstMsg] = useState(false);
+  const prevMsgCountRef = useRef(0);
+  useEffect(() => {
+    const currentCount = msgCountRef.current;
+    if (!hasUserSentFirstMsg && currentCount > prevMsgCountRef.current) {
+      setHasUserSentFirstMsg(true);
+    }
+    prevMsgCountRef.current = currentCount;
+  });
+
+  const introYourTurnHint = !hasUserSentFirstMsg && gamePhase === "active" && currentSpeakerId === userId
     ? "It's your turn! Type a response in character, or tap a suggestion below."
     : undefined;
 

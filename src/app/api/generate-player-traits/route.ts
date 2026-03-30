@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[generate-player-traits]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate traits' },
+      { error: 'Generation failed' },
       { status: 500 }
     );
   }

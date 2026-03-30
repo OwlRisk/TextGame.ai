@@ -79,20 +79,16 @@ export async function POST(request: NextRequest) {
     if (isSubscription) {
       const priceId = getStripePriceIdForTier(subscriptionTier);
       if (!priceId) {
+        console.error(`[create-checkout] Stripe price not configured for ${subscriptionTier}`);
         return NextResponse.json(
-          {
-            error:
-              `Stripe price not configured for ${subscriptionTier}. Set the correct STRIPE_*_PRICE_ID in .env, and use a Stripe Price ID (starts with price_).`,
-          },
+          { error: 'Payment processing failed' },
           { status: 500 }
         );
       }
       if (!priceId.startsWith('price_')) {
+        console.error(`[create-checkout] Invalid Stripe price id for ${subscriptionTier}: ${priceId}`);
         return NextResponse.json(
-          {
-            error:
-              `Invalid Stripe price id for ${subscriptionTier}. Expected a Stripe Price ID starting with price_ (not a product id like prod_).`,
-          },
+          { error: 'Payment processing failed' },
           { status: 500 }
         );
       }
@@ -112,8 +108,9 @@ export async function POST(request: NextRequest) {
       });
       const checkoutUrl = session.url ?? null;
       if (!checkoutUrl) {
+        console.error('[create-checkout] Stripe subscription session.url is empty');
         return NextResponse.json(
-          { error: 'Stripe did not return checkout URL', details: 'session.url is empty' },
+          { error: 'Payment processing failed' },
           { status: 500 }
         );
       }
@@ -172,19 +169,15 @@ export async function POST(request: NextRequest) {
     if (!checkoutUrl) {
       console.error('Stripe checkout session created but url is null', { sessionId: session.id });
       return NextResponse.json(
-        { error: 'Stripe did not return checkout URL', details: 'session.url is empty' },
+        { error: 'Payment processing failed' },
         { status: 500 }
       );
     }
     return NextResponse.json({ url: checkoutUrl });
   } catch (error) {
     console.error('Checkout creation error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const stripeMessage = error && typeof error === 'object' && 'raw' in error
-      ? String((error as { raw?: { message?: string } }).raw?.message ?? message)
-      : message;
     return NextResponse.json(
-      { error: 'Failed to create checkout session', details: stripeMessage },
+      { error: 'Payment processing failed' },
       { status: 500 }
     );
   }

@@ -127,7 +127,7 @@ export default function WolvesvilleAlternativePage() {
                 ["AI Players", "No — real players only", "Yes — AI fills empty seats"],
                 ["Play with friends", "Limited (ranked queues)", "Yes — invite link"],
                 ["Custom games", "No", "Yes — design any game"],
-                ["Game types", "Werewolf only", "20+ games (Werewolf, Mafia, Trivia, etc.)"],
+                ["Game types", "Werewolf only", "10+ games (Werewolf, Mafia, Trivia, etc.)"],
                 ["Free tier", "Yes (with ads)", "Yes"],
                 ["Roles available", "50+ (many locked)", "All roles included"],
               ].map(([feature, wolv, tg]) => (
@@ -166,7 +166,7 @@ export default function WolvesvilleAlternativePage() {
         <H2 id="textgame">What is TextGame.ai?</H2>
         <P>
           <Link href="/" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> is
-          an AI-powered game platform with 20+ text-based games. An AI Game Master runs every session —
+          an AI-powered game platform with 10+ text-based games. An AI Game Master runs every session —
           assigning roles, narrating the story, managing phases, and filling empty seats with AI characters
           that have unique personalities and strategies.
         </P>
@@ -175,7 +175,7 @@ export default function WolvesvilleAlternativePage() {
           <li><strong className="text-white">AI Game Master</strong> — intelligent hosting, not just automated timers</li>
           <li><strong className="text-white">Play with friends</strong> — share a link, they join instantly</li>
           <li><strong className="text-white">AI players</strong> — play solo or with 1 friend and AI fills the rest</li>
-          <li><strong className="text-white">20+ game types</strong> —{" "}
+          <li><strong className="text-white">10+ game types</strong> —{" "}
             <TrackedGameLink href="/games/werewolf" className="text-violet-400 hover:underline">Werewolf</TrackedGameLink>,{" "}
             <TrackedGameLink href="/games/mafia" className="text-violet-400 hover:underline">Mafia</TrackedGameLink>,{" "}
             <TrackedGameLink href="/games/avalon" className="text-violet-400 hover:underline">Avalon</TrackedGameLink>,{" "}
@@ -208,7 +208,7 @@ export default function WolvesvilleAlternativePage() {
         </P>
         <H3>Game Variety</H3>
         <P>
-          Wolvesville is Werewolf and only Werewolf. {SITE_NAME} has 20+ game types across social deduction,
+          Wolvesville is Werewolf and only Werewolf. {SITE_NAME} has 10+ game types across social deduction,
           party games, trivia, roleplay, and creative categories. You can even{" "}
           <Link href="/blog/create-game-with-ai" className="text-violet-400 hover:underline">create your own game</Link> from scratch.
         </P>
@@ -244,7 +244,7 @@ export default function WolvesvilleAlternativePage() {
           </div>
           <div>
             <H3>Is TextGame.ai free?</H3>
-            <P>Yes — there&apos;s a free tier that lets you play all 20+ games. Premium plans offer more sessions and features.</P>
+            <P>Yes — there&apos;s a free tier that lets you play all 10+ games. Premium plans offer more sessions and features.</P>
           </div>
           <div>
             <H3>Which has better AI?</H3>

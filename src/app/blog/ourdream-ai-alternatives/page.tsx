@@ -148,7 +148,7 @@ export default function OurDreamAiAlternativesPage() {
           runs every session — assigning roles, managing turns, and narrating the story — while AI characters play alongside human players with unique personalities and strategies.
         </P>
         <P>
-          Unlike OurDream AI&apos;s freeform chat, TextGame.ai offers 20+ game templates like Werewolf, Mafia, Murder Mystery, and custom RPGs.
+          Unlike OurDream AI&apos;s freeform chat, TextGame.ai offers 10+ game templates like Werewolf, Mafia, Murder Mystery, and custom RPGs.
           You can invite friends via a link, and AI players fill any empty seats. Every character has a distinct voice through text-to-speech, making sessions feel alive.
         </P>
         <ul className="list-disc list-inside space-y-2 text-zinc-300 text-sm mb-6 ml-2">
@@ -234,7 +234,7 @@ export default function OurDreamAiAlternativesPage() {
             <H3>Can I play games with AI characters instead of just chatting?</H3>
             <P>
               Yes — <Link href="/discover" className="text-violet-400 hover:underline">TextGame.ai</Link> is built specifically for this.
-              It has 20+ game templates with an AI Game Master that manages roles, turns, and win conditions. Other chat platforms like OurDream AI and Character.AI don&apos;t support structured games.
+              It has 10+ game templates with an AI Game Master that manages roles, turns, and win conditions. Other chat platforms like OurDream AI and Character.AI don&apos;t support structured games.
             </P>
           </div>
           <div>

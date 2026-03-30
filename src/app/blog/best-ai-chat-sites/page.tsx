@@ -208,7 +208,7 @@ export default function BestAiChatSitesPage() {
           The multiplayer angle is what makes it unique: share a link and friends join instantly as guests. You get the depth of AI roleplay combined with the thrill of actual gameplay.
         </P>
         <P>
-          <strong className="text-emerald-400">Pros:</strong> Real-time multiplayer, AI Game Master, 20+ game templates, AI voice, custom game creation, free tier.{" "}
+          <strong className="text-emerald-400">Pros:</strong> Real-time multiplayer, AI Game Master, 10+ game templates, AI voice, custom game creation, free tier.{" "}
           <strong className="text-red-400">Cons:</strong> Text-based (no graphics), newer community. <strong className="text-white">Pricing:</strong> Free starting credits; subscription for heavier use.
         </P>
 

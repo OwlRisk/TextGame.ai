@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import {
+  addTokens,
   deductTokens,
   hasTokens,
   gptUsageToCoins,
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }, { status: 402 });
     }
 
-    // Format messages for OpenAI
+    await deductTokens(user.id, estCoins, 'ai_chat', `Chat pre-deduct ~${estTokens} tokens (${chatModel})`);
+
     const formattedMessages = [
       { role: 'system' as const, content: systemMessage },
       ...messages.map((msg: any) => ({
@@ -86,26 +88,28 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      model: chatModel,
-      messages: formattedMessages,
-      max_completion_tokens: maxTokens,
-      stream: false,
-    });
+    let completion;
+    try {
+      completion = await openai.chat.completions.create({
+        model: chatModel,
+        messages: formattedMessages,
+        max_completion_tokens: maxTokens,
+        stream: false,
+      });
+    } catch (apiErr) {
+      await addTokens(user.id, estCoins, 'refund', `Refund: chat API call failed`).catch(() => {});
+      throw apiErr;
+    }
 
-    // Deduct based on actual API cost (model + usage)
     const usage = completion.usage;
     const promptTokens = usage?.prompt_tokens ?? 0;
     const completionTokens = usage?.completion_tokens ?? 0;
     const model = (completion as { model?: string }).model ?? 'gpt-5.3-chat-latest';
-    const coinsToDeduct = gptUsageToCoins(model, promptTokens, completionTokens);
-    await deductTokens(
-      user.id,
-      coinsToDeduct,
-      'ai_chat',
-      `Chat ${promptTokens + completionTokens} tokens (${model})`
-    );
+    const actualCoins = gptUsageToCoins(model, promptTokens, completionTokens);
+    const refundDelta = estCoins - actualCoins;
+    if (refundDelta > 0) {
+      await addTokens(user.id, refundDelta, 'refund', `Chat cost adjustment: est ${estCoins} → actual ${actualCoins}`).catch(() => {});
+    }
 
     let response = completion.choices[0]?.message?.content?.trim() ?? '';
 

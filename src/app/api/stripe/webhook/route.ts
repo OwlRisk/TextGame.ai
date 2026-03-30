@@ -8,6 +8,29 @@ import Stripe from 'stripe';
 import { pool } from '@/lib/pg-pool';
 import { logger } from '@/lib/logger';
 
+const processedEvents = new Map<string, number>();
+const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isEventProcessed(eventId: string): boolean {
+  const ts = processedEvents.get(eventId);
+  if (!ts) return false;
+  if (Date.now() - ts > IDEMPOTENCY_TTL_MS) {
+    processedEvents.delete(eventId);
+    return false;
+  }
+  return true;
+}
+
+function markEventProcessed(eventId: string): void {
+  processedEvents.set(eventId, Date.now());
+  if (processedEvents.size > 10_000) {
+    const cutoff = Date.now() - IDEMPOTENCY_TTL_MS;
+    for (const [id, ts] of processedEvents) {
+      if (ts < cutoff) processedEvents.delete(id);
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
@@ -43,6 +66,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isEventProcessed(event.id)) {
+    logger.log(`[Stripe Webhook] Skipping duplicate event: ${event.id} (${event.type})`);
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  markEventProcessed(event.id);
+
   try {
     logger.log(`[Stripe Webhook] Received event: ${event.type}`);
 
@@ -63,7 +92,11 @@ export async function POST(request: NextRequest) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const priceId = subscription.items?.data?.[0]?.price?.id;
           const tier = priceId ? getTierFromStripePriceId(priceId) : null;
-          const status = tier ?? 'pro';
+          if (!tier) {
+            console.error(`[Webhook] Unknown price ID: ${priceId} — cannot determine tier, skipping`);
+            break;
+          }
+          const status = tier;
 
           await updateSubscriptionStatus(
             userId,
@@ -153,10 +186,14 @@ export async function POST(request: NextRequest) {
           if (result.rows.length > 0) {
             const userId = result.rows[0].user_id;
             const priceId = sub.items?.data?.[0]?.price?.id;
-            const tier = priceId ? getTierFromStripePriceId(priceId) : 'pro';
+            const tier = priceId ? getTierFromStripePriceId(priceId) : null;
+            if (!tier) {
+              console.error(`[Webhook] invoice.paid: Unknown price ID: ${priceId}, skipping`);
+              break;
+            }
             await updateSubscriptionStatus(
               userId,
-              tier ?? 'pro',
+              tier,
               sub.id,
               new Date(sub.current_period_end * 1000)
             );

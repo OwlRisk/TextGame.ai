@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import { FAQ_ITEMS } from "@/data/landing-content";
 import HomeClient from "./home-client";
 
 export const metadata: Metadata = {
@@ -34,76 +35,17 @@ export const metadata: Metadata = {
   },
 };
 
-// FAQ items must exactly match what's rendered in FAQSection on the landing page
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "How do I create a game?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Sign in with Google, then browse templates on Discover — pick a game like Werewolf, Who's the Spy, or Mafia. Click the template and you're in a game room within seconds. AI players are added automatically. No setup or coding needed.",
-      },
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
     },
-    {
-      "@type": "Question",
-      name: "What is the Game Master and how does it work?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "The Game Master is an AI host that runs your game: it explains rules, runs day/night or discussion phases, and keeps the flow. You can also add AI players so the room is filled even when playing alone. The host and players use natural dialogue so it feels like a real tabletop session.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Can I play with friends?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes! Share an invite link from your game room — friends can join instantly in their browser without creating an account. They play as guests alongside your AI characters. You can have any mix of human and AI players in the same game.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "What templates or game types are available?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "We include 20+ templates like Werewolf (social deduction), Who's the Spy (word game), Mafia, Murder Mystery, Secret Hitler, and Tarot Reading. Browse them in Discover for one-click start. You can also create a fully custom game by describing your own rules and roles to the Game Master.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Do I need to sign in? Is it free?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Sign in with Google to create games — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Friends who join your game don't need an account at all.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Do AI characters have voices?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes. Each AI character speaks with a unique voice powered by text-to-speech. You can toggle voice on or off for any game. It adds a layer of immersion that makes the game feel like a real tabletop session.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Can I create any type of game?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Absolutely! While we offer 20+ templates for popular games, you have complete freedom to design custom games with unique rules, roles, and victory conditions. Just describe your idea to the Game Master in plain English.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How much does it cost?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "New accounts start with free credits. After that, you can purchase additional credits as needed — pricing is transparent and based on actual usage. No subscriptions or hidden fees.",
-      },
-    },
-  ],
+  })),
 };
 
 export default function HomePage() {

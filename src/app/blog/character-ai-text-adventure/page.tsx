@@ -225,7 +225,7 @@ export default function CharacterAiTextAdventurePage() {
           mix of human and AI players in games like{" "}
           <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline">Detective Mystery</TrackedGameLink>,{" "}
           <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline">Escape Room</TrackedGameLink>,
-          social deduction, RPG quests, and more. With 50+ game templates and the ability to create custom
+          social deduction, RPG quests, and more. With 10+ game templates and the ability to create custom
           adventures by describing your idea in plain English, it bridges the gap between interactive fiction and
           tabletop gaming.
         </Para>
@@ -271,7 +271,7 @@ export default function CharacterAiTextAdventurePage() {
             order, narration, rule enforcement, and story progression are all handled automatically.
           </li>
           <li>
-            <strong className="text-white">50+ game templates</strong> — from{" "}
+            <strong className="text-white">10+ game templates</strong> — from{" "}
             <TrackedGameLink href="/games/detective-mystery" className="text-violet-400 hover:underline">detective mysteries</TrackedGameLink>{" "}
             and <TrackedGameLink href="/games/escape-room" className="text-violet-400 hover:underline">escape rooms</TrackedGameLink> to
             social deduction and RPG quests, there&apos;s a template for every genre.
@@ -368,7 +368,7 @@ export default function CharacterAiTextAdventurePage() {
             <div>
               <p className="text-white font-semibold mb-1">Choose a game or scenario</p>
               <p className="text-sm text-zinc-300">
-                Browse templates or pre-made scenarios. On TextGame.ai, you can pick from 50+ games like
+                Browse templates or pre-made scenarios. On TextGame.ai, you can pick from 10+ games like
                 detective mysteries, escape rooms, RPG quests, and social deduction — or describe your own idea.
               </p>
             </div>
@@ -417,7 +417,7 @@ export default function CharacterAiTextAdventurePage() {
             Start Your AI Text Adventure Now
           </h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            Choose from 50+ game templates or describe your own adventure. AI characters with unique
+            Choose from 10+ game templates or describe your own adventure. AI characters with unique
             personalities are ready to play — solo or with friends. Free to start, no credit card needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">

@@ -75,9 +75,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[sync-subscription]', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to sync subscription', details: message },
+      { error: 'Payment processing failed' },
       { status: 500 }
     );
   }

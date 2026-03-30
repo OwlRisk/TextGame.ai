@@ -23,6 +23,7 @@ export function FAQSection() {
             className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-violet-500/30"
           >
             <button
+              id={`faq-btn-${index}`}
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
               aria-expanded={openIndex === index}
               aria-controls={`faq-panel-${index}`}

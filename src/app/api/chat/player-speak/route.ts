@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     console.error('[player-speak]', e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Failed to generate player message' },
+      { error: 'Generation failed' },
       { status: 500 }
     );
   }

@@ -23,7 +23,7 @@
 
 **TextGame.ai** is a full-stack AI game platform where an intelligent Game Master runs entire game sessions autonomously — assigning roles, managing phases, narrating the story, and driving AI characters that think and strategize alongside human players.
 
-Players can jump into 20+ built-in game templates (Werewolf, Mafia, Undercover, 20 Questions, Escape Room, Debate, and more), create custom games with their own rules, or play solo with a full table of AI opponents.
+Players can jump into 10+ built-in game templates (Werewolf, Mafia, Undercover, 20 Questions, Escape Room, Debate, and more), create custom games with their own rules, or play solo with a full table of AI opponents.
 
 **Live at [textgame.ai](https://textgame.ai)**
 
@@ -34,7 +34,7 @@ Players can jump into 20+ built-in game templates (Werewolf, Mafia, Undercover, 
 ### AI Game Engine
 - **Autonomous Game Master** — Parses structured directives (`ASSIGN_ROLE`, `NEXT_SPEAKER`, `ELIMINATE`, `GAME_OVER`, etc.) to drive game state without manual intervention.
 - **AI Player Characters** — Each AI player has a unique personality, strategy style, and optional voice. They deliberate, bluff, vote, and react in real time.
-- **20+ Game Templates** — Werewolf, Mafia, Undercover, Spyfall, Codenames, 20 Questions, Escape Room, Debate, Improv Comedy, and more.
+- **10+ Game Templates** — Werewolf, Mafia, Undercover, Spyfall, Codenames, 20 Questions, Escape Room, Debate, Improv Comedy, and more.
 - **Custom Game Creation** — Define your own rules, roles, phases, and win conditions.
 
 ### Multiplayer & Social
@@ -93,7 +93,7 @@ src/
 ├── lib/                          # Core logic
 │   ├── gm-system-prompt.ts       #   Game Master system prompt builder
 │   ├── host-prompt-builder.ts    #   Per-template prompt adaptation
-│   ├── game-templates.ts         #   20+ template definitions
+│   ├── game-templates.ts         #   10+ template definitions
 │   ├── game-template-driver.ts   #   Template-specific game mechanics
 │   └── __tests__/                #   Comprehensive unit tests
 ├── contexts/                     # React contexts (Auth, Game, GameRoom)

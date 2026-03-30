@@ -4,7 +4,7 @@ import DiscoverView from "./discover-view";
 export const metadata: Metadata = {
   title: "Discover AI Text Games — Werewolf, Mafia, RPG, Mystery & More",
   description:
-    "Browse 20+ AI-powered multiplayer text game templates. Play Werewolf, Mafia, Secret Hitler, Who's the Spy, Murder Mystery, Trivia and more — or create your own custom roleplay AI game in minutes. Best Character.AI alternative for social deduction games.",
+    "Browse 10+ AI-powered multiplayer text game templates. Play Werewolf, Mafia, Secret Hitler, Who's the Spy, Murder Mystery, Trivia and more — or create your own custom roleplay AI game in minutes. Best Character.AI alternative for social deduction games.",
   keywords: [
     "ai text games",
     "play werewolf online",
@@ -22,14 +22,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Discover AI Text Games · TextGame.ai",
     description:
-      "20+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
+      "10+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
     type: "website",
     images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover AI Text Games · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Discover AI Text Games · TextGame.ai",
-    description: "20+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
+    description: "10+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
     images: ["/hero.webp"],
   },
 };

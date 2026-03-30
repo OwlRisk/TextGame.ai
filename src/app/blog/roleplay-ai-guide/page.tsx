@@ -289,7 +289,7 @@ export default function RoleplayAiGuidePage() {
         <P>If you want to try roleplay AI for gaming, here&apos;s the fastest path:</P>
         <ol className="space-y-4 mb-8">
           {[
-            { title: "Pick a game template", desc: "Browse 20+ templates like Werewolf, Mafia, Murder Mystery, or Trivia." },
+            { title: "Pick a game template", desc: "Browse 10+ templates like Werewolf, Mafia, Murder Mystery, or Trivia." },
             { title: "Or describe your own game", desc: "Tell the AI Game Master your rules in plain English — it builds the game for you." },
             { title: "Invite friends (optional)", desc: "Share a link. Friends join instantly — no sign-up needed for guests." },
             { title: "Play", desc: "The AI Game Master runs the session. AI characters fill every seat. Just focus on playing." },

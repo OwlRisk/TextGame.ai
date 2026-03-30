@@ -130,8 +130,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!prevUserRef.current && userToSet) {
         const isNewUser = userToSet.created_at
           && (Date.now() - new Date(userToSet.created_at).getTime()) < 60_000;
+        const provider = userToSet.app_metadata?.provider || "unknown";
         import("@/lib/analytics").then(({ trackEvent }) => {
-          trackEvent(isNewUser ? "sign_up" : "login", { method: "google" });
+          trackEvent(isNewUser ? "sign_up" : "login", { method: provider });
         });
       }
       prevUserRef.current = userToSet;
@@ -298,6 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         provider: 'facebook',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          ...(returnUrl && { state: returnUrl }),
         },
       });
       if (error) throw error;

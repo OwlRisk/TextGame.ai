@@ -45,7 +45,7 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
   const playerNamesList = nonHostPlayerNames.join(", ");
   const ROUND_TABLE_TEMPLATES = ["werewolf", "mafia", "avalon", "undercover", "debate", "storyteller", "two-truths-lie", "trivia"];
   const isRoundTableGame = !!gameTemplate && ROUND_TABLE_TEMPLATES.includes(gameTemplate);
-  const NARRATIVE_TEMPLATES = ["tarot", "detective-mystery", "escape-room", "storyteller", "roleplay", "adventure"];
+  const NARRATIVE_TEMPLATES = ["tarot", "detective-mystery", "escape-room", "storyteller"];
   const isNarrativeGame = !!gameTemplate && NARRATIVE_TEMPLATES.includes(gameTemplate);
   const templateMechanicsSection = buildTemplateMechanics(gameTemplate);
   const progressionPolicySection = buildProgressionPolicy(gameTemplate, recentNonHostTurns ?? 0);

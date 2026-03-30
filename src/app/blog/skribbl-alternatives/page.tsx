@@ -84,12 +84,12 @@ export default function SkribblAlternativesPage() {
         <P>
           If you&apos;re looking for a Skribbl alternative because you want <em>variety</em>, not just
           another drawing game, <Link href="/discover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> offers
-          20+ text-based party games. Try{" "}
+          10+ text-based party games. Try{" "}
           <TrackedGameLink href="/games/codenames" className="text-violet-400 hover:underline">Codenames</TrackedGameLink> for word puzzles,{" "}
           <TrackedGameLink href="/games/spyfall" className="text-violet-400 hover:underline">Spyfall</TrackedGameLink> for social deduction, or{" "}
           <TrackedGameLink href="/games/trivia" className="text-violet-400 hover:underline">AI Trivia</TrackedGameLink> for quiz nights.
         </P>
-        <Pros items={["20+ game types — not just drawing", "AI Game Master and AI players", "Free, browser-based, no download", "Every game unique thanks to AI"]} />
+        <Pros items={["10+ game types — not just drawing", "AI Game Master and AI players", "Free, browser-based, no download", "Every game unique thanks to AI"]} />
         <Cons items={["Text-based — no drawing", "Different experience than visual games"]} />
 
         <H3>5. Codenames Online — Word-Based Deduction</H3>
@@ -135,7 +135,7 @@ export default function SkribblAlternativesPage() {
 
         <div className="bg-gradient-to-br from-cyan-600/20 to-violet-600/20 border border-cyan-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">Ready for something new?</h2>
-          <p className="text-zinc-300 mb-6 max-w-lg mx-auto">20+ free browser games with an AI host. Social deduction, trivia, improv, and more.</p>
+          <p className="text-zinc-300 mb-6 max-w-lg mx-auto">10+ free browser games with an AI host. Social deduction, trivia, improv, and more.</p>
           <Link href="/discover" className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">Browse All Games</Link>
         </div>
 

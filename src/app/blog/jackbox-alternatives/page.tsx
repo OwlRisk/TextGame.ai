@@ -173,12 +173,12 @@ export default function JackboxAlternativesPage() {
         <H2 id="textgame">1. TextGame.ai — AI-Powered Party Games</H2>
         <P>
           <Link href="/discover" className="text-violet-400 hover:underline font-semibold">{SITE_NAME}</Link> is
-          an AI-powered game platform with 20+ party games — from social deduction (Werewolf, Mafia, Secret Hitler)
+          an AI-powered game platform with 10+ party games — from social deduction (Werewolf, Mafia, Secret Hitler)
           to trivia, improv comedy, and storytelling. An AI Game Master hosts every session, assigns roles,
           and fills empty seats with AI characters that have unique personalities.
         </P>
         <Pros items={[
-          "20+ game templates — far more variety than a single Jackbox pack",
+          "10+ game templates — far more variety than a single Jackbox pack",
           "AI Game Master runs everything — no host setup needed",
           "AI fills empty seats — play with 1 friend or 10",
           "Free tier available, browser-based, no download",
@@ -443,7 +443,7 @@ export default function JackboxAlternativesPage() {
         <div className="bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border border-violet-500/30 rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold text-white mb-3">Ready for game night?</h2>
           <p className="text-zinc-300 mb-6 max-w-lg mx-auto">
-            20+ party games with an AI host. No download, no purchase, no minimum players.
+            10+ party games with an AI host. No download, no purchase, no minimum players.
           </p>
           <Link
             href="/discover"
