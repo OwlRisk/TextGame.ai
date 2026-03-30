@@ -99,10 +99,12 @@ export default function DiscoverView() {
         if (playersResult.value.humanRole) humanRole = playersResult.value.humanRole;
       }
 
-      type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: string; voice_id?: string };
+      type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: 'male' | 'female' | 'other'; voice_id?: string };
       let generatedHost: GeneratedHost;
       if (hostResult.status === "fulfilled" && hostResult.value?.name) {
-        generatedHost = hostResult.value;
+        const h = hostResult.value;
+        const g = typeof h.gender === "string" && ["male", "female", "other"].includes(h.gender) ? h.gender as 'male' | 'female' | 'other' : undefined;
+        generatedHost = { ...h, gender: g };
       } else {
         generatedHost = {
           name: fallbackHost.name,
