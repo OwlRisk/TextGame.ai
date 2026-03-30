@@ -58,30 +58,61 @@ export default function DiscoverView() {
 
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
       const gameIcon = tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
-      const host = getDefaultHostForTemplate(preset.templateId);
+      const fallbackHost = getDefaultHostForTemplate(preset.templateId);
+
+      const [playersResult, hostResult] = await Promise.allSettled([
+        (async () => {
+          toast.loading("Setting up players...", { id: toastId });
+          const res = await fetch("/api/generate-players", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              playerCount: preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4,
+              gameTemplate: preset.templateId,
+              rules: preset.rules,
+              minPlayers: tmpl?.minPlayers ?? 2,
+              maxPlayers: tmpl?.maxPlayers ?? 20,
+            }),
+          });
+          if (!res.ok) throw new Error("Failed");
+          return res.json();
+        })(),
+        (async () => {
+          toast.loading("Generating host...", { id: toastId });
+          const res = await fetch("/api/generate-host", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              gameRules: preset.rules,
+              gameName: preset.name,
+            }),
+          });
+          if (!res.ok) throw new Error("Failed");
+          return res.json();
+        })(),
+      ]);
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;
-      try {
-        toast.loading("Setting up players...", { id: toastId });
-        const playersRes = await fetch("/api/generate-players", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            playerCount: preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4,
-            gameTemplate: preset.templateId,
-            rules: preset.rules,
-            minPlayers: tmpl?.minPlayers ?? 2,
-            maxPlayers: tmpl?.maxPlayers ?? 20,
-          }),
-        });
-        if (playersRes.ok) {
-          const data = await playersRes.json();
-          if (data.players) configuredPlayers = data.players;
-          if (data.humanRole) humanRole = data.humanRole;
-        }
-      } catch (err) {
-        console.warn("Failed to generate players:", err);
+      if (playersResult.status === "fulfilled" && playersResult.value?.players) {
+        configuredPlayers = playersResult.value.players;
+        if (playersResult.value.humanRole) humanRole = playersResult.value.humanRole;
+      }
+
+      type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: string; voice_id?: string };
+      let generatedHost: GeneratedHost;
+      if (hostResult.status === "fulfilled" && hostResult.value?.name) {
+        generatedHost = hostResult.value;
+      } else {
+        generatedHost = {
+          name: fallbackHost.name,
+          personality: fallbackHost.personality || fallbackHost.description || "",
+          voiceStyle: fallbackHost.voiceStyle,
+          systemPrompt: fallbackHost.systemPrompt,
+          icon: fallbackHost.icon,
+          color: fallbackHost.color,
+          gender: fallbackHost.gender,
+        };
       }
 
       const newGame = {
@@ -94,22 +125,14 @@ export default function DiscoverView() {
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || (preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4),
           rules: preset.rules,
-          hostId: host.id,
+          hostId: fallbackHost.id,
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
           humanRole,
           ...(tmpl?.channels && {
             channels: tmpl.channels.map(c => ({ id: c.id, name: c.name, roomType: c.roomType })),
           }),
-          generatedHost: {
-            name: host.name,
-            personality: host.personality || host.description || "",
-            voiceStyle: host.voiceStyle,
-            systemPrompt: host.systemPrompt,
-            icon: host.icon,
-            color: host.color,
-            gender: host.gender,
-          },
+          generatedHost,
         },
         isActive: true,
         updatedAt: new Date().toISOString(),
