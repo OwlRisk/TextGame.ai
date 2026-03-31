@@ -5,12 +5,10 @@
  *  1. GameOverBanner button rendering logic (which buttons appear based on props)
  *  2. Resume business logic (state transitions, DB sync, system message)
  *  3. Permission control (only owner can resume)
- *  4. Inactivity timer reset after resume
- *  5. Edge cases (double resume, resume after different end reasons)
+ *  4. Edge cases (double resume, resume after different end reasons)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { GAME_INACTIVITY_TIMEOUT_MS } from "../game-room-constants";
 
 // ─── 1. GameOverBanner button visibility logic ──────────────────────────────
 
@@ -178,98 +176,7 @@ describe("Resume Game — permission control", () => {
   });
 });
 
-// ─── 4. Inactivity timer reset after resume ─────────────────────────────────
-
-describe("Resume Game — inactivity timer behavior", () => {
-  beforeEach(() => { vi.useFakeTimers(); });
-  afterEach(() => { vi.useRealTimers(); });
-
-  it("inactivity check does NOT fire when gamePhase is 'ended'", () => {
-    let autoEnded = false;
-    const isMountedRef = { current: true };
-    const lastActivityRef = { current: Date.now() };
-    const gamePhase: string = "ended";
-
-    const check = () => {
-      if (!isMountedRef.current) return;
-      if (gamePhase !== "active") return;
-      if (Date.now() - lastActivityRef.current >= GAME_INACTIVITY_TIMEOUT_MS) {
-        autoEnded = true;
-      }
-    };
-
-    const id = setInterval(check, 60_000);
-    vi.advanceTimersByTime(GAME_INACTIVITY_TIMEOUT_MS + 60_000);
-    clearInterval(id);
-
-    expect(autoEnded).toBe(false);
-  });
-
-  it("inactivity check DOES fire when gamePhase is 'active' and no activity", () => {
-    let autoEnded = false;
-    const isMountedRef = { current: true };
-    const lastActivityRef = { current: Date.now() };
-    const gamePhase: string = "active";
-
-    const check = () => {
-      if (!isMountedRef.current) return;
-      if (gamePhase !== "active") return;
-      if (Date.now() - lastActivityRef.current >= GAME_INACTIVITY_TIMEOUT_MS) {
-        autoEnded = true;
-      }
-    };
-
-    const id = setInterval(check, 60_000);
-    vi.advanceTimersByTime(GAME_INACTIVITY_TIMEOUT_MS + 60_000);
-    clearInterval(id);
-
-    expect(autoEnded).toBe(true);
-  });
-
-  it("adding a message (resume system msg) resets lastActivityRef", () => {
-    let autoEnded = false;
-    const isMountedRef = { current: true };
-    const lastActivityRef = { current: Date.now() };
-    let messagesLength = 10;
-
-    const onMessageAdded = () => {
-      lastActivityRef.current = Date.now();
-    };
-
-    const check = () => {
-      if (!isMountedRef.current) return;
-      if (Date.now() - lastActivityRef.current >= GAME_INACTIVITY_TIMEOUT_MS) {
-        autoEnded = true;
-      }
-    };
-
-    const id = setInterval(check, 60_000);
-
-    // Advance almost to timeout
-    vi.advanceTimersByTime(GAME_INACTIVITY_TIMEOUT_MS - 60_000);
-    expect(autoEnded).toBe(false);
-
-    // Resume adds a system message → resets timer
-    messagesLength++;
-    onMessageAdded();
-
-    // Advance past original timeout — should NOT trigger because timer was reset
-    vi.advanceTimersByTime(120_000);
-    expect(autoEnded).toBe(false);
-
-    // Advance to full timeout from reset point — NOW should trigger
-    vi.advanceTimersByTime(GAME_INACTIVITY_TIMEOUT_MS);
-    expect(autoEnded).toBe(true);
-
-    clearInterval(id);
-  });
-
-  it("GAME_INACTIVITY_TIMEOUT_MS is 2 hours", () => {
-    expect(GAME_INACTIVITY_TIMEOUT_MS).toBe(2 * 60 * 60 * 1000);
-  });
-});
-
-// ─── 5. Edge cases ──────────────────────────────────────────────────────────
+// ─── 4. Edge cases ──────────────────────────────────────────────────────────
 
 describe("Resume Game — edge cases", () => {
   it("double resume is idempotent (already active)", () => {

@@ -152,6 +152,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // ─── Auto-start: begin the game as soon as a freshly-created lobby is ready ─
   const autoStartFiredRef = useRef(false);
   const [autoStarting, setAutoStarting] = useState(false);
+  const startGameRef = useRef(startGame);
+  useEffect(() => { startGameRef.current = startGame; });
   useEffect(() => {
     if (autoStartFiredRef.current) return;
     if (!isInitialized || !isFreshLobby || gamePhase !== "lobby") return;
@@ -159,15 +161,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     if (nonHostPlayers.length === 0) return;
     autoStartFiredRef.current = true;
     setAutoStarting(true);
+    const safetyTimeout = setTimeout(() => setAutoStarting(false), 30000);
     const timer = setTimeout(async () => {
       try {
-        await startGame();
+        await startGameRef.current();
       } finally {
+        clearTimeout(safetyTimeout);
         setAutoStarting(false);
       }
     }, 600);
-    return () => clearTimeout(timer);
-  }, [isInitialized, isFreshLobby, gamePhase, players, startGame]);
+    return () => { clearTimeout(timer); clearTimeout(safetyTimeout); };
+  }, [isInitialized, isFreshLobby, gamePhase, players]);
 
   // ─── Auto-set channel permissions from template when game starts ──────────
   const channelPermsInitRef = useRef(false);
@@ -252,14 +256,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     prevEliminatedRef.current = currentElim;
   }, [players, gamePhase]);
 
-  // ─── Owner online state (based on page visibility) ──────────────────────
-  const [isPageVisible, setIsPageVisible] = useState(true);
-  useEffect(() => {
-    const handler = () => setIsPageVisible(document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
-  }, []);
-
   // ─── Analytics & lifecycle ────────────────────────────────────────────────
   const gameEnteredAtRef = useRef(Date.now());
   const gamePhaseRef = useRef(gamePhase);
@@ -290,18 +286,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   useGameRoomLifecycle({
     gamePhase,
-    isOwner,
-    isOwnerOnline: isPageVisible,
     gameId,
-    currentGameExists: !!currentGame,
-    messagesLength: messages.length,
     timerEndsAt,
     addMessage,
     setTimerEndsAt,
     setActiveVote: () => setActiveVote(null),
-    setGameOverSummary,
-    setGamePhase,
-    updateGame,
   });
 
   useEffect(() => { selectGame(gameId); }, [gameId, selectGame]);

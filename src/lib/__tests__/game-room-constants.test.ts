@@ -4,7 +4,6 @@ import {
   MEMBERS_POLL_INTERVAL_MS,
   MEMBERS_MAX_ERRORS,
   MAX_AUTO_ADVANCES,
-  GAME_INACTIVITY_TIMEOUT_MS,
   HOST_CONTEXT_WINDOW,
   MAX_STREAM_TOKENS,
   BASE_STREAM_TOKENS,
@@ -30,11 +29,6 @@ describe("game-room-constants", () => {
   it("MAX_AUTO_ADVANCES is a positive integer within a sane range", () => {
     expect(MAX_AUTO_ADVANCES).toBeGreaterThan(0);
     expect(MAX_AUTO_ADVANCES).toBeLessThanOrEqual(50);
-  });
-
-  it("GAME_INACTIVITY_TIMEOUT_MS is at least 30 minutes", () => {
-    const thirtyMinutes = 30 * 60 * 1000;
-    expect(GAME_INACTIVITY_TIMEOUT_MS).toBeGreaterThanOrEqual(thirtyMinutes);
   });
 
   it("HOST_CONTEXT_WINDOW is a positive integer", () => {

@@ -2,66 +2,19 @@
  * Tests for the comprehensive game mechanism audit fixes.
  *
  * Covers:
- *  1. Game inactivity timeout constant
- *  2. Owner-leave auto-end logic (5-min timer concept)
- *  3. Stream billing: post-success deduction (not pre-deduction)
- *  4. Player-speak & generate-players billing
- *  5. Token exhausted 402 handling
- *  6. beforeunload synchronous save
- *  7. Host retry on stream failure
- *  8. Zero-player guard
- *  9. NEXT_SPEAKER fallback when queue is empty
- * 10. MAX_AUTO_ADVANCES bump
+ *  1. Stream billing: post-success deduction (not pre-deduction)
+ *  2. Player-speak & generate-players billing
+ *  3. Token exhausted 402 handling
+ *  4. beforeunload synchronous save
+ *  5. Host retry on stream failure
+ *  6. Zero-player guard
+ *  7. NEXT_SPEAKER fallback when queue is empty
+ *  8. MAX_AUTO_ADVANCES bump
  */
 import { describe, it, expect } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// 1. Inactivity timeout constant
-// ---------------------------------------------------------------------------
-describe('Game inactivity timeout', () => {
-  const GAME_INACTIVITY_TIMEOUT_MS = 2 * 60 * 60 * 1000; // mirror from page.tsx
-
-  it('should be exactly 2 hours', () => {
-    expect(GAME_INACTIVITY_TIMEOUT_MS).toBe(7_200_000);
-  });
-
-  it('should trigger when lastActivity is stale', () => {
-    const lastActivity = Date.now() - GAME_INACTIVITY_TIMEOUT_MS - 1;
-    expect(Date.now() - lastActivity >= GAME_INACTIVITY_TIMEOUT_MS).toBe(true);
-  });
-
-  it('should NOT trigger when activity is recent', () => {
-    const lastActivity = Date.now() - 1000;
-    expect(Date.now() - lastActivity >= GAME_INACTIVITY_TIMEOUT_MS).toBe(false);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 2. Owner-leave timer concept
-// ---------------------------------------------------------------------------
-describe('Owner-leave auto-end', () => {
-  const OWNER_LEAVE_TIMEOUT_MS = 5 * 60 * 1000;
-
-  it('should be exactly 5 minutes', () => {
-    expect(OWNER_LEAVE_TIMEOUT_MS).toBe(300_000);
-  });
-
-  it('should only apply to non-owner (guest) clients during active phase', () => {
-    const scenarios = [
-      { gamePhase: 'active', isOwner: false, shouldApply: true },
-      { gamePhase: 'active', isOwner: true, shouldApply: false },
-      { gamePhase: 'lobby', isOwner: false, shouldApply: false },
-      { gamePhase: 'ended', isOwner: false, shouldApply: false },
-    ];
-    for (const s of scenarios) {
-      const applies = s.gamePhase === 'active' && !s.isOwner;
-      expect(applies).toBe(s.shouldApply);
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 3. Stream billing logic (post-success)
+// 1. Stream billing logic (post-success)
 // ---------------------------------------------------------------------------
 describe('Stream billing: post-success deduction', () => {
   it('should prefer actual usage over estimate when available', () => {
