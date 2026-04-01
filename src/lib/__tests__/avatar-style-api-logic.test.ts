@@ -346,8 +346,8 @@ describe('Pool API query parameter handling', () => {
 // ─── 7. VALID_STYLES set operations ───────────────────────────────────────────
 
 describe('VALID_STYLES set completeness', () => {
-  it('has exactly 2 styles', () => {
-    expect(VALID_STYLES).toHaveLength(2);
+  it('has exactly 3 styles', () => {
+    expect(VALID_STYLES).toHaveLength(3);
   });
 
   it('contains semi-realistic as the default', () => {
@@ -356,7 +356,7 @@ describe('VALID_STYLES set completeness', () => {
   });
 
   it('contains all expected style values', () => {
-    const expected = ['semi-realistic', 'toon3d'];
+    const expected = ['valorant', 'semi-realistic', 'toon3d'];
     for (const s of expected) {
       expect(VALID_STYLES).toContain(s);
     }

@@ -33,11 +33,11 @@ describe("game-template-driver", () => {
   });
 
   describe("buildTemplateMechanics", () => {
-    it("returns 20-questions mechanics without pacing", () => {
+    it("returns 20-questions mechanics including pacing guidance", () => {
       const m = buildTemplateMechanics("20-questions");
       expect(m).toContain("YOU ARE THE THINKER");
-      expect(m).toContain("ANSWERING QUESTIONS");
-      expect(m).not.toContain("### PACING");
+      expect(m).toContain("ANSWER RULES");
+      expect(m).toContain("PACING:");
     });
 
     it("returns codenames mechanics", () => {
@@ -82,7 +82,7 @@ describe("game-template-driver", () => {
     it("includes deduction-specific rules for deduction games", () => {
       const p = buildProgressionPolicy("werewolf");
       expect(p).toContain("Force state changes");
-      expect(p).toContain("START_VOTE");
+      expect(p).toContain("vote / phase transition");
     });
 
     it("includes quiz-specific rules for quiz games", () => {
@@ -97,17 +97,17 @@ describe("game-template-driver", () => {
 
     it("adds template-specific hints for 20-questions", () => {
       const p = buildProgressionPolicy("20-questions");
-      expect(p).toContain("one sentence per answer");
+      expect(p).toContain("Adjudicate quickly");
     });
 
     it("adds template-specific hints for spyfall", () => {
       const p = buildProgressionPolicy("spyfall");
-      expect(p).toContain("nudge toward accusations");
+      expect(p).toContain("nudge players toward making accusations");
     });
 
     it("adds template-specific hints for detective-mystery", () => {
       const p = buildProgressionPolicy("detective-mystery");
-      expect(p).toContain("Investigation rounds");
+      expect(p).toContain("Reveal evidence like breadcrumbs");
     });
 
     it("triggers urgency alert for deduction after threshold", () => {
@@ -122,9 +122,9 @@ describe("game-template-driver", () => {
     });
 
     it("does not trigger urgency below threshold", () => {
-      expect(buildProgressionPolicy("werewolf", 3)).not.toContain("PROGRESSION ALERT");
-      expect(buildProgressionPolicy("trivia", 2)).not.toContain("PROGRESSION ALERT");
-      expect(buildProgressionPolicy("custom", 7)).not.toContain("PROGRESSION ALERT");
+      expect(buildProgressionPolicy("werewolf", 2)).not.toContain("PROGRESSION ALERT");
+      expect(buildProgressionPolicy("trivia", 1)).not.toContain("PROGRESSION ALERT");
+      expect(buildProgressionPolicy("custom", 5)).not.toContain("PROGRESSION ALERT");
     });
 
     it("triggers urgency for open games at threshold 8", () => {

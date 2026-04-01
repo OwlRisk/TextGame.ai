@@ -94,9 +94,10 @@ describe("Landing FEATURED_GAMES preset resolution", () => {
     for (const game of FEATURED_GAMES) {
       const preset = getPresetById(game.presetId);
       if (!preset) continue;
+      const tid = preset.templateId;
       expect(
-        templateIds.has(preset.templateId) || preset.templateId === "custom",
-        `${game.title}: templateId "${preset.templateId}" not in GAME_TEMPLATES`,
+        (tid != null && templateIds.has(tid)) || tid === "custom",
+        `${game.title}: templateId "${tid ?? ""}" not in GAME_TEMPLATES`,
       ).toBe(true);
     }
   });

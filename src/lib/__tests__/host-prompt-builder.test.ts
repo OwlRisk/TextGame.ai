@@ -123,7 +123,7 @@ describe("buildHostSystemPrompt", () => {
       const opts = defaultOpts({ hasVotingPhase: true });
       const output = buildHostSystemPrompt(opts);
       expect(output).toContain("VOTING:");
-      expect(output).toContain("time to vote");
+      expect(output).toContain("List ALL eligible AI players");
     });
 
     it("when hasVotingPhase is false: does NOT include VOTING section", () => {
@@ -137,14 +137,14 @@ describe("buildHostSystemPrompt", () => {
     it("when hasNightPhase is true: includes NIGHT section", () => {
       const opts = defaultOpts({ hasNightPhase: true });
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("NIGHT PHASE RULES:");
+      expect(output).toContain("NIGHT:");
       expect(output).toContain("night-action roles");
     });
 
     it("when hasNightPhase is false: does NOT include NIGHT section", () => {
       const opts = defaultOpts({ hasNightPhase: false });
       const output = buildHostSystemPrompt(opts);
-      expect(output).not.toContain("NIGHT PHASE RULES:");
+      expect(output).not.toContain("NIGHT: Announce once");
     });
   });
 
@@ -243,10 +243,12 @@ describe("buildHostSystemPrompt", () => {
       expect(output).toContain("**SILENT TURNS");
     });
 
-    it("contains DIRECTIVES REFERENCE", () => {
+    it("contains DIRECTIVES section heading", () => {
       const opts = defaultOpts();
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("## DIRECTIVES REFERENCE");
+      expect(output).toContain(
+        '## DIRECTIVES (after "---", hidden from players)',
+      );
     });
 
     it("contains HOST VOICE section", () => {
@@ -255,14 +257,12 @@ describe("buildHostSystemPrompt", () => {
       expect(output).toContain("## HOST VOICE");
     });
 
-    it("contains example patterns (Example A, B, C, D, E)", () => {
+    it("contains example patterns (Example A, B, C)", () => {
       const opts = defaultOpts();
       const output = buildHostSystemPrompt(opts);
       expect(output).toContain("Example A");
       expect(output).toContain("Example B");
       expect(output).toContain("Example C");
-      expect(output).toContain("Example D");
-      expect(output).toContain("Example E");
     });
   });
 
@@ -305,7 +305,9 @@ describe("buildHostSystemPrompt", () => {
     it("handles empty non-host player list", () => {
       const opts = defaultOpts({ nonHostPlayerNames: [] });
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("Player names (use exactly as written):");
+      expect(output).toContain(
+        'Players: . Use "Everyone" for open discussion, "Alex" for human\'s turn.',
+      );
     });
   });
 });

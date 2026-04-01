@@ -4,16 +4,16 @@ import { buildSystemPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '../player-spe
 // ─── Constants ────────────────────────────────────────────────────────────
 
 describe('PLAYER_SPEAK_HARD_LIMIT_TOKENS', () => {
-  it('is 180 tokens', () => {
-    expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBe(180);
+  it('is 220 tokens', () => {
+    expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBe(220);
   });
 });
 
 describe('pacing rules in prompt output', () => {
   it('werewolf prompt enforces sentence limits', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'G');
-    expect(prompt).toMatch(/2 sentences max/i);
-    expect(prompt).toMatch(/1 preferred/i);
+    expect(prompt).toMatch(/3 sentences max/i);
+    expect(prompt).toMatch(/2 preferred/i);
     expect(prompt).toMatch(/No speeches/i);
   });
 
@@ -60,15 +60,20 @@ describe('buildSystemPrompt – shared guarantees', () => {
 // ─── buildSystemPrompt: template-specific content ─────────────────────────
 
 describe('buildSystemPrompt – werewolf / mafia', () => {
-  it('werewolf prompt includes social deduction language', () => {
+  it('werewolf prompt includes deduction-style accusation play', () => {
     const prompt = buildSystemPrompt('Bob', 'werewolf', 'Werewolf Night');
-    expect(prompt).toMatch(/social deduction/i);
+    expect(prompt).toMatch(/Werewolf/i);
+    expect(prompt).toMatch(/accusation/i);
   });
 
-  it('mafia prompt shares the same branch as werewolf', () => {
+  it('mafia prompt shares the same HOW TO PLAY structure as werewolf (distinct game names)', () => {
     const wPrompt = buildSystemPrompt('Bob', 'werewolf', 'G');
     const mPrompt = buildSystemPrompt('Bob', 'mafia', 'G');
-    expect(wPrompt).toBe(mPrompt);
+    expect(wPrompt).toContain('One concrete accusation, defense, or observation per turn');
+    expect(mPrompt).toContain('One concrete accusation, defense, or observation per turn');
+    expect(wPrompt).toContain('playing Werewolf');
+    expect(mPrompt).toContain('playing Mafia');
+    expect(wPrompt).not.toBe(mPrompt);
   });
 
   it('prompt includes instructions to give a concrete accusation or defense', () => {
@@ -85,7 +90,8 @@ describe('buildSystemPrompt – undercover', () => {
 
   it('instructs not to say the word outright', () => {
     const prompt = buildSystemPrompt('Eve', 'undercover', 'Word Game');
-    expect(prompt).toMatch(/don't say it outright/i);
+    expect(prompt).toMatch(/Describe your word indirectly/i);
+    expect(prompt).toMatch(/not give it away/i);
   });
 });
 
@@ -98,7 +104,7 @@ describe('buildSystemPrompt – tarot', () => {
 
   it('discourages game-theory talk', () => {
     const prompt = buildSystemPrompt('Maya', 'tarot', 'Tarot Circle');
-    expect(prompt).toMatch(/no game-theory/i);
+    expect(prompt).toMatch(/No meta-commentary about game procedure/i);
   });
 });
 
@@ -108,20 +114,20 @@ describe('buildSystemPrompt – trivia / quiz', () => {
     expect(prompt).toMatch(/pub quiz/i);
   });
 
-  it('quiz and trivia use the same template branch (same HOW TO PLAY)', () => {
+  it('trivia uses registered template; unknown "quiz" id falls back to generic HOW TO PLAY', () => {
     const tPrompt = buildSystemPrompt('Sam', 'trivia', 'G');
     const qPrompt = buildSystemPrompt('Sam', 'quiz', 'G');
     expect(tPrompt).toContain('pub quiz');
-    expect(qPrompt).toContain('pub quiz');
-    expect(tPrompt).toContain('Gut reaction');
-    expect(qPrompt).toContain('Gut reaction');
+    expect(qPrompt).not.toContain('pub quiz');
+    expect(qPrompt).toMatch(/game table with opinions and stakes/i);
+    expect(tPrompt).toMatch(/competitive pub quiz/i);
   });
 });
 
 describe('buildSystemPrompt – roleplay / adventure', () => {
   it('roleplay prompt asks to stay in character', () => {
     const prompt = buildSystemPrompt('Zara', 'roleplay', 'Fantasy Quest');
-    expect(prompt).toMatch(/stay in character/i);
+    expect(prompt).toMatch(/never break character/i);
   });
 
   it('adventure and roleplay share the same prompt branch', () => {
@@ -160,6 +166,6 @@ describe('buildSystemPrompt – pacing enforcement', () => {
 
   it('enforces sentence limits in all templates', () => {
     const prompt = buildSystemPrompt('Alice', 'mafia', 'Game');
-    expect(prompt).toMatch(/2 sentences max/i);
+    expect(prompt).toMatch(/3 sentences max/i);
   });
 });

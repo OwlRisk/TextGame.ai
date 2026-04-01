@@ -18,9 +18,9 @@ describe("env", () => {
     expect(env.OPENAI_API_KEY).toBeUndefined();
   });
 
-  it("returns OPENAI_CHAT_MODEL from env or default gpt-5.2", () => {
+  it("returns OPENAI_CHAT_MODEL from env or default gpt-5.3-chat-latest", () => {
     delete process.env.OPENAI_CHAT_MODEL;
-    expect(env.OPENAI_CHAT_MODEL).toBe("gpt-5.2");
+    expect(env.OPENAI_CHAT_MODEL).toBe("gpt-5.3-chat-latest");
 
     process.env.OPENAI_CHAT_MODEL = "gpt-4o";
     expect(env.OPENAI_CHAT_MODEL).toBe("gpt-4o");

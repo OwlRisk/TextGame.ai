@@ -24,6 +24,7 @@ import {
   ttsCostToCoins,
 } from '../tokens';
 import { DEFAULT_AI_MODEL, getPreferredModel, sanitizeModel } from '../model-prefs';
+import { getGameTemplate } from '../game-templates';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -189,34 +190,36 @@ describe('Usage content — no Pro badge in Available section', () => {
 
 describe('Sidebar — static template icons', () => {
   const sidebarPath = path.resolve(__dirname, '../../app/components/game-sidebar.tsx');
-  const content = fs.readFileSync(sidebarPath, 'utf-8');
+  const typesPath = path.resolve(__dirname, '../templates/types.ts');
+  const sidebarContent = fs.readFileSync(sidebarPath, 'utf-8');
+  const typesContent = fs.readFileSync(typesPath, 'utf-8');
 
   it('does not contain handleGenerateIcon function', () => {
-    expect(content).not.toContain('handleGenerateIcon');
+    expect(sidebarContent).not.toContain('handleGenerateIcon');
   });
 
   it('does not call generate-game-icon API', () => {
-    expect(content).not.toContain('generate-game-icon');
+    expect(sidebarContent).not.toContain('generate-game-icon');
   });
 
   it('does not contain Regenerate Icon menu item', () => {
-    expect(content).not.toContain('Regenerate Icon');
+    expect(sidebarContent).not.toContain('Regenerate Icon');
   });
 
   it('does not import RefreshCw icon', () => {
-    expect(content).not.toContain('RefreshCw');
+    expect(sidebarContent).not.toContain('RefreshCw');
   });
 
   it('does not contain iconGeneratingId state', () => {
-    expect(content).not.toContain('iconGeneratingId');
+    expect(sidebarContent).not.toContain('iconGeneratingId');
   });
 
-  it('has TEMPLATE_ICONS mapping', () => {
-    expect(content).toContain('TEMPLATE_ICONS');
+  it('has ICON_URLS mapping in template types', () => {
+    expect(typesContent).toContain('ICON_URLS');
   });
 
   it('has getGameIcon helper function', () => {
-    expect(content).toContain('getGameIcon');
+    expect(sidebarContent).toContain('getGameIcon');
   });
 
   const EXPECTED_TEMPLATES = [
@@ -225,8 +228,11 @@ describe('Sidebar — static template icons', () => {
   ];
 
   for (const template of EXPECTED_TEMPLATES) {
-    it(`has sidebar icon mapping for "${template}"`, () => {
-      expect(content).toContain(`sidebar-icon-${template}`);
+    it(`has static iconUrl for template "${template}" (getGameTemplate)`, () => {
+      const t = getGameTemplate(template);
+      expect(t, `missing template: ${template}`).toBeDefined();
+      expect(t!.iconUrl).toMatch(/^\/games\//);
+      expect(t!.iconUrl).toContain(`sidebar-icon-${template}`);
     });
   }
 });

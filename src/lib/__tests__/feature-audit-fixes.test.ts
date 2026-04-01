@@ -394,11 +394,11 @@ describe("Template channel compatibility — all templates", () => {
     }
   });
 
-  it("only werewolf and mafia define channels", () => {
+  it("only werewolf, mafia, and rpg-dungeon define channels", () => {
     const templatesWithChannels = GAME_TEMPLATES.filter(
       t => t.channels && t.channels.length > 0
     ).map(t => t.id);
-    expect(templatesWithChannels.sort()).toEqual(["mafia", "werewolf"]);
+    expect(templatesWithChannels.sort()).toEqual(["mafia", "rpg-dungeon", "werewolf"]);
   });
 
   it("all templates with channels have a public channel as first entry", () => {

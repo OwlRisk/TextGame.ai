@@ -148,13 +148,14 @@ describe("Discover page data integrity", () => {
     }
   });
 
-  it("rules contain OBJECTIVE or WIN CONDITIONS or GAMEPLAY section", () => {
+  it("rules contain OBJECTIVE or WIN CONDITIONS or GAMEPLAY or GOAL section", () => {
     for (const t of ALL_PRESETS) {
       const hasStructure =
         /OBJECTIVE/i.test(t.rules) ||
         /WIN CONDITIONS/i.test(t.rules) ||
         /GAMEPLAY/i.test(t.rules) ||
-        /SESSION FLOW/i.test(t.rules);
+        /SESSION FLOW/i.test(t.rules) ||
+        /\bGOAL:/i.test(t.rules);
       expect(hasStructure, `${t.id} rules lack structure headings`).toBe(true);
     }
   });

@@ -29,41 +29,51 @@ describe("buildSystemPrompt — all templates", () => {
     });
   }
 
-  it("werewolf prompt contains social deduction guidance", () => {
+  it("werewolf prompt contains accusation-focused deduction pacing", () => {
     const prompt = buildSystemPrompt("Alice", "werewolf", "Werewolf");
-    expect(prompt).toContain("social deduction");
+    expect(prompt).toContain("Werewolf");
     expect(prompt).toContain("accusation");
+    expect(prompt).toMatch(/Strategy discussion and accusations ARE the game/i);
   });
 
-  it("mafia prompt is identical to werewolf (same case branch)", () => {
+  it("mafia and werewolf share the same HOW TO PLAY bullets (distinct template text)", () => {
     const ww = buildSystemPrompt("Alice", "werewolf", "Game");
     const mf = buildSystemPrompt("Alice", "mafia", "Game");
-    expect(ww).toBe(mf);
+    const sharedHowTo =
+      "One concrete accusation, defense, or observation per turn. NAME who and WHY.";
+    expect(ww).toContain(sharedHowTo);
+    expect(mf).toContain(sharedHowTo);
+    expect(ww).toContain("playing Werewolf");
+    expect(mf).toContain("playing Mafia");
+    expect(ww).not.toBe(mf);
   });
 
-  it("undercover prompt mentions word-guessing", () => {
+  it("undercover prompt mentions word description / secret word", () => {
     const prompt = buildSystemPrompt("Bob", "undercover", "UC Game");
-    expect(prompt).toContain("word-guessing");
+    expect(prompt).toContain("word description game");
+    expect(prompt).toContain("secret word");
   });
 
   it("tarot prompt is reflective, not accusatory", () => {
     const prompt = buildSystemPrompt("Iris", "tarot", "Mystic");
     expect(prompt).toContain("reflective");
-    expect(prompt).toContain("No game-theory");
+    expect(prompt).toContain("No meta-commentary about game procedure");
+    expect(prompt).not.toMatch(/concrete accusation/i);
   });
 
   it("trivia/quiz prompts mention pub quiz energy", () => {
     const t = buildSystemPrompt("Sam", "trivia", "Quiz Night");
     const q = buildSystemPrompt("Sam", "quiz", "Quiz Night");
     expect(t).toContain("pub quiz");
-    expect(q).toContain("pub quiz");
+    expect(q).not.toContain("pub quiz");
+    expect(q).toMatch(/game table with opinions and stakes/i);
   });
 
   it("roleplay/adventure prompts emphasize staying in character", () => {
     const r = buildSystemPrompt("Hero", "roleplay", "Epic");
     const a = buildSystemPrompt("Hero", "adventure", "Epic");
-    expect(r).toContain("Stay in character");
-    expect(a).toContain("Stay in character");
+    expect(r).toMatch(/never break character/i);
+    expect(a).toMatch(/never break character/i);
   });
 
   it("default prompt is generic and flexible", () => {
@@ -81,7 +91,7 @@ describe("player-speak constants", () => {
 
   it("prompts contain sentence limits", () => {
     const prompt = buildSystemPrompt("Test", "werewolf", "G");
-    expect(prompt).toContain("2 sentences max");
+    expect(prompt).toContain("3 sentences max");
   });
 
   it("deduction prompts contain [MY_NOTES] section", () => {

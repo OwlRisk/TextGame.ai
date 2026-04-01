@@ -165,11 +165,12 @@ describe('avatar style resolution (pool API)', () => {
 // ─── Section 4: VALID_STYLES contract ────────────────────────────────────────
 
 describe('VALID_STYLES (imported from avatar-style-constants)', () => {
-  it('contains exactly 2 style packs', () => {
-    expect(VALID_STYLES).toHaveLength(2);
+  it('contains exactly 3 style packs', () => {
+    expect(VALID_STYLES).toHaveLength(3);
   });
 
   it('includes all expected style names', () => {
+    expect(VALID_STYLES).toContain('valorant');
     expect(VALID_STYLES).toContain('semi-realistic');
     expect(VALID_STYLES).toContain('toon3d');
   });

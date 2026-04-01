@@ -237,7 +237,7 @@ describe("streamAIChatResponse", () => {
 
     await expect(
       streamAIChatResponse(BASE_REQUEST, () => {}, undefined, undefined, 1)
-    ).rejects.toThrow("No response body");
+    ).rejects.toThrow("Response body is not readable");
   });
 
   it("handles json parse failure in error response, falls back to text", async () => {

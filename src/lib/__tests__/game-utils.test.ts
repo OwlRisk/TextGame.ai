@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { getDefaultAICountForTemplate, AI_COLORS } from '../game-utils';
 
 describe('getDefaultAICountForTemplate', () => {
-  it('returns recommendedAICount from template', () => {
-    expect(getDefaultAICountForTemplate('werewolf')).toBe(5);
-    expect(getDefaultAICountForTemplate('undercover')).toBe(5);
-    expect(getDefaultAICountForTemplate('mafia')).toBe(7);
+  it('returns maxPlayers minus one when maxPlayers > 1, else recommendedAICount', () => {
+    expect(getDefaultAICountForTemplate('werewolf')).toBe(11);
+    expect(getDefaultAICountForTemplate('undercover')).toBe(9);
+    expect(getDefaultAICountForTemplate('mafia')).toBe(14);
     expect(getDefaultAICountForTemplate('tarot')).toBe(0);
   });
   it('returns 4 for unknown or undefined template', () => {

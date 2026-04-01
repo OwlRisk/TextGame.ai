@@ -39,7 +39,7 @@ function defaultOpts(overrides: Partial<HostPromptOpts> = {}): HostPromptOpts {
   };
 }
 
-function aiPlayer(id: string, name: string, opts?: { role?: string; stats?: Record<string, unknown> }): Player {
+function aiPlayer(id: string, name: string, opts?: { role?: string; stats?: Record<string, string | number> }): Player {
   return { id, name, avatar: "#8b5cf6", isAI: true, isGameMaster: false, role: opts?.role, stats: opts?.stats };
 }
 
@@ -74,12 +74,12 @@ describe("C1: [BOARD:_Host_] host secret storage", () => {
     expect(output).not.toMatch(/\[BOARD:.*"You"\]/);
   });
 
-  it("template mechanics use _Host_ for secret storage", () => {
+  it("template mechanics avoid You board; undercover uses per-player BOARD tags", () => {
     for (const tmpl of ["20-questions", "undercover", "spyfall", "detective-mystery"]) {
       const mechanics = buildTemplateMechanics(tmpl);
-      expect(mechanics).toContain("[BOARD:_Host_]");
       expect(mechanics).not.toContain("[BOARD:You]");
     }
+    expect(buildTemplateMechanics("undercover")).toContain("[BOARD:PlayerName]");
   });
 });
 
@@ -125,16 +125,16 @@ describe("D6: no image tags in host prompt", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("D7: narrative templates have longer host voice", () => {
-  it("tarot HOST VOICE section uses 2-3 sentences instead of strict one-sentence rule", () => {
+  it("tarot HOST VOICE section allows multiple sentences (hostVoice.maxSentences)", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "tarot" }));
-    expect(output).toContain("2–3 sentences when describing scenes");
-    expect(output).not.toContain("ONE sentence max. No exceptions");
+    expect(output).toContain("4 sentences for scenes, reveals, and transitions");
+    expect(output).not.toContain("ONE sentence max.");
   });
 
-  it("werewolf HOST VOICE section still uses strict one-sentence rule", () => {
+  it("werewolf HOST VOICE section uses up to two sentences (hostVoice.maxSentences)", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "werewolf" }));
-    expect(output).toContain("ONE sentence max. No exceptions");
-    expect(output).not.toContain("2–3 sentences");
+    expect(output).toContain("2 sentences for scenes, reveals, and transitions");
+    expect(output).not.toContain("ONE sentence max.");
   });
 });
 
@@ -143,15 +143,15 @@ describe("D7: narrative templates have longer host voice", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("D8: per-template token/sentence limits", () => {
-  it("default limit is 180 tokens", () => {
+  it("default limit matches PLAYER_SPEAK_HARD_LIMIT_TOKENS; deduction games use category default", () => {
     expect(getPlayerTokenLimit()).toBe(PLAYER_SPEAK_HARD_LIMIT_TOKENS);
-    expect(getPlayerTokenLimit("werewolf")).toBe(180);
-    expect(getPlayerTokenLimit("mafia")).toBe(180);
+    expect(getPlayerTokenLimit("werewolf")).toBe(220);
+    expect(getPlayerTokenLimit("mafia")).toBe(220);
   });
 
-  it("narrative templates get higher token limits", () => {
+  it("narrative templates get higher token limits where configured", () => {
     expect(getPlayerTokenLimit("tarot")).toBe(300);
-    expect(getPlayerTokenLimit("detective-mystery")).toBe(300);
+    expect(getPlayerTokenLimit("detective-mystery")).toBe(220);
     expect(getPlayerTokenLimit("storyteller")).toBe(300);
     expect(getPlayerTokenLimit("escape-room")).toBe(300);
   });
@@ -161,7 +161,7 @@ describe("D8: per-template token/sentence limits", () => {
   });
 
   it("sentence limits scale by template", () => {
-    expect(getPlayerSentenceLimit("werewolf")).toEqual({ max: 2, preferred: 1 });
+    expect(getPlayerSentenceLimit("werewolf")).toEqual({ max: 3, preferred: 2 });
     expect(getPlayerSentenceLimit("tarot")).toEqual({ max: 4, preferred: 2 });
     expect(getPlayerSentenceLimit("debate")).toEqual({ max: 3, preferred: 2 });
   });
@@ -224,9 +224,9 @@ describe("D12: Avalon mechanics correctness", () => {
     expect(mechanics).not.toContain("Morgana");
   });
 
-  it("stores role assignments in _Host_ board", () => {
+  it("stores role assignments via setup directives (assign secretly at start)", () => {
     const mechanics = buildTemplateMechanics("avalon");
-    expect(mechanics).toContain("[BOARD:_Host_]");
+    expect(mechanics).toContain("Assign roles secretly");
   });
 });
 
@@ -379,12 +379,12 @@ describe("all game templates have mechanics", () => {
 describe("round-table speaker control in host prompt", () => {
   it("werewolf prompt instructs listing ALL players", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "werewolf" }));
-    expect(output).toContain("list ALL living players in NEXT_SPEAKER");
+    expect(output).toContain("Discussion phases: list ALL living players.");
   });
 
-  it("escape-room prompt uses standard 2-3 speakers", () => {
+  it("escape-room prompt uses selective speaker control (1–2 AI speakers)", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "escape-room" }));
-    expect(output).toContain("2–3 AI speakers");
+    expect(output).toContain("List 1–2 AI speakers per turn.");
   });
 });
 
