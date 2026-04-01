@@ -64,52 +64,53 @@ test.describe("Blog", () => {
 
 // ─── Subscription ────────────────────────────────────────────────────────────
 
-test.describe("Subscription page", () => {
-  test("loads and shows pricing plans for unauthenticated users", async ({ page }) => {
-    await page.goto("/subscription");
+test.describe("Recharge page (credit packages)", () => {
+  test("loads and shows credit packages for unauthenticated users", async ({ page }) => {
+    await page.goto("/recharge");
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(3000);
 
     const redirected = page.url().includes("/signin");
-    // Should show "Choose your plan" or plan cards (client-side rendered — wait longer)
-    const hasPlans = await page
-      .locator("text=/choose your plan|\\$20|\\$60|\\$200|Pro|Plus|Ultra/i")
+    const hasPackages = await page
+      .locator("text=/buy credits|\\$5|\\$10|\\$25|\\$50|Most popular/i")
       .first()
       .isVisible({ timeout: 10000 })
       .catch(() => false);
-    expect(redirected || hasPlans).toBe(true);
+    expect(redirected || hasPackages).toBe(true);
   });
 
-  test("displays all three paid tiers", async ({ page }) => {
-    await page.goto("/subscription");
+  test("displays all four credit packages", async ({ page }) => {
+    await page.goto("/recharge");
     await page.waitForLoadState("domcontentloaded");
 
-    for (const tier of ["Pro", "Plus", "Ultra"]) {
-      const tierEl = page.locator(`text=${tier}`).first();
-      await expect(tierEl).toBeVisible({ timeout: 8000 });
+    for (const pkg of ["Try it out", "Most popular", "Power user", "Go all in"]) {
+      const pkgEl = page.locator(`text=${pkg}`).first();
+      await expect(pkgEl).toBeVisible({ timeout: 8000 });
     }
   });
 
-  test("shows correct pricing for each tier", async ({ page }) => {
-    await page.goto("/subscription");
+  test("shows correct pricing for each package", async ({ page }) => {
+    await page.goto("/recharge");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("text=$20").first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator("text=$60").first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator("text=$200").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=$5").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=$10").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=$25").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=$50").first()).toBeVisible({ timeout: 8000 });
   });
 
-  test("shows credit amounts for each tier", async ({ page }) => {
-    await page.goto("/subscription");
+  test("shows credit amounts for each package", async ({ page }) => {
+    await page.goto("/recharge");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("text=/2,000.*credits/i").first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator("text=/6,000.*credits/i").first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator("text=/40,000.*credits/i").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=/500/").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=/1,200/").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=/3,250/").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=/7,000/").first()).toBeVisible({ timeout: 8000 });
   });
 
   test("has a back button", async ({ page }) => {
-    await page.goto("/subscription");
+    await page.goto("/recharge");
     await page.waitForLoadState("domcontentloaded");
 
     const backBtn = page.locator("text=/Back/i").first();
