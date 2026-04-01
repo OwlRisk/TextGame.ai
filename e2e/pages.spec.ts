@@ -72,7 +72,9 @@ test.describe("Recharge page (credit packages)", () => {
 
     const redirected = page.url().includes("/signin");
     const hasPackages = await page
-      .locator("text=/buy credits|\\$5|\\$10|\\$25|\\$50|Most popular/i")
+      .locator("text=Buy credits")
+      .or(page.locator("text=Most popular"))
+      .or(page.locator("text=Pay as you go"))
       .first()
       .isVisible({ timeout: 10000 })
       .catch(() => false);
