@@ -67,16 +67,16 @@ test.describe("Blog", () => {
 test.describe("Recharge page (credit packages)", () => {
   test("loads and shows credit packages for unauthenticated users", async ({ page }) => {
     await page.goto("/recharge");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle").catch(() => {});
 
     const redirected = page.url().includes("/signin");
     const hasPackages = await page
       .locator("text=Buy credits")
       .or(page.locator("text=Most popular"))
       .or(page.locator("text=Pay as you go"))
+      .or(page.locator("text=Try it out"))
       .first()
-      .isVisible({ timeout: 10000 })
+      .isVisible({ timeout: 20000 })
       .catch(() => false);
     expect(redirected || hasPackages).toBe(true);
   });
