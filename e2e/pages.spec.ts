@@ -66,19 +66,13 @@ test.describe("Blog", () => {
 
 test.describe("Recharge page (credit packages)", () => {
   test("loads and shows credit packages for unauthenticated users", async ({ page }) => {
-    await page.goto("/recharge");
-    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.goto("/recharge", { waitUntil: "domcontentloaded" });
 
-    const redirected = page.url().includes("/signin");
-    const hasPackages = await page
-      .locator("text=Buy credits")
-      .or(page.locator("text=Most popular"))
-      .or(page.locator("text=Pay as you go"))
-      .or(page.locator("text=Try it out"))
-      .first()
-      .isVisible({ timeout: 20000 })
-      .catch(() => false);
-    expect(redirected || hasPackages).toBe(true);
+    if (page.url().includes("/signin")) return;
+
+    await expect(
+      page.getByRole("heading", { name: /buy credits/i })
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("displays all four credit packages", async ({ page }) => {

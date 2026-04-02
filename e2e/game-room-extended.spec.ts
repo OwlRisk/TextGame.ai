@@ -246,7 +246,7 @@ test.describe("Accessibility – ARIA & Semantics", () => {
   });
 
   test("homepage has main landmark", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     const mainContent = page.locator("main, [role='main'], #main-content");
     const hasMain = await mainContent.first().isVisible({ timeout: 5000 }).catch(() => false);
     expect(hasMain).toBe(true);
@@ -306,16 +306,16 @@ test.describe("SEO – Extended Meta Tags", () => {
   });
 
   test("homepage has og:image", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
     expect(ogImage).toBeTruthy();
   });
 
   test("discover page has unique title different from homepage", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     const homeTitle = await page.title();
 
-    await page.goto("/discover");
+    await page.goto("/discover", { waitUntil: "domcontentloaded" });
     const discoverTitle = await page.title();
 
     expect(discoverTitle).not.toBe(homeTitle);
@@ -334,10 +334,10 @@ test.describe("SEO – Extended Meta Tags", () => {
   });
 
   test("pages do not have duplicate meta descriptions", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     const homeDesc = await page.locator('meta[name="description"]').getAttribute("content");
 
-    await page.goto("/discover");
+    await page.goto("/discover", { waitUntil: "domcontentloaded" });
     const discoverDesc = await page.locator('meta[name="description"]').getAttribute("content");
 
     expect(homeDesc).not.toBe(discoverDesc);

@@ -91,7 +91,7 @@ test.describe("Accessibility - Keyboard Navigation", () => {
   });
 
   test("skip navigation link works", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.keyboard.press("Tab");
     const skipLink = page.locator('a[href="#main-content"]');
 
