@@ -84,7 +84,7 @@ function GameCard({
           className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-lg overflow-hidden flex-shrink-0"
           style={{ background: game.color }}
         >
-          {game.icon.startsWith("data:image") || game.icon.startsWith("http") ? (
+          {game.icon.startsWith("data:image") || game.icon.startsWith("http") || game.icon.startsWith("/") ? (
             <img src={game.icon} alt={game.name} className="w-full h-full object-cover" />
           ) : (
             game.icon

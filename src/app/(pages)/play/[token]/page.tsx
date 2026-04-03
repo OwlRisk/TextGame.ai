@@ -99,7 +99,7 @@ export default function PlayTokenPage({ params }: { params: Promise<{ token: str
               className="h-14 w-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/10"
               style={{ backgroundColor: game.color || "#6366f1" }}
             >
-              {game.icon?.startsWith("data:image") ? (
+              {game.icon?.startsWith("data:image") || game.icon?.startsWith("http") || game.icon?.startsWith("/") ? (
                 <img src={game.icon} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-3xl">{game.icon || "🎮"}</span>
