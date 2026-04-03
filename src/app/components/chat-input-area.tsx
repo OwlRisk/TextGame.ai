@@ -8,6 +8,7 @@ import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import type { Player } from "@/types/player";
 import type { GameAction } from "@/hooks/useGameActions";
+import { InterrogationBudget } from "@/app/components/interrogation-budget";
 
 export interface ChatInputAreaProps {
   channelName: string;
@@ -31,6 +32,12 @@ export interface ChatInputAreaProps {
   onVote?: (choice: string) => void | Promise<void>;
   alivePlayers: Player[];
   gameActions?: GameAction[];
+  /** Game template ID — used to show script-kill specific UI */
+  gameTemplate?: string;
+  /** Current phase label from game state */
+  phaseLabel?: string;
+  /** Content from [SECTION:Investigation Status] for budget tracking */
+  investigationSectionContent?: string;
 }
 
 const MIN_INPUT_HEIGHT = 40;
@@ -57,6 +64,9 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   onVote,
   alivePlayers,
   gameActions = [],
+  gameTemplate,
+  phaseLabel = "",
+  investigationSectionContent,
 }: ChatInputAreaProps) {
   const [input, setInput] = useState("");
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
@@ -184,6 +194,9 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           <span className="text-lg">👻</span>
           <span className="text-sm font-medium">Ghost chat — only eliminated players can see this</span>
         </div>
+      )}
+      {gameTemplate === "script-kill" && phaseLabel && isGameActive && !isEliminated && (
+        <InterrogationBudget phaseLabel={phaseLabel} sectionContent={investigationSectionContent} />
       )}
       {activeVote && onVote && !isEliminated && (
         <div className="mb-3 rounded-xl border border-violet-500/30 bg-violet-950/30 px-4 py-3 backdrop-blur-sm">

@@ -433,7 +433,59 @@ CLUE TYPES:
 WIN CONDITIONS:
 - Detectives win: At least one correct full accusation (all three elements must match).
 - Culprit wins: No detective correctly names all three elements.`,
-  },];
+  },
+  {
+    id: "script-kill-moonlight",
+    name: "Script Kill: Moonlight Inn",
+    description: "A remote inn, a stormy night, and a murder. Three suspects, limited questions. Can you crack the case?",
+    icon: "🕵️",
+    cover: "/games/game-cover-script-kill-moonlight.webp",
+    category: "Mystery",
+    tags: ["Script Kill", "Investigation", "Quick"],
+    players: "1+3 AI",
+    duration: "10 min",
+    style: "Strategic",
+    color: "from-rose-700 to-red-900",
+    badge: "New",
+    templateId: "script-kill",
+    playerCount: 4,
+    rules: `CASE: The Moonlight Inn Murder. Use the pre-written case "moonlight-inn" from the case library. Follow the Script Kill mechanics exactly.`,
+  },
+  {
+    id: "script-kill-gallery",
+    name: "Script Kill: Silk Gallery",
+    description: "A poisoned art collector at a gallery opening. Four suspects with intertwined motives. Medium difficulty.",
+    icon: "🕵️",
+    cover: "/games/game-cover-script-kill-gallery.webp",
+    category: "Mystery",
+    tags: ["Script Kill", "Investigation", "Medium"],
+    players: "1+4 AI",
+    duration: "15 min",
+    style: "Strategic",
+    color: "from-rose-700 to-red-900",
+    badge: "New",
+    templateId: "script-kill",
+    playerCount: 5,
+    rules: `CASE: Death at the Silk Gallery. Use the pre-written case "silk-gallery" from the case library. Follow the Script Kill mechanics exactly.`,
+  },
+  {
+    id: "script-kill-express",
+    name: "Script Kill: Midnight Express",
+    description: "A strangled professor on a luxury train with nowhere to hide. Five suspects, seven pieces of evidence. Hard mode.",
+    icon: "🕵️",
+    cover: "/games/game-cover-script-kill-express.webp",
+    category: "Mystery",
+    tags: ["Script Kill", "Investigation", "Hard"],
+    players: "1+5 AI",
+    duration: "20 min",
+    style: "Strategic",
+    color: "from-rose-700 to-red-900",
+    badge: "New",
+    templateId: "script-kill",
+    playerCount: 6,
+    rules: `CASE: Murder on the Midnight Express. Use the pre-written case "midnight-express" from the case library. Follow the Script Kill mechanics exactly.`,
+  },
+];
 
 // ── Roleplay Games ──────────────────────────────────────────────────────────
 
@@ -693,12 +745,16 @@ export const EXTRA_GAMES: GameTemplate[] = [];
 
 // ── Aggregated & Derived ────────────────────────────────────────────────────
 
+const SCRIPT_KILL_PRESETS = MYSTERY_GAMES.filter(g => g.templateId === "script-kill");
+const OTHER_MYSTERY = MYSTERY_GAMES.filter(g => g.templateId !== "script-kill");
+
 export const ALL_PRESETS: GameTemplate[] = [
+  ...SCRIPT_KILL_PRESETS,
   FEATURED_TEMPLATE,
   ...CORE_TEMPLATES,
   ...SOCIAL_DEDUCTION,
   ...PARTY_GAMES,
-  ...MYSTERY_GAMES,
+  ...OTHER_MYSTERY,
   ...ROLEPLAY_GAMES,
   ...EDUCATIONAL_GAMES,
   ...EXTRA_GAMES,

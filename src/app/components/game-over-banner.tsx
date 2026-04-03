@@ -1,10 +1,55 @@
 "use client";
 
-import { BookOpen, Play, Heart, Trophy, Eye, Scroll, RotateCcw } from "lucide-react";
+import { BookOpen, Play, Heart, Trophy, Eye, Scroll, RotateCcw, Target, Search, Award } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import type { Player } from "@/types/player";
 import { isPlayerEliminated } from "@/lib/player-badges";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+
+interface ParsedCaseScore {
+  grade: string;
+  total: number;
+  correctCulprit: boolean;
+}
+
+function parseCaseScore(summary: string): ParsedCaseScore | null {
+  const gradeMatch = summary.match(/\b([SABCF])\s*(?:Grade|grade|GRADE)/i)
+    || summary.match(/(?:Grade|grade|GRADE)\s*[:\-—]\s*([SABCF])\b/i);
+  const totalMatch = summary.match(/(\d+)\s*(?:points?|pts?|\/\s*\d+)/i);
+  const culpritCorrect = /correct(?:ly)?[\s\w]*(?:culprit|killer|murderer)/i.test(summary)
+    || /(?:culprit|killer|murderer)[\s\w]*correct/i.test(summary)
+    || /identified the (?:culprit|killer|murderer)/i.test(summary);
+
+  if (!gradeMatch && !totalMatch) return null;
+
+  return {
+    grade: gradeMatch?.[1]?.toUpperCase() ?? "?",
+    total: totalMatch ? parseInt(totalMatch[1], 10) : 0,
+    correctCulprit: culpritCorrect,
+  };
+}
+
+function getGradeColorClass(grade: string) {
+  switch (grade) {
+    case "S": return "text-amber-400 border-amber-500/40 bg-amber-500/10";
+    case "A": return "text-emerald-400 border-emerald-500/40 bg-emerald-500/10";
+    case "B": return "text-blue-400 border-blue-500/40 bg-blue-500/10";
+    case "C": return "text-orange-400 border-orange-500/40 bg-orange-500/10";
+    case "F": return "text-red-400 border-red-500/40 bg-red-500/10";
+    default: return "text-zinc-400 border-zinc-500/40 bg-zinc-500/10";
+  }
+}
+
+function getGradeLabel(grade: string) {
+  switch (grade) {
+    case "S": return "Perfect Detective";
+    case "A": return "Sharp Investigator";
+    case "B": return "Decent Deduction";
+    case "C": return "Partial Success";
+    case "F": return "Case Cold";
+    default: return "Unknown";
+  }
+}
 
 interface GameOverBannerProps {
   gameOverSummary: string;
@@ -16,6 +61,7 @@ interface GameOverBannerProps {
   messageCount?: number;
   userId?: string;
   humanName?: string;
+  gameTemplate?: string;
 }
 
 export function GameOverBanner({
@@ -28,8 +74,13 @@ export function GameOverBanner({
   messageCount = 0,
   userId,
   humanName,
+  gameTemplate,
 }: GameOverBannerProps) {
   const [showRoles, setShowRoles] = useState(true);
+  const caseScore = useMemo(
+    () => (gameTemplate === "script-kill" ? parseCaseScore(gameOverSummary) : null),
+    [gameTemplate, gameOverSummary],
+  );
 
   const nonGMPlayers = players.filter((p) => !p.isGameMaster);
   const hasRoles = nonGMPlayers.some((p) => p.role);
@@ -43,15 +94,53 @@ export function GameOverBanner({
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 rounded-full bg-amber-500/20">
-          <Trophy className="h-6 w-6 text-amber-400" />
+          {gameTemplate === "script-kill" ? (
+            <Search className="h-6 w-6 text-amber-400" />
+          ) : (
+            <Trophy className="h-6 w-6 text-amber-400" />
+          )}
         </div>
         <div>
-          <h3 className="text-lg font-black text-amber-200 tracking-wide uppercase">Game Over</h3>
+          <h3 className="text-lg font-black text-amber-200 tracking-wide uppercase">
+            {gameTemplate === "script-kill" ? "Case Closed" : "Game Over"}
+          </h3>
           <p className="text-xs text-zinc-400 mt-0.5">
-            {survived ? "You survived!" : "You were eliminated."} · {messageCount} messages · {totalRounds} phase{totalRounds !== 1 ? "s" : ""}
+            {gameTemplate === "script-kill"
+              ? `${messageCount} messages · Investigation complete`
+              : `${survived ? "You survived!" : "You were eliminated."} · ${messageCount} messages · ${totalRounds} phase${totalRounds !== 1 ? "s" : ""}`
+            }
           </p>
         </div>
       </div>
+
+      {/* Case Score Card (script-kill only) */}
+      {caseScore && (
+        <div className="mb-4 rounded-xl border border-zinc-700/50 bg-zinc-800/40 overflow-hidden">
+          <div className="flex items-stretch">
+            <div className={`flex flex-col items-center justify-center px-5 py-3 border-r border-zinc-700/40 ${getGradeColorClass(caseScore.grade)}`}>
+              <span className="text-3xl font-black">{caseScore.grade}</span>
+              <span className="text-[10px] uppercase tracking-wider mt-0.5 opacity-80">{getGradeLabel(caseScore.grade)}</span>
+            </div>
+            <div className="flex-1 px-4 py-3 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Target className="h-3.5 w-3.5 text-zinc-500" />
+                <span className="text-sm text-zinc-300">
+                  Culprit: {caseScore.correctCulprit
+                    ? <span className="text-emerald-400 font-semibold">Correct</span>
+                    : <span className="text-red-400 font-semibold">Wrong</span>
+                  }
+                </span>
+              </div>
+              {caseScore.total > 0 && (
+                <div className="flex items-center gap-2">
+                  <Award className="h-3.5 w-3.5 text-zinc-500" />
+                  <span className="text-sm text-zinc-300">Score: <span className="font-semibold text-white">{caseScore.total}</span> pts</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
       <div className="rounded-xl bg-zinc-800/60 border border-zinc-700/40 px-4 py-3 mb-4">

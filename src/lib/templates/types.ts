@@ -199,6 +199,7 @@ const ICON_URLS: Record<string, string> = {
   avalon: "/games/sidebar-icon-avalon.webp",
   spyfall: "/games/sidebar-icon-spyfall.webp",
   "detective-mystery": "/games/sidebar-icon-detective.webp",
+  "script-kill": "/games/sidebar-icon-script-kill.webp",
   "escape-room": "/games/sidebar-icon-escape-room.webp",
   trivia: "/games/sidebar-icon-trivia.webp",
   debate: "/games/sidebar-icon-debate.webp",

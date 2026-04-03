@@ -241,6 +241,17 @@ export const FEATURES: Feature[] = [
 
 export const FEATURED_GAMES: FeaturedGame[] = [
   {
+    emoji: "🕵️",
+    title: "Script Kill: Moonlight Inn",
+    players: "Solo",
+    tags: ["Murder Mystery", "New"],
+    description: "A stormy night, a locked room, three suspects. You have 11 questions to solve the case.",
+    cover: "/games/game-cover-script-kill-moonlight.webp",
+    accent: "from-rose-500/20 to-red-500/10",
+    border: "hover:border-rose-500/50",
+    presetId: "script-kill-moonlight",
+  },
+  {
     emoji: "🐺",
     title: "Werewolf",
     players: "4+",

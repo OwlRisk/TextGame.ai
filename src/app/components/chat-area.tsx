@@ -123,6 +123,8 @@ interface ChatAreaProps {
   gameEvents?: string[];
   /** Human player display name */
   humanName?: string;
+  /** Game template ID — passed to sub-components for template-specific UI */
+  gameTemplate?: string;
 }
 
 export function ChatArea({ 
@@ -175,6 +177,7 @@ export function ChatArea({
   gameActions = [],
   gameEvents = [],
   humanName,
+  gameTemplate,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -397,6 +400,7 @@ export function ChatArea({
           messageCount={messages.length}
           userId={userId}
           humanName={humanName}
+          gameTemplate={gameTemplate}
         />
       )}
 

@@ -16,6 +16,7 @@ import { storyteller } from "./storyteller";
 import { twentyQuestions } from "./twenty-questions";
 import { twoTruthsLie } from "./two-truths-lie";
 import { rpgDungeon } from "./rpg-dungeon";
+import { scriptKill } from "./script-kill";
 import { custom } from "./custom";
 import type { GameTemplate } from "./types";
 
@@ -35,6 +36,7 @@ export const GAME_TEMPLATES: GameTemplate[] = [
   twentyQuestions,
   twoTruthsLie,
   rpgDungeon,
+  scriptKill,
   custom,
 ];
 
