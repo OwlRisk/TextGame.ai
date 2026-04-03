@@ -45,6 +45,8 @@ export interface GameConfig {
   configuredPlayers?: ConfiguredPlayer[];
   /** Role pre-assigned to the human player (for hidden-role games like Werewolf). */
   humanRole?: string;
+  /** Script Kill case identifier (e.g. "moonlight-inn") for loading structured case data. */
+  caseId?: string;
   generatedHost?: {
     name: string;
     personality: string;

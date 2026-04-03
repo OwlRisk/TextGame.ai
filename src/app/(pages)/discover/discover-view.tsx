@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getDefaultHostForTemplate } from "@/app/config/host-config";
 import { getPresetById } from "@/data/discover-templates";
+import { buildScriptKillGame } from "@/lib/script-kill-setup";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -60,30 +61,46 @@ export default function DiscoverView() {
       const gameIcon = tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
       const fallbackHost = getDefaultHostForTemplate(preset.templateId);
 
+      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id) : null;
+
+      let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
+      let humanRole: string | undefined;
+      let gameRules = preset.rules;
+      let caseId: string | undefined;
+
+      if (scriptKillSetup) {
+        configuredPlayers = scriptKillSetup.configuredPlayers;
+        humanRole = scriptKillSetup.humanRole;
+        gameRules = scriptKillSetup.rules;
+        caseId = scriptKillSetup.caseId;
+      }
+
       const [playersResult, hostResult] = await Promise.allSettled([
-        (async () => {
-          toast.loading("Setting up players...", { id: toastId });
-          const res = await fetch("/api/generate-players", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              playerCount: preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4,
-              gameTemplate: preset.templateId,
-              rules: preset.rules,
-              minPlayers: tmpl?.minPlayers ?? 2,
-              maxPlayers: tmpl?.maxPlayers ?? 20,
-            }),
-          });
-          if (!res.ok) throw new Error("Failed");
-          return res.json();
-        })(),
+        scriptKillSetup
+          ? Promise.resolve({ players: scriptKillSetup.configuredPlayers, humanRole: scriptKillSetup.humanRole })
+          : (async () => {
+              toast.loading("Setting up players...", { id: toastId });
+              const res = await fetch("/api/generate-players", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  playerCount: preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4,
+                  gameTemplate: preset.templateId,
+                  rules: preset.rules,
+                  minPlayers: tmpl?.minPlayers ?? 2,
+                  maxPlayers: tmpl?.maxPlayers ?? 20,
+                }),
+              });
+              if (!res.ok) throw new Error("Failed");
+              return res.json();
+            })(),
         (async () => {
           toast.loading("Generating host...", { id: toastId });
           const res = await fetch("/api/generate-host", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              gameRules: preset.rules,
+              gameRules: gameRules,
               gameName: preset.name,
             }),
           });
@@ -92,11 +109,11 @@ export default function DiscoverView() {
         })(),
       ]);
 
-      let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
-      let humanRole: string | undefined;
-      if (playersResult.status === "fulfilled" && playersResult.value?.players) {
-        configuredPlayers = playersResult.value.players;
-        if (playersResult.value.humanRole) humanRole = playersResult.value.humanRole;
+      if (!scriptKillSetup) {
+        if (playersResult.status === "fulfilled" && playersResult.value?.players) {
+          configuredPlayers = playersResult.value.players;
+          if (playersResult.value.humanRole) humanRole = playersResult.value.humanRole;
+        }
       }
 
       type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: 'male' | 'female' | 'other'; voice_id?: string };
@@ -127,11 +144,12 @@ export default function DiscoverView() {
           name: preset.name,
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || (preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4),
-          rules: preset.rules,
+          rules: gameRules,
           hostId: fallbackHost.id,
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
           humanRole,
+          ...(caseId && { caseId }),
           ...(tmpl?.channels && {
             channels: tmpl.channels.map(c => ({ id: c.id, name: c.name, roomType: c.roomType })),
           }),

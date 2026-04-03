@@ -12,6 +12,7 @@ import { trackEvent } from "@/lib/analytics";
 import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getDefaultHostForTemplate } from "@/app/config/host-config";
+import { buildScriptKillGame } from "@/lib/script-kill-setup";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -55,26 +56,38 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       trackEvent("template_selected", { template: preset.id, source: "landing" });
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
       const host = getDefaultHostForTemplate(preset.templateId);
+      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id) : null;
+
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;
-      try {
-        const res = await fetch("/api/generate-players", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            playerCount: preset.playerCount || tmpl?.recommendedAICount || 4,
-            gameTemplate: preset.templateId,
-            rules: preset.rules,
-            minPlayers: tmpl?.minPlayers ?? 2,
-            maxPlayers: tmpl?.maxPlayers ?? 20,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.players) configuredPlayers = data.players;
-          if (data.humanRole) humanRole = data.humanRole;
-        }
-      } catch {}
+      let gameRules = preset.rules;
+      let caseId: string | undefined;
+
+      if (scriptKillSetup) {
+        configuredPlayers = scriptKillSetup.configuredPlayers;
+        humanRole = scriptKillSetup.humanRole;
+        gameRules = scriptKillSetup.rules;
+        caseId = scriptKillSetup.caseId;
+      } else {
+        try {
+          const res = await fetch("/api/generate-players", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              playerCount: preset.playerCount || tmpl?.recommendedAICount || 4,
+              gameTemplate: preset.templateId,
+              rules: preset.rules,
+              minPlayers: tmpl?.minPlayers ?? 2,
+              maxPlayers: tmpl?.maxPlayers ?? 20,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.players) configuredPlayers = data.players;
+            if (data.humanRole) humanRole = data.humanRole;
+          }
+        } catch {}
+      }
       const newGame = {
         id: crypto.randomUUID(),
         name: preset.name,
@@ -84,11 +97,12 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
           name: preset.name,
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || preset.playerCount || tmpl?.recommendedAICount || 4,
-          rules: preset.rules,
+          rules: gameRules,
           hostId: host.id,
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
           humanRole,
+          ...(caseId && { caseId }),
           generatedHost: {
             name: host.name,
             personality: host.personality || host.description || "",

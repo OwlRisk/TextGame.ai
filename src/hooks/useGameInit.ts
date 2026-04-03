@@ -11,6 +11,8 @@ import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { trackEvent } from "@/lib/analytics";
 import { getGameTemplate, getTemplateHexColor, getAvatarStyleForTemplate, type GameTemplate } from "@/lib/game-templates";
+import { getMysteryCase } from "@/data/mystery-cases";
+import { buildSuspectPrompt, buildInitialEvidenceBoard } from "@/lib/suspect-prompt-builder";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string): string {
   if (!tmpl) return `**Your Role: ${role}**`;
@@ -356,7 +358,17 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         );
       }
 
-      if (humanRole) {
+      const isScriptKill = config.template === "script-kill";
+      const caseData = isScriptKill && (config as { caseId?: string }).caseId
+        ? getMysteryCase((config as { caseId: string }).caseId)
+        : undefined;
+
+      if (isScriptKill && caseData) {
+        setMyBoardContent((prev) => ({
+          ...prev,
+          [userId]: buildInitialEvidenceBoard(caseData),
+        }));
+      } else if (humanRole) {
         const roleDesc = buildRoleBoardContent(tmpl, humanRole);
         setMyBoardContent((prev) => ({ ...prev, [userId]: roleDesc }));
       }
@@ -365,19 +377,38 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         const briefingByPlayerId: Record<string, string> = {};
         for (const p of aiPlayersWithOpeningState) {
           const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1], 10) - 1 : -1;
-          const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
-          const note = buildAiPlayerBriefing({
-            gameTemplate: config.template,
-            role: cp?.role,
-            word: cp?.word,
-          });
-          if (note) briefingByPlayerId[p.id] = note;
+
+          if (isScriptKill && caseData && aiIndex >= 0 && aiIndex < caseData.suspects.length) {
+            briefingByPlayerId[p.id] = buildSuspectPrompt(caseData.suspects[aiIndex], caseData);
+          } else {
+            const cp = aiIndex >= 0 && aiIndex < configuredPlayers.length ? configuredPlayers[aiIndex] : null;
+            const note = buildAiPlayerBriefing({
+              gameTemplate: config.template,
+              role: cp?.role,
+              word: cp?.word,
+            });
+            if (note) briefingByPlayerId[p.id] = note;
+          }
         }
         if (Object.keys(briefingByPlayerId).length > 0) {
           setPlayerNotes((prev) => ({ ...prev, ...briefingByPlayerId }));
         }
       }
       const defaultChannelId = (config as { channels?: { id: string }[] }).channels?.[0]?.id ?? "game-room";
+
+      const kickoffPlayerNotes: Record<string, string> = {};
+      for (const p of aiPlayersWithOpeningState) {
+        const aiIndex = p.id.startsWith("ai-") ? parseInt(p.id.split("-")[1], 10) - 1 : -1;
+        if (isScriptKill && caseData && aiIndex >= 0 && aiIndex < caseData.suspects.length) {
+          kickoffPlayerNotes[p.id] = buildSuspectPrompt(caseData.suspects[aiIndex], caseData);
+        } else {
+          kickoffPlayerNotes[p.id] = buildAiPlayerBriefing({
+            gameTemplate: config.template,
+            role: p.role,
+            word: typeof p.stats?.Word === "string" ? p.stats.Word : undefined,
+          });
+        }
+      }
 
       const kickoffState: OpeningKickoffState = {
         channelId: defaultChannelId,
@@ -388,16 +419,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         gameTemplate: config.template,
         gameName: currentGame.name,
         rules: config.rules,
-        playerNotesById: Object.fromEntries(
-          aiPlayersWithOpeningState.map((p) => [
-            p.id,
-            buildAiPlayerBriefing({
-              gameTemplate: config.template,
-              role: p.role,
-              word: typeof p.stats?.Word === "string" ? p.stats.Word : undefined,
-            }),
-          ])
-        ),
+        playerNotesById: kickoffPlayerNotes,
       };
 
       await launchOpeningRound(kickoffState);
