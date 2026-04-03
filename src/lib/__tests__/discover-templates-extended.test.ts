@@ -5,7 +5,6 @@ import {
   CATEGORY_MAP,
   getPresetById,
   getStyleColor,
-  FEATURED_TEMPLATE,
   CORE_TEMPLATES,
   SOCIAL_DEDUCTION,
   PARTY_GAMES,
@@ -18,7 +17,7 @@ import {
 describe("Discover templates — ALL_PRESETS aggregate", () => {
   it("contains all sub-arrays", () => {
     const expected =
-      1 + // FEATURED_TEMPLATE
+      1 + // werewolf-classic (standalone)
       CORE_TEMPLATES.length +
       SOCIAL_DEDUCTION.length +
       PARTY_GAMES.length +
@@ -49,8 +48,9 @@ describe("Discover templates — ALL_PRESETS aggregate", () => {
     }
   });
 
-  it("featured template is first in ALL_PRESETS", () => {
-    expect(ALL_PRESETS[0]).toBe(FEATURED_TEMPLATE);
+  it("script-kill presets appear before other templates", () => {
+    const firstScriptKill = ALL_PRESETS.findIndex((t) => t.templateId === "script-kill");
+    expect(firstScriptKill).toBe(0);
   });
 });
 

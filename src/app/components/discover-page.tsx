@@ -2,14 +2,13 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Users, Clock, Play, Crown, Search } from "lucide-react";
+import { Users, Clock, Play, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
   type DiscoverPreset,
   type GameTemplate,
-  FEATURED_TEMPLATE,
   ALL_PRESETS,
   CATEGORIES,
   CATEGORY_MAP,
@@ -126,13 +125,10 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     );
   };
 
-  const showFeatured = activeCategory === "all" && !searchQuery;
-
   const filteredGames = (() => {
     let pool = activeCategory === "all"
       ? ALL_PRESETS
       : (CATEGORY_MAP[activeCategory] ?? []);
-    if (showFeatured) pool = pool.filter((t) => t.id !== FEATURED_TEMPLATE.id);
     if (!searchQuery.trim()) return pool;
     const q = searchQuery.toLowerCase();
     return pool.filter(
@@ -159,88 +155,6 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             AI-powered game templates. Pick one and start playing in seconds.
           </p>
         </div>
-
-        {/* Featured Template — only show on "all" tab with no search */}
-        {showFeatured && (
-          <div className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <Crown className="h-5 w-5 text-yellow-500" />
-              <h2 className="text-lg font-black text-white">Featured</h2>
-            </div>
-
-            <div
-              className="relative group rounded-2xl overflow-hidden border border-zinc-800 hover:border-violet-500/50 transition-all cursor-pointer"
-              role="button"
-              tabIndex={0}
-              onClick={() => handleSelect(FEATURED_TEMPLATE)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleSelect(FEATURED_TEMPLATE);
-                }
-              }}
-            >
-              {FEATURED_TEMPLATE.cover && (
-                <div className="absolute inset-0">
-                  <Image
-                    src={FEATURED_TEMPLATE.cover}
-                    alt={FEATURED_TEMPLATE.name}
-                    fill
-                    priority
-                    quality={90}
-                    fetchPriority="high"
-                    sizes="(min-width: 1024px) 900px, 100vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-zinc-950/50" />
-                </div>
-              )}
-
-              <div className="relative p-8 flex gap-8 min-h-[240px] items-center">
-                <div className="flex-1 max-w-2xl">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-3xl">{FEATURED_TEMPLATE.icon}</span>
-                    <div className="flex gap-2">
-                      {FEATURED_TEMPLATE.tags.slice(0, 2).map((tag) => (
-                        <span key={tag} className="text-[11px] font-bold px-2 py-0.5 bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <h3 className="text-3xl font-black text-white mb-2 group-hover:text-violet-300 transition-colors">
-                    {FEATURED_TEMPLATE.name}
-                  </h3>
-                  <p className="text-zinc-300 mb-4 text-base leading-relaxed">{FEATURED_TEMPLATE.longDescription}</p>
-                  {FEATURED_TEMPLATE.features && (
-                    <div className="grid grid-cols-2 gap-2 mb-5">
-                      {FEATURED_TEMPLATE.features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm text-zinc-400">
-                          <div className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-5 text-sm text-zinc-400">
-                      <div className="flex items-center gap-1.5"><Users className="h-4 w-4" /><span>{FEATURED_TEMPLATE.players}</span></div>
-                      <div className="flex items-center gap-1.5"><Clock className="h-4 w-4" /><span>{FEATURED_TEMPLATE.duration}</span></div>
-                      <Badge className={`${getStyleColor(FEATURED_TEMPLATE.style)} border text-xs font-bold`}>{FEATURED_TEMPLATE.style}</Badge>
-                    </div>
-                    <Button
-                      onClick={(e) => { e.stopPropagation(); handleSelect(FEATURED_TEMPLATE); }}
-                      className="ml-auto bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-900/40"
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Play Now
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Category Tabs + Search */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
