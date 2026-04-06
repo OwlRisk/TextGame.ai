@@ -11,6 +11,11 @@ const PRESET_TO_CASE: Record<string, string> = {
   "script-kill-moonlight": "moonlight-inn",
   "script-kill-gallery": "silk-gallery",
   "script-kill-express": "midnight-express",
+  "script-kill-campus": "haunted-campus",
+  "script-kill-banquet": "poison-banquet",
+  "script-kill-arctic": "arctic-station",
+  "script-kill-jade": "jade-temple",
+  "script-kill-cyber": "cyber-corp",
 };
 
 export function getCaseIdFromPreset(presetId: string): string | undefined {

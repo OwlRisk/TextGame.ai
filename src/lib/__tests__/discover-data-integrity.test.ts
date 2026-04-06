@@ -29,7 +29,7 @@ describe("Discover page data integrity", () => {
 
   it("every template has valid players range", () => {
     for (const t of ALL_PRESETS) {
-      expect(t.players).toMatch(/^\d+(-\d+)?$/);
+      expect(t.players).toMatch(/^\d+([+-]\d+( AI)?)?$/);
     }
   });
 
@@ -148,14 +148,15 @@ describe("Discover page data integrity", () => {
     }
   });
 
-  it("rules contain OBJECTIVE or WIN CONDITIONS or GAMEPLAY or GOAL section", () => {
+  it("rules contain OBJECTIVE or WIN CONDITIONS or GAMEPLAY or GOAL or CASE section", () => {
     for (const t of ALL_PRESETS) {
       const hasStructure =
         /OBJECTIVE/i.test(t.rules) ||
         /WIN CONDITIONS/i.test(t.rules) ||
         /GAMEPLAY/i.test(t.rules) ||
         /SESSION FLOW/i.test(t.rules) ||
-        /\bGOAL:/i.test(t.rules);
+        /\bGOAL:/i.test(t.rules) ||
+        /\bCASE:/i.test(t.rules);
       expect(hasStructure, `${t.id} rules lack structure headings`).toBe(true);
     }
   });

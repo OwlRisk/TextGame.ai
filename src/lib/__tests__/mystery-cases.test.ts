@@ -10,13 +10,15 @@ import {
 import type { MysteryCase, Evidence, Suspect } from "@/types/mystery-case";
 
 describe("MYSTERY_CASES registry", () => {
-  it("contains exactly 3 cases", () => {
-    expect(MYSTERY_CASES).toHaveLength(3);
+  it("contains all registered cases", () => {
+    expect(MYSTERY_CASES.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("has one case per difficulty level", () => {
-    const difficulties = MYSTERY_CASES.map((c) => c.difficulty).sort();
-    expect(difficulties).toEqual([1, 2, 3]);
+  it("covers all three difficulty levels", () => {
+    const levels = new Set(MYSTERY_CASES.map((c) => c.difficulty));
+    expect(levels).toContain(1);
+    expect(levels).toContain(2);
+    expect(levels).toContain(3);
   });
 
   it("each case has a unique id", () => {
