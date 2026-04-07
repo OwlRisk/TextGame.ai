@@ -432,7 +432,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-moonlight",
-    name: "Script Kill: Moonlight Inn",
+    name: "Moonlight Inn",
     description: "A remote inn, a stormy night, and a murder. Three suspects, limited questions. Can you crack the case?",
     icon: "🕵️",
     cover: "/games/game-cover-script-kill-moonlight.webp",
@@ -449,7 +449,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-gallery",
-    name: "Script Kill: Silk Gallery",
+    name: "Silk Gallery",
     description: "A poisoned art collector at a gallery opening. Four suspects with intertwined motives. Medium difficulty.",
     icon: "🕵️",
     cover: "/games/game-cover-script-kill-gallery.webp",
@@ -466,7 +466,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-express",
-    name: "Script Kill: Midnight Express",
+    name: "Midnight Express",
     description: "A strangled professor on a luxury train with nowhere to hide. Five suspects, seven pieces of evidence. Hard mode.",
     icon: "🕵️",
     cover: "/games/game-cover-script-kill-express.webp",
@@ -483,7 +483,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-campus",
-    name: "Script Kill: Drama Room",
+    name: "Drama Room",
     description: "A drama professor dead backstage, three suspects with keys to the theater. Beginner-friendly.",
     icon: "🎭",
     cover: "/games/game-cover-script-kill-campus.webp",
@@ -500,7 +500,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-banquet",
-    name: "Script Kill: The Last Toast",
+    name: "The Last Toast",
     description: "A billionaire poisoned at midnight on New Year's Eve. Four family members, one deadly champagne flute.",
     icon: "🥂",
     cover: "/games/game-cover-script-kill-banquet.webp",
@@ -517,7 +517,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-arctic",
-    name: "Script Kill: Whiteout",
+    name: "Whiteout",
     description: "A scientist electrocuted at an Arctic station during a blizzard. No rescue for three days. Four suspects, nowhere to run.",
     icon: "❄️",
     cover: "/games/game-cover-script-kill-arctic.webp",
@@ -534,7 +534,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-jade",
-    name: "Script Kill: Jade Buddha",
+    name: "Jade Buddha",
     description: "A murdered abbot, a stolen priceless statue, and five suspects trapped by a landslide in a mountain monastery.",
     icon: "🏯",
     cover: "/games/game-cover-script-kill-jade.webp",
@@ -551,7 +551,7 @@ WIN CONDITIONS:
   },
   {
     id: "script-kill-cyber",
-    name: "Script Kill: Dead Code",
+    name: "Dead Code",
     description: "A tech CEO killed by insulin overdose 48 hours before a $2B IPO. Five executives, each with secrets.",
     icon: "💻",
     cover: "/games/game-cover-script-kill-cyber.webp",

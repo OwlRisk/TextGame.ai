@@ -2,10 +2,9 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Users, Clock, Play, Search, Plus } from "lucide-react";
+import { Users, Clock, Search, Plus, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
-import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
   type DiscoverPreset,
@@ -14,7 +13,6 @@ import {
   CATEGORIES,
   CATEGORY_MAP,
   buildFallbackRules,
-  getStyleColor,
 } from "@/data/discover-templates";
 
 export type { DiscoverPreset };
@@ -22,6 +20,12 @@ export type { DiscoverPreset };
 interface DiscoverPageProps {
   onCreateGame: (preset: DiscoverPreset) => void;
   onJoinGame?: (gameId: string) => void;
+}
+
+function getDifficultyFromTags(tags: string[]): { label: string; color: string } {
+  if (tags.includes("Hard")) return { label: "Hard", color: "bg-red-500/20 text-red-300 border-red-500/30" };
+  if (tags.includes("Medium")) return { label: "Medium", color: "bg-amber-500/20 text-amber-300 border-amber-500/30" };
+  return { label: "Beginner", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" };
 }
 
 export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
@@ -55,10 +59,31 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
 
   const handleSelect = (t: GameTemplate) => {
     const preset = toPreset(t);
+    trackEvent("template_selected", { template: t.id, source: "discover" });
     onCreateGame({ ...preset, rules: preset.rules?.trim() || buildFallbackRules(preset.name) });
   };
 
+  const heroGame = ALL_PRESETS[0];
+  const restGames = ALL_PRESETS.slice(1);
+
+  const filteredGames = (() => {
+    let pool = activeCategory === "all"
+      ? restGames
+      : (CATEGORY_MAP[activeCategory] ?? []).filter((t) => t.id !== heroGame?.id);
+    if (!searchQuery.trim()) return pool;
+    const q = searchQuery.toLowerCase();
+    return pool.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.tags.some((tag) => tag.toLowerCase().includes(q))
+    );
+  })();
+
+  const isSearching = searchQuery.trim().length > 0;
+
   const renderGameCard = (template: GameTemplate) => {
+    const difficulty = getDifficultyFromTags(template.tags);
     return (
       <div
         key={template.id}
@@ -74,7 +99,6 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           }
         }}
       >
-        {/* Cover */}
         <div className="relative h-36 overflow-hidden">
           {template.cover ? (
             <Image
@@ -92,7 +116,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
           <div className="absolute top-2.5 right-2.5">
-            <Badge className={`${getStyleColor(template.style)} border text-[10px]`}>{template.style}</Badge>
+            <Badge className={`${difficulty.color} border text-[10px]`}>{difficulty.label}</Badge>
           </div>
         </div>
 
@@ -100,9 +124,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           <h3 className="text-sm font-black text-white mb-1 group-hover:text-violet-300 transition-colors leading-tight">
             {template.name}
           </h3>
-
           <p className="text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed">{template.description}</p>
-
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-zinc-600">
               <Users className="h-3 w-3" />
@@ -110,12 +132,6 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               <span className="text-zinc-700">·</span>
               <Clock className="h-3 w-3" />
               <span>{template.duration}</span>
-              {parseInt(template.players) > 1 && (
-                <>
-                  <span className="text-zinc-700">·</span>
-                  <span className="text-emerald-500 font-semibold">Multiplayer</span>
-                </>
-              )}
             </div>
             <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
               Play →
@@ -126,40 +142,95 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     );
   };
 
-  const filteredGames = (() => {
-    let pool = activeCategory === "all"
-      ? ALL_PRESETS
-      : (CATEGORY_MAP[activeCategory] ?? []);
-    if (!searchQuery.trim()) return pool;
-    const q = searchQuery.toLowerCase();
-    return pool.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q) ||
-        t.tags.some((tag) => tag.toLowerCase().includes(q))
-    );
-  })();
-
   return (
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(139,92,246,0.12),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(236,72,153,0.08),transparent_50%)] pointer-events-none" />
 
-      <div className="relative max-w-6xl mx-auto px-8 py-10">
+      <div className="relative max-w-6xl mx-auto px-6 sm:px-8 py-8 sm:py-10">
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3 tracking-tight">
             Discover <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Games</span>
           </h1>
-          <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
-            Pick a murder mystery case to start — or create your own game from scratch.
+          <p className="text-base sm:text-lg text-zinc-400 max-w-xl mx-auto">
+            Pick a murder mystery to start — or create your own game from scratch.
           </p>
         </div>
 
+        {/* Hero: Featured Game + Create Your Own */}
+        {!isSearching && heroGame && (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-10">
+            {/* Featured game — takes 3 cols */}
+            <div
+              role="button"
+              tabIndex={0}
+              className="lg:col-span-3 group relative rounded-2xl overflow-hidden cursor-pointer border border-zinc-800 hover:border-violet-500/40 transition-all duration-300"
+              onClick={() => handleSelect(heroGame)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelect(heroGame);
+                }
+              }}
+            >
+              <div className="relative h-56 sm:h-72">
+                {heroGame.cover ? (
+                  <Image
+                    src={heroGame.cover}
+                    alt={heroGame.name}
+                    fill
+                    priority
+                    quality={90}
+                    sizes="(min-width: 1024px) 60vw, 90vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className={`w-full h-full bg-gradient-to-br ${heroGame.color}`} />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-transparent" />
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
+                <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] mb-2">
+                  {getDifficultyFromTags(heroGame.tags).label}
+                </Badge>
+                <h2 className="text-xl sm:text-2xl font-black text-white mb-1 group-hover:text-violet-300 transition-colors">
+                  {heroGame.name}
+                </h2>
+                <p className="text-sm text-zinc-400 mb-3 max-w-lg line-clamp-2">{heroGame.description}</p>
+                <div className="flex items-center gap-4">
+                  <span className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                    Start Playing <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs text-zinc-500 flex items-center gap-1.5">
+                    <Users className="h-3 w-3" /> {heroGame.players}
+                    <span className="text-zinc-700 mx-0.5">·</span>
+                    <Clock className="h-3 w-3" /> {heroGame.duration}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Create Your Own — takes 2 cols */}
+            <Link
+              href="/create"
+              className="lg:col-span-2 group relative rounded-2xl overflow-hidden border-2 border-dashed border-zinc-700 hover:border-violet-500/50 bg-zinc-900/30 transition-all duration-300 flex flex-col items-center justify-center text-center p-6 sm:p-8 min-h-[200px]"
+            >
+              <div className="h-14 w-14 rounded-2xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center mb-4 group-hover:bg-violet-500/20 group-hover:border-violet-500/50 transition-colors">
+                <Sparkles className="h-7 w-7 text-violet-400" />
+              </div>
+              <p className="text-lg sm:text-xl font-bold text-white mb-2 group-hover:text-violet-300 transition-colors">Create Your Own Game</p>
+              <p className="text-sm text-zinc-500 max-w-xs leading-relaxed">Describe any idea — the AI designs the rules, roles, and characters for you.</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                Get started <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </Link>
+          </div>
+        )}
+
         {/* Category Tabs + Search */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          {/* Tabs */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {CATEGORIES.map(({ id, label, icon: Icon }) => (
               <button
@@ -177,14 +248,13 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
             <input
               id="discover-search"
               name="discover-search"
               type="text"
-              placeholder="Search cases..."
+              placeholder="Search games..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"
@@ -196,17 +266,6 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {filteredGames.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredGames.map((template) => renderGameCard(template))}
-            {/* Create Custom Game card */}
-            <Link
-              href="/create"
-              className="group relative bg-zinc-900/40 border-2 border-dashed border-zinc-700 hover:border-violet-500/50 rounded-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden flex flex-col items-center justify-center min-h-[280px] cursor-pointer"
-            >
-              <div className="h-14 w-14 rounded-2xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center mb-4 group-hover:bg-violet-500/20 transition-colors">
-                <Plus className="h-7 w-7 text-violet-400" />
-              </div>
-              <p className="text-lg font-bold text-white mb-1">Create Your Own</p>
-              <p className="text-sm text-zinc-500 text-center px-6">Describe any game idea — the AI builds the rules, roles, and characters for you.</p>
-            </Link>
           </div>
         ) : (
           <div className="text-center py-20 text-zinc-500">
