@@ -16,9 +16,9 @@ import {
 import { toast } from "sonner";
 
 const STATIC_WELCOME_CONTENT =
-  "Hey, I'm your **Game Master**. I specialize in murder mystery cases.\n\n" +
-  "Browse the **Cases** library to pick a case — or describe a custom mystery and I'll set it up for you.\n\n" +
-  "When you're ready, hit **Create Room** to start your investigation!";
+  "Hey, I'm your **Game Master**. I can help you set up any game you can imagine.\n\n" +
+  "Browse the **Cases** library to pick a murder mystery — or describe any game idea and I'll design the rules, roles, and setup for you.\n\n" +
+  "When you're ready, hit **Create Room** to start playing!";
 
 export interface UseGameMasterSessionsParams {
   userId?: string;

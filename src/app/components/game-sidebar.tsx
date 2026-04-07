@@ -140,7 +140,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              My Cases
+              My Games
             </TooltipContent>
           </Tooltip>
 
@@ -166,7 +166,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              Cases
+              Discover
             </TooltipContent>
           </Tooltip>
 
@@ -185,7 +185,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-                New Case
+                New Game
               </TooltipContent>
             </Tooltip>
           )}

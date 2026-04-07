@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Users, Clock, Play, Search } from "lucide-react";
+import { Users, Clock, Play, Search, Plus } from "lucide-react";
+import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -149,10 +150,10 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
-            Murder Mystery <span className="bg-gradient-to-r from-rose-400 to-red-400 bg-clip-text text-transparent">Cases</span>
+            Discover <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Games</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
-            Each case features unique AI suspects. Choose a case and start investigating.
+            Pick a murder mystery case to start — or create your own game from scratch.
           </p>
         </div>
 
@@ -195,6 +196,17 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {filteredGames.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredGames.map((template) => renderGameCard(template))}
+            {/* Create Custom Game card */}
+            <Link
+              href="/create"
+              className="group relative bg-zinc-900/40 border-2 border-dashed border-zinc-700 hover:border-violet-500/50 rounded-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden flex flex-col items-center justify-center min-h-[280px] cursor-pointer"
+            >
+              <div className="h-14 w-14 rounded-2xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center mb-4 group-hover:bg-violet-500/20 transition-colors">
+                <Plus className="h-7 w-7 text-violet-400" />
+              </div>
+              <p className="text-lg font-bold text-white mb-1">Create Your Own</p>
+              <p className="text-sm text-zinc-500 text-center px-6">Describe any game idea — the AI builds the rules, roles, and characters for you.</p>
+            </Link>
           </div>
         ) : (
           <div className="text-center py-20 text-zinc-500">

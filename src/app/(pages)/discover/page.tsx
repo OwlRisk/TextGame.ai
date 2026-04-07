@@ -2,30 +2,30 @@ import type { Metadata } from "next";
 import DiscoverView from "./discover-view";
 
 export const metadata: Metadata = {
-  title: "Murder Mystery Cases — AI Detective Games",
+  title: "Discover Games — AI Murder Mystery & Custom Games",
   description:
-    "Browse AI murder mystery cases. Each case features unique suspects with real personalities, hidden secrets, and breaking points. Choose a case and start investigating — 10 minutes per case, free to start.",
+    "Browse murder mystery cases or create your own game from scratch. Every game features AI characters with real personalities, secrets, and agendas.",
   keywords: [
     "AI murder mystery",
     "detective game online",
     "script kill cases",
-    "murder mystery game",
+    "create AI game",
+    "custom text game",
     "AI interrogation game",
-    "whodunit game online",
     "interactive mystery",
   ],
   alternates: { canonical: "/discover" },
   openGraph: {
-    title: "Murder Mystery Cases · TextGame.ai",
+    title: "Discover Games · TextGame.ai",
     description:
-      "Browse AI murder mystery cases. Interrogate suspects, collect evidence, solve the case.",
+      "Browse murder mystery cases or create your own game. AI characters that think for themselves.",
     type: "website",
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Murder Mystery Cases · TextGame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover Games · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Murder Mystery Cases · TextGame.ai",
-    description: "Browse AI murder mystery cases. Interrogate suspects, collect evidence, solve the case.",
+    title: "Discover Games · TextGame.ai",
+    description: "Browse murder mystery cases or create your own game. AI characters that think for themselves.",
     images: ["/hero.webp"],
   },
 };

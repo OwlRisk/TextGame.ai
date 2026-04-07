@@ -847,7 +847,7 @@ export function getPresetById(presetId: string | null): DiscoverPreset | null {
 }
 
 export const CATEGORIES = [
-  { id: "all",       label: "All Cases",        icon: Flame },
+  { id: "all",       label: "All Games",        icon: Flame },
   { id: "mystery",   label: "Murder Mystery",   icon: Search },
 ] as const;
 
