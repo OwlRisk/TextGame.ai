@@ -160,10 +160,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     if (!isInitialized || !isFreshLobby || gamePhase !== "lobby") return;
     const nonHostPlayers = players.filter((p) => !p.isGameMaster);
     if (nonHostPlayers.length === 0) return;
-    autoStartFiredRef.current = true;
     setAutoStarting(true);
     const safetyTimeout = setTimeout(() => setAutoStarting(false), 30000);
     const timer = setTimeout(async () => {
+      autoStartFiredRef.current = true;
       try {
         await startGameRef.current();
       } finally {
