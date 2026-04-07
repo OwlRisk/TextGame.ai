@@ -24,6 +24,10 @@ export const EMOTION_EMOJI: Record<string, string> = {
   clear_throat: "😤",
   yawn: "🥱",
   whispering: "🤫",
+  whisper: "🤫",
+  gasp: "😱",
+  scream: "😱",
+  gulp: "😰",
 };
 
 const DEFAULT_OPTIONS: InlineFormattingOptions = {

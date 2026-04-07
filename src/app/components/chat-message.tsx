@@ -234,13 +234,15 @@ export const ChatMessage = React.memo(function ChatMessage({
   const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
   const isSceneNarrator = isHost && gameTemplate === "scene";
 
-  // Scene narrator: render as atmospheric italic text without avatar/name
+  // Scene narrator: render as atmospheric italic narration without avatar/name
   if (isSceneNarrator && !message.isStreaming) {
     const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
     if (!cleanRaw.trim()) return null;
     return (
       <div className="my-4 px-4 py-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-        <p className="text-zinc-300 text-sm italic leading-relaxed">{cleanRaw}</p>
+        <div className="text-zinc-300 text-sm italic leading-relaxed [&_strong]:text-zinc-100 [&_em]:text-zinc-200">
+          {formatMessage(cleanRaw)}
+        </div>
       </div>
     );
   }

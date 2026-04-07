@@ -271,7 +271,7 @@ export function useHostRound({
 
       const generatedHost = currentGame?.config?.generatedHost as { name?: string; personality?: string; systemPrompt?: string } | undefined;
 
-      const sceneId = (currentGame?.config as Record<string, unknown> | undefined)?.sceneId as string | undefined;
+      const sceneId = (currentGame?.config as unknown as Record<string, unknown> | undefined)?.sceneId as string | undefined;
 
       const buildFreshHostPrompt = () => {
         const freshP = playersRef.current;
@@ -721,7 +721,7 @@ export function useHostRound({
         if (whoLower === "you" || (humanName && whoLower === humanName.toLowerCase())) setCurrentSpeakerId(userId);
       }
 
-      if (!isSilentTurn) await hostPace();
+      if (!isSilentTurn) await hostPace(isSceneMode(tmplId));
       const recentForNextRef = { current: [
         ...channelMessages.slice(-18).map((m) => ({
           senderName: m.senderName,
@@ -763,7 +763,7 @@ export function useHostRound({
       let lastBeatContentLen = hostContent?.length ?? 0;
       for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhaseRef.current !== "ended" && !interruptRef.current; i++) {
         hostSystemPrompt = buildFreshHostPrompt();
-        await dynamicPace(lastBeatContentLen);
+        await dynamicPace(lastBeatContentLen, undefined, undefined, isSceneMode(tmplId));
         const recentSummary = recentForNextRef.current.slice(-10)
           .map((m) => `${m.senderName}: ${m.content}`).join("\n");
         const autoAdvanceHint = tmplDef?.hostAnswersQuestions

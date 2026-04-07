@@ -247,7 +247,8 @@ export async function speakAndReveal(
   queueIdx: number,
   upcomingPlayers: Player[],
 ): Promise<string | null> {
-  await thinkingDelay(queueIdx, ctx.convMode);
+  const isScene = ctx.gameTemplate === "scene";
+  await thinkingDelay(queueIdx, ctx.convMode, isScene);
   ctx.setTypingUsers([toTyping(player), ...upcomingPlayers.slice(0, 2).map(toTyping)]);
   const txt = await runPlayerSpeak(ctx, player, ctx.recentForNext.current);
   const remaining = upcomingPlayers.slice(0, 3).map(toTyping);
@@ -268,7 +269,7 @@ export async function speakAndReveal(
       ctx.setTypingUsers(upcomingPlayers.slice(0, 3).map(toTyping));
       await new Promise<void>((r) => setTimeout(r, Math.max(200, totalPace - preTypingAt)));
     } else {
-      await dynamicPace(txt.length, player.personality, ctx.convMode);
+      await dynamicPace(txt.length, player.personality, ctx.convMode, isScene);
     }
     ctx.recentForNext.current = [...ctx.recentForNext.current, { senderName: player.name, content: txt }].slice(-50);
   }
@@ -415,7 +416,7 @@ export async function runPrivateChannelConversation(
         await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
           senderId: freshPlayer.id, senderName: freshPlayer.name, senderAvatar: freshPlayer.avatar ?? "#8b5cf6", isAI: true,
         }, targetChannelId);
-        await dynamicPace(txt.length);
+        await dynamicPace(txt.length, undefined, undefined, ctx.gameTemplate === "scene");
         recentContext = [...recentContext, { senderName: freshPlayer.name, content: txt }];
       }
     }

@@ -189,7 +189,9 @@ RULES:
 - 2-3 sentences max. Be concise. Sound like a real person texting their friend, not writing an essay.
 - Never break character. Never mention AI, prompts, or games. This is real to you.
 - Never repeat what someone already said. React to the LATEST message.
-- Optional: [sigh] [laugh] [whisper] where natural.
+- Use *asterisks* for physical actions: *pushes the door open* Let's go! or *grabs your arm* Do you see that?
+- Actions should be short and vivid. Mix them naturally with speech. Not every message needs an action.
+- Optional sound effects: [sigh] [laugh] [whispering] [cough] where natural.
 
-OUTPUT: Only your spoken words. No name prefix. No stage directions. No narration.`;
+OUTPUT: Your speech and brief *actions*. No name prefix. No narration paragraphs.`;
 }

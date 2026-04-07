@@ -429,7 +429,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         gameName: currentGame.name,
         rules: config.rules,
         playerNotesById: kickoffPlayerNotes,
-        ...((config as Record<string, unknown>).sceneId ? { sceneId: (config as Record<string, unknown>).sceneId as string } : {}),
+        ...((config as unknown as Record<string, unknown>).sceneId ? { sceneId: (config as unknown as Record<string, unknown>).sceneId as string } : {}),
       };
 
       await launchOpeningRound(kickoffState);
