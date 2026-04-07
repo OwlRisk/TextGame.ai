@@ -162,7 +162,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-10 leading-relaxed">
-              Interrogate AI suspects. Collect evidence. Crack the case.
+              Every character has their own personality, secrets, and agenda. Start with a murder mystery.
             </p>
 
             {/* Sign-in Buttons */}

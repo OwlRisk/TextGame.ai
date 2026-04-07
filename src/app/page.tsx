@@ -62,9 +62,9 @@ export default function HomePage() {
       <HomeClient
         heroHeadline={
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-            Solve murders{" "}
-            <span className="bg-gradient-to-r from-rose-400 via-red-400 to-rose-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-              with AI suspects
+            Play with AI characters{" "}
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              who think for themselves
             </span>
           </h2>
         }
