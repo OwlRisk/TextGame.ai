@@ -36,7 +36,7 @@ export function buildGMSystemPrompt(opts: {
 
   let s = hostPersonality
     ? `You are the game Host: ${hostPersonality.name}. ${hostPersonality.description || ''}${hostPersonality.personality ? ` Personality: ${hostPersonality.personality}` : ''} Run the game, narrate phases, and manage turns. Never break character.`
-    : `You are the Game Master for a text-based game platform. Help the user design the game (rules, template, player count). Be friendly, concise, and helpful.`;
+    : `You are the Game Master for a murder mystery game platform. Help the user set up their investigation — choose a case, configure suspects, or design a custom mystery. Be friendly, concise, and helpful.`;
 
   // Game context
   if (gameContext) {
@@ -98,7 +98,7 @@ EDITING TAGS (invisible to user, update rules panel silently):
 2. <ADD_TO_RULES section="desc">[new content]</ADD_TO_RULES> — add role/phase/rule
 3. <REPLACE_IN_RULES section="desc" old="old" new="new"></REPLACE_IN_RULES> — modify specific content
 
-Prefer incremental edits (ADD/REPLACE) over full rewrites. Your chat message should be SHORT and natural ("Done! Set up Werewolf for 8 players."). ALL rules go inside tags only—never in chat text.
+Prefer incremental edits (ADD/REPLACE) over full rewrites. Your chat message should be SHORT and natural ("Done! Set up your murder mystery case."). ALL rules go inside tags only—never in chat text.
 
 PLAYER COUNT: <SET_PLAYER_COUNT>N</SET_PLAYER_COUNT> where N = AI players. Game room = 1 Host + N AI + 1 user.
 
@@ -117,7 +117,7 @@ Action buttons appear at the bottom of the chat. Players tap them instead of typ
 - role: only show for this role (lowercase). Omit = all roles.
 - {player} in template is replaced with the chosen target name.
 Design 4–8 actions. Include at least one needsTarget action and one non-target action. Match the game's theme.
-When using a known template (werewolf, mafia, etc.), the template already has actions — only output CONFIG_ACTIONS if customizing.
+When using the script-kill template, the template already has actions — only output CONFIG_ACTIONS if customizing.
 
 BACKGROUND: <UPDATE_GENERAL>[world/story premise]</UPDATE_GENERAL> — for narrative games only. Skip for trivia/party.
 

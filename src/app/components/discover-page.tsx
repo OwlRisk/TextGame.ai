@@ -149,10 +149,10 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
-            Discover <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Games</span>
+            Murder Mystery <span className="bg-gradient-to-r from-rose-400 to-red-400 bg-clip-text text-transparent">Cases</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
-            AI-powered game templates. Pick one and start playing in seconds.
+            Each case features unique AI suspects. Choose a case and start investigating.
           </p>
         </div>
 
@@ -183,7 +183,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               id="discover-search"
               name="discover-search"
               type="text"
-              placeholder="Search games..."
+              placeholder="Search cases..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"

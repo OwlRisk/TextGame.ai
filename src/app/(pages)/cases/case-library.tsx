@@ -107,7 +107,7 @@ export function CaseLibrary() {
           <Skull className="h-8 w-8 mx-auto mb-3 text-zinc-600" />
           <h3 className="text-lg font-bold text-zinc-400">More Cases Coming Soon</h3>
           <p className="text-sm text-zinc-500 mt-2 max-w-md mx-auto">
-            New cases are added regularly. Each case is a unique murder mystery with its own suspects, evidence, and twists. AI can also generate infinite custom cases.
+            New cases are added regularly. Each case is a unique murder mystery with its own suspects, evidence, and twists.
           </p>
         </div>
       </div>

@@ -5,18 +5,18 @@ import { SITE_NAME, SITE_DOMAIN } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Guides, comparisons, and tips on AI-powered text games, social deduction, roleplay AI, and multiplayer gaming with AI characters.",
+    "Guides, tips, and deep dives on AI murder mystery games, detective strategies, and how AI suspects work.",
   keywords: [
-    "ai game blog",
-    "roleplay ai guide",
-    "character ai alternative",
-    "social deduction games",
-    "ai text game tips",
+    "AI murder mystery guide",
+    "detective game tips",
+    "AI suspect interrogation",
+    "murder mystery blog",
+    "script kill guide",
   ],
   alternates: { canonical: "/blog" },
   openGraph: {
     title: `Blog · ${SITE_NAME}`,
-    description: "Guides, comparisons, and tips on AI-powered text games and multiplayer gaming with AI characters.",
+    description: "Guides, tips, and deep dives on AI murder mystery games and detective strategies.",
     type: "website",
     url: `${SITE_DOMAIN}/blog`,
     images: [{ url: "/hero.webp", width: 1200, height: 630, alt: `Blog · ${SITE_NAME}` }],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `Blog · ${SITE_NAME}`,
-    description: "Guides, comparisons, and tips on AI-powered text games and multiplayer gaming with AI characters.",
+    description: "Guides, tips, and deep dives on AI murder mystery games and detective strategies.",
     images: ["/hero.webp"],
   },
 };
@@ -38,590 +38,56 @@ interface BlogPost {
   tags: string[];
 }
 
+// Only murder-mystery-relevant posts are shown in the index.
+// All blog page files are preserved (URLs still work) — just not listed here.
 const posts: BlogPost[] = [
-  {
-    slug: "jackbox-alternatives",
-    title: "10 Best Jackbox Alternatives — Free Online Party Games (2026)",
-    excerpt: "Looking for free Jackbox alternatives? Compare 10 online party games you can play in your browser — social deduction, trivia, improv, and more.",
-    date: "March 6, 2026",
-    readTime: "10 min read",
-    tags: ["Comparison", "Party Games"],
-  },
-  {
-    slug: "wolvesville-alternative",
-    title: "Wolvesville vs TextGame.ai — Best Werewolf App (2026)",
-    excerpt: "Comparing Wolvesville and TextGame.ai for playing Werewolf online. AI Game Master, custom roles, multiplayer — find the best werewolf platform.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "Werewolf"],
-  },
-  {
-    slug: "town-of-salem-alternative",
-    title: "Best Town of Salem Alternatives — Play Social Deduction Online (2026)",
-    excerpt: "Town of Salem shut down its free version. Here are the best alternatives for playing social deduction games online — Werewolf, Mafia, Secret Hitler, and more.",
-    date: "March 6, 2026",
-    readTime: "8 min read",
-    tags: ["Comparison", "Social Deduction"],
-  },
-  {
-    slug: "gartic-phone-alternatives",
-    title: "7 Best Gartic Phone Alternatives — Free Drawing Party Games (2026)",
-    excerpt: "Looking for games like Gartic Phone? Here are 7 free alternatives for drawing, guessing, and party games you can play in the browser with friends.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "Drawing Games"],
-  },
-  {
-    slug: "skribbl-alternatives",
-    title: "7 Best Skribbl.io Alternatives — Free Browser Games (2026)",
-    excerpt: "Tired of Skribbl.io? Here are 7 free alternatives — drawing games, word games, and AI-powered party games you can play in your browser with friends.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "Browser Games"],
-  },
-  {
-    slug: "play-two-rooms-online",
-    title: "Play Two Rooms and a Boom Online — Rules & Strategy Guide",
-    excerpt: "Learn the rules of Two Rooms and a Boom, key roles, negotiation strategy, and how to play online with an AI host. Free, no download.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Two Rooms", "How to Play"],
-  },
-  {
-    slug: "play-kingdom-intrigue-online",
-    title: "Play Kingdom Intrigue Online — Medieval Court Deduction Game",
-    excerpt: "Scheme for the throne in Kingdom Intrigue — forge alliances, spread rumors, and outwit rivals in a medieval court. Learn rules and play with AI.",
-    date: "March 6, 2026",
-    readTime: "6 min read",
-    tags: ["Kingdom Intrigue", "How to Play"],
-  },
-  {
-    slug: "play-vampire-court-online",
-    title: "Play Vampire Court Online — Gothic Social Deduction with AI",
-    excerpt: "One vampire hides among nobles. Learn the rules of Vampire Court, role strategies, and how to play this gothic social deduction game online for free.",
-    date: "March 6, 2026",
-    readTime: "6 min read",
-    tags: ["Vampire Court", "How to Play"],
-  },
-  {
-    slug: "play-space-mutiny-online",
-    title: "Play Space Mutiny Online — Sci-Fi Traitor Game Like Among Us",
-    excerpt: "One crew member has been compromised. Learn the rules of Space Mutiny, sabotage mechanics, and how to play this Among Us-style text game with AI.",
-    date: "March 6, 2026",
-    readTime: "6 min read",
-    tags: ["Space Mutiny", "How to Play"],
-  },
-  {
-    slug: "play-improv-comedy-online",
-    title: "AI Improv Comedy Game Online — Play Free with Friends",
-    excerpt: "Play improv comedy online with an AI host that generates scenes and throws curveballs. No experience needed — just jump in and make your friends laugh.",
-    date: "March 6, 2026",
-    readTime: "6 min read",
-    tags: ["Improv Comedy", "How to Play"],
-  },
-  {
-    slug: "how-textgame-ai-works",
-    title: "How TextGame.ai Works — Inside the AI Game Master",
-    excerpt: "A look inside TextGame.ai's AI Game Master — how it assigns roles, manages game phases, narrates stories, and creates unique AI characters for every session.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Product", "AI Game Master"],
-  },
-  {
-    slug: "how-ai-characters-think",
-    title: "How AI Characters Think — The Tech Behind Smart Game NPCs",
-    excerpt: "Ever wonder how AI characters make decisions, form strategies, and develop unique personalities? Here's how the technology works.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Product", "AI Characters"],
-  },
-  {
-    slug: "best-icebreaker-games-online",
-    title: "Best Icebreaker Games Online — AI-Powered, No Prep (2026)",
-    excerpt: "Break the ice instantly with AI-hosted online games. No prep, no awkward silence — just share a link and play. Perfect for new teams, classes, and meetups.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Use Case", "Icebreakers"],
-  },
-  {
-    slug: "games-to-play-over-video-call",
-    title: "15 Best Games to Play Over Video Call with Friends (2026)",
-    excerpt: "Stuck on Zoom? Here are 15 games that work perfectly over video call — from AI party games and trivia to social deduction and drawing.",
-    date: "March 6, 2026",
-    readTime: "9 min read",
-    tags: ["Use Case", "Video Call"],
-  },
-  {
-    slug: "games-to-play-with-coworkers",
-    title: "Fun Games to Play with Coworkers — Remote and In-Office (2026)",
-    excerpt: "From quick 5-minute icebreakers to full team game nights — here are the best games to play with coworkers. AI-hosted, browser-based, no prep needed.",
-    date: "March 6, 2026",
-    readTime: "8 min read",
-    tags: ["Use Case", "Workplace"],
-  },
-  {
-    slug: "couple-games-online",
-    title: "Best Couple Games Online — Fun AI Games for Two (2026)",
-    excerpt: "Date night in? Play AI-powered games for two — trivia, storytelling, mystery, and more. No download, just share a link and play together.",
-    date: "March 6, 2026",
-    readTime: "6 min read",
-    tags: ["Use Case", "Couples"],
-  },
-  {
-    slug: "games-for-large-groups",
-    title: "Best Online Games for Large Groups of 10+ Players (2026)",
-    excerpt: "Planning a game night for a big group? These online games support 10, 15, even 20+ players — from AI-hosted social deduction to drawing games and trivia.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Use Case", "Large Groups"],
-  },
-  {
-    slug: "future-of-ai-gaming",
-    title: "The Future of AI Gaming — 5 Trends Shaping 2026 and Beyond",
-    excerpt: "From AI game masters to procedural storytelling — here are 5 trends defining the future of AI in gaming. What's coming next and what it means for players.",
-    date: "March 6, 2026",
-    readTime: "8 min read",
-    tags: ["Thought Leadership", "AI Gaming"],
-  },
-  {
-    slug: "ai-game-design-guide",
-    title: "AI Game Design: How to Write Rules AI Can Follow",
-    excerpt: "Want to create your own AI-hosted game? Learn how to write game rules that an AI Game Master can understand and run — roles, phases, win conditions, and more.",
-    date: "March 6, 2026",
-    readTime: "9 min read",
-    tags: ["Thought Leadership", "Game Design"],
-  },
-  {
-    slug: "replika-alternatives",
-    title: "7 Best Replika Alternatives (2026) — AI Companions That Go Further",
-    excerpt:
-      "Replika changed AI companionship — but it's changed. These 7 alternatives offer richer conversations, roleplay, and characters you can actually do things with.",
-    date: "March 6, 2026",
-    readTime: "9 min read",
-    tags: ["Comparison", "AI Companions"],
-  },
-  {
-    slug: "play-murder-mystery-alone",
-    title: "How to Play Murder Mystery Alone with AI (No Group Required)",
-    excerpt:
-      "You don't need 6 friends for a murder mystery. AI characters fill every suspect role. Here's how to run a full whodunit solo — any time you want.",
-    date: "March 6, 2026",
-    readTime: "7 min read",
-    tags: ["Guide", "Solo Play"],
-  },
-  {
-    slug: "chai-ai-alternatives",
-    title: "7 Best Chai AI Alternatives for AI Chat & Roleplay (2026)",
-    excerpt:
-      "Chai AI is popular for 1-on-1 chat, but lacks multiplayer games. Compare 7 alternatives — from TextGame.ai's multiplayer AI games to Character.AI, Talkie, and more.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Comparison", "AI Chat"],
-  },
-  {
-    slug: "textgame-vs-novel-ai",
-    title: "TextGame.ai vs Novel AI — AI Gaming vs AI Writing (2026)",
-    excerpt:
-      "Comparing TextGame.ai and Novel AI: multiplayer AI games vs premium AI writing. Find out which platform fits your creative needs.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "AI Games"],
-  },
-  {
-    slug: "ai-changing-board-games",
-    title: "How AI is Changing Board Games and Tabletop RPGs (2026)",
-    excerpt:
-      "From AI Game Masters to dynamic NPCs — how artificial intelligence is transforming board games, tabletop RPGs, and the way we play together.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Editorial", "AI Games", "Tabletop"],
-  },
-  {
-    slug: "polybuzz-ai-alternatives",
-    title: "7 Best PolyBuzz Alternatives for AI Chat & Roleplay (2026)",
-    excerpt:
-      "Looking for PolyBuzz alternatives? Compare 7 AI chat platforms for roleplay and multiplayer games — including options with voice, game mechanics, and free tiers.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Comparison", "AI Chat"],
-  },
-  {
-    slug: "talkie-ai-alternatives",
-    title: "7 Best Talkie AI Alternatives — AI Chat & Character Apps (2026)",
-    excerpt:
-      "Explore the best Talkie AI alternatives for AI character chat, roleplay, and multiplayer games. Compare features, voice, pricing, and find your fit.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Comparison", "AI Chat"],
-  },
-  {
-    slug: "best-ai-chat-sites",
-    title: "10 Best AI Chat Sites for Roleplay & Games (2026)",
-    excerpt:
-      "The ultimate guide to AI chat platforms — Character.AI, PolyBuzz, Talkie AI, Janitor AI, and more. Compare features, pricing, and find the best AI chat site.",
-    date: "March 4, 2026",
-    readTime: "10 min read",
-    tags: ["Listicle", "AI Chat"],
-  },
-  {
-    slug: "perchance-ai-alternatives",
-    title: "5 Best Perchance AI Alternatives for Chat & Roleplay (2026)",
-    excerpt:
-      "Looking for Perchance alternatives? Compare 5 AI roleplay platforms with better multiplayer, voice, and game features.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "AI Roleplay"],
-  },
-  {
-    slug: "chat-with-ai-characters",
-    title: "Chat with AI Characters — Free, No Sign Up Required",
-    excerpt:
-      "Chat with AI characters for free — no sign up, no download. Discover the best platforms for AI character conversations, roleplay, and multiplayer games.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Guide", "AI Characters"],
-  },
-  {
-    slug: "talk-to-ai-characters",
-    title: "Talk to AI Characters Online — Free AI Companions & Game Partners",
-    excerpt:
-      "Talk to AI characters with voice and text — play games, roleplay, or just chat. Discover the best free platforms for AI companions and game partners.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Guide", "AI Characters"],
-  },
-  {
-    slug: "ourdream-ai-alternatives",
-    title: "5 Best OurDream AI Alternatives for AI Chat & Roleplay (2026)",
-    excerpt:
-      "Looking for OurDream AI alternatives? Compare 5 AI chat platforms for character roleplay, multiplayer games, and voice interactions.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "AI Chat"],
-  },
-  {
-    slug: "wsup-ai-alternatives",
-    title: "5 Best Wsup AI Alternatives for AI Chat & Characters (2026)",
-    excerpt:
-      "Explore the best Wsup AI alternatives for AI character chat and roleplay. Compare platforms with multiplayer, voice, and game features.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Comparison", "AI Chat"],
-  },
-  {
-    slug: "text-based-games-comeback",
-    title: "Text-Based Games Are Back — Why AI Makes Them Better Than Ever",
-    excerpt:
-      "From Zork to AI-powered narratives — how LLMs are reviving text adventures with unlimited stories, multiplayer, and accessibility for everyone.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Editorial", "AI Games"],
-  },
-  {
-    slug: "ai-npc-explained",
-    title: "AI NPCs Explained: How AI Characters Make Games Better",
-    excerpt:
-      "What are AI NPCs, how do they differ from scripted characters, and why are they transforming gaming? Explore the tech behind AI game characters.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Guide", "AI Characters"],
-  },
-  {
-    slug: "textgame-vs-janitor-ai",
-    title: "TextGame.ai vs Janitor AI — Which AI Roleplay Platform is Better?",
-    excerpt:
-      "Comparing TextGame.ai and Janitor AI: multiplayer games vs character chat, structured rules vs freeform roleplay. Find which platform fits your needs.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "AI Roleplay"],
-  },
-  {
-    slug: "among-us-alternatives",
-    title: "10 Best Among Us Alternatives — Social Deduction Games Online (2026)",
-    excerpt:
-      "Love Among Us? Try these 10 social deduction games online — Werewolf, Mafia, Secret Hitler, Avalon, Spyfall, and more. Many with AI players.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Listicle", "Social Deduction"],
-  },
-  {
-    slug: "ai-trivia-games",
-    title: "Best AI Trivia Games Online — Play Free with Friends (2026)",
-    excerpt:
-      "Discover AI-powered trivia games with unlimited questions, adaptive difficulty, and multiplayer. Compare with Kahoot, Trivia Crack, and more.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Trivia", "Listicle"],
-  },
-  {
-    slug: "ai-tarot-reading",
-    title: "AI Tarot Reading — Get a Free Online Tarot Card Reading",
-    excerpt:
-      "Get a free AI tarot card reading online. Learn how AI interprets tarot cards, explore major arcana meanings, reading types, and try an interactive AI tarot experience.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Tarot", "Guide"],
-  },
-  {
-    slug: "host-game-night-online",
-    title: "How to Host a Virtual Game Night — Complete Guide (2026)",
-    excerpt:
-      "Everything you need to host an amazing virtual game night — choosing games, inviting friends, tech setup, icebreakers, and how AI simplifies hosting for any group size.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Guide", "Game Night"],
-  },
-  {
-    slug: "ai-dungeon-alternatives",
-    title: "7 Best AI Dungeon Alternatives in 2026 — Free & Multiplayer",
-    excerpt:
-      "Comparing the best AI Dungeon alternatives in 2026 — from multiplayer AI games to open-source text adventures. Find free options with better stories and multiplayer support.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Comparison", "AI Games"],
-  },
-  {
-    slug: "resistance-vs-avalon",
-    title: "The Resistance vs Avalon — Rules, Differences & How to Play Online",
-    excerpt:
-      "Compare The Resistance and Avalon: rules, roles like Merlin, key differences, which to choose for your group, and how to play both online for free with AI.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Comparison", "Social Deduction"],
-  },
-  {
-    slug: "free-online-games-with-friends",
-    title: "20 Best Free Online Games to Play with Friends — No Download (2026)",
-    excerpt:
-      "The ultimate list of free online multiplayer games — social deduction, word games, trivia, escape rooms, storytelling, and more. No download needed.",
-    date: "March 4, 2026",
-    readTime: "10 min read",
-    tags: ["Listicle", "Multiplayer", "Free Games"],
-  },
   {
     slug: "ai-murder-mystery-games",
     title: "AI Murder Mystery Games — Host a Virtual Whodunit Online",
-    excerpt:
-      "Host an AI-powered murder mystery game online. No prep, no moderator — the AI runs the clues, suspects, and reveals. Perfect for parties and team events.",
+    excerpt: "Host an AI-powered murder mystery game online. No prep, no moderator — the AI runs the clues, suspects, and reveals.",
     date: "March 4, 2026",
     readTime: "7 min read",
     tags: ["Murder Mystery", "Guide"],
   },
   {
-    slug: "ai-text-adventure-games",
-    title: "Best AI Text Adventure Games in 2026 — Play Free Online",
-    excerpt:
-      "The best AI-powered text adventure games you can play right now — from AI Dungeon to multiplayer story games. Compare platforms and find your next adventure.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Listicle", "Text Adventure"],
+    slug: "play-murder-mystery-alone",
+    title: "Play Murder Mystery Alone — AI Solo Detective Games",
+    excerpt: "How to play a murder mystery game solo with AI suspects. Interrogate, collect evidence, and solve the case by yourself.",
+    date: "March 5, 2026",
+    readTime: "6 min read",
+    tags: ["Murder Mystery", "Solo"],
   },
   {
-    slug: "play-dnd-with-ai",
-    title: "How to Play D&D with AI — Solo or Multiplayer (2026 Guide)",
-    excerpt:
-      "Use AI as your Dungeon Master for D&D-style RPGs. Play solo or with friends — create characters, run campaigns, and explore worlds with an AI DM.",
-    date: "March 4, 2026",
+    slug: "how-textgame-ai-works",
+    title: "How TextGame.ai Works — Inside the AI Game Master",
+    excerpt: "A look inside TextGame.ai's AI Game Master — how it runs investigations, plays suspects, and reacts to your questions.",
+    date: "March 6, 2026",
     readTime: "7 min read",
-    tags: ["Guide", "D&D", "RPG"],
+    tags: ["Product", "AI Game Master"],
   },
   {
-    slug: "play-avalon-online",
-    title: "Play Avalon Online with AI — Rules, Roles & Strategy Guide",
-    excerpt:
-      "Learn the rules of Avalon, every role explained (Merlin, Assassin, Percival, Morgana), quest mechanics, strategy tips, and how to play online with AI.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Avalon", "How to Play"],
-  },
-  {
-    slug: "play-codenames-online",
-    title: "Play Codenames Online with AI — Rules, Tips & Free Game",
-    excerpt:
-      "Learn the rules of Codenames, Spymaster vs Operative strategy, how to give and guess clues, and play online for free with an AI partner.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Codenames", "How to Play"],
-  },
-  {
-    slug: "play-spyfall-online",
-    title: "Play Spyfall Online Free — Rules, Tips & AI-Hosted Game",
-    excerpt:
-      "Learn the rules of Spyfall, how locations work, spy vs regular player dynamics, question strategy, and play online with an AI host for free.",
+    slug: "ai-npc-explained",
+    title: "AI NPCs Explained — How AI Suspects Think and React",
+    excerpt: "How AI characters form personalities, maintain secrets, and react dynamically to your interrogation. The tech behind smart game NPCs.",
     date: "March 4, 2026",
     readTime: "6 min read",
-    tags: ["Spyfall", "How to Play"],
-  },
-  {
-    slug: "play-clue-online",
-    title: "Play Clue (Cluedo) Online with AI — Rules, Characters & Free Game",
-    excerpt:
-      "Learn the rules of Clue/Cluedo, all characters and weapons, deduction strategy, and play online for free with an AI Game Master.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Clue", "How to Play"],
-  },
-  {
-    slug: "play-undercover-online",
-    title: "Play Who's the Spy (Undercover) Online — Rules & Strategy",
-    excerpt:
-      "Learn the rules of Who's the Spy (Undercover / 谁是卧底), role strategy for Civilian, Undercover, and Mr. White, and play online with AI.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Undercover", "How to Play"],
-  },
-  {
-    slug: "play-escape-room-online",
-    title: "Play Escape Room Games Online — Free AI-Powered Puzzles",
-    excerpt:
-      "Play virtual escape rooms powered by AI — solve puzzles, crack codes, and escape before time runs out. Free, no download, with an AI host.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Escape Room", "Guide"],
-  },
-  {
-    slug: "play-mafia-online",
-    title: "Play Mafia Online: Free AI-Powered Game for 3-15 Players",
-    excerpt:
-      "Learn the rules of Mafia, every role explained, and how to play online for free with an AI host. Mafia vs Werewolf differences, strategy tips, and more.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Mafia", "How to Play"],
-  },
-  {
-    slug: "create-game-with-ai",
-    title: "How to Create Your Own AI Game — No Coding Required",
-    excerpt:
-      "Step-by-step guide to creating custom AI-powered games. Describe your idea in plain English and the AI builds the rules, roles, and gameplay for you.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Tutorial", "Game Design"],
-  },
-  {
-    slug: "ai-dungeon-vs-textgame",
-    title: "AI Dungeon vs TextGame.ai — Which AI Game Platform is Right for You?",
-    excerpt:
-      "Comparing AI Dungeon and TextGame.ai: solo adventures vs multiplayer games, freeform vs structured rules. Find out which platform fits your play style.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Comparison", "AI Games"],
-  },
-  {
-    slug: "ai-storytelling-games",
-    title: "AI Storytelling Games: Let AI Write Your Adventure",
-    excerpt:
-      "Discover AI storytelling games where AI generates narrative in response to your choices. Compare platforms, explore types of AI narrative games, and find the best experience.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Guide", "Storytelling"],
+    tags: ["AI Characters", "Deep Dive"],
   },
   {
     slug: "ai-game-master-guide",
-    title: "What is an AI Game Master? How AI Hosts Tabletop Games",
-    excerpt:
-      "Learn what an AI Game Master is, how it automates hosting tabletop games like Werewolf and D&D, assigns roles, manages phases, and narrates — plus how it compares to human GMs.",
+    title: "What Is an AI Game Master? Everything You Need to Know",
+    excerpt: "How an AI Game Master hosts murder mystery sessions — assigning roles, revealing evidence, tracking your progress, and scoring your detective work.",
     date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Guide", "AI Game Master"],
+    readTime: "5 min read",
+    tags: ["AI Game Master", "Guide"],
   },
   {
-    slug: "best-social-deduction-games",
-    title: "10 Best Social Deduction Games You Can Play Online in 2026",
-    excerpt:
-      "From Werewolf to Secret Hitler — the best social deduction games you can play online with friends or AI. Includes free options and AI-powered alternatives.",
-    date: "March 4, 2026",
-    readTime: "10 min read",
-    tags: ["Listicle", "Social Deduction", "Online Games"],
-  },
-  {
-    slug: "best-online-party-games",
-    title: "15 Best Online Party Games for Groups — Free, No Download (2026)",
-    excerpt:
-      "The best online party games you can play with friends — social deduction, word games, trivia, bluffing, and storytelling. Free, no download, many with AI hosts.",
-    date: "March 4, 2026",
+    slug: "ai-game-design-guide",
+    title: "How to Design AI-Powered Mystery Games",
+    excerpt: "A guide to designing murder mystery cases for AI. How to create suspects, plant evidence, write breakpoints, and build compelling investigations.",
+    date: "March 5, 2026",
     readTime: "8 min read",
-    tags: ["Listicle", "Party Games"],
-  },
-  {
-    slug: "virtual-team-building-games",
-    title: "Virtual Team Building Games with AI — Fun Ideas for Remote Teams",
-    excerpt:
-      "Discover AI-powered team building games for remote teams — Werewolf, Murder Mystery, Trivia, and more. No moderator needed. Build connection and morale from anywhere.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Team Building", "Remote Work"],
-  },
-  {
-    slug: "best-single-player-ai-games",
-    title: "Best Single Player Games with AI Companions (2026)",
-    excerpt:
-      "Play games alone with AI — solo Werewolf, Murder Mystery, AI Dungeon, and more. No friends online? AI fills every seat. Available 24/7, adapts to you.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Listicle", "Solo Gaming"],
-  },
-  {
-    slug: "play-board-games-online-ai",
-    title: "Play Board Games Online with AI Players — No Friends Needed",
-    excerpt:
-      "Play board game-style games online with AI — Werewolf, Mafia, Avalon, Secret Hitler, and more. AI fills seats, AI hosts. Start anytime, no downloads.",
-    date: "March 4, 2026",
-    readTime: "6 min read",
-    tags: ["Guide", "Board Games"],
-  },
-  {
-    slug: "play-secret-hitler-online",
-    title: "Play Secret Hitler Online with AI — Rules, Strategy & Free Game",
-    excerpt:
-      "Learn the rules of Secret Hitler, every role explained, winning strategies, and how to play online for free with an AI Game Master. Liberals vs Fascists — no moderator needed.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Secret Hitler", "How to Play"],
-  },
-  {
-    slug: "play-werewolf-online",
-    title: "How to Play Werewolf Online with AI — Rules, Roles & Free Game",
-    excerpt:
-      "Learn the complete rules of Werewolf, every role explained, winning strategies for both teams, and how to play online for free with an AI Game Master.",
-    date: "March 4, 2026",
-    readTime: "9 min read",
-    tags: ["Werewolf", "How to Play", "Strategy"],
-  },
-  {
-    slug: "roleplay-ai-guide",
-    title: "What is Roleplay AI? The Complete Guide to AI Role-Playing Games (2026)",
-    excerpt:
-      "Learn what roleplay AI is, how it works, and the best platforms for AI-powered role-playing games — from social deduction to custom RPGs with AI characters.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Guide", "AI Characters", "Roleplay"],
-  },
-  {
-    slug: "character-ai-alternatives",
-    title: "5 Best Character.AI Alternatives for Multiplayer Games (2026)",
-    excerpt:
-      "Looking for AI characters you can actually play games with? We compare the top Character.AI alternatives for social deduction, RPGs, and multiplayer roleplay.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Comparison", "AI Characters", "Multiplayer"],
-  },
-  {
-    slug: "ai-games-for-students",
-    title: "Best AI Games for Students — Educational Text Games for the Classroom",
-    excerpt:
-      "Discover the best AI-powered text games for students — from collaborative storytelling to social deduction. Engage critical thinking in the classroom.",
-    date: "March 4, 2026",
-    readTime: "7 min read",
-    tags: ["Education", "Students", "AI Games"],
-  },
-  {
-    slug: "character-ai-text-adventure",
-    title: "Character AI Text Adventure — Play Interactive Stories with AI Characters",
-    excerpt:
-      "Explore AI-powered text adventures with unique AI characters. Create your own stories, solve mysteries, and play social deduction games with character AI.",
-    date: "March 4, 2026",
-    readTime: "8 min read",
-    tags: ["Text Adventure", "AI Characters", "Interactive Fiction"],
+    tags: ["Game Design", "Guide"],
   },
 ];
 
@@ -630,7 +96,7 @@ const jsonLd = {
   "@type": "CollectionPage",
   name: `Blog — ${SITE_NAME}`,
   description:
-    "Guides, comparisons, and tips on AI-powered text games, social deduction, roleplay AI, and multiplayer gaming with AI characters.",
+    "Guides, tips, and deep dives on AI murder mystery games, detective strategies, and how AI suspects work.",
   url: `${SITE_DOMAIN}/blog`,
   isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_DOMAIN },
   mainEntity: {
@@ -654,7 +120,7 @@ export default function BlogIndex() {
       />
       <h1 className="text-4xl font-black text-white mb-3">Blog</h1>
       <p className="text-lg text-zinc-400 mb-12">
-        Guides, comparisons, and ideas for AI-powered multiplayer games.
+        Guides and deep dives on AI murder mystery games.
       </p>
 
       <div className="space-y-8">

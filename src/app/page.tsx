@@ -4,33 +4,33 @@ import { FAQ_ITEMS } from "@/data/landing-content";
 import HomeClient from "./home-client";
 
 export const metadata: Metadata = {
-  title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
+  title: "TextGame.ai — AI Murder Mystery & Detective Games",
   description:
-    "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed — play solo, with friends, or with a mix of both. AI fills every empty seat and reacts like real players.",
+    "Solve AI-powered murder mysteries. Interrogate suspects with real personalities, collect evidence, and crack the case. Each investigation plays differently — 10 minutes per case, free to start.",
   keywords: [
-    "AI game master",
-    "text-based games online",
-    "AI party games",
-    "online social deduction game",
-    "werewolf online",
-    "AI host game",
-    "multiplayer text game",
-    "play AI games online",
+    "AI murder mystery",
+    "detective game online",
+    "AI interrogation game",
+    "script kill",
+    "murder mystery game",
+    "AI detective",
+    "solve murder mystery online",
+    "interactive mystery game",
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
+    title: "TextGame.ai — AI Murder Mystery & Detective Games",
     description:
-      "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed — play solo or with friends.",
+      "Interrogate AI suspects. Collect evidence. Solve the case. Each suspect has a unique personality and hidden secrets.",
     type: "website",
     url: SITE_DOMAIN,
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "TextGame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "TextGame.ai — AI Murder Mystery Games" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
+    title: "TextGame.ai — AI Murder Mystery & Detective Games",
     description:
-      "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed.",
+      "Interrogate AI suspects. Collect evidence. Solve the case. Free to play.",
     images: ["/hero.webp"],
   },
 };
@@ -62,9 +62,9 @@ export default function HomePage() {
       <HomeClient
         heroHeadline={
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-            Play multiplayer games{" "}
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-              with AI characters
+            Solve murders{" "}
+            <span className="bg-gradient-to-r from-rose-400 via-red-400 to-rose-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              with AI suspects
             </span>
           </h2>
         }

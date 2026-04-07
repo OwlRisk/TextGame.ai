@@ -38,39 +38,20 @@ export const metadata: Metadata = {
   },
   keywords: [
     "TextGame.ai",
-    "AI text game",
-    "text-based game",
-    "AI game host",
-    "multiplayer text adventure",
-    "werewolf game AI",
-    "AI role-playing game",
-    "game design AI",
-    "ai rpg",
-    "ai text adventure",
-    "character ai alternative",
-    "ai character game",
-    "roleplay ai",
-    "ai dungeon master",
-    "ai game generator",
-    "ai game maker",
-    "character ai",
-    "play werewolf online",
-    "play mafia online",
-    "ai storytelling",
-    "social deduction game",
-    "ai npc",
-    "ai characters",
-    "multiplayer ai game",
-    "text based rpg",
-    "ai role play chat",
-    "ai powered game",
-    "online werewolf",
-    "online mafia game",
-    "ai text rpg",
-    "character ai game",
-    "free ai game",
-    "ai board game",
-    "custom ai game",
+    "AI murder mystery",
+    "detective game online",
+    "AI interrogation game",
+    "script kill",
+    "murder mystery game",
+    "AI detective game",
+    "solve murder mystery",
+    "interactive mystery",
+    "AI suspect interrogation",
+    "crime investigation game",
+    "whodunit game online",
+    "mystery detective game",
+    "AI crime solving",
+    "free murder mystery game",
   ],
   alternates: {
     canonical: "/",
@@ -191,35 +172,28 @@ export default async function RootLayout({
         {/* Static crawlable content for search engines (hidden from sighted users) */}
         <noscript>
           <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
-            <h1>{SITE_NAME} — AI-Powered Text Game Platform</h1>
+            <h1>{SITE_NAME} — AI-Powered Murder Mystery Games</h1>
             <p>{SITE_DESCRIPTION}</p>
-            <h2>Play AI Text Games Online</h2>
+            <h2>Solve AI Murder Mysteries Online</h2>
             <p>
-              Create and play multiplayer text-based games with an AI Game Master and AI characters.
-              The best Character.AI alternative for roleplay, social deduction, and RPG games.
-              Design custom games or choose from 10+ templates — Werewolf, Mafia, Murder Mystery, and more.
+              Step into a crime scene. Interrogate AI suspects — each with a unique personality,
+              hidden secrets, and breaking points. Collect evidence, spot contradictions, and
+              crack the case. Every investigation plays differently.
             </p>
-            <h2>AI Game Master &amp; AI Dungeon Master</h2>
+            <h2>How It Works</h2>
             <p>
-              Your AI Game Master hosts every session — assigns roles, runs phases, narrates the story,
-              and fills every seat with unique AI characters that have their own voice, personality, and strategy.
-              Perfect as an AI dungeon master for text-based RPGs and adventures.
+              An AI Host runs the investigation — presents the crime scene, reveals evidence
+              across three acts, and tracks your progress. AI suspects answer your questions
+              in character, lie to protect their secrets, and crack under the right pressure.
+              Solve the case in about 10 minutes.
             </p>
-            <h2>Popular AI Games</h2>
+            <h2>Murder Mystery Cases</h2>
             <nav>
-              <a href="/discover">Discover AI Text Games</a>
-              <a href="/games">Game Library — Browse All Games</a>
-              <a href="/games/werewolf">Play Werewolf Online with AI</a>
-              <a href="/games/mafia">Play Mafia Online with AI</a>
-              <a href="/games/undercover">Play Who&apos;s the Spy / Undercover Online</a>
-              <a href="/games/avalon">Play Avalon Online with AI</a>
-              <a href="/games/escape-room">AI Escape Room Game</a>
-              <a href="/games/trivia">AI Trivia Game</a>
-              <a href="/games/tarot">AI Tarot Reading</a>
-              <a href="/games/secret-hitler">Play Secret Hitler Online with AI</a>
-              <a href="/games/murder-mystery">AI Murder Mystery Game</a>
-              <a href="/blog">Blog — AI Game Guides &amp; Comparisons</a>
-              <a href="/blog/character-ai-alternatives">Best Character.AI Alternatives for Multiplayer Games</a>
+              <a href="/discover">Browse All Cases</a>
+              <a href="/cases">Murder Mystery Case Library</a>
+              <a href="/blog">Blog — Detective Guides &amp; Tips</a>
+              <a href="/blog/ai-murder-mystery-games">AI Murder Mystery Games Guide</a>
+              <a href="/blog/play-murder-mystery-alone">Play Murder Mystery Alone with AI</a>
               <a href="/recharge">Buy Credits</a>
               <a href="/signin">Sign In</a>
               <a href="/terms">Terms of Service</a>

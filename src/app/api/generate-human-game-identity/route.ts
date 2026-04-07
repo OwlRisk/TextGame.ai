@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `You generate a single short in-game character name for the human player. The name must fit the game's theme and setting (e.g. for a school mystery: a student name; for werewolf: a villager name; for fantasy: a fitting first name). One name only, 1-3 words, no explanation. Use English.`,
+          content: `You generate a single short in-game character name for the human player. The name must fit the game's theme and setting (e.g. for a school mystery: a student name; for a murder mystery: a detective name; for a historical setting: a period-appropriate name). One name only, 1-3 words, no explanation. Use English.`,
         },
         {
           role: "user",

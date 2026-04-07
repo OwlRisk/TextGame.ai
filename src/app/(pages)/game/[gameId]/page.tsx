@@ -78,6 +78,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameOverSummary,
     setGameOverSummary,
     aiSuggestedPrompts,
+    suggestedChoices,
     addReaction,
   } = useGameRoomContext();
 
@@ -388,7 +389,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               <h1 className="text-2xl font-bold mb-4">Game not found</h1>
               <p className="text-zinc-400 text-sm mb-6">This game may have been deleted or the link is invalid.</p>
               <div className="flex flex-wrap gap-3 justify-center">
-                <button onClick={() => router.push("/discover")} className="px-4 py-2 bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">Explore Games</button>
+                <button onClick={() => router.push("/discover")} className="px-4 py-2 bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">Browse Cases</button>
                 <button onClick={() => router.push("/my-games")} className="px-4 py-2 bg-zinc-700 rounded-lg hover:bg-zinc-600 transition-colors">My Games</button>
                 <button onClick={() => router.push("/")} className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">Home</button>
               </div>
@@ -411,7 +412,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    gameSectionLabel: "Game Rooms",
+    gameSectionLabel: "Investigation",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || null,
     gameId,
@@ -457,7 +458,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
       {/* Mobile left drawer: channels */}
       <Sheet open={mobileLeftDrawer === "channels"} onOpenChange={(open) => !open && setMobileLeftDrawer(null)}>
-        <SheetContent side="left" title="Channels and rules" className="w-64 max-w-[85vw] p-0 bg-zinc-800 border-r border-zinc-700">
+        <SheetContent side="left" title="Evidence and rules" className="w-64 max-w-[85vw] p-0 bg-zinc-800 border-r border-zinc-700">
           <ChannelList {...channelListCommon} selectedChannelId={selectedChannelId} onSelectChannel={(id) => { setSelectedChannelId(id); setMobileLeftDrawer(null); }} />
         </SheetContent>
       </Sheet>
@@ -579,6 +580,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             humanName={humanGameIdentity?.name || undefined}
             introYourTurnHint={introYourTurnHint}
             aiSuggestedPrompts={aiSuggestedPrompts}
+            suggestedChoices={suggestedChoices}
             lastFailedSendContent={lastFailedSendContent}
             onRetryLastMessage={handleRetryLastMessage}
             isRoundInProgress={isRoundInProgress}

@@ -24,9 +24,9 @@ export default function DiscoverError({
           </div>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Failed to load games</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Failed to load cases</h1>
           <p className="text-zinc-400 text-sm">
-            We couldn&apos;t load the game catalog right now. Please try again.
+            We couldn&apos;t load the case library right now. Please try again.
           </p>
           {error.digest && (
             <p className="text-zinc-600 text-xs mt-2 font-mono">Error ID: {error.digest}</p>

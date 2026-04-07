@@ -1,41 +1,29 @@
 export type { GameTemplate, QuickAction, PartialTemplate, TemplateChannel, ActionType, TargetType } from "./types";
 export { withDefaults, AFTERLIFE_CHANNEL_ID } from "./types";
 
-import { werewolf } from "./werewolf";
-import { mafia } from "./mafia";
-import { undercover } from "./undercover";
-import { tarot } from "./tarot";
-import { codenames } from "./codenames";
-import { avalon } from "./avalon";
-import { spyfall } from "./spyfall";
-import { detectiveMystery } from "./detective-mystery";
-import { escapeRoom } from "./escape-room";
-import { trivia } from "./trivia";
-import { debate } from "./debate";
-import { storyteller } from "./storyteller";
-import { twentyQuestions } from "./twenty-questions";
-import { twoTruthsLie } from "./two-truths-lie";
-import { rpgDungeon } from "./rpg-dungeon";
+// Active templates
 import { scriptKill } from "./script-kill";
 import { custom } from "./custom";
 import type { GameTemplate } from "./types";
 
+// Archived — not currently exposed in UI (kept for future restoration)
+// import { werewolf } from "./werewolf";
+// import { mafia } from "./mafia";
+// import { undercover } from "./undercover";
+// import { tarot } from "./tarot";
+// import { codenames } from "./codenames";
+// import { avalon } from "./avalon";
+// import { spyfall } from "./spyfall";
+// import { detectiveMystery } from "./detective-mystery";
+// import { escapeRoom } from "./escape-room";
+// import { trivia } from "./trivia";
+// import { debate } from "./debate";
+// import { storyteller } from "./storyteller";
+// import { twentyQuestions } from "./twenty-questions";
+// import { twoTruthsLie } from "./two-truths-lie";
+// import { rpgDungeon } from "./rpg-dungeon";
+
 export const GAME_TEMPLATES: GameTemplate[] = [
-  werewolf,
-  mafia,
-  undercover,
-  tarot,
-  codenames,
-  avalon,
-  spyfall,
-  detectiveMystery,
-  escapeRoom,
-  trivia,
-  debate,
-  storyteller,
-  twentyQuestions,
-  twoTruthsLie,
-  rpgDungeon,
   scriptKill,
   custom,
 ];

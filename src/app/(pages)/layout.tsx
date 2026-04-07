@@ -9,9 +9,9 @@ import { useAuth } from "@/app/contexts/AuthContext";
 const SIDEBAR_EXCLUDED_PATHS = ["/signin"];
 
 const PATHNAME_TO_TITLE: Record<string, string> = {
-  "/discover": "Discover",
-  "/create": "Create Game",
-  "/my-games": "My Games",
+  "/discover": "Cases",
+  "/create": "Custom Game",
+  "/my-games": "My Cases",
   "/profile": "Profile",
   "/usage": "Usage & Spending",
   "/subscription": "Subscription",
@@ -20,9 +20,9 @@ const PATHNAME_TO_TITLE: Record<string, string> = {
 };
 
 function getMobileTitle(pathname: string): string {
-  if (pathname.startsWith("/game/")) return "Game";
-  if (pathname.startsWith("/games/")) return "Game Info";
-  if (pathname === "/games") return "All Games";
+  if (pathname.startsWith("/game/")) return "Investigation";
+  if (pathname.startsWith("/games/")) return "Case Info";
+  if (pathname === "/games") return "Case Library";
   return PATHNAME_TO_TITLE[pathname] ?? "Menu";
 }
 

@@ -1,6 +1,7 @@
 {
-  "name": "textgame.ai",
-  "short_name": "textgame.ai",
+  "name": "TextGame.ai — AI Murder Mystery",
+  "short_name": "TextGame.ai",
+  "description": "Solve AI-powered murder mysteries. Interrogate suspects, collect evidence, crack the case.",
   "start_url": "/",
   "icons": [
     { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },

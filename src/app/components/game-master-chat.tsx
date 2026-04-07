@@ -849,7 +849,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
   const handleStartGame = async () => {
     if (checkRulesEmpty(customRules)) {
-      toast.info("Chat with the Game Master first to generate game rules.");
+      toast.info("Chat with the Game Master first to set up your case.");
       return;
     }
     setIsStartingGame(true);
@@ -1344,7 +1344,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       Thinking...
                     </span>
                   ) : conversationState === "greeting" || conversationState === "game-type" ? (
-                    "Describe a game or browse templates"
+                    "Browse murder mystery cases"
                   ) : conversationState === "completed" ? (
                     "Ready to start!"
                   ) : (
@@ -1357,7 +1357,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             <Link href="/discover" className="hidden sm:inline-flex">
               <Button variant="ghost" size="sm" className="text-xs text-zinc-400 hover:text-white hover:bg-white/10 gap-1.5">
                 <LayoutGrid className="h-3.5 w-3.5" />
-                Templates
+                Cases
               </Button>
             </Link>
             {/* Right: Game Document + Create Room — mobile only */}

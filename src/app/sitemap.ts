@@ -35,7 +35,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: SITE_DOMAIN,                        lastModified: now, changeFrequency: "weekly",  priority: 1   },
     { url: `${SITE_DOMAIN}/discover`,           lastModified: now, changeFrequency: "daily",   priority: 0.9 },
-    { url: `${SITE_DOMAIN}/games`,              lastModified: now, changeFrequency: "weekly",  priority: 0.9 },
+    { url: `${SITE_DOMAIN}/cases`,              lastModified: now, changeFrequency: "weekly",  priority: 0.9 },
+    { url: `${SITE_DOMAIN}/games`,              lastModified: now, changeFrequency: "weekly",  priority: 0.8 },
     ...gamePages,
     { url: `${SITE_DOMAIN}/blog`,               lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
     ...blogPages,

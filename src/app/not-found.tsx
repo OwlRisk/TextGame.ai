@@ -24,7 +24,7 @@ export default function NotFound() {
             href="/discover"
             className="inline-flex items-center justify-center rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 transition-colors"
           >
-            Browse games
+            Browse cases
           </Link>
         </div>
       </div>

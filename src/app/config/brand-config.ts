@@ -2,9 +2,9 @@
 export const BRAND_CONFIG = {
   name: "TextGame.ai",
   shortName: "TextGame",
-  tagline: "Any game you can describe, you can play",
+  tagline: "AI-Powered Murder Mystery Games",
   description:
-    "Describe any game idea in plain English. AI builds the rules, runs the session, and fills every seat.",
+    "Step into a crime scene. Interrogate AI suspects with real personalities. Solve the case before time runs out.",
 
   logo: {
     square: "/logo.png",

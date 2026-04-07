@@ -68,6 +68,8 @@ interface ChatAreaProps {
   aiSuggestedPrompts?: string[];
   /** Label for AI suggestions row (e.g. "AI suggestions") */
   aiSuggestionsLabel?: string;
+  /** Host-suggested action choices for the detective */
+  suggestedChoices?: string[];
   /** When last send failed, show retry banner with this content */
   lastFailedSendContent?: string | null;
   /** Call to retry sending the last failed message */
@@ -152,6 +154,7 @@ export function ChatArea({
   introEveryoneSpokenHint,
   aiSuggestedPrompts = [],
   aiSuggestionsLabel = 'AI suggestions',
+  suggestedChoices = [],
   lastFailedSendContent,
   onRetryLastMessage,
   isRoundInProgress = false,
@@ -507,6 +510,7 @@ export function ChatArea({
         introEveryoneSpokenHint={introEveryoneSpokenHint}
         aiSuggestedPrompts={aiSuggestedPrompts}
         aiSuggestionsLabel={aiSuggestionsLabel}
+        suggestedChoices={suggestedChoices}
         lastFailedSendContent={lastFailedSendContent}
         onRetryLastMessage={onRetryLastMessage}
         activeVote={activeVote}

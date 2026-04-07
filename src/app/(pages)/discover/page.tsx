@@ -2,34 +2,30 @@ import type { Metadata } from "next";
 import DiscoverView from "./discover-view";
 
 export const metadata: Metadata = {
-  title: "Discover AI Text Games — Werewolf, Mafia, RPG, Mystery & More",
+  title: "Murder Mystery Cases — AI Detective Games",
   description:
-    "Browse 10+ AI-powered multiplayer text game templates. Play Werewolf, Mafia, Secret Hitler, Who's the Spy, Murder Mystery, Trivia and more — or create your own custom roleplay AI game in minutes. Best Character.AI alternative for social deduction games.",
+    "Browse AI murder mystery cases. Each case features unique suspects with real personalities, hidden secrets, and breaking points. Choose a case and start investigating — 10 minutes per case, free to start.",
   keywords: [
-    "ai text games",
-    "play werewolf online",
-    "play mafia online",
-    "ai rpg",
-    "roleplay ai",
-    "character ai alternative",
-    "social deduction game",
-    "ai game templates",
-    "multiplayer ai game",
-    "ai dungeon master",
-    "text adventure game",
+    "AI murder mystery",
+    "detective game online",
+    "script kill cases",
+    "murder mystery game",
+    "AI interrogation game",
+    "whodunit game online",
+    "interactive mystery",
   ],
   alternates: { canonical: "/discover" },
   openGraph: {
-    title: "Discover AI Text Games · TextGame.ai",
+    title: "Murder Mystery Cases · TextGame.ai",
     description:
-      "10+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
+      "Browse AI murder mystery cases. Interrogate suspects, collect evidence, solve the case.",
     type: "website",
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover AI Text Games · TextGame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Murder Mystery Cases · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Discover AI Text Games · TextGame.ai",
-    description: "10+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
+    title: "Murder Mystery Cases · TextGame.ai",
+    description: "Browse AI murder mystery cases. Interrogate suspects, collect evidence, solve the case.",
     images: ["/hero.webp"],
   },
 };

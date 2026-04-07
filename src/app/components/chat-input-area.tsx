@@ -26,6 +26,7 @@ export interface ChatInputAreaProps {
   introEveryoneSpokenHint?: string;
   aiSuggestedPrompts: string[];
   aiSuggestionsLabel: string;
+  suggestedChoices?: string[];
   lastFailedSendContent?: string | null;
   onRetryLastMessage?: () => void;
   activeVote?: ActiveVote | null;
@@ -58,6 +59,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   introEveryoneSpokenHint,
   aiSuggestedPrompts,
   aiSuggestionsLabel,
+  suggestedChoices = [],
   lastFailedSendContent,
   onRetryLastMessage,
   activeVote,
@@ -274,6 +276,22 @@ export const ChatInputArea = React.memo(function ChatInputArea({
       {introEveryoneSpokenHint && canSend && (
         <div className="mb-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 text-sm text-emerald-200 backdrop-blur-sm">
           {introEveryoneSpokenHint}
+        </div>
+      )}
+      {suggestedChoices.length > 0 && canSend && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {suggestedChoices.map((choice) => (
+            <Button
+              key={choice}
+              variant="outline"
+              size="sm"
+              className="h-auto px-3 py-1.5 text-sm border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 hover:text-rose-100 whitespace-normal text-left"
+              disabled={sendDisabled}
+              onClick={() => handleSend(choice)}
+            >
+              {choice}
+            </Button>
+          ))}
         </div>
       )}
       {aiSuggestedPrompts.length > 0 && canSend && (

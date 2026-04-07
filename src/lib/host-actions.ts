@@ -43,6 +43,8 @@ export type HostAction =
   | { type: "engagement"; score: number }
   /** BEGIN_GAME: AI Host decides all players are ready; code should transition to active phase. */
   | { type: "begin_game" }
+  /** CHOICES: suggested next actions for the player to pick from (or ignore). */
+  | { type: "choices"; options: string[] }
   ;
 
 /** Result of parsing host content: public text + list of actions to apply. */
@@ -160,6 +162,19 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
   }
   // Strip orphaned opening tags (e.g. model output got cut off before content)
   cleanContent = cleanContent.replace(/\[MY_NOTES\]/gi, '');
+
+  // ─── [CHOICES] block: suggested actions for the player ─────────────────
+  const choicesMatch = cleanContent.match(/\[CHOICES\]\s*([\s\S]*?)\s*\[\/CHOICES\]/i);
+  if (choicesMatch) {
+    const options = choicesMatch[1]
+      .split("|")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (options.length > 0) {
+      actions.push({ type: "choices", options });
+    }
+    cleanContent = cleanContent.replace(/\[CHOICES\][\s\S]*?\[\/CHOICES\]/gi, "");
+  }
 
   // ─── Inline single-line directives (GM-driven UI) ──────────────────────
   const INLINE_DIRECTIVES: Array<{

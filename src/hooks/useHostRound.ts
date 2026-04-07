@@ -115,6 +115,7 @@ export function useHostRound({
     roundNumber,
     setRoundNumber,
     addReaction,
+    setSuggestedChoices,
   } = useGameRoomContext();
 
   const currentGame = games.find((g) => g.id === gameId);
@@ -144,6 +145,7 @@ export function useHostRound({
   const handleSendMessage = async (content: string, options?: SendMessageOptions) => {
     if (!content.trim()) return;
     if (gamePhase === "ended") return;
+    setSuggestedChoices([]);
 
     if (isRoundInProgress) {
       pendingHumanMsgRef.current = content;
@@ -487,6 +489,8 @@ export function useHostRound({
             if (kickoff) {
               launchOpeningRound(kickoff);
             }
+          } else if (a.type === "choices") {
+            setSuggestedChoices(a.options);
           }
         }
         return cleanContent;

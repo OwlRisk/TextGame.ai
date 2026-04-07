@@ -5,28 +5,27 @@ import { ChevronRight, Users, Clock } from "lucide-react";
 import { GAME_SEO_DATA } from "@/lib/game-seo-data";
 
 export const metadata: Metadata = {
-  title: "AI Game Library",
+  title: "Murder Mystery Case Library",
   description:
-    "Browse 15+ text games with an AI game master — Werewolf, Mafia, Undercover, Escape Room, Trivia and more. Free to play, no setup needed.",
+    "Browse AI murder mystery cases. Interrogate suspects, collect evidence, and solve the case. 8 unique cases — each with different suspects, motives, and secrets.",
   keywords: [
-    "AI text games",
-    "online party games",
-    "social deduction games online",
-    "AI game master",
-    "free online games",
-    "werewolf mafia online",
+    "AI murder mystery",
+    "detective game",
+    "script kill cases",
+    "murder mystery online",
+    "AI interrogation game",
   ],
   alternates: { canonical: "/games" },
   openGraph: {
-    title: "AI Game Library · TextGame.ai",
-    description: "Browse 15+ text games with an AI game master. Free to play, no setup needed.",
+    title: "Murder Mystery Cases · TextGame.ai",
+    description: "Browse AI murder mystery cases. Interrogate suspects, collect evidence, solve the case.",
     type: "website",
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "AI Game Library · TextGame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Murder Mystery Cases · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Game Library · TextGame.ai",
-    description: "Browse 15+ text games with an AI game master. Free to play, no setup needed.",
+    title: "Murder Mystery Cases · TextGame.ai",
+    description: "Browse AI murder mystery cases. Interrogate suspects, collect evidence, solve the case.",
     images: ["/hero.webp"],
   },
 };
@@ -72,17 +71,17 @@ export default function GamesPage() {
         {/* Hero */}
         <section className="space-y-4 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight">
-            AI Game Library
+            Murder Mystery Cases
           </h1>
           <p className="text-zinc-400 text-lg max-w-xl mx-auto leading-relaxed">
-            Play any of these games with an AI game master — no moderator, no setup, no download.
-            Just invite your friends and start playing.
+            Each case features unique AI suspects with real personalities. Interrogate them,
+            collect evidence, and solve the mystery.
           </p>
           <Link
             href="/discover"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-colors shadow-lg shadow-violet-900/30"
           >
-            Browse All Games
+            Browse All Cases
             <ChevronRight className="h-4 w-4" />
           </Link>
         </section>
@@ -185,15 +184,15 @@ export default function GamesPage() {
 
         {/* Bottom CTA */}
         <section className="rounded-2xl bg-gradient-to-br from-violet-900/30 to-indigo-900/20 border border-violet-800/30 p-8 text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Don't see your game?</h2>
+          <h2 className="text-2xl font-bold text-white">More cases coming soon</h2>
           <p className="text-zinc-400 text-sm max-w-sm mx-auto">
-            Create any game from scratch — describe the rules and the AI host takes it from there.
+            New murder mystery cases are added regularly. Each with unique suspects, evidence, and solutions.
           </p>
           <Link
             href="/discover"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-colors"
           >
-            Create a Custom Game
+            Browse Cases
             <ChevronRight className="h-4 w-4" />
           </Link>
         </section>

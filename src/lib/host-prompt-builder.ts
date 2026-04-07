@@ -32,11 +32,8 @@ export interface HostPromptOpts {
 }
 
 const CATEGORY_PACING: Record<string, string> = {
-  deduction: "Force state changes (vote / phase transition) after a few discussion turns. Prefer directives over more chatter.",
-  quiz: "Keep rounds crisp. Adjudicate quickly, then next question. No open-ended drift.",
-  cooperative: "Nudge with clues or consequences if stalled. Rotate speakers. Inject obstacles if pace drops.",
-  party: "Energy high, rounds snappy. Next round quickly after each answer/vote. Inject variety.",
-  open: "Creative freedom, but no dead air. Drop a concrete hook if momentum fades.",
+  deduction: "Enforce question budgets strictly. Transition acts when budget is exhausted. Keep suspect answers to 2-3 sentences max. Use ANNOUNCE: for act transitions. The investigation should feel focused and time-pressured.",
+  open: "Keep momentum. Drop a concrete hook if pace fades. No dead air.",
 };
 
 function buildProgressionPolicy(tmpl: GameTemplate | undefined, recentNonHostTurns: number): string {
@@ -144,7 +141,7 @@ AUTO_CHANNEL: <RoomName> [| <goal>]
 - "private_ai" rooms: free discussion, no structured outcome.
 Place AUTO_CHANNEL BEFORE NEXT_SPEAKER. Only valid for rooms with explicit [ACCESS:...] restrictions.
 Examples:
-  AUTO_CHANNEL: Werewolves only | Pick a villager to eliminate tonight
+  AUTO_CHANNEL: Suspects only | Discuss alibis and coordinate your stories
   NEXT_SPEAKER: ${humanName}
 `;
   }

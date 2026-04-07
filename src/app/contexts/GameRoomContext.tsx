@@ -42,6 +42,8 @@ interface GameRoomContextType {
   gameEnded: boolean;
   gameResult: { winner: string; message: string } | null;
   aiSuggestedPrompts: string[];
+  /** Host-suggested actions for the player (from [CHOICES] blocks) */
+  suggestedChoices: string[];
   /** Human player's in-game name (and avatar key) for this game — AI-generated, persisted with room. */
   humanGameIdentity: { name: string } | null;
   /** Persisted avatar image URLs (key = "name|type") so they sync across devices. */
@@ -90,6 +92,7 @@ interface GameRoomContextType {
   setGameEnded: React.Dispatch<React.SetStateAction<boolean>>;
   setGameResult: React.Dispatch<React.SetStateAction<{ winner: string; message: string } | null>>;
   setAiSuggestedPrompts: React.Dispatch<React.SetStateAction<string[]>>;
+  setSuggestedChoices: React.Dispatch<React.SetStateAction<string[]>>;
   setHumanGameIdentity: React.Dispatch<React.SetStateAction<{ name: string } | null>>;
   /** Call when a generated avatar URL is first loaded so we persist it for this room (key = "name|type"). */
   onAvatarUrlLoaded: (key: string, url: string) => void;
@@ -136,6 +139,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [gameEnded, setGameEnded] = useState(false);
   const [gameResult, setGameResult] = useState<{ winner: string; message: string } | null>(null);
   const [aiSuggestedPrompts, setAiSuggestedPrompts] = useState<string[]>([]);
+  const [suggestedChoices, setSuggestedChoices] = useState<string[]>([]);
   const [humanGameIdentity, setHumanGameIdentity] = useState<{ name: string } | null>(null);
   const [avatarImageUrls, setAvatarImageUrls] = useState<Record<string, string>>({});
   const [phaseLabel, setPhaseLabel] = useState("");
@@ -769,6 +773,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     gameEnded,
     gameResult,
     aiSuggestedPrompts,
+    suggestedChoices,
     humanGameIdentity,
     avatarImageUrls,
     isRoomLoading: !isHydrated,
@@ -802,6 +807,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setGameEnded,
     setGameResult,
     setAiSuggestedPrompts,
+    setSuggestedChoices,
     setHumanGameIdentity,
     setPhaseLabel,
     setMood,
@@ -816,7 +822,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     messages, players, gamePhase, gamePhaseState, selectedChannelId,
     currentSpeakerId, typingUsers, privateMessages,
     myBoardContent, playerNotes, sections, sectionsLoading, gameEvents,
-    gameEnded, gameResult, aiSuggestedPrompts, humanGameIdentity,
+    gameEnded, gameResult, aiSuggestedPrompts, suggestedChoices, humanGameIdentity,
     avatarImageUrls, isHydrated, phaseLabel, mood, activeVote, timerEndsAt,
     gameOverSummary, roundNumber, onAvatarUrlLoaded, regenerateAvatar, addMessage,
     addStreamingMessage, updateStreamingMessage, addEventNotification,

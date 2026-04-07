@@ -45,14 +45,14 @@ export default function DiscoverView() {
     if (!user && !loading) {
       const returnUrl = `/discover`;
       router.push(`/signin?returnUrl=${encodeURIComponent(returnUrl)}`);
-      toast.info("Sign in to create this game");
+      toast.info("Sign in to start this case");
       return;
     }
     if (creating) return;
     setCreating(true);
 
     const toastId = "create-game";
-    toast.loading("Creating game...", { id: toastId });
+    toast.loading("Setting up case...", { id: toastId });
 
     try {
       trackEvent("template_selected", { template: preset.id, source: "discover" });

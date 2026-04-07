@@ -24,9 +24,9 @@ export default function GameRoomError({
           </div>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Game room error</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Investigation error</h1>
           <p className="text-zinc-400 text-sm">
-            Something went wrong in the game room. Your progress is saved — try reloading.
+            Something went wrong during the investigation. Your progress is saved — try reloading.
           </p>
           {error.digest && (
             <p className="text-zinc-600 text-xs mt-2 font-mono">Error ID: {error.digest}</p>

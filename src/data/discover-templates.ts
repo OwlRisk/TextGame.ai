@@ -1,10 +1,6 @@
 import {
   Flame,
-  Swords,
-  MessageCircle,
   Search,
-  Drama,
-  Lightbulb,
 } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -831,18 +827,10 @@ export const EXTRA_GAMES: GameTemplate[] = [];
 // ── Aggregated & Derived ────────────────────────────────────────────────────
 
 const SCRIPT_KILL_PRESETS = MYSTERY_GAMES.filter(g => g.templateId === "script-kill");
-const OTHER_MYSTERY = MYSTERY_GAMES.filter(g => g.templateId !== "script-kill");
 
+// Product pivot: only Script Kill cases are exposed
 export const ALL_PRESETS: GameTemplate[] = [
   ...SCRIPT_KILL_PRESETS,
-  FEATURED_TEMPLATE,
-  ...CORE_TEMPLATES,
-  ...SOCIAL_DEDUCTION,
-  ...PARTY_GAMES,
-  ...OTHER_MYSTERY,
-  ...ROLEPLAY_GAMES,
-  ...EDUCATIONAL_GAMES,
-  ...EXTRA_GAMES,
 ];
 
 export function getPresetById(presetId: string | null): DiscoverPreset | null {
@@ -859,18 +847,10 @@ export function getPresetById(presetId: string | null): DiscoverPreset | null {
 }
 
 export const CATEGORIES = [
-  { id: "all",       label: "All Games",       icon: Flame },
-  { id: "deduction", label: "Social Deduction", icon: Swords },
-  { id: "party",     label: "Party",            icon: MessageCircle },
-  { id: "mystery",   label: "Mystery",          icon: Search },
-  { id: "creative",  label: "Creative",         icon: Drama },
-  { id: "brain",     label: "Brain Games",      icon: Lightbulb },
+  { id: "all",       label: "All Cases",        icon: Flame },
+  { id: "mystery",   label: "Murder Mystery",   icon: Search },
 ] as const;
 
 export const CATEGORY_MAP: Record<string, GameTemplate[]> = {
-  deduction: [...CORE_TEMPLATES.filter(t => t.category === "Social Deduction"), ...SOCIAL_DEDUCTION, ...EXTRA_GAMES.filter(t => t.category === "Social Deduction")],
-  party:     [...PARTY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Party")],
-  mystery:   [...MYSTERY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Mystery")],
-  creative:  [...ROLEPLAY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Creative")],
-  brain:     [...EDUCATIONAL_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Knowledge" || t.category === "Educational" || t.category === "Puzzle")],
+  mystery: [...SCRIPT_KILL_PRESETS],
 };

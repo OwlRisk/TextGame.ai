@@ -162,7 +162,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-10 leading-relaxed">
-              AI fills every seat. Play solo or with friends.
+              Interrogate AI suspects. Collect evidence. Crack the case.
             </p>
 
             {/* Sign-in Buttons */}
@@ -207,7 +207,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                   className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 !rounded-[11px] transition-all"
                 >
                   <Compass className="h-5 w-5 mr-2" />
-                  Explore Games
+                  Browse Cases
                 </Button>
               ) : (
                 <Button
@@ -218,7 +218,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 >
                   <Link href="/discover">
                     <Compass className="h-5 w-5 mr-2" />
-                    Explore Games
+                    Browse Cases
                   </Link>
                 </Button>
               )}
@@ -345,7 +345,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
               <span className="text-sm font-bold text-violet-400">FEATURES</span>
             </div>
-            <h3 className="text-4xl font-black text-white mb-4">Why You&apos;ll Love It</h3>
+            <h3 className="text-4xl font-black text-white mb-4">Why Detectives Love It</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {FEATURES.map((feature, index) => (
@@ -378,10 +378,10 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
         <div className="mb-32">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">FEATURED TEMPLATES</span>
+              <span className="text-sm font-bold text-violet-400">FEATURED CASES</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">One-click start — or make it your own</h3>
-            <p className="text-lg text-zinc-400">Classic games ready to play, or describe your own idea and the AI builds it for you.</p>
+            <h3 className="text-3xl font-black text-white mb-3">Choose a case and start investigating</h3>
+            <p className="text-lg text-zinc-400">Each case features unique suspects, evidence, and a mystery to solve.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {FEATURED_GAMES.map((game, index) => (
@@ -446,7 +446,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-8">
-                Start Your First Game — Free
+                Start Your First Case — Free
               </h3>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center w-full max-w-md sm:max-w-none mx-auto">
                 <div className="relative w-full sm:w-auto">
@@ -484,18 +484,15 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
 
         {/* ── Blog Links (SEO internal linking) ──────────────────── */}
         <div className="mb-16">
-          <h3 className="text-lg font-bold text-white mb-4">Guides & Resources</h3>
+          <h3 className="text-lg font-bold text-white mb-4">Detective Guides</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              { href: "/blog/play-werewolf-online", label: "How to Play Werewolf Online" },
-              { href: "/blog/play-mafia-online", label: "Play Mafia Online with AI" },
-              { href: "/blog/best-online-party-games", label: "Best Online Party Games" },
-              { href: "/blog/best-social-deduction-games", label: "Best Social Deduction Games" },
-              { href: "/blog/jackbox-alternatives", label: "Jackbox Alternatives" },
-              { href: "/blog/ai-game-master-guide", label: "What is an AI Game Master?" },
-              { href: "/blog/play-secret-hitler-online", label: "Play Secret Hitler Online" },
-              { href: "/blog/character-ai-alternatives", label: "Character.AI Alternatives" },
-              { href: "/blog/among-us-alternatives", label: "Among Us Alternatives" },
+              { href: "/blog/ai-murder-mystery-games", label: "AI Murder Mystery Games Guide" },
+              { href: "/blog/play-murder-mystery-alone", label: "Play Murder Mystery Alone with AI" },
+              { href: "/blog/ai-game-master-guide", label: "How the AI Host Works" },
+              { href: "/blog/ai-npc-explained", label: "How AI Suspects Think" },
+              { href: "/blog/how-textgame-ai-works", label: "How TextGame.ai Works" },
+              { href: "/blog/ai-game-design-guide", label: "Designing Mystery Cases" },
             ].map(({ href, label }) => (
               <Link
                 key={href}
@@ -514,7 +511,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
         {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
-            <p>© 2026 {BRAND_CONFIG.name} • Any game you describe, playable in minutes</p>
+            <p>© 2026 {BRAND_CONFIG.name} • AI-powered murder mystery games</p>
             <div className="flex gap-6">
               <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>

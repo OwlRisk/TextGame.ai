@@ -57,16 +57,16 @@ export function UserProfile({ onClose }: UserProfileProps) {
 
   // Mock data
   const gameHistory = [
-    { id: 1, name: "Werewolf Night", date: "2024-01-20", result: "Won", players: 7 },
-    { id: 2, name: "Undercover Mystery", date: "2024-01-19", result: "Lost", players: 6 },
-    { id: 3, name: "Mafia Showdown", date: "2024-01-18", result: "Won", players: 8 },
-    { id: 4, name: "Detective Game", date: "2024-01-17", result: "Won", players: 5 },
+    { id: 1, name: "Moonlight Inn", date: "2024-01-20", result: "Solved (A)", players: 4 },
+    { id: 2, name: "Silk Gallery", date: "2024-01-19", result: "Unsolved (C)", players: 4 },
+    { id: 3, name: "Poison Banquet", date: "2024-01-18", result: "Solved (S)", players: 5 },
+    { id: 4, name: "Arctic Station", date: "2024-01-17", result: "Solved (B)", players: 4 },
   ];
 
   const stats = {
     totalGames: 24,
     totalPlaytime: "18h 32m",
-    favoriteGame: "Werewolf",
+    favoriteGame: "Murder Mystery",
   };
 
   return (
@@ -216,9 +216,9 @@ export function UserProfile({ onClose }: UserProfileProps) {
                     ) : games.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 text-zinc-500 gap-3">
                         <Gamepad2 className="h-10 w-10 opacity-30" />
-                        <p className="text-sm">No games yet. Create your first game!</p>
+                        <p className="text-sm">No cases solved yet. Start your first investigation!</p>
                         <Link href="/" onClick={onClose}>
-                          <Button size="sm" className="bg-[#5865f2] hover:bg-[#4752c4] text-white">Start a Game</Button>
+                          <Button size="sm" className="bg-[#5865f2] hover:bg-[#4752c4] text-white">Start a Case</Button>
                         </Link>
                       </div>
                     ) : (
