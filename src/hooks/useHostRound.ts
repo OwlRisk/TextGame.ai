@@ -26,7 +26,8 @@ import {
   hostPace,
   dynamicPace,
 } from "@/lib/game-pace";
-import { buildHostSystemPrompt } from "@/lib/host-prompt-builder";
+import { buildHostSystemPrompt, buildSceneDirectorPrompt } from "@/lib/host-prompt-builder";
+import { isSceneMode } from "@/lib/scenes";
 import {
   type SpeakerQueueItem,
   parseRoleAssignments,
@@ -94,6 +95,7 @@ export function useHostRound({
     selectedChannelId,
     setSelectedChannelId,
     userId,
+    currentSpeakerId,
     setCurrentSpeakerId,
     setTypingUsers,
     humanGameIdentity,
@@ -269,6 +271,8 @@ export function useHostRound({
 
       const generatedHost = currentGame?.config?.generatedHost as { name?: string; personality?: string; systemPrompt?: string } | undefined;
 
+      const sceneId = (currentGame?.config as Record<string, unknown> | undefined)?.sceneId as string | undefined;
+
       const buildFreshHostPrompt = () => {
         const freshP = playersRef.current;
         const freshNonHost = freshP.filter((p) => !p.isGameMaster);
@@ -286,6 +290,21 @@ export function useHostRound({
           return `  • ${n} [${tl}] | ${r} | Status: ${s}${ex ? ` | ${ex}` : ""}`;
         }).join("\n");
 
+        const freshEvents = gameEvents.length > 0
+          ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
+          : "(No events recorded yet)";
+
+        if (isSceneMode(tmplId) && sceneId) {
+          return buildSceneDirectorPrompt({
+            sceneId,
+            humanName,
+            nonHostPlayerNames: freshNonHost.map((p) => (p.id === userId ? humanName : p.name)),
+            playerRoster: freshRoster,
+            eventLogSummary: freshEvents,
+            recentNonHostTurns,
+          });
+        }
+
         const freshBoard = Object.entries(myBoardContent)
           .map(([pid, bc]) => {
             if (!bc?.trim()) return null;
@@ -294,10 +313,6 @@ export function useHostRound({
             const nm = pl ? (pl.id === userId ? humanName : pl.name) : pid;
             return `  [${nm}]\n${bc.trim()}`;
           }).filter(Boolean);
-
-        const freshEvents = gameEvents.length > 0
-          ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
-          : "(No events recorded yet)";
 
         return buildHostSystemPrompt({
           gameName: currentGame?.name ?? "",
@@ -647,6 +662,8 @@ export function useHostRound({
         gameTemplate: currentGame?.config?.template,
         gameRules: currentGame?.config?.rules,
         gamePhase,
+        humanName,
+        sceneId,
         phaseLabel: phaseLabel ?? "",
         myBoardContent,
         playerNotes,
@@ -814,6 +831,25 @@ export function useHostRound({
   };
 
   handleSendMessageRef.current = handleSendMessage;
+
+  // Scene mode: auto-continue when user is silent for 20 seconds
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const tmplId = currentGame?.config?.template;
+    if (!isSceneMode(tmplId)) return;
+    if (gamePhase !== "active") return;
+    if (currentSpeakerId !== userId) {
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+      return;
+    }
+    if (isRoundInProgress) return;
+
+    silenceTimerRef.current = setTimeout(() => {
+      handleSendMessageRef.current?.("[Continue]", { skipAddMessage: true });
+    }, 20_000);
+
+    return () => { if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; } };
+  }, [currentSpeakerId, userId, gamePhase, isRoundInProgress, currentGame?.config?.template]);
 
   const handleRetryLastMessage = useCallback(() => {
     if (lastFailedSendContent) {

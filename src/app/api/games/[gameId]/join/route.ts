@@ -42,14 +42,25 @@ export async function POST(
   }
 
   // Block joining after game has started (only lobby/waiting phases allow new players)
+  // Exception: scene-mode games allow drop-in during active phase
   const { data: roomState } = await supabaseAdmin
     .from("game_room_state")
     .select("state")
     .eq("game_id", gameId)
     .maybeSingle();
 
-  const gamePhase = (roomState?.state as Record<string, unknown>)?.gamePhase as string | undefined;
-  if (gamePhase === "active" || gamePhase === "ended") {
+  const roomStateObj = roomState?.state as Record<string, unknown> | undefined;
+  const gamePhase = roomStateObj?.gamePhase as string | undefined;
+  const gameConfig = roomStateObj?.config as Record<string, unknown> | undefined;
+  const isSceneGame = gameConfig?.template === "scene";
+
+  if (gamePhase === "ended") {
+    return NextResponse.json(
+      { error: "Game has ended. New players cannot join." },
+      { status: 403 }
+    );
+  }
+  if (gamePhase === "active" && !isSceneGame) {
     return NextResponse.json(
       { error: "Game has already started. New players cannot join." },
       { status: 403 }

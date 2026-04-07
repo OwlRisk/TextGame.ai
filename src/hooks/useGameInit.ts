@@ -13,6 +13,7 @@ import { trackEvent } from "@/lib/analytics";
 import { getGameTemplate, getTemplateHexColor, getAvatarStyleForTemplate, type GameTemplate } from "@/lib/game-templates";
 import { getMysteryCase } from "@/data/mystery-cases";
 import { buildSuspectPrompt, buildInitialEvidenceBoard } from "@/lib/suspect-prompt-builder";
+import { getScene, isSceneMode } from "@/lib/scenes";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string): string {
   if (!tmpl) return `**Your Role: ${role}**`;
@@ -39,6 +40,7 @@ export interface OpeningKickoffState {
   gameName: string;
   rules?: string;
   humanPlayerName: string;
+  sceneId?: string;
   aiPlayers: Array<{
     id: string;
     name: string;
@@ -243,16 +245,23 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       game_name: kickoff.gameName,
     });
 
-    const tmplMeta = getGameTemplate(kickoff.gameTemplate || "custom");
-    const isSoloGame = tmplMeta?.maxPlayers === 1;
-    const playerCount = playersRef.current.filter((p) => !p.isGameMaster).length;
+    const isScene = isSceneMode(kickoff.gameTemplate);
+    const sceneData = isScene && kickoff.sceneId ? getScene(kickoff.sceneId) : undefined;
+
     let hostGreeting: string;
-    if (isSoloGame) {
-      hostGreeting = `Welcome! I'm your host for this session. Just type your response below when it's your turn — you can also tap a suggested reply if you're not sure what to say. Let's begin!`;
-    } else if (tmplMeta?.hasHiddenRoles) {
-      hostGreeting = `Welcome, ${playerCount} players! Roles have been secretly assigned — check **"My Board"** on the left for your identity.\n\nWhen it's your turn, type your response below or tap a suggested reply. Night falls...`;
+    if (sceneData) {
+      hostGreeting = sceneData.openingNarration;
     } else {
-      hostGreeting = `Welcome! The game begins now with ${playerCount} players. When you see **"It's your turn"**, type your response below — or tap a suggested reply to jump right in. Let's go!`;
+      const tmplMeta = getGameTemplate(kickoff.gameTemplate || "custom");
+      const isSoloGame = tmplMeta?.maxPlayers === 1;
+      const playerCount = playersRef.current.filter((p) => !p.isGameMaster).length;
+      if (isSoloGame) {
+        hostGreeting = `Welcome! I'm your host for this session. Just type your response below when it's your turn — you can also tap a suggested reply if you're not sure what to say. Let's begin!`;
+      } else if (tmplMeta?.hasHiddenRoles) {
+        hostGreeting = `Welcome, ${playerCount} players! Roles have been secretly assigned — check **"My Board"** on the left for your identity.\n\nWhen it's your turn, type your response below or tap a suggested reply. Night falls...`;
+      } else {
+        hostGreeting = `Welcome! The game begins now with ${playerCount} players. When you see **"It's your turn"**, type your response below — or tap a suggested reply to jump right in. Let's go!`;
+      }
     }
     const greetingId = `start-greeting-${gameId}-${Date.now()}`;
     addMessage(
@@ -420,6 +429,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         gameName: currentGame.name,
         rules: config.rules,
         playerNotesById: kickoffPlayerNotes,
+        ...((config as Record<string, unknown>).sceneId ? { sceneId: (config as Record<string, unknown>).sceneId as string } : {}),
       };
 
       await launchOpeningRound(kickoffState);
@@ -473,13 +483,20 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     }
   }, [currentGame, isInitialized, players.length, gameId, isRoomLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch human in-game identity
+  // Fetch human in-game identity (skip for scene mode — use real name)
   useEffect(() => {
     if (isRoomLoading) return;
     if (!currentGame?.config || !session?.access_token) return;
     if (humanGameIdentity !== null && humanGameIdentity.name !== "Player") return;
     if (humanIdentityFetchedRef.current === currentGame.id) return;
     humanIdentityFetchedRef.current = currentGame.id;
+
+    if (isSceneMode(currentGame.config.template)) {
+      const realName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "Player";
+      setHumanGameIdentity({ name: realName });
+      return;
+    }
+
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     headers["Authorization"] = `Bearer ${session.access_token}`;
     fetch("/api/generate-human-game-identity", {
@@ -496,7 +513,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         setHumanGameIdentity({ name });
       })
       .catch(() => setHumanGameIdentity({ name: "Player" }));
-  }, [isRoomLoading, currentGame?.id, currentGame?.name, currentGame?.config?.rules, session?.access_token, humanGameIdentity, setHumanGameIdentity]);
+  }, [isRoomLoading, currentGame?.id, currentGame?.name, currentGame?.config?.rules, session?.access_token, humanGameIdentity, setHumanGameIdentity, session?.user]);
 
   // Sync human player display name
   useEffect(() => {

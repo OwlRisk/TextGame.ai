@@ -5,6 +5,11 @@ export const HOST_PACE_PER_50_CHARS_MS = 200;
 /** Maximum gap between messages */
 export const HOST_PACE_MAX_MS = 1500;
 
+/** Scene mode: faster pace */
+export const SCENE_PACE_BASE_MS = 200;
+export const SCENE_PACE_PER_50_CHARS_MS = 100;
+export const SCENE_PACE_MAX_MS = 800;
+
 // ─── Conversation mode: structured (turn-based) vs freeform (narrative/social) ──
 import { getGameTemplate } from "./game-templates";
 
@@ -37,10 +42,13 @@ export function getTypewriterSpeed(personality?: string): number {
   return 3;                       // default
 }
 
-export function dynamicPace(textLength: number, personality?: string, mode: ConversationMode = "structured"): Promise<void> {
+export function dynamicPace(textLength: number, personality?: string, mode: ConversationMode = "structured", isScene = false): Promise<void> {
+  const pBase = isScene ? SCENE_PACE_BASE_MS : HOST_PACE_BASE_MS;
+  const pPer50 = isScene ? SCENE_PACE_PER_50_CHARS_MS : HOST_PACE_PER_50_CHARS_MS;
+  const pMax = isScene ? SCENE_PACE_MAX_MS : HOST_PACE_MAX_MS;
   const base = Math.min(
-    HOST_PACE_BASE_MS + Math.floor(textLength / 50) * HOST_PACE_PER_50_CHARS_MS,
-    HOST_PACE_MAX_MS,
+    pBase + Math.floor(textLength / 50) * pPer50,
+    pMax,
   );
   const factor = getPersonalityPaceFactor(personality);
   const jitterRange = mode === "freeform" ? 0.6 : 0.4;
@@ -48,11 +56,11 @@ export function dynamicPace(textLength: number, personality?: string, mode: Conv
   const ms = Math.round(base * factor * jitter);
   return new Promise<void>((r) => setTimeout(r, ms));
 }
-export const hostPace = () => dynamicPace(0);
+export const hostPace = (isScene = false) => dynamicPace(0, undefined, "structured", isScene);
 
 /** Brief thinking delay before typing indicator. */
-export function thinkingDelay(queueIndex: number, _mode: ConversationMode): Promise<void> {
-  const base = 150 + Math.random() * 250;
+export function thinkingDelay(queueIndex: number, _mode: ConversationMode, isScene = false): Promise<void> {
+  const base = isScene ? (80 + Math.random() * 120) : (150 + Math.random() * 250);
   const positionalFactor = queueIndex === 0 ? 1.0 : Math.max(0.4, 1.0 - queueIndex * 0.2);
   return new Promise<void>((r) => setTimeout(r, Math.round(base * positionalFactor)));
 }

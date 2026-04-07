@@ -231,7 +231,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           </div>
         </div>
       )}
-      {canSend && !isEliminated && isGameActive && currentSpeakerId === userId && (
+      {canSend && !isEliminated && isGameActive && currentSpeakerId === userId && gameTemplate !== "scene" && (
         <div className="mb-3 text-sm font-medium text-emerald-300 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           It&apos;s your turn to speak
@@ -445,7 +445,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                 if (!sendDisabled) handleSend();
               }
             }}
-            placeholder={isRoundInProgress ? "Host & AI replying…" : `Message #${channelName}`}
+            placeholder={isRoundInProgress ? (gameTemplate === "scene" ? "Your crew is talking…" : "Host & AI replying…") : (gameTemplate === "scene" ? "Say something…" : `Message #${channelName}`)}
             className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
             style={{ minHeight: `${MIN_INPUT_HEIGHT}px`, maxHeight: `${MAX_INPUT_HEIGHT}px` }}
             disabled={sendDisabled}

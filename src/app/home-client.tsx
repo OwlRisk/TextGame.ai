@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
 import { LandingPage } from "@/app/components/landing-page";
+import { SceneSelectView } from "@/app/components/scene-select-view";
 import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -13,6 +14,7 @@ import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getDefaultHostForTemplate } from "@/app/config/host-config";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
+import { getScene } from "@/lib/scenes";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -35,11 +37,12 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   const creatingRef = useRef(false);
 
   const [hidden, setHidden] = useState(false);
+  const [showScenes, setShowScenes] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      setHidden(true);
-      router.replace("/create");
+      setShowScenes(true);
+      selectGame("home");
       return;
     }
     selectGame("home");
@@ -129,6 +132,62 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     }
   };
 
+  const createSceneGame = async (sceneId: string) => {
+    const scene = getScene(sceneId);
+    if (!scene) return;
+    if (creatingRef.current) return;
+    creatingRef.current = true;
+    const toastId = "scene-create";
+    toast.loading("Gathering your crew...", { id: toastId });
+    try {
+      trackEvent("scene_selected", { scene: scene.id, source: "home" });
+      const configuredPlayers = scene.characters.map((c) => ({
+        name: c.name,
+        gender: c.gender,
+        personality: c.personality,
+        background: c.background,
+        speechStyle: c.speechStyle,
+        quirk: c.quirk,
+      }));
+      const newGame = {
+        id: crypto.randomUUID(),
+        name: scene.title,
+        icon: scene.icon,
+        color: "#7c3aed",
+        config: {
+          name: scene.title,
+          template: "scene",
+          sceneId: scene.id,
+          playerCount: configuredPlayers.length,
+          rules: "",
+          hostId: "narrator",
+          hideRolesInPlayerList: false,
+          configuredPlayers,
+          generatedHost: {
+            name: "Narrator",
+            personality: "Invisible storyteller and director",
+            voiceStyle: "atmospheric",
+            systemPrompt: "",
+            icon: "",
+            color: "#52525b",
+            gender: "other" as const,
+          },
+        },
+        isActive: true,
+        updatedAt: new Date().toISOString(),
+      };
+      addGame(newGame);
+      selectGame(newGame.id);
+      trackEvent("game_created", { template: "scene", scene: scene.id, player_count: configuredPlayers.length, game_name: scene.title });
+      toast.success("Let's go!", { id: toastId });
+      router.push(`/game/${newGame.id}`);
+    } catch {
+      toast.error("Failed to create adventure", { id: toastId });
+    } finally {
+      creatingRef.current = false;
+    }
+  };
+
   const handleCreateGame = (presetId?: string) => {
     trackEvent("cta_click", { label: presetId ? `play_${presetId}` : "create_game", source: "landing" });
     if (!user && !loading) {
@@ -174,7 +233,13 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      {!hidden && (
+      {showScenes ? (
+        <SceneSelectView
+          onSelectScene={createSceneGame}
+          onGoToCreate={() => router.push("/create")}
+          isCreating={creatingRef.current}
+        />
+      ) : !hidden ? (
         <LandingPage
           onSignIn={handleSignIn}
           onSignInFacebook={handleSignInFacebook}
@@ -182,7 +247,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
           onExploreGames={handleExploreGames}
           heroHeadline={heroHeadline}
         />
-      )}
+      ) : null}
 
       <Toaster
         position="top-right"

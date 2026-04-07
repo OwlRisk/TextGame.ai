@@ -164,12 +164,13 @@ export interface ChatMessageProps {
   avatarImageUrls: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   onReact?: (messageId: string, emoji: string) => void;
+  gameTemplate?: string;
 }
 
 export const ChatMessage = React.memo(function ChatMessage({
   message, showAvatar, syncedContent, rawContent, isShowingCursor,
   userId, userAvatarUrl, useGeneratedAvatarForUser, humanPlayer, userAvatarName,
-  gameId, players, avatarImageUrls, onAvatarUrlLoaded, onReact,
+  gameId, players, avatarImageUrls, onAvatarUrlLoaded, onReact, gameTemplate,
 }: ChatMessageProps) {
   if (message.isAnnouncement) {
     return (
@@ -231,6 +232,18 @@ export const ChatMessage = React.memo(function ChatMessage({
     p => p.id === message.senderId || (message.isAI && p.name === message.senderName)
   ) : null;
   const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
+  const isSceneNarrator = isHost && gameTemplate === "scene";
+
+  // Scene narrator: render as atmospheric italic text without avatar/name
+  if (isSceneNarrator && !message.isStreaming) {
+    const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
+    if (!cleanRaw.trim()) return null;
+    return (
+      <div className="my-4 px-4 py-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+        <p className="text-zinc-300 text-sm italic leading-relaxed">{cleanRaw}</p>
+      </div>
+    );
+  }
 
   const cursor = isShowingCursor
     ? <span key="streaming-cursor" className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 align-text-bottom animate-pulse" />

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { buildSystemPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
+import { buildSystemPrompt, buildSceneCharacterPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
 import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins, estimateTokensFromText } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
@@ -78,13 +78,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
       gamePhase?: string;
       preferredModel?: string;
       isSeedGreeting?: boolean;
+      humanName?: string;
+      sceneId?: string;
       /** Optional task injected when the player is in a private "decision" channel. */
       channelGoal?: string;
       /** Player's own private notes from previous turns (written via [MY_NOTES] tags). */
@@ -120,7 +122,9 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
-    const system = buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk);
+    const system = (gameTemplate === 'scene' && sceneId)
+      ? buildSceneCharacterPrompt(player.name, sceneId, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk)
+      : buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk);
 
     // Build user content: game context + private knowledge + recent chat
     const lines: string[] = [];

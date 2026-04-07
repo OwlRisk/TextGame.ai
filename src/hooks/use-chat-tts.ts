@@ -25,9 +25,10 @@ interface UseChatTTSOpts {
   channelId?: string;
   channelName: string;
   isOwner?: boolean;
+  gameTemplate?: string;
 }
 
-export function useChatTTS({ messages, players, gameId, channelId, channelName, isOwner }: UseChatTTSOpts) {
+export function useChatTTS({ messages, players, gameId, channelId, channelName, isOwner, gameTemplate }: UseChatTTSOpts) {
   const sanitizePublicText = useCallback((text: string) => stripPrivateNotes((text ?? "").trim()), []);
 
   // ─── TTS Broadcast ────────────────────────────────────────────────────
@@ -45,9 +46,10 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Voice enabled state ──────────────────────────────────────────────
+  // ─── Voice enabled state (scene mode defaults to off) ────────────────
   const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
+    if (gameTemplate === "scene") return false;
     const stored = localStorage.getItem('voice_enabled');
     return stored === 'true';
   });

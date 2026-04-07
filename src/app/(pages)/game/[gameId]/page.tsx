@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getGameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
+import { isSceneMode } from "@/lib/scenes";
 import { safeMarked } from "@/lib/safe-marked";
 import { trackEvent } from "@/lib/analytics";
 import { EvidenceBoard } from "@/app/components/evidence-board";
@@ -370,6 +371,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     channelId: selectedChannelId ?? undefined,
     channelName: gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room",
     isOwner: isOwner ? true : undefined,
+    gameTemplate: currentGame?.config?.template,
   });
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -407,11 +409,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     onOpenProfile: () => router.push("/profile"),
     onUpdateGame: updateGame,
   };
+  const isScene = isSceneMode(currentGame?.config?.template);
   const channelListCommon = {
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    gameSectionLabel: "Game Rooms",
+    gameSectionLabel: isScene ? "Adventure" : "Game Rooms",
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || null,
     gameId,
@@ -420,8 +423,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     channelPermissions,
     allPlayers: players,
     unreadCounts,
-    hasRules: !!(currentGame?.config?.rules ?? "").trim(),
-    hasMyBoard: gamePhase !== "lobby",
+    hasRules: isScene ? false : !!(currentGame?.config?.rules ?? "").trim(),
+    hasMyBoard: isScene ? false : gamePhase !== "lobby",
     myBoardHasUpdate,
     playerBoardLabel: currentGame?.config?.playerBoardLabel,
     onDeleteChannel: (id: string | undefined) => {

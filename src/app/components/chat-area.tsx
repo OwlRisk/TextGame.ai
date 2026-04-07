@@ -453,6 +453,7 @@ export function ChatArea({
                 avatarImageUrls={avatarImageUrls ?? {}}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
                 onReact={onReact}
+                gameTemplate={gameTemplate}
               />
             );
           })}

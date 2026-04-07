@@ -4,17 +4,21 @@
 
 import { getGameTemplate } from "./game-templates";
 import type { GameTemplate } from "./templates/types";
+import { getScene } from "@/lib/scenes";
+import type { SceneCharacter } from "@/lib/scenes/types";
 
 /** Default hard limit: enforced by max_completion_tokens. */
 export const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 220;
 
 export function getPlayerTokenLimit(template?: string): number {
+  if (template === "scene") return 300;
   if (!template) return PLAYER_SPEAK_HARD_LIMIT_TOKENS;
   const tmpl = getGameTemplate(template);
   return tmpl?.playerLimits.tokenLimit ?? PLAYER_SPEAK_HARD_LIMIT_TOKENS;
 }
 
 export function getPlayerSentenceLimit(template?: string): { max: number; preferred: number } {
+  if (template === "scene") return { max: 3, preferred: 2 };
   if (!template) return { max: 3, preferred: 1 };
   const tmpl = getGameTemplate(template);
   if (!tmpl) return { max: 3, preferred: 1 };
@@ -22,6 +26,7 @@ export function getPlayerSentenceLimit(template?: string): { max: number; prefer
 }
 
 export function getPlayerCharLimit(template?: string): number {
+  if (template === "scene") return 400;
   if (!template) return 280;
   const tmpl = getGameTemplate(template);
   return tmpl?.playerLimits.charLimit ?? 280;
@@ -136,4 +141,55 @@ export function buildSystemPrompt(
   }
 
   return `${intro}\n\n${howTo}${tail}`;
+}
+
+/* ─── Scene Mode: Character Prompt ─── */
+
+function findSceneCharacter(sceneId: string, playerName: string): SceneCharacter | undefined {
+  const scene = getScene(sceneId);
+  if (!scene) return undefined;
+  return scene.characters.find((c) => c.name === playerName);
+}
+
+export function buildSceneCharacterPrompt(
+  playerName: string,
+  sceneId: string,
+  humanName: string,
+  personality?: string,
+  background?: string,
+  speechStyle?: string,
+  quirk?: string,
+): string {
+  const char = findSceneCharacter(sceneId, playerName);
+
+  const p = char?.personality ?? personality ?? "friendly and curious";
+  const bg = char?.background ?? background ?? "";
+  const style = char?.speechStyle ?? speechStyle ?? "";
+  const q = char?.quirk ?? quirk ?? "";
+  const goal = char?.goal ?? "";
+  const fear = char?.fear ?? "";
+  const attitude = char?.attitudeToUser ?? `A good friend to ${humanName}.`;
+
+  return `You are ${playerName}. You are a real person — not an AI, not a character in a game. You are on an adventure with your friends, including ${humanName} (a real human).
+
+WHO YOU ARE: ${p}. ${bg}
+
+WHAT YOU WANT: ${goal}
+
+WHAT SCARES YOU: ${fear}
+
+YOUR RELATIONSHIP WITH ${humanName.toUpperCase()}: ${attitude}
+
+HOW YOU TALK: ${style}. ${q ? `Quirk: ${q}.` : ""}
+
+RULES:
+- Talk TO ${humanName} frequently. React to what they say. Ask their opinion. Warn them. Joke with them. You are their friend.
+- When other characters say something, respond naturally — agree, argue, joke, panic. You have opinions.
+- Express real emotions through your words: fear, excitement, humor, frustration. No labels like [scared] or [excited].
+- 2-3 sentences max. Be concise. Sound like a real person texting their friend, not writing an essay.
+- Never break character. Never mention AI, prompts, or games. This is real to you.
+- Never repeat what someone already said. React to the LATEST message.
+- Optional: [sigh] [laugh] [whisper] where natural.
+
+OUTPUT: Only your spoken words. No name prefix. No stage directions. No narration.`;
 }
