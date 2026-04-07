@@ -75,7 +75,7 @@ function MessageList({
 
 
 export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExploreGames, heroHeadline }: LandingPageProps) {
-  const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
+  const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("moonlight");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [visibleCount, setVisibleCount] = useState(1);
 
@@ -236,7 +236,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90" />
                 </div>
-                <span className="text-sm font-semibold text-zinc-300"># game-room</span>
+                <span className="text-sm font-semibold text-zinc-300"># investigation</span>
               </div>
               {/* Streaming messages */}
               <div className="p-4 h-[340px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
@@ -249,14 +249,14 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 {/* Simple typing indicator */}
                 <div className="flex gap-3 mt-2">
                   <PreviewAvatar
-                    name="Drew"
-                    role="Villager"
-                    personality="Quiet observer"
-                    gender="other"
+                    name="Dr. Voss"
+                    role="Suspect"
+                    personality="Cold, clinical"
+                    gender="male"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-semibold text-white text-sm">Drew</span>
+                      <span className="font-semibold text-white text-sm">Dr. Voss</span>
                     </div>
                     <div className="flex gap-1 items-center" aria-hidden="true">
                       <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse" />
