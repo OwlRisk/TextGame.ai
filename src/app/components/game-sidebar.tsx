@@ -150,12 +150,19 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
               <Button
                 variant="ghost"
                 size="icon"
-                className="!h-12 !w-12 bg-green-600 hover:!bg-green-500 rounded-2xl hover:rounded-xl transition-all duration-200"
+                className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
+                  selectedGameId === "create"
+                    ? "bg-green-600 rounded-xl shadow-lg shadow-green-500/50 hover:!bg-green-600"
+                    : "bg-green-600 hover:!bg-green-500 hover:rounded-xl"
+                }`}
                 aria-label="Create Game"
                 asChild
               >
-                <Link href="/create" prefetch aria-label="Create" onClick={() => { trackEvent("cta_click", { label: "create_game", source: "sidebar" }); onNavigate?.(); }}>
+                <Link href="/create" prefetch aria-label="Create" onClick={() => { trackEvent("cta_click", { label: "create_game", source: "sidebar" }); onSelectGame("create"); onNavigate?.(); }}>
                   <Plus className="h-7 w-7 text-white" aria-hidden="true" />
+                  {selectedGameId === "create" && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                  )}
                 </Link>
               </Button>
             </TooltipTrigger>

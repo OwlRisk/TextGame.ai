@@ -50,7 +50,7 @@ function CreateGamePageContent() {
   const initialPreset = presetId ? getPresetById(presetId) : null;
 
   useEffect(() => {
-    selectGame("home");
+    selectGame("create");
     trackEvent("gm_chat_started", { preset: presetId || "none" });
   }, [selectGame, presetId]);
 
