@@ -13,15 +13,33 @@ describe("SCENES data integrity", () => {
   });
 
   it("every scene should have required fields", () => {
+    const validGenres = ["adventure", "mystery", "survival", "heist"];
     for (const scene of SCENES) {
       expect(scene.id).toBeTruthy();
       expect(scene.title).toBeTruthy();
       expect(scene.hook).toBeTruthy();
+      expect(scene.genre).toBeTruthy();
+      expect(validGenres).toContain(scene.genre);
       expect(scene.openingNarration).toBeTruthy();
       expect(scene.characters.length).toBeGreaterThanOrEqual(1);
       expect(scene.directorNotes).toBeTruthy();
       expect(scene.color).toBeTruthy();
       expect(scene.icon).toBeTruthy();
+    }
+  });
+
+  it("every character should have complete personality fields", () => {
+    for (const scene of SCENES) {
+      for (const char of scene.characters) {
+        expect(char.name).toBeTruthy();
+        expect(char.personality).toBeTruthy();
+        expect(char.background).toBeTruthy();
+        expect(char.goal).toBeTruthy();
+        expect(char.fear).toBeTruthy();
+        expect(char.quirk).toBeTruthy();
+        expect(char.speechStyle).toBeTruthy();
+        expect(char.attitudeToUser).toBeTruthy();
+      }
     }
   });
 });

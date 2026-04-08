@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
-import { Send, ChevronDown, ChevronUp, Vote, Zap } from "lucide-react";
+import { Send, ChevronDown, ChevronUp, Vote, Zap, MessageCircle, Hand } from "lucide-react";
 import type { ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -76,6 +76,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   const [popupIndex, setPopupIndex] = useState(0);
   const [pendingAction, setPendingAction] = useState<GameAction | null>(null);
   const [myVoteChoice, setMyVoteChoice] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<"say" | "do">("say");
 
   useEffect(() => { if (!activeVote) setMyVoteChoice(null); }, [activeVote]);
 
@@ -154,18 +155,20 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   const handleSendRef = useRef<(override?: string) => void>(undefined);
   handleSendRef.current = (override?: string) => {
     if (sendingLockRef.current) return;
-    const text = (override ?? input.trim()).trim();
-    if (text) {
-      sendingLockRef.current = true;
-      setIsSending(true);
-      flushSync(() => setInput(""));
-      onSendMessage(text);
-      requestAnimationFrame(() => resizeInput());
-      setTimeout(() => {
-        sendingLockRef.current = false;
-        setIsSending(false);
-      }, 500);
+    let text = (override ?? input.trim()).trim();
+    if (!text) return;
+    if (!override && gameTemplate === "scene" && inputMode === "do" && !text.startsWith("*")) {
+      text = `*${text}*`;
     }
+    sendingLockRef.current = true;
+    setIsSending(true);
+    flushSync(() => setInput(""));
+    onSendMessage(text);
+    requestAnimationFrame(() => resizeInput());
+    setTimeout(() => {
+      sendingLockRef.current = false;
+      setIsSending(false);
+    }, 500);
   };
 
   const handleSend = useCallback(
@@ -178,7 +181,6 @@ export const ChatInputArea = React.memo(function ChatInputArea({
 
   const canSend = isGameActive && (!currentSpeakerId || currentSpeakerId === userId || isRoundInProgress);
   const effectivelyEliminated = isEliminated && !isInAfterlife;
-  const inputDisabled = !isGameActive || effectivelyEliminated || isSending;
   const sendDisabled = !isGameActive || effectivelyEliminated || isSending;
 
   return (
@@ -311,18 +313,25 @@ export const ChatInputArea = React.memo(function ChatInputArea({
       )}
       {gameTemplate === "scene" && gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && (
         <div className="mb-2 flex flex-wrap gap-2">
-          {gameActions.map((action) => (
-            <button
-              key={action.label}
-              type="button"
-              className="px-3 py-1.5 text-sm rounded-full border border-zinc-600/50 bg-zinc-800/60 hover:bg-violet-600/30 hover:border-violet-500/50 text-zinc-300 hover:text-white transition-all duration-200"
-              disabled={sendDisabled}
-              onClick={() => onSendMessage(action.template)}
-            >
-              {action.icon && <span className="mr-1.5">{action.icon}</span>}
-              {action.label}
-            </button>
-          ))}
+          {gameActions.map((action) => {
+            const isAction = action.inputMode === "do";
+            return (
+              <button
+                key={action.label}
+                type="button"
+                className={`px-3 py-1.5 text-sm rounded-full border transition-all duration-200 ${
+                  isAction
+                    ? "border-amber-500/40 bg-amber-900/20 hover:bg-amber-600/30 hover:border-amber-400/50 text-amber-200 hover:text-amber-100 italic"
+                    : "border-zinc-600/50 bg-zinc-800/60 hover:bg-violet-600/30 hover:border-violet-500/50 text-zinc-300 hover:text-white"
+                }`}
+                disabled={sendDisabled}
+                onClick={() => onSendMessage(action.template)}
+              >
+                {action.icon && <span className="mr-1.5">{action.icon}</span>}
+                {action.label}
+              </button>
+            );
+          })}
         </div>
       )}
       {gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && gameTemplate !== "scene" && (
@@ -367,8 +376,6 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                 onClick={() => {
                   if (action.needsTarget) {
                     setPendingAction(action);
-                  } else if (gameTemplate === "scene") {
-                    onSendMessage(action.template);
                   } else {
                     setInput(action.template);
                     requestAnimationFrame(() => {
@@ -387,6 +394,21 @@ export const ChatInputArea = React.memo(function ChatInputArea({
         )
       )}
       <div className="flex gap-2 items-end">
+        {gameTemplate === "scene" && (
+          <button
+            type="button"
+            onClick={() => setInputMode((m) => (m === "say" ? "do" : "say"))}
+            className={`flex-shrink-0 flex items-center gap-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+              inputMode === "do"
+                ? "bg-amber-500/20 border border-amber-500/40 text-amber-300"
+                : "bg-zinc-800/80 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300"
+            }`}
+            title={inputMode === "say" ? "Switch to Action mode" : "Switch to Say mode"}
+          >
+            {inputMode === "say" ? <MessageCircle className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
+            <span className="hidden sm:inline">{inputMode === "say" ? "Say" : "Do"}</span>
+          </button>
+        )}
         <div className="relative flex-1 min-w-0">
           {showPopup && (
             <div
@@ -463,8 +485,16 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                 if (!sendDisabled) handleSend();
               }
             }}
-            placeholder={isRoundInProgress ? (gameTemplate === "scene" ? "Your crew is talking…" : "Host & AI replying…") : (gameTemplate === "scene" ? "Say something…" : `Message #${channelName}`)}
-            className="min-h-0 bg-zinc-800/80 backdrop-blur-sm border border-violet-900/30 focus:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors"
+            placeholder={isRoundInProgress
+              ? (gameTemplate === "scene" ? "Your crew is talking…" : "Host & AI replying…")
+              : (gameTemplate === "scene"
+                ? (inputMode === "do" ? "What do you do?" : "Say something…")
+                : `Message #${channelName}`)}
+            className={`min-h-0 bg-zinc-800/80 backdrop-blur-sm border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors ${
+              gameTemplate === "scene" && inputMode === "do"
+                ? "border-amber-500/30 focus:border-amber-500/50 italic text-amber-100"
+                : "border-violet-900/30 focus:border-amber-500/40"
+            }`}
             style={{ minHeight: `${MIN_INPUT_HEIGHT}px`, maxHeight: `${MAX_INPUT_HEIGHT}px` }}
             disabled={sendDisabled}
             rows={1}

@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   buildSystemPrompt,
+  buildSceneCharacterPrompt,
+  getPlayerTokenLimit,
+  getPlayerSentenceLimit,
+  getPlayerCharLimit,
   PLAYER_SPEAK_HARD_LIMIT_TOKENS,
   EMOTION_TAGS_SECTION,
 } from "@/lib/player-speak-prompt";
@@ -103,5 +107,53 @@ describe("player-speak constants", () => {
   it("EMOTION_TAGS_SECTION mentions emotion and sound tags", () => {
     expect(EMOTION_TAGS_SECTION).toContain("[angry]");
     expect(EMOTION_TAGS_SECTION).toContain("[sigh]");
+  });
+});
+
+describe("scene mode limits", () => {
+  it("getPlayerTokenLimit returns 300 for scene", () => {
+    expect(getPlayerTokenLimit("scene")).toBe(300);
+  });
+
+  it("getPlayerTokenLimit returns hard limit for undefined", () => {
+    expect(getPlayerTokenLimit(undefined)).toBe(PLAYER_SPEAK_HARD_LIMIT_TOKENS);
+  });
+
+  it("getPlayerSentenceLimit returns max:3 preferred:2 for scene", () => {
+    const limit = getPlayerSentenceLimit("scene");
+    expect(limit.max).toBe(3);
+    expect(limit.preferred).toBe(2);
+  });
+
+  it("getPlayerCharLimit returns 400 for scene", () => {
+    expect(getPlayerCharLimit("scene")).toBe(400);
+  });
+
+  it("getPlayerCharLimit returns 280 for undefined", () => {
+    expect(getPlayerCharLimit(undefined)).toBe(280);
+  });
+});
+
+describe("buildSceneCharacterPrompt", () => {
+  it("produces a prompt containing player and human names", () => {
+    const prompt = buildSceneCharacterPrompt("Max", "the-lighthouse", "Alex", "tough and direct", "ex-soldier", "clipped sentences", "cracks knuckles");
+    expect(prompt).toContain("Max");
+    expect(prompt).toContain("Alex");
+  });
+
+  it("contains RULES section", () => {
+    const prompt = buildSceneCharacterPrompt("Max", "the-lighthouse", "Alex");
+    expect(prompt).toContain("RULES");
+  });
+
+  it("includes asterisk action format instruction", () => {
+    const prompt = buildSceneCharacterPrompt("Max", "the-lighthouse", "Alex");
+    expect(prompt).toMatch(/asterisk/i);
+  });
+
+  it("does not crash with invalid sceneId", () => {
+    const prompt = buildSceneCharacterPrompt("Max", "nonexistent", "Alex");
+    expect(prompt).toContain("Max");
+    expect(prompt).toContain("Alex");
   });
 });

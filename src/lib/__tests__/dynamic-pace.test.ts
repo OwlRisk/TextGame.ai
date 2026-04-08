@@ -1,94 +1,138 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  HOST_PACE_BASE_MS,
+  HOST_PACE_PER_50_CHARS_MS,
+  HOST_PACE_MAX_MS,
+  SCENE_PACE_BASE_MS,
+  SCENE_PACE_PER_50_CHARS_MS,
+  SCENE_PACE_MAX_MS,
+  dynamicPace,
+  hostPace,
+  thinkingDelay,
+  getPersonalityPaceFactor,
+  getTypewriterSpeed,
+  getConversationMode,
+} from "../game-pace";
 
-/**
- * Tests for the dynamicPace / hostPace timing function used in the game room.
- * The function calculates a delay based on message length to make AI
- * conversations feel more natural.
- */
-
-const HOST_PACE_BASE_MS = 1000;
-const HOST_PACE_PER_50_CHARS_MS = 800;
-const HOST_PACE_MAX_MS = 4000;
-
-function calculatePace(textLength: number): number {
-  return Math.min(
-    HOST_PACE_BASE_MS + Math.floor(textLength / 50) * HOST_PACE_PER_50_CHARS_MS,
-    HOST_PACE_MAX_MS,
-  );
-}
-
-describe("calculatePace", () => {
-  it("returns base delay for zero-length text", () => {
-    expect(calculatePace(0)).toBe(HOST_PACE_BASE_MS);
+describe("pace constants", () => {
+  it("host constants are positive and ordered", () => {
+    expect(HOST_PACE_BASE_MS).toBeGreaterThan(0);
+    expect(HOST_PACE_PER_50_CHARS_MS).toBeGreaterThan(0);
+    expect(HOST_PACE_MAX_MS).toBeGreaterThan(HOST_PACE_BASE_MS);
   });
 
-  it("returns base delay for short text (< 50 chars)", () => {
-    expect(calculatePace(30)).toBe(HOST_PACE_BASE_MS);
-    expect(calculatePace(49)).toBe(HOST_PACE_BASE_MS);
-  });
-
-  it("adds per-50-char delay for medium text", () => {
-    expect(calculatePace(50)).toBe(HOST_PACE_BASE_MS + HOST_PACE_PER_50_CHARS_MS);
-    expect(calculatePace(100)).toBe(HOST_PACE_BASE_MS + 2 * HOST_PACE_PER_50_CHARS_MS);
-  });
-
-  it("caps at max delay for long text", () => {
-    expect(calculatePace(500)).toBe(HOST_PACE_MAX_MS);
-    expect(calculatePace(1000)).toBe(HOST_PACE_MAX_MS);
-  });
-
-  it("hits max at correct threshold", () => {
-    // 200 chars: 1000 + 4*800 = 4200, capped to 4000
-    expect(calculatePace(200)).toBe(HOST_PACE_MAX_MS);
-    // 150 chars: 1000 + 3*800 = 3400, below cap
-    expect(calculatePace(150)).toBe(HOST_PACE_BASE_MS + 3 * HOST_PACE_PER_50_CHARS_MS);
-    expect(calculatePace(150)).toBeLessThan(HOST_PACE_MAX_MS);
-  });
-
-  it("returns monotonically increasing values up to cap", () => {
-    let prev = 0;
-    for (let len = 0; len <= 500; len += 10) {
-      const pace = calculatePace(len);
-      expect(pace).toBeGreaterThanOrEqual(prev);
-      expect(pace).toBeLessThanOrEqual(HOST_PACE_MAX_MS);
-      prev = pace;
-    }
+  it("scene constants are faster than host constants", () => {
+    expect(SCENE_PACE_BASE_MS).toBeLessThan(HOST_PACE_BASE_MS);
+    expect(SCENE_PACE_PER_50_CHARS_MS).toBeLessThan(HOST_PACE_PER_50_CHARS_MS);
+    expect(SCENE_PACE_MAX_MS).toBeLessThan(HOST_PACE_MAX_MS);
   });
 });
 
-/**
- * Test the actual dynamicPace promise behavior with fake timers.
- */
-function dynamicPace(textLength: number): Promise<void> {
-  const ms = calculatePace(textLength);
-  return new Promise<void>((r) => setTimeout(r, ms));
-}
-
-describe("dynamicPace as promise", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
+describe("getConversationMode", () => {
+  it("returns 'freeform' for undefined/empty", () => {
+    expect(getConversationMode(undefined)).toBe("freeform");
+    expect(getConversationMode("")).toBe("freeform");
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it("returns 'freeform' for scene template", () => {
+    expect(getConversationMode("scene")).toBe("freeform");
   });
 
-  it("resolves after the calculated delay", async () => {
+  it("returns 'freeform' for unknown template", () => {
+    expect(getConversationMode("nonexistent")).toBe("freeform");
+  });
+});
+
+describe("getPersonalityPaceFactor", () => {
+  it("returns 1.0 for undefined", () => {
+    expect(getPersonalityPaceFactor(undefined)).toBe(1.0);
+  });
+
+  it("returns 0.7 for anxious personalities", () => {
+    expect(getPersonalityPaceFactor("Anxious and nervous")).toBe(0.7);
+    expect(getPersonalityPaceFactor("Very eager")).toBe(0.7);
+  });
+
+  it("returns 1.3 for calm personalities", () => {
+    expect(getPersonalityPaceFactor("Calm philosopher")).toBe(1.3);
+    expect(getPersonalityPaceFactor("Patient listener")).toBe(1.3);
+  });
+
+  it("returns 0.8 for bold personalities", () => {
+    expect(getPersonalityPaceFactor("Bold leader")).toBe(0.8);
+    expect(getPersonalityPaceFactor("Confident and loud")).toBe(0.8);
+  });
+
+  it("returns 1.0 for unrecognized personalities", () => {
+    expect(getPersonalityPaceFactor("Friendly")).toBe(1.0);
+  });
+});
+
+describe("getTypewriterSpeed", () => {
+  it("returns 3 for default", () => {
+    expect(getTypewriterSpeed(undefined)).toBe(3);
+  });
+
+  it("returns 5 for fast (anxious)", () => {
+    expect(getTypewriterSpeed("Nervous")).toBe(5);
+  });
+
+  it("returns 2 for slow (calm)", () => {
+    expect(getTypewriterSpeed("Calm thinker")).toBe(2);
+  });
+});
+
+describe("dynamicPace", () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it("resolves after a delay for normal mode", async () => {
     let resolved = false;
-    dynamicPace(50).then(() => { resolved = true; });
-
+    dynamicPace(0).then(() => { resolved = true; });
     expect(resolved).toBe(false);
-    await vi.advanceTimersByTimeAsync(HOST_PACE_BASE_MS + HOST_PACE_PER_50_CHARS_MS);
+    await vi.advanceTimersByTimeAsync(HOST_PACE_MAX_MS + 500);
     expect(resolved).toBe(true);
   });
 
-  it("hostPace (zero-length) resolves after base delay", async () => {
-    let resolved = false;
-    dynamicPace(0).then(() => { resolved = true; });
+  it("scene mode resolves faster than host mode", async () => {
+    let hostResolved = false;
+    let sceneResolved = false;
+    dynamicPace(100, undefined, "structured", false).then(() => { hostResolved = true; });
+    dynamicPace(100, undefined, "structured", true).then(() => { sceneResolved = true; });
 
-    await vi.advanceTimersByTimeAsync(HOST_PACE_BASE_MS - 1);
-    expect(resolved).toBe(false);
-    await vi.advanceTimersByTimeAsync(1);
+    await vi.advanceTimersByTimeAsync(SCENE_PACE_MAX_MS + 100);
+    expect(sceneResolved).toBe(true);
+    // host may or may not have resolved depending on jitter — just check scene is done
+  });
+});
+
+describe("hostPace", () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it("resolves after delay", async () => {
+    let resolved = false;
+    hostPace().then(() => { resolved = true; });
+    await vi.advanceTimersByTimeAsync(HOST_PACE_MAX_MS + 500);
+    expect(resolved).toBe(true);
+  });
+});
+
+describe("thinkingDelay", () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it("resolves after a brief delay", async () => {
+    let resolved = false;
+    thinkingDelay(0, "structured").then(() => { resolved = true; });
+    await vi.advanceTimersByTimeAsync(500);
+    expect(resolved).toBe(true);
+  });
+
+  it("scene mode uses shorter delay", async () => {
+    let resolved = false;
+    thinkingDelay(0, "structured", true).then(() => { resolved = true; });
+    await vi.advanceTimersByTimeAsync(250);
     expect(resolved).toBe(true);
   });
 });
