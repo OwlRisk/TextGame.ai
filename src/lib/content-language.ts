@@ -17,7 +17,29 @@ export const SUPPORTED_LANGUAGES = [
   { code: "fr",    label: "Français" },
   { code: "de",    label: "Deutsch" },
   { code: "pt",    label: "Português" },
-  { code: "auto",  label: "Auto (match my messages)" },
+  { code: "ru",    label: "Русский" },
+  { code: "it",    label: "Italiano" },
+  { code: "nl",    label: "Nederlands" },
+  { code: "pl",    label: "Polski" },
+  { code: "tr",    label: "Türkçe" },
+  { code: "ar",    label: "العربية" },
+  { code: "hi",    label: "हिन्दी" },
+  { code: "th",    label: "ไทย" },
+  { code: "vi",    label: "Tiếng Việt" },
+  { code: "id",    label: "Bahasa Indonesia" },
+  { code: "ms",    label: "Bahasa Melayu" },
+  { code: "uk",    label: "Українська" },
+  { code: "cs",    label: "Čeština" },
+  { code: "ro",    label: "Română" },
+  { code: "sv",    label: "Svenska" },
+  { code: "da",    label: "Dansk" },
+  { code: "fi",    label: "Suomi" },
+  { code: "no",    label: "Norsk" },
+  { code: "el",    label: "Ελληνικά" },
+  { code: "he",    label: "עברית" },
+  { code: "hu",    label: "Magyar" },
+  { code: "bn",    label: "বাংলা" },
+  { code: "fil",   label: "Filipino" },
 ] as const;
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]["code"];
@@ -32,6 +54,29 @@ const LANG_NAMES: Record<string, string> = {
   "fr":    "French (Français)",
   "de":    "German (Deutsch)",
   "pt":    "Portuguese (Português)",
+  "ru":    "Russian (Русский)",
+  "it":    "Italian (Italiano)",
+  "nl":    "Dutch (Nederlands)",
+  "pl":    "Polish (Polski)",
+  "tr":    "Turkish (Türkçe)",
+  "ar":    "Arabic (العربية)",
+  "hi":    "Hindi (हिन्दी)",
+  "th":    "Thai (ไทย)",
+  "vi":    "Vietnamese (Tiếng Việt)",
+  "id":    "Indonesian (Bahasa Indonesia)",
+  "ms":    "Malay (Bahasa Melayu)",
+  "uk":    "Ukrainian (Українська)",
+  "cs":    "Czech (Čeština)",
+  "ro":    "Romanian (Română)",
+  "sv":    "Swedish (Svenska)",
+  "da":    "Danish (Dansk)",
+  "fi":    "Finnish (Suomi)",
+  "no":    "Norwegian (Norsk)",
+  "el":    "Greek (Ελληνικά)",
+  "he":    "Hebrew (עברית)",
+  "hu":    "Hungarian (Magyar)",
+  "bn":    "Bengali (বাংলা)",
+  "fil":   "Filipino",
 };
 
 /** Detect language from browser settings. */
@@ -40,13 +85,16 @@ export function detectBrowserLanguage(): string {
   const raw = (navigator.language || "").toLowerCase();
   if (raw.startsWith("zh-tw") || raw.startsWith("zh-hant")) return "zh-TW";
   if (raw.startsWith("zh")) return "zh-CN";
-  if (raw.startsWith("ja")) return "ja";
-  if (raw.startsWith("ko")) return "ko";
-  if (raw.startsWith("es")) return "es";
-  if (raw.startsWith("fr")) return "fr";
-  if (raw.startsWith("de")) return "de";
-  if (raw.startsWith("pt")) return "pt";
-  return "en";
+  const PREFIX_MAP: Record<string, string> = {
+    ja: "ja", ko: "ko", es: "es", fr: "fr", de: "de", pt: "pt",
+    ru: "ru", it: "it", nl: "nl", pl: "pl", tr: "tr", ar: "ar",
+    hi: "hi", th: "th", vi: "vi", id: "id", ms: "ms", uk: "uk",
+    cs: "cs", ro: "ro", sv: "sv", da: "da", fi: "fi", no: "no",
+    nb: "no", nn: "no", el: "el", he: "he", hu: "hu", bn: "bn",
+    fil: "fil", tl: "fil",
+  };
+  const base = raw.split("-")[0];
+  return PREFIX_MAP[base] || "en";
 }
 
 /**
@@ -58,11 +106,6 @@ export function detectBrowserLanguage(): string {
  */
 export function buildLanguageInstruction(contentLanguage?: string): string {
   const lang = contentLanguage || "en";
-
-  if (lang === "auto") {
-    return `\n\nLANGUAGE: Detect the human player's language from their messages and respond in the same language. Default to English if unclear.`;
-  }
-
   const langName = LANG_NAMES[lang] || lang;
   const isEnglish = lang === "en";
 
