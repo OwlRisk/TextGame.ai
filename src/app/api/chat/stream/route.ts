@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       maxCompletionTokens?: number;
       systemPrompt?: string;
       preferredModel?: string;
+      gameId?: string;
     };
     let body: Body;
     try {
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt, preferredModel } = body;
+    const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt, preferredModel, gameId: bodyGameId } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
@@ -157,7 +158,8 @@ export async function POST(request: NextRequest) {
             await deductTokens(userId, Math.max(1, actualCoins), 'ai_chat',
               (promptTokens + completionTokens) > 0
                 ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModel})`
-                : `Chat ~${systemTokens + messagesTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`
+                : `Chat ~${systemTokens + messagesTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`,
+              bodyGameId
             );
           } catch (deductErr) {
             console.error('[stream] CRITICAL deduct error — user received content without paying:', deductErr, { userId, coins: actualCoins });

@@ -22,6 +22,7 @@ export interface SpeakerQueueContext {
   playersRef: { current: Player[] };
   aiOnly: Player[];
 
+  gameId: string;
   gameName: string;
   gameTemplate?: string;
   gameRules?: string;
@@ -130,6 +131,7 @@ export async function runPlayerSpeak(
         ...(channelGoal ? { channelGoal } : {}),
         ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
         ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
+        gameId: ctx.gameId,
       }),
     });
     if (!res.ok) return null;

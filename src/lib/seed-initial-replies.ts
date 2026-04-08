@@ -14,6 +14,7 @@ export interface SeedPlayerInfo {
 
 export interface SeedInitialRepliesOpts {
   channelId: string;
+  gameId: string;
   hostName: string;
   hostContent: string;
   aiPlayers: SeedPlayerInfo[];
@@ -96,6 +97,7 @@ export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
           playerRoster: aiPlayers.map((p) => ({ name: p.name, isHuman: false }))
             .concat(humanPlayerName ? [{ name: humanPlayerName, isHuman: true }] : []),
           isSeedGreeting: true,
+          gameId: opts.gameId,
         }),
       });
 

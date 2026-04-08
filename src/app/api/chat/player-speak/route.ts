@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId, gameId: bodyGameId } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
       recentMessages: Array<{ senderName: string; content: string }>;
       /** All players in the game — same list the human sees in the sidebar. */
       playerRoster?: Array<{ name: string; role?: string; isHuman?: boolean }>;
+      gameId?: string;
     };
 
     if (!player?.name || !Array.isArray(recentMessages)) {
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
     const actualModel = (completion as { model?: string }).model ?? chatModel;
     if (promptTokens + completionTokens > 0) {
       const coins = gptUsageToCoins(actualModel, promptTokens, completionTokens);
-      await deductTokens(user.id, Math.max(1, coins), 'ai_player_speak', `Player speak ${promptTokens}+${completionTokens} tokens (${actualModel})`);
+      await deductTokens(user.id, Math.max(1, coins), 'ai_player_speak', `Player speak ${promptTokens}+${completionTokens} tokens (${actualModel})`, bodyGameId);
     }
 
     return NextResponse.json({ message });

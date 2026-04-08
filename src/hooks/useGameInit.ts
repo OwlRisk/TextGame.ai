@@ -344,6 +344,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
 
     seedInitialPlayerReplies({
       channelId: kickoff.channelId,
+      gameId,
       hostName: kickoff.hostName,
       hostContent: hostGreeting,
       aiPlayers: kickoff.aiPlayers,

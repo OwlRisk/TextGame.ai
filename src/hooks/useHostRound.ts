@@ -523,6 +523,7 @@ export function useHostRound({
               messages: [{ role: "user", content: userContent }],
               maxCompletionTokens: streamTokenBudget,
               preferredModel: getPreferredModel(),
+              gameId,
             }),
           });
           if (!res.ok) {
@@ -611,6 +612,7 @@ export function useHostRound({
                 messages: [{ role: "user", content: userContent }],
                 maxCompletionTokens: streamTokenBudget,
                 preferredModel: getPreferredModel(),
+                gameId,
               }),
             });
             if (!retryRes.ok) throw new Error("retry failed");
@@ -658,6 +660,7 @@ export function useHostRound({
         userId, channelId,
         convMode: getConversationMode(currentGame?.config?.template),
         playersRef, aiOnly,
+        gameId,
         gameName: currentGame?.name ?? "",
         gameTemplate: currentGame?.config?.template,
         gameRules: currentGame?.config?.rules,
