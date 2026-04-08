@@ -105,7 +105,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
                 }`}
                 asChild
               >
-                <Link href={user ? "/create" : "/"} prefetch aria-label="Home" onClick={() => { onSelectGame("home"); onNavigate?.(); }}>
+                <Link href="/" prefetch aria-label="Home" onClick={() => { onSelectGame("home"); onNavigate?.(); }}>
                   <Home className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "home" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
