@@ -416,13 +416,17 @@ describe("typewriterReveal cancellation", () => {
     expect(result).toBe("");
   });
 
-  it("resolves immediately when text fits in first chunk", async () => {
+  it("resolves after one frame when text fits in first chunk", async () => {
     const addFn = () => "msg-3";
     const updateFn = vi.fn();
     const meta = { senderId: "ai", senderName: "AI", senderAvatar: "#000", isAI: true };
 
     const { typewriterReveal } = await import("@/lib/game-pace");
-    const result = await typewriterReveal("Hi", addFn, updateFn, meta, undefined, 5);
+    const promise = typewriterReveal("Hi", addFn, updateFn, meta, undefined, 5);
+
+    flushRAF();
+
+    const result = await promise;
     expect(result).toBe("msg-3");
     expect(updateFn).toHaveBeenCalledWith("msg-3", "Hi", true);
   });

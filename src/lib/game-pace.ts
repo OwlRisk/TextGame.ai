@@ -71,8 +71,8 @@ const TYPEWRITER_CHARS_PER_TICK = 3;
 export type StreamMsgMeta = { senderId: string; senderName: string; senderAvatar: string; isAI: boolean };
 
 /**
- * Display text immediately via addStreamingMessage + updateStreamingMessage.
- * Returns a promise that resolves with the message ID when the full text is shown.
+ * Reveal text progressively via addStreamingMessage + updateStreamingMessage.
+ * Animates character-by-character for an immersive reading experience.
  */
 export function typewriterReveal(
   text: string,
@@ -80,11 +80,29 @@ export function typewriterReveal(
   updateStreamFn: (messageId: string, content: string, isComplete?: boolean) => void,
   msgMeta: StreamMsgMeta,
   channelId?: string,
-  _charsPerTick?: number,
-  _cancelled?: () => boolean,
+  charsPerTick = TYPEWRITER_CHARS_PER_TICK,
+  cancelled?: () => boolean,
 ): Promise<string> {
-  const messageId = addStreamFn(msgMeta, channelId, text);
+  const messageId = addStreamFn(msgMeta, channelId, "");
   if (!messageId) return Promise.resolve("");
-  updateStreamFn(messageId, text, true);
-  return Promise.resolve(messageId);
+
+  return new Promise<string>((resolve) => {
+    let pos = 0;
+    function tick() {
+      if (cancelled?.()) {
+        updateStreamFn(messageId, text, true);
+        resolve(messageId);
+        return;
+      }
+      pos = Math.min(pos + charsPerTick, text.length);
+      const done = pos >= text.length;
+      updateStreamFn(messageId, text.slice(0, pos), done);
+      if (done) {
+        resolve(messageId);
+      } else {
+        requestAnimationFrame(tick);
+      }
+    }
+    requestAnimationFrame(tick);
+  });
 }

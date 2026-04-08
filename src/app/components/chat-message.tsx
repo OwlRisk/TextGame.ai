@@ -257,10 +257,45 @@ export const ChatMessage = React.memo(function ChatMessage({
     ? <span key="streaming-cursor" className="inline-block w-[2px] h-4 bg-violet-400 ml-0.5 align-text-bottom animate-pulse" />
     : null;
 
+  const cleanSynced = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(syncedContent)));
+  const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
+  const displayText = cleanSynced.trim() || cleanRaw.trim();
+
+  const isSceneAction = gameTemplate === "scene" && displayText && /^\*[^*]+\*$/.test(displayText.trim());
+
+  if (isSceneAction && !message.isStreaming) {
+    const actionText = displayText.trim().slice(1, -1);
+    const isMe = message.senderId === userId;
+    return (
+      <div className={`${showAvatar ? "mt-5" : "mt-2"}`}>
+        <div className="flex gap-4">
+          {showAvatar ? (
+            <div className="relative flex-shrink-0" title={message.senderName}>
+              <MessageAvatar
+                message={message} userId={userId} userAvatarUrl={userAvatarUrl}
+                useGeneratedAvatarForUser={useGeneratedAvatarForUser} humanPlayer={humanPlayer}
+                userAvatarName={userAvatarName} gameId={gameId} messagePlayer={messagePlayer}
+                avatarImageUrls={avatarImageUrls} onAvatarUrlLoaded={onAvatarUrlLoaded}
+              />
+            </div>
+          ) : <div className="w-11 flex-shrink-0" />}
+          <div className="flex-1 min-w-0">
+            {showAvatar && (
+              <span className={`text-xs font-medium mb-1 block ${isMe ? "text-blue-300/70" : "text-zinc-500"}`}>
+                {message.senderName}
+              </span>
+            )}
+            <div className="text-amber-200/80 text-sm italic leading-relaxed">
+              {message.senderName} {actionText}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const contentBlock = (() => {
     let formatted: React.ReactNode = null;
-    const cleanSynced = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(syncedContent)));
-    const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
     if (cleanSynced.trim()) formatted = formatMessage(cleanSynced);
     else if (cleanRaw.trim()) formatted = formatMessage(cleanRaw);
     else if (!message.isAI && !message.imageUrl && !message.isStreaming) formatted = <span className="italic text-zinc-500">(No content)</span>;
