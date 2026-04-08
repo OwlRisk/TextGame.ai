@@ -5,20 +5,20 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Button } from '@/app/components/ui/button';
 import {
-  Activity,
   ArrowLeft,
-  ArrowUpRight,
   Calendar,
   DollarSign,
-  ImageIcon,
   Loader2,
   MessageSquare,
+  ImageIcon,
   Mic,
+  Gamepad2,
+  TrendingDown,
   Plus,
   RefreshCw,
-  TrendingDown,
+  ArrowUpRight,
+  Activity,
 } from 'lucide-react';
-import Link from 'next/link';
 import {
   BarChart,
   Bar,
@@ -26,7 +26,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { motion } from 'motion/react';
@@ -39,68 +38,103 @@ interface Transaction {
   createdAt: string;
 }
 
-const TYPE_CONFIG: Record<
-  string,
-  { label: string; icon: typeof ArrowUpRight; color: string; bgColor: string; prefix: string }
-> = {
-  spending: { label: 'Spending', icon: ArrowUpRight, color: 'text-red-400', bgColor: 'bg-red-500/10', prefix: '-' },
-  topup: { label: 'Top-up', icon: Plus, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', prefix: '+' },
-  subscription_grant: { label: 'Subscription', icon: RefreshCw, color: 'text-blue-400', bgColor: 'bg-blue-500/10', prefix: '+' },
-  purchase: { label: 'Purchase', icon: Plus, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', prefix: '+' },
-  default: { label: 'Transaction', icon: Activity, color: 'text-zinc-400', bgColor: 'bg-zinc-500/10', prefix: '' },
+// ─── Category mapping: actual DB transaction_type → display group ────────────
+type CategoryKey = 'gameplay' | 'setup' | 'voice' | 'image';
+
+const CATEGORY_GROUP: Record<string, CategoryKey> = {
+  ai_chat:           'gameplay',
+  ai_player_speak:   'gameplay',
+  suggest_gm_replies:'gameplay',
+  game_creation:     'setup',
+  generate_players:  'setup',
+  image_generation:  'image',
+  tts:               'voice',
+  transcription:     'voice',
 };
 
-/** Map individual transaction types → top-level chart category */
-const CATEGORY_GROUP: Record<string, 'text' | 'image' | 'voice' | 'other'> = {
-  ai_chat:            'text',
-  ai_chat_stream:     'text',
-  game_creation:      'text',
-  image_generation:   'image',
-  tts:                'voice',
-  voice_transcription:'voice',
-  quick_reply:        'other',
-  prompt_suggestion:  'other',
-};
-
-const CATEGORY_META: Record<'text' | 'image' | 'voice' | 'other', {
+const CATEGORY_META: Record<CategoryKey, {
   label: string;
   color: string;
   fill: string;
   Icon: typeof MessageSquare;
 }> = {
-  text:  { label: 'AI Text',  color: 'text-violet-400',  fill: '#a855f7', Icon: MessageSquare },
-  image: { label: 'Image',    color: 'text-amber-400',   fill: '#f59e0b', Icon: ImageIcon },
-  voice: { label: 'Voice/TTS',color: 'text-sky-400',     fill: '#38bdf8', Icon: Mic },
-  other: { label: 'Other',    color: 'text-zinc-400',    fill: '#71717a', Icon: Activity },
+  gameplay: { label: 'AI Gameplay',   color: 'text-violet-400',  fill: '#a855f7', Icon: MessageSquare },
+  setup:    { label: 'Game Setup',    color: 'text-amber-400',   fill: '#f59e0b', Icon: Gamepad2 },
+  voice:    { label: 'Voice',         color: 'text-sky-400',     fill: '#38bdf8', Icon: Mic },
+  image:    { label: 'Avatars',       color: 'text-rose-400',    fill: '#fb7185', Icon: ImageIcon },
 };
 
-function getTypeConfig(tx: Transaction) {
-  if (tx.amount > 0) {
-    if (tx.transactionType === 'subscription_grant') return TYPE_CONFIG.subscription_grant;
-    if (tx.transactionType === 'purchase') return TYPE_CONFIG.purchase;
-    return TYPE_CONFIG.topup;
-  }
-  return TYPE_CONFIG.spending;
+const ALL_CATEGORIES: CategoryKey[] = ['gameplay', 'setup', 'voice', 'image'];
+
+function resolveCategory(type: string): CategoryKey {
+  return CATEGORY_GROUP[type] ?? 'gameplay';
 }
 
-function formatDateTime(date: Date | string): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+// ─── Transaction list config ─────────────────────────────────────────────────
+const TX_DISPLAY: Record<string, { label: string; icon: typeof ArrowUpRight; color: string; bg: string; prefix: string }> = {
+  spending:           { label: 'Spending',     icon: ArrowUpRight, color: 'text-red-400',     bg: 'bg-red-500/10',     prefix: '-' },
+  topup:              { label: 'Top-up',       icon: Plus,         color: 'text-emerald-400', bg: 'bg-emerald-500/10', prefix: '+' },
+  subscription_grant: { label: 'Subscription', icon: RefreshCw,    color: 'text-blue-400',    bg: 'bg-blue-500/10',    prefix: '+' },
+  purchase:           { label: 'Purchase',     icon: Plus,         color: 'text-emerald-400', bg: 'bg-emerald-500/10', prefix: '+' },
+  refund:             { label: 'Refund',       icon: RefreshCw,    color: 'text-emerald-400', bg: 'bg-emerald-500/10', prefix: '+' },
+};
+
+function getTxDisplay(tx: Transaction) {
+  if (tx.amount > 0) {
+    return TX_DISPLAY[tx.transactionType] ?? TX_DISPLAY.topup;
+  }
+  return TX_DISPLAY.spending;
+}
+
+function formatTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
-  const diff = now.getTime() - dateObj.getTime();
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return 'Just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  const days = Math.floor(seconds / 86400);
+  const diff = now.getTime() - d.getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return 'Just now';
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+  const days = Math.floor(sec / 86400);
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days}d ago`;
-  return dateObj.toLocaleDateString('en-US', {
+  return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: dateObj.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   });
 }
 
+// ─── Custom tooltip ──────────────────────────────────────────────────────────
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  const total = payload.reduce((s, p) => s + (p.value ?? 0), 0);
+  if (total === 0) return null;
+  return (
+    <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl text-xs">
+      <div className="text-zinc-400 mb-1.5">{label}</div>
+      {payload.filter(p => p.value > 0).map((p) => {
+        const meta = CATEGORY_META[p.dataKey as CategoryKey];
+        return (
+          <div key={p.dataKey} className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: meta?.fill }} />
+              <span className="text-zinc-300">{meta?.label ?? p.dataKey}</span>
+            </span>
+            <span className="text-white font-medium tabular-nums">{p.value.toLocaleString()}</span>
+          </div>
+        );
+      })}
+      {payload.length > 1 && (
+        <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-zinc-700">
+          <span className="text-zinc-400">Total</span>
+          <span className="text-white font-semibold tabular-nums">{total.toLocaleString()}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
 export function UsageContent() {
   const router = useRouter();
   const { session } = useAuth();
@@ -130,29 +164,29 @@ export function UsageContent() {
 
   const stats = useMemo(() => {
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const spendingRecords = transactions.filter((r) => r.amount < 0);
-    const weekSpent = spendingRecords
-      .filter((r) => new Date(r.createdAt) >= startOfWeek)
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 86_400_000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 86_400_000);
+    const spending = transactions.filter((r) => r.amount < 0);
+
+    const weekSpent = spending
+      .filter((r) => new Date(r.createdAt) >= sevenDaysAgo)
       .reduce((sum, r) => sum + Math.abs(r.amount), 0);
-    const monthSpent = spendingRecords
-      .filter((r) => new Date(r.createdAt) >= startOfMonth)
+    const monthSpent = spending
+      .filter((r) => new Date(r.createdAt) >= thirtyDaysAgo)
       .reduce((sum, r) => sum + Math.abs(r.amount), 0);
-    const chartData: { date: string; text: number; image: number; voice: number; other: number }[] = [];
+
+    const chartData: Record<string, number | string>[] = [];
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const date = new Date(now.getTime() - i * 86_400_000);
       const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      const dayRecords = spendingRecords.filter((r) => {
+      const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+      const dayRecords = spending.filter((r) => {
         const t = new Date(r.createdAt);
         return t >= dayStart && t < dayEnd;
       });
-      const byGroup = { text: 0, image: 0, voice: 0, other: 0 };
+      const byGroup: Record<CategoryKey, number> = { gameplay: 0, setup: 0, voice: 0, image: 0 };
       dayRecords.forEach((r) => {
-        const group = CATEGORY_GROUP[r.transactionType] ?? 'other';
-        byGroup[group] += Math.abs(r.amount);
+        byGroup[resolveCategory(r.transactionType)] += Math.abs(r.amount);
       });
       chartData.push({
         date: dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -160,28 +194,19 @@ export function UsageContent() {
       });
     }
 
-    // Grouped totals for the summary cards
-    const groupTotals: Record<'text' | 'image' | 'voice' | 'other', number> = { text: 0, image: 0, voice: 0, other: 0 };
-    spendingRecords.forEach((r) => {
-      const group = CATEGORY_GROUP[r.transactionType] ?? 'other';
-      groupTotals[group] += Math.abs(r.amount);
+    const groupTotals: Record<CategoryKey, number> = { gameplay: 0, setup: 0, voice: 0, image: 0 };
+    spending.forEach((r) => {
+      groupTotals[resolveCategory(r.transactionType)] += Math.abs(r.amount);
     });
     const totalGrouped = Object.values(groupTotals).reduce((s, v) => s + v, 0);
 
-    return {
-      weekSpent,
-      monthSpent,
-      chartData,
-      totalSpent: spendingRecords.reduce((s, r) => s + Math.abs(r.amount), 0),
-      groupTotals,
-      totalGrouped,
-    };
+    return { weekSpent, monthSpent, chartData, totalSpent: totalGrouped, groupTotals, totalGrouped };
   }, [transactions]);
 
   if (!session) {
     return (
-      <div className="flex-1 flex flex-col bg-[#0a0a0a] min-h-0 overflow-y-auto">
-        <div className="p-6 text-zinc-400 text-center">Sign in to view your usage.</div>
+      <div className="flex-1 flex items-center justify-center bg-[#0a0a0a]">
+        <p className="text-zinc-400">Sign in to view your usage.</p>
       </div>
     );
   }
@@ -189,9 +214,9 @@ export function UsageContent() {
   return (
     <div className="flex-1 flex flex-col bg-[#0a0a0a] min-h-0 overflow-y-auto">
       {/* Header */}
-      <div className="bg-zinc-900/50 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
-        <div className="flex items-center gap-4">
-            <Button
+      <div className="border-b border-zinc-800/60 px-6 py-4 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <Button
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
@@ -199,219 +224,175 @@ export function UsageContent() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-white">Usage & Spending</h1>
+          <div>
+            <h1 className="text-lg font-bold text-white">Usage & Spending</h1>
             <p className="text-xs text-zinc-500">Track your credit usage</p>
           </div>
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="bg-zinc-900/30 border-b border-zinc-800 px-6 py-6 flex-shrink-0">
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 mb-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-white font-semibold text-sm">Spending Trend</h3>
-                <p className="text-xs text-zinc-500">Last 7 days</p>
-              </div>
+      <div className="px-6 py-6 space-y-6">
+        {/* ── Balance + period stats ────────────────────────────────────── */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <DollarSign className="h-4 w-4 text-emerald-400" />
+              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Available</span>
             </div>
-            {stats.totalSpent > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={stats.chartData}
-                  barSize={18}
-                  barCategoryGap="30%"
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                  <XAxis dataKey="date" stroke="#71717a" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#71717a" fontSize={11} tickLine={false} />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                    contentStyle={{
-                      backgroundColor: '#18181b',
-                      border: '1px solid #3f3f46',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                    labelStyle={{ color: '#a1a1aa' }}
-                    formatter={(value: number, name: string) => [
-                      value,
-                      CATEGORY_META[name as keyof typeof CATEGORY_META]?.label ?? name,
-                    ]}
-                  />
-                  <Legend
-                    formatter={(value) =>
-                      CATEGORY_META[value as keyof typeof CATEGORY_META]?.label ?? value
-                    }
-                    wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                  />
-                  <Bar dataKey="text"  stackId="a" fill={CATEGORY_META.text.fill}  radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="image" stackId="a" fill={CATEGORY_META.image.fill} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="voice" stackId="a" fill={CATEGORY_META.voice.fill} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="other" stackId="a" fill={CATEGORY_META.other.fill} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            {loadingBalance ? (
+              <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+            ) : balance ? (
+              <div className="text-3xl font-black text-white tabular-nums">{balance.tokens.toLocaleString()}</div>
             ) : (
-              <div className="h-[220px] flex items-center justify-center">
-                <div className="text-center">
-                  <TrendingDown className="h-8 w-8 text-zinc-700 mx-auto mb-2" />
-                  <p className="text-xs text-zinc-600">No spending data yet</p>
-                </div>
-              </div>
+              <div className="text-zinc-500">—</div>
             )}
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
-            <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-emerald-400" />
-                <span className="text-xs font-semibold text-emerald-400">Available</span>
-              </div>
-              {loadingBalance ? (
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : balance ? (
-                <>
-                  <div className="text-3xl font-black text-white mb-1 tabular-nums">
-                    {balance.tokens.toLocaleString()}
-                  </div>
-                  <div className="text-[10px] text-zinc-500">credits</div>
-                </>
-              ) : (
-                <div className="text-zinc-400 text-sm">—</div>
-              )}
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="h-4 w-4 text-red-400" />
-                <span className="text-xs font-semibold text-zinc-400">Last 7 Days</span>
-              </div>
-              <div className="text-2xl font-bold text-white tabular-nums">{stats.weekSpent.toLocaleString()}</div>
-              <div className="text-[10px] text-zinc-500 mt-1">Spent</div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingDown className="h-4 w-4 text-orange-400" />
-            <span className="text-xs font-semibold text-zinc-400">Last 30 Days</span>
-          </div>
-          <div className="text-2xl font-bold text-white tabular-nums">{stats.monthSpent.toLocaleString()}</div>
-        </div>
-      </div>
 
-      {/* Usage by category */}
-      {stats.totalSpent > 0 && (
-        <div className="bg-zinc-900/30 border-b border-zinc-800 px-6 py-4 flex-shrink-0">
-          <h3 className="text-sm font-semibold text-white mb-3">Breakdown by category</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {(Object.entries(stats.groupTotals) as [keyof typeof CATEGORY_META, number][])
-              .filter(([, amount]) => amount > 0)
-              .sort(([, a], [, b]) => b - a)
-              .map(([group, amount]) => {
-                const meta = CATEGORY_META[group];
-                const Icon = meta.Icon;
-                const pct = stats.totalGrouped > 0 ? Math.round((amount / stats.totalGrouped) * 100) : 0;
-                return (
-                  <div
-                    key={group}
-                    className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${meta.fill}18` }}
-                      >
-                        <Icon className="h-3.5 w-3.5" style={{ color: meta.fill }} />
-                      </div>
-                      <span className="text-xs text-zinc-400 font-medium">{meta.label}</span>
-                    </div>
-                    <div className="text-xl font-bold text-white tabular-nums">
-                      {amount.toLocaleString()}
-                    </div>
-                    <div className="w-full bg-zinc-800 rounded-full h-1">
-                      <div
-                        className="h-1 rounded-full transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: meta.fill }}
-                      />
-                    </div>
-                    <div className="text-[10px] text-zinc-500">{pct}% of total</div>
-                  </div>
-                );
-              })}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingDown className="h-4 w-4 text-orange-400" />
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">7 Days</span>
+            </div>
+            <div className="text-3xl font-black text-white tabular-nums">{stats.weekSpent.toLocaleString()}</div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingDown className="h-4 w-4 text-red-400" />
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">30 Days</span>
+            </div>
+            <div className="text-3xl font-black text-white tabular-nums">{stats.monthSpent.toLocaleString()}</div>
           </div>
         </div>
-      )}
 
-      {/* Transaction List */}
-      <div className="flex-1 px-6 py-4 min-h-0">
-        {loadingTx ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-zinc-400">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Loading…</span>
-          </div>
-        ) : transactions.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="h-16 w-16 rounded-full bg-zinc-900 flex items-center justify-center mx-auto mb-4 border border-zinc-800">
-              <DollarSign className="h-8 w-8 text-zinc-600" />
+        {/* ── Spending chart ────────────────────────────────────────────── */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+          <h3 className="text-sm font-semibold text-white mb-1">Spending Trend</h3>
+          <p className="text-xs text-zinc-500 mb-4">Last 7 days by category</p>
+          {stats.totalSpent > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={stats.chartData} barSize={20} barCategoryGap="25%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                <XAxis dataKey="date" stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} width={35} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                {ALL_CATEGORIES.map((key, i) => (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="a"
+                    fill={CATEGORY_META[key].fill}
+                    radius={i === ALL_CATEGORIES.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center">
+              <div className="text-center">
+                <TrendingDown className="h-8 w-8 text-zinc-700 mx-auto mb-2" />
+                <p className="text-xs text-zinc-600">No spending data yet</p>
+              </div>
             </div>
-            <p className="text-zinc-400 text-lg mb-1">No transactions found</p>
-            <p className="text-zinc-600 text-sm mb-4">Your transaction history will appear here</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {transactions.map((record, index) => {
-              const typeConfig = getTypeConfig(record);
-              const Icon = typeConfig.icon;
-              const isCredit = record.amount > 0;
-              return (
-                <motion.div
-                  key={record.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(index * 0.03, 0.3) }}
-                  className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-all"
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`h-11 w-11 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        isCredit ? 'bg-emerald-500/10' : 'bg-red-500/10'
-                      }`}
-                    >
-                      <Icon
-                        className={`h-5 w-5 ${isCredit ? 'text-emerald-400' : 'text-red-400'}`}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold text-sm mb-1">
-                            {record.description || record.transactionType}
-                          </h3>
+          )}
+          {/* Legend */}
+          {stats.totalSpent > 0 && (
+            <div className="flex items-center justify-center gap-5 mt-3">
+              {ALL_CATEGORIES.map((key) => (
+                <span key={key} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CATEGORY_META[key].fill }} />
+                  {CATEGORY_META[key].label}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Category breakdown ────────────────────────────────────────── */}
+        {stats.totalSpent > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-3">Breakdown</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {ALL_CATEGORIES
+                .filter((key) => stats.groupTotals[key] > 0)
+                .map((key) => {
+                  const meta = CATEGORY_META[key];
+                  const amount = stats.groupTotals[key];
+                  const pct = stats.totalGrouped > 0 ? Math.round((amount / stats.totalGrouped) * 100) : 0;
+                  const Icon = meta.Icon;
+                  return (
+                    <div key={key} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div
+                          className="h-7 w-7 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: `${meta.fill}18` }}
+                        >
+                          <Icon className="h-3.5 w-3.5" style={{ color: meta.fill }} />
                         </div>
-                        <div className={`text-xl font-bold tabular-nums ${typeConfig.color}`}>
-                          {typeConfig.prefix}
-                          {Math.abs(record.amount).toLocaleString()}
-                        </div>
+                        <span className="text-xs text-zinc-400 font-medium">{meta.label}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs">
-                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${typeConfig.bgColor}`}>
-                          <span className={`font-medium ${typeConfig.color}`}>{typeConfig.label}</span>
-                        </div>
-                        <span className="text-zinc-600">•</span>
-                        <div className="flex items-center gap-1 text-zinc-500">
-                          <Calendar className="h-3 w-3" />
-                          {formatDateTime(record.createdAt)}
-                        </div>
+                      <div className="text-xl font-bold text-white tabular-nums mb-2">{amount.toLocaleString()}</div>
+                      <div className="w-full bg-zinc-800 rounded-full h-1">
+                        <div className="h-1 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: meta.fill }} />
                       </div>
+                      <div className="text-[10px] text-zinc-500 mt-1">{pct}%</div>
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  );
+                })}
+            </div>
           </div>
         )}
+
+        {/* ── Transaction history ───────────────────────────────────────── */}
+        <div>
+          <h3 className="text-sm font-semibold text-white mb-3">Recent Transactions</h3>
+          {loadingTx ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-zinc-500">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">Loading…</span>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="h-14 w-14 rounded-full bg-zinc-900 flex items-center justify-center mx-auto mb-3 border border-zinc-800">
+                <DollarSign className="h-7 w-7 text-zinc-600" />
+              </div>
+              <p className="text-zinc-400 mb-1">No transactions yet</p>
+              <p className="text-zinc-600 text-sm">Your history will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {transactions.map((tx, index) => {
+                const display = getTxDisplay(tx);
+                const Icon = display.icon;
+                const isCredit = tx.amount > 0;
+                return (
+                  <motion.div
+                    key={tx.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.02, 0.2) }}
+                    className="flex items-center gap-3 rounded-lg px-4 py-3 hover:bg-zinc-900/80 transition-colors"
+                  >
+                    <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isCredit ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                      <Icon className={`h-4 w-4 ${isCredit ? 'text-emerald-400' : 'text-red-400'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white truncate">{tx.description || tx.transactionType}</p>
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-500 mt-0.5">
+                        <span className={`px-1.5 py-0.5 rounded ${display.bg} ${display.color} font-medium`}>{display.label}</span>
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatTime(tx.createdAt)}</span>
+                      </div>
+                    </div>
+                    <div className={`text-base font-bold tabular-nums ${display.color}`}>
+                      {display.prefix}{Math.abs(tx.amount).toLocaleString()}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
