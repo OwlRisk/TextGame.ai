@@ -12,7 +12,7 @@ import {
   splitHostOutput as splitHostOutputUtil,
   sectionId as sectionIdUtil,
 } from "@/lib/game-host-utils";
-import { getPreferredModel } from "@/lib/model-prefs";
+import { getPreferredModel, SCENE_NARRATOR_MODEL } from "@/lib/model-prefs";
 import { getTemplateHexColor, getGameTemplate } from "@/lib/game-templates";
 import {
   MAX_AUTO_ADVANCES,
@@ -529,7 +529,7 @@ export function useHostRound({
               systemPrompt: hostSystemPrompt,
               messages: [{ role: "user", content: userContent }],
               maxCompletionTokens: streamTokenBudget,
-              preferredModel: getPreferredModel(),
+              preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
               gameId,
             }),
           });
@@ -618,7 +618,7 @@ export function useHostRound({
                 systemPrompt: hostSystemPrompt,
                 messages: [{ role: "user", content: userContent }],
                 maxCompletionTokens: streamTokenBudget,
-                preferredModel: getPreferredModel(),
+                preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
                 gameId,
               }),
             });

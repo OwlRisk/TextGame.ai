@@ -2,7 +2,7 @@ import type { Player } from "@/types/player";
 import type { SpeakerQueueItem } from "@/lib/host-output-parser";
 import type { ConversationMode, StreamMsgMeta } from "@/lib/game-pace";
 import { parseHostActions } from "@/lib/host-actions";
-import { getPreferredModel } from "@/lib/model-prefs";
+import { getPreferredModel, SCENE_PLAYER_MODEL } from "@/lib/model-prefs";
 import { isPlayerEliminated } from "@/lib/player-badges";
 import {
   thinkingDelay,
@@ -128,7 +128,7 @@ export async function runPlayerSpeak(
         ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
         recentMessages: recent,
         playerRoster,
-        preferredModel: getPreferredModel(),
+        preferredModel: ctx.sceneId ? SCENE_PLAYER_MODEL : getPreferredModel(),
         ...(channelGoal ? { channelGoal } : {}),
         ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
         ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
