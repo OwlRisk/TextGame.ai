@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       systemPrompt?: string;
       preferredModel?: string;
       gameId?: string;
+      contentLanguage?: string;
     };
     let body: Body;
     try {
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt, preferredModel, gameId: bodyGameId } = body;
+    const { messages, hostPersonality, gameContext, maxCompletionTokens, systemPrompt: customSystemPrompt, preferredModel, gameId: bodyGameId, contentLanguage } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const openai = getOpenAI();
-    const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext, customSystemPrompt });
+    const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext, customSystemPrompt, contentLanguage });
 
     const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
       ? Math.min(4096, Math.max(256, maxCompletionTokens))

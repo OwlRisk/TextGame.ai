@@ -25,17 +25,21 @@ export async function POST(request: NextRequest) {
     if (!rl.success) return rateLimitResponse(rl);
 
     const body = await request.json().catch(() => ({}));
-    const { gameName = "Custom Game", rules = "" } = body as { gameName?: string; rules?: string };
+    const { gameName = "Custom Game", rules = "", contentLanguage } = body as { gameName?: string; rules?: string; contentLanguage?: string };
 
     const openai = getOpenAI();
     const rulesSnippet = (rules || "").slice(0, 800);
+
+    const langHint = contentLanguage && contentLanguage !== "en" && contentLanguage !== "auto"
+      ? ` Use a name that fits the language/culture: ${contentLanguage}.`
+      : " Use English.";
 
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest',
       messages: [
         {
           role: "system",
-          content: `You generate a single short in-game character name for the human player. The name must fit the game's theme and setting (e.g. for a school mystery: a student name; for werewolf: a villager name; for fantasy: a fitting first name). One name only, 1-3 words, no explanation. Use English.`,
+          content: `You generate a single short in-game character name for the human player. The name must fit the game's theme and setting (e.g. for a school mystery: a student name; for werewolf: a villager name; for fantasy: a fitting first name). One name only, 1-3 words, no explanation.${langHint}`,
         },
         {
           role: "user",

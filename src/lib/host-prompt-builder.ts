@@ -1,6 +1,7 @@
 import { getGameTemplate } from "@/lib/game-templates";
 import type { GameTemplate } from "@/lib/templates/types";
 import { getScene } from "@/lib/scenes";
+import { buildLanguageInstruction } from "@/lib/content-language";
 
 /* ─── Scene Director Prompt (adventure / exploration mode) ─── */
 
@@ -11,10 +12,11 @@ export interface SceneDirectorOpts {
   playerRoster: string;
   eventLogSummary: string;
   recentNonHostTurns?: number;
+  contentLanguage?: string;
 }
 
 export function buildSceneDirectorPrompt(opts: SceneDirectorOpts): string {
-  const { sceneId, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, recentNonHostTurns } = opts;
+  const { sceneId, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, recentNonHostTurns, contentLanguage } = opts;
   const scene = getScene(sceneId);
   const playerNamesList = nonHostPlayerNames.join(", ");
   const directorNotes = scene?.directorNotes ?? "";
@@ -98,7 +100,7 @@ Event Log:
 ${eventLogSummary || "Adventure just started."}
 
 ## REMEMBER
-You are invisible. You are the world itself speaking. No character name, no "I", no meta-commentary. Just the story unfolding.`.trim();
+You are invisible. You are the world itself speaking. No character name, no "I", no meta-commentary. Just the story unfolding.${buildLanguageInstruction(contentLanguage)}`.trim();
 }
 
 /* ─── Original Host Prompt (template-based games) ─── */
@@ -131,6 +133,7 @@ export interface HostPromptOpts {
   roundNumber?: number;
   /** Custom action buttons from GameConfig (overrides template). */
   configQuickActions?: Array<{ label: string; template: string; icon: string; needsTarget?: boolean; phase?: string; role?: string; actionType?: string; targetType?: string }>;
+  contentLanguage?: string;
 }
 
 const CATEGORY_PACING: Record<string, string> = {
@@ -203,7 +206,7 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
     playerRoster, eventLogSummary, boardSummary, rulesText,
     hostName, hostPersonality, hostCustomSystemPrompt,
     recentNonHostTurns, quickGame, roundNumber,
-    configQuickActions,
+    configQuickActions, contentLanguage,
   } = opts;
 
   const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
@@ -349,5 +352,5 @@ Private Board (already sent — do not repeat publicly):
 ${boardSummary}
 
 ## GAME RULES (enforce only, do not modify)
-${rulesText || "No specific rules defined."}`.trim();
+${rulesText || "No specific rules defined."}${buildLanguageInstruction(contentLanguage)}`.trim();
 }

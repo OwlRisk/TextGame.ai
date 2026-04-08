@@ -3,6 +3,8 @@
  * Single source of truth; eliminates ~8000 chars of duplication.
  */
 
+import { buildLanguageInstruction } from "@/lib/content-language";
+
 interface GameContext {
   template?: string;
   playerCount?: number;
@@ -27,8 +29,9 @@ export function buildGMSystemPrompt(opts: {
   hostPersonality?: HostPersonality | null;
   gameContext?: GameContext;
   customSystemPrompt?: string;
+  contentLanguage?: string;
 }): string {
-  const { hostPersonality, gameContext, customSystemPrompt } = opts;
+  const { hostPersonality, gameContext, customSystemPrompt, contentLanguage } = opts;
 
   if (typeof customSystemPrompt === 'string' && customSystemPrompt.trim()) {
     return customSystemPrompt.trim();
@@ -77,6 +80,8 @@ export function buildGMSystemPrompt(opts: {
     }
     s += SETUP_PROMPT;
   }
+
+  s += buildLanguageInstruction(contentLanguage);
 
   return s;
 }

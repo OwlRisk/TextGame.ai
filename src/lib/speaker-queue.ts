@@ -29,6 +29,7 @@ export interface SpeakerQueueContext {
   gamePhase: string;
   humanName?: string;
   sceneId?: string;
+  contentLanguage?: string;
   /** Current phase label set by the host (e.g. "Night Phase", "Day 2") */
   phaseLabel: string;
   myBoardContent: Record<string, string>;
@@ -131,6 +132,7 @@ export async function runPlayerSpeak(
         ...(channelGoal ? { channelGoal } : {}),
         ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
         ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
+        ...(ctx.contentLanguage ? { contentLanguage: ctx.contentLanguage } : {}),
         gameId: ctx.gameId,
       }),
     });

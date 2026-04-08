@@ -125,6 +125,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     afterSeedSendRef,
     isInitialized,
     isFreshLobby,
+    contentLanguage,
   } = useGameInit(gameId);
 
   // ─── Host round (message handling) ────────────────────────────────────────
@@ -144,6 +145,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     defaultGameChannelId,
     readyKickoffRef,
     launchOpeningRound,
+    contentLanguage,
   });
 
   // Keep the seed-completion callback in sync with the latest host round handler

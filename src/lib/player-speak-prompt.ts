@@ -6,6 +6,7 @@ import { getGameTemplate } from "./game-templates";
 import type { GameTemplate } from "./templates/types";
 import { getScene } from "@/lib/scenes";
 import type { SceneCharacter } from "@/lib/scenes/types";
+import { buildLanguageInstruction } from "@/lib/content-language";
 
 /** Default hard limit: enforced by max_completion_tokens. */
 export const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 220;
@@ -86,6 +87,7 @@ export function buildSystemPrompt(
   role?: string,
   speechStyle?: string,
   quirk?: string,
+  contentLanguage?: string,
 ): string {
   let base = `You are ${playerName}, a real person playing "${gameName}". Never break character.`;
   if (personality) base += ` Your personality: ${personality}.`;
@@ -94,7 +96,8 @@ export function buildSystemPrompt(
   if (quirk) base += ` Quirk: ${quirk}.`;
 
   const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
-  const tail = `\n\n${buildPacingRule(tmpl)}\n\n${OUTPUT_RULE}\n\n${EMOTION_TAGS_SECTION}${buildNotesSection(tmpl)}`;
+  const langInst = buildLanguageInstruction(contentLanguage);
+  const tail = `\n\n${buildPacingRule(tmpl)}\n\n${OUTPUT_RULE}\n\n${EMOTION_TAGS_SECTION}${buildNotesSection(tmpl)}${langInst}`;
 
   // Try role-specific prompt from template
   const roleLower = role?.toLowerCase() ?? "";
@@ -159,6 +162,7 @@ export function buildSceneCharacterPrompt(
   background?: string,
   speechStyle?: string,
   quirk?: string,
+  contentLanguage?: string,
 ): string {
   const char = findSceneCharacter(sceneId, playerName);
 
@@ -193,5 +197,5 @@ RULES:
 - Actions should be short and vivid. Mix them naturally with speech. Not every message needs an action.
 - Optional sound effects: [sigh] [laugh] [whispering] [cough] where natural.
 
-OUTPUT: Your speech and brief *actions*. No name prefix. No narration paragraphs.`;
+OUTPUT: Your speech and brief *actions*. No name prefix. No narration paragraphs.${buildLanguageInstruction(contentLanguage)}`;
 }

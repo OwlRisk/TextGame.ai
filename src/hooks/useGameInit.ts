@@ -14,6 +14,7 @@ import { getGameTemplate, getTemplateHexColor, getAvatarStyleForTemplate, type G
 import { getMysteryCase } from "@/data/mystery-cases";
 import { buildSuspectPrompt, buildInitialEvidenceBoard } from "@/lib/suspect-prompt-builder";
 import { getScene, isSceneMode } from "@/lib/scenes";
+import { extractPreferredName, detectBrowserLanguage } from "@/lib/content-language";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string): string {
   if (!tmpl) return `**Your Role: ${role}**`;
@@ -66,6 +67,8 @@ export interface UseGameInitReturn {
   seedCancelledRef: React.MutableRefObject<boolean>;
   /** Set this to handleSendMessageRef from useHostRound so the game auto-continues after seed replies */
   afterSeedSendRef: React.MutableRefObject<((content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => Promise<void>) | null>;
+  /** User's content language preference (from Profile > navigator.language > "en") */
+  contentLanguage: string;
 }
 
 export function useGameInit(gameId: string): UseGameInitReturn {
@@ -94,10 +97,12 @@ export function useGameInit(gameId: string): UseGameInitReturn {
   const currentGame = games.find((g) => g.id === gameId);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isFreshLobby, setIsFreshLobby] = useState(false);
+  const [contentLanguage, setContentLanguage] = useState(() => detectBrowserLanguage());
   const seedCancelledRef = useRef(false);
   const readyKickoffRef = useRef<OpeningKickoffState | null>(null);
   const gameStartingRef = useRef(false);
   const afterSeedSendRef = useRef<((content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => Promise<void>) | null>(null);
+  const langFetchedRef = useRef(false);
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
 
@@ -358,6 +363,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       setTypingUsers,
       sessionToken: session?.access_token,
       isCancelled: () => seedCancelledRef.current,
+      contentLanguage,
     }).then(() => {
       if (seedCancelledRef.current) return;
       setTimeout(() => {
@@ -559,8 +565,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     humanIdentityFetchedRef.current = currentGame.id;
 
     if (isSceneMode(currentGame.config.template)) {
-      const realName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "Player";
-      setHumanGameIdentity({ name: realName });
+      const fullName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "Player";
+      setHumanGameIdentity({ name: extractPreferredName(fullName) });
       return;
     }
 
@@ -572,6 +578,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       body: JSON.stringify({
         gameName: currentGame.name,
         rules: currentGame.config.rules,
+        contentLanguage,
       }),
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Failed"))))
@@ -589,6 +596,32 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     setPlayers((prev) => prev.map((p) => (p.id === userId ? { ...p, name } : p)));
   }, [humanGameIdentity?.name, session?.user, players.length, userId, setPlayers]);
 
+  // Fetch content language from user preferences; auto-save browser language if not set
+  useEffect(() => {
+    if (!session?.access_token || langFetchedRef.current) return;
+    langFetchedRef.current = true;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    };
+    fetch("/api/user/settings", { headers })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("fetch failed"))))
+      .then((prefs: Record<string, unknown>) => {
+        if (typeof prefs.content_language === "string" && prefs.content_language) {
+          setContentLanguage(prefs.content_language);
+        } else {
+          const detected = detectBrowserLanguage();
+          setContentLanguage(detected);
+          fetch("/api/user/settings", {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({ content_language: detected }),
+          }).catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, [session?.access_token]);
+
   return {
     initializeLobby,
     startGame,
@@ -598,5 +631,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     readyKickoffRef,
     seedCancelledRef,
     afterSeedSendRef,
+    contentLanguage,
   };
 }

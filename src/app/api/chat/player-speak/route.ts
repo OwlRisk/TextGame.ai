@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId, gameId: bodyGameId } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId, gameId: bodyGameId, contentLanguage } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
       isSeedGreeting?: boolean;
       humanName?: string;
       sceneId?: string;
+      contentLanguage?: string;
       /** Optional task injected when the player is in a private "decision" channel. */
       channelGoal?: string;
       /** Player's own private notes from previous turns (written via [MY_NOTES] tags). */
@@ -124,8 +125,8 @@ export async function POST(request: NextRequest) {
       .join('\n');
 
     const system = (gameTemplate === 'scene' && sceneId)
-      ? buildSceneCharacterPrompt(player.name, sceneId, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk)
-      : buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk);
+      ? buildSceneCharacterPrompt(player.name, sceneId, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, contentLanguage)
+      : buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk, contentLanguage);
 
     // Build user content: game context + private knowledge + recent chat
     const lines: string[] = [];

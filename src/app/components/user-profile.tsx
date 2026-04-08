@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, History, Camera, X, LogOut, Loader2, Gamepad2, ExternalLink } from "lucide-react";
+import { User, History, Camera, X, LogOut, Loader2, Gamepad2, ExternalLink, Globe } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { getGames } from "@/lib/db";
 import Link from "next/link";
 import { toast } from "sonner";
+import { SUPPORTED_LANGUAGES, detectBrowserLanguage } from "@/lib/content-language";
 
 interface UserProfileProps {
   onClose: () => void;
@@ -30,9 +31,37 @@ export function UserProfile({ onClose }: UserProfileProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [games, setGames] = useState<GameRecord[]>([]);
   const [gamesLoading, setGamesLoading] = useState(false);
+  const [contentLanguage, setContentLanguage] = useState<string>(() => detectBrowserLanguage());
+  const [langLoading, setLangLoading] = useState(true);
 
   const username = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || "Player";
   const email = user?.email || "";
+
+  useEffect(() => {
+    if (!user) { setLangLoading(false); return; }
+    fetch("/api/user/settings", {
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((prefs: Record<string, unknown>) => {
+        if (typeof prefs.content_language === "string" && prefs.content_language) {
+          setContentLanguage(prefs.content_language);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLangLoading(false));
+  }, [user]);
+
+  const handleLanguageChange = (lang: string) => {
+    setContentLanguage(lang);
+    fetch("/api/user/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content_language: lang }),
+    })
+      .then((r) => { if (r.ok) toast.success("Language saved"); else throw new Error(); })
+      .catch(() => toast.error("Failed to save language"));
+  };
 
   useEffect(() => {
     if (activeTab !== "history" || !user?.id) return;
@@ -185,6 +214,25 @@ export function UserProfile({ onClose }: UserProfileProps) {
                       <p className="text-sm text-white bg-[#1e1f22] rounded px-3 py-2">{email}</p>
                     </div>
                     <p className="text-xs text-zinc-500">To update your name or email, edit them in your sign-in provider (Google, GitHub, etc.).</p>
+                  </div>
+
+                  {/* Game Language */}
+                  <div className="bg-[#2b2d31] rounded-lg p-6 space-y-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="h-4 w-4 text-zinc-400" />
+                      <Label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Game Language</Label>
+                    </div>
+                    <p className="text-xs text-zinc-500">AI characters and narration will use this language at the start of each game. If you reply in a different language, they will automatically switch.</p>
+                    <select
+                      value={contentLanguage}
+                      onChange={(e) => handleLanguageChange(e.target.value)}
+                      disabled={langLoading}
+                      className="w-full bg-[#1e1f22] text-white text-sm rounded px-3 py-2.5 border border-zinc-700 focus:border-[#5865f2] focus:outline-none appearance-none cursor-pointer disabled:opacity-50"
+                    >
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>{lang.label}</option>
+                      ))}
+                    </select>
                   </div>
                 </>
               )}

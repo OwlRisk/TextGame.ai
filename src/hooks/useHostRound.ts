@@ -59,6 +59,7 @@ interface UseHostRoundParams {
   defaultGameChannelId: string;
   readyKickoffRef: React.MutableRefObject<{ channelId: string } | null>;
   launchOpeningRound: (kickoff: any) => Promise<void>;
+  contentLanguage?: string;
 }
 
 export interface UseHostRoundReturn {
@@ -79,6 +80,7 @@ export function useHostRound({
   defaultGameChannelId,
   readyKickoffRef,
   launchOpeningRound,
+  contentLanguage,
 }: UseHostRoundParams): UseHostRoundReturn {
   const { session } = useAuth();
   const { games, touchGame, updateGame } = useGameContext();
@@ -302,6 +304,7 @@ export function useHostRound({
             playerRoster: freshRoster,
             eventLogSummary: freshEvents,
             recentNonHostTurns,
+            contentLanguage,
           });
         }
 
@@ -339,6 +342,7 @@ export function useHostRound({
           quickGame: (() => { try { return !localStorage.getItem("tg_game_completed"); } catch { return false; } })(),
           roundNumber,
           configQuickActions: currentGame?.config?.quickActions ?? undefined,
+          contentLanguage,
         });
       };
 
@@ -667,6 +671,7 @@ export function useHostRound({
         gamePhase,
         humanName,
         sceneId,
+        contentLanguage,
         phaseLabel: phaseLabel ?? "",
         myBoardContent,
         playerNotes,

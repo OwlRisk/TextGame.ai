@@ -28,6 +28,7 @@ export interface SeedInitialRepliesOpts {
   setTypingUsers?: (users: { name: string; avatar: string }[]) => void;
   sessionToken: string | undefined;
   isCancelled?: () => boolean;
+  contentLanguage?: string;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -98,6 +99,7 @@ export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
             .concat(humanPlayerName ? [{ name: humanPlayerName, isHuman: true }] : []),
           isSeedGreeting: true,
           gameId: opts.gameId,
+          ...(opts.contentLanguage ? { contentLanguage: opts.contentLanguage } : {}),
         }),
       });
 
