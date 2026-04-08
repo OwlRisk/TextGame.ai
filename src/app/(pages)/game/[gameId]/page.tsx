@@ -409,7 +409,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     games,
     selectedGameId,
     onSelectGame: (id: string) => selectGame(id),
-    onCreateGame: () => router.push("/discover"),
     onOpenProfile: () => router.push("/profile"),
     onUpdateGame: updateGame,
   };

@@ -52,7 +52,6 @@ export default function PagesLayout({
       games={games}
       selectedGameId={selectedGameId}
       onSelectGame={(gameId) => selectGame(gameId)}
-      onCreateGame={user && !loading ? () => router.push("/create") : () => router.push("/signin")}
       onOpenProfile={user && !loading ? () => router.push("/profile") : () => router.push("/signin")}
       onUpdateGame={updateGame}
     >

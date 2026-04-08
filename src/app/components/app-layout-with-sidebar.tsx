@@ -22,7 +22,6 @@ interface AppLayoutWithSidebarProps {
   games: Game[];
   selectedGameId: string | null;
   onSelectGame: (gameId: string) => void;
-  onCreateGame: () => void;
   onOpenProfile?: () => void;
   onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
   children: React.ReactNode;
@@ -34,7 +33,6 @@ export function AppLayoutWithSidebar({
   games,
   selectedGameId,
   onSelectGame,
-  onCreateGame,
   onOpenProfile,
   onUpdateGame,
   children,
@@ -45,7 +43,6 @@ export function AppLayoutWithSidebar({
     games,
     selectedGameId,
     onSelectGame,
-    onCreateGame,
     onOpenProfile,
     onUpdateGame,
   };

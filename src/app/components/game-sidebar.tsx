@@ -58,14 +58,13 @@ interface GameSidebarProps {
   games: Game[];
   selectedGameId: string | null;
   onSelectGame: (gameId: string) => void;
-  onCreateGame: () => void;
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
   onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
   onNavigate?: () => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame, onOpenProfile, onDeleteGame, onNavigate }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile, onDeleteGame, onNavigate }: GameSidebarProps) {
   const router = useRouter();
   const { user, session, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);

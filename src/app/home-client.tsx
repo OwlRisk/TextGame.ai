@@ -243,7 +243,6 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       games={games}
       selectedGameId="home"
       onSelectGame={(gameId) => selectGame(gameId)}
-      onCreateGame={handleCreateGame}
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
