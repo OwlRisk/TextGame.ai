@@ -283,7 +283,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   }, [input, isRecording, voiceTranscript, resizeInput]);
 
   // Resizable preview panel
-  const { previewWidth, isDragging: isDraggingSplit, onDragStart: onSplitDragStart, minWidth: PREVIEW_MIN } = useSplitPanel();
+  const splitContainerRef = useRef<HTMLDivElement>(null);
+  const { previewWidth, isDragging: isDraggingSplit, onDragStart: onSplitDragStart, minWidth: PREVIEW_MIN } = useSplitPanel({ containerRef: splitContainerRef });
   // Background merged into Rules - no separate tab needed
   const [isRulesBeingEdited, setIsRulesBeingEdited] = useState<boolean>(false); // Track if rules are being edited in real-time
   const [isStartingGame, setIsStartingGame] = useState(false);
@@ -1176,7 +1177,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </SheetContent>
       </Sheet>
 
-      {/* Game Document Sheet — mobile only */}
+      {/* Game Rules Sheet — mobile/tablet */}
       <Sheet open={mobileRulesOpen} onOpenChange={setMobileRulesOpen}>
         <SheetContent
           side="right"
@@ -1242,7 +1243,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       </Sheet>
 
       {/* Main Chat Area + resizable split */}
-      <div className="flex flex-1 min-w-0 min-h-0 overflow-hidden">
+      <div ref={splitContainerRef} className="flex flex-1 min-w-0 min-h-0 overflow-hidden">
       <div className="flex flex-col min-w-0 min-h-0 flex-1 overflow-hidden">
         {/* Header */}
         <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl flex-shrink-0 relative z-10">
