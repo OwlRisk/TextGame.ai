@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
-import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, MoreVertical, Play, Plus, PanelLeft, FileText, LayoutGrid } from "lucide-react";
+import { Sparkles, Send, Mic, MicOff, X, Check, MessageSquarePlus, Trash2, Play, Plus, PanelLeft, FileText, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import type { DiscoverPreset } from "@/data/discover-templates";
@@ -13,12 +13,6 @@ import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/app/components/ui/context-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +51,6 @@ import { parseGMResponseTags, applyRulesUpdates, applyBackgroundToRules, clampPl
 import { formatGMMessage as formatMessage } from "@/lib/gm-format-message";
 import { useSplitPanel } from "@/hooks/useSplitPanel";
 import { GameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
-import { getPreferredModel } from "@/lib/model-prefs";
 
 export type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, ChannelRoomType };
 
@@ -250,72 +243,22 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     return [];
   }, [messages]);
 
-  /** LLM-generated quick replies; when set, they replace parsed/default chips */
-  const [llmQuickReplies, setLlmQuickReplies] = useState<string[]>([]);
-  const lastGMContentForSuggestionsRef = useRef<string>("");
   const isStreamingRef = useRef(false);
   const isGMTypingRef = useRef(false);
   isStreamingRef.current = isStreaming;
   isGMTypingRef.current = isGMTyping;
 
-  useEffect(() => {
-    if (isGMTypingRef.current || isStreamingRef.current) return;
-    const lastMsg = messages[messages.length - 1];
-    if (!lastMsg || lastMsg.role !== "gm" || !lastMsg.content?.trim()) {
-      setLlmQuickReplies([]);
-      lastGMContentForSuggestionsRef.current = "";
-      return;
-    }
-    const content = lastMsg.content.trim().slice(0, 500);
-    if (content === lastGMContentForSuggestionsRef.current) return;
-    lastGMContentForSuggestionsRef.current = content;
-    setLlmQuickReplies([]); // New GM message: clear old suggestions; displayChips will show suggestionChips until API returns
+  /** Max number of quick-reply chips to show (regex-parsed from GM message only, no LLM call) */
+  const MAX_DISPLAY_CHIPS = 4;
+  const MAX_CHIP_DISPLAY_LEN = 42;
 
-    const lang = /[\u4e00-\u9fff]/.test(content) ? "zh" : "en";
-    const currentRulesSnippet = (customRules || selectedTemplate?.defaultRules || "").slice(0, 800);
-    fetch("/api/suggest-gm-replies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-        gameName: gameName || selectedTemplate?.name || "",
-        rulesSnippet: currentRulesSnippet,
-        playerCount: playerCount,
-        language: lang,
-        preferredModel: getPreferredModel(),
-      }),
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed"))))
-      .then((data: { suggestions?: string[] }) => {
-        if (Array.isArray(data.suggestions)) {
-          setLlmQuickReplies(data.suggestions.slice(0, 8));
-        }
-      })
-      .catch(() => {});
-  }, [messages]);
-
-  /** Max number of quick-reply chips to show */
-  const MAX_DISPLAY_CHIPS = 3;
-  const MAX_CHIP_DISPLAY_LEN = 38;
-
-  /** Chips to show: LLM suggestions when available, else parsed/default chips so they don't flash away. */
   const displayChips = useMemo(() => {
-    if (llmQuickReplies.length > 0) {
-      return llmQuickReplies.slice(0, MAX_DISPLAY_CHIPS).map((text) => {
-        const clean = stripChipLabel(text);
-        return {
-          label: clean.length > MAX_CHIP_DISPLAY_LEN ? clean.slice(0, MAX_CHIP_DISPLAY_LEN - 1).trim() + "…" : clean,
-          value: clean,
-          fullLabel: clean.length > MAX_CHIP_DISPLAY_LEN ? clean : undefined,
-        };
-      });
-    }
     return suggestionChips.slice(0, MAX_DISPLAY_CHIPS).map((c) => ({
       label: c.label.length > MAX_CHIP_DISPLAY_LEN ? c.label.slice(0, MAX_CHIP_DISPLAY_LEN - 1).trim() + "…" : c.label,
       value: c.value,
       fullLabel: c.fullLabel ?? (c.label.length > MAX_CHIP_DISPLAY_LEN ? c.label : undefined),
     }));
-  }, [llmQuickReplies, suggestionChips]);
+  }, [suggestionChips]);
 
   // Only render client-only UI after mount to avoid hydration mismatch.
   const [mounted, setMounted] = useState(false);
@@ -1180,90 +1123,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         </div>
       )}
       
-      {/* Session History Sidebar — desktop only */}
-      <div className="hidden md:flex flex-shrink-0 w-60 border-r border-white/5 bg-black/50 backdrop-blur-xl flex-col relative z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-transparent pointer-events-none" />
-        
-        <div className="p-4 border-b border-white/10 relative flex-shrink-0">
-          <Button
-            onClick={createNewSession}
-            className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-violet-500/20 transition-all"
-          >
-            <MessageSquarePlus className="h-4 w-4 mr-2" />
-            New Session
-          </Button>
-        </div>
+      {/* Desktop sidebar removed — sessions accessible via header dropdown and mobile sheet */}
 
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hidden">
-          <div className="p-2 space-y-1 w-full">
-            {sessions.map((session) => (
-              <ContextMenu key={session.id}>
-                <ContextMenuTrigger>
-                  <div
-                    className={`group relative rounded-lg transition-all duration-200 overflow-hidden ${
-                      currentSessionId === session.id
-                        ? "bg-white/10 border border-white/20"
-                        : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
-                    }`}
-                  >
-                    <button
-                      onClick={() => loadSession(session.id, undefined, true)}
-                      className="w-full min-w-0 p-2 text-left"
-                    >
-                      <div className="text-xs font-medium text-white mb-0.5 line-clamp-1 pr-6">
-                        {session.title}
-                      </div>
-                      <div className="text-[10px] text-zinc-500 truncate">
-                        {(() => {
-                          const dateStr = new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                          if (session.messages.length === 0) return `${dateStr} · No messages yet`;
-                          const last = session.messages[session.messages.length - 1];
-                          const preview = (last?.content ?? '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\n+/g, ' ').trim();
-                          return preview ? `${dateStr} — ${preview}` : `${dateStr} · ${session.messages.length} msgs`;
-                        })()}
-                      </div>
-                    </button>
-                  </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
-                  <ContextMenuItem 
-                    className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
-                    onClick={() => {
-                      setSessionToDelete(session);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Session
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
-            {sessions.length > 20 && (
-              <div className="pt-2 pb-1 px-2 border-t border-white/5 mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const sortedSessions = [...sessions].sort((a, b) => 
-                      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-                    );
-                    const sessionsToKeep = sortedSessions.slice(0, 20);
-                    setSessions(sessionsToKeep);
-                    localStorage.setItem("gameMasterSessions", JSON.stringify(sessionsToKeep));
-                    toast.success(`Cleaned up ${sessions.length - 20} old sessions`);
-                  }}
-                  className="w-full h-7 text-[10px] text-zinc-400 hover:text-white hover:bg-white/5"
-                >
-                  Clear Old ({sessions.length - 20})
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Session History Sheet — mobile only */}
+      {/* Session History Sheet */}
       <Sheet open={mobileSessionsOpen} onOpenChange={setMobileSessionsOpen}>
         <SheetContent
           side="left"
@@ -1318,11 +1180,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       <Sheet open={mobileRulesOpen} onOpenChange={setMobileRulesOpen}>
         <SheetContent
           side="right"
-          title="Game Document"
+          title="Game Rules"
           className="w-[85vw] max-w-sm p-0 gap-0 border-l border-white/10 bg-zinc-950/95 backdrop-blur-xl flex flex-col [&>button:last-child]:hidden"
         >
           <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
-            <h2 className="text-base font-bold text-white flex-1">Game Document</h2>
+            <h2 className="text-base font-bold text-white flex-1">Game Rules</h2>
             {isRulesBeingEdited && (
               <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -1330,7 +1192,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
               </div>
             )}
           </div>
-          <div className={`flex-1 min-h-0 overflow-y-auto px-4 py-4 transition-opacity ${isRulesBeingEdited ? "opacity-70 pointer-events-none" : ""}`}>
+          <div className={`flex-1 min-h-0 overflow-y-auto px-4 py-4 transition-opacity ${isRulesBeingEdited ? "opacity-70" : ""}`}>
             <EditorContent editor={gameDocEditor} />
           </div>
           {(() => {
@@ -1387,11 +1249,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-orange-500/5" />
           <div className="h-14 sm:h-16 px-3 sm:px-6 md:px-8 flex items-center justify-between relative gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              {/* Mobile sessions toggle */}
+              {/* Sessions toggle — all screen sizes */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden flex-shrink-0 h-10 w-10 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10"
+                className="flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10"
                 onClick={() => setMobileSessionsOpen(true)}
                 aria-label="View sessions"
               >
@@ -1425,21 +1287,32 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 </p>
               </div>
             </div>
-            {/* Browse Templates shortcut */}
-            <Link href="/discover" className="hidden sm:inline-flex">
-              <Button variant="ghost" size="sm" className="text-xs text-zinc-400 hover:text-white hover:bg-white/10 gap-1.5">
-                <LayoutGrid className="h-3.5 w-3.5" />
-                Templates
+            {/* Header actions */}
+            <div className="hidden sm:flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10"
+                onClick={createNewSession}
+                title="New session"
+              >
+                <Plus className="h-4 w-4" />
               </Button>
-            </Link>
-            {/* Right: Game Document + Create Room — mobile only */}
+              <Link href="/discover">
+                <Button variant="ghost" size="sm" className="text-xs text-zinc-400 hover:text-white hover:bg-white/10 gap-1.5">
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  Templates
+                </Button>
+              </Link>
+            </div>
+            {/* Right: Game Rules + Create Room — mobile only */}
             <div className="lg:hidden flex items-center gap-1.5 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-10 w-10 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 relative flex-shrink-0"
                 onClick={() => setMobileRulesOpen(true)}
-                aria-label="Game Document"
+                aria-label="Game Rules"
               >
                 <FileText className="h-4 w-4" />
                 {isRulesBeingEdited && (
@@ -1561,6 +1434,47 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                 </div>
               );
             })}
+
+            {/* Inline Create Room CTA — visible when rules are ready */}
+            {!isStreaming && !isGMTyping && !isStartingGame && !checkRulesEmpty(customRules) && conversationState !== "completed" && (
+              <div className="flex justify-center pt-2 pb-4">
+                <Button
+                  onClick={handleStartGame}
+                  disabled={isRulesBeingEdited}
+                  className="h-11 px-6 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-violet-500/20 border border-violet-500/30 hover:border-violet-400/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Create Room
+                </Button>
+              </div>
+            )}
+            {isStartingGame && (
+              <div className="flex flex-col items-center gap-2 pt-2 pb-4">
+                <div className="flex items-center gap-2">
+                  <Button
+                    disabled
+                    className="h-11 px-6 bg-violet-600 text-white text-sm font-semibold rounded-xl opacity-80 cursor-default"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+                      Creating…
+                    </span>
+                  </Button>
+                  <Button
+                    onClick={handleCancelStartGame}
+                    variant="ghost"
+                    className="h-11 px-4 text-sm text-zinc-400 hover:text-white hover:bg-white/10 rounded-xl"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                {creatingStep && (
+                  <p className="text-xs text-violet-400/80 animate-pulse">
+                    {creatingStep} <span className="text-zinc-500">(~1–2 min)</span>
+                  </p>
+                )}
+              </div>
+            )}
 
             <div ref={scrollRef} />
           </div>
@@ -1723,7 +1637,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3 flex-nowrap min-w-0">
                 <div className="min-w-0 flex-1 flex items-center gap-3 overflow-hidden">
-                  <h2 className="text-lg font-bold text-white truncate">Game Document</h2>
+                  <h2 className="text-lg font-bold text-white truncate">Game Rules</h2>
                   {isRulesBeingEdited && (
                     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded-md shrink-0">
                       <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -1779,7 +1693,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
-            <div className={`flex-1 overflow-auto min-h-0 px-4 py-4 transition-opacity ${isRulesBeingEdited ? "opacity-70 pointer-events-none" : ""}`}>
+            <div className={`flex-1 overflow-auto min-h-0 px-4 py-4 transition-opacity ${isRulesBeingEdited ? "opacity-70" : ""}`}>
               <EditorContent editor={gameDocEditor} />
             </div>
           </div>
