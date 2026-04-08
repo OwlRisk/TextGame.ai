@@ -165,17 +165,20 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     const nonHostPlayers = players.filter((p) => !p.isGameMaster);
     if (nonHostPlayers.length === 0) return;
     setAutoStarting(true);
+    autoStartFiredRef.current = true;
     const safetyTimeout = setTimeout(() => setAutoStarting(false), 30000);
-    const delay = isSceneGame ? 50 : 600;
+    if (isSceneGame) {
+      startGameRef.current().finally(() => { clearTimeout(safetyTimeout); setAutoStarting(false); });
+      return () => clearTimeout(safetyTimeout);
+    }
     const timer = setTimeout(async () => {
-      autoStartFiredRef.current = true;
       try {
         await startGameRef.current();
       } finally {
         clearTimeout(safetyTimeout);
         setAutoStarting(false);
       }
-    }, delay);
+    }, 600);
     return () => { clearTimeout(timer); clearTimeout(safetyTimeout); };
   }, [isInitialized, isFreshLobby, isSceneGame, gamePhase, players]);
 
@@ -523,6 +526,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             </div>
           </ScrollArea>
         ) : gamePhase === "lobby" ? (
+          isScene ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <div className="h-8 w-8 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
+              <p className="text-sm text-zinc-400">Setting the scene…</p>
+            </div>
+          ) : (
           <LobbyView
             gameName={currentGame?.name ?? "Game"}
             gameTemplate={currentGame?.config?.template}
@@ -546,6 +555,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             }}
             maxSeats={lobbyMaxSeats}
           />
+          )
         ) : (() => {
           const activeSection = sections.find((s) => s.id === selectedChannelId);
           if (activeSection) return (
