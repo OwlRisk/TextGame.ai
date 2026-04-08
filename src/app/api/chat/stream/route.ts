@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         params.stream_options = { include_usage: true };
       }
       const s = await client.chat.completions.create(
-        params as Parameters<typeof client.chat.completions.create>[0],
+        params as unknown as Parameters<typeof client.chat.completions.create>[0],
         { signal: ac.signal },
       );
       return { stream: s, timer, model };
