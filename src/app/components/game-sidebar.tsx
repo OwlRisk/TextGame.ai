@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Trash2, Loader2, LogIn, CreditCard, BarChart3 } from "lucide-react";
+import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -115,6 +115,32 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onCreateGame,
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
               Home
+            </TooltipContent>
+          </Tooltip>
+
+          {/* My Games */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
+                  selectedGameId === "my-games"
+                    ? "bg-blue-600 rounded-xl shadow-lg shadow-blue-500/50 hover:!bg-blue-600"
+                    : "bg-zinc-800 hover:bg-blue-600 hover:rounded-xl"
+                }`}
+                asChild
+              >
+                <Link href="/my-games" prefetch aria-label="My Games" onClick={() => { onSelectGame("my-games"); onNavigate?.(); }}>
+                  <Gamepad2 className="h-7 w-7 text-white" aria-hidden="true" />
+                  {selectedGameId === "my-games" && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                  )}
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
+              My Stories
             </TooltipContent>
           </Tooltip>
 
