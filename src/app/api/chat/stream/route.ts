@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       const s = await client.chat.completions.create(
         params as unknown as Parameters<typeof client.chat.completions.create>[0],
         { signal: ac.signal },
-      );
+      ) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
       return { stream: s, timer, model };
     }
 
