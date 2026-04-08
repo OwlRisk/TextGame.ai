@@ -10,12 +10,19 @@ export interface SceneCharacter {
   gender?: "male" | "female" | "other";
 }
 
+export interface SceneOpeningMessage {
+  speaker: string;
+  text: string;
+  delay?: number;
+}
+
 export interface Scene {
   id: string;
   title: string;
   hook: string;
   genre: "adventure" | "mystery" | "survival" | "heist";
   openingNarration: string;
+  openingSequence?: SceneOpeningMessage[];
   characters: SceneCharacter[];
   directorNotes: string;
   color: string;

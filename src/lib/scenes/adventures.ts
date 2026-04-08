@@ -1,4 +1,4 @@
-import type { Scene } from "./types";
+import type { Scene, SceneOpeningMessage } from "./types";
 
 export const theLighthouse: Scene = {
   id: "the-lighthouse",
@@ -11,6 +11,12 @@ export const theLighthouse: Scene = {
     "The boat cuts through black water. Ahead, the lighthouse stands against the sky like a broken finger. " +
     "Nobody's maintained it in twenty years — but last week, someone spotted a light flashing from the top floor. " +
     "Three short, three long, three short. SOS. Your crew pulls up to the crumbling dock.",
+  openingSequence: [
+    { speaker: "narrator", text: "The boat bumps against the crumbling dock. The lighthouse looms above — dark, except for the top floor, where something flickers." },
+    { speaker: "Max", text: "There it is. SOS signal, just like I saw from shore. Someone's up there.", delay: 1200 },
+    { speaker: "Suki", text: "*adjusts glasses* The main door is hanging off its hinges. But look — fresh footprints in the mud.", delay: 1500 },
+    { speaker: "Max", text: "So, {playerName} — front door, or do we check around back first? Your call.", delay: 1200 },
+  ],
   characters: [
     {
       name: "Max",
@@ -83,6 +89,13 @@ export const wrongTurn: Scene = {
     "The engine coughs and dies. Again. You're parked on what the GPS calls Main Street, " +
     "but the road isn't on any map you can find. The town sign — hand-painted, wooden — reads 'HALCYON SPRINGS, POP. 84'. " +
     "The houses look lived-in but nobody's outside. It's 2pm on a Tuesday. Your phones have no signal.",
+  openingSequence: [
+    { speaker: "narrator", text: "The engine coughs and dies. The town sign reads HALCYON SPRINGS, POP. 84. No signal. No map. No one outside." },
+    { speaker: "Jordan", text: "Okay, don't panic. I'll get the car running. Just... give me a minute. *tries the ignition — nothing*", delay: 1200 },
+    { speaker: "Lily", text: "*snapping a photo of the town sign* This is incredible. {playerName}, look — the sign is hand-painted. When's the last time you saw that?", delay: 1500 },
+    { speaker: "Priya", text: "*quietly* Has anyone else noticed? All the curtains are closed. Every single house.", delay: 1200 },
+    { speaker: "Jordan", text: "{playerName}, what do you think — should we try to find a gas station, or knock on one of these doors?", delay: 1200 },
+  ],
   characters: [
     {
       name: "Jordan",
@@ -159,6 +172,12 @@ export const theMuseumJob: Scene = {
     "The new wing — 'Echoes of the Ancient World' — opened yesterday to sold-out crowds. " +
     "Your crew couldn't get tickets, so Kai suggested an alternative. " +
     "The security guard does rounds every 45 minutes. The alarm on this door was disabled from inside. You have questions about that.",
+  openingSequence: [
+    { speaker: "narrator", text: "The service door clicks shut. You're inside the Whitmore Museum, after midnight. The alarm on this door was already disabled." },
+    { speaker: "Kai", text: "*checks his watch* Security does rounds every 45 minutes. We've got 40. Stay close. *unfolds a napkin with a floor plan sketched on it*", delay: 1200 },
+    { speaker: "Noor", text: "*whisper-yelling* This is breaking and entering. Actual breaking and entering. I want that on the record.", delay: 1500 },
+    { speaker: "Kai", text: "{playerName}, the new wing is straight ahead, or we could cut through the dinosaur hall. Faster but more cameras. What do you think?", delay: 1200 },
+  ],
   characters: [
     {
       name: "Kai",
@@ -234,6 +253,13 @@ export const theLastTrain: Scene = {
     "But here it is, idling at the platform, doors open, interior lights warm and golden. " +
     "Your crew almost didn't get on. Almost. Now the doors have closed, the platform is sliding away, " +
     "and the conductor's announcement was in a language none of you recognized.",
+  openingSequence: [
+    { speaker: "narrator", text: "The doors seal shut. Platform 9 slides away into the dark. The conductor's announcement echoes — in a language none of you recognize." },
+    { speaker: "Mika", text: "OKAY we are ON a GHOST TRAIN. This is the best worst idea I've ever had. *tries to take a selfie — flash won't work*", delay: 1200 },
+    { speaker: "Ellis", text: "*clicking recorder on* 11:59pm. We've boarded. The schedule says Ashford, which hasn't existed for three years. Documenting everything.", delay: 1500 },
+    { speaker: "Sam", text: "*staring at phone* My compass is... spinning. Slowly, consistently. That's not possible unless... *trails off*", delay: 1200 },
+    { speaker: "Mika", text: "{playerName}, there's a door to the next carriage. Do we check it out, or stay put and figure out what's going on?", delay: 1200 },
+  ],
   characters: [
     {
       name: "Ellis",

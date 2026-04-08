@@ -248,6 +248,72 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     const isScene = isSceneMode(kickoff.gameTemplate);
     const sceneData = isScene && kickoff.sceneId ? getScene(kickoff.sceneId) : undefined;
 
+    // Scene games with openingSequence: play pre-written messages, skip AI generation
+    if (sceneData?.openingSequence && sceneData.openingSequence.length > 0) {
+      const humanName = kickoff.humanPlayerName || "You";
+      const playersByName = new Map(
+        kickoff.aiPlayers.map((p) => [p.name, p])
+      );
+
+      for (let i = 0; i < sceneData.openingSequence.length; i++) {
+        if (seedCancelledRef.current) return;
+        const msg = sceneData.openingSequence[i];
+        const text = msg.text.replace(/\{playerName\}/g, humanName);
+
+        if (msg.speaker === "narrator") {
+          addMessage(
+            {
+              id: `opening-${gameId}-${i}-${Date.now()}`,
+              senderId: "gm-1",
+              senderName: kickoff.hostName,
+              senderAvatar: kickoff.hostColor,
+              content: text,
+              isAI: true,
+            },
+            kickoff.channelId
+          );
+        } else {
+          const player = playersByName.get(msg.speaker);
+          if (player) {
+            addMessage(
+              {
+                id: `opening-${gameId}-${i}-${Date.now()}`,
+                senderId: player.id,
+                senderName: player.name,
+                senderAvatar: player.avatar ?? "#8b5cf6",
+                content: text,
+                isAI: true,
+              },
+              kickoff.channelId
+            );
+          } else {
+            addMessage(
+              {
+                id: `opening-${gameId}-${i}-${Date.now()}`,
+                senderId: "gm-1",
+                senderName: msg.speaker,
+                senderAvatar: kickoff.hostColor,
+                content: text,
+                isAI: true,
+              },
+              kickoff.channelId
+            );
+          }
+        }
+
+        if (i < sceneData.openingSequence.length - 1 && msg.delay) {
+          await new Promise((r) => setTimeout(r, msg.delay));
+        }
+      }
+
+      // After pre-set opening, hand control to the AI host to continue
+      setTimeout(() => {
+        afterSeedSendRef.current?.("[Continue]", { skipAddMessage: true, channelId: kickoff.channelId });
+      }, 800);
+      return;
+    }
+
+    // Non-scene games (or scenes without openingSequence): original flow
     let hostGreeting: string;
     if (sceneData) {
       hostGreeting = sceneData.openingNarration;

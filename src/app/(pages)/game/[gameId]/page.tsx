@@ -156,13 +156,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const [autoStarting, setAutoStarting] = useState(false);
   const startGameRef = useRef(startGame);
   useEffect(() => { startGameRef.current = startGame; });
+  const isSceneGame = isSceneMode(currentGame?.config?.template);
   useEffect(() => {
     if (autoStartFiredRef.current) return;
-    if (!isInitialized || !isFreshLobby || gamePhase !== "lobby") return;
+    if (!isInitialized || gamePhase !== "lobby") return;
+    // Scene games always auto-start; other games require a fresh lobby
+    if (!isSceneGame && !isFreshLobby) return;
     const nonHostPlayers = players.filter((p) => !p.isGameMaster);
     if (nonHostPlayers.length === 0) return;
     setAutoStarting(true);
     const safetyTimeout = setTimeout(() => setAutoStarting(false), 30000);
+    const delay = isSceneGame ? 50 : 600;
     const timer = setTimeout(async () => {
       autoStartFiredRef.current = true;
       try {
@@ -171,9 +175,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         clearTimeout(safetyTimeout);
         setAutoStarting(false);
       }
-    }, 600);
+    }, delay);
     return () => { clearTimeout(timer); clearTimeout(safetyTimeout); };
-  }, [isInitialized, isFreshLobby, gamePhase, players]);
+  }, [isInitialized, isFreshLobby, isSceneGame, gamePhase, players]);
 
   // ─── Auto-set channel permissions from template when game starts ──────────
   const channelPermsInitRef = useRef(false);
