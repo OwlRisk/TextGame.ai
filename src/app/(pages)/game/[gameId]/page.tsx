@@ -580,6 +580,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             typingUsers={typingUsers}
             userId={userId}
             gameId={gameId}
+            gameTemplate={currentGame?.config?.template}
             gameActions={gameActions}
             gameEvents={gameEvents}
             humanName={humanGameIdentity?.name || undefined}

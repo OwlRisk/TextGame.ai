@@ -235,13 +235,18 @@ export const ChatMessage = React.memo(function ChatMessage({
   const isSceneNarrator = isHost && gameTemplate === "scene";
 
   // Scene narrator: render as atmospheric italic narration without avatar/name
-  if (isSceneNarrator && !message.isStreaming) {
+  if (isSceneNarrator) {
+    const cleanSynced = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(syncedContent)));
     const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
-    if (!cleanRaw.trim()) return null;
+    const displayText = cleanSynced.trim() ? cleanSynced : cleanRaw;
+    if (!displayText.trim() && !message.isStreaming) return null;
+    const narratorCursor = isShowingCursor
+      ? <span key="streaming-cursor" className="inline-block w-[2px] h-4 bg-zinc-400 ml-0.5 align-text-bottom animate-pulse" />
+      : null;
     return (
       <div className="my-4 px-4 py-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
         <div className="text-zinc-300 text-sm italic leading-relaxed [&_strong]:text-zinc-100 [&_em]:text-zinc-200">
-          {formatMessage(cleanRaw)}
+          {formatMessage(displayText)}{narratorCursor}
         </div>
       </div>
     );

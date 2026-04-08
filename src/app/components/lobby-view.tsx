@@ -39,7 +39,8 @@ export function LobbyView({
   const [startingGame, setStartingGame] = useState(false);
   const isStarting = startingGame || autoStarting;
 
-  const host = players.find((p) => p.isGameMaster);
+  const isScene = gameTemplate === "scene";
+  const host = isScene ? null : players.find((p) => p.isGameMaster);
   const nonHost = players.filter((p) => !p.isGameMaster);
   const aiCount = nonHost.filter((p) => p.isAI).length;
   const humanCount = nonHost.filter((p) => !p.isAI).length;
