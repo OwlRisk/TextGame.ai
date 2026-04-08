@@ -169,42 +169,95 @@ export async function runPlayerSpeak(
   }
 }
 
-// ─── Passive reactions: AI players spontaneously react based on personality ──
+// ─── Passive reactions: content-aware AI emoji reactions ─────────────────────
 
-interface PersonalityReactionRule {
-  keywords: RegExp;
-  emojis: string[];
-  chance: number;
-}
+type Sentiment = "funny" | "tense" | "touching" | "question" | "bold" | "sad" | "excited" | "neutral";
 
-const PERSONALITY_REACTION_RULES: PersonalityReactionRule[] = [
-  { keywords: /warm|trusting|kind|empathetic|supportive|nurturing|caring/i, emojis: ["👍", "❤️"], chance: 0.30 },
-  { keywords: /chaotic|playful|comedian|witty|humorous|funny|joker/i, emojis: ["😂", "😅", "😮"], chance: 0.35 },
-  { keywords: /skeptical|analytical|critical|debate|logical/i, emojis: ["🤔", "👀"], chance: 0.15 },
-  { keywords: /quiet|observant|reserved|stoic|patient|silent/i, emojis: ["🤔"], chance: 0.10 },
-  { keywords: /bold|confident|aggressive|leader|decisive|brash/i, emojis: ["👍", "😮"], chance: 0.25 },
-  { keywords: /nervous|anxious|cautious|worried|timid/i, emojis: ["😅", "😬"], chance: 0.20 },
-  { keywords: /dramatic|expressive|emotional|passionate/i, emojis: ["😮", "❤️", "😂"], chance: 0.30 },
-  { keywords: /calm|reassuring|mediator|steady|soothing/i, emojis: ["👍", "❤️", "🤔"], chance: 0.20 },
+const SENTIMENT_PATTERNS: { sentiment: Sentiment; pattern: RegExp; weight: number }[] = [
+  { sentiment: "funny",    pattern: /lol|lmao|haha|😂|🤣|joke|hilarious|ridiculous|absurd|can't believe/i, weight: 2 },
+  { sentiment: "funny",    pattern: /ironic|sarcas|that's rich|seriously\?|you('re| are) kidding/i, weight: 1 },
+  { sentiment: "tense",    pattern: /danger|careful|watch out|run|hide|weapon|blood|scream|dark|shadow|stalker|kill|dead|attack|threat|fear|terrif/i, weight: 2 },
+  { sentiment: "tense",    pattern: /suspect|betray|lying|trust no|can't trust|accuse|guilty|caught/i, weight: 1 },
+  { sentiment: "touching",  pattern: /thank|grateful|love|miss you|forgive|sorry|beautiful|proud|together|protect|safe|promise/i, weight: 2 },
+  { sentiment: "sad",      pattern: /sad|cry|tear|lost|gone|never again|too late|hopeless|mourn|farewell|goodbye/i, weight: 2 },
+  { sentiment: "question",  pattern: /\?\s*$|what if|who do you think|why would|how did|does anyone/i, weight: 1 },
+  { sentiment: "bold",     pattern: /let's go|follow me|i'll do it|charge|brave|fight|stand up|challenge|dare|confront/i, weight: 2 },
+  { sentiment: "excited",  pattern: /amazing|incredible|wow|whoa|no way|found it|brilliant|perfect|yes!|let's go!/i, weight: 2 },
 ];
 
-const PASSIVE_REACTION_DEFAULT_EMOJIS = ["👍", "🤔"];
-const PASSIVE_REACTION_DEFAULT_CHANCE = 0.15;
-
-function getReactionRuleForPersonality(personality?: string): { emojis: string[]; chance: number } {
-  if (!personality) return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
-  for (const rule of PERSONALITY_REACTION_RULES) {
-    if (rule.keywords.test(personality)) return { emojis: rule.emojis, chance: rule.chance };
+function detectSentiment(text: string): Sentiment {
+  const scores: Partial<Record<Sentiment, number>> = {};
+  for (const { sentiment, pattern, weight } of SENTIMENT_PATTERNS) {
+    if (pattern.test(text)) scores[sentiment] = (scores[sentiment] ?? 0) + weight;
   }
-  return { emojis: PASSIVE_REACTION_DEFAULT_EMOJIS, chance: PASSIVE_REACTION_DEFAULT_CHANCE };
+  let best: Sentiment = "neutral";
+  let bestScore = 0;
+  for (const [s, score] of Object.entries(scores) as [Sentiment, number][]) {
+    if (score > bestScore) { best = s; bestScore = score; }
+  }
+  return best;
+}
+
+const SENTIMENT_EMOJIS: Record<Sentiment, string[]> = {
+  funny:    ["😂", "🤣", "😅", "💀"],
+  tense:    ["😨", "😬", "👀", "💀", "😰"],
+  touching: ["❤️", "🥹", "👏", "💪"],
+  question: ["🤔", "👀", "🧐"],
+  bold:     ["💪", "🔥", "👏", "😮"],
+  sad:      ["😢", "💔", "🥺"],
+  excited:  ["🔥", "😮", "⚡", "👏", "🤩"],
+  neutral:  ["👍", "🤔", "👀"],
+};
+
+type PersonalityType = "warm" | "playful" | "skeptical" | "quiet" | "bold" | "nervous" | "dramatic" | "calm" | "default";
+
+const PERSONALITY_CLASSIFY: { type: PersonalityType; keywords: RegExp }[] = [
+  { type: "warm",      keywords: /warm|trusting|kind|empathetic|supportive|nurturing|caring/i },
+  { type: "playful",   keywords: /chaotic|playful|comedian|witty|humorous|funny|joker/i },
+  { type: "skeptical",  keywords: /skeptical|analytical|critical|debate|logical/i },
+  { type: "quiet",     keywords: /quiet|observant|reserved|stoic|patient|silent/i },
+  { type: "bold",      keywords: /bold|confident|aggressive|leader|decisive|brash/i },
+  { type: "nervous",   keywords: /nervous|anxious|cautious|worried|timid/i },
+  { type: "dramatic",  keywords: /dramatic|expressive|emotional|passionate/i },
+  { type: "calm",      keywords: /calm|reassuring|mediator|steady|soothing/i },
+];
+
+function classifyPersonality(personality?: string): PersonalityType {
+  if (!personality) return "default";
+  for (const { type, keywords } of PERSONALITY_CLASSIFY) {
+    if (keywords.test(personality)) return type;
+  }
+  return "default";
+}
+
+const PERSONALITY_OVERRIDES: Partial<Record<PersonalityType, Partial<Record<Sentiment, string[]>>>> = {
+  warm:     { tense: ["😰", "🥺"], funny: ["😂", "❤️"], sad: ["❤️", "🥺", "😢"] },
+  playful:  { tense: ["😅", "💀", "👀"], sad: ["😅", "💔"], touching: ["😂", "❤️"] },
+  skeptical: { bold: ["🤔", "👀"], excited: ["🤔", "👀"], funny: ["😏", "🤔"] },
+  quiet:    { funny: ["😅"], tense: ["👀"], excited: ["👀"] },
+  nervous:  { tense: ["😨", "😰", "😬"], bold: ["😬", "😅"], funny: ["😅"] },
+  dramatic: { tense: ["😱", "💀", "😨"], touching: ["😭", "❤️", "🥹"], excited: ["🤩", "🔥", "😮"] },
+};
+
+const PERSONALITY_CHANCE: Record<PersonalityType, number> = {
+  warm: 0.28, playful: 0.32, skeptical: 0.15, quiet: 0.08,
+  bold: 0.22, nervous: 0.18, dramatic: 0.30, calm: 0.18, default: 0.12,
+};
+
+function pickEmoji(personality: PersonalityType, sentiment: Sentiment, usedEmojis: Set<string>): string | null {
+  const overrides = PERSONALITY_OVERRIDES[personality]?.[sentiment];
+  const pool = overrides ?? SENTIMENT_EMOJIS[sentiment];
+  const available = pool.filter(e => !usedEmojis.has(e));
+  if (available.length === 0) return null;
+  return available[Math.floor(Math.random() * available.length)];
 }
 
 const ENGAGEMENT_RATIO: Record<number, { chanceMultiplier: number; ratio: number }> = {
   1: { chanceMultiplier: 0.1, ratio: 0 },
   2: { chanceMultiplier: 0.5, ratio: 0.15 },
   3: { chanceMultiplier: 1.0, ratio: 0.3 },
-  4: { chanceMultiplier: 1.5, ratio: 0.55 },
-  5: { chanceMultiplier: 2.0, ratio: 0.85 },
+  4: { chanceMultiplier: 1.5, ratio: 0.5 },
+  5: { chanceMultiplier: 2.0, ratio: 0.7 },
 };
 
 export function triggerPassiveReactions(
@@ -212,6 +265,7 @@ export function triggerPassiveReactions(
   messageId: string,
   excludePlayerId?: string,
   engagementScore: number = 3,
+  messageContent?: string,
 ): void {
   if (!ctx.addReaction) return;
   const addReaction = ctx.addReaction;
@@ -225,17 +279,23 @@ export function triggerPassiveReactions(
   const maxReactions = Math.max(0, Math.round(candidates.length * scale.ratio));
   if (maxReactions === 0) return;
 
+  const sentiment = detectSentiment(messageContent ?? "");
   const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  const usedEmojis = new Set<string>();
   let reactionCount = 0;
 
   for (const player of shuffled) {
     if (reactionCount >= maxReactions) break;
-    const { emojis, chance } = getReactionRuleForPersonality(player.personality);
+    const pType = classifyPersonality(player.personality);
+    const chance = PERSONALITY_CHANCE[pType];
     if (Math.random() > chance * scale.chanceMultiplier) continue;
 
+    const emoji = pickEmoji(pType, sentiment, usedEmojis);
+    if (!emoji) continue;
+
+    usedEmojis.add(emoji);
     reactionCount++;
-    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-    const delay = 500 + Math.random() * 2000;
+    const delay = 800 + Math.random() * 2500;
 
     setTimeout(() => {
       addReaction(messageId, emoji, player.name);
@@ -260,7 +320,7 @@ export async function speakAndReveal(
     const revealedMsgId = await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
       senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true,
     }, ctx.channelId, speed);
-    if (revealedMsgId) triggerPassiveReactions(ctx, revealedMsgId, player.id, ctx.engagementScore);
+    if (revealedMsgId) triggerPassiveReactions(ctx, revealedMsgId, player.id, ctx.engagementScore, txt);
     const totalPace = Math.min(
       HOST_PACE_BASE_MS + Math.floor(txt.length / 50) * HOST_PACE_PER_50_CHARS_MS,
       HOST_PACE_MAX_MS,
