@@ -10,7 +10,7 @@ import {
   estimateChatTokens,
 } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
-import { sanitizeModel, isGeminiModel } from '@/lib/model-prefs';
+import { sanitizeModel, isGeminiModel, DEFAULT_AI_MODEL } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 import { buildGMSystemPrompt } from '@/lib/gm-system-prompt';
 
@@ -126,23 +126,42 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 120_000);
-
-    const streamParams: Record<string, unknown> = {
-      model: chatModel,
-      messages: formattedMessages,
-      max_completion_tokens: maxTokens,
-      stream: true,
-    };
-    if (!useGemini) {
-      streamParams.stream_options = { include_usage: true };
+    async function createStream(client: OpenAI, model: string, isGemini: boolean) {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 120_000);
+      const params: Record<string, unknown> = {
+        model,
+        messages: formattedMessages,
+        max_completion_tokens: maxTokens,
+        stream: true,
+      };
+      if (!isGemini) {
+        params.stream_options = { include_usage: true };
+      }
+      const s = await client.chat.completions.create(
+        params as Parameters<typeof client.chat.completions.create>[0],
+        { signal: ac.signal },
+      );
+      return { stream: s, timer, model };
     }
-    const stream = await aiClient.chat.completions.create(
-      streamParams as Parameters<typeof aiClient.chat.completions.create>[0],
-      { signal: ac.signal },
-    );
 
+    let activeStream: Awaited<ReturnType<typeof createStream>>;
+    let actualModelUsed = chatModel;
+    try {
+      activeStream = await createStream(aiClient, chatModel, useGemini);
+      actualModelUsed = chatModel;
+    } catch (geminiErr) {
+      if (useGemini) {
+        console.warn('[stream] Gemini failed, falling back to OpenAI:', (geminiErr as Error)?.message);
+        const fallbackModel = DEFAULT_AI_MODEL;
+        activeStream = await createStream(getOpenAI(), fallbackModel, false);
+        actualModelUsed = fallbackModel;
+      } else {
+        throw geminiErr;
+      }
+    }
+
+    const { stream, timer } = activeStream;
     const userId = user.id;
     const encoder = new TextEncoder();
 
@@ -169,14 +188,13 @@ export async function POST(request: NextRequest) {
           controller.close();
           clearTimeout(timer);
 
-          const actualModel = chatModel;
           const actualCoins = (promptTokens + completionTokens) > 0
-            ? gptUsageToCoins(actualModel, promptTokens, completionTokens)
-            : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(fullContent.length / 3), chatModel);
+            ? gptUsageToCoins(actualModelUsed, promptTokens, completionTokens)
+            : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(fullContent.length / 3), actualModelUsed);
           try {
             await deductTokens(userId, Math.max(1, actualCoins), 'ai_chat',
               (promptTokens + completionTokens) > 0
-                ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModel})`
+                ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModelUsed})`
                 : `Chat ~${systemTokens + messagesTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`,
               bodyGameId
             );
