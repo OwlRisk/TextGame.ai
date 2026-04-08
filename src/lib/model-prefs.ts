@@ -10,8 +10,8 @@ export const DEFAULT_AI_MODEL = 'gpt-5.3-chat-latest';
  */
 export const CHEAP_AI_MODEL = 'gpt-4.1-mini';
 
-/** Scene narrator: creative writing quality with reasonable cost. */
-export const SCENE_NARRATOR_MODEL = 'gpt-5.4-mini';
+/** Scene narrator: flagship model for rich storytelling and reliable directive handling. */
+export const SCENE_NARRATOR_MODEL = 'gpt-5.4';
 
 
 export const ALLOWED_MODELS = [
