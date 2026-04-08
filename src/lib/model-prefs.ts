@@ -13,8 +13,6 @@ export const CHEAP_AI_MODEL = 'gpt-4.1-mini';
 /** Scene narrator: creative writing quality with reasonable cost. */
 export const SCENE_NARRATOR_MODEL = 'gpt-5.4-mini';
 
-/** Scene AI players: fast and cheap for short in-character dialogue. */
-export const SCENE_PLAYER_MODEL = 'gpt-5.4-nano';
 
 export const ALLOWED_MODELS = [
   'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano',
