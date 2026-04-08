@@ -10,7 +10,7 @@ import {
   estimateChatTokens,
 } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
-import { sanitizeModel } from '@/lib/model-prefs';
+import { sanitizeModel, isGeminiModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 import { buildGMSystemPrompt } from '@/lib/gm-system-prompt';
 
@@ -22,6 +22,17 @@ function getOpenAI() {
     throw new Error('OPENAI_API_KEY environment variable is not set. Please configure it in your .env file.');
   }
   return new OpenAI({ apiKey });
+}
+
+function getGeminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is not set. Please configure it in your .env file.');
+  }
+  return new OpenAI({
+    apiKey,
+    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -81,7 +92,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const openai = getOpenAI();
+    const chatModel = sanitizeModel(preferredModel);
+    const useGemini = isGeminiModel(chatModel);
+    const aiClient = useGemini ? getGeminiClient() : getOpenAI();
     const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext, customSystemPrompt, contentLanguage });
 
     const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
@@ -93,7 +106,6 @@ export async function POST(request: NextRequest) {
       0
     );
     const totalEstimate = estimateChatTokens(systemTokens, messagesTokens, maxTokens);
-    const chatModel = sanitizeModel(preferredModel);
     const estimatedCoins = estimatedTokensToCoins(totalEstimate, chatModel);
     if (!(await hasTokens(user.id, estimatedCoins))) {
       return new Response(
@@ -117,13 +129,19 @@ export async function POST(request: NextRequest) {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 120_000);
 
-    const stream = await openai.chat.completions.create({
+    const streamParams: Record<string, unknown> = {
       model: chatModel,
       messages: formattedMessages,
       max_completion_tokens: maxTokens,
       stream: true,
-      stream_options: { include_usage: true },
-    }, { signal: ac.signal });
+    };
+    if (!useGemini) {
+      streamParams.stream_options = { include_usage: true };
+    }
+    const stream = await aiClient.chat.completions.create(
+      streamParams as Parameters<typeof aiClient.chat.completions.create>[0],
+      { signal: ac.signal },
+    );
 
     const userId = user.id;
     const encoder = new TextEncoder();

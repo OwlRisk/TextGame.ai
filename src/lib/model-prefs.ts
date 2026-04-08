@@ -10,8 +10,8 @@ export const DEFAULT_AI_MODEL = 'gpt-5.3-chat-latest';
  */
 export const CHEAP_AI_MODEL = 'gpt-4.1-mini';
 
-/** Scene narrator: flagship model for rich storytelling and reliable directive handling. */
-export const SCENE_NARRATOR_MODEL = 'gpt-5.4';
+/** Scene narrator: Gemini 2.5 Pro via OpenAI-compat endpoint for rich storytelling. */
+export const SCENE_NARRATOR_MODEL = 'gemini-2.5-pro';
 
 
 export const ALLOWED_MODELS = [
@@ -19,12 +19,18 @@ export const ALLOWED_MODELS = [
   'gpt-5.3-chat-latest', 'gpt-5.2-chat-latest', 'gpt-5.1-chat-latest',
   'gpt-5.2', 'gpt-5.2-mini', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano',
   'gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o4-mini',
+  'gemini-2.5-pro', 'gemini-2.5-flash',
 ];
 
 export function sanitizeModel(preferred?: string): string {
   if (!preferred) return process.env.OPENAI_CHAT_MODEL || DEFAULT_AI_MODEL;
   if (ALLOWED_MODELS.includes(preferred)) return preferred;
   return process.env.OPENAI_CHAT_MODEL || DEFAULT_AI_MODEL;
+}
+
+/** Whether the model string points to Google Gemini (routed via OpenAI-compat endpoint). */
+export function isGeminiModel(model: string): boolean {
+  return model.startsWith('gemini-');
 }
 
 export function getPreferredModel(): string {
