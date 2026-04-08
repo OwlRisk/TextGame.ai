@@ -205,8 +205,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   const handleCreateGame = (presetId?: string) => {
     trackEvent("cta_click", { label: presetId ? `play_${presetId}` : "create_game", source: "landing" });
     if (!user && !loading) {
-      const returnUrl = presetId ? `/discover?preset=${presetId}` : "/discover";
-      router.push(`/signin?returnUrl=${encodeURIComponent(returnUrl)}`);
+      router.push(`/signin?returnUrl=${encodeURIComponent("/")}`);
     } else if (presetId) {
       createGameFromPreset(presetId);
     } else {
@@ -222,7 +221,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   const handleSignIn = async () => {
     trackEvent("cta_click", { label: "sign_in", source: "landing" });
     try {
-      await signInWithGoogle("/discover");
+      await signInWithGoogle("/");
     } catch {
       toast.error("Sign-in failed. Please try again.");
     }
@@ -231,7 +230,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   const handleSignInFacebook = async () => {
     trackEvent("cta_click", { label: "sign_in_facebook", source: "landing" });
     try {
-      await signInWithFacebook("/discover");
+      await signInWithFacebook("/");
     } catch {
       toast.error("Sign-in failed. Please try again.");
     }
