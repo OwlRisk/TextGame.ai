@@ -36,6 +36,26 @@ interface UseGameActionsParams {
   configQuickActions?: ConfigQuickAction[];
 }
 
+function getSceneQuickActions(phase: string): GameAction[] {
+  const base: GameAction[] = [
+    { label: "Look around", template: "*looks around carefully* What is this place?", icon: "👀" },
+    { label: "Let's go", template: "Let's keep moving. Stay close.", icon: "🚶" },
+    { label: "Wait", template: "Hold on. Did you hear that?", icon: "✋" },
+  ];
+
+  if (phase === "combat" || phase === "unknown") {
+    base.push({ label: "Run", template: "*backs away* We need to get out of here. NOW.", icon: "🏃" });
+  }
+  if (phase === "exploration" || phase === "unknown") {
+    base.push({ label: "Investigate", template: "*moves closer to examine it* Let me see...", icon: "🔍" });
+  }
+  if (phase === "social") {
+    base.push({ label: "Ask", template: "Who are you? What do you want?", icon: "❓" });
+  }
+
+  return base.slice(0, 4);
+}
+
 function getPhaseType(phaseLabel: string): string {
   const lower = phaseLabel.toLowerCase();
   if (/combat|battle|fight|encounter/i.test(lower)) return "combat";
@@ -102,10 +122,15 @@ export function useGameActions({
       }));
 
     if (actions.length === 0) {
-      actions.push(
-        { label: "Respond", template: "@{player} ", needsTarget: true, icon: "💬", actionType: "social" },
-        { label: "React", template: "That's ", icon: "😮", actionType: "social" },
-      );
+      if (gameTemplate === "scene") {
+        const sceneActions = getSceneQuickActions(phase);
+        actions.push(...sceneActions);
+      } else {
+        actions.push(
+          { label: "Respond", template: "@{player} ", needsTarget: true, icon: "💬", actionType: "social" },
+          { label: "React", template: "That's ", icon: "😮", actionType: "social" },
+        );
+      }
     }
 
     return actions;

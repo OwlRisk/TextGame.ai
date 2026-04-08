@@ -309,7 +309,23 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
-      {gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && (
+      {gameTemplate === "scene" && gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {gameActions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              className="px-3 py-1.5 text-sm rounded-full border border-zinc-600/50 bg-zinc-800/60 hover:bg-violet-600/30 hover:border-violet-500/50 text-zinc-300 hover:text-white transition-all duration-200"
+              disabled={sendDisabled}
+              onClick={() => onSendMessage(action.template)}
+            >
+              {action.icon && <span className="mr-1.5">{action.icon}</span>}
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && gameTemplate !== "scene" && (
         pendingAction?.needsTarget ? (
           <div className="mb-2 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-2">
@@ -351,6 +367,8 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                 onClick={() => {
                   if (action.needsTarget) {
                     setPendingAction(action);
+                  } else if (gameTemplate === "scene") {
+                    onSendMessage(action.template);
                   } else {
                     setInput(action.template);
                     requestAnimationFrame(() => {
