@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
 import { LandingPage } from "@/app/components/landing-page";
-import { SceneSelectView } from "@/app/components/scene-select-view";
 import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -14,7 +13,7 @@ import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getDefaultHostForTemplate } from "@/app/config/host-config";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
-import { getScene } from "@/lib/scenes";
+import { getScene, getRandomScene } from "@/lib/scenes";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -35,12 +34,15 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   const { selectGame, games, updateGame, addGame } = useGameContext();
   const { user, loading, signInWithGoogle, signInWithFacebook } = useAuth();
   const creatingRef = useRef(false);
-
-  const [showScenes, setShowScenes] = useState(false);
+  const autoStarted = useRef(false);
 
   useEffect(() => {
-    if (!loading && user) setShowScenes(true);
     selectGame("home");
+    if (!loading && user && !autoStarted.current) {
+      autoStarted.current = true;
+      const scene = getRandomScene();
+      createSceneGame(scene.id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, selectGame]);
 
@@ -227,12 +229,15 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      {showScenes ? (
-        <SceneSelectView
-          onSelectScene={createSceneGame}
-          onGoToCreate={() => router.push("/create")}
-          isCreating={creatingRef.current}
-        />
+      {!loading && user ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-4">
+          <div className="text-center">
+            <div className="animate-pulse mb-4">
+              <span className="text-4xl">🎭</span>
+            </div>
+            <p className="text-zinc-400 text-lg">Gathering your crew...</p>
+          </div>
+        </div>
       ) : (
         <LandingPage
           onSignIn={handleSignIn}
