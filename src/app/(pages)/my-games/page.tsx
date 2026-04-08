@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { MyGamesPage } from "@/app/components/my-games-page";
@@ -13,12 +13,25 @@ import { Lock, LogIn } from "lucide-react";
 export default function MyGamesPageRoute() {
   const router = useRouter();
   const { games, selectGame, gamesLoading, isHydrated, removeGame } = useGameContext();
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, session } = useAuth();
+  const [gameSpending, setGameSpending] = useState<Record<string, number>>({});
 
-  // Sync sidebar highlight to "my-games" when entering My Games page
   useEffect(() => {
     selectGame("my-games");
   }, [selectGame]);
+
+  useEffect(() => {
+    if (!session?.access_token || games.length === 0) return;
+    const ids = games.map(g => g.id);
+    fetch('/api/user/game-spending', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameIds: ids }),
+    })
+      .then(r => r.ok ? r.json() : { spending: {} })
+      .then(data => setGameSpending(data.spending ?? {}))
+      .catch(() => {});
+  }, [session?.access_token, games]);
 
   const handleSignIn = async () => {
     try {
@@ -66,6 +79,7 @@ export default function MyGamesPageRoute() {
         }}
         onCreateGame={() => router.push("/discover")}
         onDeleteGame={(gameId) => removeGame(gameId)}
+        gameSpending={gameSpending}
       />
       <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
     </>

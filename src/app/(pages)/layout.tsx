@@ -13,7 +13,6 @@ const PATHNAME_TO_TITLE: Record<string, string> = {
   "/create": "Create Game",
   "/my-games": "My Games",
   "/profile": "Profile",
-  "/usage": "Usage & Spending",
   "/subscription": "Subscription",
   "/help": "Help & Support",
   "/recharge": "Buy Credits",

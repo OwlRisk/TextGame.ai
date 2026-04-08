@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
-import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star, Search, X, RotateCcw } from "lucide-react";
+import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star, Search, X, RotateCcw, Coins } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ interface MyGamesPageProps {
   onSelectGame: (gameId: string) => void;
   onCreateGame: () => void;
   onDeleteGame?: (gameId: string) => void;
+  gameSpending?: Record<string, number>;
 }
 
 function timeAgo(dateStr?: string): string {
@@ -61,11 +62,13 @@ function GameCard({
   onSelect,
   onDelete,
   onPlayAgain,
+  creditsUsed,
 }: {
   game: Game;
   onSelect: () => void;
   onDelete?: () => void;
   onPlayAgain?: () => void;
+  creditsUsed?: number;
 }) {
   const isActive = game.isActive;
 
@@ -132,6 +135,12 @@ function GameCard({
             {timeAgo(game.updatedAt)}
           </span>
         )}
+        {creditsUsed != null && creditsUsed > 0 && (
+          <span className="flex items-center gap-1">
+            <Coins className="h-3.5 w-3.5 text-amber-400" />
+            {creditsUsed.toLocaleString()}
+          </span>
+        )}
       </div>
 
       {/* Action */}
@@ -195,7 +204,7 @@ function GameCard({
   );
 }
 
-export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGame, onDeleteGame }: MyGamesPageProps) {
+export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGame, onDeleteGame, gameSpending = {} }: MyGamesPageProps) {
   const [search, setSearch] = useState("");
 
   const filteredGames = useMemo(() => {
@@ -353,6 +362,7 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
                         onSelect={() => onSelectGame(game.id)}
                         onDelete={onDeleteGame ? () => onDeleteGame(game.id) : undefined}
                         onPlayAgain={() => handlePlayAgain(game)}
+                        creditsUsed={gameSpending[game.id]}
                       />
                     ))}
                   </div>
@@ -389,6 +399,7 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
                         onSelect={() => onSelectGame(game.id)}
                         onDelete={onDeleteGame ? () => onDeleteGame(game.id) : undefined}
                         onPlayAgain={() => handlePlayAgain(game)}
+                        creditsUsed={gameSpending[game.id]}
                       />
                     ))}
                   </div>

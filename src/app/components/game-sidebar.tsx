@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, BarChart3 } from "lucide-react";
+import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
@@ -71,6 +71,15 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    fetch('/api/user/balance', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.tokens != null) setCreditBalance(data.tokens); })
+      .catch(() => {});
+  }, [session?.access_token]);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -297,6 +306,17 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                     </div>
                   </div>
 
+                  {/* Credit balance */}
+                  {creditBalance != null && (
+                    <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-zinc-800/60 mb-2">
+                      <span className="flex items-center gap-2 text-sm text-zinc-300">
+                        <Coins className="h-4 w-4 text-amber-400" />
+                        Credits
+                      </span>
+                      <span className="text-sm font-bold text-white tabular-nums">{creditBalance.toLocaleString()}</span>
+                    </div>
+                  )}
+
                   <div className="space-y-1">
                     <Button 
                       variant="ghost" 
@@ -305,14 +325,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                     >
                       <UserCircle className="mr-3 h-4 w-4 text-blue-400 shrink-0" />
                       <span className="text-sm">Edit Profile</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start h-10 hover:bg-zinc-800 text-zinc-100"
-                      onClick={() => { setUserMenuOpen(false); router.push('/usage'); }}
-                    >
-                      <BarChart3 className="mr-3 h-4 w-4 text-violet-400 shrink-0" />
-                      <span className="text-sm">Usage & Spending</span>
                     </Button>
                     <Button 
                       variant="ghost" 

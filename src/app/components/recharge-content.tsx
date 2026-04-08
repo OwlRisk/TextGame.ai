@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Check, ArrowRight, Sparkles, Shield, Infinity, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { setAuthCookie } from '@/lib/auth-cookie';
@@ -325,7 +324,7 @@ export function RechargeContent() {
             <div>
               <dt className="font-medium text-zinc-200 mb-1">How are credits used?</dt>
               <dd className="text-zinc-500 leading-relaxed">
-                Every AI interaction costs a small number of credits — messages, character voices, and image generation. You can see exact costs in <Link href="/usage" className="text-violet-400 hover:underline">Usage</Link>.
+                Every AI interaction costs a small number of credits — messages, character voices, and image generation. Your balance is shown in your profile menu.
               </dd>
             </div>
             <div>

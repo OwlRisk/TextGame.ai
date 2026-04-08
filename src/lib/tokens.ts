@@ -395,6 +395,31 @@ export async function getRecentTransactions(
   });
 }
 
+/**
+ * Get total credits spent per game session for the given user.
+ * Returns a map of gameSessionId → total absolute spending.
+ */
+export async function getSpendingByGame(
+  userId: string,
+  gameSessionIds: string[]
+): Promise<Record<string, number>> {
+  if (gameSessionIds.length === 0) return {};
+  return withUserContext(userId, async (client) => {
+    const result = await client.query(
+      `SELECT game_session_id, SUM(ABS(amount)) as total
+       FROM token_transactions
+       WHERE user_id = $1 AND game_session_id = ANY($2) AND amount < 0
+       GROUP BY game_session_id`,
+      [userId, gameSessionIds]
+    );
+    const map: Record<string, number> = {};
+    for (const row of result.rows) {
+      if (row.game_session_id) map[row.game_session_id] = Number(row.total);
+    }
+    return map;
+  });
+}
+
 /** Default 1:100 coin packages when DB has none (e.g. migration not run) */
 export const DEFAULT_COIN_PACKAGES = [
   { id: 'default-100', name: '100 Coins', tokens: 100, price_cents: 100, bonus_percentage: 0 },
