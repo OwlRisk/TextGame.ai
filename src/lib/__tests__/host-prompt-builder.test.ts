@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   buildHostSystemPrompt,
+  buildSceneDirectorPrompt,
   type HostPromptOpts,
+  type SceneDirectorOpts,
 } from "../host-prompt-builder";
 
 // ─── Helper ─────────────────────────────────────────────────────────────────
@@ -309,5 +311,74 @@ describe("buildHostSystemPrompt", () => {
         'Players: . Use "Everyone" for open discussion, "Alex" for human\'s turn.',
       );
     });
+  });
+
+  // ─── Content Language ───────────────────────────────────────────────────
+
+  describe("contentLanguage", () => {
+    it("includes LANGUAGE ADAPTATION for English (default)", () => {
+      const output = buildHostSystemPrompt(defaultOpts());
+      expect(output).toContain("LANGUAGE ADAPTATION");
+    });
+
+    it("does not include explicit LANGUAGE rule for English", () => {
+      const output = buildHostSystemPrompt(defaultOpts({ contentLanguage: "en" }));
+      expect(output).not.toMatch(/LANGUAGE:.*Respond in English/);
+    });
+
+    it("includes Chinese language instruction", () => {
+      const output = buildHostSystemPrompt(defaultOpts({ contentLanguage: "zh-CN" }));
+      expect(output).toContain("Respond in Simplified Chinese");
+      expect(output).toContain("LANGUAGE ADAPTATION");
+    });
+
+    it("includes Japanese language instruction", () => {
+      const output = buildHostSystemPrompt(defaultOpts({ contentLanguage: "ja" }));
+      expect(output).toContain("Respond in Japanese");
+    });
+
+    it("includes Arabic language instruction", () => {
+      const output = buildHostSystemPrompt(defaultOpts({ contentLanguage: "ar" }));
+      expect(output).toContain("Arabic");
+    });
+
+    it("keeps directive keywords in English regardless of language", () => {
+      const output = buildHostSystemPrompt(defaultOpts({ contentLanguage: "zh-CN" }));
+      expect(output).toContain("NEXT_SPEAKER");
+      expect(output).toContain("ASSIGN_ROLE");
+      expect(output).toContain("always remain in English");
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// buildSceneDirectorPrompt — language support
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("buildSceneDirectorPrompt — contentLanguage", () => {
+  function sceneOpts(overrides: Partial<SceneDirectorOpts> = {}): SceneDirectorOpts {
+    return {
+      sceneId: "museum-heist",
+      humanName: "Brook",
+      nonHostPlayerNames: ["Kai", "Noor", "Brook"],
+      playerRoster: "Kai [AI]\nNoor [AI]\nBrook [YOU/HUMAN]",
+      eventLogSummary: "Adventure just started.",
+      ...overrides,
+    };
+  }
+
+  it("includes LANGUAGE ADAPTATION by default", () => {
+    const output = buildSceneDirectorPrompt(sceneOpts());
+    expect(output).toContain("LANGUAGE ADAPTATION");
+  });
+
+  it("includes Chinese language instruction when set", () => {
+    const output = buildSceneDirectorPrompt(sceneOpts({ contentLanguage: "zh-CN" }));
+    expect(output).toContain("Respond in Simplified Chinese");
+  });
+
+  it("does not duplicate language rule for English", () => {
+    const output = buildSceneDirectorPrompt(sceneOpts({ contentLanguage: "en" }));
+    expect(output).not.toMatch(/LANGUAGE:.*Respond in English/);
   });
 });

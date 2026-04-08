@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSystemPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '../player-speak-prompt';
+import { buildSystemPrompt, buildSceneCharacterPrompt, PLAYER_SPEAK_HARD_LIMIT_TOKENS } from '../player-speak-prompt';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -167,5 +167,63 @@ describe('buildSystemPrompt – pacing enforcement', () => {
   it('enforces sentence limits in all templates', () => {
     const prompt = buildSystemPrompt('Alice', 'mafia', 'Game');
     expect(prompt).toMatch(/3 sentences max/i);
+  });
+});
+
+// ─── buildSystemPrompt: contentLanguage ────────────────────────────────────
+
+describe('buildSystemPrompt – contentLanguage', () => {
+  it('includes LANGUAGE ADAPTATION by default (no contentLanguage)', () => {
+    const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game');
+    expect(prompt).toContain('LANGUAGE ADAPTATION');
+  });
+
+  it('does not add explicit LANGUAGE rule for English', () => {
+    const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game', undefined, undefined, undefined, undefined, undefined, 'en');
+    expect(prompt).not.toMatch(/LANGUAGE:.*Respond in English/);
+    expect(prompt).toContain('LANGUAGE ADAPTATION');
+  });
+
+  it('adds Chinese language instruction', () => {
+    const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game', undefined, undefined, undefined, undefined, undefined, 'zh-CN');
+    expect(prompt).toContain('Respond in Simplified Chinese');
+    expect(prompt).toContain('LANGUAGE ADAPTATION');
+  });
+
+  it('adds Japanese language instruction', () => {
+    const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game', undefined, undefined, undefined, undefined, undefined, 'ja');
+    expect(prompt).toContain('Japanese');
+  });
+
+  it('keeps directive keywords in English', () => {
+    const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game', undefined, undefined, undefined, undefined, undefined, 'ko');
+    expect(prompt).toContain('always remain in English');
+  });
+
+  it('language instruction appears for all template types', () => {
+    for (const tmpl of ['werewolf', 'mafia', 'tarot', 'trivia', 'roleplay', undefined]) {
+      const prompt = buildSystemPrompt('Zara', tmpl, 'Game', undefined, undefined, undefined, undefined, undefined, 'fr');
+      expect(prompt).toContain('Respond in French');
+    }
+  });
+});
+
+// ─── buildSceneCharacterPrompt: contentLanguage ────────────────────────────
+
+describe('buildSceneCharacterPrompt – contentLanguage', () => {
+  it('includes LANGUAGE ADAPTATION by default', () => {
+    const prompt = buildSceneCharacterPrompt('Kai', 'museum-heist', 'Brook');
+    expect(prompt).toContain('LANGUAGE ADAPTATION');
+  });
+
+  it('adds Chinese language instruction', () => {
+    const prompt = buildSceneCharacterPrompt('Kai', 'museum-heist', 'Brook', undefined, undefined, undefined, undefined, 'zh-CN');
+    expect(prompt).toContain('Respond in Simplified Chinese');
+  });
+
+  it('does not add explicit LANGUAGE rule for English', () => {
+    const prompt = buildSceneCharacterPrompt('Kai', 'museum-heist', 'Brook', undefined, undefined, undefined, undefined, 'en');
+    expect(prompt).not.toMatch(/LANGUAGE:.*Respond in English/);
+    expect(prompt).toContain('LANGUAGE ADAPTATION');
   });
 });

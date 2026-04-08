@@ -130,6 +130,18 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   /** Action buttons decided by the GM via <CONFIG_ACTIONS>. null = use template default. */
   const [gmActions, setGmActions] = useState<NonNullable<GameConfig["quickActions"]> | null>(null);
 
+  // ─── Accept / Cancel for GM config changes ────────────────────────────
+  interface ConfigSnapshot {
+    customRules: string;
+    playerCount: number;
+    gameName: string;
+    configuredPlayers: typeof configuredPlayers;
+    gmChannels: typeof gmChannels;
+    gmActions: typeof gmActions;
+  }
+  const pendingSnapshotRef = useRef<ConfigSnapshot | null>(null);
+  const [pendingChangeMessageId, setPendingChangeMessageId] = useState<string | null>(null);
+
   // Default player count to max when template is selected
   useEffect(() => {
     if (selectedTemplate && selectedTemplate.maxPlayers > 1) {
@@ -493,6 +505,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     if (isStreaming || isGMTyping) {
       return;
     }
+
+    // Auto-accept pending changes when user continues chatting
+    if (pendingChangeMessageId) {
+      handleAcceptChanges();
+    }
     
     setIsGMTyping(true);
     setIsStreaming(true);
@@ -538,6 +555,16 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         category: selectedTemplate?.category,
         hasHiddenRoles: selectedTemplate?.hasHiddenRoles,
         hasElimination: selectedTemplate?.hasElimination,
+      };
+
+      // Snapshot state before streaming so we can revert on cancel
+      pendingSnapshotRef.current = {
+        customRules,
+        playerCount,
+        gameName,
+        configuredPlayers: [...configuredPlayers],
+        gmChannels: gmChannels ? [...gmChannels] : null,
+        gmActions: gmActions ? [...gmActions] : null,
       };
 
       // Stream AI response
@@ -764,6 +791,22 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
           setIsRulesBeingEdited(false);
 
+          // Detect if GM made any config changes → show accept/cancel
+          const hasAnyChange =
+            hasRulesChange ||
+            !!parsed.updateGeneral ||
+            (parsed.configPlayers && parsed.configPlayers.length > 0) ||
+            !!parsed.configChannels ||
+            (parsed.configActions && parsed.configActions.length > 0) ||
+            parsed.setPlayerCount != null ||
+            !!parsed.setGameName;
+
+          if (hasAnyChange) {
+            setPendingChangeMessageId(tempMessageId);
+          } else {
+            pendingSnapshotRef.current = null;
+          }
+
           const cleanedResponse = parsed.cleanedResponse;
           setMessages(prev => {
             if (!cleanedResponse.trim()) {
@@ -808,10 +851,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             );
           }
 
-          // Remove temp message
+          // Remove temp message and revert snapshot on error
           setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
           setIsGMTyping(false);
           setIsStreaming(false);
+          pendingSnapshotRef.current = null;
         }
       );
     } catch (error: any) {
@@ -819,6 +863,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
       setIsGMTyping(false);
       setIsStreaming(false);
+      pendingSnapshotRef.current = null;
 
       const isInsufficientTokens =
         error.message === 'INSUFFICIENT_TOKENS' || error.code === 'INSUFFICIENT_TOKENS';
@@ -836,6 +881,29 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     }
   };
 
+  const handleAcceptChanges = useCallback(() => {
+    setPendingChangeMessageId(null);
+    pendingSnapshotRef.current = null;
+    trackEvent("gm_changes_accepted");
+  }, []);
+
+  const handleRejectChanges = useCallback(() => {
+    const snap = pendingSnapshotRef.current;
+    if (snap) {
+      flushSync(() => {
+        setCustomRules(snap.customRules);
+        setPlayerCount(snap.playerCount);
+        setGameName(snap.gameName);
+        setConfiguredPlayers(snap.configuredPlayers);
+        setGmChannels(snap.gmChannels);
+        setGmActions(snap.gmActions);
+      });
+    }
+    setPendingChangeMessageId(null);
+    pendingSnapshotRef.current = null;
+    trackEvent("gm_changes_rejected");
+  }, []);
+
   const checkRulesEmpty = (rules: string | undefined) =>
     !rules?.trim() || rules.trim() === "Custom game rules will be defined through conversation";
 
@@ -848,6 +916,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   };
 
   const handleStartGame = async () => {
+    // Auto-accept pending GM changes when starting the game
+    if (pendingChangeMessageId) {
+      handleAcceptChanges();
+    }
     if (checkRulesEmpty(customRules)) {
       toast.info("Chat with the Game Master first to generate game rules.");
       return;
@@ -1451,7 +1523,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                           message.role === "gm"
                             ? "bg-zinc-800/80 border border-white/[0.08] text-zinc-100"
                             : "bg-violet-600/85 border border-white/10 text-white"
-                        } ${isStreamingMsg ? "ring-1 ring-amber-500/20" : ""}`}
+                        } ${isStreamingMsg ? "ring-1 ring-amber-500/20" : ""} ${pendingChangeMessageId === message.id ? "ring-1 ring-amber-500/40" : ""}`}
                       >
                         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
                         <div className="text-sm sm:text-[15px] leading-relaxed relative z-10 font-normal select-text">
@@ -1461,6 +1533,29 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                       <div className={`text-[10px] sm:text-[11px] text-zinc-500 mt-1 ${isUser ? "pr-1" : "pl-1"}`}>
                         {formatMessageTime(message.timestamp)}
                       </div>
+
+                      {/* Accept / Cancel buttons for GM config changes */}
+                      {!isUser && pendingChangeMessageId === message.id && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            className="h-7 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-md"
+                            onClick={handleAcceptChanges}
+                          >
+                            <Check className="h-3.5 w-3.5 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-3 text-xs text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg"
+                            onClick={handleRejectChanges}
+                          >
+                            <X className="h-3.5 w-3.5 mr-1" />
+                            Revert
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
