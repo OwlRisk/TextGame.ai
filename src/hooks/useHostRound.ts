@@ -515,7 +515,10 @@ export function useHostRound({
       const splitHostOutput = splitHostOutputUtil;
 
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
-        const streamTokenBudget = Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
+        const isScene = isSceneMode(tmplId);
+        const streamTokenBudget = isScene
+          ? 2048
+          : Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
         let messageId: string | null = null;
         setTypingUsers([{ name: gmName, avatar: gmColor }]);
         try {
