@@ -228,7 +228,8 @@ export const ChatMessage = React.memo(function ChatMessage({
   }
 
   // ─── Regular message ──────────────────────────────────────────────────
-  const messagePlayer = showAvatar ? players.find(
+  const alwaysResolvePlayer = showAvatar || gameTemplate === "scene";
+  const messagePlayer = alwaysResolvePlayer ? players.find(
     p => p.id === message.senderId || (message.isAI && p.name === message.senderName)
   ) : null;
   const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");

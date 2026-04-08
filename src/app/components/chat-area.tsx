@@ -457,10 +457,16 @@ export function ChatArea({
               />
             );
           })}
-          {/* Typing Indicator */}
-          {typingUsers && typingUsers.length > 0 && (
+          {/* Typing Indicator — hide narrator in scene mode */}
+          {typingUsers && typingUsers.length > 0 && (() => {
+            const hostNames = new Set(players.filter(p => p.isGameMaster).map(p => p.name));
+            const filtered = gameTemplate === "scene"
+              ? typingUsers.filter(u => !hostNames.has(u.name))
+              : typingUsers;
+            if (filtered.length === 0) return null;
+            return (
             <TypingIndicator
-              typingUsers={typingUsers}
+              typingUsers={filtered}
               streamingNames={streamingNames}
               players={players}
                     gameId={gameId}
@@ -471,7 +477,8 @@ export function ChatArea({
               avatarImageUrls={avatarImageUrls}
               onAvatarUrlLoaded={onAvatarUrlLoaded}
             />
-          )}
+            );
+          })()}
           
           <div ref={scrollRef} />
           <div ref={bottomSentinelRef} className="h-1" />
