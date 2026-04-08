@@ -671,7 +671,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       {/* Player panel */}
             <div className="hidden md:block flex-shrink-0 w-80">
               <PlayerPanelWithBoard
-                players={playersForChannel}
+                players={isScene ? playersForChannel.filter(p => !p.isGameMaster) : playersForChannel}
                 gameId={gameId}
                 humanGameIdentity={humanGameIdentity}
                 avatarImageUrls={avatarImageUrls}
@@ -684,7 +684,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
               <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700 [&>button:last-child]:hidden">
                 <PlayerPanelWithBoard
-                  players={playersForChannel}
+                  players={isScene ? playersForChannel.filter(p => !p.isGameMaster) : playersForChannel}
                   gameId={gameId}
                   humanGameIdentity={humanGameIdentity}
                   avatarImageUrls={avatarImageUrls}
