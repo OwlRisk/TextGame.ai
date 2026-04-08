@@ -325,20 +325,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
   }, [selectedChannelId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // First-game welcome overlay (shows once per user, auto-dismiss after 8s)
-  const [showWelcome, setShowWelcome] = useState(false);
-  useEffect(() => {
-    if (gamePhase !== "active") return;
-    try {
-      if (localStorage.getItem("tg_welcome_shown")) return;
-    } catch {}
-    setShowWelcome(true);
-    const timer = setTimeout(() => {
-      setShowWelcome(false);
-      try { localStorage.setItem("tg_welcome_shown", "1"); } catch {}
-    }, 8000);
-    return () => clearTimeout(timer);
-  }, [gamePhase]);
 
   // Track first message sent (state-driven so the hint disappears reactively)
   const [hasUserSentFirstMsg, setHasUserSentFirstMsg] = useState(false);
@@ -754,33 +740,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         }}
       />
 
-      {showWelcome && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-          <div
-            className="pointer-events-auto w-full max-w-sm rounded-2xl bg-zinc-900/95 backdrop-blur-xl border border-violet-500/30 shadow-2xl shadow-violet-500/10 p-6 animate-in fade-in zoom-in-95 duration-300"
-            onClick={() => { setShowWelcome(false); try { localStorage.setItem("tg_welcome_shown", "1"); } catch {} }}
-            role="dialog"
-            aria-label="Welcome guide"
-          >
-            <h3 className="text-lg font-bold text-white mb-4">How to play</h3>
-            <div className="space-y-3 text-sm text-zinc-300">
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-xs font-bold text-violet-400">1</span>
-                <span>The <strong className="text-white">AI Host</strong> runs the game — assigns roles, manages phases, keeps things moving.</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-xs font-bold text-violet-400">2</span>
-                <span>When you see <strong className="text-emerald-400">&quot;It&apos;s your turn&quot;</strong>, type your response below.</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-xs font-bold text-violet-400">3</span>
-                <span>Not sure what to say? Tap a <strong className="text-violet-400">suggested reply</strong> to jump right in.</span>
-              </div>
-            </div>
-            <p className="mt-4 text-xs text-zinc-500 text-center">Tap anywhere to dismiss</p>
-          </div>
-        </div>
-      )}
 
       <Toaster
         position="top-right"
