@@ -162,26 +162,14 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   useEffect(() => {
     if (autoStartFiredRef.current) return;
     if (!isInitialized || gamePhase !== "lobby") return;
-    // Scene games always auto-start; other games require a fresh lobby
     if (!isSceneGame && !isFreshLobby) return;
     const nonHostPlayers = players.filter((p) => !p.isGameMaster);
     if (nonHostPlayers.length === 0) return;
     setAutoStarting(true);
     autoStartFiredRef.current = true;
     const safetyTimeout = setTimeout(() => setAutoStarting(false), 30000);
-    if (isSceneGame) {
-      startGameRef.current().finally(() => { clearTimeout(safetyTimeout); setAutoStarting(false); });
-      return () => clearTimeout(safetyTimeout);
-    }
-    const timer = setTimeout(async () => {
-      try {
-        await startGameRef.current();
-      } finally {
-        clearTimeout(safetyTimeout);
-        setAutoStarting(false);
-      }
-    }, 600);
-    return () => { clearTimeout(timer); clearTimeout(safetyTimeout); };
+    startGameRef.current().finally(() => { clearTimeout(safetyTimeout); setAutoStarting(false); });
+    return () => clearTimeout(safetyTimeout);
   }, [isInitialized, isFreshLobby, isSceneGame, gamePhase, players]);
 
   // ─── Auto-set channel permissions from template when game starts ──────────
@@ -514,10 +502,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             </div>
           </ScrollArea>
         ) : gamePhase === "lobby" ? (
-          isScene ? (
+          (autoStarting || isScene) ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <div className="h-8 w-8 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
-              <p className="text-sm text-zinc-400">Setting the scene…</p>
+              <p className="text-sm text-zinc-400">
+                {isScene ? "Setting the scene…" : "Preparing the game…"}
+              </p>
             </div>
           ) : (
           <LobbyView
