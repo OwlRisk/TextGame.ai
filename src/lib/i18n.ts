@@ -520,10 +520,457 @@ const T: Record<string, Record<string, string>> = {
     ko: "\uac8c\uc784\uc744 \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4", pt: "Nenhum jogo encontrado", ru: "\u0418\u0433\u0440\u044b \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b",
     it: "Nessun gioco trovato", ar: "\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0623\u0644\u0639\u0627\u0628",
   },
+  "discover.subtitle": {
+    en: "AI-powered game templates. Pick one and start playing in seconds.",
+    zh: "AI \u9a71\u52a8\u7684\u6e38\u620f\u6a21\u677f\u3002\u9009\u4e00\u4e2a\uff0c\u79d2\u5f00\u5f00\u73a9\u3002",
+    de: "KI-gest\u00fctzte Spielvorlagen. W\u00e4hle eine und spiele sofort los.",
+    fr: "Mod\u00e8les de jeu anim\u00e9s par l\u2019IA. Choisissez et jouez en quelques secondes.",
+    es: "Plantillas de juegos con IA. Elige una y empieza a jugar en segundos.",
+    ja: "AI\u641c\u8f09\u306e\u30b2\u30fc\u30e0\u30c6\u30f3\u30d7\u30ec\u30fc\u30c8\u3002\u9078\u3093\u3067\u3059\u3050\u30d7\u30ec\u30a4\u3002",
+    ko: "AI \uae30\ubc18 \uac8c\uc784 \ud15c\ud50c\ub9bf. \ud558\ub098\ub97c \uace8\ub77c \ubc14\ub85c \uc2dc\uc791\ud558\uc138\uc694.",
+    pt: "Modelos de jogos com IA. Escolha um e comece a jogar em segundos.",
+    ru: "\u0428\u0430\u0431\u043b\u043e\u043d\u044b \u0438\u0433\u0440 \u043d\u0430 \u0431\u0430\u0437\u0435 \u0418\u0418. \u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0438 \u043d\u0430\u0447\u043d\u0438\u0442\u0435 \u0438\u0433\u0440\u0430\u0442\u044c.",
+    it: "Modelli di gioco basati sull\u2019IA. Scegli e inizia a giocare in pochi secondi.",
+    ar: "\u0642\u0648\u0627\u0644\u0628 \u0623\u0644\u0639\u0627\u0628 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a. \u0627\u062e\u062a\u0631 \u0648\u0627\u0628\u062f\u0623 \u0627\u0644\u0644\u0639\u0628 \u0641\u0648\u0631\u0627\u064b.",
+  },
+  "discover.try_different": {
+    en: "Try a different keyword or category",
+    zh: "\u8bd5\u8bd5\u5176\u4ed6\u5173\u952e\u8bcd\u6216\u5206\u7c7b",
+    de: "Versuche ein anderes Stichwort oder eine andere Kategorie",
+    fr: "Essayez un autre mot-cl\u00e9 ou une autre cat\u00e9gorie",
+    es: "Prueba otra palabra clave o categor\u00eda",
+    ja: "\u5225\u306e\u30ad\u30fc\u30ef\u30fc\u30c9\u304b\u30ab\u30c6\u30b4\u30ea\u3092\u8a66\u3057\u3066\u304f\u3060\u3055\u3044",
+    ko: "\ub2e4\ub978 \ud0a4\uc6cc\ub4dc\ub098 \uce74\ud14c\uace0\ub9ac\ub97c \uc2dc\ub3c4\ud574\ubcf4\uc138\uc694",
+    pt: "Tente outra palavra-chave ou categoria",
+    ru: "\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u043e\u0435 \u0441\u043b\u043e\u0432\u043e \u0438\u043b\u0438 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e",
+    it: "Prova una parola chiave o categoria diversa",
+    ar: "\u062c\u0631\u0628 \u0643\u0644\u0645\u0629 \u0623\u0648 \u0641\u0626\u0629 \u0645\u062e\u062a\u0644\u0641\u0629",
+  },
+  "discover.play": {
+    en: "Play \u2192", zh: "\u5f00\u59cb \u2192", de: "Spielen \u2192", fr: "Jouer \u2192",
+    es: "Jugar \u2192", ja: "\u30d7\u30ec\u30a4 \u2192", ko: "\ud50c\ub808\uc774 \u2192",
+    pt: "Jogar \u2192", ru: "\u0418\u0433\u0440\u0430\u0442\u044c \u2192", it: "Gioca \u2192", ar: "\u0627\u0644\u0639\u0628 \u2192",
+  },
+  // Category tabs
+  "cat.all": {
+    en: "All Games", zh: "\u5168\u90e8\u6e38\u620f", de: "Alle Spiele", fr: "Tous les jeux",
+    es: "Todos los juegos", ja: "\u3059\u3079\u3066\u306e\u30b2\u30fc\u30e0", ko: "\ubaa8\ub4e0 \uac8c\uc784",
+    pt: "Todos os jogos", ru: "\u0412\u0441\u0435 \u0438\u0433\u0440\u044b", it: "Tutti i giochi", ar: "\u0643\u0644 \u0627\u0644\u0623\u0644\u0639\u0627\u0628",
+  },
+  "cat.deduction": {
+    en: "Social Deduction", zh: "\u793e\u4ea4\u63a8\u7406", de: "Soziale Deduktion", fr: "D\u00e9duction sociale",
+    es: "Deducci\u00f3n social", ja: "\u4eba\u72fc\u7cfb", ko: "\uc0ac\ud68c\uc801 \ucd94\ub9ac",
+    pt: "Dedu\u00e7\u00e3o social", ru: "\u0421\u043e\u0446\u0438\u0430\u043b\u044c\u043d\u0430\u044f \u0434\u0435\u0434\u0443\u043a\u0446\u0438\u044f", it: "Deduzione sociale", ar: "\u0627\u0633\u062a\u0646\u062a\u0627\u062c \u0627\u062c\u062a\u0645\u0627\u0639\u064a",
+  },
+  "cat.party": {
+    en: "Party", zh: "\u6d3e\u5bf9", de: "Party", fr: "F\u00eate",
+    es: "Fiesta", ja: "\u30d1\u30fc\u30c6\u30a3\u30fc", ko: "\ud30c\ud2f0",
+    pt: "Festa", ru: "\u0412\u0435\u0447\u0435\u0440\u0438\u043d\u043a\u0430", it: "Festa", ar: "\u062d\u0641\u0644\u0629",
+  },
+  "cat.mystery": {
+    en: "Mystery", zh: "\u60ac\u7591", de: "Mysterium", fr: "Myst\u00e8re",
+    es: "Misterio", ja: "\u30df\u30b9\u30c6\u30ea\u30fc", ko: "\ubbf8\uc2a4\ud130\ub9ac",
+    pt: "Mist\u00e9rio", ru: "\u0422\u0430\u0439\u043d\u0430", it: "Mistero", ar: "\u0644\u063a\u0632",
+  },
+  "cat.creative": {
+    en: "Creative", zh: "\u521b\u610f", de: "Kreativ", fr: "Cr\u00e9atif",
+    es: "Creativo", ja: "\u30af\u30ea\u30a8\u30a4\u30c6\u30a3\u30d6", ko: "\ud06c\ub9ac\uc5d0\uc774\ud2f0\ube0c",
+    pt: "Criativo", ru: "\u0422\u0432\u043e\u0440\u0447\u0435\u0441\u043a\u0438\u0435", it: "Creativo", ar: "\u0625\u0628\u062f\u0627\u0639\u064a",
+  },
+  "cat.brain": {
+    en: "Brain Games", zh: "\u667a\u529b\u6e38\u620f", de: "Denkspiele", fr: "Jeux de r\u00e9flexion",
+    es: "Juegos mentales", ja: "\u8133\u30c8\u30ec", ko: "\ub450\ub1cc \uac8c\uc784",
+    pt: "Jogos mentais", ru: "\u0418\u043d\u0442\u0435\u043b\u043b\u0435\u043a\u0442\u0443\u0430\u043b\u044c\u043d\u044b\u0435", it: "Rompicapo", ar: "\u0623\u0644\u0639\u0627\u0628 \u0630\u0647\u0646\u064a\u0629",
+  },
+  // Style badges
+  "style.casual": {
+    en: "Casual", zh: "\u4f11\u95f2", de: "Locker", fr: "D\u00e9contract\u00e9",
+    es: "Casual", ja: "\u30ab\u30b8\u30e5\u30a2\u30eb", ko: "\uce90\uc8fc\uc5bc",
+    pt: "Casual", ru: "\u041a\u0430\u0436\u0443\u0430\u043b\u044c\u043d\u0430\u044f", it: "Casual", ar: "\u0639\u0627\u062f\u064a\u0629",
+  },
+  "style.strategic": {
+    en: "Strategic", zh: "\u7b56\u7565", de: "Strategisch", fr: "Strat\u00e9gique",
+    es: "Estrat\u00e9gico", ja: "\u6226\u7565", ko: "\uc804\ub7b5",
+    pt: "Estrat\u00e9gico", ru: "\u0421\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u0447\u0435\u0441\u043a\u0430\u044f", it: "Strategico", ar: "\u0627\u0633\u062a\u0631\u0627\u062a\u064a\u062c\u064a",
+  },
+  "style.competitive": {
+    en: "Competitive", zh: "\u7ade\u6280", de: "Wettbewerb", fr: "Comp\u00e9titif",
+    es: "Competitivo", ja: "\u7af6\u6280", ko: "\uacbd\uc7c1",
+    pt: "Competitivo", ru: "\u0421\u043e\u0440\u0435\u0432\u043d\u043e\u0432\u0430\u0442\u0435\u043b\u044c\u043d\u0430\u044f", it: "Competitivo", ar: "\u062a\u0646\u0627\u0641\u0633\u064a",
+  },
   "discover.multiplayer": {
     en: "Multiplayer", zh: "\u591a\u4eba\u6e38\u620f", de: "Mehrspieler", fr: "Multijoueur",
     es: "Multijugador", ja: "\u30de\u30eb\u30c1\u30d7\u30ec\u30a4\u30e4\u30fc", ko: "\uba40\ud2f0\ud50c\ub808\uc774\uc5b4",
     pt: "Multijogador", ru: "\u041c\u043d\u043e\u0433\u043e\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c\u0441\u043a\u0430\u044f", it: "Multigiocatore", ar: "\u0645\u062a\u0639\u062f\u062f \u0627\u0644\u0644\u0627\u0639\u0628\u064a\u0646",
+  },
+
+  // ── Landing page ──────────────────────────────────────────────────────
+  "landing.hero_1": {
+    en: "Play multiplayer games", zh: "\u548cAI\u89d2\u8272\u4e00\u8d77", ja: "AI\u30ad\u30e3\u30e9\u3068", ko: "AI \uce90\ub9ad\ud130\uc640",
+    de: "Multiplayer-Spiele spielen", fr: "Jouez \u00e0 des jeux multijoueurs", es: "Juega juegos multijugador",
+    pt: "Jogue jogos multijogador", ru: "\u0418\u0433\u0440\u0430\u0439\u0442\u0435 \u0432 \u0438\u0433\u0440\u044b", it: "Gioca a giochi multiplayer", ar: "\u0627\u0644\u0639\u0628 \u0623\u0644\u0639\u0627\u0628 \u062c\u0645\u0627\u0639\u064a\u0629",
+  },
+  "landing.hero_2": {
+    en: "with AI characters", zh: "\u73a9\u591a\u4eba\u6e38\u620f", ja: "\u30de\u30eb\u30c1\u30d7\u30ec\u30a4", ko: "\uba40\ud2f0\ud50c\ub808\uc774",
+    de: "mit KI-Charakteren", fr: "avec des personnages IA", es: "con personajes IA",
+    pt: "com personagens IA", ru: "\u0441 \u0418\u0418-\u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0430\u043c\u0438", it: "con personaggi IA", ar: "\u0645\u0639 \u0634\u062e\u0635\u064a\u0627\u062a \u0630\u0643\u0627\u0621 \u0627\u0635\u0637\u0646\u0627\u0639\u064a",
+  },
+  "landing.hero_sub": {
+    en: "AI fills every seat. Play solo or with friends.",
+    zh: "AI\u586b\u6ee1\u6bcf\u4e2a\u5ea7\u4f4d\u3002\u5355\u4eba\u6216\u4e0e\u670b\u53cb\u4e00\u8d77\u73a9\u3002",
+    ja: "AI\u304c\u5168\u5e2d\u3092\u57cb\u3081\u308b\u3002\u30bd\u30ed\u3067\u3082\u53cb\u9054\u3068\u3067\u3082\u3002",
+    ko: "AI\uac00 \ubaa8\ub4e0 \uc790\ub9ac\ub97c \ucc44\uc6c1\ub2c8\ub2e4. \uc194\ub85c \ub610\ub294 \uce5c\uad6c\uc640 \ud568\uaed8.",
+    de: "KI f\u00fcllt jeden Platz. Spiele allein oder mit Freunden.",
+    fr: "L\u2019IA remplit chaque si\u00e8ge. Jouez seul ou entre amis.",
+    es: "La IA llena cada asiento. Juega solo o con amigos.",
+    pt: "A IA preenche cada lugar. Jogue sozinho ou com amigos.",
+    ru: "\u0418\u0418 \u0437\u0430\u043d\u0438\u043c\u0430\u0435\u0442 \u043a\u0430\u0436\u0434\u043e\u0435 \u043c\u0435\u0441\u0442\u043e. \u0418\u0433\u0440\u0430\u0439\u0442\u0435 \u043e\u0434\u0438\u043d \u0438\u043b\u0438 \u0441 \u0434\u0440\u0443\u0437\u044c\u044f\u043c\u0438.",
+    it: "L\u2019IA riempie ogni posto. Gioca da solo o con amici.",
+    ar: "\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a \u064a\u0645\u0644\u0623 \u0643\u0644 \u0645\u0642\u0639\u062f. \u0627\u0644\u0639\u0628 \u0648\u062d\u062f\u0643 \u0623\u0648 \u0645\u0639 \u0627\u0644\u0623\u0635\u062f\u0642\u0627\u0621.",
+  },
+  "landing.cta_google": {
+    en: "Get Started with Google", zh: "\u7528Google\u5f00\u59cb", ja: "Google\u3067\u59cb\u3081\u308b", ko: "Google\ub85c \uc2dc\uc791\ud558\uae30",
+    de: "Mit Google starten", fr: "Commencer avec Google", es: "Comenzar con Google",
+    pt: "Come\u00e7ar com Google", ru: "\u041d\u0430\u0447\u0430\u0442\u044c \u0441 Google", it: "Inizia con Google", ar: "\u0627\u0628\u062f\u0623 \u0628\u0627\u0633\u062a\u062e\u062f\u0627\u0645 Google",
+  },
+  "landing.cta_facebook": {
+    en: "Continue with Facebook", zh: "\u7528Facebook\u7ee7\u7eed", ja: "Facebook\u3067\u7d9a\u3051\u308b", ko: "Facebook\uc73c\ub85c \uacc4\uc18d",
+    de: "Mit Facebook fortfahren", fr: "Continuer avec Facebook", es: "Continuar con Facebook",
+    pt: "Continuar com Facebook", ru: "\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u0441 Facebook", it: "Continua con Facebook", ar: "\u0645\u062a\u0627\u0628\u0639\u0629 \u0628\u0627\u0633\u062a\u062e\u062f\u0627\u0645 Facebook",
+  },
+  "landing.explore": {
+    en: "Explore Games", zh: "\u63a2\u7d22\u6e38\u620f", ja: "\u30b2\u30fc\u30e0\u3092\u63a2\u7d22", ko: "\uac8c\uc784 \ud0d0\uc0c9",
+    de: "Spiele entdecken", fr: "Explorer les jeux", es: "Explorar juegos",
+    pt: "Explorar jogos", ru: "\u0418\u0441\u0441\u043b\u0435\u0434\u043e\u0432\u0430\u0442\u044c \u0438\u0433\u0440\u044b", it: "Esplora i giochi", ar: "\u0627\u0633\u062a\u0643\u0634\u0641 \u0627\u0644\u0623\u0644\u0639\u0627\u0628",
+  },
+  "landing.type_message": {
+    en: "Type your message...", zh: "\u8f93\u5165\u4f60\u7684\u6d88\u606f...", ja: "\u30e1\u30c3\u30bb\u30fc\u30b8\u3092\u5165\u529b...", ko: "\uba54\uc2dc\uc9c0\ub97c \uc785\ub825\ud558\uc138\uc694...",
+    de: "Nachricht eingeben...", fr: "Tapez votre message...", es: "Escribe tu mensaje...",
+    pt: "Digite sua mensagem...", ru: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435...", it: "Scrivi il tuo messaggio...", ar: "\u0627\u0643\u062a\u0628 \u0631\u0633\u0627\u0644\u062a\u0643...",
+  },
+  "landing.ai_players_badge": {
+    en: "AI PLAYERS", zh: "AI\u73a9\u5bb6", ja: "AI\u30d7\u30ec\u30a4\u30e4\u30fc", ko: "AI \ud50c\ub808\uc774\uc5b4",
+    de: "KI-SPIELER", fr: "JOUEURS IA", es: "JUGADORES IA",
+    pt: "JOGADORES IA", ru: "\u0418\u0418-\u0418\u0413\u0420\u041e\u041a\u0418", it: "GIOCATORI IA", ar: "\u0644\u0627\u0639\u0628\u0648 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a",
+  },
+  "landing.ai_players_title": {
+    en: "Every seat filled with a unique character", zh: "\u6bcf\u4e2a\u5ea7\u4f4d\u90fd\u662f\u72ec\u4e00\u65e0\u4e8c\u7684\u89d2\u8272",
+    ja: "\u3059\u3079\u3066\u306e\u5e2d\u304c\u30e6\u30cb\u30fc\u30af\u306a\u30ad\u30e3\u30e9\u30af\u30bf\u30fc\u3067\u57cb\u307e\u308b", ko: "\ubaa8\ub4e0 \uc790\ub9ac\ub97c \uace0\uc720\ud55c \uce90\ub9ad\ud130\uac00 \ucc44\uc6c0",
+    de: "Jeder Platz mit einem einzigartigen Charakter besetzt", fr: "Chaque place remplie par un personnage unique",
+    es: "Cada asiento ocupado por un personaje \u00fanico", pt: "Cada lugar preenchido com um personagem \u00fanico",
+    ru: "\u041a\u0430\u0436\u0434\u043e\u0435 \u043c\u0435\u0441\u0442\u043e \u0437\u0430\u043d\u044f\u0442\u043e \u0443\u043d\u0438\u043a\u0430\u043b\u044c\u043d\u044b\u043c \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0435\u043c",
+    it: "Ogni posto occupato da un personaggio unico", ar: "\u0643\u0644 \u0645\u0642\u0639\u062f \u0645\u0645\u0644\u0648\u0621 \u0628\u0634\u062e\u0635\u064a\u0629 \u0641\u0631\u064a\u062f\u0629",
+  },
+  "landing.ai_players_desc": {
+    en: "Each AI player has their own personality, role, and strategy. No two games feel the same.",
+    zh: "\u6bcf\u4e2aAI\u73a9\u5bb6\u90fd\u6709\u72ec\u7279\u7684\u4e2a\u6027\u3001\u89d2\u8272\u548c\u7b56\u7565\u3002\u6bcf\u5c40\u6e38\u620f\u90fd\u4e0d\u4e00\u6837\u3002",
+    ja: "\u5404AI\u30d7\u30ec\u30a4\u30e4\u30fc\u306b\u306f\u56fa\u6709\u306e\u6027\u683c\u3001\u5f79\u5272\u3001\u6226\u7565\u304c\u3042\u308b\u3002\u540c\u3058\u30b2\u30fc\u30e0\u306f\u4e8c\u5ea6\u3068\u306a\u3044\u3002",
+    ko: "\uac01 AI \ud50c\ub808\uc774\uc5b4\ub294 \uace0\uc720\ud55c \uc131\uaca9, \uc5ed\ud560, \uc804\ub7b5\uc744 \uac00\uc9d0. \uac19\uc740 \uac8c\uc784\uc740 \uc5c6\uc2b5\ub2c8\ub2e4.",
+    de: "Jeder KI-Spieler hat eigene Pers\u00f6nlichkeit, Rolle und Strategie. Kein Spiel gleicht dem anderen.",
+    fr: "Chaque joueur IA a sa personnalit\u00e9, son r\u00f4le et sa strat\u00e9gie. Aucune partie ne se ressemble.",
+    es: "Cada jugador IA tiene su personalidad, rol y estrategia. Ninguna partida es igual.",
+    pt: "Cada jogador IA tem personalidade, papel e estrat\u00e9gia pr\u00f3prios. Nenhuma partida \u00e9 igual.",
+    ru: "\u041a\u0430\u0436\u0434\u044b\u0439 \u0418\u0418-\u0438\u0433\u0440\u043e\u043a \u0438\u043c\u0435\u0435\u0442 \u0441\u0432\u043e\u044e \u043b\u0438\u0447\u043d\u043e\u0441\u0442\u044c, \u0440\u043e\u043b\u044c \u0438 \u0441\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u044e. \u041a\u0430\u0436\u0434\u0430\u044f \u0438\u0433\u0440\u0430 \u0443\u043d\u0438\u043a\u0430\u043b\u044c\u043d\u0430.",
+    it: "Ogni giocatore IA ha personalit\u00e0, ruolo e strategia propri. Nessuna partita \u00e8 uguale.",
+    ar: "\u0644\u0643\u0644 \u0644\u0627\u0639\u0628 \u0630\u0643\u0627\u0621 \u0627\u0635\u0637\u0646\u0627\u0639\u064a \u0634\u062e\u0635\u064a\u062a\u0647 \u0648\u062f\u0648\u0631\u0647 \u0648\u0627\u0633\u062a\u0631\u0627\u062a\u064a\u062c\u064a\u062a\u0647. \u0644\u0627 \u062a\u062a\u0643\u0631\u0631 \u0623\u064a \u0644\u0639\u0628\u0629.",
+  },
+  "landing.features_badge": {
+    en: "FEATURES", zh: "\u7279\u8272\u529f\u80fd", ja: "\u7279\u5fb4", ko: "\uae30\ub2a5",
+    de: "FUNKTIONEN", fr: "FONCTIONNALIT\u00c9S", es: "CARACTER\u00cdSTICAS",
+    pt: "RECURSOS", ru: "\u0412\u041e\u0417\u041c\u041e\u0416\u041d\u041e\u0421\u0422\u0418", it: "FUNZIONALIT\u00c0", ar: "\u0627\u0644\u0645\u064a\u0632\u0627\u062a",
+  },
+  "landing.features_title": {
+    en: "Why You'll Love It", zh: "\u4e3a\u4ec0\u4e48\u4f60\u4f1a\u559c\u6b22", ja: "\u304d\u3063\u3068\u6c17\u306b\u5165\u308b\u7406\u7531", ko: "\ub9e4\ub825 \ud3ec\uc778\ud2b8",
+    de: "Warum du es lieben wirst", fr: "Pourquoi vous allez adorer", es: "Por qu\u00e9 te encantar\u00e1",
+    pt: "Por que voc\u00ea vai adorar", ru: "\u041f\u043e\u0447\u0435\u043c\u0443 \u0432\u0430\u043c \u043f\u043e\u043d\u0440\u0430\u0432\u0438\u0442\u0441\u044f", it: "Perch\u00e9 ti piacer\u00e0", ar: "\u0644\u0645\u0627\u0630\u0627 \u0633\u062a\u062d\u0628\u0647",
+  },
+  "landing.feat.ai_host": {
+    en: "AI runs the table", zh: "AI\u4e3b\u6301\u5168\u573a", ja: "AI\u304c\u30b2\u30fc\u30e0\u3092\u904b\u55b6", ko: "AI\uac00 \uac8c\uc784\uc744 \uc9c4\ud589",
+    de: "KI leitet das Spiel", fr: "L\u2019IA m\u00e8ne le jeu", es: "La IA dirige la mesa",
+    pt: "A IA comanda a mesa", ru: "\u0418\u0418 \u0432\u0435\u0434\u0451\u0442 \u0438\u0433\u0440\u0443", it: "L\u2019IA gestisce il tavolo", ar: "\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a \u064a\u062f\u064a\u0631 \u0627\u0644\u0644\u0639\u0628\u0629",
+  },
+  "landing.feat.always_players": {
+    en: "Always enough players", zh: "\u6c38\u8fdc\u4e0d\u7f3a\u73a9\u5bb6", ja: "\u3044\u3064\u3067\u3082\u5341\u5206\u306a\u30d7\u30ec\u30a4\u30e4\u30fc", ko: "\ud56d\uc0c1 \ucda9\ubd84\ud55c \ud50c\ub808\uc774\uc5b4",
+    de: "Immer genug Spieler", fr: "Toujours assez de joueurs", es: "Siempre suficientes jugadores",
+    pt: "Sempre jogadores suficientes", ru: "\u0412\u0441\u0435\u0433\u0434\u0430 \u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0438\u0433\u0440\u043e\u043a\u043e\u0432", it: "Sempre abbastanza giocatori", ar: "\u0644\u0627\u0639\u0628\u0648\u0646 \u0643\u0627\u0641\u0648\u0646 \u062f\u0627\u0626\u0645\u0627\u064b",
+  },
+  "landing.feat.ai_plays": {
+    en: "AI characters actually play", zh: "AI\u89d2\u8272\u771f\u6b63\u5728\u73a9", ja: "AI\u30ad\u30e3\u30e9\u304c\u672c\u5f53\u306b\u30d7\u30ec\u30a4", ko: "AI \uce90\ub9ad\ud130\uac00 \uc2e4\uc81c\ub85c \ud50c\ub808\uc774",
+    de: "KI-Charaktere spielen wirklich", fr: "Les personnages IA jouent vraiment", es: "Los personajes IA realmente juegan",
+    pt: "Personagens IA realmente jogam", ru: "\u0418\u0418-\u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0438 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u0438\u0433\u0440\u0430\u044e\u0442", it: "I personaggi IA giocano davvero", ar: "\u0634\u062e\u0635\u064a\u0627\u062a \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a \u062a\u0644\u0639\u0628 \u0641\u0639\u0644\u0627\u064b",
+  },
+  "landing.feat.easy_start": {
+    en: "Easy to start with friends", zh: "\u8f7b\u677e\u548c\u670b\u53cb\u5f00\u59cb", ja: "\u53cb\u9054\u3068\u7c21\u5358\u306b\u59cb\u3081\u3089\u308c\u308b", ko: "\uce5c\uad6c\uc640 \uc27d\uac8c \uc2dc\uc791",
+    de: "Einfach mit Freunden starten", fr: "Facile \u00e0 jouer entre amis", es: "F\u00e1cil de empezar con amigos",
+    pt: "F\u00e1cil de come\u00e7ar com amigos", ru: "\u041b\u0435\u0433\u043a\u043e \u043d\u0430\u0447\u0430\u0442\u044c \u0441 \u0434\u0440\u0443\u0437\u044c\u044f\u043c\u0438", it: "Facile iniziare con gli amici", ar: "\u0633\u0647\u0644 \u0627\u0644\u0628\u062f\u0621 \u0645\u0639 \u0627\u0644\u0623\u0635\u062f\u0642\u0627\u0621",
+  },
+  "landing.templates_badge": {
+    en: "FEATURED TEMPLATES", zh: "\u7cbe\u9009\u6a21\u677f", ja: "\u304a\u3059\u3059\u3081\u30c6\u30f3\u30d7\u30ec\u30fc\u30c8", ko: "\ucd94\ucc9c \ud15c\ud50c\ub9bf",
+    de: "VORGESTELLTE VORLAGEN", fr: "MOD\u00c8LES VEDETTES", es: "PLANTILLAS DESTACADAS",
+    pt: "MODELOS EM DESTAQUE", ru: "\u0420\u0415\u041a\u041e\u041c\u0415\u041d\u0414\u0423\u0415\u041c\u042b\u0415 \u0428\u0410\u0411\u041b\u041e\u041d\u042b", it: "MODELLI IN EVIDENZA", ar: "\u0642\u0648\u0627\u0644\u0628 \u0645\u0645\u064a\u0632\u0629",
+  },
+  "landing.templates_title": {
+    en: "One-click start \u2014 or make it your own", zh: "\u4e00\u952e\u5f00\u59cb \u2014 \u6216\u81ea\u5b9a\u4e49", ja: "\u30ef\u30f3\u30af\u30ea\u30c3\u30af\u3067\u958b\u59cb \u2014 \u307e\u305f\u306f\u81ea\u7531\u306b\u30ab\u30b9\u30bf\u30de\u30a4\u30ba",
+    ko: "\ud074\ub9ad \ud55c \ubc88\uc73c\ub85c \uc2dc\uc791 \u2014 \ub610\ub294 \ub098\ub9cc\uc758 \uac8c\uc784\uc73c\ub85c",
+    de: "Ein-Klick-Start \u2014 oder selbst gestalten", fr: "D\u00e9marrage en un clic \u2014 ou personnalisez",
+    es: "Inicio en un clic \u2014 o personaliza", pt: "Comece em um clique \u2014 ou personalize",
+    ru: "\u0421\u0442\u0430\u0440\u0442 \u0432 \u043e\u0434\u0438\u043d \u043a\u043b\u0438\u043a \u2014 \u0438\u043b\u0438 \u0441\u043e\u0437\u0434\u0430\u0439\u0442\u0435 \u0441\u0432\u043e\u0451",
+    it: "Avvio con un clic \u2014 o personalizza", ar: "\u0627\u0628\u062f\u0623 \u0628\u0646\u0642\u0631\u0629 \u2014 \u0623\u0648 \u0627\u0635\u0646\u0639 \u0644\u0639\u0628\u062a\u0643",
+  },
+  "landing.templates_desc": {
+    en: "Classic games ready to play, or describe your own idea and the AI builds it for you.",
+    zh: "\u7ecf\u5178\u6e38\u620f\u5373\u70b9\u5373\u73a9\uff0c\u6216\u63cf\u8ff0\u4f60\u7684\u60f3\u6cd5\uff0cAI\u5e2e\u4f60\u5b9e\u73b0\u3002",
+    ja: "\u5b9a\u756a\u30b2\u30fc\u30e0\u3092\u3059\u3050\u30d7\u30ec\u30a4\u3001\u307e\u305f\u306f\u30a2\u30a4\u30c7\u30a2\u3092\u4f1d\u3048\u308c\u3070AI\u304c\u4f5c\u308a\u307e\u3059\u3002",
+    ko: "\ud074\ub798\uc2dd \uac8c\uc784\uc744 \ubc14\ub85c \ud50c\ub808\uc774\ud558\uac70\ub098, \uc544\uc774\ub514\uc5b4\ub97c \uc124\uba85\ud558\uba74 AI\uac00 \ub9cc\ub4e4\uc5b4\uc90d\ub2c8\ub2e4.",
+    de: "Klassische Spiele sofort spielbar, oder beschreibe deine Idee und die KI baut sie f\u00fcr dich.",
+    fr: "Des jeux classiques pr\u00eats \u00e0 jouer, ou d\u00e9crivez votre id\u00e9e et l\u2019IA la construit pour vous.",
+    es: "Juegos cl\u00e1sicos listos para jugar, o describe tu idea y la IA la construye.",
+    pt: "Jogos cl\u00e1ssicos prontos para jogar, ou descreva sua ideia e a IA constr\u00f3i para voc\u00ea.",
+    ru: "\u041a\u043b\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u0438\u0433\u0440\u044b \u0433\u043e\u0442\u043e\u0432\u044b \u043a \u0437\u0430\u043f\u0443\u0441\u043a\u0443, \u0438\u043b\u0438 \u043e\u043f\u0438\u0448\u0438\u0442\u0435 \u0441\u0432\u043e\u044e \u0438\u0434\u0435\u044e \u2014 \u0418\u0418 \u043f\u043e\u0441\u0442\u0440\u043e\u0438\u0442.",
+    it: "Giochi classici pronti da giocare, o descrivi la tua idea e l\u2019IA la costruisce.",
+    ar: "\u0623\u0644\u0639\u0627\u0628 \u0643\u0644\u0627\u0633\u064a\u0643\u064a\u0629 \u062c\u0627\u0647\u0632\u0629 \u0644\u0644\u0639\u0628\u060c \u0623\u0648 \u0635\u0641 \u0641\u0643\u0631\u062a\u0643 \u0648\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a \u064a\u0628\u0646\u064a\u0647\u0627.",
+  },
+  "landing.start_game": {
+    en: "Start this game \u2192", zh: "\u5f00\u59cb\u6e38\u620f \u2192", ja: "\u3053\u306e\u30b2\u30fc\u30e0\u3092\u59cb\u3081\u308b \u2192", ko: "\uc774 \uac8c\uc784 \uc2dc\uc791 \u2192",
+    de: "Dieses Spiel starten \u2192", fr: "Lancer ce jeu \u2192", es: "Iniciar este juego \u2192",
+    pt: "Iniciar este jogo \u2192", ru: "\u041d\u0430\u0447\u0430\u0442\u044c \u044d\u0442\u0443 \u0438\u0433\u0440\u0443 \u2192", it: "Avvia questo gioco \u2192", ar: "\u0627\u0628\u062f\u0623 \u0647\u0630\u0647 \u0627\u0644\u0644\u0639\u0628\u0629 \u2192",
+  },
+  "landing.players_suffix": {
+    en: "players", zh: "\u73a9\u5bb6", ja: "\u30d7\u30ec\u30a4\u30e4\u30fc", ko: "\ud50c\ub808\uc774\uc5b4",
+    de: "Spieler", fr: "joueurs", es: "jugadores",
+    pt: "jogadores", ru: "\u0438\u0433\u0440\u043e\u043a\u043e\u0432", it: "giocatori", ar: "\u0644\u0627\u0639\u0628\u064a\u0646",
+  },
+  "landing.start_free": {
+    en: "Start Your First Game \u2014 Free", zh: "\u514d\u8d39\u5f00\u59cb\u4f60\u7684\u7b2c\u4e00\u5c40\u6e38\u620f",
+    ja: "\u6700\u521d\u306e\u30b2\u30fc\u30e0\u3092\u7121\u6599\u3067\u59cb\u3081\u3088\u3046", ko: "\ucc98\uc74c \uac8c\uc784\uc744 \ubb34\ub8cc\ub85c \uc2dc\uc791\ud558\uc138\uc694",
+    de: "Starte dein erstes Spiel \u2014 Kostenlos", fr: "Commencez votre premi\u00e8re partie \u2014 Gratuit",
+    es: "Empieza tu primera partida \u2014 Gratis", pt: "Comece seu primeiro jogo \u2014 Gr\u00e1tis",
+    ru: "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0440\u0432\u0443\u044e \u0438\u0433\u0440\u0443 \u2014 \u0411\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u043e",
+    it: "Inizia la tua prima partita \u2014 Gratis", ar: "\u0627\u0628\u062f\u0623 \u0644\u0639\u0628\u062a\u0643 \u0627\u0644\u0623\u0648\u0644\u0649 \u2014 \u0645\u062c\u0627\u0646\u0627\u064b",
+  },
+  "landing.continue_google": {
+    en: "Continue with Google", zh: "\u7528Google\u7ee7\u7eed", ja: "Google\u3067\u7d9a\u3051\u308b", ko: "Google\ub85c \uacc4\uc18d",
+    de: "Mit Google fortfahren", fr: "Continuer avec Google", es: "Continuar con Google",
+    pt: "Continuar com Google", ru: "\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u0441 Google", it: "Continua con Google", ar: "\u0645\u062a\u0627\u0628\u0639\u0629 \u0628\u0627\u0633\u062a\u062e\u062f\u0627\u0645 Google",
+  },
+  "landing.guides": {
+    en: "Guides & Resources", zh: "\u6307\u5357\u4e0e\u8d44\u6e90", ja: "\u30ac\u30a4\u30c9\u3068\u30ea\u30bd\u30fc\u30b9", ko: "\uac00\uc774\ub4dc \ubc0f \ub9ac\uc18c\uc2a4",
+    de: "Anleitungen & Ressourcen", fr: "Guides et ressources", es: "Gu\u00edas y recursos",
+    pt: "Guias e recursos", ru: "\u0413\u0430\u0439\u0434\u044b \u0438 \u0440\u0435\u0441\u0443\u0440\u0441\u044b", it: "Guide e risorse", ar: "\u0623\u062f\u0644\u0629 \u0648\u0645\u0648\u0627\u0631\u062f",
+  },
+  "landing.view_guides": {
+    en: "View all guides \u2192", zh: "\u67e5\u770b\u6240\u6709\u6307\u5357 \u2192", ja: "\u3059\u3079\u3066\u306e\u30ac\u30a4\u30c9\u3092\u898b\u308b \u2192", ko: "\ubaa8\ub4e0 \uac00\uc774\ub4dc \ubcf4\uae30 \u2192",
+    de: "Alle Anleitungen ansehen \u2192", fr: "Voir tous les guides \u2192", es: "Ver todas las gu\u00edas \u2192",
+    pt: "Ver todos os guias \u2192", ru: "\u0412\u0441\u0435 \u0433\u0430\u0439\u0434\u044b \u2192", it: "Vedi tutte le guide \u2192", ar: "\u0639\u0631\u0636 \u062c\u0645\u064a\u0639 \u0627\u0644\u0623\u062f\u0644\u0629 \u2192",
+  },
+  "landing.footer": {
+    en: "Any game you describe, playable in minutes", zh: "\u63cf\u8ff0\u4efb\u4f55\u6e38\u620f\uff0c\u5206\u949f\u5185\u53ef\u73a9",
+    ja: "\u3069\u3093\u306a\u30b2\u30fc\u30e0\u3082\u8aac\u660e\u3059\u308c\u3070\u6570\u5206\u3067\u30d7\u30ec\u30a4\u53ef\u80fd", ko: "\uc5b4\ub5a4 \uac8c\uc784\uc774\ub4e0 \uc124\uba85\ud558\uba74 \uba87 \ubd84 \ub9cc\uc5d0 \ud50c\ub808\uc774 \uac00\ub2a5",
+    de: "Jedes Spiel, das du beschreibst, in Minuten spielbar", fr: "Tout jeu que vous d\u00e9crivez, jouable en quelques minutes",
+    es: "Cualquier juego que describas, jugable en minutos", pt: "Qualquer jogo que voc\u00ea descreva, jog\u00e1vel em minutos",
+    ru: "\u041b\u044e\u0431\u0430\u044f \u0438\u0433\u0440\u0430, \u043a\u043e\u0442\u043e\u0440\u0443\u044e \u0432\u044b \u043e\u043f\u0438\u0448\u0435\u0442\u0435, \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430 \u0437\u0430 \u043c\u0438\u043d\u0443\u0442\u044b",
+    it: "Qualsiasi gioco descrivi, giocabile in pochi minuti", ar: "\u0623\u064a \u0644\u0639\u0628\u0629 \u062a\u0635\u0641\u0647\u0627\u060c \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u0639\u0628 \u0641\u064a \u062f\u0642\u0627\u0626\u0642",
+  },
+  "landing.blog": { en: "Blog", zh: "\u535a\u5ba2", ja: "\u30d6\u30ed\u30b0", ko: "\ube14\ub85c\uadf8", de: "Blog", fr: "Blog", es: "Blog", pt: "Blog", ru: "\u0411\u043b\u043e\u0433", it: "Blog", ar: "\u0645\u062f\u0648\u0646\u0629" },
+  "landing.privacy": {
+    en: "Privacy Policy", zh: "\u9690\u79c1\u653f\u7b56", ja: "\u30d7\u30e9\u30a4\u30d0\u30b7\u30fc\u30dd\u30ea\u30b7\u30fc", ko: "\uac1c\uc778\uc815\ubcf4 \ucc98\ub9ac\ubc29\uce68",
+    de: "Datenschutzrichtlinie", fr: "Politique de confidentialit\u00e9", es: "Pol\u00edtica de privacidad",
+    pt: "Pol\u00edtica de privacidade", ru: "\u041f\u043e\u043b\u0438\u0442\u0438\u043a\u0430 \u043a\u043e\u043d\u0444\u0438\u0434\u0435\u043d\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0441\u0442\u0438", it: "Informativa sulla privacy", ar: "\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u062e\u0635\u0648\u0635\u064a\u0629",
+  },
+  "landing.terms": {
+    en: "Terms of Service", zh: "\u670d\u52a1\u6761\u6b3e", ja: "\u5229\u7528\u898f\u7d04", ko: "\uc774\u7528\uc57d\uad00",
+    de: "Nutzungsbedingungen", fr: "Conditions d\u2019utilisation", es: "T\u00e9rminos de servicio",
+    pt: "Termos de servi\u00e7o", ru: "\u0423\u0441\u043b\u043e\u0432\u0438\u044f \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u043d\u0438\u044f", it: "Termini di servizio", ar: "\u0634\u0631\u0648\u0637 \u0627\u0644\u062e\u062f\u0645\u0629",
+  },
+
+  // ── Sidebar / User menu ───────────────────────────────────────────────
+  "sidebar.credits": {
+    en: "Credits", zh: "\u989d\u5ea6", ja: "\u30af\u30ec\u30b8\u30c3\u30c8", ko: "\ud06c\ub808\ub527",
+    de: "Guthaben", fr: "Cr\u00e9dits", es: "Cr\u00e9ditos",
+    pt: "Cr\u00e9ditos", ru: "\u041a\u0440\u0435\u0434\u0438\u0442\u044b", it: "Crediti", ar: "\u0627\u0644\u0631\u0635\u064a\u062f",
+  },
+  "sidebar.edit_profile": {
+    en: "Edit Profile", zh: "\u7f16\u8f91\u8d44\u6599", ja: "\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u7de8\u96c6", ko: "\ud504\ub85c\ud544 \ud3b8\uc9d1",
+    de: "Profil bearbeiten", fr: "Modifier le profil", es: "Editar perfil",
+    pt: "Editar perfil", ru: "\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043f\u0440\u043e\u0444\u0438\u043b\u044c", it: "Modifica profilo", ar: "\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062e\u0635\u064a",
+  },
+  "sidebar.buy_credits": {
+    en: "Buy Credits", zh: "\u8d2d\u4e70\u989d\u5ea6", ja: "\u30af\u30ec\u30b8\u30c3\u30c8\u8cfc\u5165", ko: "\ud06c\ub808\ub527 \uad6c\ub9e4",
+    de: "Guthaben kaufen", fr: "Acheter des cr\u00e9dits", es: "Comprar cr\u00e9ditos",
+    pt: "Comprar cr\u00e9ditos", ru: "\u041a\u0443\u043f\u0438\u0442\u044c \u043a\u0440\u0435\u0434\u0438\u0442\u044b", it: "Acquista crediti", ar: "\u0634\u0631\u0627\u0621 \u0631\u0635\u064a\u062f",
+  },
+  "sidebar.help": {
+    en: "Help & Support", zh: "\u5e2e\u52a9\u4e0e\u652f\u6301", ja: "\u30d8\u30eb\u30d7\u3068\u30b5\u30dd\u30fc\u30c8", ko: "\ub3c4\uc6c0\ub9d0 \ubc0f \uc9c0\uc6d0",
+    de: "Hilfe & Support", fr: "Aide et support", es: "Ayuda y soporte",
+    pt: "Ajuda e suporte", ru: "\u041f\u043e\u043c\u043e\u0449\u044c \u0438 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0430", it: "Aiuto e supporto", ar: "\u0627\u0644\u0645\u0633\u0627\u0639\u062f\u0629 \u0648\u0627\u0644\u062f\u0639\u0645",
+  },
+  "sidebar.log_out": {
+    en: "Log Out", zh: "\u9000\u51fa\u767b\u5f55", ja: "\u30ed\u30b0\u30a2\u30a6\u30c8", ko: "\ub85c\uadf8\uc544\uc6c3",
+    de: "Abmelden", fr: "D\u00e9connexion", es: "Cerrar sesi\u00f3n",
+    pt: "Sair", ru: "\u0412\u044b\u0439\u0442\u0438", it: "Esci", ar: "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c",
+  },
+  "sidebar.signing_out": {
+    en: "Signing out...", zh: "\u6b63\u5728\u9000\u51fa...", ja: "\u30ed\u30b0\u30a2\u30a6\u30c8\u4e2d...", ko: "\ub85c\uadf8\uc544\uc6c3 \uc911...",
+    de: "Abmelden...", fr: "D\u00e9connexion...", es: "Cerrando sesi\u00f3n...",
+    pt: "Saindo...", ru: "\u0412\u044b\u0445\u043e\u0434...", it: "Disconnessione...", ar: "\u062c\u0627\u0631\u064d \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c...",
+  },
+  "sidebar.delete_game": {
+    en: "Delete Game", zh: "\u5220\u9664\u6e38\u620f", ja: "\u30b2\u30fc\u30e0\u3092\u524a\u9664", ko: "\uac8c\uc784 \uc0ad\uc81c",
+    de: "Spiel l\u00f6schen", fr: "Supprimer le jeu", es: "Eliminar juego",
+    pt: "Excluir jogo", ru: "\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0438\u0433\u0440\u0443", it: "Elimina gioco", ar: "\u062d\u0630\u0641 \u0627\u0644\u0644\u0639\u0628\u0629",
+  },
+  "sidebar.failed_sign_out": {
+    en: "Failed to sign out. Please try again.", zh: "\u9000\u51fa\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\u3002", ja: "\u30ed\u30b0\u30a2\u30a6\u30c8\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u518d\u8a66\u884c\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+    ko: "\ub85c\uadf8\uc544\uc6c3\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \uc2dc\ub3c4\ud574 \uc8fc\uc138\uc694.",
+    de: "Abmeldung fehlgeschlagen. Bitte erneut versuchen.", fr: "\u00c9chec de la d\u00e9connexion. Veuillez r\u00e9essayer.",
+    es: "Error al cerrar sesi\u00f3n. Int\u00e9ntalo de nuevo.", pt: "Falha ao sair. Tente novamente.",
+    ru: "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u044b\u0439\u0442\u0438. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0441\u043d\u043e\u0432\u0430.",
+    it: "Disconnessione non riuscita. Riprova.", ar: "\u0641\u0634\u0644 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c. \u064a\u0631\u062c\u0649 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
+  },
+
+  // ── Channel list ──────────────────────────────────────────────────────
+  "channel.delete_section": {
+    en: "Delete Section", zh: "\u5220\u9664\u5206\u533a", ja: "\u30bb\u30af\u30b7\u30e7\u30f3\u3092\u524a\u9664", ko: "\uc139\uc158 \uc0ad\uc81c",
+    de: "Bereich l\u00f6schen", fr: "Supprimer la section", es: "Eliminar secci\u00f3n",
+    pt: "Excluir se\u00e7\u00e3o", ru: "\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0440\u0430\u0437\u0434\u0435\u043b", it: "Elimina sezione", ar: "\u062d\u0630\u0641 \u0627\u0644\u0642\u0633\u0645",
+  },
+  "channel.delete_room": {
+    en: "Delete Room", zh: "\u5220\u9664\u623f\u95f4", ja: "\u30eb\u30fc\u30e0\u3092\u524a\u9664", ko: "\ubc29 \uc0ad\uc81c",
+    de: "Raum l\u00f6schen", fr: "Supprimer la salle", es: "Eliminar sala",
+    pt: "Excluir sala", ru: "\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u043a\u043e\u043c\u043d\u0430\u0442\u0443", it: "Elimina stanza", ar: "\u062d\u0630\u0641 \u0627\u0644\u063a\u0631\u0641\u0629",
+  },
+  "channel.public_room": {
+    en: "Public room", zh: "\u516c\u5f00\u623f\u95f4", ja: "\u516c\u958b\u30eb\u30fc\u30e0", ko: "\uacf5\uac1c \ubc29",
+    de: "\u00d6ffentlicher Raum", fr: "Salle publique", es: "Sala p\u00fablica",
+    pt: "Sala p\u00fablica", ru: "\u041e\u0442\u043a\u0440\u044b\u0442\u0430\u044f \u043a\u043e\u043c\u043d\u0430\u0442\u0430", it: "Stanza pubblica", ar: "\u063a\u0631\u0641\u0629 \u0639\u0627\u0645\u0629",
+  },
+  "channel.member": {
+    en: "{count} member", zh: "{count} \u540d\u6210\u5458", ja: "{count} \u30e1\u30f3\u30d0\u30fc", ko: "{count}\uba85",
+    de: "{count} Mitglied", fr: "{count} membre", es: "{count} miembro",
+    pt: "{count} membro", ru: "{count} \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a", it: "{count} membro", ar: "{count} \u0639\u0636\u0648",
+  },
+  "channel.members": {
+    en: "{count} members", zh: "{count} \u540d\u6210\u5458", ja: "{count} \u30e1\u30f3\u30d0\u30fc", ko: "{count}\uba85",
+    de: "{count} Mitglieder", fr: "{count} membres", es: "{count} miembros",
+    pt: "{count} membros", ru: "{count} \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u043e\u0432", it: "{count} membri", ar: "{count} \u0623\u0639\u0636\u0627\u0621",
+  },
+  "channel.confirm_delete": {
+    en: "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+    zh: "\u786e\u5b9a\u8981\u5220\u9664\u201c{name}\u201d\u5417\uff1f\u6b64\u64cd\u4f5c\u65e0\u6cd5\u64a4\u6d88\u3002",
+    ja: "\u300c{name}\u300d\u3092\u524a\u9664\u3057\u3066\u3082\u3088\u308d\u3057\u3044\u3067\u3059\u304b\uff1f\u3053\u306e\u64cd\u4f5c\u306f\u53d6\u308a\u6d88\u305b\u307e\u305b\u3093\u3002",
+    ko: "\"{name}\"\uc744(\ub97c) \uc0ad\uc81c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c? \uc774 \uc791\uc5c5\uc740 \ucde8\uc18c\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.",
+    de: "M\u00f6chten Sie \u201e{name}\u201c wirklich l\u00f6schen? Dies kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
+    fr: "\u00cates-vous s\u00fbr de vouloir supprimer \u00ab {name} \u00bb ? Cette action est irr\u00e9versible.",
+    es: "\u00bfEst\u00e1s seguro de que quieres eliminar \u201c{name}\u201d? Esta acci\u00f3n no se puede deshacer.",
+    pt: "Tem certeza de que deseja excluir \u201c{name}\u201d? Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita.",
+    ru: "\u0412\u044b \u0443\u0432\u0435\u0440\u0435\u043d\u044b, \u0447\u0442\u043e \u0445\u043e\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043b\u0438\u0442\u044c \u00ab{name}\u00bb? \u042d\u0442\u043e \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435 \u043d\u0435\u043b\u044c\u0437\u044f \u043e\u0442\u043c\u0435\u043d\u0438\u0442\u044c.",
+    it: "Sei sicuro di voler eliminare \u201c{name}\u201d? Questa azione non pu\u00f2 essere annullata.",
+    ar: "\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u062d\u0630\u0641 \u201c{name}\u201d\u061f \u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0631\u0627\u062c\u0639 \u0639\u0646 \u0647\u0630\u0627 \u0627\u0644\u0625\u062c\u0631\u0627\u0621.",
+  },
+  "btn.delete": {
+    en: "Delete", zh: "\u5220\u9664", ja: "\u524a\u9664", ko: "\uc0ad\uc81c",
+    de: "L\u00f6schen", fr: "Supprimer", es: "Eliminar",
+    pt: "Excluir", ru: "\u0423\u0434\u0430\u043b\u0438\u0442\u044c", it: "Elimina", ar: "\u062d\u0630\u0641",
+  },
+
+  // ── Welcome page ──────────────────────────────────────────────────────
+  "welcome.jump_back": {
+    en: "Jump back in", zh: "\u7ee7\u7eed\u6e38\u620f", ja: "\u7d9a\u304d\u304b\u3089", ko: "\ub3cc\uc544\uac00\uae30",
+    de: "Weiterspielen", fr: "Reprendre", es: "Volver al juego",
+    pt: "Voltar ao jogo", ru: "\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c", it: "Riprendi", ar: "\u0627\u0644\u0639\u0648\u062f\u0629",
+  },
+  "welcome.loading": {
+    en: "Loading\u2026", zh: "\u52a0\u8f7d\u4e2d\u2026", ja: "\u8aad\u307f\u8fbc\u307f\u4e2d\u2026", ko: "\ub85c\ub529 \uc911\u2026",
+    de: "Laden\u2026", fr: "Chargement\u2026", es: "Cargando\u2026",
+    pt: "Carregando\u2026", ru: "\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430\u2026", it: "Caricamento\u2026", ar: "\u062c\u0627\u0631\u064d \u0627\u0644\u062a\u062d\u0645\u064a\u0644\u2026",
+  },
+  "welcome.design_game": {
+    en: "Design a game", zh: "\u8bbe\u8ba1\u4e00\u6b3e\u6e38\u620f", ja: "\u30b2\u30fc\u30e0\u3092\u30c7\u30b6\u30a4\u30f3", ko: "\uac8c\uc784 \ub514\uc790\uc778",
+    de: "Ein Spiel entwerfen", fr: "Concevoir un jeu", es: "Dise\u00f1a un juego",
+    pt: "Crie um jogo", ru: "\u0421\u043e\u0437\u0434\u0430\u0439\u0442\u0435 \u0438\u0433\u0440\u0443", it: "Progetta un gioco", ar: "\u0635\u0645\u0651\u0645 \u0644\u0639\u0628\u0629",
+  },
+  "welcome.in_conversation": {
+    en: "in a conversation.", zh: "\u5728\u5bf9\u8bdd\u4e2d\u5b8c\u6210\u3002", ja: "\u4f1a\u8a71\u3067\u3002", ko: "\ub300\ud654\ub85c.",
+    de: "im Gespr\u00e4ch.", fr: "en conversant.", es: "en una conversaci\u00f3n.",
+    pt: "numa conversa.", ru: "\u0432 \u0434\u0438\u0430\u043b\u043e\u0433\u0435.", it: "in una conversazione.", ar: "\u0641\u064a \u0645\u062d\u0627\u062f\u062b\u0629.",
+  },
+  "welcome.hero_desc": {
+    en: "Describe your idea. Get roles, rules, and a playable session\u2014with an AI host and AI players. No game design experience needed.",
+    zh: "\u63cf\u8ff0\u4f60\u7684\u60f3\u6cd5\uff0c\u83b7\u53d6\u89d2\u8272\u3001\u89c4\u5219\u548c\u53ef\u73a9\u7684\u573a\u6b21\u2014\u2014\u7531AI\u4e3b\u6301\u548cAI\u73a9\u5bb6\u52a9\u9635\u3002\u65e0\u9700\u6e38\u620f\u8bbe\u8ba1\u7ecf\u9a8c\u3002",
+    ja: "\u30a2\u30a4\u30c7\u30a2\u3092\u8aac\u660e\u3059\u308c\u3070\u3001\u5f79\u5272\u30fb\u30eb\u30fc\u30eb\u30fb\u30d7\u30ec\u30a4\u53ef\u80fd\u306a\u30bb\u30c3\u30b7\u30e7\u30f3\u304c\u624b\u306b\u5165\u308b\u3002\u30b2\u30fc\u30e0\u30c7\u30b6\u30a4\u30f3\u306e\u7d4c\u9a13\u4e0d\u8981\u3002",
+    ko: "\uc544\uc774\ub514\uc5b4\ub97c \uc124\uba85\ud558\uba74 \uc5ed\ud560, \uaddc\uce59, \ud50c\ub808\uc774 \uac00\ub2a5\ud55c \uc138\uc158\uc744 \uc5bb\uc744 \uc218 \uc788\uc2b5\ub2c8\ub2e4. \uac8c\uc784 \ub514\uc790\uc778 \uacbd\ud5d8 \ubd88\ud544\uc694.",
+    de: "Beschreibe deine Idee. Erhalte Rollen, Regeln und eine spielbare Session \u2014 mit einem KI-Host und KI-Spielern. Keine Spieldesign-Erfahrung n\u00f6tig.",
+    fr: "D\u00e9crivez votre id\u00e9e. Obtenez r\u00f4les, r\u00e8gles et une session jouable \u2014 avec un h\u00f4te IA et des joueurs IA. Aucune exp\u00e9rience requise.",
+    es: "Describe tu idea. Obt\u00e9n roles, reglas y una sesi\u00f3n jugable \u2014 con un anfitri\u00f3n IA y jugadores IA. Sin experiencia necesaria.",
+    pt: "Descreva sua ideia. Obtenha pap\u00e9is, regras e uma sess\u00e3o jog\u00e1vel \u2014 com host IA e jogadores IA. Sem experi\u00eancia necess\u00e1ria.",
+    ru: "\u041e\u043f\u0438\u0448\u0438\u0442\u0435 \u0438\u0434\u0435\u044e. \u041f\u043e\u043b\u0443\u0447\u0438\u0442\u0435 \u0440\u043e\u043b\u0438, \u043f\u0440\u0430\u0432\u0438\u043b\u0430 \u0438 \u0438\u0433\u0440\u043e\u0432\u0443\u044e \u0441\u0435\u0441\u0441\u0438\u044e \u2014 \u0441 \u0418\u0418-\u0432\u0435\u0434\u0443\u0449\u0438\u043c \u0438 \u0418\u0418-\u0438\u0433\u0440\u043e\u043a\u0430\u043c\u0438.",
+    it: "Descrivi la tua idea. Ottieni ruoli, regole e una sessione giocabile \u2014 con host IA e giocatori IA. Nessuna esperienza necessaria.",
+    ar: "\u0635\u0641 \u0641\u0643\u0631\u062a\u0643. \u0627\u062d\u0635\u0644 \u0639\u0644\u0649 \u0623\u062f\u0648\u0627\u0631 \u0648\u0642\u0648\u0627\u0639\u062f \u0648\u062c\u0644\u0633\u0629 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u0639\u0628 \u2014 \u0628\u0644\u0627 \u062e\u0628\u0631\u0629.",
+  },
+  "welcome.sign_in_create": {
+    en: "Sign in to create your first game", zh: "\u767b\u5f55\u4ee5\u521b\u5efa\u4f60\u7684\u7b2c\u4e00\u5c40\u6e38\u620f",
+    ja: "\u30b5\u30a4\u30f3\u30a4\u30f3\u3057\u3066\u6700\u521d\u306e\u30b2\u30fc\u30e0\u3092\u4f5c\u308d\u3046", ko: "\ub85c\uadf8\uc778\ud558\uc5ec \uccab \uac8c\uc784\uc744 \ub9cc\ub4dc\uc138\uc694",
+    de: "Anmelden und erstes Spiel erstellen", fr: "Connectez-vous pour cr\u00e9er votre premier jeu",
+    es: "Inicia sesi\u00f3n para crear tu primer juego", pt: "Entre para criar seu primeiro jogo",
+    ru: "\u0412\u043e\u0439\u0434\u0438\u0442\u0435, \u0447\u0442\u043e\u0431\u044b \u0441\u043e\u0437\u0434\u0430\u0442\u044c \u043f\u0435\u0440\u0432\u0443\u044e \u0438\u0433\u0440\u0443",
+    it: "Accedi per creare il tuo primo gioco", ar: "\u0633\u062c\u0651\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0625\u0646\u0634\u0627\u0621 \u0644\u0639\u0628\u062a\u0643 \u0627\u0644\u0623\u0648\u0644\u0649",
+  },
+  "welcome.browse_templates": {
+    en: "Browse templates", zh: "\u6d4f\u89c8\u6a21\u677f", ja: "\u30c6\u30f3\u30d7\u30ec\u30fc\u30c8\u3092\u63a2\u3059", ko: "\ud15c\ud50c\ub9bf \ub458\ub7ec\ubcf4\uae30",
+    de: "Vorlagen durchsuchen", fr: "Parcourir les mod\u00e8les", es: "Explorar plantillas",
+    pt: "Explorar modelos", ru: "\u041f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c \u0448\u0430\u0431\u043b\u043e\u043d\u044b", it: "Sfoglia i modelli", ar: "\u062a\u0635\u0641\u062d \u0627\u0644\u0642\u0648\u0627\u0644\u0628",
+  },
+  "welcome.free_start": {
+    en: "Free to start \u00b7 No credit card required", zh: "\u514d\u8d39\u5f00\u59cb \u00b7 \u65e0\u9700\u4fe1\u7528\u5361",
+    ja: "\u7121\u6599\u3067\u59cb\u3081\u3089\u308c\u308b \u00b7 \u30af\u30ec\u30b8\u30c3\u30c8\u30ab\u30fc\u30c9\u4e0d\u8981", ko: "\ubb34\ub8cc\ub85c \uc2dc\uc791 \u00b7 \uc2e0\uc6a9\uce74\ub4dc \ubd88\ud544\uc694",
+    de: "Kostenlos starten \u00b7 Keine Kreditkarte n\u00f6tig", fr: "Gratuit pour commencer \u00b7 Pas de carte de cr\u00e9dit",
+    es: "Gratis para empezar \u00b7 Sin tarjeta de cr\u00e9dito", pt: "Gratuito para come\u00e7ar \u00b7 Sem cart\u00e3o de cr\u00e9dito",
+    ru: "\u0411\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u043e \u00b7 \u041a\u0430\u0440\u0442\u0430 \u043d\u0435 \u043d\u0443\u0436\u043d\u0430",
+    it: "Gratis per iniziare \u00b7 Nessuna carta di credito", ar: "\u0645\u062c\u0627\u0646\u064a \u0644\u0644\u0628\u062f\u0621 \u00b7 \u0644\u0627 \u062d\u0627\u062c\u0629 \u0644\u0628\u0637\u0627\u0642\u0629",
+  },
+  "welcome.save_games": {
+    en: "Save games", zh: "\u4fdd\u5b58\u6e38\u620f", ja: "\u30b2\u30fc\u30e0\u3092\u4fdd\u5b58", ko: "\uac8c\uc784 \uc800\uc7a5",
+    de: "Spiele speichern", fr: "Sauvegarder les jeux", es: "Guardar juegos",
+    pt: "Salvar jogos", ru: "\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u0438\u0433\u0440\u044b", it: "Salva i giochi", ar: "\u062d\u0641\u0638 \u0627\u0644\u0623\u0644\u0639\u0627\u0628",
+  },
+  "welcome.sync_devices": {
+    en: "Sync across devices", zh: "\u8de8\u8bbe\u5907\u540c\u6b65", ja: "\u30c7\u30d0\u30a4\u30b9\u9593\u540c\u671f", ko: "\uae30\uae30 \uac04 \ub3d9\uae30\ud654",
+    de: "Ger\u00e4te\u00fcbergreifend synchronisieren", fr: "Synchroniser entre appareils", es: "Sincronizar entre dispositivos",
+    pt: "Sincronizar entre dispositivos", ru: "\u0421\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f \u043c\u0435\u0436\u0434\u0443 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430\u043c\u0438", it: "Sincronizza tra dispositivi", ar: "\u0645\u0632\u0627\u0645\u0646\u0629 \u0639\u0628\u0631 \u0627\u0644\u0623\u062c\u0647\u0632\u0629",
+  },
+  "welcome.share_friends": {
+    en: "Share links to play with friends", zh: "\u5206\u4eab\u94fe\u63a5\u4e0e\u670b\u53cb\u4e00\u8d77\u73a9", ja: "\u30ea\u30f3\u30af\u3092\u5171\u6709\u3057\u3066\u53cb\u9054\u3068\u30d7\u30ec\u30a4",
+    ko: "\ub9c1\ud06c\ub97c \uacf5\uc720\ud558\uc5ec \uce5c\uad6c\uc640 \ud50c\ub808\uc774",
+    de: "Links teilen, um mit Freunden zu spielen", fr: "Partager des liens pour jouer entre amis",
+    es: "Comparte enlaces para jugar con amigos", pt: "Compartilhe links para jogar com amigos",
+    ru: "\u041f\u043e\u0434\u0435\u043b\u0438\u0442\u0435\u0441\u044c \u0441\u0441\u044b\u043b\u043a\u043e\u0439 \u0434\u043b\u044f \u0438\u0433\u0440\u044b \u0441 \u0434\u0440\u0443\u0437\u044c\u044f\u043c\u0438",
+    it: "Condividi link per giocare con amici", ar: "\u0634\u0627\u0631\u0643 \u0627\u0644\u0631\u0648\u0627\u0628\u0637 \u0644\u0644\u0639\u0628 \u0645\u0639 \u0627\u0644\u0623\u0635\u062f\u0642\u0627\u0621",
+  },
+  "welcome.try_it": {
+    en: "Try it \u2014 no sign-in required", zh: "\u8bd5\u8bd5\u770b \u2014 \u65e0\u9700\u767b\u5f55", ja: "\u8a66\u3057\u3066\u307f\u3088\u3046 \u2014 \u30b5\u30a4\u30f3\u30a4\u30f3\u4e0d\u8981",
+    ko: "\uc2dc\ub3c4\ud574\ubcf4\uc138\uc694 \u2014 \ub85c\uadf8\uc778 \ubd88\ud544\uc694",
+    de: "Ausprobieren \u2014 ohne Anmeldung", fr: "Essayez \u2014 sans connexion",
+    es: "Prueba \u2014 sin registrarse", pt: "Experimente \u2014 sem login",
+    ru: "\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u2014 \u0431\u0435\u0437 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u0438",
+    it: "Prova \u2014 senza registrazione", ar: "\u062c\u0631\u0651\u0628 \u2014 \u0628\u062f\u0648\u0646 \u062a\u0633\u062c\u064a\u0644 \u062f\u062e\u0648\u0644",
+  },
+  "welcome.ready": {
+    en: "Ready to create?", zh: "\u51c6\u5907\u597d\u521b\u5efa\u4e86\u5417\uff1f", ja: "\u4f5c\u6210\u6e96\u5099\u306f\u3044\u3044\u3067\u3059\u304b\uff1f", ko: "\ub9cc\ub4e4 \uc900\ube44\uac00 \ub418\uc168\ub098\uc694?",
+    de: "Bereit zu erstellen?", fr: "Pr\u00eat \u00e0 cr\u00e9er ?", es: "\u00bfListo para crear?",
+    pt: "Pronto para criar?", ru: "\u0413\u043e\u0442\u043e\u0432\u044b \u0441\u043e\u0437\u0434\u0430\u0442\u044c?", it: "Pronto a creare?", ar: "\u0645\u0633\u062a\u0639\u062f \u0644\u0644\u0625\u0646\u0634\u0627\u0621\u061f",
+  },
+  "welcome.create_new": {
+    en: "Create a new game", zh: "\u521b\u5efa\u65b0\u6e38\u620f", ja: "\u65b0\u3057\u3044\u30b2\u30fc\u30e0\u3092\u4f5c\u6210", ko: "\uc0c8 \uac8c\uc784 \ub9cc\ub4e4\uae30",
+    de: "Neues Spiel erstellen", fr: "Cr\u00e9er un nouveau jeu", es: "Crear un juego nuevo",
+    pt: "Criar um novo jogo", ru: "\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0438\u0433\u0440\u0443", it: "Crea un nuovo gioco", ar: "\u0623\u0646\u0634\u0626 \u0644\u0639\u0628\u0629 \u062c\u062f\u064a\u062f\u0629",
+  },
+  "welcome.sign_in_save": {
+    en: "Sign in to save and run your games.", zh: "\u767b\u5f55\u4ee5\u4fdd\u5b58\u548c\u8fd0\u884c\u4f60\u7684\u6e38\u620f\u3002",
+    ja: "\u30b5\u30a4\u30f3\u30a4\u30f3\u3057\u3066\u30b2\u30fc\u30e0\u3092\u4fdd\u5b58\u30fb\u5b9f\u884c\u3002", ko: "\ub85c\uadf8\uc778\ud558\uc5ec \uac8c\uc784\uc744 \uc800\uc7a5\ud558\uace0 \uc2e4\ud589\ud558\uc138\uc694.",
+    de: "Anmelden, um Spiele zu speichern und auszuf\u00fchren.", fr: "Connectez-vous pour sauvegarder et lancer vos jeux.",
+    es: "Inicia sesi\u00f3n para guardar y ejecutar tus juegos.", pt: "Entre para salvar e rodar seus jogos.",
+    ru: "\u0412\u043e\u0439\u0434\u0438\u0442\u0435, \u0447\u0442\u043e\u0431\u044b \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u0442\u044c \u0438 \u0437\u0430\u043f\u0443\u0441\u043a\u0430\u0442\u044c \u0438\u0433\u0440\u044b.",
+    it: "Accedi per salvare e avviare i tuoi giochi.", ar: "\u0633\u062c\u0651\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u062d\u0641\u0638 \u0648\u062a\u0634\u063a\u064a\u0644 \u0623\u0644\u0639\u0627\u0628\u0643.",
   },
 };
 
@@ -560,6 +1007,30 @@ export function tAction(label: string, lang?: string): string {
   const effectiveLang = lang ?? getAppLanguage();
   const base = resolveKey(effectiveLang);
   return entry[base] ?? entry.en ?? label;
+}
+
+/**
+ * Translate a game style badge ("Casual" / "Strategic" / "Competitive").
+ */
+export function tStyle(style: string, lang?: string): string {
+  const key = `style.${style.toLowerCase()}`;
+  const entry = T[key];
+  if (!entry) return style;
+  const effectiveLang = lang ?? getAppLanguage();
+  const base = resolveKey(effectiveLang);
+  return entry[base] ?? entry.en ?? style;
+}
+
+/**
+ * Translate a category label by its id.
+ */
+export function tCategory(catId: string, lang?: string): string {
+  const key = `cat.${catId}`;
+  const entry = T[key];
+  if (!entry) return catId;
+  const effectiveLang = lang ?? getAppLanguage();
+  const base = resolveKey(effectiveLang);
+  return entry[base] ?? entry.en ?? catId;
 }
 
 /** @deprecated Use `getAppLanguage()` instead */

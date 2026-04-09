@@ -17,6 +17,8 @@ import {
   FEATURED_GAMES,
   MARQUEE_CHARACTERS,
 } from "@/data/landing-content";
+import { t, getAppLanguage } from "@/lib/i18n";
+import { getTemplateI18n } from "@/data/template-i18n";
 import dynamic from "next/dynamic";
 import { SafeAvatar, PreviewAvatar, StreamingText } from "@/app/components/landing/shared";
 const InsideGameSection = dynamic(() => import("@/app/components/landing/InsideGameSection").then(m => m.InsideGameSection), { ssr: false });
@@ -154,15 +156,15 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             {/* Headline — server-rendered slot for LCP (heroHeadline comes from page.tsx server component) */}
             {heroHeadline ?? (
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-                Play multiplayer games{" "}
+                {t("landing.hero_1")}{" "}
                 <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                  with AI characters
+                  {t("landing.hero_2")}
                 </span>
               </h2>
             )}
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-10 leading-relaxed">
-              AI fills every seat. Play solo or with friends.
+              {t("landing.hero_sub")}
             </p>
 
             {/* Sign-in Buttons */}
@@ -180,7 +182,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  Get Started with Google
+                  {t("landing.cta_google")}
                 </Button>
               </div>
               {onSignInFacebook && (
@@ -192,7 +194,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                   <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
-                  Continue with Facebook
+                  {t("landing.cta_facebook")}
                 </Button>
               )}
             </div>
@@ -207,7 +209,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                   className="w-full bg-transparent hover:bg-zinc-800/50 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 font-semibold text-base py-5 !rounded-[11px] transition-all"
                 >
                   <Compass className="h-5 w-5 mr-2" />
-                  Explore Games
+                  {t("landing.explore")}
                 </Button>
               ) : (
                 <Button
@@ -218,7 +220,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 >
                   <Link href="/discover">
                     <Compass className="h-5 w-5 mr-2" />
-                    Explore Games
+                    {t("landing.explore")}
                   </Link>
                 </Button>
               )}
@@ -269,7 +271,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
               {/* Mock input */}
               <div className="bg-zinc-800/70 px-4 py-3 border-t border-zinc-700/80">
                 <div className="bg-zinc-800/80 rounded-xl px-4 py-2.5 text-sm text-zinc-500 border border-zinc-600/50">
-                  Type your message...
+                  {t("landing.type_message")}
                 </div>
               </div>
             </div>
@@ -280,10 +282,10 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
         <div className="mb-32 overflow-hidden">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">AI PLAYERS</span>
+              <span className="text-sm font-bold text-violet-400">{t("landing.ai_players_badge")}</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">Every seat filled with a unique character</h3>
-            <p className="text-zinc-400">Each AI player has their own personality, role, and strategy. No two games feel the same.</p>
+            <h3 className="text-3xl font-black text-white mb-3">{t("landing.ai_players_title")}</h3>
+            <p className="text-zinc-400">{t("landing.ai_players_desc")}</p>
           </div>
 
           {/* Scrolling marquee */}
@@ -343,9 +345,9 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
         <div className="mb-32">
           <div className="text-center mb-16">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">FEATURES</span>
+              <span className="text-sm font-bold text-violet-400">{t("landing.features_badge")}</span>
             </div>
-            <h3 className="text-4xl font-black text-white mb-4">Why You&apos;ll Love It</h3>
+            <h3 className="text-4xl font-black text-white mb-4">{t("landing.features_title")}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {FEATURES.map((feature, index) => (
@@ -378,10 +380,10 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
         <div className="mb-32">
           <div className="text-center mb-12">
             <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-              <span className="text-sm font-bold text-violet-400">FEATURED TEMPLATES</span>
+              <span className="text-sm font-bold text-violet-400">{t("landing.templates_badge")}</span>
             </div>
-            <h3 className="text-3xl font-black text-white mb-3">One-click start — or make it your own</h3>
-            <p className="text-lg text-zinc-400">Classic games ready to play, or describe your own idea and the AI builds it for you.</p>
+            <h3 className="text-3xl font-black text-white mb-3">{t("landing.templates_title")}</h3>
+            <p className="text-lg text-zinc-400">{t("landing.templates_desc")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {FEATURED_GAMES.map((game, index) => (
@@ -389,14 +391,14 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 key={index}
                 type="button"
                 onClick={() => onCreateGame?.(game.presetId)}
-                aria-label={`Play ${game.title}`}
+                aria-label={`Play ${getTemplateI18n(game.presetId, "name", getAppLanguage()) ?? game.title}`}
                 className={`group relative bg-zinc-900/60 border border-zinc-800 ${game.border} rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer overflow-hidden text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500`}
               >
                 {/* Cover image */}
                 <div className="relative h-48 overflow-hidden">
                   <NextImage
                     src={game.cover}
-                    alt={game.title}
+                    alt={getTemplateI18n(game.presetId, "name", getAppLanguage()) ?? game.title}
                     width={400}
                     height={160}
                     loading="lazy"
@@ -408,8 +410,8 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 </div>
 
                 <div className="p-5">
-                  <h4 className="font-black text-white text-base mb-2">{game.title}</h4>
-                  <p className="text-sm text-zinc-400 leading-relaxed mb-4">{game.description}</p>
+                  <h4 className="font-black text-white text-base mb-2">{getTemplateI18n(game.presetId, "name", getAppLanguage()) ?? game.title}</h4>
+                  <p className="text-sm text-zinc-400 leading-relaxed mb-4">{getTemplateI18n(game.presetId, "desc", getAppLanguage()) ?? game.description}</p>
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1.5 mb-4">
@@ -420,14 +422,14 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                     ))}
                     <span className="text-[11px] font-medium px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-full flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {game.players} players
+                      {game.players} {t("landing.players_suffix")}
                     </span>
                   </div>
 
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
                     <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Start this game →
+                      {t("landing.start_game")}
                     </span>
                   </div>
                 </div>
@@ -446,7 +448,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
             <div className="relative text-center">
               <h3 className="text-4xl md:text-5xl font-black text-white mb-8">
-                Start Your First Game — Free
+                {t("landing.start_free")}
               </h3>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center w-full max-w-md sm:max-w-none mx-auto">
                 <div className="relative w-full sm:w-auto">
@@ -462,7 +464,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                     </svg>
-                    Continue with Google
+                    {t("landing.continue_google")}
                   </Button>
                 </div>
                 {onSignInFacebook && (
@@ -474,7 +476,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                     <svg className="h-7 w-7 mr-3" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                     </svg>
-                    Continue with Facebook
+                    {t("landing.cta_facebook")}
                   </Button>
                 )}
               </div>
@@ -484,7 +486,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
 
         {/* ── Blog Links (SEO internal linking) ──────────────────── */}
         <div className="mb-16">
-          <h3 className="text-lg font-bold text-white mb-4">Guides & Resources</h3>
+          <h3 className="text-lg font-bold text-white mb-4">{t("landing.guides")}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               { href: "/blog/play-werewolf-online", label: "How to Play Werewolf Online" },
@@ -507,18 +509,18 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             ))}
           </div>
           <Link href="/blog" className="inline-block mt-4 text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
-            View all guides →
+            {t("landing.view_guides")}
           </Link>
         </div>
 
         {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
-            <p>© 2026 {BRAND_CONFIG.name} • Any game you describe, playable in minutes</p>
+            <p>© 2026 {BRAND_CONFIG.name} • {t("landing.footer")}</p>
             <div className="flex gap-6">
-              <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="/blog" className="hover:text-white transition-colors">{t("landing.blog")}</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">{t("landing.privacy")}</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">{t("landing.terms")}</Link>
             </div>
           </div>
         </footer>

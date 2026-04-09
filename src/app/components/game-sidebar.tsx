@@ -88,7 +88,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
       await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
-      toast.error("Failed to sign out. Please try again.");
+      toast.error(t("sidebar.failed_sign_out"));
       setIsSigningOut(false);
     }
   };
@@ -261,7 +261,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                       }}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Game
+                      {t("sidebar.delete_game")}
                     </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>
@@ -312,7 +312,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                     <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-zinc-800/60 mb-2">
                       <span className="flex items-center gap-2 text-sm text-zinc-300">
                         <Coins className="h-4 w-4 text-amber-400" />
-                        Credits
+                        {t("sidebar.credits")}
                       </span>
                       <span className="text-sm font-bold text-white tabular-nums">{creditBalance.toLocaleString()}</span>
                     </div>
@@ -325,7 +325,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                       onClick={() => { setUserMenuOpen(false); router.push('/profile'); }}
                     >
                       <UserCircle className="mr-3 h-4 w-4 text-blue-400 shrink-0" />
-                      <span className="text-sm">Edit Profile</span>
+                      <span className="text-sm">{t("sidebar.edit_profile")}</span>
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -333,7 +333,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                       onClick={() => { setUserMenuOpen(false); router.push('/recharge'); }}
                     >
                       <CreditCard className="mr-3 h-4 w-4 text-emerald-400 shrink-0" />
-                      <span className="text-sm">Buy Credits</span>
+                      <span className="text-sm">{t("sidebar.buy_credits")}</span>
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -341,7 +341,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                       onClick={() => { setUserMenuOpen(false); router.push('/help'); }}
                     >
                       <HelpCircle className="mr-3 h-4 w-4 text-amber-400 shrink-0" />
-                      <span className="text-sm">Help & Support</span>
+                      <span className="text-sm">{t("sidebar.help")}</span>
                     </Button>
                     <div className="pt-1 border-t border-zinc-800 mt-2">
                       <Button 
@@ -355,7 +355,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                         ) : (
                           <LogOut className="mr-3 h-4 w-4 shrink-0" />
                         )}
-                        <span className="text-sm">{isSigningOut ? 'Signing out...' : 'Log Out'}</span>
+                        <span className="text-sm">{isSigningOut ? t('sidebar.signing_out') : t('sidebar.log_out')}</span>
                       </Button>
                     </div>
                   </div>
@@ -387,14 +387,14 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-700 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Game</AlertDialogTitle>
+            <AlertDialogTitle>{t("sidebar.delete_game")}</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete &ldquo;{gameToDelete?.name}&rdquo;? This action cannot be undone.
+              {t("channel.confirm_delete", undefined, { name: gameToDelete?.name ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700">
-              Cancel
+              {t("btn.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction 
               className="bg-red-600 hover:bg-red-700 text-white"
@@ -405,7 +405,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                 setGameToDelete(null);
               }}
             >
-              Delete
+              {t("btn.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

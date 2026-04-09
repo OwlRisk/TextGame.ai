@@ -187,7 +187,7 @@ export function ChannelList({
                           }}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Section
+                          {t("channel.delete_section")}
                         </ContextMenuItem>
                       </ContextMenuContent>
                     </ContextMenu>
@@ -264,8 +264,8 @@ export function ChannelList({
                       className="text-zinc-400 focus:text-zinc-300 focus:bg-zinc-800 cursor-default pointer-events-none text-xs"
                     >
                       {isRestricted
-                        ? `${memberPlayers.length} member${memberPlayers.length !== 1 ? "s" : ""}`
-                        : "Public room"}
+                        ? t(memberPlayers.length !== 1 ? "channel.members" : "channel.member", undefined, { count: memberPlayers.length })
+                        : t("channel.public_room")}
                     </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>
@@ -290,10 +290,10 @@ export function ChannelList({
                     <div className="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
                     <span className="text-sm text-zinc-300 truncate flex-1">{m.nickname}</span>
                     {badge === OnlineBadge.You && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-600/60 text-zinc-300 font-bold tracking-wide">{OnlineBadge.You}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-600/60 text-zinc-300 font-bold tracking-wide">{t("label.you")}</span>
                     )}
                     {badge === OnlineBadge.Guest && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold tracking-wide border border-emerald-500/25">{OnlineBadge.Guest}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold tracking-wide border border-emerald-500/25">{t("label.guest")}</span>
                     )}
                   </div>
                 );
@@ -338,16 +338,16 @@ export function ChannelList({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {channelToDelete?.type === "game"
-                ? "Delete Room"
-                : "Delete Section"}
+                ? t("channel.delete_room")
+                : t("channel.delete_section")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete "{channelToDelete?.name}"? This action cannot be undone.
+              {t("channel.confirm_delete", undefined, { name: channelToDelete?.name ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700">
-              Cancel
+              {t("btn.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction 
               className="bg-red-600 hover:bg-red-700 text-white"
@@ -358,7 +358,7 @@ export function ChannelList({
                 setChannelToDelete(null);
               }}
             >
-              Delete
+              {t("btn.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

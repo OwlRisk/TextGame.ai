@@ -4,7 +4,8 @@ import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Users, Clock, Play, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
-import { t } from "@/lib/i18n";
+import { t, tStyle, tCategory, getAppLanguage } from "@/lib/i18n";
+import { getTemplateI18n } from "@/data/template-i18n";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
@@ -92,16 +93,16 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
           <div className="absolute top-2.5 right-2.5">
-            <Badge className={`${getStyleColor(template.style)} border text-[10px]`}>{template.style}</Badge>
+            <Badge className={`${getStyleColor(template.style)} border text-[10px]`}>{tStyle(template.style)}</Badge>
           </div>
         </div>
 
         <div className="p-4">
           <h3 className="text-sm font-black text-white mb-1 group-hover:text-violet-300 transition-colors leading-tight">
-            {template.name}
+            {getTemplateI18n(template.id, "name", getAppLanguage()) ?? template.name}
           </h3>
 
-          <p className="text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed">{template.description}</p>
+          <p className="text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed">{getTemplateI18n(template.id, "desc", getAppLanguage()) ?? template.description}</p>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-zinc-600">
@@ -118,7 +119,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               )}
             </div>
             <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
-              Play →
+              {t("discover.play")}
             </span>
           </div>
         </div>
@@ -153,7 +154,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             {t("discover.title")} <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">{t("discover.games")}</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
-            AI-powered game templates. Pick one and start playing in seconds.
+            {t("discover.subtitle")}
           </p>
         </div>
 
@@ -172,7 +173,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {label}
+                {tCategory(id)}
               </button>
             ))}
           </div>
@@ -201,7 +202,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
           <div className="text-center py-20 text-zinc-500">
             <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="text-lg font-semibold">{t("discover.no_results")}</p>
-            <p className="text-sm mt-1">Try a different keyword or category</p>
+            <p className="text-sm mt-1">{t("discover.try_different")}</p>
           </div>
         )}
       </div>

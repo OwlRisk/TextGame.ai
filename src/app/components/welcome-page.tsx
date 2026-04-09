@@ -16,6 +16,7 @@ import {
   LayoutTemplate,
   Bot,
 } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
@@ -60,7 +61,7 @@ export function WelcomePage({
           {user && recentGames.length > 0 && (
             <div className="mb-8 flex flex-wrap items-center gap-2">
               <span className="text-xs font-medium text-zinc-500 uppercase tracking-widest">
-                Jump back in
+                {t("welcome.jump_back")}
               </span>
               {recentGames.map((g) => (
                 <button
@@ -79,7 +80,7 @@ export function WelcomePage({
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-20 text-zinc-500">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm">Loading…</span>
+              <span className="text-sm">{t("welcome.loading")}</span>
             </div>
           ) : isGuest ? (
             <>
@@ -88,12 +89,12 @@ export function WelcomePage({
                 {/* Hero */}
                 <header className="lg:sticky lg:top-8 text-center sm:text-left order-1">
                   <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] xl:text-5xl font-bold text-white tracking-tight leading-[1.12] mb-4">
-                    Design a game
+                    {t("welcome.design_game")}
                     <br className="sm:hidden" />
-                    <span className="text-amber-400"> in a conversation.</span>
+                    <span className="text-amber-400"> {t("welcome.in_conversation")}</span>
                   </h1>
                   <p className="text-zinc-400 text-base sm:text-lg max-w-md mb-6 sm:mb-8">
-                    Describe your idea. Get roles, rules, and a playable session—with an AI host and AI players. No game design experience needed.
+                    {t("welcome.hero_desc")}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <Button
@@ -102,7 +103,7 @@ export function WelcomePage({
                       className="bg-amber-500 hover:bg-amber-400 text-zinc-900 font-semibold rounded-xl px-6 py-6 h-auto text-base shadow-lg shadow-amber-500/25"
                     >
                       <LogIn className="h-5 w-5 mr-2 shrink-0" />
-                      Sign in to create your first game
+                      {t("welcome.sign_in_create")}
                     </Button>
                     <Button
                       onClick={onExploreGames}
@@ -111,25 +112,25 @@ export function WelcomePage({
                       className="text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-xl px-6 py-6 h-auto text-base"
                     >
                       <Lightbulb className="h-5 w-5 mr-2 shrink-0" />
-                      Browse templates
+                      {t("welcome.browse_templates")}
                     </Button>
                   </div>
                   <p className="mt-4 text-xs text-zinc-500">
-                    Free to start · No credit card required
+                    {t("welcome.free_start")}
                   </p>
                   {/* After signing in you can */}
                   <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-500">
                     <span className="inline-flex items-center gap-1.5">
                       <Save className="h-3.5 w-3.5 text-amber-500/80" />
-                      Save games
+                      {t("welcome.save_games")}
                     </span>
                     <span className="inline-flex items-center gap-1.5">
                       <Smartphone className="h-3.5 w-3.5 text-violet-500/80" />
-                      Sync across devices
+                      {t("welcome.sync_devices")}
                     </span>
                     <span className="inline-flex items-center gap-1.5">
                       <Share2 className="h-3.5 w-3.5 text-amber-500/80" />
-                      Share links to play with friends
+                      {t("welcome.share_friends")}
                     </span>
                   </div>
                 </header>
@@ -137,7 +138,7 @@ export function WelcomePage({
                 {/* Try it: chat — right on lg, below hero on mobile */}
                 <section className="order-2 min-w-0">
                   <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 sm:mb-4">
-                    Try it — no sign-in required
+                    {t("welcome.try_it")}
                   </p>
                   <div className="lg:min-h-[420px] flex flex-col">
                     <IntroRulesChat />
@@ -251,7 +252,7 @@ export function WelcomePage({
                   </button>
                 </div>
                 <p className="mt-4 text-xs text-zinc-500">
-                  Sign in to save and run your games.
+                  {t("welcome.sign_in_save")}
                 </p>
               </section>
 
@@ -278,7 +279,7 @@ export function WelcomePage({
           ) : (
             /* Logged-in: minimal CTA (in case redirect is slow) */
             <div className="pt-16 text-center">
-              <h1 className="text-2xl font-bold text-white mb-4">Ready to create?</h1>
+              <h1 className="text-2xl font-bold text-white mb-4">{t("welcome.ready")}</h1>
               <div className="flex flex-wrap justify-center gap-3">
                 <Button
                   onClick={() => onCreateGame()}
@@ -286,7 +287,7 @@ export function WelcomePage({
                   className="bg-amber-500 hover:bg-amber-400 text-zinc-900 font-semibold rounded-xl"
                 >
                   <Sparkles className="h-5 w-5 mr-2" />
-                  Create a new game
+                  {t("welcome.create_new")}
                 </Button>
                 <Button
                   onClick={onExploreGames}
@@ -295,7 +296,7 @@ export function WelcomePage({
                   className="border-white/20 text-white hover:bg-white/10 rounded-xl"
                 >
                   <Lightbulb className="h-5 w-5 mr-2" />
-                  Browse templates
+                  {t("welcome.browse_templates")}
                 </Button>
               </div>
             </div>
