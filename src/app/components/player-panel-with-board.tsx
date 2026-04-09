@@ -96,13 +96,13 @@ export function PlayerPanelWithBoard({
         <div className="flex items-center gap-2 text-zinc-300">
           <User className="h-4 w-4" />
           <span className="text-sm font-semibold">Players</span>
-          <span className="text-xs text-zinc-500">({players.length + guestMembers.length})</span>
+          <span className="text-xs text-zinc-500">({players.filter(p => !p.isGameMaster).length + guestMembers.length})</span>
         </div>
       </div>
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3 space-y-3">
           <div className="space-y-1.5">
-            {players.map((player) => (
+            {players.filter(p => !p.isGameMaster).map((player) => (
               <PlayerCard
                 key={player.id}
                 player={player}

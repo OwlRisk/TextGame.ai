@@ -113,23 +113,22 @@ export function useGameInit(gameId: string): UseGameInitReturn {
   }, [gameId]);
 
   const buildHostPlayer = useCallback((config: any) => {
-    const hostColor = config.generatedHost?.color || getTemplateHexColor(config.template || "custom");
-    const hostName = (config.generatedHost?.name || "Game Master").trim() || "Game Master";
-    const hostPersonality = config.generatedHost?.personality || "A mysterious game master";
+    const hostColor = "#52525b";
+    const hostName = "Narrator";
     return {
       player: {
         id: "gm-1",
         name: hostName,
         avatar: hostColor,
-        role: "Host",
-        status: config.generatedHost?.voiceStyle || "Host",
+        role: "Narrator",
+        status: "Narrator",
         isGameMaster: true,
         isAI: true,
         isMuted: false,
-        background: hostPersonality,
-        personality: config.generatedHost?.voiceStyle || config.generatedHost?.personality,
-        gender: config.generatedHost?.gender,
-        voiceId: (config.generatedHost?.voice_id as string | undefined) ?? undefined,
+        background: "Invisible storyteller and director",
+        personality: undefined,
+        gender: "other" as const,
+        voiceId: undefined,
       },
       hostName,
       hostColor,

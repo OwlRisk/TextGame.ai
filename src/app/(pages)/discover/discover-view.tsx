@@ -9,7 +9,6 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
-import { getDefaultHostForTemplate } from "@/app/config/host-config";
 import { getPresetById } from "@/data/discover-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
 
@@ -59,8 +58,6 @@ export default function DiscoverView() {
 
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
       const gameIcon = tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
-      const fallbackHost = getDefaultHostForTemplate(preset.templateId);
-
       const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id) : null;
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
@@ -97,15 +94,14 @@ export default function DiscoverView() {
         } catch {}
       }
 
-      const fg = typeof fallbackHost.gender === "string" && ["male", "female", "other"].includes(fallbackHost.gender) ? fallbackHost.gender as 'male' | 'female' | 'other' : undefined;
       const generatedHost = {
-        name: fallbackHost.name,
-        personality: fallbackHost.personality || fallbackHost.description || "",
-        voiceStyle: fallbackHost.voiceStyle,
-        systemPrompt: fallbackHost.systemPrompt,
-        icon: fallbackHost.icon,
-        color: fallbackHost.color,
-        gender: fg,
+        name: "Narrator",
+        personality: "Invisible storyteller and director",
+        voiceStyle: "atmospheric",
+        systemPrompt: "",
+        icon: "",
+        color: "#52525b",
+        gender: "other" as 'male' | 'female' | 'other',
       };
 
       const newGame = {
@@ -118,7 +114,7 @@ export default function DiscoverView() {
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || (preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4),
           rules: gameRules,
-          hostId: fallbackHost.id,
+          hostId: "narrator",
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
           humanRole,

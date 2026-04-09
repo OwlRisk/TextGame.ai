@@ -11,7 +11,6 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { trackEvent } from "@/lib/analytics";
 import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
-import { getDefaultHostForTemplate } from "@/app/config/host-config";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
 import { getScene } from "@/lib/scenes";
 
@@ -49,7 +48,6 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     try {
       trackEvent("template_selected", { template: preset.id, source: "landing" });
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
-      const host = getDefaultHostForTemplate(preset.templateId);
       const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id) : null;
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
@@ -92,19 +90,19 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || preset.playerCount || tmpl?.recommendedAICount || 4,
           rules: gameRules,
-          hostId: host.id,
+          hostId: "narrator",
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
           humanRole,
           ...(caseId && { caseId }),
           generatedHost: {
-            name: host.name,
-            personality: host.personality || host.description || "",
-            voiceStyle: host.voiceStyle,
-            systemPrompt: host.systemPrompt,
-            icon: host.icon,
-            color: host.color,
-            gender: host.gender,
+            name: "Narrator",
+            personality: "Invisible storyteller and director",
+            voiceStyle: "atmospheric",
+            systemPrompt: "",
+            icon: "",
+            color: "#52525b",
+            gender: "other" as const,
           },
         },
         isActive: true,

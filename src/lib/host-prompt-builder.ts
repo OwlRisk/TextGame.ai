@@ -260,43 +260,39 @@ Examples:
 `;
   }
 
-  const identityBlock = (hostName || hostPersonality || hostCustomSystemPrompt)
-    ? `You are ${hostName ?? 'the Game Master'}.${hostPersonality ? ` ${hostPersonality}` : ''}${hostCustomSystemPrompt ? ` ${hostCustomSystemPrompt}` : ''} Stay in this persona on every line.\n\n`
-    : '';
-
   const sentenceRule = hostMaxSentences === 1
     ? "ONE sentence max (rarely two)."
     : `Up to ${hostMaxSentences} sentences.`;
 
   const silentTurnBlock = silentByDefault
     ? `**SILENT TURNS (DEFAULT):**
-Most messages do NOT need a GM response. Leave PUBLIC MESSAGE empty and output only directives unless:
-1. A game-mechanical action needs your resolution (phase transition, vote result, role reveal, answer recording)
-2. A dramatic moment just happened and ONE in-character line would add atmosphere`
-    : `**ACTIVE HOST:**
-React to dramatic moments, build suspense before reveals, and add color commentary between phases.
+Most turns do NOT need narration. Leave NARRATION empty and output only directives unless:
+1. A game-mechanical action needs resolution (phase transition, vote result, role reveal, answer recording)
+2. A dramatic moment just happened and ONE atmospheric line would add immersion`
+    : `**ACTIVE NARRATION:**
+React to dramatic moments, build suspense before reveals, and set atmosphere between phases.
 Stay silent ONLY when:
 1. A player is simply continuing an ongoing discussion with nothing new to resolve
-2. You already responded to this exact beat — never repeat yourself`;
+2. You already narrated this exact beat — never repeat yourself`;
 
   const voiceBlock = hostMaxSentences > 1
-    ? `${hostMaxSentences} sentences for scenes, reveals, and transitions. 1 sentence for simple acknowledgments.`
+    ? `${hostMaxSentences} sentences for dramatic scenes, reveals, and transitions. 1 sentence for simple beats.`
     : 'ONE sentence max.';
 
-  return `${identityBlock}You are the game host (moderator) for "${gameName}". The game is already configured — your only job is to run it: advance phases, moderate interactions, and drive the story forward. You have NO authority to change rules or ask for setup.
+  return `You are the invisible narrator for "${gameName}". You are NOT a character. You have no name, no avatar, no personality. Your words appear as atmospheric narration — setting descriptions, dramatic reveals, phase transitions, and consequences.
 
 ## OUTPUT FORMAT — MANDATORY
 Every reply MUST be split into exactly two sections by a line containing only "---":
 
-1. PUBLIC MESSAGE (before ---): What all players see in chat and hear via TTS. ${sentenceRule} Never include directives, role info, or private content here.
+1. NARRATION (before ---): What all players see in chat. ${sentenceRule} Written like a novel — atmospheric, present tense. Never address players as "you". Never include directives, role info, or private content here.
 2. DIRECTIVES (after ---): Hidden machine commands. Never shown to players.
 
 ${silentTurnBlock}
-${tmpl?.hostAnswersQuestions ? '(EXCEPTION: You MUST answer every yes/no question from players.)' : ''}
-Before speaking, scan the last 8 messages — if you or anyone already said it, stay SILENT. Never repeat yourself.
+${tmpl?.hostAnswersQuestions ? '(EXCEPTION: You MUST answer every yes/no question from players, narrated as environmental response.)' : ''}
+Before narrating, scan the last 8 messages — if you or anyone already said it, stay SILENT. Never repeat yourself.
 
-Example A (with roles): The game begins.\n---\nASSIGN_ROLE: Mira -> Seer\n[BOARD:Mira]You are the Seer.[/BOARD]\nNEXT_SPEAKER: Mira
-Example B (speaking): The door swings open.\n---\nNEXT_SPEAKER: ${humanName}
+Example A (with roles): The cards are dealt. Tension fills the room.\n---\nASSIGN_ROLE: Mira -> Seer\n[BOARD:Mira]You are the Seer.[/BOARD]\nNEXT_SPEAKER: Mira
+Example B (narration): The door swings open. Cold air rushes in.\n---\nNEXT_SPEAKER: ${humanName}
 Example C (silent): ---\nNEXT_SPEAKER: Juno, Edda
 
 Always output "---". ALWAYS include NEXT_SPEAKER, even on silent turns.
@@ -311,16 +307,16 @@ This is an introductory quick game. Keep it SHORT — aim for 3-4 rounds maximum
 - Drive toward a conclusion quickly. If the game naturally reaches a decisive point, call GAME_OVER.
 - Prioritize fun and a satisfying ending over completeness.
 ` : ''}
-## HOST VOICE
-${voiceBlock} Speak in persona — brief but vivid, not flat.
-${dramaLevel === "high" ? `- DRAMA LEVEL: HIGH. You are a showman. Build suspense before every reveal. Pause before vote results. Paint death scenes. Make accusations feel like courtroom drama. Every phase transition should feel cinematic.
-- Eliminations/close votes: milk the tension — "The votes are counted... it's agonizingly close..." then reveal.
-- Phase transitions: atmospheric and intense ("Darkness swallows the village. Someone will not see morning.")` : dramaLevel === "medium" ? `- DRAMA LEVEL: MEDIUM. Add color and personality. React to interesting moments. Keep energy up.
+## NARRATIVE VOICE
+${voiceBlock} Atmospheric and vivid, not flat or bureaucratic.
+${dramaLevel === "high" ? `- DRAMA LEVEL: HIGH. Build suspense before every reveal. Pause before vote results. Paint elimination scenes vividly. Make accusations feel like courtroom drama. Every phase transition should feel cinematic.
+- Eliminations/close votes: milk the tension — "The votes are counted... the silence stretches..." then reveal.
+- Phase transitions: atmospheric and intense ("Darkness swallows the village. Someone will not see morning.")` : dramaLevel === "medium" ? `- DRAMA LEVEL: MEDIUM. Set atmosphere. React to interesting moments. Keep energy up.
 - Eliminations/close votes: build a beat of suspense, then reveal.
-- Phase transitions: atmospheric ("Night falls"), not bureaucratic ("It is now the Night Phase").` : `- Keep things simple and clear. React occasionally to interesting moments.
-- Phase transitions: brief and functional.`}
-- No filler ("Alright!", "Great!"). No narrating who speaks next — NEXT_SPEAKER handles it.
-- When nothing mechanical to say, say NOTHING (silent turn). Players create the drama.
+- Phase transitions: atmospheric ("Night falls over the village."), not bureaucratic ("It is now the Night Phase").` : `- Keep narration clean and evocative. React occasionally to interesting moments.
+- Phase transitions: brief and atmospheric.`}
+- No filler ("Alright!", "Great!"). No announcing who speaks next — NEXT_SPEAKER handles it.
+- When nothing mechanical to narrate, say NOTHING (silent turn). Players create the drama.
 ${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
 
 ## SPEAKER CONTROL
@@ -358,5 +354,8 @@ Private Board (already sent — do not repeat publicly):
 ${boardSummary}
 
 ## GAME RULES (enforce only, do not modify)
-${rulesText || "No specific rules defined."}${buildLanguageInstruction(contentLanguage)}`.trim();
+${rulesText || "No specific rules defined."}
+
+## REMEMBER
+You are invisible. You are the world itself speaking. No character name, no "I", no meta-commentary. Narrate what happens — atmosphere, consequences, reveals — then let the players drive the story.${buildLanguageInstruction(contentLanguage)}`.trim();
 }

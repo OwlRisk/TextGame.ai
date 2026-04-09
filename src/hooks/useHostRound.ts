@@ -207,8 +207,8 @@ export function useHostRound({
               })
               .join("\n");
 
-      const gmName = currentGame?.config?.generatedHost?.name || "Game Master";
-      const gmColor = currentGame?.config?.generatedHost?.color || getTemplateHexColor(currentGame?.config?.template || "custom");
+      const gmName = "Narrator";
+      const gmColor = "#52525b";
 
       const channelPermsForAiOnly = channelPermissions[channelId];
       const freshPlayers = playersRef.current;
@@ -270,8 +270,6 @@ export function useHostRound({
       const recentNonHostTurns = channelMessages
         .slice(-12)
         .filter((m) => !m.isSystemMessage && m.senderName !== gmName).length;
-
-      const generatedHost = currentGame?.config?.generatedHost as { name?: string; personality?: string; systemPrompt?: string } | undefined;
 
       const sceneId = (currentGame?.config as unknown as Record<string, unknown> | undefined)?.sceneId as string | undefined;
 
@@ -335,9 +333,9 @@ export function useHostRound({
           eventLogSummary: freshEvents,
           boardSummary: freshBoard.length > 0 ? freshBoard.join("\n\n") : "(No private board content yet)",
           rulesText,
-          hostName: generatedHost?.name ?? "Game Master",
-          hostPersonality: generatedHost?.personality ?? undefined,
-          hostCustomSystemPrompt: generatedHost?.systemPrompt ?? undefined,
+          hostName: undefined,
+          hostPersonality: undefined,
+          hostCustomSystemPrompt: undefined,
           recentNonHostTurns,
           quickGame: (() => { try { return !localStorage.getItem("tg_game_completed"); } catch { return false; } })(),
           roundNumber,

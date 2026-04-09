@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Play, Plus, X, Sparkles, Users, Crown, Bot, User, Volume2, Square, Loader2 } from "lucide-react";
+import { Play, Plus, X, Sparkles, Users, Bot, User, Volume2, Square, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import type { Player } from "@/types/player";
@@ -39,8 +39,6 @@ export function LobbyView({
   const [startingGame, setStartingGame] = useState(false);
   const isStarting = startingGame || autoStarting;
 
-  const isScene = gameTemplate === "scene";
-  const host = isScene ? null : players.find((p) => p.isGameMaster);
   const nonHost = players.filter((p) => !p.isGameMaster);
   const aiCount = nonHost.filter((p) => p.isAI).length;
   const humanCount = nonHost.filter((p) => !p.isAI).length;
@@ -76,31 +74,6 @@ export function LobbyView({
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-6 space-y-6">
-          {/* Host card */}
-          {host && (
-            <div className="rounded-xl border border-violet-800/30 bg-violet-950/20 p-4 flex items-center gap-4">
-              <GeneratedAvatar
-                name={host.name}
-                type="host"
-                gameId={gameId}
-                role={host.role}
-                background={host.background}
-                personality={host.personality}
-                gender={host.gender}
-                initialUrl={avatarImageUrls?.[`${host.name}|host`]}
-                onAvatarLoaded={onAvatarUrlLoaded}
-                className="h-12 w-12 rounded-full ring-2 ring-violet-500/40"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white truncate">{host.name}</span>
-                  <Crown className="h-3.5 w-3.5 text-violet-400 flex-shrink-0" />
-                </div>
-                <p className="text-xs text-zinc-400 mt-0.5 truncate">{host.background || "Game Host"}</p>
-              </div>
-            </div>
-          )}
-
           {/* Player grid */}
           <div>
             <h2 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">

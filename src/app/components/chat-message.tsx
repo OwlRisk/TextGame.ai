@@ -246,15 +246,13 @@ export const ChatMessage = React.memo(function ChatMessage({
   }
 
   // ─── Regular message ──────────────────────────────────────────────────
-  const alwaysResolvePlayer = showAvatar || gameTemplate === "scene";
-  const messagePlayer = alwaysResolvePlayer ? players.find(
+  const messagePlayer = players.find(
     p => p.id === message.senderId || (message.isAI && p.name === message.senderName)
-  ) : null;
+  ) ?? null;
   const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
-  const isSceneNarrator = isHost && gameTemplate === "scene";
 
-  // Scene narrator: render as atmospheric italic narration without avatar/name
-  if (isSceneNarrator) {
+  // Narrator: render all host/GM messages as atmospheric narration without avatar/name
+  if (isHost) {
     const cleanSynced = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(syncedContent)));
     const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
     const displayText = cleanSynced.trim() ? cleanSynced : cleanRaw;
@@ -348,9 +346,7 @@ export const ChatMessage = React.memo(function ChatMessage({
     ) : body;
   })();
 
-  const hostStyle = isHost
-    ? "leading-[1.65] rounded-r-lg border-l-2 border-amber-500/40 bg-amber-500/5 backdrop-blur-sm pl-3 py-1 -ml-0.5"
-    : "leading-relaxed";
+  const hostStyle = "leading-relaxed";
 
   // Random delays per emoji — seeded by message id + emoji so they're stable across re-renders
   const reactionDelays = useMemo(() => {
@@ -422,17 +418,12 @@ export const ChatMessage = React.memo(function ChatMessage({
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 mb-2">
                 <span
                   className={`font-semibold text-[15px] shrink-0 ${
-                    isHost ? "text-amber-300" : message.senderId === userId ? "text-blue-200" : "text-white"
+                    message.senderId === userId ? "text-blue-200" : "text-white"
                   }`}
                 >
                   {message.senderName}
                 </span>
-                {isHost && (
-                  <span className="inline-flex items-center justify-center leading-none min-h-[20px] px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full shrink-0 text-[10px] font-bold text-white uppercase tracking-wide shadow-sm">
-                    HOST
-                  </span>
-                )}
-                {message.senderId === userId && !isHost && (
+                {message.senderId === userId && (
                   <span className="inline-flex items-center justify-center leading-none min-h-[20px] px-2 py-0.5 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full shrink-0 text-[10px] font-bold text-white uppercase tracking-wide shadow-sm">
                     YOU
                   </span>
