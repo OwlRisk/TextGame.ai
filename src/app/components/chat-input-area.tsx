@@ -9,6 +9,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import type { Player } from "@/types/player";
 import type { GameAction } from "@/hooks/useGameActions";
 import { InterrogationBudget } from "@/app/components/interrogation-budget";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 export interface ChatInputAreaProps {
   channelName: string;
@@ -236,13 +237,13 @@ export const ChatInputArea = React.memo(function ChatInputArea({
       {canSend && !isEliminated && isGameActive && currentSpeakerId === userId && gameTemplate !== "scene" && (
         <div className="mb-3 text-sm font-medium text-emerald-300 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          {typeof navigator !== "undefined" && navigator.language?.startsWith("zh") ? "轮到你发言" : "It\u2019s your turn to speak"}
+          {t("turn.yours", getBrowserLanguage())}
         </div>
       )}
       {isRoundInProgress && !isEliminated && isGameActive && (
         <div className="mb-3 text-xs text-violet-400 flex items-center gap-1.5">
           <span className="inline-block w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-          AI players are responding — you can type ahead
+          {t("status.ai_responding", getBrowserLanguage())}
         </div>
       )}
       {lastFailedSendContent && onRetryLastMessage && (
@@ -512,9 +513,9 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               }
             }}
             placeholder={(() => {
-              const zh = typeof navigator !== "undefined" && navigator.language?.startsWith("zh");
-              if (isRoundInProgress) return gameTemplate === "scene" ? (zh ? "队友正在交谈…" : "Your crew is talking…") : (zh ? "AI 正在回复…" : "AI replying…");
-              if (gameTemplate === "scene") return inputMode === "do" ? (zh ? "你要做什么？" : "What do you do?") : (zh ? "说点什么…" : "Say something…");
+              const lang = getBrowserLanguage();
+              if (isRoundInProgress) return gameTemplate === "scene" ? t("placeholder.crew_talking", lang) : t("placeholder.ai_replying", lang);
+              if (gameTemplate === "scene") return inputMode === "do" ? t("placeholder.do", lang) : t("placeholder.say", lang);
               return `Message #${channelName}`;
             })()}
             className={`min-h-0 bg-zinc-800/80 backdrop-blur-sm border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors ${

@@ -23,6 +23,7 @@ import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getGameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
 import { isSceneMode } from "@/lib/scenes";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 import { safeMarked } from "@/lib/safe-marked";
 import { trackEvent } from "@/lib/analytics";
 import { EvidenceBoard } from "@/app/components/evidence-board";
@@ -506,7 +507,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <div className="h-8 w-8 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
               <p className="text-sm text-zinc-400">
-                {isScene ? "Setting the scene…" : "Preparing the game…"}
+                {isScene ? t("status.setting_scene", getBrowserLanguage()) : t("status.preparing_game", getBrowserLanguage())}
               </p>
             </div>
           ) : (

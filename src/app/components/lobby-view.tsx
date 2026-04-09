@@ -6,6 +6,7 @@ import { Button } from "@/app/components/ui/button";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import type { Player } from "@/types/player";
 import { cn } from "@/app/components/ui/utils";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 interface LobbyViewProps {
   gameName: string;
@@ -157,7 +158,7 @@ export function LobbyView({
             <div className="text-sm text-zinc-300 flex items-center gap-2">
               <div className="h-4 w-4 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
               <Sparkles className="h-4 w-4 text-violet-400" />
-              Preparing the game…
+              {t("status.preparing_game", getBrowserLanguage())}
             </div>
           ) : (
             <>
