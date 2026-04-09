@@ -2,6 +2,7 @@
 
 import { SCENES } from "@/lib/scenes";
 import type { Scene } from "@/lib/scenes/types";
+import { t } from "@/lib/i18n";
 
 const GENRE_LABELS: Record<string, string> = {
   adventure: "Adventure",
@@ -42,11 +43,11 @@ function SceneCard({ scene, onClick, disabled }: { scene: Scene; onClick: () => 
             </div>
           ))}
           <div className="w-7 h-7 rounded-full bg-white/30 border-2 border-white/40 flex items-center justify-center text-[10px] font-bold text-white">
-            You
+            {t("label.you")}
           </div>
         </div>
         <span className="text-xs text-white/50 group-hover:text-white/80 transition-colors">
-          Tap to start &rarr;
+          {t("scene.tap_to_start")}
         </span>
       </div>
     </button>
@@ -65,7 +66,7 @@ export function SceneSelectView({ onSelectScene, onGoToCreate, isCreating }: Sce
       <div className="w-full max-w-3xl">
         <div className="text-center mb-8 md:mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-            Pick an adventure
+            {t("scene.pick_adventure")}
           </h1>
           <p className="text-zinc-400 text-base md:text-lg">
             Your crew is ready. Where are you going tonight?

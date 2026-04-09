@@ -189,13 +189,13 @@ export const ChatInputArea = React.memo(function ChatInputArea({
       {isEliminated && !isInAfterlife && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800/80 border border-zinc-600/40 text-zinc-400">
           <span className="text-lg">👁️</span>
-          <span className="text-sm font-medium">You&apos;ve been eliminated — watching as spectator. Switch to Afterlife to chat with other ghosts.</span>
+          <span className="text-sm font-medium">{t("eliminated.watching")}</span>
         </div>
       )}
       {isEliminated && isInAfterlife && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-violet-900/30 border border-violet-500/30 text-violet-300">
           <span className="text-lg">👻</span>
-          <span className="text-sm font-medium">Ghost chat — only eliminated players can see this</span>
+          <span className="text-sm font-medium">{t("eliminated.ghost_chat")}</span>
         </div>
       )}
       {gameTemplate === "script-kill" && phaseLabel && isGameActive && !isEliminated && (
@@ -248,14 +248,14 @@ export const ChatInputArea = React.memo(function ChatInputArea({
       )}
       {lastFailedSendContent && onRetryLastMessage && (
         <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
-          <span className="text-xs text-red-300">Send failed. Try again?</span>
+          <span className="text-xs text-red-300">{t("btn.send_failed")}</span>
           <Button
             size="sm"
             variant="outline"
             className="h-7 px-3 border-red-500/50 text-red-300 hover:bg-red-500/20"
             onClick={onRetryLastMessage}
           >
-            Retry
+            {t("btn.retry")}
           </Button>
         </div>
       )}

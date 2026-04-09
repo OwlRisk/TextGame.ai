@@ -15,7 +15,7 @@ import { getMysteryCase } from "@/data/mystery-cases";
 import { buildSuspectPrompt, buildInitialEvidenceBoard } from "@/lib/suspect-prompt-builder";
 import { getScene, isSceneMode } from "@/lib/scenes";
 import { extractPreferredName, detectBrowserLanguage } from "@/lib/content-language";
-import { t } from "@/lib/i18n";
+import { t, setAppLanguage } from "@/lib/i18n";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string): string {
   if (!tmpl) return `**Your Role: ${role}**`;
@@ -609,9 +609,11 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       .then((prefs: Record<string, unknown>) => {
         if (typeof prefs.content_language === "string" && prefs.content_language) {
           setContentLanguage(prefs.content_language);
+          setAppLanguage(prefs.content_language);
         } else {
           const detected = detectBrowserLanguage();
           setContentLanguage(detected);
+          setAppLanguage(detected);
           fetch("/api/user/settings", {
             method: "PUT",
             headers,

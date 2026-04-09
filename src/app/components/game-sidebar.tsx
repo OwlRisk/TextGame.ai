@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -122,7 +123,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              Home
+              {t("nav.home")}
             </TooltipContent>
           </Tooltip>
 
@@ -139,7 +140,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                 }`}
                 asChild
               >
-                <Link href="/my-games" prefetch aria-label="My Games" onClick={() => { onSelectGame("my-games"); onNavigate?.(); }}>
+                <Link href="/my-games" prefetch aria-label={t("nav.my_games")} onClick={() => { onSelectGame("my-games"); onNavigate?.(); }}>
                   <Gamepad2 className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "my-games" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
@@ -148,7 +149,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              My Stories
+              {t("nav.my_games")}
             </TooltipContent>
           </Tooltip>
 
@@ -165,7 +166,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                 }`}
                 asChild
               >
-                <Link href="/discover" prefetch aria-label="Discover" onClick={() => { onSelectGame("discover"); onNavigate?.(); }}>
+                <Link href="/discover" prefetch aria-label={t("nav.discover")} onClick={() => { onSelectGame("discover"); onNavigate?.(); }}>
                   <Compass className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "discover" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
@@ -174,7 +175,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              Discover
+              {t("nav.discover")}
             </TooltipContent>
           </Tooltip>
 
@@ -189,10 +190,10 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                     ? "bg-green-600 rounded-xl shadow-lg shadow-green-500/50 hover:!bg-green-600"
                     : "bg-green-600 hover:!bg-green-500 hover:rounded-xl"
                 }`}
-                aria-label="Create Game"
+                aria-label={t("nav.create_game")}
                 asChild
               >
-                <Link href="/create" prefetch aria-label="Create" onClick={() => { trackEvent("cta_click", { label: "create_game", source: "sidebar" }); onSelectGame("create"); onNavigate?.(); }}>
+                <Link href="/create" prefetch aria-label={t("nav.create_game")} onClick={() => { trackEvent("cta_click", { label: "create_game", source: "sidebar" }); onSelectGame("create"); onNavigate?.(); }}>
                   <Plus className="h-7 w-7 text-white" aria-hidden="true" />
                   {selectedGameId === "create" && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
@@ -201,7 +202,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              Create Game
+              {t("nav.create_game")}
             </TooltipContent>
           </Tooltip>
 
@@ -367,7 +368,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Sign In"
+                  aria-label={t("nav.sign_in")}
                   className="!h-12 !w-12 !p-0 rounded-full bg-zinc-800 hover:!bg-violet-600 transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/30"
                   onClick={() => { trackEvent("cta_click", { label: "sign_in", source: "sidebar" }); router.push('/signin'); }}
                 >
@@ -375,7 +376,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-                Sign In
+                {t("nav.sign_in")}
               </TooltipContent>
             </Tooltip>
           )}

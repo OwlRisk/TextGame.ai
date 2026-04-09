@@ -367,16 +367,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           {gamesLoading ? (
             <>
               <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-violet-500 border-t-transparent mb-4" aria-hidden />
-              <p className="text-zinc-400">Loading game…</p>
+              <p className="text-zinc-400">{t("status.loading_game")}</p>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold mb-4">Game not found</h1>
-              <p className="text-zinc-400 text-sm mb-6">This game may have been deleted or the link is invalid.</p>
+              <h1 className="text-2xl font-bold mb-4">{t("game.not_found")}</h1>
+              <p className="text-zinc-400 text-sm mb-6">{t("game.not_found_desc")}</p>
               <div className="flex flex-wrap gap-3 justify-center">
-                <button onClick={() => router.push("/discover")} className="px-4 py-2 bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">Explore Games</button>
-                <button onClick={() => router.push("/my-games")} className="px-4 py-2 bg-zinc-700 rounded-lg hover:bg-zinc-600 transition-colors">My Games</button>
-                <button onClick={() => router.push("/")} className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">Home</button>
+                <button onClick={() => router.push("/discover")} className="px-4 py-2 bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">{t("nav.discover")}</button>
+                <button onClick={() => router.push("/my-games")} className="px-4 py-2 bg-zinc-700 rounded-lg hover:bg-zinc-600 transition-colors">{t("nav.my_games")}</button>
+                <button onClick={() => router.push("/")} className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">{t("nav.home")}</button>
               </div>
             </>
           )}
@@ -456,7 +456,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       <ErrorBoundary>
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {isRoomLoading && (
-          <div className="flex-shrink-0 px-4 py-1.5 bg-violet-950/40 border-b border-violet-800/30 text-center text-xs text-violet-300">Loading room from cloud…</div>
+          <div className="flex-shrink-0 px-4 py-1.5 bg-violet-950/40 border-b border-violet-800/30 text-center text-xs text-violet-300">{t("status.loading_room")}</div>
         )}
         {selectedChannelId === RULES_CHANNEL_ID ? (
           <ScrollArea className="flex-1 min-h-0">
@@ -496,8 +496,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 )
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
-                  <p className="text-sm font-medium">Nothing here yet.</p>
-                  <p className="text-xs mt-1">The Game Master will update your board as the game progresses.</p>
+                  <p className="text-sm font-medium">{t("game.nothing_here")}</p>
+                  <p className="text-xs mt-1">{t("game.board_hint")}</p>
                 </div>
               )}
             </div>

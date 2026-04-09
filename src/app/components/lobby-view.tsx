@@ -66,9 +66,9 @@ export function LobbyView({
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <span className="flex items-center gap-1"><Bot className="h-3.5 w-3.5" />{aiCount} AI</span>
+            <span className="flex items-center gap-1"><Bot className="h-3.5 w-3.5" />{aiCount} {t("label.ai")}</span>
             <span className="text-zinc-700">·</span>
-            <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" />{humanCount} Human</span>
+            <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" />{humanCount}</span>
           </div>
         </div>
       </div>
@@ -108,10 +108,10 @@ export function LobbyView({
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-medium text-white truncate">{player.name}</span>
                       {!player.isAI && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-900/50 text-emerald-400 font-medium flex-shrink-0">YOU</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-900/50 text-emerald-400 font-medium flex-shrink-0">{t("label.you")}</span>
                       )}
                       {player.isAI && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-500 font-medium flex-shrink-0">AI</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-500 font-medium flex-shrink-0">{t("label.ai")}</span>
                       )}
                     </div>
                     {player.personality && (
@@ -143,7 +143,7 @@ export function LobbyView({
                   className="rounded-xl border-2 border-dashed border-zinc-700 hover:border-zinc-500 p-4 flex items-center justify-center gap-2 transition-colors text-zinc-500 hover:text-zinc-300 min-h-[4.5rem]"
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="text-sm font-medium">Add Character</span>
+                  <span className="text-sm font-medium">{t("btn.add_character")}</span>
                 </button>
               )}
             </div>

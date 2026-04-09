@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { Player } from "@/types/player";
 import { getGameTemplate } from "@/lib/game-templates";
 import type { QuickAction } from "@/lib/templates/types";
+import { tAction } from "@/lib/i18n";
 
 export interface GameAction {
   label: string;
@@ -120,7 +121,7 @@ export function useGameActions({
     const actions: GameAction[] = sourceActions
       .filter((qa) => matchesPhase(qa, phase) && matchesRole(qa, roleLower))
       .map((qa) => ({
-        label: qa.label,
+        label: tAction(qa.label),
         template: qa.template,
         needsTarget: qa.needsTarget,
         icon: qa.icon,
@@ -131,11 +132,11 @@ export function useGameActions({
     if (actions.length === 0) {
       if (gameTemplate === "scene") {
         const sceneActions = getSceneQuickActions(phase);
-        actions.push(...sceneActions);
+        actions.push(...sceneActions.map(a => ({ ...a, label: tAction(a.label) })));
       } else {
         actions.push(
-          { label: "Respond", template: "@{player} ", needsTarget: true, icon: "💬", actionType: "social" },
-          { label: "React", template: "That's ", icon: "😮", actionType: "social" },
+          { label: tAction("Respond"), template: "@{player} ", needsTarget: true, icon: "💬", actionType: "social" },
+          { label: tAction("React"), template: "That's ", icon: "😮", actionType: "social" },
         );
       }
     }

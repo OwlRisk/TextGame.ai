@@ -1,5 +1,6 @@
 import { Hash, Users, Lock, Trash2, Link2, BookOpen, FileText, Package } from "lucide-react";
 import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
+import { t } from "@/lib/i18n";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
@@ -134,7 +135,7 @@ export function ChannelList({
                   onClick={() => onSelectChannel("__rules__")}
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
-                  <span className="text-sm">Rules</span>
+                  <span className="text-sm">{t("label.rules")}</span>
                 </Button>
               )}
               {hasMyBoard && (
@@ -159,7 +160,7 @@ export function ChannelList({
                 return textChannels.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between px-3 mb-2">
-                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sections</span>
+                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{t("label.sections")}</span>
                   </div>
                   {textChannels.map((channel) => (
                     <ContextMenu key={channel.id}>
@@ -279,7 +280,7 @@ export function ChannelList({
             <Separator className="my-3 bg-zinc-700/50" />
             <div>
               <div className="flex items-center justify-between px-3 mb-2">
-                <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Players Online</span>
+                <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{t("label.players")}</span>
                 <span className="text-xs text-zinc-500">{roomMembers.length}</span>
               </div>
               {roomMembers.map((m) => {

@@ -8,6 +8,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import type { Player } from "@/types/player";
 import { stripPrivateNotes } from "@/lib/chat-utils";
+import { t } from "@/lib/i18n";
 import { ChatInputArea } from "@/app/components/chat-input-area";
 import { GameOverBanner } from "@/app/components/game-over-banner";
 import { TypingIndicator } from "@/app/components/typing-indicator";
@@ -409,21 +410,21 @@ export function ChatArea({
         <div className="py-6 space-y-5" aria-live="polite" aria-relevant="additions">
           {hasMoreOlder && (
             <div ref={loadMoreSentinelRef} className="flex justify-center py-3" role="status" aria-label="Loading older messages">
-              <span className="text-xs text-zinc-500">Pull up for older messages</span>
+              <span className="text-xs text-zinc-500">{t("chat.pull_older")}</span>
             </div>
           )}
           {messages.length === 0 && !isRoundInProgress && (
             <div className="flex flex-col items-center justify-center py-20 text-center select-none">
               <div className="text-4xl mb-4 opacity-40">💬</div>
-              <p className="text-zinc-500 text-sm font-medium">No messages yet</p>
-              <p className="text-zinc-600 text-xs mt-1">Start the conversation!</p>
+              <p className="text-zinc-500 text-sm font-medium">{t("chat.no_messages")}</p>
+              <p className="text-zinc-600 text-xs mt-1">{t("chat.start_conversation")}</p>
             </div>
           )}
           {messages.length === 0 && isRoundInProgress && (
             <div className="flex flex-col items-center justify-center py-20 text-center select-none">
               <div className="flex items-center gap-2 text-zinc-500 text-sm">
                 <span className="h-3.5 w-3.5 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin flex-shrink-0" />
-                Game is starting…
+                {t("status.game_starting")}
               </div>
             </div>
           )}

@@ -11,6 +11,7 @@ import { getGames } from "@/lib/db";
 import Link from "next/link";
 import { toast } from "sonner";
 import { SUPPORTED_LANGUAGES, detectBrowserLanguage } from "@/lib/content-language";
+import { setAppLanguage, t } from "@/lib/i18n";
 
 interface UserProfileProps {
   onClose: () => void;
@@ -54,6 +55,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
 
   const handleLanguageChange = (lang: string) => {
     setContentLanguage(lang);
+    setAppLanguage(lang);
     fetch("/api/user/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

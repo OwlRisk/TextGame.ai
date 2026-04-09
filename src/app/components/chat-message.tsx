@@ -10,6 +10,7 @@ import { formatMessageTime, stripEmotionTags, stripPrivateNotes } from "@/lib/ch
 import { parseInlineFormatting, type InlineFormattingOptions } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/types/player";
+import { t } from "@/lib/i18n";
 
 // ─── Cursor injection ─────────────────────────────────────────────────────
 /** Append a trailing node (blinking cursor) inside the last line of formatted content. */
@@ -230,7 +231,7 @@ export const ChatMessage = React.memo(function ChatMessage({
             <div className="flex items-center gap-2 mb-2">
               <span className="font-semibold text-sm text-violet-300">{message.senderName}</span>
               <span className="inline-flex items-center justify-center leading-none min-h-[18px] px-2 py-0.5 bg-violet-500/30 border border-violet-400/40 rounded shrink-0 text-[10px] font-bold text-violet-200 uppercase tracking-wide">
-                Private
+                {t("label.private")}
               </span>
               <span className="text-[11px] text-violet-400/60 ml-auto shrink-0">
                 {formatMessageTime(message.timestamp)}
@@ -425,7 +426,7 @@ export const ChatMessage = React.memo(function ChatMessage({
                 </span>
                 {message.senderId === userId && (
                   <span className="inline-flex items-center justify-center leading-none min-h-[20px] px-2 py-0.5 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full shrink-0 text-[10px] font-bold text-white uppercase tracking-wide shadow-sm">
-                    YOU
+                    {t("label.you")}
                   </span>
                 )}
                 <span className="text-xs text-zinc-500 shrink-0" aria-hidden="true">
@@ -564,7 +565,7 @@ function MessageAvatar({
       <Avatar className="h-11 w-11 border-2 border-violet-500/20">
         <AvatarImage src={userAvatarUrl} alt="You" className="object-cover" />
         <AvatarFallback className="bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xs font-semibold">
-          YOU
+          {t("label.you")}
         </AvatarFallback>
       </Avatar>
     );

@@ -16,6 +16,7 @@ import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avat
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { isPlayerEliminated, resolveYouBadge, OnlineBadge } from "@/lib/player-badges";
+import { t } from "@/lib/i18n";
 
 export interface GuestEntry {
   id: string;
@@ -95,7 +96,7 @@ export function PlayerPanelWithBoard({
       <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
         <div className="flex items-center gap-2 text-zinc-300">
           <User className="h-4 w-4" />
-          <span className="text-sm font-semibold">Players</span>
+          <span className="text-sm font-semibold">{t("label.players")}</span>
           <span className="text-xs text-zinc-500">({players.filter(p => !p.isGameMaster).length + guestMembers.length})</span>
         </div>
       </div>
@@ -248,7 +249,7 @@ const PlayerCard = memo(function PlayerCard({
                   )}
                   {resolveYouBadge(player, currentUserId) && (
                     <Badge className="inline-flex items-center justify-center leading-none bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wide shadow-sm rounded-md">
-                      YOU
+                      {t("label.you")}
                     </Badge>
                   )}
                   {boundGuest && (
@@ -411,7 +412,7 @@ const GuestCard = memo(function GuestCard({ guest }: { guest: GuestEntry }) {
               {guest.playerRole ? ` · ${guest.playerRole}` : ""}
             </div>
           ) : (
-            <div className="text-xs text-zinc-500 mt-0.5">Spectator</div>
+            <div className="text-xs text-zinc-500 mt-0.5">{t("label.spectator")}</div>
           )}
         </div>
       </div>

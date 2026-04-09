@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Users, Clock, Play, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { t } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
@@ -112,7 +113,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               {parseInt(template.players) > 1 && (
                 <>
                   <span className="text-zinc-700">·</span>
-                  <span className="text-emerald-500 font-semibold">Multiplayer</span>
+                  <span className="text-emerald-500 font-semibold">{t("discover.multiplayer")}</span>
                 </>
               )}
             </div>
@@ -149,7 +150,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
-            Discover <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Games</span>
+            {t("discover.title")} <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">{t("discover.games")}</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-5">
             AI-powered game templates. Pick one and start playing in seconds.
@@ -183,7 +184,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               id="discover-search"
               name="discover-search"
               type="text"
-              placeholder="Search games..."
+              placeholder={t("discover.search")}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-base sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500/60 transition-colors"
@@ -199,7 +200,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         ) : (
           <div className="text-center py-20 text-zinc-500">
             <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="text-lg font-semibold">No games found</p>
+            <p className="text-lg font-semibold">{t("discover.no_results")}</p>
             <p className="text-sm mt-1">Try a different keyword or category</p>
           </div>
         )}
