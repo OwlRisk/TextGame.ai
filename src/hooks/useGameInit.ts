@@ -325,12 +325,19 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       const tmplMeta = getGameTemplate(kickoff.gameTemplate || "custom");
       const isSoloGame = tmplMeta?.maxPlayers === 1;
       const playerCount = playersRef.current.filter((p) => !p.isGameMaster).length;
+      const isChinese = contentLanguage.startsWith("zh");
       if (isSoloGame) {
-        hostGreeting = `Welcome! I'm your host for this session. Just type your response below when it's your turn — you can also tap a suggested reply if you're not sure what to say. Let's begin!`;
+        hostGreeting = isChinese
+          ? `欢迎！轮到你时在下方输入回复，也可以点击快捷按钮快速回应。开始吧！`
+          : `Welcome! Just type your response below when it's your turn — you can also tap a suggested reply. Let's begin!`;
       } else if (tmplMeta?.hasHiddenRoles) {
-        hostGreeting = `Welcome, ${playerCount} players! Roles have been secretly assigned — check **"My Board"** on the left for your identity.\n\nWhen it's your turn, type your response below or tap a suggested reply. Night falls...`;
+        hostGreeting = isChinese
+          ? `欢迎，${playerCount} 位玩家！角色已秘密分配——点击左侧 **"My Board"** 查看你的身份。\n\n轮到你时，在下方输入回复或点击快捷按钮。夜幕降临……`
+          : `Welcome, ${playerCount} players! Roles have been secretly assigned — check **"My Board"** on the left for your identity.\n\nWhen it's your turn, type your response below or tap a suggested reply. Night falls...`;
       } else {
-        hostGreeting = `Welcome! The game begins now with ${playerCount} players. When you see **"It's your turn"**, type your response below — or tap a suggested reply to jump right in. Let's go!`;
+        hostGreeting = isChinese
+          ? `欢迎！游戏开始，共 ${playerCount} 位玩家。看到 **"轮到你发言"** 时，在下方输入回复或点击快捷按钮。开始吧！`
+          : `Welcome! The game begins now with ${playerCount} players. When you see **"It's your turn"**, type your response below — or tap a suggested reply to jump right in. Let's go!`;
       }
     }
     const greetingId = `start-greeting-${gameId}-${Date.now()}`;

@@ -236,7 +236,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
       {canSend && !isEliminated && isGameActive && currentSpeakerId === userId && gameTemplate !== "scene" && (
         <div className="mb-3 text-sm font-medium text-emerald-300 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          It&apos;s your turn to speak
+          {typeof navigator !== "undefined" && navigator.language?.startsWith("zh") ? "轮到你发言" : "It\u2019s your turn to speak"}
         </div>
       )}
       {isRoundInProgress && !isEliminated && isGameActive && (
@@ -511,11 +511,12 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                 if (!sendDisabled) handleSend();
               }
             }}
-            placeholder={isRoundInProgress
-              ? (gameTemplate === "scene" ? "Your crew is talking…" : "Host & AI replying…")
-              : (gameTemplate === "scene"
-                ? (inputMode === "do" ? "What do you do?" : "Say something…")
-                : `Message #${channelName}`)}
+            placeholder={(() => {
+              const zh = typeof navigator !== "undefined" && navigator.language?.startsWith("zh");
+              if (isRoundInProgress) return gameTemplate === "scene" ? (zh ? "队友正在交谈…" : "Your crew is talking…") : (zh ? "AI 正在回复…" : "AI replying…");
+              if (gameTemplate === "scene") return inputMode === "do" ? (zh ? "你要做什么？" : "What do you do?") : (zh ? "说点什么…" : "Say something…");
+              return `Message #${channelName}`;
+            })()}
             className={`min-h-0 bg-zinc-800/80 backdrop-blur-sm border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors ${
               gameTemplate === "scene" && inputMode === "do"
                 ? "border-amber-500/30 focus:border-amber-500/50 focus-visible:ring-amber-500/50 italic text-amber-100"
