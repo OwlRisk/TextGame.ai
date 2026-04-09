@@ -186,8 +186,9 @@ describe('buildSystemPrompt – contentLanguage', () => {
 
   it('adds Chinese language instruction', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game', undefined, undefined, undefined, undefined, undefined, 'zh-CN');
-    expect(prompt).toContain('Respond in Simplified Chinese');
+    expect(prompt).toContain('Simplified Chinese');
     expect(prompt).toContain('LANGUAGE ADAPTATION');
+    expect(prompt).toContain('MUST');
   });
 
   it('adds Japanese language instruction', () => {
@@ -203,7 +204,8 @@ describe('buildSystemPrompt – contentLanguage', () => {
   it('language instruction appears for all template types', () => {
     for (const tmpl of ['werewolf', 'mafia', 'tarot', 'trivia', 'roleplay', undefined]) {
       const prompt = buildSystemPrompt('Zara', tmpl, 'Game', undefined, undefined, undefined, undefined, undefined, 'fr');
-      expect(prompt).toContain('Respond in French');
+      expect(prompt).toContain('French');
+      expect(prompt).toContain('MUST');
     }
   });
 });
@@ -218,7 +220,8 @@ describe('buildSceneCharacterPrompt – contentLanguage', () => {
 
   it('adds Chinese language instruction', () => {
     const prompt = buildSceneCharacterPrompt('Kai', 'museum-heist', 'Brook', undefined, undefined, undefined, undefined, 'zh-CN');
-    expect(prompt).toContain('Respond in Simplified Chinese');
+    expect(prompt).toContain('Simplified Chinese');
+    expect(prompt).toContain('MUST');
   });
 
   it('does not add explicit LANGUAGE rule for English', () => {

@@ -210,14 +210,16 @@ describe("buildLanguageInstruction", () => {
 
   it("adds LANGUAGE rule for Chinese", () => {
     const result = buildLanguageInstruction("zh-CN");
-    expect(result).toContain("Respond in Simplified Chinese");
+    expect(result).toContain("Simplified Chinese");
     expect(result).toContain("简体中文");
+    expect(result).toContain("MUST");
   });
 
   it("adds LANGUAGE rule for Japanese", () => {
     const result = buildLanguageInstruction("ja");
-    expect(result).toContain("Respond in Japanese");
+    expect(result).toContain("Japanese");
     expect(result).toContain("日本語");
+    expect(result).toContain("MUST");
   });
 
   it("adds LANGUAGE rule for Korean", () => {
@@ -249,7 +251,7 @@ describe("buildLanguageInstruction", () => {
 
   it("handles unknown language code gracefully", () => {
     const result = buildLanguageInstruction("xx");
-    expect(result).toContain("Respond in xx");
+    expect(result).toContain("xx");
     expect(result).toContain("LANGUAGE ADAPTATION");
   });
 

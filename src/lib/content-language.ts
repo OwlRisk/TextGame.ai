@@ -111,9 +111,21 @@ export function buildLanguageInstruction(contentLanguage?: string): string {
 
   const initial = isEnglish
     ? ""
-    : `\nLANGUAGE: Respond in ${langName}. ALL narration, dialogue, phase labels (PHASE directive values), announcements (ANNOUNCE text), and spoken content MUST be in ${langName}. Only directive keywords themselves (NEXT_SPEAKER, RECORD_EVENT, etc.) stay in English.`;
+    : `\nLANGUAGE: You MUST respond entirely in ${langName}.
+This applies to ALL player-visible content without exception:
+- Narration and scene descriptions
+- Dialogue and character speech
+- PHASE label values (e.g. PHASE: 第一幕 — 犯罪现场, not "Act 1 — Crime Scene")
+- ANNOUNCE text
+- Evidence descriptions and board content ([BOARD:...])
+- [SECTION:...] titles and content
+- Questions-remaining indicators
+- Character introductions and role descriptions
+- Game-over summaries and scores
+The ONLY English allowed: directive KEYWORDS themselves (NEXT_SPEAKER, ASSIGN_ROLE, PHASE, BOARD, SECTION, GAME_OVER, etc.) and player names.
+Even though the game rules/instructions below are written in English, you must translate ALL output for the player into ${langName}.`;
 
-  const adapt = `\nLANGUAGE ADAPTATION: If the human player writes in a different language, switch to THEIR language immediately and continue in that language. Directive keywords (NEXT_SPEAKER, RECORD_EVENT, PHASE, ASSIGN_ROLE, etc.) always remain in English — but the VALUES of PHASE and ANNOUNCE should be in the player's language.`;
+  const adapt = `\nLANGUAGE ADAPTATION: If the human player writes in a different language, switch to THEIR language immediately and continue in that language. Directive keywords always remain in English — but ALL values and player-visible text must be in the player's language.`;
 
   return `\n${initial}${adapt}`;
 }

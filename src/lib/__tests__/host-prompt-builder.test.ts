@@ -328,13 +328,15 @@ describe("buildHostSystemPrompt", () => {
 
     it("includes Chinese language instruction", () => {
       const output = buildHostSystemPrompt(defaultOpts({ contentLanguage: "zh-CN" }));
-      expect(output).toContain("Respond in Simplified Chinese");
+      expect(output).toContain("Simplified Chinese");
       expect(output).toContain("LANGUAGE ADAPTATION");
+      expect(output).toContain("MUST");
     });
 
     it("includes Japanese language instruction", () => {
       const output = buildHostSystemPrompt(defaultOpts({ contentLanguage: "ja" }));
-      expect(output).toContain("Respond in Japanese");
+      expect(output).toContain("Japanese");
+      expect(output).toContain("MUST");
     });
 
     it("includes Arabic language instruction", () => {
@@ -374,7 +376,8 @@ describe("buildSceneDirectorPrompt — contentLanguage", () => {
 
   it("includes Chinese language instruction when set", () => {
     const output = buildSceneDirectorPrompt(sceneOpts({ contentLanguage: "zh-CN" }));
-    expect(output).toContain("Respond in Simplified Chinese");
+    expect(output).toContain("Simplified Chinese");
+    expect(output).toContain("MUST");
   });
 
   it("does not duplicate language rule for English", () => {

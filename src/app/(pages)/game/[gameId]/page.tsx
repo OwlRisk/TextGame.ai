@@ -463,7 +463,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             <div className="max-w-2xl p-6">
               <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-zinc-700/50">
                 <BookOpen className="h-5 w-5 text-violet-400" />
-                <h2 className="text-lg font-semibold text-white">Rules</h2>
+                <h2 className="text-lg font-semibold text-white">{t("label.rules")}</h2>
               </div>
               {(currentGame?.config?.rules ?? "").trim() ? (
                 <div
@@ -472,8 +472,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
-                  <p className="text-sm font-medium">No rules defined for this game.</p>
-                  <p className="text-xs mt-1">The Game Master can add rules when creating the game.</p>
+                  <p className="text-sm font-medium">{t("game.no_rules")}</p>
+                  <p className="text-xs mt-1">{t("game.no_rules_hint")}</p>
                 </div>
               )}
             </div>
