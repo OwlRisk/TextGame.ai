@@ -99,6 +99,12 @@ ${playerRoster}
 Event Log:
 ${eventLogSummary || "Adventure just started."}
 
+## PLAYER INPUT FORMAT
+The human player's messages have a tag prefix:
+- [SAY] = the player is speaking out loud to characters (dialogue)
+- [ACTION] = the player is performing a physical action in the world
+React accordingly: [SAY] triggers conversation; [ACTION] triggers environmental consequences, narration of what happens.
+
 ## REMEMBER
 You are invisible. You are the world itself speaking. No character name, no "I", no meta-commentary. Just the story unfolding.${buildLanguageInstruction(contentLanguage)}`.trim();
 }

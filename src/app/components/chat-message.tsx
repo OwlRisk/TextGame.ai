@@ -7,7 +7,7 @@ import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avat
 import { Popover, PopoverTrigger, PopoverContent } from "@/app/components/ui/popover";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { formatMessageTime, stripEmotionTags, stripPrivateNotes } from "@/lib/chat-utils";
-import { parseInlineFormatting } from "@/lib/format-message";
+import { parseInlineFormatting, type InlineFormattingOptions } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/types/player";
 
@@ -44,7 +44,25 @@ export function formatMessage(content: string): React.JSX.Element {
   return result;
 }
 
-function formatMessageUncached(content: string): React.JSX.Element {
+const SCENE_FORMAT_CACHE = new Map<string, React.JSX.Element>();
+
+/** Scene-mode variant: renders *italic* as amber action text to distinguish from speech. */
+export function formatSceneMessage(content: string): React.JSX.Element {
+  const cached = SCENE_FORMAT_CACHE.get(content);
+  if (cached) return cached;
+  const result = formatMessageUncached(content, {
+    sceneActionClassName: "italic text-amber-200/80",
+  });
+  SCENE_FORMAT_CACHE.set(content, result);
+  if (SCENE_FORMAT_CACHE.size > FORMAT_CACHE_MAX) {
+    const first = SCENE_FORMAT_CACHE.keys().next().value;
+    if (first !== undefined) SCENE_FORMAT_CACHE.delete(first);
+  }
+  return result;
+}
+
+function formatMessageUncached(content: string, fmtOpts?: InlineFormattingOptions): React.JSX.Element {
+  const fmt = (text: string) => parseInlineFormatting(text, fmtOpts);
   const lines = content.split('\n');
   const elements: React.JSX.Element[] = [];
 
@@ -60,7 +78,7 @@ function formatMessageUncached(content: string): React.JSX.Element {
       const text = trimmedLine.replace(/^###+\s*/, '');
       elements.push(
         <h3 key={index} className="font-bold text-base text-violet-300 mt-4 mb-2 first:mt-0">
-          {parseInlineFormatting(text)}
+          {fmt(text)}
         </h3>
       );
       return;
@@ -69,7 +87,7 @@ function formatMessageUncached(content: string): React.JSX.Element {
       const text = trimmedLine.replace(/^##+\s*/, '');
       elements.push(
         <h2 key={index} className="font-bold text-lg text-violet-200 mt-4 mb-2 first:mt-0">
-          {parseInlineFormatting(text)}
+          {fmt(text)}
         </h2>
       );
       return;
@@ -78,7 +96,7 @@ function formatMessageUncached(content: string): React.JSX.Element {
       const text = trimmedLine.replace(/^#+\s*/, '');
       elements.push(
         <h1 key={index} className="font-bold text-xl text-violet-100 mt-4 mb-3 first:mt-0">
-          {parseInlineFormatting(text)}
+          {fmt(text)}
         </h1>
       );
       return;
@@ -90,7 +108,7 @@ function formatMessageUncached(content: string): React.JSX.Element {
       elements.push(
         <div key={index} className="flex gap-2.5 mb-1.5">
           <span className="text-violet-400 font-semibold flex-shrink-0 min-w-[20px]">{number}.</span>
-          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
+          <div className="flex-1 min-w-0">{fmt(text)}</div>
         </div>
       );
       return;
@@ -100,7 +118,7 @@ function formatMessageUncached(content: string): React.JSX.Element {
       elements.push(
         <div key={index} className="flex gap-2.5 mb-1.5">
           <span className="text-violet-400 flex-shrink-0 mt-0.5">•</span>
-          <div className="flex-1 min-w-0">{parseInlineFormatting(text)}</div>
+          <div className="flex-1 min-w-0">{fmt(text)}</div>
         </div>
       );
       return;
@@ -108,7 +126,7 @@ function formatMessageUncached(content: string): React.JSX.Element {
 
     elements.push(
       <div key={index} className="mb-1.5 leading-relaxed">
-        {parseInlineFormatting(trimmedLine)}
+        {fmt(trimmedLine)}
       </div>
     );
   });
@@ -246,8 +264,8 @@ export const ChatMessage = React.memo(function ChatMessage({
       : null;
     return (
       <div className="my-4 px-4 py-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-        <div className="text-zinc-300 text-sm italic leading-relaxed [&_strong]:text-zinc-100 [&_em]:text-zinc-200">
-          {formatMessage(displayText)}{narratorCursor}
+        <div className="text-zinc-300 text-sm italic leading-relaxed [&_strong]:text-zinc-100 [&_em]:text-amber-200/80">
+          {formatSceneMessage(displayText)}{narratorCursor}
         </div>
       </div>
     );
@@ -259,12 +277,28 @@ export const ChatMessage = React.memo(function ChatMessage({
 
   const cleanSynced = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(syncedContent)));
   const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
-  const displayText = cleanSynced.trim() || cleanRaw.trim();
+  let displayText = cleanSynced.trim() || cleanRaw.trim();
 
-  const isSceneAction = gameTemplate === "scene" && displayText && /^\*[^*]+\*$/.test(displayText.trim());
+  // Strip [SAY]/[ACTION] prefixes from user messages (used internally for AI context).
+  // Track whether this was an action message for rendering.
+  let isTaggedAction = false;
+  if (gameTemplate === "scene" && displayText) {
+    if (/^\[ACTION\]\s*/i.test(displayText)) {
+      isTaggedAction = true;
+      displayText = displayText.replace(/^\[ACTION\]\s*/i, "");
+    } else if (/^\[SAY\]\s*/i.test(displayText)) {
+      displayText = displayText.replace(/^\[SAY\]\s*/i, "");
+    }
+  }
+
+  const isSceneAction = gameTemplate === "scene" && displayText && (
+    isTaggedAction || /^\*[^*]+\*$/.test(displayText.trim())
+  );
 
   if (isSceneAction && !message.isStreaming) {
-    const actionText = displayText.trim().slice(1, -1);
+    const actionText = isTaggedAction
+      ? displayText.trim()
+      : displayText.trim().slice(1, -1);
     const isMe = message.senderId === userId;
     return (
       <div className={`${showAvatar ? "mt-5" : "mt-2"}`}>
@@ -295,9 +329,10 @@ export const ChatMessage = React.memo(function ChatMessage({
   }
 
   const contentBlock = (() => {
+    const fmt = gameTemplate === "scene" ? formatSceneMessage : formatMessage;
     let formatted: React.ReactNode = null;
-    if (cleanSynced.trim()) formatted = formatMessage(cleanSynced);
-    else if (cleanRaw.trim()) formatted = formatMessage(cleanRaw);
+    if (cleanSynced.trim()) formatted = fmt(cleanSynced);
+    else if (cleanRaw.trim()) formatted = fmt(cleanRaw);
     else if (!message.isAI && !message.imageUrl && !message.isStreaming) formatted = <span className="italic text-zinc-500">(No content)</span>;
 
     const body = cursor ? withCursor(formatted, cursor) : formatted;

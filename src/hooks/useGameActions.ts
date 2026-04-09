@@ -42,21 +42,21 @@ interface UseGameActionsParams {
 export function getSceneQuickActions(phase: string): GameAction[] {
   const say: GameAction[] = [];
   const act: GameAction[] = [
-    { label: "Look around", template: "*looks around carefully*", icon: "👀", inputMode: "do" },
+    { label: "Look around", template: "[ACTION] looks around carefully", icon: "👀", inputMode: "do" },
   ];
 
   if (phase === "social") {
-    say.push({ label: "Ask", template: "Who are you? What do you want?", icon: "❓", inputMode: "say" });
+    say.push({ label: "Ask", template: "[SAY] Who are you? What do you want?", icon: "❓", inputMode: "say" });
   } else {
-    say.push({ label: "Let's go", template: "Let's keep moving. Stay close.", icon: "🚶", inputMode: "say" });
+    say.push({ label: "Let's go", template: "[SAY] Let's keep moving. Stay close.", icon: "🚶", inputMode: "say" });
   }
-  say.push({ label: "Wait", template: "Hold on. Did you hear that?", icon: "✋", inputMode: "say" });
+  say.push({ label: "Wait", template: "[SAY] Hold on. Did you hear that?", icon: "✋", inputMode: "say" });
 
   if (phase === "combat" || phase === "unknown") {
-    act.push({ label: "Run", template: "*backs away and runs*", icon: "🏃", inputMode: "do" });
+    act.push({ label: "Run", template: "[ACTION] backs away and runs", icon: "🏃", inputMode: "do" });
   }
   if (phase === "exploration" || phase === "unknown") {
-    act.push({ label: "Investigate", template: "*moves closer to examine it*", icon: "🔍", inputMode: "do" });
+    act.push({ label: "Investigate", template: "[ACTION] moves closer to examine it", icon: "🔍", inputMode: "do" });
   }
 
   return [...say.slice(0, 2), ...act.slice(0, 2)];

@@ -9,6 +9,8 @@ export interface InlineFormattingOptions {
   strikethroughClassName?: string;
   mentionClassName?: string;
   emotionClassName?: string;
+  /** When set, *italic* text is treated as character actions and rendered with this class instead. */
+  sceneActionClassName?: string;
 }
 
 /**
@@ -52,6 +54,7 @@ export function parseInlineFormatting(
   let currentIndex = 0;
 
   const patterns = [
+    { regex: /\[ACTION\](.*?)\[\/ACTION\]/gi, type: "action" as const },
     { regex: /\*\*(.*?)\*\*/g, type: "bold" as const },
     { regex: /\*(.*?)\*/g, type: "italic" as const },
     { regex: /`(.*?)`/g, type: "code" as const },
@@ -91,15 +94,22 @@ export function parseInlineFormatting(
     if (match.start > currentIndex) {
       parts.push(text.substring(currentIndex, match.start));
     }
-    if (match.type === "bold") {
+    if (match.type === "action") {
+      parts.push(
+        <em key={`a-${i}`} className="italic text-amber-200/80">
+          {match.content}
+        </em>
+      );
+    } else if (match.type === "bold") {
       parts.push(
         <strong key={`b-${i}`} className={opts.boldClassName}>
           {match.content}
         </strong>
       );
     } else if (match.type === "italic") {
+      const cls = opts.sceneActionClassName ?? opts.italicClassName;
       parts.push(
-        <em key={`i-${i}`} className={opts.italicClassName}>
+        <em key={`i-${i}`} className={cls}>
           {match.content}
         </em>
       );

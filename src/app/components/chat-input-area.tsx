@@ -157,8 +157,8 @@ export const ChatInputArea = React.memo(function ChatInputArea({
     if (sendingLockRef.current) return;
     let text = (override ?? input.trim()).trim();
     if (!text) return;
-    if (!override && gameTemplate === "scene" && inputMode === "do" && !text.startsWith("*")) {
-      text = `*${text}*`;
+    if (!override && gameTemplate === "scene") {
+      text = inputMode === "do" ? `[ACTION] ${text}` : `[SAY] ${text}`;
     }
     sendingLockRef.current = true;
     setIsSending(true);
@@ -311,29 +311,55 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           )}
         </div>
       )}
-      {gameTemplate === "scene" && gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && (
-        <div className="mb-2 flex flex-wrap gap-2">
-          {gameActions.map((action) => {
-            const isAction = action.inputMode === "do";
-            return (
-              <button
-                key={action.label}
-                type="button"
-                className={`px-3 py-1.5 text-sm rounded-full border transition-all duration-200 ${
-                  isAction
-                    ? "border-amber-500/40 bg-amber-900/20 hover:bg-amber-600/30 hover:border-amber-400/50 text-amber-200 hover:text-amber-100 italic"
-                    : "border-zinc-600/50 bg-zinc-800/60 hover:bg-violet-600/30 hover:border-violet-500/50 text-zinc-300 hover:text-white"
-                }`}
-                disabled={sendDisabled}
-                onClick={() => onSendMessage(action.template)}
-              >
-                {action.icon && <span className="mr-1.5">{action.icon}</span>}
-                {action.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {gameTemplate === "scene" && gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && (() => {
+        const sayActions = gameActions.filter((a) => a.inputMode !== "do");
+        const doActions = gameActions.filter((a) => a.inputMode === "do");
+        return (
+          <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            {sayActions.length > 0 && (
+              <>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-1 mr-0.5">
+                  <MessageCircle className="h-3 w-3" />Say
+                </span>
+                {sayActions.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    className="px-3 py-1.5 text-sm rounded-full border border-zinc-600/50 bg-zinc-800/60 hover:bg-violet-600/30 hover:border-violet-500/50 text-zinc-300 hover:text-white transition-all duration-200"
+                    disabled={sendDisabled}
+                    onClick={() => onSendMessage(action.template)}
+                  >
+                    {action.icon && <span className="mr-1.5">{action.icon}</span>}
+                    {action.label}
+                  </button>
+                ))}
+              </>
+            )}
+            {sayActions.length > 0 && doActions.length > 0 && (
+              <span className="w-px h-5 bg-zinc-700/60 mx-1" />
+            )}
+            {doActions.length > 0 && (
+              <>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400/70 flex items-center gap-1 mr-0.5">
+                  <Hand className="h-3 w-3" />Act
+                </span>
+                {doActions.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    className="px-3 py-1.5 text-sm rounded-lg border border-amber-500/40 bg-amber-900/20 hover:bg-amber-600/30 hover:border-amber-400/50 text-amber-200 hover:text-amber-100 italic transition-all duration-200"
+                    disabled={sendDisabled}
+                    onClick={() => onSendMessage(action.template)}
+                  >
+                    {action.icon && <span className="mr-1.5">{action.icon}</span>}
+                    {action.label}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        );
+      })()}
       {gameActions.length > 0 && !isEliminated && isGameActive && !isRoundInProgress && gameTemplate !== "scene" && (
         pendingAction?.needsTarget ? (
           <div className="mb-2 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 backdrop-blur-sm">
@@ -398,15 +424,15 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           <button
             type="button"
             onClick={() => setInputMode((m) => (m === "say" ? "do" : "say"))}
-            className={`flex-shrink-0 flex items-center gap-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
               inputMode === "do"
-                ? "bg-amber-500/20 border border-amber-500/40 text-amber-300"
-                : "bg-zinc-800/80 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300"
+                ? "bg-amber-500/20 border border-amber-500/50 text-amber-300 shadow-sm shadow-amber-500/10"
+                : "bg-violet-500/15 border border-violet-500/40 text-violet-300 shadow-sm shadow-violet-500/10"
             }`}
             title={inputMode === "say" ? "Switch to Action mode" : "Switch to Say mode"}
           >
             {inputMode === "say" ? <MessageCircle className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
-            <span className="hidden sm:inline">{inputMode === "say" ? "Say" : "Do"}</span>
+            <span>{inputMode === "say" ? "Say" : "Act"}</span>
           </button>
         )}
         <div className="relative flex-1 min-w-0">
@@ -490,10 +516,12 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               : (gameTemplate === "scene"
                 ? (inputMode === "do" ? "What do you do?" : "Say something…")
                 : `Message #${channelName}`)}
-            className={`min-h-0 bg-zinc-800/80 backdrop-blur-sm border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors ${
+            className={`min-h-0 bg-zinc-800/80 backdrop-blur-sm border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors ${
               gameTemplate === "scene" && inputMode === "do"
-                ? "border-amber-500/30 focus:border-amber-500/50 italic text-amber-100"
-                : "border-violet-900/30 focus:border-amber-500/40"
+                ? "border-amber-500/30 focus:border-amber-500/50 focus-visible:ring-amber-500/50 italic text-amber-100"
+                : gameTemplate === "scene"
+                  ? "border-violet-500/30 focus:border-violet-500/50 focus-visible:ring-violet-500/50"
+                  : "border-violet-900/30 focus:border-amber-500/40 focus-visible:ring-amber-500/50"
             }`}
             style={{ minHeight: `${MIN_INPUT_HEIGHT}px`, maxHeight: `${MAX_INPUT_HEIGHT}px` }}
             disabled={sendDisabled}

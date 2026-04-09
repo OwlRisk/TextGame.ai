@@ -615,22 +615,27 @@ export async function POST(request: NextRequest) {
         ? style
         : DEFAULT_STYLE;
 
-      // Try exact name match first (covers characters selected from the browser)
-      const { data: exactMatch } = await supabaseAdmin
-        .from('ai_characters')
-        .select('avatar_url, avatar_styles')
-        .eq('is_system', true)
-        .eq('name', name)
-        .not('avatar_url', 'is', null)
-        .limit(1)
-        .maybeSingle();
+      // Try exact name match first (covers characters selected from the browser).
+      // IMPORTANT: when avatarOffset > 0, this call is a collision-retry from
+      // fetchAvatarsForRoom and must bypass exact match so offset can take effect.
+      const shouldUseExactNameMatch = !(typeof avatarOffset === 'number' && avatarOffset > 0);
+      if (shouldUseExactNameMatch) {
+        const { data: exactMatch } = await supabaseAdmin
+          .from('ai_characters')
+          .select('avatar_url, avatar_styles')
+          .eq('is_system', true)
+          .eq('name', name)
+          .not('avatar_url', 'is', null)
+          .limit(1)
+          .maybeSingle();
 
-      if (exactMatch) {
-        const styles = (exactMatch.avatar_styles ?? {}) as Record<string, string>;
-        const url = styles[requestedStyle] ?? styles['semi-realistic'] ?? exactMatch.avatar_url;
-        if (url) {
-          logger.log('[Avatar API] exact name match for:', name, url);
-          return NextResponse.json({ image: url, pool: true });
+        if (exactMatch) {
+          const styles = (exactMatch.avatar_styles ?? {}) as Record<string, string>;
+          const url = styles[requestedStyle] ?? styles['semi-realistic'] ?? exactMatch.avatar_url;
+          if (url) {
+            logger.log('[Avatar API] exact name match for:', name, url);
+            return NextResponse.json({ image: url, pool: true });
+          }
         }
       }
 
@@ -652,9 +657,24 @@ export async function POST(request: NextRequest) {
           return !!s[requestedStyle];
         });
         const pool = withStyle.length > 0 ? withStyle : chars;
-        const baseIdx = parseInt(hash.slice(0, 8), 16) % pool.length;
-        const idx = ((baseIdx + (avatarOffset || 0)) % pool.length);
-        const char = pool[idx];
+
+        // Deduplicate by resolved URL so offset-based collision retries can
+        // actually move to a different avatar when DB rows share same image.
+        const uniquePool: Array<{ avatar_url: string | null; avatar_styles: Record<string, string> | null }> = [];
+        const seenUrls = new Set<string>();
+        for (const c of pool) {
+          const styles = (c.avatar_styles ?? {}) as Record<string, string>;
+          const resolvedUrl = styles[requestedStyle] ?? styles['semi-realistic'] ?? c.avatar_url;
+          if (!resolvedUrl) continue;
+          if (seenUrls.has(resolvedUrl)) continue;
+          seenUrls.add(resolvedUrl);
+          uniquePool.push(c);
+        }
+
+        const pickPool = uniquePool.length > 0 ? uniquePool : pool;
+        const baseIdx = parseInt(hash.slice(0, 8), 16) % pickPool.length;
+        const idx = ((baseIdx + (avatarOffset || 0)) % pickPool.length);
+        const char = pickPool[idx];
         const styles = (char.avatar_styles ?? {}) as Record<string, string>;
         const url = styles[requestedStyle] ?? styles['semi-realistic'] ?? char.avatar_url;
         if (url) {
