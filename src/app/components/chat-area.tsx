@@ -458,12 +458,10 @@ export function ChatArea({
               />
             );
           })}
-          {/* Typing Indicator — hide narrator in scene mode */}
+          {/* Typing Indicator — always hide invisible narrator */}
           {typingUsers && typingUsers.length > 0 && (() => {
             const hostNames = new Set(players.filter(p => p.isGameMaster).map(p => p.name));
-            const filtered = gameTemplate === "scene"
-              ? typingUsers.filter(u => !hostNames.has(u.name))
-              : typingUsers;
+            const filtered = typingUsers.filter(u => !hostNames.has(u.name));
             if (filtered.length === 0) return null;
             return (
             <TypingIndicator
