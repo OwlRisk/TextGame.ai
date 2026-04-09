@@ -61,8 +61,8 @@ export function UserProfile({ onClose }: UserProfileProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content_language: lang }),
     })
-      .then((r) => { if (r.ok) toast.success("Language saved"); else throw new Error(); })
-      .catch(() => toast.error("Failed to save language"));
+      .then((r) => { if (r.ok) toast.success(t("profile.lang_saved")); else throw new Error(); })
+      .catch(() => toast.error(t("profile.lang_failed")));
   };
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
       // Don't show toast here as page will reload
     } catch (error) {
       console.error("Error signing out:", error);
-      toast.error("Failed to sign out. Please try again.");
+      toast.error(t("sidebar.failed_sign_out"));
       setIsSigningOut(false);
     }
   };
@@ -114,7 +114,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
         {/* Left Sidebar Navigation */}
         <div className="w-56 bg-[#2b2d31] p-4 space-y-1 flex-shrink-0 overflow-y-auto">
           <div className="mb-4 px-2">
-            <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">User Settings</h2>
+            <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{t("profile.user_settings")}</h2>
           </div>
           
           <button 
@@ -126,7 +126,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
             }`}
           >
             <User className="h-4 w-4" />
-            My Account
+            {t("profile.my_account")}
           </button>
           
           <button 
@@ -138,7 +138,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
             }`}
           >
             <History className="h-4 w-4" />
-            Game History
+            {t("profile.game_history")}
           </button>
 
           <div className="h-px bg-zinc-700 my-2" />
@@ -151,12 +151,12 @@ export function UserProfile({ onClose }: UserProfileProps) {
             {isSigningOut ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Signing out...
+                {t("sidebar.signing_out")}
               </>
             ) : (
               <>
                 <LogOut className="h-4 w-4" />
-                Log Out
+                {t("sidebar.log_out")}
               </>
             )}
           </button>
@@ -167,8 +167,8 @@ export function UserProfile({ onClose }: UserProfileProps) {
           {/* Header with Close Button */}
           <div className="flex-shrink-0 px-10 pt-16 pb-6 relative">
             <h1 className="text-xl font-bold text-white">
-              {activeTab === "account" && "My Account"}
-              {activeTab === "history" && "Game History"}
+              {activeTab === "account" && t("profile.my_account")}
+              {activeTab === "history" && t("profile.game_history")}
             </h1>
             <button
               onClick={onClose}
@@ -187,7 +187,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                 <>
                   {/* Avatar Section */}
                   <div className="bg-[#2b2d31] rounded-lg p-6">
-                    <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">Profile Picture</h2>
+                    <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">{t("profile.profile_picture")}</h2>
                     <div className="flex items-center gap-6">
                       <Avatar className="h-20 w-20">
                         <AvatarImage
@@ -200,7 +200,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                       </Avatar>
                       <div>
                         <p className="text-sm font-semibold text-white">{username}</p>
-                        <p className="text-xs text-zinc-400 mt-0.5">Avatar managed via your sign-in provider</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">{t("profile.avatar_provider")}</p>
                       </div>
                     </div>
                   </div>
@@ -208,23 +208,23 @@ export function UserProfile({ onClose }: UserProfileProps) {
                   {/* Basic Info (read-only) */}
                   <div className="bg-[#2b2d31] rounded-lg p-6 space-y-4">
                     <div>
-                      <Label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 block">Username</Label>
+                      <Label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 block">{t("profile.username")}</Label>
                       <p className="text-sm text-white bg-[#1e1f22] rounded px-3 py-2">{username}</p>
                     </div>
                     <div>
-                      <Label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 block">Email</Label>
+                      <Label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 block">{t("profile.email")}</Label>
                       <p className="text-sm text-white bg-[#1e1f22] rounded px-3 py-2">{email}</p>
                     </div>
-                    <p className="text-xs text-zinc-500">To update your name or email, edit them in your sign-in provider (Google, GitHub, etc.).</p>
+                    <p className="text-xs text-zinc-500">{t("profile.update_hint")}</p>
                   </div>
 
                   {/* Game Language */}
                   <div className="bg-[#2b2d31] rounded-lg p-6 space-y-3">
                     <div className="flex items-center gap-2 mb-1">
                       <Globe className="h-4 w-4 text-zinc-400" />
-                      <Label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Game Language</Label>
+                      <Label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{t("profile.game_language")}</Label>
                     </div>
-                    <p className="text-xs text-zinc-500">AI characters and narration will use this language at the start of each game. If you reply in a different language, they will automatically switch.</p>
+                    <p className="text-xs text-zinc-500">{t("profile.language_hint")}</p>
                     <select
                       value={contentLanguage}
                       onChange={(e) => handleLanguageChange(e.target.value)}
@@ -245,13 +245,13 @@ export function UserProfile({ onClose }: UserProfileProps) {
                   <div className="bg-[#2b2d31] rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-zinc-400">Games Created</p>
+                        <p className="text-xs text-zinc-400">{t("profile.games_created")}</p>
                         <p className="text-2xl font-bold text-purple-400">{gamesLoading ? "—" : games.length}</p>
                       </div>
                       <Link href="/my-games" onClick={onClose}>
                         <Button size="sm" variant="outline" className="border-zinc-700 hover:bg-zinc-700 text-zinc-300 gap-1.5">
                           <ExternalLink className="h-3 w-3" />
-                          View All
+                          {t("profile.view_all")}
                         </Button>
                       </Link>
                     </div>
@@ -261,14 +261,14 @@ export function UserProfile({ onClose }: UserProfileProps) {
                     {gamesLoading ? (
                       <div className="flex items-center justify-center py-12 text-zinc-500">
                         <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                        Loading games…
+                        {t("profile.loading_games")}
                       </div>
                     ) : games.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 text-zinc-500 gap-3">
                         <Gamepad2 className="h-10 w-10 opacity-30" />
-                        <p className="text-sm">No games yet. Create your first game!</p>
+                        <p className="text-sm">{t("profile.no_games")}</p>
                         <Link href="/" onClick={onClose}>
-                          <Button size="sm" className="bg-[#5865f2] hover:bg-[#4752c4] text-white">Start a Game</Button>
+                          <Button size="sm" className="bg-[#5865f2] hover:bg-[#4752c4] text-white">{t("profile.start_game")}</Button>
                         </Link>
                       </div>
                     ) : (
@@ -277,7 +277,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                           <div key={game.id} className="p-4 hover:bg-[#313338] transition-colors">
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-white truncate">{game.name || "Untitled Game"}</p>
+                                <p className="font-medium text-white truncate">{game.name || t("profile.untitled")}</p>
                                 <p className="text-xs text-zinc-400 mt-0.5">
                                   {game.config?.template && <span className="mr-2">{game.config.template}</span>}
                                   {new Date(game.updated_at).toLocaleDateString()}
@@ -286,7 +286,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                               <Link href={`/game/${game.id}`} onClick={onClose}>
                                 <Button size="sm" variant="ghost" className="text-zinc-400 hover:text-white flex-shrink-0 gap-1">
                                   <ExternalLink className="h-3 w-3" />
-                                  Play
+                                  {t("discover.play")}
                                 </Button>
                               </Link>
                             </div>

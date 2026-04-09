@@ -972,6 +972,120 @@ const T: Record<string, Record<string, string>> = {
     ru: "\u0412\u043e\u0439\u0434\u0438\u0442\u0435, \u0447\u0442\u043e\u0431\u044b \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u0442\u044c \u0438 \u0437\u0430\u043f\u0443\u0441\u043a\u0430\u0442\u044c \u0438\u0433\u0440\u044b.",
     it: "Accedi per salvare e avviare i tuoi giochi.", ar: "\u0633\u062c\u0651\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u062d\u0641\u0638 \u0648\u062a\u0634\u063a\u064a\u0644 \u0623\u0644\u0639\u0627\u0628\u0643.",
   },
+
+  // ── User profile / settings ──────────────────────────────────────────
+  "profile.user_settings": {
+    en: "User Settings", zh: "\u7528\u6237\u8bbe\u7f6e", ja: "\u30e6\u30fc\u30b6\u30fc\u8a2d\u5b9a", ko: "\uc0ac\uc6a9\uc790 \uc124\uc815",
+    de: "Benutzereinstellungen", fr: "Param\u00e8tres utilisateur", es: "Configuraci\u00f3n de usuario",
+    pt: "Configura\u00e7\u00f5es do usu\u00e1rio", ru: "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f", it: "Impostazioni utente", ar: "\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645",
+  },
+  "profile.my_account": {
+    en: "My Account", zh: "\u6211\u7684\u8d26\u6237", ja: "\u30de\u30a4\u30a2\u30ab\u30a6\u30f3\u30c8", ko: "\ub0b4 \uacc4\uc815",
+    de: "Mein Konto", fr: "Mon compte", es: "Mi cuenta",
+    pt: "Minha conta", ru: "\u041c\u043e\u0439 \u0430\u043a\u043a\u0430\u0443\u043d\u0442", it: "Il mio account", ar: "\u062d\u0633\u0627\u0628\u064a",
+  },
+  "profile.game_history": {
+    en: "Game History", zh: "\u6e38\u620f\u5386\u53f2", ja: "\u30b2\u30fc\u30e0\u5c65\u6b74", ko: "\uac8c\uc784 \uae30\ub85d",
+    de: "Spielverlauf", fr: "Historique des jeux", es: "Historial de juegos",
+    pt: "Hist\u00f3rico de jogos", ru: "\u0418\u0441\u0442\u043e\u0440\u0438\u044f \u0438\u0433\u0440", it: "Cronologia giochi", ar: "\u0633\u062c\u0644 \u0627\u0644\u0623\u0644\u0639\u0627\u0628",
+  },
+  "profile.profile_picture": {
+    en: "Profile Picture", zh: "\u5934\u50cf", ja: "\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u753b\u50cf", ko: "\ud504\ub85c\ud544 \uc0ac\uc9c4",
+    de: "Profilbild", fr: "Photo de profil", es: "Foto de perfil",
+    pt: "Foto de perfil", ru: "\u0410\u0432\u0430\u0442\u0430\u0440", it: "Immagine profilo", ar: "\u0635\u0648\u0631\u0629 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062e\u0635\u064a",
+  },
+  "profile.avatar_provider": {
+    en: "Avatar managed via your sign-in provider", zh: "\u5934\u50cf\u7531\u767b\u5f55\u670d\u52a1\u63d0\u4f9b\u5546\u7ba1\u7406",
+    ja: "\u30a2\u30d0\u30bf\u30fc\u306f\u30b5\u30a4\u30f3\u30a4\u30f3\u30d7\u30ed\u30d0\u30a4\u30c0\u30fc\u3067\u7ba1\u7406\u3055\u308c\u3066\u3044\u307e\u3059", ko: "\uc544\ubc14\ud0c0\ub294 \ub85c\uadf8\uc778 \uc81c\uacf5\uc5c5\uccb4\uc5d0\uc11c \uad00\ub9ac\ub429\ub2c8\ub2e4",
+    de: "Avatar wird \u00fcber Ihren Anmeldeanbieter verwaltet", fr: "Avatar g\u00e9r\u00e9 par votre fournisseur de connexion",
+    es: "Avatar gestionado por tu proveedor de inicio de sesi\u00f3n", pt: "Avatar gerenciado pelo seu provedor de login",
+    ru: "\u0410\u0432\u0430\u0442\u0430\u0440 \u0443\u043f\u0440\u0430\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u0432\u0430\u0448\u0438\u043c \u043f\u0440\u043e\u0432\u0430\u0439\u0434\u0435\u0440\u043e\u043c \u0432\u0445\u043e\u0434\u0430",
+    it: "Avatar gestito dal tuo provider di accesso", ar: "\u0627\u0644\u0635\u0648\u0631\u0629 \u0627\u0644\u0631\u0645\u0632\u064a\u0629 \u062a\u062f\u064a\u0631\u0647\u0627 \u062e\u062f\u0645\u0629 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
+  },
+  "profile.username": {
+    en: "Username", zh: "\u7528\u6237\u540d", ja: "\u30e6\u30fc\u30b6\u30fc\u540d", ko: "\uc0ac\uc6a9\uc790\uba85",
+    de: "Benutzername", fr: "Nom d\u2019utilisateur", es: "Nombre de usuario",
+    pt: "Nome de usu\u00e1rio", ru: "\u0418\u043c\u044f \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f", it: "Nome utente", ar: "\u0627\u0633\u0645 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645",
+  },
+  "profile.email": {
+    en: "Email", zh: "\u7535\u5b50\u90ae\u4ef6", ja: "\u30e1\u30fc\u30eb", ko: "\uc774\uba54\uc77c",
+    de: "E-Mail", fr: "E-mail", es: "Correo electr\u00f3nico",
+    pt: "E-mail", ru: "\u042d\u043b. \u043f\u043e\u0447\u0442\u0430", it: "E-mail", ar: "\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a",
+  },
+  "profile.update_hint": {
+    en: "To update your name or email, edit them in your sign-in provider (Google, GitHub, etc.).",
+    zh: "\u8981\u66f4\u65b0\u59d3\u540d\u6216\u90ae\u7bb1\uff0c\u8bf7\u5728\u767b\u5f55\u670d\u52a1\u63d0\u4f9b\u5546\uff08Google\u3001GitHub \u7b49\uff09\u4e2d\u4fee\u6539\u3002",
+    ja: "\u540d\u524d\u3084\u30e1\u30fc\u30eb\u3092\u66f4\u65b0\u3059\u308b\u306b\u306f\u3001\u30b5\u30a4\u30f3\u30a4\u30f3\u30d7\u30ed\u30d0\u30a4\u30c0\u30fc\uff08Google\u3001GitHub\u306a\u3069\uff09\u3067\u7de8\u96c6\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+    ko: "\uc774\ub984\uc774\ub098 \uc774\uba54\uc77c\uc744 \ubcc0\uacbd\ud558\ub824\uba74 \ub85c\uadf8\uc778 \uc81c\uacf5\uc5c5\uccb4(Google, GitHub \ub4f1)\uc5d0\uc11c \uc218\uc815\ud558\uc138\uc694.",
+    de: "Um Ihren Namen oder Ihre E-Mail zu \u00e4ndern, bearbeiten Sie diese bei Ihrem Anmeldeanbieter (Google, GitHub usw.).",
+    fr: "Pour modifier votre nom ou e-mail, modifiez-les dans votre fournisseur de connexion (Google, GitHub, etc.).",
+    es: "Para actualizar tu nombre o correo, ed\u00edtalos en tu proveedor de inicio de sesi\u00f3n (Google, GitHub, etc.).",
+    pt: "Para atualizar seu nome ou e-mail, edite-os no seu provedor de login (Google, GitHub, etc.).",
+    ru: "\u0427\u0442\u043e\u0431\u044b \u0438\u0437\u043c\u0435\u043d\u0438\u0442\u044c \u0438\u043c\u044f \u0438\u043b\u0438 \u044d\u043b. \u043f\u043e\u0447\u0442\u0443, \u043e\u0442\u0440\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u0443\u0439\u0442\u0435 \u0438\u0445 \u0443 \u043f\u0440\u043e\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u0432\u0445\u043e\u0434\u0430 (Google, GitHub \u0438 \u0442.\u0434.).",
+    it: "Per aggiornare nome o e-mail, modificali nel tuo provider di accesso (Google, GitHub, ecc.).",
+    ar: "\u0644\u062a\u062d\u062f\u064a\u062b \u0627\u0633\u0645\u0643 \u0623\u0648 \u0628\u0631\u064a\u062f\u0643\u060c \u0639\u062f\u0651\u0644\u0647\u0645\u0627 \u0641\u064a \u0645\u0632\u0648\u062f \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 (Google\u060c GitHub \u0625\u0644\u062e).",
+  },
+  "profile.game_language": {
+    en: "Game Language", zh: "\u6e38\u620f\u8bed\u8a00", ja: "\u30b2\u30fc\u30e0\u8a00\u8a9e", ko: "\uac8c\uc784 \uc5b8\uc5b4",
+    de: "Spielsprache", fr: "Langue du jeu", es: "Idioma del juego",
+    pt: "Idioma do jogo", ru: "\u042f\u0437\u044b\u043a \u0438\u0433\u0440\u044b", it: "Lingua del gioco", ar: "\u0644\u063a\u0629 \u0627\u0644\u0644\u0639\u0628\u0629",
+  },
+  "profile.language_hint": {
+    en: "AI characters and narration will use this language at the start of each game. If you reply in a different language, they will automatically switch.",
+    zh: "AI\u89d2\u8272\u548c\u53d9\u8ff0\u4f1a\u5728\u6bcf\u5c40\u6e38\u620f\u5f00\u59cb\u65f6\u4f7f\u7528\u6b64\u8bed\u8a00\u3002\u5982\u679c\u4f60\u7528\u5176\u4ed6\u8bed\u8a00\u56de\u590d\uff0c\u5b83\u4eec\u4f1a\u81ea\u52a8\u5207\u6362\u3002",
+    ja: "AI\u30ad\u30e3\u30e9\u3068\u30ca\u30ec\u30fc\u30b7\u30e7\u30f3\u306f\u5404\u30b2\u30fc\u30e0\u958b\u59cb\u6642\u306b\u3053\u306e\u8a00\u8a9e\u3092\u4f7f\u7528\u3057\u307e\u3059\u3002\u5225\u306e\u8a00\u8a9e\u3067\u8fd4\u4fe1\u3059\u308b\u3068\u81ea\u52d5\u3067\u5207\u308a\u66ff\u308f\u308a\u307e\u3059\u3002",
+    ko: "AI \uce90\ub9ad\ud130\uc640 \ub0b4\ub808\uc774\uc158\uc740 \uac01 \uac8c\uc784 \uc2dc\uc791 \uc2dc \uc774 \uc5b8\uc5b4\ub97c \uc0ac\uc6a9\ud569\ub2c8\ub2e4. \ub2e4\ub978 \uc5b8\uc5b4\ub85c \ub2f5\uc7a5\ud558\uba74 \uc790\ub3d9\uc73c\ub85c \uc804\ud658\ub429\ub2c8\ub2e4.",
+    de: "KI-Charaktere und Erz\u00e4hlung verwenden diese Sprache zu Spielbeginn. Bei Antworten in einer anderen Sprache wird automatisch gewechselt.",
+    fr: "Les personnages IA et la narration utiliseront cette langue au d\u00e9but de chaque partie. Si vous r\u00e9pondez dans une autre langue, ils basculeront automatiquement.",
+    es: "Los personajes IA y la narraci\u00f3n usar\u00e1n este idioma al inicio de cada partida. Si respondes en otro idioma, cambiar\u00e1n autom\u00e1ticamente.",
+    pt: "Os personagens IA e a narra\u00e7\u00e3o usar\u00e3o este idioma no in\u00edcio de cada jogo. Se voc\u00ea responder em outro idioma, eles mudam automaticamente.",
+    ru: "\u0418\u0418-\u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0438 \u0438 \u043f\u043e\u0432\u0435\u0441\u0442\u0432\u043e\u0432\u0430\u043d\u0438\u0435 \u0431\u0443\u0434\u0443\u0442 \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u044c \u044d\u0442\u043e\u0442 \u044f\u0437\u044b\u043a \u0432 \u043d\u0430\u0447\u0430\u043b\u0435 \u043a\u0430\u0436\u0434\u043e\u0439 \u0438\u0433\u0440\u044b. \u041f\u0440\u0438 \u043e\u0442\u0432\u0435\u0442\u0435 \u043d\u0430 \u0434\u0440\u0443\u0433\u043e\u043c \u044f\u0437\u044b\u043a\u0435 \u043e\u043d\u0438 \u043f\u0435\u0440\u0435\u043a\u043b\u044e\u0447\u0430\u0442\u0441\u044f \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438.",
+    it: "I personaggi IA e la narrazione useranno questa lingua all\u2019inizio di ogni partita. Se rispondi in un\u2019altra lingua, cambieranno automaticamente.",
+    ar: "\u0633\u062a\u0633\u062a\u062e\u062f\u0645 \u0634\u062e\u0635\u064a\u0627\u062a \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a \u0648\u0627\u0644\u0633\u0631\u062f \u0647\u0630\u0647 \u0627\u0644\u0644\u063a\u0629 \u0641\u064a \u0628\u062f\u0627\u064a\u0629 \u0643\u0644 \u0644\u0639\u0628\u0629. \u0625\u0630\u0627 \u0631\u062f\u062f\u062a \u0628\u0644\u063a\u0629 \u0623\u062e\u0631\u0649\u060c \u0633\u064a\u062a\u062d\u0648\u0644\u0648\u0646 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b.",
+  },
+  "profile.lang_saved": {
+    en: "Language saved", zh: "\u8bed\u8a00\u5df2\u4fdd\u5b58", ja: "\u8a00\u8a9e\u304c\u4fdd\u5b58\u3055\u308c\u307e\u3057\u305f", ko: "\uc5b8\uc5b4\uac00 \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
+    de: "Sprache gespeichert", fr: "Langue enregistr\u00e9e", es: "Idioma guardado",
+    pt: "Idioma salvo", ru: "\u042f\u0437\u044b\u043a \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d", it: "Lingua salvata", ar: "\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0644\u063a\u0629",
+  },
+  "profile.lang_failed": {
+    en: "Failed to save language", zh: "\u4fdd\u5b58\u8bed\u8a00\u5931\u8d25", ja: "\u8a00\u8a9e\u306e\u4fdd\u5b58\u306b\u5931\u6557\u3057\u307e\u3057\u305f", ko: "\uc5b8\uc5b4 \uc800\uc7a5 \uc2e4\ud328",
+    de: "Sprache konnte nicht gespeichert werden", fr: "\u00c9chec de l\u2019enregistrement de la langue", es: "Error al guardar el idioma",
+    pt: "Falha ao salvar o idioma", ru: "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u044f\u0437\u044b\u043a", it: "Impossibile salvare la lingua", ar: "\u0641\u0634\u0644 \u062d\u0641\u0638 \u0627\u0644\u0644\u063a\u0629",
+  },
+  "profile.games_created": {
+    en: "Games Created", zh: "\u5df2\u521b\u5efa\u6e38\u620f", ja: "\u4f5c\u6210\u3057\u305f\u30b2\u30fc\u30e0", ko: "\uc0dd\uc131\ud55c \uac8c\uc784",
+    de: "Erstellte Spiele", fr: "Jeux cr\u00e9\u00e9s", es: "Juegos creados",
+    pt: "Jogos criados", ru: "\u0421\u043e\u0437\u0434\u0430\u043d\u043d\u044b\u0435 \u0438\u0433\u0440\u044b", it: "Giochi creati", ar: "\u0627\u0644\u0623\u0644\u0639\u0627\u0628 \u0627\u0644\u0645\u0646\u0634\u0623\u0629",
+  },
+  "profile.view_all": {
+    en: "View All", zh: "\u67e5\u770b\u5168\u90e8", ja: "\u3059\u3079\u3066\u898b\u308b", ko: "\ubaa8\ub450 \ubcf4\uae30",
+    de: "Alle anzeigen", fr: "Tout voir", es: "Ver todo",
+    pt: "Ver tudo", ru: "\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0432\u0441\u0435", it: "Vedi tutto", ar: "\u0639\u0631\u0636 \u0627\u0644\u0643\u0644",
+  },
+  "profile.loading_games": {
+    en: "Loading games\u2026", zh: "\u52a0\u8f7d\u6e38\u620f\u4e2d\u2026", ja: "\u30b2\u30fc\u30e0\u3092\u8aad\u307f\u8fbc\u307f\u4e2d\u2026", ko: "\uac8c\uc784 \ub85c\ub529 \uc911\u2026",
+    de: "Spiele laden\u2026", fr: "Chargement des jeux\u2026", es: "Cargando juegos\u2026",
+    pt: "Carregando jogos\u2026", ru: "\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430 \u0438\u0433\u0440\u2026", it: "Caricamento giochi\u2026", ar: "\u062c\u0627\u0631\u064d \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0623\u0644\u0639\u0627\u0628\u2026",
+  },
+  "profile.no_games": {
+    en: "No games yet. Create your first game!", zh: "\u8fd8\u6ca1\u6709\u6e38\u620f\u3002\u521b\u5efa\u4f60\u7684\u7b2c\u4e00\u5c40\u5427\uff01",
+    ja: "\u30b2\u30fc\u30e0\u306f\u307e\u3060\u3042\u308a\u307e\u305b\u3093\u3002\u6700\u521d\u306e\u30b2\u30fc\u30e0\u3092\u4f5c\u308a\u307e\u3057\u3087\u3046\uff01", ko: "\uc544\uc9c1 \uac8c\uc784\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uccab \uac8c\uc784\uc744 \ub9cc\ub4e4\uc5b4 \ubcf4\uc138\uc694!",
+    de: "Noch keine Spiele. Erstelle dein erstes Spiel!", fr: "Aucun jeu pour l\u2019instant. Cr\u00e9ez votre premier jeu !",
+    es: "A\u00fan no hay juegos. \u00a1Crea tu primer juego!", pt: "Nenhum jogo ainda. Crie seu primeiro jogo!",
+    ru: "\u0418\u0433\u0440 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442. \u0421\u043e\u0437\u0434\u0430\u0439\u0442\u0435 \u043f\u0435\u0440\u0432\u0443\u044e!",
+    it: "Nessun gioco ancora. Crea il tuo primo gioco!", ar: "\u0644\u0627 \u0623\u0644\u0639\u0627\u0628 \u0628\u0639\u062f. \u0623\u0646\u0634\u0626 \u0644\u0639\u0628\u062a\u0643 \u0627\u0644\u0623\u0648\u0644\u0649!",
+  },
+  "profile.start_game": {
+    en: "Start a Game", zh: "\u5f00\u59cb\u6e38\u620f", ja: "\u30b2\u30fc\u30e0\u3092\u59cb\u3081\u308b", ko: "\uac8c\uc784 \uc2dc\uc791",
+    de: "Spiel starten", fr: "Commencer une partie", es: "Iniciar un juego",
+    pt: "Iniciar um jogo", ru: "\u041d\u0430\u0447\u0430\u0442\u044c \u0438\u0433\u0440\u0443", it: "Inizia un gioco", ar: "\u0627\u0628\u062f\u0623 \u0644\u0639\u0628\u0629",
+  },
+  "profile.untitled": {
+    en: "Untitled Game", zh: "\u65e0\u6807\u9898\u6e38\u620f", ja: "\u7121\u984c\u306e\u30b2\u30fc\u30e0", ko: "\uc81c\ubaa9 \uc5c6\ub294 \uac8c\uc784",
+    de: "Unbenanntes Spiel", fr: "Jeu sans titre", es: "Juego sin t\u00edtulo",
+    pt: "Jogo sem t\u00edtulo", ru: "\u0411\u0435\u0437 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u044f", it: "Gioco senza titolo", ar: "\u0644\u0639\u0628\u0629 \u0628\u062f\u0648\u0646 \u0639\u0646\u0648\u0627\u0646",
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────
