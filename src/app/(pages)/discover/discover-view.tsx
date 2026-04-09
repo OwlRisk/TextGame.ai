@@ -75,65 +75,38 @@ export default function DiscoverView() {
         caseId = scriptKillSetup.caseId;
       }
 
-      const [playersResult, hostResult] = await Promise.allSettled([
-        scriptKillSetup
-          ? Promise.resolve({ players: scriptKillSetup.configuredPlayers, humanRole: scriptKillSetup.humanRole })
-          : (async () => {
-              toast.loading("Setting up players...", { id: toastId });
-              const res = await fetch("/api/generate-players", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  playerCount: preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4,
-                  gameTemplate: preset.templateId,
-                  rules: preset.rules,
-                  minPlayers: tmpl?.minPlayers ?? 2,
-                  maxPlayers: tmpl?.maxPlayers ?? 20,
-                }),
-              });
-              if (!res.ok) throw new Error("Failed");
-              return res.json();
-            })(),
-        (async () => {
-          toast.loading("Generating host...", { id: toastId });
-          const res = await fetch("/api/generate-host", {
+      if (!scriptKillSetup) {
+        toast.loading("Setting up players...", { id: toastId });
+        try {
+          const res = await fetch("/api/generate-players", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              gameRules: gameRules,
-              gameName: preset.name,
+              playerCount: preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4,
+              gameTemplate: preset.templateId,
+              rules: preset.rules,
+              minPlayers: tmpl?.minPlayers ?? 2,
+              maxPlayers: tmpl?.maxPlayers ?? 20,
             }),
           });
-          if (!res.ok) throw new Error("Failed");
-          return res.json();
-        })(),
-      ]);
-
-      if (!scriptKillSetup) {
-        if (playersResult.status === "fulfilled" && playersResult.value?.players) {
-          configuredPlayers = playersResult.value.players;
-          if (playersResult.value.humanRole) humanRole = playersResult.value.humanRole;
-        }
+          if (res.ok) {
+            const data = await res.json();
+            if (data.players) configuredPlayers = data.players;
+            if (data.humanRole) humanRole = data.humanRole;
+          }
+        } catch {}
       }
 
-      type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: 'male' | 'female' | 'other'; voice_id?: string };
-      let generatedHost: GeneratedHost;
-      if (hostResult.status === "fulfilled" && hostResult.value?.name) {
-        const h = hostResult.value;
-        const g = typeof h.gender === "string" && ["male", "female", "other"].includes(h.gender) ? h.gender as 'male' | 'female' | 'other' : undefined;
-        generatedHost = { name: h.name, personality: h.personality ?? "", voiceStyle: h.voiceStyle ?? "", systemPrompt: h.systemPrompt ?? "", icon: h.icon ?? "🎭", color: h.color ?? "#7c3aed", gender: g, voice_id: h.voice_id };
-      } else {
-        const fg = typeof fallbackHost.gender === "string" && ["male", "female", "other"].includes(fallbackHost.gender) ? fallbackHost.gender as 'male' | 'female' | 'other' : undefined;
-        generatedHost = {
-          name: fallbackHost.name,
-          personality: fallbackHost.personality || fallbackHost.description || "",
-          voiceStyle: fallbackHost.voiceStyle,
-          systemPrompt: fallbackHost.systemPrompt,
-          icon: fallbackHost.icon,
-          color: fallbackHost.color,
-          gender: fg,
-        };
-      }
+      const fg = typeof fallbackHost.gender === "string" && ["male", "female", "other"].includes(fallbackHost.gender) ? fallbackHost.gender as 'male' | 'female' | 'other' : undefined;
+      const generatedHost = {
+        name: fallbackHost.name,
+        personality: fallbackHost.personality || fallbackHost.description || "",
+        voiceStyle: fallbackHost.voiceStyle,
+        systemPrompt: fallbackHost.systemPrompt,
+        icon: fallbackHost.icon,
+        color: fallbackHost.color,
+        gender: fg,
+      };
 
       const newGame = {
         id: crypto.randomUUID(),
