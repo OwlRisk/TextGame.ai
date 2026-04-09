@@ -67,7 +67,7 @@ export const FEATURED_TEMPLATE: GameTemplate = {
   cover: "/games/game-cover-werewolf.webp",
   category: "Social Deduction",
   tags: ["Classic", "Strategy", "Deception", "Roleplay"],
-  players: "5-12",
+  players: "6",
   duration: "20-40 min",
   style: "Strategic",
   color: "from-purple-900 to-indigo-900",
@@ -77,6 +77,7 @@ export const FEATURED_TEMPLATE: GameTemplate = {
     "Democratic voting & elimination",
     "Bluffing and deduction",
   ],
+  playerCount: 6,
   templateId: "werewolf",
   rules: `SETTING: A village haunted by werewolves. Neighbors by day, predators by night.
 
@@ -118,11 +119,12 @@ export const CORE_TEMPLATES: GameTemplate[] = [
     cover: "/games/game-cover-codenames.webp",
     category: "Social Deduction",
     tags: ["Team Game", "Word Association", "Strategic"],
-    players: "4-12",
+    players: "6",
     duration: "15-25 min",
     style: "Casual",
     color: "from-orange-600 to-red-600",
     badge: "🔥 Most Popular",
+    playerCount: 6,
     templateId: "codenames",
     rules: `SETTING: Two spy agencies race to contact all their field agents hidden among 25 code words — before the other team does.
 
@@ -158,11 +160,12 @@ WIN CONDITIONS:
     cover: "/games/game-cover-avalon.webp",
     category: "Social Deduction",
     tags: ["Strategic", "Team-based", "Hidden Roles"],
-    players: "5-10",
+    players: "6",
     duration: "30-40 min",
     style: "Strategic",
     color: "from-blue-700 to-indigo-800",
     badge: "⭐ Classic",
+    playerCount: 6,
     templateId: "avalon",
     rules: `SETTING: Camelot is in peril. Loyal knights of the Round Table must complete quests to save the realm — but agents of Mordred hide among them.
 
@@ -204,11 +207,12 @@ WIN CONDITIONS:
     cover: "/games/game-cover-undercover.webp",
     category: "Social Deduction",
     tags: ["Quick Play", "Word Game", "Beginner Friendly"],
-    players: "4-10",
+    players: "6",
     duration: "15-20 min",
     style: "Casual",
     color: "from-blue-600 to-cyan-600",
     badge: "✨ Quick & Fun",
+    playerCount: 6,
     templateId: "undercover",
     rules: `SETTING: Everyone has a secret word — but one player has a subtly different word, and they're trying to blend in without getting caught.
 
@@ -246,10 +250,11 @@ export const SOCIAL_DEDUCTION: GameTemplate[] = [
     cover: "/games/game-cover-mafia.webp",
     category: "Social Deduction",
     tags: ["Advanced", "Roleplay", "Strategic"],
-    players: "6-15",
+    players: "8",
     duration: "45-60 min",
     style: "Competitive",
     color: "from-red-600 to-pink-600",
+    playerCount: 8,
     templateId: "mafia",
     rules: `SETTING: A town has been infiltrated by organized crime. Citizens debate and vote by day; the Mafia strikes by night. Trust no one.
 
@@ -284,10 +289,11 @@ WIN CONDITIONS:
     icon: "🌍",
     category: "Social Deduction",
     tags: ["Quick", "Deduction", "Bluffing"],
-    players: "3-8",
+    players: "5",
     duration: "15-20 min",
     style: "Casual",
     color: "from-green-600 to-teal-600",
+    playerCount: 5,
     templateId: "spyfall",
     rules: `SETTING: Everyone has been briefed on the same secret location — except one player: the Spy. The Spy must figure out where they are from the conversation alone.
 
@@ -319,10 +325,11 @@ export const PARTY_GAMES: GameTemplate[] = [  {
     icon: "❓",
     category: "Party",
     tags: ["Classic", "Guessing", "Family Friendly"],
-    players: "2-10",
+    players: "4",
     duration: "10-15 min",
     style: "Casual",
     color: "from-blue-500 to-cyan-500",
+    playerCount: 4,
     templateId: "20-questions",
     rules: `SETTING: The Host secretly thinks of a person, place, animal, or object. All players are Guessers with 20 yes-or-no questions to figure out what it is.
 
@@ -363,10 +370,11 @@ WIN CONDITIONS:
     icon: "🤥",
     category: "Party",
     tags: ["Icebreaker", "Social", "Personal"],
-    players: "3-12",
+    players: "5",
     duration: "15-25 min",
     style: "Casual",
     color: "from-green-500 to-emerald-500",
+    playerCount: 5,
     templateId: "two-truths-lie",
     rules: `SETTING: A social icebreaker where players share personal statements — two true, one false — and the group tries to spot the lie.
 
@@ -402,10 +410,11 @@ export const MYSTERY_GAMES: GameTemplate[] = [
     cover: "/games/game-cover-detective.webp",
     category: "Mystery",
     tags: ["Deduction", "Story-Rich", "Investigation"],
-    players: "3-8",
+    players: "5",
     duration: "30-40 min",
     style: "Strategic",
     color: "from-amber-600 to-orange-600",
+    playerCount: 5,
     templateId: "detective-mystery",
     rules: `SETTING: A murder has been committed. Suspects have secrets. Detectives must piece together clues, interrogate witnesses, and name the killer before it's too late.
 
@@ -615,10 +624,11 @@ TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflectio
     icon: "📖",
     category: "Creative",
     tags: ["Cooperative", "Creative", "Open-ended"],
-    players: "3-8",
+    players: "5",
     duration: "30-50 min",
     style: "Casual",
     color: "from-violet-600 to-purple-600",
+    playerCount: 5,
     templateId: "storyteller",
     rules: `SETTING: A collaborative adventure where every player is both author and character. Together you build a story that surprises even its creators.
 
@@ -655,7 +665,7 @@ WIN CONDITIONS: Cooperative by default — creating a memorable story together i
     cover: "/games/game-cover-rpg-dungeon.webp",
     category: "Creative",
     tags: ["RPG", "Cooperative", "Fantasy", "Combat"],
-    players: "3-6",
+    players: "4",
     duration: "30-50 min",
     style: "Strategic",
     color: "from-amber-600 to-red-600",
@@ -710,10 +720,11 @@ export const EDUCATIONAL_GAMES: GameTemplate[] = [
     icon: "💡",
     category: "Knowledge",
     tags: ["Educational", "Quick", "Competitive"],
-    players: "2-10",
+    players: "5",
     duration: "20-30 min",
     style: "Casual",
     color: "from-yellow-600 to-orange-600",
+    playerCount: 5,
     templateId: "trivia",
     rules: `SETTING: A competitive knowledge championship hosted by the AI. Players answer questions across chosen topics to score points.
 
@@ -749,10 +760,11 @@ WIN CONDITIONS:
     icon: "⚖️",
     category: "Educational",
     tags: ["Debate", "Persuasion", "Critical Thinking"],
-    players: "2-8",
+    players: "4",
     duration: "25-35 min",
     style: "Strategic",
     color: "from-indigo-600 to-purple-600",
+    playerCount: 4,
     templateId: "debate",
     rules: `SETTING: A structured debate where players argue assigned positions — whether they agree with them or not — on philosophical, ethical, political, or deliberately absurd topics.
 
@@ -789,10 +801,11 @@ WIN CONDITIONS:
     cover: "/games/game-cover-escape-room.webp",
     category: "Puzzle",
     tags: ["Cooperative", "Logic", "Teamwork"],
-    players: "2-6",
+    players: "4",
     duration: "40-60 min",
     style: "Casual",
     color: "from-green-600 to-emerald-600",
+    playerCount: 4,
     templateId: "escape-room",
     rules: `SETTING: You are trapped inside a room filled with interconnected puzzles, locked mechanisms, and hidden clues. Work together to solve them all and escape before time runs out.
 
