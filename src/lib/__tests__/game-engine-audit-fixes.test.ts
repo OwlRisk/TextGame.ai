@@ -125,15 +125,15 @@ describe("D6: no image tags in host prompt", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("D7: narrative templates have longer host voice", () => {
-  it("tarot HOST VOICE section allows multiple sentences (hostVoice.maxSentences)", () => {
+  it("tarot NARRATIVE VOICE allows multiple sentences (hostVoice.maxSentences)", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "tarot" }));
-    expect(output).toContain("4 sentences for scenes, reveals, and transitions");
+    expect(output).toContain("4 sentences for dramatic scenes, reveals, and transitions");
     expect(output).not.toContain("ONE sentence max.");
   });
 
-  it("werewolf HOST VOICE section uses up to two sentences (hostVoice.maxSentences)", () => {
+  it("werewolf NARRATIVE VOICE uses up to two sentences (hostVoice.maxSentences)", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "werewolf" }));
-    expect(output).toContain("2 sentences for scenes, reveals, and transitions");
+    expect(output).toContain("2 sentences for dramatic scenes, reveals, and transitions");
     expect(output).not.toContain("ONE sentence max.");
   });
 });

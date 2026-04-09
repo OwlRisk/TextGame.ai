@@ -89,12 +89,11 @@ describe("getSceneQuickActions", () => {
     }
   });
 
-  it("do-mode actions have asterisk-wrapped templates", () => {
+  it("do-mode actions use [ACTION] prefix in templates", () => {
     const actions = getSceneQuickActions("unknown");
     for (const a of actions) {
       if (a.inputMode === "do") {
-        expect(a.template.startsWith("*")).toBe(true);
-        expect(a.template.endsWith("*")).toBe(true);
+        expect(a.template.startsWith("[ACTION] ")).toBe(true);
       }
     }
   });

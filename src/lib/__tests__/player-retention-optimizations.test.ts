@@ -61,11 +61,11 @@ describe("Quick Game mode in host prompt", () => {
     expect(output).toContain("PACING & PROGRESSION");
   });
 
-  it("quick game section is placed between progression and host voice", () => {
+  it("quick game section is placed between progression and narrative voice", () => {
     const output = buildHostSystemPrompt(defaultOpts({ quickGame: true }));
     const progressionIdx = output.indexOf("PACING & PROGRESSION");
     const quickIdx = output.indexOf("## QUICK GAME MODE");
-    const voiceIdx = output.indexOf("## HOST VOICE");
+    const voiceIdx = output.indexOf("## NARRATIVE VOICE");
     expect(progressionIdx).toBeLessThan(quickIdx);
     expect(quickIdx).toBeLessThan(voiceIdx);
   });
@@ -164,25 +164,25 @@ describe("ALL_PRESETS templateId validity", () => {
 // Host prompt — identity and greeting (smoke tests)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("Host prompt identity block", () => {
-  it("includes host name when provided", () => {
+describe("Host prompt — invisible narrator", () => {
+  it("always identifies as invisible narrator, regardless of hostName", () => {
     const output = buildHostSystemPrompt(
       defaultOpts({ hostName: "Luna the Enchantress" }),
     );
-    expect(output).toContain("Luna the Enchantress");
+    expect(output).toContain("invisible narrator");
+    expect(output).toContain("You are NOT a character");
   });
 
-  it("includes host personality when provided", () => {
+  it("never uses host personality in output", () => {
     const output = buildHostSystemPrompt(
       defaultOpts({ hostPersonality: "mysterious and dramatic" }),
     );
-    expect(output).toContain("mysterious and dramatic");
+    expect(output).not.toContain("mysterious and dramatic");
   });
 
-  it("includes custom system prompt when provided", () => {
-    const output = buildHostSystemPrompt(
-      defaultOpts({ hostCustomSystemPrompt: "Always speak in rhyme." }),
-    );
-    expect(output).toContain("Always speak in rhyme.");
+  it("contains REMEMBER section with narrator identity", () => {
+    const output = buildHostSystemPrompt(defaultOpts());
+    expect(output).toContain("## REMEMBER");
+    expect(output).toContain("invisible");
   });
 });

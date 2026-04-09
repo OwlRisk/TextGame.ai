@@ -253,10 +253,10 @@ describe("buildHostSystemPrompt", () => {
       );
     });
 
-    it("contains HOST VOICE section", () => {
+    it("contains NARRATIVE VOICE section", () => {
       const opts = defaultOpts();
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("## HOST VOICE");
+      expect(output).toContain("## NARRATIVE VOICE");
     });
 
     it("contains example patterns (Example A, B, C)", () => {
