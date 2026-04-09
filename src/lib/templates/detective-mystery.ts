@@ -18,7 +18,10 @@ export const detectiveMystery = withDefaults({
   hasVotingPhase: false,
   hasNightPhase: false,
 
-  hostVoice: { maxSentences: 3, silentByDefault: false, drama: "high" },
+  hostVoice: {
+    maxSentences: 3, silentByDefault: false, drama: "high",
+    narrativeStyle: `Write like a classic whodunit mystery. Agatha Christie meets modern thriller. Every clue should be planted with care — describe where it was found, how it looks, what it might mean. Red herrings should be seductive. Suspect interrogations are chess matches — describe the power dynamics, the tells, the deflections. Build toward the "aha" moment where pieces click together. The detective should feel like they're unraveling a web, thread by thread.`,
+  },
   speakerMode: "selective",
 
   pacing: {

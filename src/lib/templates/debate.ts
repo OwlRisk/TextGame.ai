@@ -16,7 +16,10 @@ export const debate = withDefaults({
   estimatedTime: "25–35 min",
   roles: ["Debater"],
 
-  hostVoice: { maxSentences: 2, silentByDefault: false, drama: "medium" },
+  hostVoice: {
+    maxSentences: 2, silentByDefault: false, drama: "medium",
+    narrativeStyle: `Write like a sharp-witted moderator commentating a fierce debate. Note when a point lands well or when an argument has a logical gap. Highlight rhetorical moves — a clever analogy, a devastating counter, a surprising concession. Transitions between speakers should build anticipation. Scoring moments should feel weighty. The tone is intellectual but never dry — think Oxford Union meets TED Talk.`,
+  },
   speakerMode: "round-table",
   playerLimits: {
     tokenLimit: 280,

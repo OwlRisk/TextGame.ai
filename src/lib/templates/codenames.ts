@@ -47,7 +47,10 @@ HOW THE STORY ENDS:
   hasNightPhase: false,
   speakerMode: "selective",
 
-  hostVoice: { maxSentences: 2, silentByDefault: false, drama: "high" },
+  hostVoice: {
+    maxSentences: 2, silentByDefault: false, drama: "high",
+    narrativeStyle: `Write like a spy thriller briefing. Cold War tension — every word is a code, every guess could blow a cover. When agents are contacted, describe the thrill of connection. When the Assassin looms, build dread. Correct guesses feel like a heist going right; wrong guesses feel like an alarm tripped. Keep it crisp and urgent, like intercepted radio transmissions.`,
+  },
 
   pacing: {
     progressionThreshold: 3,

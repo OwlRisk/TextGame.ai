@@ -18,7 +18,10 @@ export const scriptKill = withDefaults({
   hasVotingPhase: false,
   hasNightPhase: false,
 
-  hostVoice: { maxSentences: 3, silentByDefault: false, drama: "high" },
+  hostVoice: {
+    maxSentences: 3, silentByDefault: false, drama: "high",
+    narrativeStyle: `Write like a noir detective film. Terse, atmospheric, with sharp sensory details — the smell of gunpowder, the tick of a clock, sweat on a suspect's brow. Focus on tension and body language. When evidence is revealed, make it feel like a camera zoom. When a suspect cracks, describe the moment of breaking — the trembling hands, the faltering voice. Use short, punchy sentences for confrontation; longer, brooding ones for scene-setting. Every beat should tighten the noose.`,
+  },
   speakerMode: "selective",
 
   playerLimits: {

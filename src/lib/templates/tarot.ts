@@ -37,7 +37,10 @@ TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflectio
   hasNightPhase: false,
   speakerMode: "selective",
 
-  hostVoice: { maxSentences: 4, silentByDefault: false, drama: "medium" },
+  hostVoice: {
+    maxSentences: 4, silentByDefault: false, drama: "medium",
+    narrativeStyle: `Write like a mystic oracle. Poetic, layered, and intimate. Describe the cards as living things — they whisper, they burn, they reveal. Use metaphor and symbolism freely. The reading is a conversation between fate and the seeker. Transitions between cards should feel like turning pages of destiny. Speak with gentle authority — not fortune-telling cliché, but genuine depth and warmth. Leave space for the querent to find their own meaning.`,
+  },
 
   playerLimits: { tokenLimit: 300, sentenceMax: 4, sentencePreferred: 2, charLimit: 350, mustContribute: false },
 

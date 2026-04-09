@@ -17,7 +17,10 @@ export const twentyQuestions = withDefaults({
   estimatedTime: "10–15 min",
   roles: ["Guesser"],
 
-  hostVoice: { maxSentences: 1, silentByDefault: false, drama: "medium" },
+  hostVoice: {
+    maxSentences: 1, silentByDefault: false, drama: "medium",
+    narrativeStyle: `Write like a puzzle master who enjoys watching people think. React to clever questions with approval. When players are getting warm, build excitement. When they go cold, add a gentle hint through environmental description. The countdown of remaining questions should build tension naturally. The final guess moment should feel like a dramatic reveal.`,
+  },
   speakerMode: "selective",
 
   mechanicsPrompt: `20 QUESTIONS — YOU ARE THE THINKER

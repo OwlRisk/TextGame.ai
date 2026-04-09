@@ -52,7 +52,10 @@ WIN CONDITIONS:
     { id: AFTERLIFE_CHANNEL_ID, name: "Afterlife", roomType: "private_ai" },
   ],
 
-  hostVoice: { maxSentences: 2, silentByDefault: false, drama: "high" },
+  hostVoice: {
+    maxSentences: 2, silentByDefault: false, drama: "high",
+    narrativeStyle: `Write like a dark fairy tale. The village is alive — creaking shutters, howling wind, flickering lanterns. Night passages should feel dangerous and intimate. Day accusations should crackle with paranoia — describe sideways glances, nervous laughter, the weight of silence after an accusation. Eliminations are rituals: describe the village gathering, the final vote, the condemned player's last look. Never clinical — always visceral and mythic.`,
+  },
 
   pacing: {
     progressionThreshold: 3,

@@ -44,7 +44,10 @@ HOW THE STORY ENDS:
 
   hasNightPhase: false,
 
-  hostVoice: { maxSentences: 2, silentByDefault: false, drama: "high" },
+  hostVoice: {
+    maxSentences: 2, silentByDefault: false, drama: "high",
+    narrativeStyle: `Write like a psychological thriller. Everyone is smiling, but someone is lying. Focus on micro-expressions and word choices — the slight hesitation, the too-eager agreement, the answer that is almost right but not quite. Voting moments should feel like a jury deliberation where no one trusts anyone. When an undercover agent is caught, describe the mask slipping.`,
+  },
 
   pacing: {
     progressionThreshold: 3,

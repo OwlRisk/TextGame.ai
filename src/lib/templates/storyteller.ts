@@ -16,7 +16,10 @@ export const storyteller = withDefaults({
   estimatedTime: "30–50 min",
   roles: ["Author"],
 
-  hostVoice: { maxSentences: 3, silentByDefault: false, drama: "medium" },
+  hostVoice: {
+    maxSentences: 3, silentByDefault: false, drama: "medium",
+    narrativeStyle: `Write like a collaborative fiction author. Your narration weaves between what characters do and what the world does in response. Be literary but accessible — vivid imagery, unexpected metaphors, emotional resonance. When players contribute ideas, build on them generously. Surprise them with consequences they didn't expect. The story should feel alive, growing in directions no one predicted. Vary your rhythm: short punchy lines for action, flowing prose for emotional beats.`,
+  },
   speakerMode: "round-table",
   playerLimits: {
     tokenLimit: 300,

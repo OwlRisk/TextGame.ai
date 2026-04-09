@@ -16,7 +16,10 @@ export const twoTruthsLie = withDefaults({
   estimatedTime: "15–25 min",
   roles: ["Player"],
 
-  hostVoice: { maxSentences: 1, silentByDefault: false, drama: "medium" },
+  hostVoice: {
+    maxSentences: 1, silentByDefault: false, drama: "medium",
+    narrativeStyle: `Write like a witty party host narrating a social game. Light, playful, and warm. React to surprising truths with genuine delight. When the lie is revealed, make it a fun reveal moment. Comment on how convincing (or terrible) the bluff was. Keep the energy social and celebratory — this is about getting to know each other, not competition.`,
+  },
   speakerMode: "round-table",
 
   mechanicsPrompt: `TWO TRUTHS AND A LIE — ROUND MANAGEMENT

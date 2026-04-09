@@ -15,7 +15,10 @@ export const escapeRoom = withDefaults({
   hasElimination: false,
   category: "cooperative",
 
-  hostVoice: { maxSentences: 3, silentByDefault: false, drama: "medium" },
+  hostVoice: {
+    maxSentences: 3, silentByDefault: false, drama: "medium",
+    narrativeStyle: `Write like a ticking-clock thriller. The room is a character — describe its walls closing in, the hum of machinery, cryptic symbols catching the light. Every solved puzzle should feel like a breakthrough: a click, a hidden panel sliding open, a new path revealed. Failed attempts raise stakes — lights flicker, a timer beeps faster, something locks permanently. Build claustrophobic urgency. The team is racing against time and the room itself.`,
+  },
 
   pacing: {
     progressionThreshold: 4,

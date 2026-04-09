@@ -44,7 +44,10 @@ GOAL: Defeat the dungeon boss together. If all players are knocked out, the dung
 
 ITEMS: Players can find and use items (potions, scrolls, weapons). Items are tracked on player boards.`,
 
-  hostVoice: { maxSentences: 4, silentByDefault: false, drama: "high" },
+  hostVoice: {
+    maxSentences: 4, silentByDefault: false, drama: "high",
+    narrativeStyle: `Write like an epic fantasy novel. Rich world-building: torchlight on ancient stone, the echo of dripping water, runes that glow when touched. Combat is visceral — describe the clash of steel, the arc of a spell, the roar of a wounded beast. Exploration is wondrous — describe what the party sees, hears, and feels as they push deeper. Treasure discoveries should feel earned. Deaths should feel heroic or tragic, never trivial. Build a sense of wonder and danger in equal measure.`,
+  },
   speakerMode: "selective",
   playerLimits: { tokenLimit: 300, sentenceMax: 4, sentencePreferred: 2, charLimit: 350, mustContribute: false },
   pacing: { progressionThreshold: 5, maxRounds: 40, hint: "Keep combat tense and fast. Between combat, allow brief exploration and RP. Push to the next room if pace drops." },

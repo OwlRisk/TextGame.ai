@@ -309,7 +309,7 @@ This is an introductory quick game. Keep it SHORT — aim for 3-4 rounds maximum
 ` : ''}
 ## NARRATIVE VOICE
 ${voiceBlock} Atmospheric and vivid, not flat or bureaucratic.
-${dramaLevel === "high" ? `- DRAMA LEVEL: HIGH. Build suspense before every reveal. Pause before vote results. Paint elimination scenes vividly. Make accusations feel like courtroom drama. Every phase transition should feel cinematic.
+${tmpl?.hostVoice.narrativeStyle ? `\nSTYLE: ${tmpl.hostVoice.narrativeStyle}\n` : ''}${dramaLevel === "high" ? `- DRAMA LEVEL: HIGH. Build suspense before every reveal. Pause before vote results. Paint elimination scenes vividly. Make accusations feel like courtroom drama. Every phase transition should feel cinematic.
 - Eliminations/close votes: milk the tension — "The votes are counted... the silence stretches..." then reveal.
 - Phase transitions: atmospheric and intense ("Darkness swallows the village. Someone will not see morning.")` : dramaLevel === "medium" ? `- DRAMA LEVEL: MEDIUM. Set atmosphere. React to interesting moments. Keep energy up.
 - Eliminations/close votes: build a beat of suspense, then reveal.

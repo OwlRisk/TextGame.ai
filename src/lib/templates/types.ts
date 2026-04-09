@@ -79,6 +79,8 @@ export interface GameTemplate {
     maxSentences: number;
     silentByDefault: boolean;
     drama: "low" | "medium" | "high";
+    /** Per-template narrative style injected into the NARRATIVE VOICE prompt section. */
+    narrativeStyle?: string;
   };
 
   speakerMode: "round-table" | "selective";

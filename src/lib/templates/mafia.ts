@@ -50,7 +50,10 @@ HOW THE STORY ENDS:
     { id: AFTERLIFE_CHANNEL_ID, name: "Afterlife", roomType: "private_ai" },
   ],
 
-  hostVoice: { maxSentences: 2, silentByDefault: false, drama: "high" },
+  hostVoice: {
+    maxSentences: 2, silentByDefault: false, drama: "high",
+    narrativeStyle: `Write like a gangster film. Smoky rooms, whispered deals, the crack of a gunshot at dawn. Accusations should feel like betrayals between old friends. Night kills are cinematic — describe the shadows, the footsteps, the aftermath. Voting moments are tense standoffs. Use the language of loyalty and treachery. Every elimination should feel personal, not procedural.`,
+  },
 
   pacing: {
     progressionThreshold: 3,
