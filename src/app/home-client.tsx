@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
@@ -13,7 +13,7 @@ import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getDefaultHostForTemplate } from "@/app/config/host-config";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
-import { getScene, getRandomScene } from "@/lib/scenes";
+import { getScene } from "@/lib/scenes";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -31,31 +31,13 @@ function templateToHex(templateId: string | undefined): string {
 
 export default function HomeClient({ heroHeadline }: { heroHeadline?: React.ReactNode }) {
   const router = useRouter();
-  const { selectGame, games, updateGame, addGame, isHydrated, gamesLoading } = useGameContext();
+  const { selectGame, games, updateGame, addGame } = useGameContext();
   const { user, loading, signInWithGoogle, signInWithFacebook } = useAuth();
   const creatingRef = useRef(false);
-  const autoStarted = useRef(false);
-  const [autoCreatingScene, setAutoCreatingScene] = useState(false);
 
   useEffect(() => {
     selectGame("home");
-    // Auto-create only once for truly new users after game list is fully loaded.
-    if (loading || !user || autoStarted.current) return;
-    if (!isHydrated || gamesLoading) return;
-    if (games.length > 0) return;
-    try {
-      const hasAutocreated = localStorage.getItem("tg_home_scene_autocreated_v1") === "1";
-      if (hasAutocreated) return;
-      localStorage.setItem("tg_home_scene_autocreated_v1", "1");
-    } catch {
-      // Ignore localStorage failures and continue.
-    }
-    autoStarted.current = true;
-    const scene = getRandomScene();
-    setAutoCreatingScene(true);
-    createSceneGame(scene.id).finally(() => setAutoCreatingScene(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, user, selectGame, isHydrated, gamesLoading, games.length]);
+  }, [selectGame]);
 
   const createGameFromPreset = async (presetId: string) => {
     const preset = getPresetById(presetId);
@@ -240,24 +222,13 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      {!loading && user && autoCreatingScene ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <div className="text-center">
-            <div className="animate-pulse mb-4">
-              <span className="text-4xl">🎭</span>
-            </div>
-            <p className="text-zinc-400 text-lg">Gathering your crew...</p>
-          </div>
-        </div>
-      ) : (
-        <LandingPage
-          onSignIn={handleSignIn}
-          onSignInFacebook={handleSignInFacebook}
-          onCreateGame={handleCreateGame}
-          onExploreGames={handleExploreGames}
-          heroHeadline={heroHeadline}
-        />
-      )}
+      <LandingPage
+        onSignIn={handleSignIn}
+        onSignInFacebook={handleSignInFacebook}
+        onCreateGame={handleCreateGame}
+        onExploreGames={handleExploreGames}
+        heroHeadline={heroHeadline}
+      />
 
       <Toaster
         position="top-right"
