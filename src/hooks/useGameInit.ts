@@ -128,7 +128,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         background: "Invisible storyteller and director",
         personality: undefined,
         gender: "other" as const,
-        voiceId: undefined,
+        voiceId: undefined as string | undefined,
       },
       hostName,
       hostColor,
