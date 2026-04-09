@@ -125,6 +125,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+    fetch("/api/user/settings", { headers: { "Content-Type": "application/json" } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((prefs) => {
+        if (prefs?.content_language) {
+          import("@/lib/i18n").then(({ setAppLanguage }) => {
+            setAppLanguage(prefs.content_language);
+          });
+        }
+      })
+      .catch(() => {});
+  }, [user]);
+
+  useEffect(() => {
     const prevUserRef = { current: null as User | null };
     const applySession = (sessionToSet: Session | null, userToSet: User | null) => {
       if (!prevUserRef.current && userToSet) {

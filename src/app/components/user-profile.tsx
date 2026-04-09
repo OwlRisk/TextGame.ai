@@ -10,8 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { getGames } from "@/lib/db";
 import Link from "next/link";
 import { toast } from "sonner";
-import { SUPPORTED_LANGUAGES, detectBrowserLanguage } from "@/lib/content-language";
-import { setAppLanguage, t } from "@/lib/i18n";
+import { SUPPORTED_LANGUAGES } from "@/lib/content-language";
+import { setAppLanguage, getAppLanguage, t } from "@/lib/i18n";
 
 interface UserProfileProps {
   onClose: () => void;
@@ -32,7 +32,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [games, setGames] = useState<GameRecord[]>([]);
   const [gamesLoading, setGamesLoading] = useState(false);
-  const [contentLanguage, setContentLanguage] = useState<string>(() => detectBrowserLanguage());
+  const [contentLanguage, setContentLanguage] = useState<string>(() => getAppLanguage());
   const [langLoading, setLangLoading] = useState(true);
 
   const username = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || "Player";
@@ -47,6 +47,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
       .then((prefs: Record<string, unknown>) => {
         if (typeof prefs.content_language === "string" && prefs.content_language) {
           setContentLanguage(prefs.content_language);
+          setAppLanguage(prefs.content_language);
         }
       })
       .catch(() => {})
