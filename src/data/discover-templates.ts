@@ -77,7 +77,7 @@ export const FEATURED_TEMPLATE: GameTemplate = {
     "Democratic voting & elimination",
     "Bluffing and deduction",
   ],
-  playerCount: 6,
+  playerCount: 5,
   templateId: "werewolf",
   rules: `SETTING: A village haunted by werewolves. Neighbors by day, predators by night.
 
@@ -124,7 +124,7 @@ export const CORE_TEMPLATES: GameTemplate[] = [
     style: "Casual",
     color: "from-orange-600 to-red-600",
     badge: "🔥 Most Popular",
-    playerCount: 6,
+    playerCount: 5,
     templateId: "codenames",
     rules: `SETTING: Two spy agencies race to contact all their field agents hidden among 25 code words — before the other team does.
 
@@ -165,7 +165,7 @@ WIN CONDITIONS:
     style: "Strategic",
     color: "from-blue-700 to-indigo-800",
     badge: "⭐ Classic",
-    playerCount: 6,
+    playerCount: 5,
     templateId: "avalon",
     rules: `SETTING: Camelot is in peril. Loyal knights of the Round Table must complete quests to save the realm — but agents of Mordred hide among them.
 
@@ -212,7 +212,7 @@ WIN CONDITIONS:
     style: "Casual",
     color: "from-blue-600 to-cyan-600",
     badge: "✨ Quick & Fun",
-    playerCount: 6,
+    playerCount: 5,
     templateId: "undercover",
     rules: `SETTING: Everyone has a secret word — but one player has a subtly different word, and they're trying to blend in without getting caught.
 
@@ -254,7 +254,7 @@ export const SOCIAL_DEDUCTION: GameTemplate[] = [
     duration: "45-60 min",
     style: "Competitive",
     color: "from-red-600 to-pink-600",
-    playerCount: 8,
+    playerCount: 7,
     templateId: "mafia",
     rules: `SETTING: A town has been infiltrated by organized crime. Citizens debate and vote by day; the Mafia strikes by night. Trust no one.
 
@@ -293,7 +293,7 @@ WIN CONDITIONS:
     duration: "15-20 min",
     style: "Casual",
     color: "from-green-600 to-teal-600",
-    playerCount: 5,
+    playerCount: 4,
     templateId: "spyfall",
     rules: `SETTING: Everyone has been briefed on the same secret location — except one player: the Spy. The Spy must figure out where they are from the conversation alone.
 
@@ -329,7 +329,7 @@ export const PARTY_GAMES: GameTemplate[] = [  {
     duration: "10-15 min",
     style: "Casual",
     color: "from-blue-500 to-cyan-500",
-    playerCount: 4,
+    playerCount: 3,
     templateId: "20-questions",
     rules: `SETTING: The Host secretly thinks of a person, place, animal, or object. All players are Guessers with 20 yes-or-no questions to figure out what it is.
 
@@ -374,7 +374,7 @@ WIN CONDITIONS:
     duration: "15-25 min",
     style: "Casual",
     color: "from-green-500 to-emerald-500",
-    playerCount: 5,
+    playerCount: 4,
     templateId: "two-truths-lie",
     rules: `SETTING: A social icebreaker where players share personal statements — two true, one false — and the group tries to spot the lie.
 
@@ -414,7 +414,7 @@ export const MYSTERY_GAMES: GameTemplate[] = [
     duration: "30-40 min",
     style: "Strategic",
     color: "from-amber-600 to-orange-600",
-    playerCount: 5,
+    playerCount: 4,
     templateId: "detective-mystery",
     rules: `SETTING: A murder has been committed. Suspects have secrets. Detectives must piece together clues, interrogate witnesses, and name the killer before it's too late.
 
@@ -628,7 +628,7 @@ TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflectio
     duration: "30-50 min",
     style: "Casual",
     color: "from-violet-600 to-purple-600",
-    playerCount: 5,
+    playerCount: 4,
     templateId: "storyteller",
     rules: `SETTING: A collaborative adventure where every player is both author and character. Together you build a story that surprises even its creators.
 
@@ -671,7 +671,7 @@ WIN CONDITIONS: Cooperative by default — creating a memorable story together i
     color: "from-amber-600 to-red-600",
     badge: "New",
     templateId: "rpg-dungeon",
-    playerCount: 4,
+    playerCount: 3,
     features: [
       "Class-based abilities (Warrior, Mage, Rogue, Healer)",
       "Turn-based combat with d20 rolls",
@@ -724,7 +724,7 @@ export const EDUCATIONAL_GAMES: GameTemplate[] = [
     duration: "20-30 min",
     style: "Casual",
     color: "from-yellow-600 to-orange-600",
-    playerCount: 5,
+    playerCount: 4,
     templateId: "trivia",
     rules: `SETTING: A competitive knowledge championship hosted by the AI. Players answer questions across chosen topics to score points.
 
@@ -764,7 +764,7 @@ WIN CONDITIONS:
     duration: "25-35 min",
     style: "Strategic",
     color: "from-indigo-600 to-purple-600",
-    playerCount: 4,
+    playerCount: 3,
     templateId: "debate",
     rules: `SETTING: A structured debate where players argue assigned positions — whether they agree with them or not — on philosophical, ethical, political, or deliberately absurd topics.
 
@@ -805,7 +805,7 @@ WIN CONDITIONS:
     duration: "40-60 min",
     style: "Casual",
     color: "from-green-600 to-emerald-600",
-    playerCount: 4,
+    playerCount: 3,
     templateId: "escape-room",
     rules: `SETTING: You are trapped inside a room filled with interconnected puzzles, locked mechanisms, and hidden clues. Work together to solve them all and escape before time runs out.
 
