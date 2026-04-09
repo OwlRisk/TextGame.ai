@@ -113,14 +113,11 @@ export function buildLanguageInstruction(contentLanguage?: string): string {
     ? ""
     : `\nLANGUAGE: You MUST respond entirely in ${langName}.
 This applies to ALL player-visible content without exception:
-- Narration and scene descriptions
-- Dialogue and character speech
-- PHASE label values (e.g. PHASE: 第一幕 — 犯罪现场, not "Act 1 — Crime Scene")
-- ANNOUNCE text
-- Evidence descriptions and board content ([BOARD:...])
+- Narration, scene descriptions, dialogue, character speech
+- PHASE label values (translate them — do NOT keep English like "Act 1 — Crime Scene")
+- ANNOUNCE text, evidence descriptions, board content ([BOARD:...])
 - [SECTION:...] titles and content
-- Questions-remaining indicators
-- Character introductions and role descriptions
+- Questions-remaining indicators, character introductions, role descriptions
 - Game-over summaries and scores
 The ONLY English allowed: directive KEYWORDS themselves (NEXT_SPEAKER, ASSIGN_ROLE, PHASE, BOARD, SECTION, GAME_OVER, etc.) and player names.
 Even though the game rules/instructions below are written in English, you must translate ALL output for the player into ${langName}.`;
