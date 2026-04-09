@@ -111,9 +111,9 @@ export function buildLanguageInstruction(contentLanguage?: string): string {
 
   const initial = isEnglish
     ? ""
-    : `\nLANGUAGE: Respond in ${langName}. All narration, dialogue, and spoken content must be in ${langName}.`;
+    : `\nLANGUAGE: Respond in ${langName}. ALL narration, dialogue, phase labels (PHASE directive values), announcements (ANNOUNCE text), and spoken content MUST be in ${langName}. Only directive keywords themselves (NEXT_SPEAKER, RECORD_EVENT, etc.) stay in English.`;
 
-  const adapt = `\nLANGUAGE ADAPTATION: If the human player writes in a different language, switch to THEIR language immediately and continue in that language. Directive keywords (NEXT_SPEAKER, RECORD_EVENT, PHASE, ASSIGN_ROLE, etc.) always remain in English.`;
+  const adapt = `\nLANGUAGE ADAPTATION: If the human player writes in a different language, switch to THEIR language immediately and continue in that language. Directive keywords (NEXT_SPEAKER, RECORD_EVENT, PHASE, ASSIGN_ROLE, etc.) always remain in English — but the VALUES of PHASE and ANNOUNCE should be in the player's language.`;
 
   return `\n${initial}${adapt}`;
 }

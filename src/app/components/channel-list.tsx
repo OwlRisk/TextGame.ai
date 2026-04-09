@@ -85,7 +85,7 @@ export function ChannelList({
   selectedChannelId, 
   onSelectChannel,
   onDeleteChannel,
-  gameSectionLabel = "Game Rooms",
+  gameSectionLabel,
   userDisplayName,
   gameUserDisplayName,
   gameId,
@@ -101,7 +101,7 @@ export function ChannelList({
   hasRules,
   hasMyBoard,
   myBoardHasUpdate,
-  playerBoardLabel = "My Board",
+  playerBoardLabel,
 }: ChannelListProps) {
   const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
@@ -149,7 +149,7 @@ export function ChannelList({
                   onClick={() => onSelectChannel("__my_board__")}
                 >
                   <Package className="h-4 w-4 mr-2 text-amber-400/60" />
-                  <span className="text-sm">{playerBoardLabel}</span>
+                  <span className="text-sm">{playerBoardLabel || t("channel.my_board")}</span>
                   {myBoardHasUpdate && selectedChannelId !== "__my_board__" && (
                     <span className="ml-auto h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" aria-hidden />
                   )}
@@ -203,7 +203,7 @@ export function ChannelList({
           {/* Game Rooms */}
           <div>
             <div className="flex items-center justify-between px-3 mb-2">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{gameSectionLabel}</span>
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{gameSectionLabel || t("channel.game_rooms")}</span>
             </div>
             {channels.filter(c => c.type === "game").map((channel) => {
               const perms = channelPermissions[channel.id];

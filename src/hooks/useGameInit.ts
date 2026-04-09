@@ -15,16 +15,17 @@ import { getMysteryCase } from "@/data/mystery-cases";
 import { buildSuspectPrompt, buildInitialEvidenceBoard } from "@/lib/suspect-prompt-builder";
 import { getScene, isSceneMode } from "@/lib/scenes";
 import { extractPreferredName, detectBrowserLanguage } from "@/lib/content-language";
-import { t, setAppLanguage } from "@/lib/i18n";
+import { t, setAppLanguage, getAppLanguage } from "@/lib/i18n";
 
-function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string): string {
-  if (!tmpl) return `**Your Role: ${role}**`;
+function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string, lang?: string): string {
+  const label = t("board.your_role", lang, { role });
+  if (!tmpl) return label;
   const rulesText = tmpl.defaultRules || "";
   const roleRegex = new RegExp(`-\\s*${role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^\\n]+)`, "i");
   const match = rulesText.match(roleRegex);
   const desc = match?.[1]?.trim();
-  if (desc) return `**Your Role: ${role}**\n\n${desc}`;
-  return `**Your Role: ${role}**`;
+  if (desc) return `${label}\n\n${desc}`;
+  return label;
 }
 
 const AI_COLOR_PALETTE = [
@@ -98,7 +99,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
   const currentGame = games.find((g) => g.id === gameId);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isFreshLobby, setIsFreshLobby] = useState(false);
-  const [contentLanguage, setContentLanguage] = useState(() => detectBrowserLanguage());
+  const [contentLanguage, setContentLanguage] = useState(() => getAppLanguage());
   const seedCancelledRef = useRef(false);
   const readyKickoffRef = useRef<OpeningKickoffState | null>(null);
   const gameStartingRef = useRef(false);
@@ -451,7 +452,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
           [userId]: buildInitialEvidenceBoard(caseData),
         }));
       } else if (humanRole) {
-        const roleDesc = buildRoleBoardContent(tmpl, humanRole);
+        const roleDesc = buildRoleBoardContent(tmpl, humanRole, contentLanguage);
         setMyBoardContent((prev) => ({ ...prev, [userId]: roleDesc }));
       }
 

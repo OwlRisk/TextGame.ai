@@ -516,7 +516,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               const lang = getBrowserLanguage();
               if (isRoundInProgress) return gameTemplate === "scene" ? t("placeholder.crew_talking", lang) : t("placeholder.ai_replying", lang);
               if (gameTemplate === "scene") return inputMode === "do" ? t("placeholder.do", lang) : t("placeholder.say", lang);
-              return `Message #${channelName}`;
+              return t("placeholder.message_channel", lang, { channel: channelName });
             })()}
             className={`min-h-0 bg-zinc-800/80 backdrop-blur-sm border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 text-white placeholder:text-zinc-500 py-2 px-3 text-base sm:text-sm w-full resize-none leading-relaxed scrollbar-hide rounded-lg transition-colors ${
               gameTemplate === "scene" && inputMode === "do"

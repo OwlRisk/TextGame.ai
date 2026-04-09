@@ -397,7 +397,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameName: currentGame?.name ?? "Game",
     channels: gameChannels,
     selectedChannelId,
-    gameSectionLabel: isScene ? "Adventure" : "Game Rooms",
+    gameSectionLabel: isScene ? t("channel.adventure") : t("channel.game_rooms"),
     userDisplayName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0] || null,
     gameUserDisplayName: humanGameIdentity?.name || null,
     gameId,
@@ -411,7 +411,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     myBoardHasUpdate,
     playerBoardLabel: currentGame?.config?.playerBoardLabel,
     onDeleteChannel: (id: string | undefined) => {
-      if (gameRoomIds.has(id ?? "")) toast.info("Game rooms are defined by the Game Master and cannot be removed");
+      if (gameRoomIds.has(id ?? "")) toast.info(t("channel.cannot_remove"));
     },
   };
 
@@ -483,7 +483,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             <div className="max-w-2xl p-6">
               <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-zinc-700/50">
                 <Info className="h-5 w-5 text-amber-400" />
-                <h2 className="text-lg font-semibold text-white">{currentGame?.config?.playerBoardLabel || (currentGame?.config?.template === "script-kill" ? "Evidence Board" : "My Board")}</h2>
+                <h2 className="text-lg font-semibold text-white">{currentGame?.config?.playerBoardLabel || (currentGame?.config?.template === "script-kill" ? t("channel.evidence_board") : t("channel.my_board"))}</h2>
               </div>
               {boardContentForViewer.trim() ? (
                 currentGame?.config?.template === "script-kill" ? (

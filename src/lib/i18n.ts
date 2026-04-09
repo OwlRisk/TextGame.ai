@@ -170,6 +170,19 @@ const T: Record<string, Record<string, string>> = {
     it: "Di qualcosa\u2026",
     ar: "\u0642\u0644 \u0634\u064a\u0626\u0627\u2026",
   },
+  "placeholder.message_channel": {
+    en: "Message #{channel}",
+    zh: "发送消息到 #{channel}",
+    ja: "#{channel} にメッセージ",
+    ko: "#{channel}에 메시지",
+    de: "Nachricht an #{channel}",
+    fr: "Message #{channel}",
+    es: "Mensaje a #{channel}",
+    pt: "Mensagem em #{channel}",
+    ru: "Сообщение в #{channel}",
+    it: "Messaggio in #{channel}",
+    ar: "رسالة في #{channel}",
+  },
   "placeholder.do": {
     en: "What do you do?",
     zh: "\u4f60\u8981\u505a\u4ec0\u4e48\uff1f",
@@ -442,6 +455,20 @@ const T: Record<string, Record<string, string>> = {
     ar: "\u0633\u064a\u0642\u0648\u0645 \u0645\u062f\u064a\u0631 \u0627\u0644\u0644\u0639\u0628\u0629 \u0628\u062a\u062d\u062f\u064a\u062b \u0644\u0648\u062d\u062a\u0643.",
   },
 
+  "board.your_role": {
+    en: "**Your Role: {role}**",
+    zh: "**你的角色：{role}**",
+    ja: "**あなたの役割：{role}**",
+    ko: "**당신의 역할: {role}**",
+    de: "**Deine Rolle: {role}**",
+    fr: "**Votre rôle : {role}**",
+    es: "**Tu rol: {role}**",
+    pt: "**Seu papel: {role}**",
+    ru: "**Ваша роль: {role}**",
+    it: "**Il tuo ruolo: {role}**",
+    ar: "**دورك: {role}**",
+  },
+
   // ── Greetings ──────────────────────────────────────────────────────────
   "greeting.solo": {
     en: "Welcome! Just type your response below when it\u2019s your turn \u2014 you can also tap a suggested reply. Let\u2019s begin!",
@@ -458,16 +485,16 @@ const T: Record<string, Record<string, string>> = {
   },
   "greeting.hidden_roles": {
     en: "Welcome, {count} players! Roles have been secretly assigned \u2014 check **\u201cMy Board\u201d** on the left for your identity.\n\nWhen it\u2019s your turn, type your response below or tap a suggested reply. Night falls\u2026",
-    zh: "\u6b22\u8fce\uff0c{count} \u4f4d\u73a9\u5bb6\uff01\u89d2\u8272\u5df2\u79d8\u5bc6\u5206\u914d\u2014\u2014\u70b9\u51fb\u5de6\u4fa7 **\u201cMy Board\u201d** \u67e5\u770b\u4f60\u7684\u8eab\u4efd\u3002\n\n\u8f6e\u5230\u4f60\u65f6\uff0c\u5728\u4e0b\u65b9\u8f93\u5165\u56de\u590d\u6216\u70b9\u51fb\u5feb\u6377\u6309\u94ae\u3002\u591c\u5e55\u964d\u4e34\u2026\u2026",
-    de: "Willkommen, {count} Spieler! Rollen wurden heimlich zugewiesen \u2014 pr\u00fcfe **\u201eMy Board\u201c** links.\n\nWenn du dran bist, tippe deine Antwort ein. Die Nacht bricht herein\u2026",
-    fr: "Bienvenue, {count} joueurs ! Les r\u00f4les ont \u00e9t\u00e9 attribu\u00e9s \u2014 consultez **\u00ab My Board \u00bb** \u00e0 gauche.\n\nLa nuit tombe\u2026",
-    es: "\u00a1Bienvenidos, {count} jugadores! Los roles han sido asignados \u2014 revisa **\u201cMy Board\u201d** a la izquierda.\n\nCae la noche\u2026",
-    ja: "\u3088\u3046\u3053\u305d\u3001{count}\u4eba\u306e\u30d7\u30ec\u30a4\u30e4\u30fc\uff01\u5f79\u8077\u304c\u914d\u5e03\u3055\u308c\u307e\u3057\u305f\u2014\u2014\u5de6\u306e **\u201cMy Board\u201d** \u3067\u78ba\u8a8d\u3002\n\n\u591c\u304c\u8fc7\u308a\u307e\u3059\u2026",
-    ko: "\ud658\uc601\ud569\ub2c8\ub2e4, {count}\uba85! \uc5ed\ud560\uc774 \ubc30\uc815\ub418\uc5c8\uc2b5\ub2c8\ub2e4 \u2014 \uc67c\ucabd **\u201cMy Board\u201d**\uc5d0\uc11c \ud655\uc778\ud558\uc138\uc694.\n\n\ubc24\uc774 \ucc3e\uc544\uc635\ub2c8\ub2e4\u2026",
-    pt: "Bem-vindos, {count} jogadores! Os pap\u00e9is foram atribu\u00eddos \u2014 verifique **\u201cMy Board\u201d** \u00e0 esquerda.\n\nA noite cai\u2026",
-    ru: "\u0414\u043e\u0431\u0440\u043e \u043f\u043e\u0436\u0430\u043b\u043e\u0432\u0430\u0442\u044c, {count} \u0438\u0433\u0440\u043e\u043a\u043e\u0432! \u0420\u043e\u043b\u0438 \u0440\u0430\u0441\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u044b \u2014 \u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 **\u00abMy Board\u00bb** \u0441\u043b\u0435\u0432\u0430.\n\n\u041d\u043e\u0447\u044c \u043d\u0430\u0441\u0442\u0443\u043f\u0430\u0435\u0442\u2026",
-    it: "Benvenuti, {count} giocatori! I ruoli sono stati assegnati \u2014 controlla **\u201cMy Board\u201d** a sinistra.\n\nScende la notte\u2026",
-    ar: "\u0623\u0647\u0644\u0627\u064b\u060c {count} \u0644\u0627\u0639\u0628\u064a\u0646! \u062a\u0645 \u062a\u0648\u0632\u064a\u0639 \u0627\u0644\u0623\u062f\u0648\u0627\u0631 \u2014 \u062a\u062d\u0642\u0642 \u0645\u0646 **\u201cMy Board\u201d**.\n\n\u064a\u062d\u0644 \u0627\u0644\u0644\u064a\u0644\u2026",
+    zh: "\u6b22\u8fce\uff0c{count} \u4f4d\u73a9\u5bb6\uff01\u89d2\u8272\u5df2\u79d8\u5bc6\u5206\u914d\u2014\u2014\u70b9\u51fb\u5de6\u4fa7 **\u201c\u6211\u7684\u9762\u677f\u201d** \u67e5\u770b\u4f60\u7684\u8eab\u4efd\u3002\n\n\u8f6e\u5230\u4f60\u65f6\uff0c\u5728\u4e0b\u65b9\u8f93\u5165\u56de\u590d\u6216\u70b9\u51fb\u5feb\u6377\u6309\u94ae\u3002\u591c\u5e55\u964d\u4e34\u2026\u2026",
+    de: "Willkommen, {count} Spieler! Rollen wurden heimlich zugewiesen \u2014 pr\u00fcfe **\u201eMein Board\u201c** links.\n\nWenn du dran bist, tippe deine Antwort ein. Die Nacht bricht herein\u2026",
+    fr: "Bienvenue, {count} joueurs ! Les r\u00f4les ont \u00e9t\u00e9 attribu\u00e9s \u2014 consultez **\u00ab Mon tableau \u00bb** \u00e0 gauche.\n\nLa nuit tombe\u2026",
+    es: "\u00a1Bienvenidos, {count} jugadores! Los roles han sido asignados \u2014 revisa **\u201cMi tablero\u201d** a la izquierda.\n\nCae la noche\u2026",
+    ja: "\u3088\u3046\u3053\u305d\u3001{count}\u4eba\u306e\u30d7\u30ec\u30a4\u30e4\u30fc\uff01\u5f79\u8077\u304c\u914d\u5e03\u3055\u308c\u307e\u3057\u305f\u2014\u2014\u5de6\u306e **\u201c\u30de\u30a4\u30dc\u30fc\u30c9\u201d** \u3067\u78ba\u8a8d\u3002\n\n\u591c\u304c\u8fc7\u308a\u307e\u3059\u2026",
+    ko: "\ud658\uc601\ud569\ub2c8\ub2e4, {count}\uba85! \uc5ed\ud560\uc774 \ubc30\uc815\ub418\uc5c8\uc2b5\ub2c8\ub2e4 \u2014 \uc67c\ucabd **\u201c\ub0b4 \ubcf4\ub4dc\u201d**\uc5d0\uc11c \ud655\uc778\ud558\uc138\uc694.\n\n\ubc24\uc774 \ucc3e\uc544\uc635\ub2c8\ub2e4\u2026",
+    pt: "Bem-vindos, {count} jogadores! Os pap\u00e9is foram atribu\u00eddos \u2014 verifique **\u201cMeu painel\u201d** \u00e0 esquerda.\n\nA noite cai\u2026",
+    ru: "\u0414\u043e\u0431\u0440\u043e \u043f\u043e\u0436\u0430\u043b\u043e\u0432\u0430\u0442\u044c, {count} \u0438\u0433\u0440\u043e\u043a\u043e\u0432! \u0420\u043e\u043b\u0438 \u0440\u0430\u0441\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u044b \u2014 \u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 **\u00ab\u041c\u043e\u044f \u0434\u043e\u0441\u043a\u0430\u00bb** \u0441\u043b\u0435\u0432\u0430.\n\n\u041d\u043e\u0447\u044c \u043d\u0430\u0441\u0442\u0443\u043f\u0430\u0435\u0442\u2026",
+    it: "Benvenuti, {count} giocatori! I ruoli sono stati assegnati \u2014 controlla **\u201cLa mia bacheca\u201d** a sinistra.\n\nScende la notte\u2026",
+    ar: "\u0623\u0647\u0644\u0627\u064b\u060c {count} \u0644\u0627\u0639\u0628\u064a\u0646! \u062a\u0645 \u062a\u0648\u0632\u064a\u0639 \u0627\u0644\u0623\u062f\u0648\u0627\u0631 \u2014 \u062a\u062d\u0642\u0642 \u0645\u0646 **\u201c\u0644\u0648\u062d\u062a\u064a\u201d** \u0639\u0644\u0649 \u0627\u0644\u064a\u0633\u0627\u0631.\n\n\u064a\u062d\u0644 \u0627\u0644\u0644\u064a\u0644\u2026",
   },
   "greeting.default": {
     en: "Welcome! The game begins now with {count} players. When you see **\u201cIt\u2019s your turn\u201d**, type your response below \u2014 or tap a suggested reply to jump right in. Let\u2019s go!",
@@ -829,6 +856,39 @@ const T: Record<string, Record<string, string>> = {
   },
 
   // ── Channel list ──────────────────────────────────────────────────────
+  "channel.game_rooms": {
+    en: "Game Rooms", zh: "游戏房间", ja: "ゲームルーム", ko: "게임 룸",
+    de: "Spielräume", fr: "Salles de jeu", es: "Salas de juego",
+    pt: "Salas de jogo", ru: "Игровые комнаты", it: "Stanze di gioco", ar: "غرف اللعبة",
+  },
+  "channel.adventure": {
+    en: "Adventure", zh: "冒险", ja: "アドベンチャー", ko: "어드벤처",
+    de: "Abenteuer", fr: "Aventure", es: "Aventura",
+    pt: "Aventura", ru: "Приключение", it: "Avventura", ar: "مغامرة",
+  },
+  "channel.my_board": {
+    en: "My Board", zh: "我的面板", ja: "マイボード", ko: "내 보드",
+    de: "Mein Board", fr: "Mon tableau", es: "Mi tablero",
+    pt: "Meu painel", ru: "Моя доска", it: "La mia bacheca", ar: "لوحتي",
+  },
+  "channel.evidence_board": {
+    en: "Evidence Board", zh: "证据板", ja: "証拠ボード", ko: "증거 보드",
+    de: "Beweisboard", fr: "Tableau de preuves", es: "Tablero de evidencias",
+    pt: "Painel de evidências", ru: "Доска улик", it: "Bacheca prove", ar: "لوحة الأدلة",
+  },
+  "channel.cannot_remove": {
+    en: "Game rooms are defined by the Game Master and cannot be removed",
+    zh: "游戏房间由系统定义，无法删除",
+    ja: "ゲームルームはシステムが定義しており、削除できません",
+    ko: "게임 룸은 시스템이 정의하며 삭제할 수 없습니다",
+    de: "Spielräume werden vom System definiert und können nicht entfernt werden",
+    fr: "Les salles de jeu sont définies par le système et ne peuvent pas être supprimées",
+    es: "Las salas de juego están definidas por el sistema y no se pueden eliminar",
+    pt: "As salas de jogo são definidas pelo sistema e não podem ser removidas",
+    ru: "Игровые комнаты определены системой и не могут быть удалены",
+    it: "Le stanze di gioco sono definite dal sistema e non possono essere rimosse",
+    ar: "غرف اللعبة محددة من النظام ولا يمكن إزالتها",
+  },
   "channel.delete_section": {
     en: "Delete Section", zh: "\u5220\u9664\u5206\u533a", ja: "\u30bb\u30af\u30b7\u30e7\u30f3\u3092\u524a\u9664", ko: "\uc139\uc158 \uc0ad\uc81c",
     de: "Bereich l\u00f6schen", fr: "Supprimer la section", es: "Eliminar secci\u00f3n",
