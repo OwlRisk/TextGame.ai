@@ -418,7 +418,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     channelPermissions,
     allPlayers: players,
     unreadCounts,
-    hasRules: isScene ? false : !!(currentGame?.config?.rules ?? "").trim(),
+    hasRules: isScene ? false : !!(currentGame?.config?.playerRules ?? "").trim(),
     hasMyBoard: isScene ? false : gamePhase !== "lobby",
     myBoardHasUpdate,
     playerBoardLabel: currentGame?.config?.playerBoardLabel,
@@ -477,10 +477,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 <BookOpen className="h-5 w-5 text-violet-400" />
                 <h2 className="text-lg font-semibold text-white">{t("label.rules")}</h2>
               </div>
-              {(currentGame?.config?.rules ?? "").trim() ? (
+              {(currentGame?.config?.playerRules ?? "").trim() ? (
                 <div
                   className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
-                  dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.rules!) }}
+                  dangerouslySetInnerHTML={{ __html: safeMarked(currentGame!.config!.playerRules!) }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
@@ -598,7 +598,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               setMobileLeftDrawer(null);
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
-            onOpenRules={(currentGame?.config?.rules ?? "").trim() ? () => {
+            onOpenRules={(currentGame?.config?.playerRules ?? "").trim() ? () => {
               setSelectedChannelId(RULES_CHANNEL_ID);
               setMobileLeftDrawer(null);
             } : undefined}

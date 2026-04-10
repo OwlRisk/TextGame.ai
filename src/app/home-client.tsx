@@ -53,12 +53,14 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;
       let gameRules = preset.rules;
+      let gamePlayerRules: string | undefined;
       let caseId: string | undefined;
 
       if (scriptKillSetup) {
         configuredPlayers = scriptKillSetup.configuredPlayers;
         humanRole = scriptKillSetup.humanRole;
         gameRules = scriptKillSetup.rules;
+        gamePlayerRules = scriptKillSetup.playerRules;
         caseId = scriptKillSetup.caseId;
       } else {
         try {
@@ -90,6 +92,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || preset.playerCount || tmpl?.recommendedAICount || 4,
           rules: gameRules,
+          ...(gamePlayerRules && { playerRules: gamePlayerRules }),
           hostId: "narrator",
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,

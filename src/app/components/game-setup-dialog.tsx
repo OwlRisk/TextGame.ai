@@ -35,6 +35,8 @@ export interface GameConfig {
   template: string;
   playerCount: number;
   rules: string;
+  /** Player-facing rules summary — shown in the Rules panel. If absent, Rules tab is hidden. */
+  playerRules?: string;
   /** Game background — merged into Rules (deprecated, kept for backward compatibility) */
   intro?: string;
   customRoles?: string[];

@@ -63,12 +63,14 @@ export default function DiscoverView() {
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;
       let gameRules = preset.rules;
+      let gamePlayerRules: string | undefined;
       let caseId: string | undefined;
 
       if (scriptKillSetup) {
         configuredPlayers = scriptKillSetup.configuredPlayers;
         humanRole = scriptKillSetup.humanRole;
         gameRules = scriptKillSetup.rules;
+        gamePlayerRules = scriptKillSetup.playerRules;
         caseId = scriptKillSetup.caseId;
       }
 
@@ -114,6 +116,7 @@ export default function DiscoverView() {
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || (preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4),
           rules: gameRules,
+          ...(gamePlayerRules && { playerRules: gamePlayerRules }),
           hostId: "narrator",
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
