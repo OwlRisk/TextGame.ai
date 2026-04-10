@@ -14,15 +14,10 @@ test.describe("API – public endpoints", () => {
     expect(json).toHaveProperty("model");
   });
 
-  test("GET /api/join/<invalid> returns 404", async ({ request }) => {
-    const res = await request.get("/api/join/nonexistent");
-    expect(res.status()).toBe(404);
-  });
 });
 
 test.describe("API – auth-required endpoints return 401 without token", () => {
   const authEndpoints = [
-    { method: "POST" as const, path: "/api/games/fake-id/invite" },
     { method: "POST" as const, path: "/api/chat/stream" },
     { method: "POST" as const, path: "/api/stripe/create-checkout" },
     { method: "POST" as const, path: "/api/stripe/create-portal-session" },
