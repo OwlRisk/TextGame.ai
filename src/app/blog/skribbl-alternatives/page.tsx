@@ -12,7 +12,7 @@ const MODIFIED = "2026-03-06T00:00:00Z";
 
 export const metadata: Metadata = {
   title: TITLE, description: DESCRIPTION,
-  keywords: ["skribbl alternative", "games like skribbl", "skribbl.io alternatives", "free drawing games online", "pictionary online free", "browser games with friends", "multiplayer browser games free"],
+  keywords: ["skribbl alternative", "games like skribbl", "skribbl.io alternatives", "free drawing games online", "pictionary online free", "browser games with friends", "multiplayer browser games free", "games like skribbl.io", "skribbl replacement", "gartic phone alternative", "free games like skribbl"],
   alternates: { canonical: CANONICAL },
   openGraph: { title: TITLE, description: DESCRIPTION, type: "article", url: `${SITE_DOMAIN}${CANONICAL}`, publishedTime: PUBLISHED, modifiedTime: MODIFIED, authors: [SITE_NAME], tags: ["Comparison", "Browser Games"], images: [{ url: "/blog/blog-skribbl-alternatives.png", width: 1792, height: 1024, alt: TITLE }] },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/blog/blog-skribbl-alternatives.png"] },

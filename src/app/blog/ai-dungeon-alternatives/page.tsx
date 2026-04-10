@@ -23,6 +23,7 @@ export const metadata: Metadata = {
     "koboldai",
     "multiplayer ai game",
     "ai rpg",
+    "apps like ai dungeon",
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {

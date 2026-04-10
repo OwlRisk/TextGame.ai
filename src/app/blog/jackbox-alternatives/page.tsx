@@ -24,6 +24,13 @@ export const metadata: Metadata = {
     "browser party games",
     "multiplayer browser games",
     "party games for groups online",
+    "jackbox games free",
+    "jackbox games free online",
+    "free jackbox alternative",
+    "jackbox style games",
+    "party games like jackbox free",
+    "jackbox online free",
+    "jackbox alternative no download",
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {

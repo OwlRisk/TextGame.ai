@@ -31,6 +31,9 @@ export const metadata: Metadata = {
     "TextGame.ai",
     "ai game master",
     "play werewolf online ai",
+    "games like character ai",
+    "ai character chat no sign up",
+    "character ai free no login",
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {

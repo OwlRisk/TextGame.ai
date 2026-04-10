@@ -4,7 +4,7 @@ import DiscoverView from "./discover-view";
 export const metadata: Metadata = {
   title: "Discover AI Text Games — Werewolf, Mafia, RPG, Mystery & More",
   description:
-    "Browse 10+ AI-powered multiplayer text game templates. Play Werewolf, Mafia, Secret Hitler, Who's the Spy, Murder Mystery, Trivia and more — or create your own custom roleplay AI game in minutes. Best Character.AI alternative for social deduction games.",
+    "Browse 10+ free AI-powered multiplayer text game templates. Play Werewolf, Mafia, Secret Hitler, Who's the Spy, Murder Mystery, Trivia and more — or create your own custom roleplay AI game in minutes. Best free Character.AI & Jackbox alternative for social deduction games.",
   keywords: [
     "ai text games",
     "play werewolf online",
@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     "multiplayer ai game",
     "ai dungeon master",
     "text adventure game",
+    "jackbox alternative free",
+    "free online party games",
+    "games like jackbox",
   ],
   alternates: { canonical: "/discover" },
   openGraph: {

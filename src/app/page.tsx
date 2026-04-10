@@ -6,7 +6,7 @@ import HomeClient from "./home-client";
 export const metadata: Metadata = {
   title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
   description:
-    "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed — play solo, with friends, or with a mix of both. AI fills every empty seat and reacts like real players.",
+    "Play Werewolf, Mafia, Who's the Spy and more with AI characters — free, no download needed. No moderator required — play solo, with friends, or with a mix of both. AI fills every empty seat and reacts like real players.",
   keywords: [
     "AI game master",
     "text-based games online",
@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     "AI host game",
     "multiplayer text game",
     "play AI games online",
+    "jackbox alternative",
+    "free ai game",
+    "no download party game",
   ],
   alternates: { canonical: "/" },
   openGraph: {

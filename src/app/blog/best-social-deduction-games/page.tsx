@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     "avalon online",
     "ai social deduction",
     "best party games for groups",
+    "free social deduction games online",
+    "browser social deduction games",
+    "digital social deduction games",
+    "2026 social deduction games",
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {

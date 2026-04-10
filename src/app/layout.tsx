@@ -71,6 +71,11 @@ export const metadata: Metadata = {
     "free ai game",
     "ai board game",
     "custom ai game",
+    "jackbox alternative",
+    "jackbox alternative free",
+    "no sign up ai chat",
+    "free online party games",
+    "ai chat no sign up",
   ],
   alternates: {
     canonical: "/",
@@ -170,6 +175,9 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
         {process.env.NEXT_PUBLIC_SEARCH_CONSOLE_ID && (
           <meta name="google-site-verification" content={process.env.NEXT_PUBLIC_SEARCH_CONSOLE_ID} />
+        )}
+        {process.env.NEXT_PUBLIC_BING_VERIFICATION_ID && (
+          <meta name="msvalidate.01" content={process.env.NEXT_PUBLIC_BING_VERIFICATION_ID} />
         )}
       </head>
       <body className="antialiased h-full overflow-hidden safe-area-padding" suppressHydrationWarning>
