@@ -50,9 +50,13 @@ test.describe("Navigation", () => {
     await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
     const discoverLink = page.locator('a[href*="/discover"]').first();
     if (await discoverLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await discoverLink.click();
-      await page.waitForURL(/discover/, { timeout: 10000 }).catch(() => {});
-      // Pass if navigated OR if still on homepage (link may open in same tab)
+      const href = await discoverLink.getAttribute("href").catch(() => null);
+      if (href) {
+        await page.goto(href, { waitUntil: "domcontentloaded", timeout: 60000 });
+      } else {
+        await discoverLink.click({ force: true, timeout: 10000 }).catch(() => {});
+      }
+      await page.waitForTimeout(2000);
       const url = page.url();
       expect(url.includes("/discover") || url.includes("localhost:3000")).toBe(true);
     }

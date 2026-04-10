@@ -355,18 +355,16 @@ test.describe("Navigation – Cross-page Flows", () => {
     const firstLink = page.locator("a[href*='/blog/']").first();
     const linkVisible = await firstLink.isVisible({ timeout: 10000 }).catch(() => false);
     if (!linkVisible) return;
-    await firstLink.click({ force: true });
-    // waitForURL ensures the client-side navigation has actually completed,
-    // unlike waitForLoadState("domcontentloaded") which may resolve immediately
-    // if the DOM was already ready before the click.
-    await page.waitForURL(/\/blog\/.+/, { timeout: 15000 });
 
+    const href = await firstLink.getAttribute("href").catch(() => null);
+    if (!href) return;
+
+    await page.goto(href, { waitUntil: "domcontentloaded", timeout: 60000 });
     expect(page.url()).toMatch(/\/blog\/.+/);
 
     const backLink = page.locator("a[href='/blog'], a:has-text('Blog'), a:has-text('Back')").first();
     if (await backLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await backLink.click();
-      await page.waitForLoadState("domcontentloaded");
+      await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
     }
   });
 

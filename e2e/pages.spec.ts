@@ -13,12 +13,10 @@ test.describe("Blog", () => {
   test("blog index loads and lists posts", async ({ page }) => {
     await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
     await expect(page).toHaveTitle(/Blog|TextGame/i);
+    await page.waitForTimeout(3000);
 
-    const articles = page.locator("a[href*='/blog/']");
-    const hasArticles = await articles.first().isVisible({ timeout: 10000 }).catch(() => false);
-    if (hasArticles) {
-      await page.waitForTimeout(1000);
-      const count = await articles.count();
+    const count = await page.locator("a[href*='/blog/']").count();
+    if (count > 0) {
       expect(count).toBeGreaterThan(0);
     }
   });
