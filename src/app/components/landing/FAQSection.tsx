@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { FAQ_ITEMS } from "@/data/landing-content";
+import { localizeFAQ } from "@/data/landing-content-i18n";
+import { t, getAppLanguage } from "@/lib/i18n";
 
 export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const lang = getAppLanguage();
+  const faqItems = useMemo(() => localizeFAQ(FAQ_ITEMS, lang), [lang]);
 
   return (
     <div className="mb-24">
@@ -13,11 +17,11 @@ export function FAQSection() {
         <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
           <span className="text-sm font-bold text-violet-400">FAQ</span>
         </div>
-        <h3 className="text-3xl font-black text-white mb-3">Common Questions</h3>
-        <p className="text-lg text-zinc-400">Everything you need to know</p>
+        <h3 className="text-3xl font-black text-white mb-3">{t("landing.faq_title")}</h3>
+        <p className="text-lg text-zinc-400">{t("landing.faq_desc")}</p>
       </div>
       <div className="max-w-3xl mx-auto space-y-3">
-        {FAQ_ITEMS.map((faq, index) => (
+        {faqItems.map((faq, index) => (
           <div
             key={index}
             className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-violet-500/30"

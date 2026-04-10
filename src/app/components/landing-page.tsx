@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Compass,
   Users,
@@ -19,6 +19,12 @@ import {
 } from "@/data/landing-content";
 import { t, getAppLanguage } from "@/lib/i18n";
 import { getTemplateI18n } from "@/data/template-i18n";
+import {
+  localizeScenarios,
+  localizeMarqueeCharacters,
+  localizeFeatures,
+  localizeBlogLabel,
+} from "@/data/landing-content-i18n";
 import dynamic from "next/dynamic";
 import { SafeAvatar, PreviewAvatar, StreamingText } from "@/app/components/landing/shared";
 const InsideGameSection = dynamic(() => import("@/app/components/landing/InsideGameSection").then(m => m.InsideGameSection), { ssr: false });
@@ -77,13 +83,18 @@ function MessageList({
 
 
 export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExploreGames, heroHeadline }: LandingPageProps) {
+  const lang = getAppLanguage();
+  const localScenarios = useMemo(() => localizeScenarios(GAME_SCENARIOS, lang), [lang]);
+  const localCharacters = useMemo(() => localizeMarqueeCharacters(MARQUEE_CHARACTERS, lang), [lang]);
+  const localFeatures = useMemo(() => localizeFeatures(FEATURES, lang), [lang]);
+
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [visibleCount, setVisibleCount] = useState(1);
 
   useEffect(() => {
     if (!isAutoPlaying) return;
-    const games = Object.keys(GAME_SCENARIOS) as Array<keyof typeof GAME_SCENARIOS>;
+    const games = Object.keys(localScenarios) as Array<keyof typeof GAME_SCENARIOS>;
     let currentIndex = games.indexOf(selectedGame);
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % games.length;
@@ -100,7 +111,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
   // Preload small (72x72) avatars so game-tab switching is instant
   useEffect(() => {
     const urls = new Set<string>();
-    for (const scenario of Object.values(GAME_SCENARIOS)) {
+    for (const scenario of Object.values(localScenarios)) {
       for (const msg of scenario.messages) {
         const src = LANDING_AVATAR_MAP[msg.name];
         if (src) urls.add(src.replace("/avatars/preview/", "/avatars/preview/small/"));
@@ -112,7 +123,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
     });
   }, []);
 
-  const currentScenario = GAME_SCENARIOS[selectedGame];
+  const currentScenario = localScenarios[selectedGame];
 
   return (
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
@@ -149,7 +160,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 <h1 className="text-4xl font-black text-white tracking-tight">
                   {BRAND_CONFIG.name}
                 </h1>
-                <p className="text-sm text-zinc-500 font-medium">{BRAND_CONFIG.tagline}</p>
+                <p className="text-sm text-zinc-500 font-medium">{t("landing.brand_tagline")}</p>
               </div>
             </div>
 
@@ -295,7 +306,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none" />
 
             <div className="flex gap-4 animate-marquee" style={{ width: "max-content" }}>
-              {MARQUEE_CHARACTERS.map((char, i) => (
+              {localCharacters.map((char, i) => (
                 <div
                   key={i}
                   className="flex-shrink-0 w-44 bg-zinc-900/60 border border-zinc-700/60 rounded-2xl p-4 hover:border-violet-500/50 hover:bg-zinc-800/60 transition-all duration-300 group"
@@ -350,7 +361,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
             <h3 className="text-4xl font-black text-white mb-4">{t("landing.features_title")}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {FEATURES.map((feature, index) => (
+            {localFeatures.map((feature, index) => (
               <div
                 key={index}
                 className="group relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 hover:border-violet-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02]"
@@ -504,7 +515,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 href={href}
                 className="text-sm text-zinc-400 hover:text-violet-400 transition-colors truncate"
               >
-                {label} →
+                {localizeBlogLabel(href, label, lang)} →
               </Link>
             ))}
           </div>

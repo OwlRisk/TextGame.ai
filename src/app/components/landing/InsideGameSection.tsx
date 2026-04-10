@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import NextImage from "next/image";
 import {
   MessageCircle,
@@ -19,6 +19,8 @@ const STEP_ICONS: Record<string, React.ElementType> = {
   "you-play": Gamepad2,
 };
 import { INSIDE_GAME_STEPS } from "@/data/landing-content";
+import { localizeInsideGameSteps } from "@/data/landing-content-i18n";
+import { t, getAppLanguage } from "@/lib/i18n";
 import { PreviewAvatar, StreamingText } from "./shared";
 
 function InsideGameMessageList({
@@ -111,22 +113,24 @@ function useAutoCarousel(count: number) {
 }
 
 export function InsideGameSection() {
-  const { current: selectedStep, goTo: setSelectedStep, prev: handlePrevious, next: handleNext } = useAutoCarousel(INSIDE_GAME_STEPS.length);
-  const currentStep = INSIDE_GAME_STEPS[selectedStep];
+  const lang = getAppLanguage();
+  const steps = useMemo(() => localizeInsideGameSteps(INSIDE_GAME_STEPS, lang), [lang]);
+  const { current: selectedStep, goTo: setSelectedStep, prev: handlePrevious, next: handleNext } = useAutoCarousel(steps.length);
+  const currentStep = steps[selectedStep];
 
   return (
     <div className="mb-16 sm:mb-32">
       <div className="text-center mb-6 sm:mb-12 px-4">
         <div className="inline-block bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-4">
-          <span className="text-sm font-bold text-violet-400">INSIDE A GAME</span>
+          <span className="text-sm font-bold text-violet-400">{t("landing.inside_badge")}</span>
         </div>
-        <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 sm:mb-4">What actually happens inside a game</h3>
-        <p className="text-sm sm:text-lg text-zinc-400">Experience every stage of gameplay</p>
+        <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 sm:mb-4">{t("landing.inside_title")}</h3>
+        <p className="text-sm sm:text-lg text-zinc-400">{t("landing.inside_desc")}</p>
       </div>
 
       {/* Tab navigation — horizontal scroll on mobile */}
       <div role="tablist" aria-label="Game stages" className="flex gap-2 sm:gap-3 mb-6 sm:mb-12 overflow-x-auto scrollbar-hidden px-4 sm:px-0 sm:justify-center sm:flex-wrap">
-        {INSIDE_GAME_STEPS.map((step, index) => (
+        {steps.map((step, index) => (
           <button
             key={step.id}
             type="button"
@@ -158,7 +162,7 @@ export function InsideGameSection() {
               <div className="inline-flex items-center gap-2 mb-3 sm:mb-4">
                 <Gamepad2 className="h-4 w-4 sm:h-5 sm:w-5 text-fuchsia-400" />
                 <span className="text-xs sm:text-sm font-bold text-fuchsia-400">
-                  STEP {currentStep.step} / {currentStep.total}
+                  {t("landing.inside_step")} {currentStep.step} / {currentStep.total}
                 </span>
               </div>
               <h4 className="text-xl sm:text-3xl lg:text-4xl font-black text-white mb-4 sm:mb-6 leading-tight">{currentStep.heading}</h4>
@@ -175,7 +179,7 @@ export function InsideGameSection() {
                   className="w-full h-auto object-cover rounded-lg sm:rounded-xl"
                 />
                 {/* Preload all other images */}
-                {INSIDE_GAME_STEPS.map((step, i) => i !== selectedStep ? (
+                {steps.map((step, i) => i !== selectedStep ? (
                   <NextImage
                     key={`preload-${step.id}`}
                     src={step.image}
@@ -194,7 +198,7 @@ export function InsideGameSection() {
             {/* Navigation */}
             <div className="flex items-center justify-between mt-5 sm:mt-8">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                {INSIDE_GAME_STEPS.map((step, index) => (
+                {steps.map((step, index) => (
                   <button
                     key={index}
                     type="button"
@@ -235,7 +239,7 @@ export function InsideGameSection() {
             <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
               <div className="flex items-center gap-1.5 sm:gap-2 bg-red-500/10 border border-red-500/30 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-[10px] sm:text-xs font-bold text-red-400">LIVE EXAMPLE</span>
+                <span className="text-[10px] sm:text-xs font-bold text-red-400">{t("landing.inside_live")}</span>
               </div>
             </div>
             <div className="h-full flex flex-col min-h-[280px] sm:min-h-[400px] lg:min-h-[600px]">
@@ -248,7 +252,7 @@ export function InsideGameSection() {
               <div className="p-3 sm:p-4 border-t border-zinc-800">
                 <div className="bg-zinc-950/50 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-sm text-zinc-600 flex items-center gap-2">
                   <MessageCircle className="h-4 w-4" />
-                  <span>Type your message...</span>
+                  <span>{t("landing.type_message")}</span>
                 </div>
               </div>
             </div>
