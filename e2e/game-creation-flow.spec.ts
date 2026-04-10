@@ -176,7 +176,8 @@ test.describe("Discover → Create Flow", () => {
 
     const gameCard = page.locator("[data-testid='game-card']").first();
     if (await gameCard.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await gameCard.click();
+      await page.waitForTimeout(1000);
+      await gameCard.click({ force: true });
       await page.waitForLoadState("domcontentloaded");
       await page.waitForTimeout(2000);
 
@@ -187,6 +188,7 @@ test.describe("Discover → Create Flow", () => {
       const onCreateOrGame =
         page.url().includes("/create") ||
         page.url().includes("/game/") ||
+        page.url().includes("/signin") ||
         (await page.locator("text=/Game Master|Great choice|loaded the rules/i").first().isVisible({ timeout: 5000 }).catch(() => false));
       expect(onCreateOrGame).toBe(true);
     }

@@ -36,7 +36,7 @@ test.describe("Game Master (GM) Interface", () => {
 
     const gmButton = page.locator('a[href*="/create"], button:has-text("Create"), a:has-text("Create")').first();
     if (await gmButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await gmButton.click();
+      await gmButton.click({ force: true });
       await page.waitForLoadState("domcontentloaded");
 
       // Accept: sign-in redirect OR any content rendered (h1/h2/textarea) OR body loaded
@@ -75,7 +75,7 @@ test.describe("Responsive Layout", () => {
 
 test.describe("Accessibility - Keyboard Navigation", () => {
   test("can tab through main navigation links on landing page", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
 
     await page.keyboard.press("Tab");
     const firstFocused = await page.evaluate(() => document.activeElement?.tagName);

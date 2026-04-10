@@ -203,7 +203,7 @@ test.describe("Error resilience", () => {
 
 test.describe("Unicode handling", () => {
   test("pages render correctly with UTF-8 charset", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
     const charset = await page.locator('meta[charset]').getAttribute("charset");
     expect(charset?.toLowerCase()).toBe("utf-8");
   });

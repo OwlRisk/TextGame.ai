@@ -6,18 +6,16 @@ test.describe("Discover page — game card data", () => {
 
     const cards = page.locator("[data-testid='game-card']");
     await expect(cards.first()).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(2000);
 
-    const count = await cards.count();
-    expect(count).toBeGreaterThan(0);
+    const allTexts = await cards.allTextContents();
+    expect(allTexts.length).toBeGreaterThan(0);
 
-    for (let i = 0; i < Math.min(count, 8); i++) {
-      const card = cards.nth(i);
-      const cardText = await card.textContent();
-      // Should NOT contain patterns like "5-12" or "3-8" (ranges)
+    for (let i = 0; i < Math.min(allTexts.length, 8); i++) {
+      const cardText = allTexts[i];
       const rangePattern = /\b\d{1,2}-\d{1,2}\b(?!\s*min)/;
       const hasRange = rangePattern.test(cardText || "");
       if (hasRange) {
-        // Allow duration ranges like "20-40 min" but not player ranges
         const playerRange = (cardText || "").match(/\b(\d{1,2})-(\d{1,2})\b/g);
         const onlyDurationRanges = playerRange?.every((r) => (cardText || "").includes(`${r} min`));
         expect(onlyDurationRanges, `card ${i} shows player range: ${cardText}`).toBe(true);

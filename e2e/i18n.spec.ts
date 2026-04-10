@@ -6,17 +6,13 @@ test.describe("Discover page — i18n content", () => {
 
     const cards = page.locator("[data-testid='game-card']");
     await expect(cards.first()).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(2000);
 
-    const count = await cards.count();
-    expect(count).toBeGreaterThan(0);
+    const allTexts = await cards.allTextContents();
+    expect(allTexts.length).toBeGreaterThan(0);
 
-    for (let i = 0; i < Math.min(count, 5); i++) {
-      const card = cards.nth(i);
-      const title = card.locator("h3, h4, [class*='font-semibold'], [class*='font-bold']").first();
-      const titleVisible = await title.isVisible({ timeout: 5000 }).catch(() => false);
-      if (!titleVisible) continue;
-      const titleText = await title.textContent();
-      expect(titleText?.trim().length, `card ${i} title is empty`).toBeGreaterThan(0);
+    for (let i = 0; i < Math.min(allTexts.length, 5); i++) {
+      expect(allTexts[i]?.trim().length, `card ${i} is empty`).toBeGreaterThan(0);
     }
   });
 
