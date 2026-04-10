@@ -32,7 +32,39 @@ export function buildSceneDirectorPrompt(opts: SceneDirectorOpts): string {
 2. React to player choices with real consequences. What they do matters. Show don't tell.
 3. Create obstacles, surprises, and discoveries. Every 3-4 exchanges, something new MUST happen.
 4. Drive the adventure forward. Never let the group stand still for too long.
-5. When characters argue or debate what to do, let it play out briefly — then force a decision by changing the environment.
+5. When characters argue or debate what to do, let it play out 2-3 exchanges — then force a decision by changing the environment.
+
+## GAME ENGINE RULES (MANDATORY)
+
+DECISION POINTS:
+- Every 2-3 narration turns, present a CONCRETE choice — not "what do you do?"
+- Binary: "The path splits — left toward the light, right toward the sound."
+- Or resource: "The flashlight is dying. Use it now, or save it for later?"
+- Characters should DISAGREE about which option to choose BEFORE the human decides.
+
+CONSEQUENCES:
+- Every player choice MUST change something permanently.
+- Bad choice -> someone gets hurt, a tool breaks, a path closes, a clue is missed.
+- Good choice -> new discovery, new access, a character trusts ${humanName} more.
+- NEVER "almost happened" — things ACTUALLY happen. Commit to outcomes.
+
+FAILURE IS REAL:
+- Characters can get injured (they talk less or differently afterward).
+- Equipment can break or get lost permanently.
+- Paths can close: "The ceiling collapses behind them. No going back."
+- GAME_OVER can be a BAD ending. A tragic ending is still a great story.
+- Create real stakes: "If they don't find the switch, the tide will trap them here."
+
+TENSION ARC:
+- Turns 1-6 (Act 1): Explore, banter, small discoveries. Tone: curious, light.
+- Turns 7-14 (Act 2): Complications, first real danger, characters argue. Tone: tense. Narration gets shorter.
+- Turns 15+ (Act 3): Revelations, final choices, fears erupt. Tone: urgent, clipped sentences.
+- Mark act transitions with PHASE: directives. Shorten narration as tension rises.
+
+CHARACTER CONFLICT:
+- When presenting a choice, have characters argue about it BEFORE ${humanName} decides.
+- Let arguments run 2-3 exchanges, then force a decision via environment change ("The noise is getting closer — choose NOW.").
+- Characters should appeal to ${humanName}: "Tell them this is insane!" / "You agree with me, right?"
 
 ## OUTPUT FORMAT — MANDATORY
 Every reply MUST be split into exactly two sections by a line containing only "---":
@@ -143,11 +175,11 @@ export interface HostPromptOpts {
 }
 
 const CATEGORY_PACING: Record<string, string> = {
-  deduction: "Force state changes (vote / phase transition) after a few discussion turns. Prefer directives over more chatter.",
+  deduction: "Force escalation. After 3 discussion turns without a concrete accusation, create pressure: 'The village grows restless.' Drive toward confrontation, not consensus. Every vote result must feel HEAVY — describe reactions, not just outcomes.",
   quiz: "Keep rounds crisp. Adjudicate quickly, then next question. No open-ended drift.",
-  cooperative: "Nudge with clues or consequences if stalled. Rotate speakers. Inject obstacles if pace drops.",
-  party: "Energy high, rounds snappy. Next round quickly after each answer/vote. Inject variety.",
-  open: "Creative freedom, but no dead air. Drop a concrete hook if momentum fades.",
+  cooperative: "Nudge with clues or consequences if stalled. Rotate speakers. Inject obstacles if pace drops. Make failures feel real — lost resources, missed windows, rising danger.",
+  party: "Energy high, rounds snappy. Next round quickly after each answer/vote. Inject variety and surprise twists.",
+  open: "Creative freedom, but no dead air. Drop a concrete hook if momentum fades. Present binary choices, not open-ended questions.",
 };
 
 function buildProgressionPolicy(tmpl: GameTemplate | undefined, recentNonHostTurns: number): string {
@@ -317,6 +349,13 @@ ${tmpl?.hostVoice.narrativeStyle ? `\nSTYLE: ${tmpl.hostVoice.narrativeStyle}\n`
 - Phase transitions: brief and atmospheric.`}
 - No filler ("Alright!", "Great!"). No announcing who speaks next — NEXT_SPEAKER handles it.
 - When nothing mechanical to narrate, say NOTHING (silent turn). Players create the drama.
+
+## GAME TENSION
+- Narrate CONSEQUENCES of every vote/action — make eliminations feel heavy, not procedural.
+- Build to revelations: don't just announce results. Pause, describe tension, THEN reveal.
+- When players argue: let it escalate 2-3 exchanges before you intervene with a phase change.
+- Create urgency with narrative pressure: "Only two villagers remain." / "This is the last round."
+- If a player has been quiet, have the narrator note the tension: "All eyes turn to ${humanName}."
 ${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
 
 ## PLAYER INPUT FORMAT

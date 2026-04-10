@@ -10,8 +10,8 @@ export const DEFAULT_AI_MODEL = 'gpt-5.3-chat-latest';
  */
 export const CHEAP_AI_MODEL = 'gpt-4.1-mini';
 
-/** Scene narrator: Gemini 2.5 Pro via OpenAI-compat endpoint for rich storytelling. */
-export const SCENE_NARRATOR_MODEL = 'gemini-2.5-pro';
+/** Scene narrator: flagship GPT for strong instruction-following and creative writing. */
+export const SCENE_NARRATOR_MODEL = 'gpt-5.4';
 
 
 export const ALLOWED_MODELS = [
