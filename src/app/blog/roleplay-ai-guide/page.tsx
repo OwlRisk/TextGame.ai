@@ -4,7 +4,7 @@ import { TrackedGameLink } from "@/app/components/blog/TrackedGameLink";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import Image from "next/image";
 
-const TITLE = "What is Roleplay AI? The Complete Guide to AI Role-Playing Games (2026)";
+const TITLE = "Roleplay AI: Complete Guide to AI Role-Playing Games (2026)";
 const DESCRIPTION =
   "Learn what roleplay AI is, how it works, and the best platforms for AI-powered role-playing games — from social deduction to custom RPGs with AI characters.";
 const CANONICAL = "/blog/roleplay-ai-guide";
