@@ -196,6 +196,19 @@ const T: Record<string, Record<string, string>> = {
     it: "Cosa fai?",
     ar: "\u0645\u0627\u0630\u0627 \u062a\u0641\u0639\u0644\u061f",
   },
+  "do.no_actions": {
+    en: "No actions available right now",
+    zh: "\u5f53\u524d\u6ca1\u6709\u53ef\u7528\u7684\u884c\u52a8",
+    de: "Momentan keine Aktionen verf\u00fcgbar",
+    fr: "Aucune action disponible pour le moment",
+    es: "No hay acciones disponibles ahora",
+    ja: "\u73fe\u5728\u5229\u7528\u53ef\u80fd\u306a\u30a2\u30af\u30b7\u30e7\u30f3\u306f\u3042\u308a\u307e\u305b\u3093",
+    ko: "\ud604\uc7ac \uc0ac\uc6a9 \uac00\ub2a5\ud55c \ud589\ub3d9\uc774 \uc5c6\uc2b5\ub2c8\ub2e4",
+    pt: "Nenhuma a\u00e7\u00e3o dispon\u00edvel no momento",
+    ru: "\u0421\u0435\u0439\u0447\u0430\u0441 \u043d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0439",
+    it: "Nessuna azione disponibile al momento",
+    ar: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0625\u062c\u0631\u0627\u0621\u0627\u062a \u0645\u062a\u0627\u062d\u0629 \u062d\u0627\u0644\u064a\u0627",
+  },
 
   // ── Labels ─────────────────────────────────────────────────────────────
   "label.players": {

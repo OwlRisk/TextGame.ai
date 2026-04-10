@@ -34,7 +34,7 @@ import { useHostRound } from "@/hooks/useHostRound";
 import { useGameInit } from "@/hooks/useGameInit";
 import { useChatTTS } from "@/hooks/use-chat-tts";
 import { GameEventOverlay, type GameEvent } from "@/app/components/game-event-overlay";
-import { useGameActions } from "@/hooks/useGameActions";
+import { useGameActions, getSceneDialogueChips, getPhaseType } from "@/hooks/useGameActions";
 import { buildInitialChannelPermissions } from "@/lib/game-host-utils";
 
 const AI_COLOR_PALETTE = [
@@ -345,6 +345,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     configQuickActions: currentGame?.config?.quickActions,
   });
 
+  const dialogueChips = useMemo(() => {
+    if (gamePhase !== "active") return [];
+    const tmplId = currentGame?.config?.template;
+    if (tmplId && isSceneMode(tmplId)) {
+      const phase = getPhaseType(phaseLabel);
+      return getSceneDialogueChips(phase);
+    }
+    if (!tmplId) return [];
+    return getGameTemplate(tmplId)?.dialogueChips ?? [];
+  }, [currentGame?.config?.template, gamePhase, phaseLabel]);
+
   // ─── TTS (voice) — default off, user can toggle in header ─────────────────
   const {
     voiceEnabled, setVoiceEnabled, inworldTTSSupported,
@@ -572,6 +583,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             gameId={gameId}
             gameTemplate={currentGame?.config?.template}
             gameActions={gameActions}
+            dialogueChips={dialogueChips}
             gameEvents={gameEvents}
             humanName={humanGameIdentity?.name || undefined}
             introYourTurnHint={introYourTurnHint}
@@ -586,6 +598,11 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               setMobileLeftDrawer(null);
             }}
             playerBoardLabel={currentGame?.config?.playerBoardLabel}
+            onOpenRules={(currentGame?.config?.rules ?? "").trim() ? () => {
+              setSelectedChannelId(RULES_CHANNEL_ID);
+              setMobileLeftDrawer(null);
+            } : undefined}
+            myBoardHasUpdate={myBoardHasUpdate}
             isOwner={isOwner ? true : undefined}
             gamePhaseLabel={phaseLabel || undefined}
             gameOverSummary={gameOverSummary || undefined}

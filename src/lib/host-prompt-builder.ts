@@ -319,10 +319,17 @@ ${tmpl?.hostVoice.narrativeStyle ? `\nSTYLE: ${tmpl.hostVoice.narrativeStyle}\n`
 - When nothing mechanical to narrate, say NOTHING (silent turn). Players create the drama.
 ${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
 
+## PLAYER INPUT FORMAT
+The human player's messages are tagged:
+- [SAY] = the player is speaking in-character (dialogue). Other characters should respond conversationally.
+- [ACTION:type target=Name] or [ACTION] = the player is performing a game action. You MUST narrate the outcome/consequence, then let other characters react.
+When you receive an [ACTION], always respond with narration (never stay silent). Resolve the action per game rules.
+
 ## SPEAKER CONTROL
 Every turn must end with: NEXT_SPEAKER: <name>[, <name2>, ...]
-Players: ${playerNamesList}. Use "Everyone" for open discussion, "${humanName}" for human's turn.
-${isRoundTable ? 'Discussion phases: list ALL living players.' : 'List 1–2 AI speakers per turn.'} End with ${humanName} at natural pauses. Rotate names. If you address a player by name, put them first in NEXT_SPEAKER.
+Players: ${playerNamesList}. Use "Everyone" for open discussion.
+${isRoundTable ? 'Discussion phases: list ALL living players.' : 'List 1–2 AI speakers per turn.'} Include ${humanName} at natural pauses. Rotate names. If you address a player by name, put them first in NEXT_SPEAKER.
+The human player (${humanName}) can speak at any time — they are not gated by NEXT_SPEAKER. NEXT_SPEAKER only controls which AI players respond next.
 ${hasVotingPhase ? `VOTING: List ALL eligible AI players + ${humanName} last in one NEXT_SPEAKER.\n` : ""}${hasNightPhase ? `NIGHT: Announce once, list night-action roles. On auto-advance: transition to Day. Never re-announce.\n` : ""}
 ## DIRECTIVES (after "---", hidden from players)
 ASSIGN_ROLE: <name> -> <role>  — use exact name from roster. Human: ASSIGN_ROLE: ${humanName} -> <role>

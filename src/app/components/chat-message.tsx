@@ -278,11 +278,17 @@ export const ChatMessage = React.memo(function ChatMessage({
   const cleanRaw = stripDirectiveLines(stripEmotionTags(stripPrivateNotes(rawContent)));
   let displayText = cleanSynced.trim() || cleanRaw.trim();
 
-  // Strip [SAY]/[ACTION] prefixes from user messages (used internally for AI context).
-  // Track whether this was an action message for rendering.
+  // Strip [SAY]/[ACTION]/[ACTION:type ...] prefixes from messages.
+  // Track whether this was an action for distinct visual rendering.
   let isTaggedAction = false;
-  if (gameTemplate === "scene" && displayText) {
-    if (/^\[ACTION\]\s*/i.test(displayText)) {
+  let _actionMeta = "";
+  if (displayText) {
+    const structuredMatch = displayText.match(/^\[ACTION:([^\]]*)\]\s*/i);
+    if (structuredMatch) {
+      isTaggedAction = true;
+      _actionMeta = structuredMatch[1].trim();
+      displayText = displayText.replace(structuredMatch[0], "");
+    } else if (/^\[ACTION\]\s*/i.test(displayText)) {
       isTaggedAction = true;
       displayText = displayText.replace(/^\[ACTION\]\s*/i, "");
     } else if (/^\[SAY\]\s*/i.test(displayText)) {
@@ -290,38 +296,28 @@ export const ChatMessage = React.memo(function ChatMessage({
     }
   }
 
-  const isSceneAction = gameTemplate === "scene" && displayText && (
-    isTaggedAction || /^\*[^*]+\*$/.test(displayText.trim())
-  );
+  // Scene-mode italic actions: *does something*
+  const isSceneStyleAction = gameTemplate === "scene" && displayText &&
+    !isTaggedAction && /^\*[^*]+\*$/.test(displayText.trim());
 
-  if (isSceneAction && !message.isStreaming) {
-    const actionText = isTaggedAction
-      ? displayText.trim()
-      : displayText.trim().slice(1, -1);
-    const isMe = message.senderId === userId;
+  const isActionMessage = isTaggedAction || isSceneStyleAction;
+
+  if (isActionMessage && !message.isStreaming) {
+    const actionText = isSceneStyleAction
+      ? displayText.trim().slice(1, -1)
+      : displayText.trim();
     return (
-      <div className={`${showAvatar ? "mt-5" : "mt-2"}`}>
-        <div className="flex gap-4">
-          {showAvatar ? (
-            <div className="relative flex-shrink-0" title={message.senderName}>
-              <MessageAvatar
-                message={message} userId={userId} userAvatarUrl={userAvatarUrl}
-                useGeneratedAvatarForUser={useGeneratedAvatarForUser} humanPlayer={humanPlayer}
-                userAvatarName={userAvatarName} gameId={gameId} messagePlayer={messagePlayer}
-                avatarImageUrls={avatarImageUrls} onAvatarUrlLoaded={onAvatarUrlLoaded}
-              />
-            </div>
-          ) : <div className="w-11 flex-shrink-0" />}
-          <div className="flex-1 min-w-0">
-            {showAvatar && (
-              <span className={`text-xs font-medium mb-1 block ${isMe ? "text-blue-300/70" : "text-zinc-500"}`}>
-                {message.senderName}
-              </span>
-            )}
-            <div className="text-amber-200/80 text-sm italic leading-relaxed">
-              {message.senderName} {actionText}
-            </div>
+      <div className={`${showAvatar ? "mt-5" : "mt-1"}`}>
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-amber-500/[0.06] border border-amber-500/15">
+          <span className="text-amber-400 text-xs flex-shrink-0">⚡</span>
+          <div className="flex-1 min-w-0 text-sm text-amber-200/90 italic leading-relaxed">
+            <span className="font-medium not-italic text-amber-300/80">{message.senderName}</span>
+            {" "}
+            {actionText}
           </div>
+          <span className="text-[11px] text-zinc-600 shrink-0">
+            {formatMessageTime(message.timestamp)}
+          </span>
         </div>
       </div>
     );

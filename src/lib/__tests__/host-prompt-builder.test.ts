@@ -308,8 +308,9 @@ describe("buildHostSystemPrompt", () => {
       const opts = defaultOpts({ nonHostPlayerNames: [] });
       const output = buildHostSystemPrompt(opts);
       expect(output).toContain(
-        'Players: . Use "Everyone" for open discussion, "Alex" for human\'s turn.',
+        'Players: . Use "Everyone" for open discussion.',
       );
+      expect(output).toContain("The human player (Alex) can speak at any time");
     });
   });
 

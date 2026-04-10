@@ -39,28 +39,32 @@ interface UseGameActionsParams {
   configQuickActions?: ConfigQuickAction[];
 }
 
-/** @internal Exported for testing */
+/** @internal Exported for testing — returns only Do-type actions for scene mode. */
 export function getSceneQuickActions(phase: string): GameAction[] {
-  const say: GameAction[] = [];
   const act: GameAction[] = [
-    { label: "Look around", template: "[ACTION] looks around carefully", icon: "👀", inputMode: "do" },
+    { label: "Look around", template: "looks around carefully", icon: "👀", actionType: "investigate" },
   ];
 
-  if (phase === "social") {
-    say.push({ label: "Ask", template: "[SAY] Who are you? What do you want?", icon: "❓", inputMode: "say" });
-  } else {
-    say.push({ label: "Let's go", template: "[SAY] Let's keep moving. Stay close.", icon: "🚶", inputMode: "say" });
-  }
-  say.push({ label: "Wait", template: "[SAY] Hold on. Did you hear that?", icon: "✋", inputMode: "say" });
-
   if (phase === "combat" || phase === "unknown") {
-    act.push({ label: "Run", template: "[ACTION] backs away and runs", icon: "🏃", inputMode: "do" });
+    act.push({ label: "Run", template: "backs away and runs", icon: "🏃", actionType: "move" });
   }
   if (phase === "exploration" || phase === "unknown") {
-    act.push({ label: "Investigate", template: "[ACTION] moves closer to examine it", icon: "🔍", inputMode: "do" });
+    act.push({ label: "Investigate", template: "moves closer to examine it", icon: "🔍", actionType: "investigate" });
   }
 
-  return [...say.slice(0, 2), ...act.slice(0, 2)];
+  return act.slice(0, 3);
+}
+
+/** Scene-mode dialogue chips (Say-type). */
+export function getSceneDialogueChips(phase: string): Array<{ label: string; starter: string; icon?: string }> {
+  const chips: Array<{ label: string; starter: string; icon?: string }> = [];
+  if (phase === "social") {
+    chips.push({ label: "Ask", starter: "Who are you? What do you want?", icon: "❓" });
+  } else {
+    chips.push({ label: "Let's go", starter: "Let's keep moving. Stay close.", icon: "🚶" });
+  }
+  chips.push({ label: "Wait", starter: "Hold on. Did you hear that?", icon: "✋" });
+  return chips;
 }
 
 /** @internal Exported for testing */

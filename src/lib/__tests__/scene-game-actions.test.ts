@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getSceneQuickActions, getPhaseType } from "@/hooks/useGameActions";
+import { getSceneQuickActions, getSceneDialogueChips, getPhaseType } from "@/hooks/useGameActions";
 import type { GameAction } from "@/hooks/useGameActions";
 
 describe("getPhaseType", () => {
@@ -27,38 +27,17 @@ describe("getPhaseType", () => {
   });
 });
 
-describe("getSceneQuickActions", () => {
+describe("getSceneQuickActions (Do-type only)", () => {
   function labels(actions: GameAction[]): string[] {
     return actions.map((a) => a.label);
   }
 
-  function modes(actions: GameAction[]): (string | undefined)[] {
-    return actions.map((a) => a.inputMode);
-  }
-
-  it("returns 4 actions for 'unknown' phase", () => {
+  it("returns only Do actions (no Say actions)", () => {
     const actions = getSceneQuickActions("unknown");
-    expect(actions.length).toBe(4);
-  });
-
-  it("includes both say and do actions", () => {
-    const actions = getSceneQuickActions("unknown");
-    const sayCount = actions.filter((a) => a.inputMode === "say").length;
-    const doCount = actions.filter((a) => a.inputMode === "do").length;
-    expect(sayCount).toBeGreaterThanOrEqual(1);
-    expect(doCount).toBeGreaterThanOrEqual(1);
-  });
-
-  it("includes 'Ask' in social phase instead of 'Let's go'", () => {
-    const actions = getSceneQuickActions("social");
-    const names = labels(actions);
-    expect(names).toContain("Ask");
-    expect(names).not.toContain("Let's go");
-  });
-
-  it("includes 'Let's go' in non-social phases", () => {
-    const actions = getSceneQuickActions("unknown");
-    expect(labels(actions)).toContain("Let's go");
+    expect(actions.length).toBeGreaterThanOrEqual(1);
+    for (const a of actions) {
+      expect(a.inputMode).toBeUndefined();
+    }
   });
 
   it("includes 'Run' in combat phase", () => {
@@ -71,39 +50,53 @@ describe("getSceneQuickActions", () => {
     expect(labels(actions)).toContain("Investigate");
   });
 
-  it("always includes 'Look around' as a do action", () => {
+  it("always includes 'Look around'", () => {
     for (const phase of ["unknown", "combat", "exploration", "social", "rest"]) {
       const actions = getSceneQuickActions(phase);
       const lookAround = actions.find((a) => a.label === "Look around");
       expect(lookAround).toBeDefined();
-      expect(lookAround!.inputMode).toBe("do");
     }
   });
 
-  it("always includes 'Wait' as a say action", () => {
+  it("templates do NOT contain [ACTION] or [SAY] prefixes (handled by input layer)", () => {
+    const actions = getSceneQuickActions("unknown");
+    for (const a of actions) {
+      expect(a.template.startsWith("[ACTION]")).toBe(false);
+      expect(a.template.startsWith("[SAY]")).toBe(false);
+    }
+  });
+
+  it("has max 3 actions", () => {
+    const actions = getSceneQuickActions("unknown");
+    expect(actions.length).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("getSceneDialogueChips (Say-type)", () => {
+  it("includes 'Ask' in social phase instead of 'Let's go'", () => {
+    const chips = getSceneDialogueChips("social");
+    const chipLabels = chips.map((c) => c.label);
+    expect(chipLabels).toContain("Ask");
+    expect(chipLabels).not.toContain("Let's go");
+  });
+
+  it("includes 'Let's go' in non-social phases", () => {
+    const chips = getSceneDialogueChips("unknown");
+    expect(chips.map((c) => c.label)).toContain("Let's go");
+  });
+
+  it("always includes 'Wait'", () => {
     for (const phase of ["unknown", "combat", "exploration", "social", "rest"]) {
-      const actions = getSceneQuickActions(phase);
-      const wait = actions.find((a) => a.label === "Wait");
-      expect(wait).toBeDefined();
-      expect(wait!.inputMode).toBe("say");
+      const chips = getSceneDialogueChips(phase);
+      expect(chips.map((c) => c.label)).toContain("Wait");
     }
   });
 
-  it("do-mode actions use [ACTION] prefix in templates", () => {
-    const actions = getSceneQuickActions("unknown");
-    for (const a of actions) {
-      if (a.inputMode === "do") {
-        expect(a.template.startsWith("[ACTION] ")).toBe(true);
-      }
-    }
-  });
-
-  it("say-mode actions do NOT have asterisk-wrapped templates", () => {
-    const actions = getSceneQuickActions("unknown");
-    for (const a of actions) {
-      if (a.inputMode === "say") {
-        expect(a.template.startsWith("*")).toBe(false);
-      }
+  it("starters do NOT have tag prefixes", () => {
+    const chips = getSceneDialogueChips("unknown");
+    for (const c of chips) {
+      expect(c.starter.startsWith("[SAY]")).toBe(false);
+      expect(c.starter.startsWith("[ACTION]")).toBe(false);
     }
   });
 });

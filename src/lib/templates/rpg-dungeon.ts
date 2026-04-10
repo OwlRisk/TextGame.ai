@@ -151,6 +151,11 @@ TONE: Epic, atmospheric, with moments of humor. Build tension before boss fights
     { label: "Inspect", template: "I look around and inspect my surroundings.", icon: "👀", actionType: "investigate" },
   ],
 
+  dialogueChips: [
+    { label: "Let's go", starter: "Let's keep moving. ", icon: "🚶" },
+    { label: "Wait", starter: "Hold on, did you hear that?", icon: "✋" },
+  ],
+
   channels: [
     { id: "general", name: "Dungeon", roomType: "public" as const },
     { id: AFTERLIFE_CHANNEL_ID, name: "Fallen Heroes", roomType: "public" as const },

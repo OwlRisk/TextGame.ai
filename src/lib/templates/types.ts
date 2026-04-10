@@ -34,6 +34,17 @@ export interface QuickAction {
   targetType?: TargetType;
 }
 
+/**
+ * Lightweight conversation starter shown in Say mode.
+ * Tapping fills the input box — the player can edit before sending.
+ */
+export interface DialogueChip {
+  label: string;
+  /** Pre-filled text inserted into the input box */
+  starter: string;
+  icon?: string;
+}
+
 export interface TemplateChannel {
   id: string;
   name: string;
@@ -107,6 +118,9 @@ export interface GameTemplate {
   };
 
   quickActions: QuickAction[];
+
+  /** Conversation starters shown in Say mode (0-3 recommended). */
+  dialogueChips?: DialogueChip[];
 
   /** Template-defined game channels (faction rooms, dead chat, etc.). */
   channels?: TemplateChannel[];
@@ -185,11 +199,11 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
 export type PartialTemplate = Omit<GameTemplate,
   "hasVotingPhase" | "hasNightPhase" | "hostAnswersQuestions" | "hasSecretWord" |
   "hostVoice" | "speakerMode" |
-  "playerLimits" | "pacing" | "mechanicsPrompt" | "playerPrompts" | "quickActions" | "iconUrl" | "channels"
+  "playerLimits" | "pacing" | "mechanicsPrompt" | "playerPrompts" | "quickActions" | "dialogueChips" | "iconUrl" | "channels"
 > & Partial<Pick<GameTemplate,
   "hasVotingPhase" | "hasNightPhase" | "hostAnswersQuestions" | "hasSecretWord" |
   "hostVoice" | "speakerMode" |
-  "playerLimits" | "pacing" | "mechanicsPrompt" | "playerPrompts" | "quickActions" | "iconUrl" | "channels"
+  "playerLimits" | "pacing" | "mechanicsPrompt" | "playerPrompts" | "quickActions" | "dialogueChips" | "iconUrl" | "channels"
 >>;
 
 const ICON_URLS: Record<string, string> = {
@@ -232,6 +246,7 @@ export function withDefaults(partial: PartialTemplate): GameTemplate {
     mechanicsPrompt: partial.mechanicsPrompt ?? "",
     playerPrompts: partial.playerPrompts ?? { default: "" },
     quickActions: partial.quickActions ?? catDef.quickActions,
+    dialogueChips: partial.dialogueChips,
     channels: partial.channels,
   };
 }

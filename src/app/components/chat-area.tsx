@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { User, ArrowDown, Timer, Volume2, VolumeOff } from "lucide-react";
+import { BookOpen, Package, ArrowDown, Timer, Volume2, VolumeOff } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -49,6 +49,9 @@ interface ChatAreaProps {
   gameId?: string;
   onOpenPlayerBoard?: () => void;
   playerBoardLabel?: string;
+  onOpenRules?: () => void;
+  /** True when My Board has new unread content */
+  myBoardHasUpdate?: boolean;
   onHostPostEvent?: (eventDescription: string, opts?: { nextSpeakerId?: string | null; setPhase?: string; autoAdvance?: { afterMs: number; nextEvent: string; nextPhase: string } }) => void;
   onHostAssignSpeaker?: (playerId: string | null) => void;
   onHostEliminate?: (playerId: string) => void;
@@ -117,6 +120,8 @@ interface ChatAreaProps {
   revealTick?: number;
   /** Context-sensitive game actions */
   gameActions?: import("@/hooks/useGameActions").GameAction[];
+  /** Template-defined conversation starters for Say mode */
+  dialogueChips?: import("@/lib/templates/types").DialogueChip[];
   /** Game event log entries for game over recap */
   gameEvents?: string[];
   /** Human player display name */
@@ -138,6 +143,8 @@ export function ChatArea({
   gameId,
   onOpenPlayerBoard,
   playerBoardLabel = "My Board",
+  onOpenRules,
+  myBoardHasUpdate,
   onHostPostEvent,
   onHostAssignSpeaker,
   onHostEliminate,
@@ -173,6 +180,7 @@ export function ChatArea({
   displayedContentRef,
   revealTick,
   gameActions = [],
+  dialogueChips = [],
   gameEvents = [],
   humanName,
   gameTemplate,
@@ -359,7 +367,34 @@ export function ChatArea({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {onOpenRules && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onOpenRules}
+              className="h-8 w-8 hover:bg-zinc-700 text-zinc-400 hover:text-violet-300"
+              title={t("label.rules")}
+              aria-label={t("label.rules")}
+            >
+              <BookOpen className="h-4 w-4" />
+            </Button>
+          )}
+          {onOpenPlayerBoard && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onOpenPlayerBoard}
+              className="relative h-8 w-8 hover:bg-zinc-700 text-zinc-400 hover:text-amber-300"
+              title={playerBoardLabel}
+              aria-label={playerBoardLabel}
+            >
+              <Package className="h-4 w-4" />
+              {myBoardHasUpdate && (
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+              )}
+            </Button>
+          )}
           {onToggleVoice && (
             <Button
               variant="ghost"
@@ -370,17 +405,6 @@ export function ChatArea({
               aria-label={voiceEnabled ? "Mute voice" : "Enable voice"}
             >
               {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeOff className="h-4 w-4" />}
-            </Button>
-          )}
-          {onOpenPlayerBoard && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onOpenPlayerBoard}
-              className="md:hidden hover:bg-zinc-700 text-zinc-300 hover:text-white"
-            >
-              <User className="h-4 w-4 mr-2" />
-              {playerBoardLabel}
             </Button>
           )}
         </div>
@@ -517,6 +541,9 @@ export function ChatArea({
         onVote={onVote}
         alivePlayers={alivePlayers}
         gameActions={gameActions}
+        dialogueChips={dialogueChips}
+        gameTemplate={gameTemplate}
+        phaseLabel={gamePhaseLabel}
       />
       </div>
     </div>
