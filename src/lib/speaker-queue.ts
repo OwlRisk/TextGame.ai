@@ -54,6 +54,8 @@ export interface SpeakerQueueContext {
   addReaction?: (messageId: string, emoji: string, from: string) => void;
   /** GM engagement score for the current turn (1-5), controls passive reaction intensity */
   engagementScore?: number;
+  /** GM whispers to individual characters for this turn */
+  characterDirections?: import("@/lib/gm-state").CharacterDirection[];
 }
 
 export function isNightPhase(phaseLabel: string | undefined): boolean {
@@ -133,6 +135,9 @@ export async function runPlayerSpeak(
         ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
         ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
         ...(ctx.contentLanguage ? { contentLanguage: ctx.contentLanguage } : {}),
+        ...(ctx.characterDirections?.find((d) => d.name === speaker.name) ? {
+          characterDirection: ctx.characterDirections.find((d) => d.name === speaker.name)!.direction,
+        } : {}),
         gameId: ctx.gameId,
       }),
     });

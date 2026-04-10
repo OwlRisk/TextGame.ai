@@ -27,4 +27,6 @@ export interface Scene {
   directorNotes: string;
   color: string;
   icon: string;
+  /** Initial GM state — the ingredients, secrets, and threats available at scene start */
+  initialGmState?: import("@/lib/gm-state").GmState;
 }

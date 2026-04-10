@@ -1,4 +1,5 @@
 import type { Scene, SceneOpeningMessage } from "./types";
+import type { GmState } from "@/lib/gm-state";
 
 export const theLighthouse: Scene = {
   id: "the-lighthouse",
@@ -66,28 +67,39 @@ export const theLighthouse: Scene = {
   directorNotes:
     "ATMOSPHERE: Coastal horror meets mystery. Fog, rust, salt-corroded metal, distant waves. " +
     "The lighthouse should feel alive — creaking, shifting, as if watching them.\n\n" +
-    "CLUE CHAIN (reveal in order, each connects to the next):\n" +
-    "1. Ground floor: fresh coffee mug still warm + radio tuned to an unknown frequency\n" +
-    "2. Stairwell: scratches on walls form a pattern — tally marks that shift into symbols\n" +
-    "3. Second floor: a door bolted FROM THE OUTSIDE — someone was kept in here. Cot, water bottles, scratched messages.\n" +
-    "4. Top floor: the signal equipment is automated. No one is operating it. It's been running for weeks.\n" +
-    "5. Truth: Elias Marsh didn't disappear. He's still in the building. Somewhere below them.\n\n" +
-    "DECISION TREE (key branching points):\n" +
-    "- Entrance: front door (faster but exposed) vs circle around back (slower, find supplies shed with useful tools)\n" +
-    "- Ground floor: investigate the radio signal (costs time, tide rising) vs head straight upstairs (miss critical context about who's here)\n" +
-    "- Second floor: open the bolted door (risky — changes everything) vs continue up (miss the key truth, weaker ending)\n" +
-    "- Top floor: disable the signal and leave (safe ending) vs trace the frequency source deeper into the basement (leads to Elias — dangerous but complete ending)\n\n" +
-    "CONSEQUENCES FOR WRONG CHOICES:\n" +
-    "- Max's flashlight dies at the worst moment (his claustrophobia erupts — he freezes, someone must calm him)\n" +
-    "- If they skip the radio: they won't understand the symbols later and Dev can't help\n" +
-    "- If they open the bolted door carelessly: something inside reacts\n" +
-    "- The tide is rising throughout — eventually the ground floor floods, cutting off retreat\n\n" +
-    "CHARACTER FEAR TRIGGERS:\n" +
-    "- Max: the spiral staircase narrows. He slows down, voice cracks. Someone must push him forward.\n" +
-    "- Suki: the symbols defy physics. Her worldview cracks. She gets angry, then scared.\n" +
-    "- Dev: recognizes the symbols from his research. Panics — 'We need to leave. NOW.'\n" +
-    "- Rena: reviews her photos. Something is in them that wasn't visible to the eye. She goes quiet.\n\n" +
-    "TONE: Act 1 adventurous and fun. Act 2 genuinely unsettling. Act 3 desperate.",
+    "THE TRUTH (only you know this): Elias Marsh didn't disappear. He's still in the building — in a sealed room below ground level. " +
+    "He stayed voluntarily. The signal is automated. Everything else is breadcrumbs leading here.\n\n" +
+    "INGREDIENTS (use when the moment feels right — not in order, not all required):\n" +
+    "- coffee_mug: A fresh coffee mug, still warm. Someone was here minutes ago.\n" +
+    "- radio_frequency: A radio tuned to a frequency that shouldn't exist. Static, then a voice.\n" +
+    "- wall_symbols: Scratches on the stairwell walls — tally marks that become symbols.\n" +
+    "- locked_door: A door on the second floor, bolted FROM THE OUTSIDE. Cot and water bottles inside.\n" +
+    "- automated_signal: The signal equipment at the top runs itself. No operator. Weeks of logs.\n" +
+    "- Max_claustrophobia: The staircase narrows. Max freezes. Voice cracks. Won't admit why.\n" +
+    "- Suki_rational_break: Something defies her scientific worldview. She gets angry, then terrified.\n" +
+    "- Dev_symbol_panic: Dev recognizes the symbols from his research. Real panic — 'We need to leave.'\n" +
+    "- Rena_camera: Rena's photos show something not visible to the naked eye. She goes silent.\n" +
+    "- rising_tide: The water is coming in. Ground floor will flood. Retreat gets cut off.\n\n" +
+    "PRINCIPLES:\n" +
+    "- Every player choice should cost or gain something real.\n" +
+    "- Characters should disagree about what to do. Let arguments build before forcing a decision.\n" +
+    "- Use rising_tide as a background clock — mention it occasionally, make it worse over time.\n" +
+    "- Let the player figure things out — don't explain, let them connect the dots.\n\n" +
+    "TONE: Adventurous fun → creeping unease → desperate urgency.",
+  initialGmState: {
+    act: 1,
+    tension: 1,
+    ingredientsUsed: [],
+    ingredientsAvailable: [
+      "coffee_mug", "radio_frequency", "wall_symbols", "locked_door",
+      "automated_signal", "Max_claustrophobia", "Suki_rational_break",
+      "Dev_symbol_panic", "Rena_camera", "rising_tide",
+    ],
+    playerKnows: [],
+    playerDoesntKnow: ["Elias is alive and below them", "The signal is automated", "The symbols are a message"],
+    activeThreats: ["rising_tide"],
+    mood: "curious",
+  } satisfies GmState,
 };
 
 export const wrongTurn: Scene = {
@@ -156,28 +168,41 @@ export const wrongTurn: Scene = {
   ],
   directorNotes:
     "ATMOSPHERE: Americana gone wrong. Sunny, quiet, everything LOOKS normal but FEELS off. " +
-    "Think: a town frozen in time, or one that exists only when visitors arrive.\n\n" +
-    "CLUE CHAIN (reveal in order):\n" +
-    "1. Car radio briefly plays a song from 1987. Cal: 'That station doesn't exist anymore.'\n" +
-    "2. Diner: coffee hot, food fresh, guestbook full of travelers. No dates on any entry.\n" +
-    "3. Library: newspapers stop at June 14, 1987. Same date on every calendar in town.\n" +
-    "4. Church: fresh flowers, candles lit. A list of 84 names on the wall. One name is scratched out.\n" +
-    "5. Truth: the town loops. Travelers arrive, stay, and eventually become part of the 84. The scratched name was the last one who tried to leave.\n\n" +
-    "DECISION TREE:\n" +
-    "- Start: fix the car (Cal's plan, practical) vs explore town for help (Jordan/Lily want to, Priya uneasy)\n" +
-    "- Diner: eat the food (Lily wants to — BAD idea, makes them drowsy) vs don't touch anything (Priya's instinct — correct)\n" +
-    "- Library: spend time reading newspapers (reveals the date pattern — critical clue) vs move on quickly (miss the pattern)\n" +
-    "- Church: read the names (triggering event — the bell rings, someone appears) vs leave immediately (safer, but they'll come to you anyway)\n" +
-    "- Endgame: try to drive out before sunset (risky, car may not start) vs confront the 'welcomer' (dangerous but gets real answers)\n\n" +
-    "CONSEQUENCES:\n" +
-    "- Eating diner food: character gets sluggish, speaks less, wants to 'stay a while'\n" +
-    "- Skipping the library: they can't figure out the loop later\n" +
-    "- The sun is setting throughout. After sunset, the town 'activates' — lights come on, music plays, doors open. Getting harder to leave.\n" +
-    "- Priya's secret: she saw a face in an upstairs window. If she's not prompted to share it, she'll blurt it out at the worst moment.\n\n" +
-    "CHARACTER CONFLICT:\n" +
-    "- Cal vs Jordan: Cal wants to fix the car. Jordan wants to explore. They'll argue. Player decides.\n" +
-    "- Lily vs Priya: Lily thinks it's charming. Priya is terrified. Their tension should build.\n\n" +
-    "TONE: Road trip banter -> Twilight Zone unease -> desperate escape before sunset.",
+    "A town frozen in time, or one that only exists when visitors arrive.\n\n" +
+    "THE TRUTH (only you know this): Halcyon Springs is a loop. Travelers arrive, stay, and eventually become part of the population. " +
+    "The 84 names on the church wall are all former travelers. The scratched-out name tried to leave. June 14, 1987 is when the loop began.\n\n" +
+    "INGREDIENTS:\n" +
+    "- radio_1987: Car radio plays a song from 1987 for 3 seconds. The station doesn't exist anymore.\n" +
+    "- diner_food: Hot coffee, fresh pie. Eating it makes you drowsy and content. You start wanting to stay.\n" +
+    "- guestbook: Diner guestbook full of travelers. Friendly entries. No dates on any of them.\n" +
+    "- newspapers_date: Library newspapers all stop at June 14, 1987. Every calendar in town shows the same date.\n" +
+    "- church_names: 84 names on the church wall. Fresh flowers. One name scratched out violently.\n" +
+    "- car_mystery: Cal opens the hood — parts that should work just don't. Wiring goes nowhere. But the car almost starts...\n" +
+    "- Priya_face: Priya saw a face in an upstairs window. She hasn't told anyone. It's eating her up.\n" +
+    "- Jordan_enthusiasm: Jordan keeps finding 'charming' things. His enthusiasm is infectious — and dangerous.\n" +
+    "- Lily_seduction: Lily starts liking this place. The food, the quiet. She doesn't want to leave.\n" +
+    "- Cal_frustration: The car makes no sense. Cal gets angry, then scared. Something is deeply wrong.\n" +
+    "- sunset: The sun is setting. After dark, the town activates — lights, music, doors opening. Getting harder to leave.\n" +
+    "- the_welcomer: Someone finally appears. Friendly. Too friendly. Knows their names.\n\n" +
+    "PRINCIPLES:\n" +
+    "- Sunset is the background clock. Mention the light changing. Make it feel urgent.\n" +
+    "- Let the town seduce some characters (Jordan, Lily) while terrifying others (Priya, Cal). The player breaks the tie.\n" +
+    "- Never confirm it's supernatural until Act 3. Always leave a rational explanation... until there isn't one.\n\n" +
+    "TONE: Road trip banter → Twilight Zone unease → desperate escape before dark.",
+  initialGmState: {
+    act: 1,
+    tension: 1,
+    ingredientsUsed: [],
+    ingredientsAvailable: [
+      "radio_1987", "diner_food", "guestbook", "newspapers_date", "church_names",
+      "car_mystery", "Priya_face", "Jordan_enthusiasm", "Lily_seduction",
+      "Cal_frustration", "sunset", "the_welcomer",
+    ],
+    playerKnows: ["car won't start", "town seems empty"],
+    playerDoesntKnow: ["the town is a loop", "the 84 are all former travelers", "June 14 1987 is the loop date"],
+    activeThreats: ["sunset"],
+    mood: "curious",
+  } satisfies GmState,
 };
 
 export const theMuseumJob: Scene = {
@@ -245,29 +270,42 @@ export const theMuseumJob: Scene = {
     },
   ],
   directorNotes:
-    "ATMOSPHERE: After-hours museum. Emergency lighting casts long shadows. Exhibits look different at night — " +
-    "the dinosaur skeleton seems to watch, the ancient masks have deeper eye sockets, the dioramas feel less like displays and more like windows.\n\n" +
-    "CLUE CHAIN:\n" +
-    "1. Service entrance: alarm was already disabled BEFORE they arrived. Kai shrugs it off.\n" +
-    "2. Main hall: a display case is open. The artifact inside is missing. Not broken — unlocked.\n" +
-    "3. Egyptian wing: Noor's phone glitches. Static, then a brief image of someone standing behind them. No one is there.\n" +
-    "4. New wing: the obsidian mirror. Theo goes quiet. Then whispers: 'It's not reflecting the room correctly.'\n" +
-    "5. Truth: Kai has been here before. He's not here to look — he's here to take the mirror. And someone else is here to stop him.\n\n" +
-    "DECISION TREE:\n" +
-    "- Route: main halls (more cover, security cameras OFF) vs service corridors (Zara knows them, but narrow and loud)\n" +
-    "- Missing artifact: investigate (costs time, security patrol in 20 min) vs ignore and keep moving (miss Kai's real plan)\n" +
-    "- The mirror: let Theo examine it (he might not come back from what he sees) vs pull him away (he'll resist)\n" +
-    "- Kai's confession: trust him and help (risky — is he lying?) vs side with Zara and abort (safer, but the mirror stays)\n" +
-    "- Escape: original exit (may be blocked now) vs Zara's route through basement (unknown, dark)\n\n" +
-    "CONSEQUENCES:\n" +
-    "- Security patrol is a real timer: 45 minutes from entry. Guard route is predictable but they MUST stay ahead.\n" +
-    "- If they're too loud: guard changes pattern, time compresses.\n" +
-    "- If Theo touches the mirror: something changes about him. He speaks differently. The group notices.\n" +
-    "- If they investigate the missing artifact: they find Kai's fingerprints. Zara's suspicion confirmed.\n\n" +
-    "CHARACTER CONFLICT:\n" +
-    "- Kai vs Zara: Zara doesn't trust Kai. She'll pull the player aside to warn them. Kai tries to keep everyone focused and moving.\n" +
-    "- Theo vs Noor: Theo wants to stay and study everything. Noor wants to leave immediately. Player breaks the tie.\n\n" +
-    "TONE: Heist caper -> paranoid thriller -> confrontation. The question shifts from 'will we get caught?' to 'what is Kai really doing?'",
+    "ATMOSPHERE: After-hours museum. Emergency lighting, long shadows. Exhibits look different at night — " +
+    "the dinosaur skeleton seems to watch, ancient masks have deeper eye sockets, dioramas feel like windows into other worlds.\n\n" +
+    "THE TRUTH (only you know this): Kai has been here before. He's not here to look — he's here to steal the obsidian mirror. " +
+    "The alarm was already disabled because he disabled it earlier. Someone else is also in the museum tonight — they want the mirror too.\n\n" +
+    "INGREDIENTS:\n" +
+    "- alarm_disabled: The alarm was off BEFORE they arrived. Kai shrugs it off if asked.\n" +
+    "- missing_artifact: A display case is open. Artifact gone. Not broken — unlocked with a key.\n" +
+    "- Noor_phone_glitch: Noor's phone shows static near the new wing. Brief image of someone behind them.\n" +
+    "- obsidian_mirror: The centerpiece. It doesn't reflect the room correctly. Theo is hypnotized.\n" +
+    "- Theo_mirror_change: If Theo touches the mirror, something changes about him. He speaks differently.\n" +
+    "- Kai_fingerprints: If they investigate the missing artifact: Kai's fingerprints. He's been here before.\n" +
+    "- Zara_suspicion: Zara doesn't trust Kai. She'll pull the player aside when something doesn't add up.\n" +
+    "- Noor_panic: Noor is a ticking anxiety bomb. Every shadow, every sound. She wants to leave.\n" +
+    "- security_patrol: Guard does rounds every 45 minutes. Predictable but they must stay ahead.\n" +
+    "- footsteps: Footsteps from inside the exhibit. Not the guard's pattern. Someone else is here.\n" +
+    "- Kai_confession: When cornered, Kai admits the truth. He needs the mirror. It's complicated.\n\n" +
+    "PRINCIPLES:\n" +
+    "- Security patrol is the background clock. Mention distant footsteps, flashlight beams, radio chatter.\n" +
+    "- The question evolves: 'Will we get caught?' → 'What is Kai doing?' → 'What IS the mirror?'\n" +
+    "- Let Kai and Zara's conflict simmer. Don't resolve it early. Let the player pick a side.\n" +
+    "- Noise has consequences. Being loud compresses the timeline.\n\n" +
+    "TONE: Heist caper → paranoid thriller → confrontation.",
+  initialGmState: {
+    act: 1,
+    tension: 1,
+    ingredientsUsed: [],
+    ingredientsAvailable: [
+      "alarm_disabled", "missing_artifact", "Noor_phone_glitch", "obsidian_mirror",
+      "Theo_mirror_change", "Kai_fingerprints", "Zara_suspicion", "Noor_panic",
+      "security_patrol", "footsteps", "Kai_confession",
+    ],
+    playerKnows: ["we broke into the museum after hours"],
+    playerDoesntKnow: ["Kai has been here before", "Kai wants to steal the mirror", "someone else is in the museum"],
+    activeThreats: ["security_patrol"],
+    mood: "excited",
+  } satisfies GmState,
 };
 
 export const theLastTrain: Scene = {
@@ -337,27 +375,46 @@ export const theLastTrain: Scene = {
   ],
   directorNotes:
     "ATMOSPHERE: Liminal space horror. The train is beautiful but wrong — art deco fixtures, velvet seats, " +
-    "but the view outside doesn't match any known route. Stations flash by with names that don't exist. " +
-    "The lighting flickers in patterns. Other carriages can be heard but are always empty — or are they?\n\n" +
-    "CLUE CHAIN:\n" +
-    "1. First carriage: Ellis's recorder plays back their voice — but a few seconds AHEAD of when they spoke it.\n" +
-    "2. Connecting door: the next carriage is wrong era. 1940s decor. But their bags are already on the seats.\n" +
-    "3. Dining car: table set for five. Menu has their names. The dishes described are their favorite meals.\n" +
-    "4. Sam's compass stops spinning in one specific carriage. The temperature drops. Olive says: 'This is where it wants us.'\n" +
-    "5. Truth: the train runs on a loop. It arrives at Ashford, then resets. The only way off is to find the conductor and answer a question correctly. Wrong answer = another loop.\n\n" +
-    "DECISION TREE:\n" +
-    "- First carriage: stay and investigate (find recorder clue) vs push forward immediately (miss key context)\n" +
-    "- Connecting door: open it (enter the 1940s carriage — no turning back, door locks) vs try to pry open the emergency exit (doesn't work, wastes time, train accelerates)\n" +
-    "- Dining car: eat the food (restores energy but they hear whispers after) vs refuse (hungry, but clear-headed)\n" +
-    "- The knock: answer it (meet something from the other side) vs ignore it (it gets louder, more insistent, eventually the door opens on its own)\n" +
-    "- Endgame: answer the conductor's question (what is Ashford?) vs refuse to answer (the train loops — bittersweet ending)\n\n" +
-    "CONSEQUENCES:\n" +
-    "- Each carriage they pass through changes slightly when they look back. Can't retrace steps.\n" +
-    "- Mika's selfie shows an extra person. If they compare photos: the figure gets CLOSER in each one.\n" +
-    "- Eating the food: character starts hearing whispers, becomes unreliable narrator within the group.\n" +
-    "- The train is decelerating. They can feel it. Ashford is approaching. Time pressure builds.\n\n" +
-    "CHARACTER CONFLICT:\n" +
-    "- Ellis vs Sam: Ellis thinks this is exciting content. Sam thinks they're in genuine danger. They clash.\n" +
-    "- Mika vs Olive: Mika is terrified and wants off. Olive is calm and says they should stay and listen. Player chooses who to follow.\n\n" +
-    "TONE: Urban exploration excitement -> surreal unease -> cosmic mystery. The question shifts from 'how do we get off?' to 'why were we chosen?'",
+    "but the view outside doesn't match any route. Stations flash by with names that don't exist. " +
+    "Lighting flickers in patterns. Other carriages can be heard but are always empty — or are they?\n\n" +
+    "THE TRUTH (only you know this): The train runs a loop. It arrives at Ashford, resets, and goes again. " +
+    "The only way off is to find the conductor and answer correctly: 'What is Ashford?' " +
+    "Wrong answer = another loop. The train has been collecting passengers for a long time.\n\n" +
+    "INGREDIENTS:\n" +
+    "- recorder_echo: Ellis plays back their recorder. Their voice is there — but a few seconds AHEAD of when they spoke.\n" +
+    "- wrong_era_carriage: The next carriage is 1940s decor. Their bags are already on the seats.\n" +
+    "- dining_car: Table set for five. Menu has their names. Their favorite meals described perfectly.\n" +
+    "- Mika_selfie_figure: Mika's selfie shows someone behind them. Compare photos — the figure gets closer each time.\n" +
+    "- Sam_compass: Sam's phone compass stops spinning in one specific carriage. Temperature drops.\n" +
+    "- Olive_sketches: Olive's sketches don't match what others see out the window. She's drawing a station: Ashford.\n" +
+    "- dining_whispers: Eating the food makes a character hear whispers. They become unreliable — say things they don't remember.\n" +
+    "- the_knock: Three knocks on the connecting door. From the other side. Getting louder.\n" +
+    "- carriages_change: Looking back, carriages they passed through have changed. Can't retrace steps.\n" +
+    "- Ellis_excitement: Ellis is filming everything. Thinks this is content gold. Doesn't take danger seriously.\n" +
+    "- Mika_terror: Mika's humor breaks. Real fear. Wants OFF.\n" +
+    "- Sam_breaking: Sam's instruments give impossible readings. Their composure cracks. 'I can't explain this.'\n" +
+    "- Olive_channel: Olive starts saying things she shouldn't know. The train is speaking through her.\n" +
+    "- deceleration: The train is slowing. They can feel it. Ashford is approaching.\n" +
+    "- the_conductor: Appears when the time is right. Calm. Old. Asks one question.\n\n" +
+    "PRINCIPLES:\n" +
+    "- Each carriage is a new world. Moving forward = commitment. No going back.\n" +
+    "- The question evolves: 'How do we get off?' → 'Why were we chosen?' → 'What IS Ashford?'\n" +
+    "- Let Olive's strangeness build slowly. She's the key, but don't rush it.\n" +
+    "- Deceleration is the background clock. The train is arriving whether they're ready or not.\n\n" +
+    "TONE: Urban exploration excitement → surreal unease → cosmic mystery.",
+  initialGmState: {
+    act: 1,
+    tension: 1,
+    ingredientsUsed: [],
+    ingredientsAvailable: [
+      "recorder_echo", "wrong_era_carriage", "dining_car", "Mika_selfie_figure",
+      "Sam_compass", "Olive_sketches", "dining_whispers", "the_knock",
+      "carriages_change", "Ellis_excitement", "Mika_terror", "Sam_breaking",
+      "Olive_channel", "deceleration", "the_conductor",
+    ],
+    playerKnows: ["on a train to Ashford", "Ashford was removed from schedules years ago"],
+    playerDoesntKnow: ["the train is a loop", "the conductor holds the key", "Olive is connected to the train"],
+    activeThreats: ["deceleration"],
+    mood: "excited",
+  } satisfies GmState,
 };

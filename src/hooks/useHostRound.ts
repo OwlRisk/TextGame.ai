@@ -27,7 +27,8 @@ import {
   dynamicPace,
 } from "@/lib/game-pace";
 import { buildHostSystemPrompt, buildSceneDirectorPrompt } from "@/lib/host-prompt-builder";
-import { isSceneMode } from "@/lib/scenes";
+import { isSceneMode, getScene } from "@/lib/scenes";
+import { type GmState, type CharacterDirection, parseGmState, parseCharacterDirections, stripGmDirectives, EMPTY_GM_STATE } from "@/lib/gm-state";
 import {
   type SpeakerQueueItem,
   parseRoleAssignments,
@@ -126,6 +127,8 @@ export function useHostRound({
   const msgCountRef = useRef(0);
   const pendingHumanMsgRef = useRef<string | null>(null);
   const interruptRef = useRef(false);
+  const gmStateRef = useRef<GmState | null>(null);
+  const characterDirectionsRef = useRef<CharacterDirection[]>([]);
 
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
@@ -269,6 +272,14 @@ export function useHostRound({
 
       const sceneId = (currentGame?.config as unknown as Record<string, unknown> | undefined)?.sceneId as string | undefined;
 
+      // Initialize GM state from scene data on first round
+      if (isSceneMode(tmplId) && sceneId && !gmStateRef.current) {
+        const sceneData = getScene(sceneId);
+        if (sceneData?.initialGmState) {
+          gmStateRef.current = { ...sceneData.initialGmState };
+        }
+      }
+
       const buildFreshHostPrompt = () => {
         const freshP = playersRef.current;
         const freshNonHost = freshP.filter((p) => !p.isGameMaster);
@@ -297,6 +308,7 @@ export function useHostRound({
             eventLogSummary: freshEvents,
             recentNonHostTurns,
             contentLanguage,
+            previousGmState: gmStateRef.current,
           });
         }
 
@@ -577,8 +589,17 @@ export function useHostRound({
 
           // Full directive parsing on the complete response
           const { message: rawSplitMessage, directives } = splitHostOutput(acc);
+
+          // Extract GM brain state before stripping
+          if (isScene) {
+            const newGmState = parseGmState(directives);
+            if (newGmState) gmStateRef.current = newGmState;
+            characterDirectionsRef.current = parseCharacterDirections(directives);
+          }
+          const cleanedDirectives = isScene ? stripGmDirectives(directives) : directives;
+
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
-          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(directives);
+          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(cleanedDirectives);
           const afterActions = applyHostActionsAndClean(directivesClean);
           const afterRoles = applyHostRoleAssignments(afterActions);
           const displayContent = splitMessage || afterRoles;
@@ -635,8 +656,16 @@ export function useHostRound({
               }
             }
             const { message: rawRetryMsg, directives: retryDir } = splitHostOutput(retryAcc);
+
+            if (isScene) {
+              const retryGm = parseGmState(retryDir);
+              if (retryGm) gmStateRef.current = retryGm;
+              characterDirectionsRef.current = parseCharacterDirections(retryDir);
+            }
+            const retryDirCleaned = isScene ? stripGmDirectives(retryDir) : retryDir;
+
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
-            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDir);
+            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDirCleaned);
             const retryAfterActions = applyHostActionsAndClean(retryClean);
             const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
             const retryDisplay = retryMsg || retryAfterRoles;
@@ -682,6 +711,7 @@ export function useHostRound({
         addStreamingMessage, updateStreamingMessage,
         addReaction,
         engagementScore: latestEngagementScore,
+        characterDirections: characterDirectionsRef.current,
       });
 
       const decisionSummaryPrefix = pendingDecisionSummariesRef.current.length > 0

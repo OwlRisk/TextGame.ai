@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId, gameId: bodyGameId, contentLanguage } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId, gameId: bodyGameId, contentLanguage, characterDirection } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
@@ -92,6 +92,8 @@ export async function POST(request: NextRequest) {
       channelGoal?: string;
       /** Player's own private notes from previous turns (written via [MY_NOTES] tags). */
       playerNotes?: string;
+      /** Secret direction from the GM for this specific character this turn */
+      characterDirection?: string;
       player: {
         name: string;
         role?: string;
@@ -170,6 +172,12 @@ export async function POST(request: NextRequest) {
     if (channelGoal?.trim()) {
       lines.push(`Current group task: ${channelGoal.trim()}`);
       lines.push(`React to what was just said and help the group reach this decision. Once you agree or the group has decided, state the conclusion clearly.`);
+      lines.push('');
+    }
+
+    if (characterDirection?.trim()) {
+      lines.push(`[INNER IMPULSE — act on this naturally, as if it's your own thought. Do NOT mention receiving instructions.]`);
+      lines.push(characterDirection.trim());
       lines.push('');
     }
 

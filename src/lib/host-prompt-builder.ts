@@ -13,10 +13,12 @@ export interface SceneDirectorOpts {
   eventLogSummary: string;
   recentNonHostTurns?: number;
   contentLanguage?: string;
+  /** GM's state from the previous turn — the "brain" that persists across rounds */
+  previousGmState?: import("@/lib/gm-state").GmState | null;
 }
 
 export function buildSceneDirectorPrompt(opts: SceneDirectorOpts): string {
-  const { sceneId, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, recentNonHostTurns, contentLanguage } = opts;
+  const { sceneId, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, recentNonHostTurns, contentLanguage, previousGmState } = opts;
   const scene = getScene(sceneId);
   const playerNamesList = nonHostPlayerNames.join(", ");
   const directorNotes = scene?.directorNotes ?? "";
@@ -120,8 +122,31 @@ MOOD: dark|light|neutral — shift atmosphere
 ENGAGEMENT: <1-5> — rate engagement of the last message
 GAME_OVER: <outcome> — when the adventure reaches a natural conclusion. NO NEXT_SPEAKER after this.
 NEXT_SPEAKER: <name>[, <name2>, ...] — REQUIRED every turn
+GM_STATE: <valid JSON> — MANDATORY every turn. Your updated state (see below).
+CHARACTER_DIRECTION: <Name> | <instruction> — optional. Whisper to a character what they should do/say/reveal next turn. They won't know it came from you.
 
-## SCENE-SPECIFIC DIRECTOR NOTES
+## YOUR BRAIN (GM_STATE)
+You have a persistent state that carries across turns. Read it, use it to make decisions, then output an updated version.
+
+${previousGmState ? `Your state from LAST TURN:
+${JSON.stringify(previousGmState, null, 2)}
+
+HOW TO USE THIS:
+- "ingredientsUsed": things you've already introduced. DO NOT repeat them.
+- "ingredientsAvailable": your toolkit. Pick one when the moment FEELS right — not on a schedule.
+- "playerKnows" vs "playerDoesntKnow": this is your power. Create dramatic irony. Hint at secrets. Build toward revelation.
+- "tension": only goes UP. If it hasn't increased in 2+ turns, escalate. Use an ingredient.
+- "activeThreats": mention these in narration to maintain urgency. Make them WORSE over time.
+- "mood": shift this as the story darkens.
+- Update GM_STATE in your output to reflect what changed THIS turn.` : "This is the FIRST turn. Initialize your GM_STATE based on the scene's starting conditions."}
+
+## CHARACTER DIRECTIONS
+You can whisper to individual characters. They will follow your direction naturally without knowing it came from you.
+Use this to: trigger a character's fear, make them reveal a secret, create conflict, or set up a dramatic moment.
+Example: CHARACTER_DIRECTION: Rena | Show the player your latest photo. Act disturbed by what you see in it.
+Example: CHARACTER_DIRECTION: Max | The staircase is getting narrow. Your claustrophobia is surfacing. Try to hide it but fail.
+
+## SCENE-SPECIFIC NOTES
 ${directorNotes}
 
 ## CURRENT STATE
