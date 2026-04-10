@@ -218,7 +218,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     };
   }, []);
 
-  // Load game room state: local-first when logged in (show cache immediately, then sync from DB), else localStorage only
+  // Load game room state: local-first (show cache immediately, then sync from DB)
   useEffect(() => {
     function applyState(state: Record<string, unknown>) {
       if (state.messages && Array.isArray(state.messages)) {
@@ -255,55 +255,29 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.humanGameIdentity && typeof (state.humanGameIdentity as any).name === "string") {
         setHumanGameIdentity({ name: (state.humanGameIdentity as any).name });
       }
-      // avatarImageUrls is a client-side style-aware cache; do NOT restore from
-      // persisted state because it may have been written by a different client with
-      // a different avatar style selected, which would show wrong-style images.
       if (typeof state.phaseLabel === "string") setPhaseLabel(state.phaseLabel);
       if (state.mood === "dark" || state.mood === "light" || state.mood === "neutral") setMood(state.mood);
       if (typeof state.gameOverSummary === "string") setGameOverSummary(state.gameOverSummary);
       if (typeof state.roundNumber === "number") setRoundNumber(state.roundNumber);
     }
 
-    if (user?.id) {
-      // Local-first: apply cached state immediately so UI isn't blank while DB responds
-      try {
-        const saved = localStorage.getItem(`gameRoom_${gameId}`);
-        if (saved) applyState(JSON.parse(saved));
-      } catch (_) {}
-
-      getGameRoomState(gameId)
-        .then(({ data, error }) => {
-          if (!error && data != null) {
-            applyState(data as Record<string, unknown>);
-          }
-          setIsHydrated(true);
-        });
-    } else {
-      // Guest (unauthenticated): load from DB so avatars/players/state are populated.
-      // The game_room_state table has USING(true) RLS so anon clients can read.
-      // IMPORTANT:
-      //   - strip humanGameIdentity: guests must not inherit the owner's character name
-      //   - reset selectedChannelId: guests always start from the default channel
-      //     (owner may have left the session on a private channel the guest can't access)
-      const applyGuestState = (raw: Record<string, unknown>) => {
-        const { humanGameIdentity: _ignored, selectedChannelId: _ch, ...rest } = raw;
-        applyState(rest);
-      };
-      try {
-        const saved = localStorage.getItem(`gameRoom_${gameId}`);
-        if (saved) applyGuestState(JSON.parse(saved));
-      } catch (e) {
-        console.error("Error loading game room state:", e);
-      }
-      getGameRoomState(gameId)
-        .then(({ data, error }) => {
-          if (!error && data != null) {
-            applyGuestState(data as Record<string, unknown>);
-          }
-        })
-        .catch(() => {/* non-critical for guests */})
-        .finally(() => setIsHydrated(true));
+    if (!user?.id) {
+      setIsHydrated(true);
+      return;
     }
+
+    try {
+      const saved = localStorage.getItem(`gameRoom_${gameId}`);
+      if (saved) applyState(JSON.parse(saved));
+    } catch (_) {}
+
+    getGameRoomState(gameId)
+      .then(({ data, error }) => {
+        if (!error && data != null) {
+          applyState(data as Record<string, unknown>);
+        }
+        setIsHydrated(true);
+      });
   }, [gameId, user?.id]);
 
   /** Immediately flush current state to DB (bypasses the 2-second debounce). */
@@ -493,14 +467,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   }, [gameId, userId, isHydrated, saveTrigger]);
 
   // ─── Realtime subscription ────────────────────────────────────────────────
-  // Merge remote state received via Supabase Realtime (postgres_changes or broadcast).
+  // Merge remote state received via Supabase Realtime (postgres_changes).
   // Only messages not already in local state are added; streaming messages are never merged.
-  //
-  // I-3: When the update was written by a guest (clientId === "guest_write"), we only
-  // merge the messages array. We intentionally skip players/gamePhase/etc. because
-  // the guest-triggered DB write uses the snapshot it *read* — which may be stale.
-  // Overwriting the owner's current state with that stale snapshot would undo any
-  // role assignments or game-phase changes the AI just processed.
   const mergeRemoteState = useCallback((remoteState: Record<string, unknown>) => {
     if (!isMountedRef.current) return;
 
@@ -514,20 +482,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         const localIds = new Set(prev.map((m) => m.id));
         const newMsgs = remoteMessages.filter((m) => !localIds.has(m.id));
         if (newMsgs.length === 0) return prev;
-        // Sort only the incoming batch among themselves; append after existing
-        // messages so that already-displayed order is never disrupted.
         newMsgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
         const merged = [...prev, ...newMsgs];
-        return merged.length > 100 ? merged.slice(-100) : merged;
+        return merged.length > 60 ? merged.slice(-60) : merged;
       });
     }
-
-    // Skip non-message state updates that originated from a guest write.
-    // The guest_write RPC only appends a message and preserves existing state,
-    // but the Realtime payload still contains the full state blob (with stale
-    // players/gamePhase from when the guest first loaded the page).
-    const isGuestWrite = remoteState.clientId === "guest_write";
-    if (isGuestWrite) return;
 
     if (remoteState.players && Array.isArray(remoteState.players)) {
       setPlayers(remoteState.players as Player[]);
@@ -544,38 +503,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (remoteState.gameEvents && Array.isArray(remoteState.gameEvents)) {
       setGameEvents(remoteState.gameEvents as string[]);
     }
-    // avatarImageUrls is intentionally NOT synced from remote state.
-    // It is a per-client cache keyed by name|type|style; merging another
-    // client's cache (which may use a different style) would show wrong-style images.
     if (typeof remoteState.phaseLabel === "string") setPhaseLabel(remoteState.phaseLabel);
     if (remoteState.mood === "dark" || remoteState.mood === "light" || remoteState.mood === "neutral") setMood(remoteState.mood);
     if (typeof remoteState.gameOverSummary === "string") setGameOverSummary(remoteState.gameOverSummary);
     if (typeof remoteState.roundNumber === "number") setRoundNumber(remoteState.roundNumber);
-    // NOTE: humanGameIdentity is intentionally NOT synced from remote state.
-    // It is a per-user concept — the owner's identity must not overwrite the
-    // guest's identity (guestNickname) when Realtime/polling delivers state.
   }, []);
-
-  // ─── Guest polling fallback ──────────────────────────────────────────────
-  // postgres_changes Realtime is not reliable for unauthenticated (anon) clients.
-  // When there is no logged-in user, poll the DB every 3 s to pick up new
-  // messages / state updates (AI responses, player updates, avatars, etc.)
-  // This gives guests a near-real-time "meeting" experience without auth.
-  useEffect(() => {
-    if (!gameId || !isHydrated || user?.id) return; // owners use Realtime, skip
-
-    const poll = () => {
-      getGameRoomState(gameId)
-        .then(({ data, error }) => {
-          if (!error && data != null) mergeRemoteState(data as Record<string, unknown>);
-        })
-        .catch(() => {/* non-critical */});
-    };
-
-    const GUEST_POLL_INTERVAL_MS = 3000;
-    const interval = setInterval(poll, GUEST_POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [gameId, isHydrated, user?.id, mergeRemoteState]);
 
   useEffect(() => {
     if (!gameId) return;
@@ -611,21 +543,18 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (!isMountedRef.current) return;
       const newMessage: Message = {
         ...msg,
-        // Allow callers to supply a pre-generated ID (e.g. guest optimistic update)
-        // so the Realtime echo can be deduplicated by ID.
+        // Allow callers to supply a pre-generated ID so the Realtime echo
+        // can be deduplicated by ID.
         id: msg.id ?? `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         timestamp: new Date(),
         ...(channelId != null && { channelId }),
       };
       setMessages((prev) => {
-        // I-6: Primary dedup by ID — reliable for all pre-generated message IDs
-        // (optimistic updates, guest messages, etc.). Falls back to content
-        // matching only for legacy / AI messages that share auto-generated IDs.
+        // Dedup by ID — reliable for all pre-generated message IDs.
         if (prev.some((m) => m.id === newMessage.id)) return prev;
 
-        // Limit to last 100 messages
         const updated = [...prev, newMessage];
-        return updated.length > 100 ? updated.slice(-100) : updated;
+        return updated.length > 60 ? updated.slice(-60) : updated;
       });
       return newMessage.id;
     },

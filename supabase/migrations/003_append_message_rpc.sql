@@ -4,7 +4,7 @@
 -- This function uses FOR UPDATE to lock the row before modifying it.
 
 CREATE OR REPLACE FUNCTION append_game_message(
-  p_game_id    TEXT,
+  p_game_id    UUID,
   p_message    JSONB,
   p_owner_uid  TEXT,
   p_max_msgs   INTEGER DEFAULT 60
@@ -58,4 +58,4 @@ END;
 $$;
 
 -- Grant execution to the service_role (used by supabaseAdmin)
-GRANT EXECUTE ON FUNCTION append_game_message(TEXT, JSONB, TEXT, INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION append_game_message(UUID, JSONB, TEXT, INTEGER) TO service_role;

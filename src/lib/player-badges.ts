@@ -1,39 +1,6 @@
 // ─── Shared player badge enums and helpers ────────────────────────────────────
 // Single source of truth for badge labels, player status values, and
 // the pure logic functions that resolve which badge each player receives.
-// Used by player-panel-with-board.tsx, channel-list.tsx, and tests.
-
-// ── Players Online sidebar (channel-list.tsx) ─────────────────────────────────
-
-/** Badge shown next to each entry in the "Players Online" section. */
-export enum OnlineBadge {
-  You   = "You",
-  Host  = "Host",
-  Guest = "Guest",
-}
-
-export interface RoomMember {
-  id: string;
-  nickname: string;
-  is_owner: boolean;
-  player_id: string | null;
-}
-
-/**
- * Resolve which badge to show for a room member row.
- *
- * viewerMemberId present  → compare by ID to identify the viewer
- * viewerMemberId absent   → fall back to is_owner flag (owner views their room)
- */
-export function resolveOnlineBadge(
-  m: RoomMember,
-  viewerMemberId: string | undefined
-): OnlineBadge {
-  const isViewer = viewerMemberId ? m.id === viewerMemberId : m.is_owner;
-  if (isViewer) return OnlineBadge.You;
-  if (m.is_owner) return OnlineBadge.Host;
-  return OnlineBadge.Guest;
-}
 
 // ── Player panel right-side (player-panel-with-board.tsx) ─────────────────────
 
@@ -74,7 +41,7 @@ export function isPlayerEliminated(player: PlayerLike): boolean {
  * Resolve the YOU badge for a player card.
  *
  * Rules:
- *  - currentUserId must be a non-empty string (guests have userId = "")
+ *  - currentUserId must be a non-empty string
  *  - player.id must match currentUserId exactly
  *  - player must not be an AI
  *  - player must not be eliminated

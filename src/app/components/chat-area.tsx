@@ -29,9 +29,6 @@ export interface Message {
   channelId?: string;
   /** Optional image URL (e.g. Host chose to reply with an image). */
   imageUrl?: string;
-  /** True for messages sent by a non-owner guest (via /api/games/[gameId]/message). Used to prevent
-   *  name-based player matching from accidentally assigning an AI avatar to a guest message. */
-  isGuestMessage?: boolean;
   /** True for announcement banners injected by ANNOUNCE directive */
   isAnnouncement?: boolean;
   /** Emoji reactions added by AI players/GM */

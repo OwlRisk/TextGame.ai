@@ -141,7 +141,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameId,
     channelPermissions,
     setChannelPermissions,
-    roomMembers: players,
     gameRoomEntries,
     defaultGameChannelId,
     readyKickoffRef,
@@ -284,13 +283,15 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     };
   }, [gameId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const clearActiveVote = useCallback(() => setActiveVote(null), [setActiveVote]);
+
   useGameRoomLifecycle({
     gamePhase,
     gameId,
     timerEndsAt,
     addMessage,
     setTimerEndsAt,
-    setActiveVote: () => setActiveVote(null),
+    setActiveVote: clearActiveVote,
   });
 
   useEffect(() => { selectGame(gameId); }, [gameId, selectGame]);

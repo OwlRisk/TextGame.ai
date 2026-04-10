@@ -16,18 +16,14 @@ function ProtectedRouteInner({ children }: ProtectedRouteProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Guest players joining via invite link carry ?guestId=... in the URL.
-  // Allow them through without requiring a login.
-  const isGuestSession = !!searchParams.get("guestId");
-
   useEffect(() => {
-    if (!loading && !user && !isGuestSession) {
+    if (!loading && !user) {
       const qs = searchParams.toString();
       const fullPath = pathname ? (qs ? `${pathname}?${qs}` : pathname) : "";
       const returnUrl = fullPath ? `/signin?returnUrl=${encodeURIComponent(fullPath)}` : "/signin";
       router.push(returnUrl);
     }
-  }, [user, loading, router, pathname, searchParams, isGuestSession]);
+  }, [user, loading, router, pathname, searchParams]);
 
   if (loading) {
     return (
@@ -37,8 +33,7 @@ function ProtectedRouteInner({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user && !isGuestSession) {
-    // M-4: Show spinner while the redirect effect fires so there is no blank flash
+  if (!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
         <Loader2 className="w-8 h-8 animate-spin text-purple-500" />

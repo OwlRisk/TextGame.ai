@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   INITIAL_PLAYER_REPLIES,
-  MEMBERS_POLL_INTERVAL_MS,
-  MEMBERS_MAX_ERRORS,
   MAX_AUTO_ADVANCES,
   HOST_CONTEXT_WINDOW,
   MAX_STREAM_TOKENS,
@@ -15,15 +13,6 @@ describe("game-room-constants", () => {
     expect(INITIAL_PLAYER_REPLIES).toBeGreaterThan(0);
     expect(Number.isInteger(INITIAL_PLAYER_REPLIES)).toBe(true);
     expect(INITIAL_PLAYER_REPLIES).toBeLessThanOrEqual(10);
-  });
-
-  it("MEMBERS_POLL_INTERVAL_MS is at least 1 second", () => {
-    expect(MEMBERS_POLL_INTERVAL_MS).toBeGreaterThanOrEqual(1000);
-  });
-
-  it("MEMBERS_MAX_ERRORS is a positive integer", () => {
-    expect(MEMBERS_MAX_ERRORS).toBeGreaterThan(0);
-    expect(Number.isInteger(MEMBERS_MAX_ERRORS)).toBe(true);
   });
 
   it("MAX_AUTO_ADVANCES is a positive integer within a sane range", () => {

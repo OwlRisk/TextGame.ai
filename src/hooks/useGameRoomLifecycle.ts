@@ -49,5 +49,5 @@ export function useGameRoomLifecycle({
     }
     const timeout = setTimeout(fire, remaining);
     return () => clearTimeout(timeout);
-  }, [timerEndsAt, addMessage, setTimerEndsAt]);
+  }, [timerEndsAt, addMessage, setTimerEndsAt, setActiveVote]);
 }

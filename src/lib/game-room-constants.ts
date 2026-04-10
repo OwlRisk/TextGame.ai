@@ -1,10 +1,6 @@
 /** Number of AI players to reply right after the host's initial greeting */
 export const INITIAL_PLAYER_REPLIES = 3;
 
-/** Members polling interval (ms) and max consecutive errors before giving up */
-export const MEMBERS_POLL_INTERVAL_MS = 15_000;
-export const MEMBERS_MAX_ERRORS = 3;
-
 /** Maximum autonomous Host→AI advance loops before waiting for human input */
 export const MAX_AUTO_ADVANCES = 1;
 

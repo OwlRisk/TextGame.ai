@@ -54,7 +54,6 @@ interface UseHostRoundParams {
   gameId: string;
   channelPermissions: Record<string, string[]>;
   setChannelPermissions: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
-  roomMembers: Array<{ id: string; guest_id?: string | null; player_id?: string | null; is_owner?: boolean; nickname?: string }>;
   gameRoomEntries: Array<{ id: string; name: string; roomType?: string }>;
   defaultGameChannelId: string;
   readyKickoffRef: React.MutableRefObject<{ channelId: string } | null>;
@@ -75,7 +74,6 @@ export function useHostRound({
   gameId,
   channelPermissions,
   setChannelPermissions,
-  roomMembers,
   gameRoomEntries,
   defaultGameChannelId,
   readyKickoffRef,
@@ -233,12 +231,10 @@ export function useHostRound({
         if (isHuman) {
           return `  • ${name} [YOU/HUMAN] | ${role} | ${statusStr}`;
         }
-        const boundGuest = roomMembers.find((m) => m.player_id === p.id && !m.is_owner);
         const personality = p.personality ? `Personality: ${p.personality}` : "";
         const background = p.background ? `Background: ${p.background}` : "";
         const extras = [personality, background].filter(Boolean).join(" | ");
-        const typeLabel = boundGuest ? `GUEST: ${boundGuest.nickname}` : "AI";
-        return `  • ${name} [${typeLabel}] | ${role} | ${statusStr}${extras ? ` | ${extras}` : ""}`;
+        return `  • ${name} [AI] | ${role} | ${statusStr}${extras ? ` | ${extras}` : ""}`;
       }).join("\n");
 
       const boardEntries = Object.entries(myBoardContent)
@@ -282,12 +278,10 @@ export function useHostRound({
           const r = p.role ? `Role: ${p.role}` : "Role: not assigned";
           const s = (p.stats?.Status as string | undefined) ?? "alive";
           if (isH) return `  • ${n} [YOU/HUMAN] | ${r} | Status: ${s}`;
-          const bg = roomMembers.find((m) => m.player_id === p.id && !m.is_owner);
           const pers = p.personality ? `Personality: ${p.personality}` : "";
           const back = p.background ? `Background: ${p.background}` : "";
           const ex = [pers, back].filter(Boolean).join(" | ");
-          const tl = bg ? `GUEST: ${bg.nickname}` : "AI";
-          return `  • ${n} [${tl}] | ${r} | Status: ${s}${ex ? ` | ${ex}` : ""}`;
+          return `  • ${n} [AI] | ${r} | Status: ${s}${ex ? ` | ${ex}` : ""}`;
         }).join("\n");
 
         const freshEvents = gameEvents.length > 0

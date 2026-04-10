@@ -172,38 +172,6 @@ export interface Database {
           updated_at?: string;
         };
       };
-      game_members: {
-        Row: {
-          id: string;
-          game_id: string;
-          user_id: string | null;
-          guest_id: string | null;
-          nickname: string;
-          player_id: string | null;
-          is_owner: boolean;
-          joined_at: string;
-        };
-        Insert: {
-          id?: string;
-          game_id: string;
-          user_id?: string | null;
-          guest_id?: string | null;
-          nickname: string;
-          player_id?: string | null;
-          is_owner?: boolean;
-          joined_at?: string;
-        };
-        Update: {
-          id?: string;
-          game_id?: string;
-          user_id?: string | null;
-          guest_id?: string | null;
-          nickname?: string;
-          player_id?: string | null;
-          is_owner?: boolean;
-          joined_at?: string;
-        };
-      };
     };
   };
 }

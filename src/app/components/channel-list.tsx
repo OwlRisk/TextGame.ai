@@ -1,5 +1,4 @@
-import { Hash, Users, Lock, Trash2, Link2, BookOpen, FileText, Package } from "lucide-react";
-import { OnlineBadge, resolveOnlineBadge } from "@/lib/player-badges";
+import { Hash, Users, Lock, Trash2, BookOpen, FileText, Package } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -61,14 +60,6 @@ interface ChannelListProps {
   allPlayers?: PlayerInfo[];
   /** Unread message counts per channelId — shows a badge on non-selected channels. */
   unreadCounts?: Record<string, number>;
-  /** Callback to generate and copy an invite link. Owner only. */
-  onInvite?: () => void;
-  /** When true, show "Copied!" feedback on the invite button. */
-  inviteJustCopied?: boolean;
-  /** List of human players who have joined via invite link. */
-  roomMembers?: Array<{ id: string; nickname: string; is_owner: boolean; player_id: string | null }>;
-  /** The current viewer's member ID — used to show "You" on their own entry. */
-  viewerMemberId?: string;
   /** When true, shows a "Rules" entry at the top of the channel list that selects the special "__rules__" channel. */
   hasRules?: boolean;
   /** When true, shows a "My Board" entry below Rules that selects the special "__my_board__" channel. */
@@ -94,10 +85,6 @@ export function ChannelList({
   channelPermissions = {},
   allPlayers = [],
   unreadCounts = {},
-  onInvite,
-  inviteJustCopied = false,
-  roomMembers,
-  viewerMemberId,
   hasRules,
   hasMyBoard,
   myBoardHasUpdate,
@@ -274,33 +261,6 @@ export function ChannelList({
           </div>
         </div>
 
-        {/* Room members section — shown to all participants when anyone else is online */}
-        {roomMembers && roomMembers.length > 0 && (
-          <>
-            <Separator className="my-3 bg-zinc-700/50" />
-            <div>
-              <div className="flex items-center justify-between px-3 mb-2">
-                <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{t("label.players")}</span>
-                <span className="text-xs text-zinc-500">{roomMembers.length}</span>
-              </div>
-              {roomMembers.map((m) => {
-                const badge = resolveOnlineBadge(m, viewerMemberId);
-                return (
-                  <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg">
-                    <div className="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                    <span className="text-sm text-zinc-300 truncate flex-1">{m.nickname}</span>
-                    {badge === OnlineBadge.You && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-600/60 text-zinc-300 font-bold tracking-wide">{t("label.you")}</span>
-                    )}
-                    {badge === OnlineBadge.Guest && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold tracking-wide border border-emerald-500/25">{t("label.guest")}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
       </ScrollArea>
 
       {/* User section: pinned to bottom */}
