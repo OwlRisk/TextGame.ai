@@ -100,7 +100,7 @@ jobs:
           CARTESIA_API_KEY: placeholder
           REPLICATE_API_TOKEN: placeholder
           AVATAR_GENERATION_MODEL: dalle-3
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
