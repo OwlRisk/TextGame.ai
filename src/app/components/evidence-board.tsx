@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Fingerprint, FileText, Monitor, MessageSquareQuote, User, HelpCircle } from "lucide-react";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 interface EvidenceBoardProps {
   boardContent: string;
@@ -157,7 +158,8 @@ export const EvidenceBoard = React.memo(function EvidenceBoard({
   caseTitle,
 }: EvidenceBoardProps) {
   const board = useMemo(() => parseBoard(boardContent), [boardContent]);
-  const title = caseTitle || board.title || "Evidence Board";
+  const lang = getBrowserLanguage();
+  const title = caseTitle || board.title || t("board.evidence_board", lang);
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -167,11 +169,11 @@ export const EvidenceBoard = React.memo(function EvidenceBoard({
         {board.victim && (
           <div className="mt-2 space-y-1">
             <p className="text-sm text-zinc-300">
-              <span className="text-zinc-500 font-medium">Victim:</span> {board.victim}
+              <span className="text-zinc-500 font-medium">{t("board.victim", lang)}:</span> {board.victim}
             </p>
             {board.causeOfDeath && (
               <p className="text-sm text-zinc-300">
-                <span className="text-zinc-500 font-medium">Cause of Death:</span> {board.causeOfDeath}
+                <span className="text-zinc-500 font-medium">{t("board.cause_of_death", lang)}:</span> {board.causeOfDeath}
               </p>
             )}
           </div>
@@ -183,7 +185,7 @@ export const EvidenceBoard = React.memo(function EvidenceBoard({
         <div>
           <h3 className="text-sm font-semibold text-rose-300 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Fingerprint className="h-4 w-4" />
-            Evidence Collected ({board.evidence.length})
+            {t("board.evidence_collected", lang)} ({board.evidence.length})
           </h3>
           <div className="grid gap-2">
             {board.evidence.map((e, i) => (
@@ -216,7 +218,7 @@ export const EvidenceBoard = React.memo(function EvidenceBoard({
         <div>
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <User className="h-4 w-4" />
-            Suspect Notes ({board.suspects.length})
+            {t("board.suspect_notes", lang)} ({board.suspects.length})
           </h3>
           <div className="grid gap-2">
             {board.suspects.map((s, i) => (
@@ -230,7 +232,7 @@ export const EvidenceBoard = React.memo(function EvidenceBoard({
                 </div>
                 {s.alibi && (
                   <p className="text-xs text-zinc-400 mb-1">
-                    <span className="text-zinc-500 font-medium">Alibi:</span> {s.alibi}
+                    <span className="text-zinc-500 font-medium">{t("board.alibi", lang)}:</span> {s.alibi}
                   </p>
                 )}
                 {s.notes && s.notes.length > 0 && (
@@ -251,8 +253,8 @@ export const EvidenceBoard = React.memo(function EvidenceBoard({
 
       {board.evidence.length === 0 && board.suspects.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
-          <p className="text-sm font-medium">No evidence yet.</p>
-          <p className="text-xs mt-1">Evidence will appear here as the investigation progresses.</p>
+          <p className="text-sm font-medium">{t("board.no_evidence_yet", lang)}</p>
+          <p className="text-xs mt-1">{t("board.no_evidence_hint", lang)}</p>
         </div>
       )}
     </div>

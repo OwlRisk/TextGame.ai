@@ -243,6 +243,56 @@ const T: Record<string, Record<string, string>> = {
     pt: "Sala de jogo", ru: "Игровая", it: "Stanza di gioco", ar: "غرفة اللعبة",
   },
 
+  // ── Evidence Board ───────────────────────────────────────────────────
+  "board.evidence_board": {
+    en: "Evidence Board", zh: "证据板", ja: "証拠ボード", ko: "증거 보드",
+    de: "Beweistafel", fr: "Tableau des preuves", es: "Tablero de evidencias",
+    pt: "Painel de evidências", ru: "Доска улик", it: "Tabella delle prove", ar: "لوحة الأدلة",
+  },
+  "board.victim": {
+    en: "Victim", zh: "受害者", ja: "被害者", ko: "피해자",
+    de: "Opfer", fr: "Victime", es: "Víctima",
+    pt: "Vítima", ru: "Жертва", it: "Vittima", ar: "الضحية",
+  },
+  "board.cause_of_death": {
+    en: "Cause of Death", zh: "死因", ja: "死因", ko: "사인",
+    de: "Todesursache", fr: "Cause du décès", es: "Causa de muerte",
+    pt: "Causa da morte", ru: "Причина смерти", it: "Causa della morte", ar: "سبب الوفاة",
+  },
+  "board.evidence_collected": {
+    en: "Evidence Collected", zh: "已收集证据", ja: "収集済み証拠", ko: "수집된 증거",
+    de: "Gesammelte Beweise", fr: "Preuves collectées", es: "Evidencia recopilada",
+    pt: "Evidências coletadas", ru: "Собранные улики", it: "Prove raccolte", ar: "الأدلة المجمعة",
+  },
+  "board.suspect_notes": {
+    en: "Suspect Notes", zh: "嫌疑人笔记", ja: "容疑者メモ", ko: "용의자 메모",
+    de: "Verdächtigennotizen", fr: "Notes sur les suspects", es: "Notas de sospechosos",
+    pt: "Notas de suspeitos", ru: "Заметки о подозреваемых", it: "Note sui sospetti", ar: "ملاحظات المشتبهين",
+  },
+  "board.alibi": {
+    en: "Alibi", zh: "不在场证明", ja: "アリバイ", ko: "알리바이",
+    de: "Alibi", fr: "Alibi", es: "Coartada",
+    pt: "Álibi", ru: "Алиби", it: "Alibi", ar: "حجة الغياب",
+  },
+  "board.no_evidence_yet": {
+    en: "No evidence yet.", zh: "暂无证据。", ja: "まだ証拠がありません。", ko: "아직 증거가 없습니다.",
+    de: "Noch keine Beweise.", fr: "Pas encore de preuves.", es: "Aún no hay evidencia.",
+    pt: "Ainda sem evidências.", ru: "Пока нет улик.", it: "Ancora nessuna prova.", ar: "لا أدلة بعد.",
+  },
+  "board.no_evidence_hint": {
+    en: "Evidence will appear here as the investigation progresses.",
+    zh: "随着调查推进，证据会出现在这里。",
+    ja: "調査が進むにつれ、証拠がここに表示されます。",
+    ko: "조사가 진행되면 증거가 여기에 나타납니다.",
+    de: "Beweise erscheinen hier im Laufe der Ermittlung.",
+    fr: "Les preuves apparaîtront ici au fur et à mesure de l'enquête.",
+    es: "Las evidencias aparecerán aquí a medida que avance la investigación.",
+    pt: "As evidências aparecerão aqui conforme a investigação progride.",
+    ru: "Улики появятся здесь по мере продвижения расследования.",
+    it: "Le prove appariranno qui con il progresso dell'indagine.",
+    ar: "ستظهر الأدلة هنا مع تقدم التحقيق.",
+  },
+
   // ── Labels ─────────────────────────────────────────────────────────────
   "label.players": {
     en: "Players", zh: "\u73a9\u5bb6", de: "Spieler", fr: "Joueurs",
