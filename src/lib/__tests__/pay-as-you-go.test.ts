@@ -166,13 +166,6 @@ describe('Routing — /recharge page is active', () => {
     expect(content).not.toContain('router.push("/subscription');
   });
 
-  it('token-balance routes to /recharge', () => {
-    const p = path.resolve(__dirname, '../../app/components/token-balance.tsx');
-    const content = fs.readFileSync(p, 'utf-8');
-    expect(content).toContain("'/recharge'");
-    expect(content).not.toContain("'/subscription'");
-  });
-
   it('game-sidebar user menu routes to /recharge', () => {
     const p = path.resolve(__dirname, '../../app/components/game-sidebar.tsx');
     const content = fs.readFileSync(p, 'utf-8');

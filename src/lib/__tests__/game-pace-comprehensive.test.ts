@@ -282,7 +282,7 @@ describe("typewriterReveal", () => {
     await vi.runAllTimersAsync();
     const result = await p;
 
-    expect(addStream).toHaveBeenCalledWith(MSG_META, undefined, "Hi");
+    expect(addStream).toHaveBeenCalledWith(MSG_META, undefined, "");
     expect(updateStream).toHaveBeenCalledWith("msg-1", "Hi", true);
     expect(result).toBe("msg-1");
   });
@@ -305,12 +305,12 @@ describe("typewriterReveal", () => {
     expect(updateStream).not.toHaveBeenCalled();
   });
 
-  it("longer text is written in full immediately", async () => {
+  it("longer text is revealed via RAF ticks", async () => {
     const addStream = vi.fn().mockReturnValue("msg-1");
     const updateStream = vi.fn();
     const text = "Hello world";
 
-    const result = await typewriterReveal(
+    const p = typewriterReveal(
       text,
       addStream,
       updateStream,
@@ -318,8 +318,10 @@ describe("typewriterReveal", () => {
       undefined,
       3,
     );
+    await vi.runAllTimersAsync();
+    const result = await p;
 
-    expect(addStream).toHaveBeenCalledWith(MSG_META, undefined, "Hello world");
+    expect(addStream).toHaveBeenCalledWith(MSG_META, undefined, "");
     expect(updateStream).toHaveBeenCalledWith("msg-1", "Hello world", true);
     expect(result).toBe("msg-1");
   });
@@ -330,7 +332,7 @@ describe("typewriterReveal", () => {
     const text = "This is a long message for testing";
     const cancelled = vi.fn().mockReturnValue(false);
 
-    const result = await typewriterReveal(
+    const p = typewriterReveal(
       text,
       addStream,
       updateStream,
@@ -339,6 +341,8 @@ describe("typewriterReveal", () => {
       3,
       cancelled,
     );
+    await vi.runAllTimersAsync();
+    const result = await p;
 
     expect(updateStream).toHaveBeenCalledWith("msg-1", text, true);
     expect(result).toBe("msg-1");

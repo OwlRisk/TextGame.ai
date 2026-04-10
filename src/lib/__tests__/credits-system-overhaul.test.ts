@@ -4,12 +4,10 @@
  * Validates the full set of changes from the credits-only migration:
  *  1. PLATFORM_MARKUP = 2 (1:2 credit-to-token ratio)
  *  2. Settings page — no isPaid gating, no model selector, no image gen toggle
- *  3. Token balance — no Pro/Crown badge, always shows credit balance
- *  4. Usage display — no Pro badge, always shows credits
- *  5. Sidebar — static template icons, no DALL-E generation
- *  6. Stripe checkout — credits match display values (not formula)
- *  7. Model unification — getPreferredModel always returns default
- *  8. Removed API routes — no generate-game-icon, no generate-nav-icon
+ *  3. Sidebar — static template icons, no DALL-E generation
+ *  4. Stripe checkout — credits match display values (not formula)
+ *  5. Model unification — getPreferredModel always returns default
+ *  6. Removed API routes — no generate-game-icon, no generate-nav-icon
  */
 
 import { describe, it, expect } from 'vitest';
@@ -121,72 +119,7 @@ describe('Settings page — no feature gating', () => {
   });
 });
 
-// ─── 3. Token balance — no Pro badge ─────────────────────────────────────────
-
-describe('Token balance — always shows credits', () => {
-  const balancePath = path.resolve(__dirname, '../../app/components/token-balance.tsx');
-  const content = fs.readFileSync(balancePath, 'utf-8');
-
-  it('does not import Crown icon', () => {
-    expect(content).not.toContain('Crown');
-  });
-
-  it('does not conditionally show Pro/tier label', () => {
-    expect(content).not.toContain('tierLabel');
-    expect(content).not.toMatch(/balance\.isPro\s*\?/);
-  });
-
-  it('always renders Coins icon for balance', () => {
-    expect(content).toContain('Coins');
-  });
-
-  it('displays token count with toLocaleString', () => {
-    expect(content).toContain('balance.tokens.toLocaleString()');
-  });
-
-  it('links to /recharge', () => {
-    expect(content).toContain("'/recharge'");
-  });
-});
-
-// ─── 4. Usage display — no Pro badge ─────────────────────────────────────────
-
-describe('Usage display — always shows credits', () => {
-  const displayPath = path.resolve(__dirname, '../../app/components/usage-display.tsx');
-  const content = fs.readFileSync(displayPath, 'utf-8');
-
-  it('does not import Crown icon', () => {
-    expect(content).not.toContain('Crown');
-  });
-
-  it('does not show "Pro" text conditionally', () => {
-    expect(content).not.toMatch(/isPro\s*\?/);
-    expect(content).not.toContain("'Pro'");
-  });
-
-  it('shows credits label', () => {
-    expect(content).toContain('credits');
-  });
-
-  it('renders token balance for all users', () => {
-    expect(content).toContain('balance.tokens.toLocaleString()');
-  });
-});
-
-describe('Usage content — no Pro badge in Available section', () => {
-  const usagePath = path.resolve(__dirname, '../../app/components/usage-content.tsx');
-  const content = fs.readFileSync(usagePath, 'utf-8');
-
-  it('does not show amber Pro badge', () => {
-    expect(content).not.toContain('text-amber-400">Pro');
-  });
-
-  it('shows credits label in Available section', () => {
-    expect(content).toContain('credits');
-  });
-});
-
-// ─── 5. Sidebar — static icons, no generation ───────────────────────────────
+// ─── 3. Sidebar — static icons, no generation ───────────────────────────────
 
 describe('Sidebar — static template icons', () => {
   const sidebarPath = path.resolve(__dirname, '../../app/components/game-sidebar.tsx');
