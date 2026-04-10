@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 interface ChannelConfig {
   id: string;
@@ -62,7 +63,7 @@ export function useGameChannels<
   const gameRoomEntries: GameRoomEntry[] = useMemo(() => {
     const entries = channelConfigs?.length
       ? channelConfigs.map((c) => ({ id: c.id, name: c.name, type: "game" as const }))
-      : [{ id: "game-room", name: "game-room", type: "game" as const }];
+      : [{ id: "game-room", name: t("channel.default_room", getBrowserLanguage()), type: "game" as const }];
     if (sceneName && entries.length > 0) {
       entries[0] = { ...entries[0], name: sceneName };
     }

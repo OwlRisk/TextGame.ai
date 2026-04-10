@@ -209,6 +209,39 @@ const T: Record<string, Record<string, string>> = {
     it: "Nessuna azione disponibile al momento",
     ar: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0625\u062c\u0631\u0627\u0621\u0627\u062a \u0645\u062a\u0627\u062d\u0629 \u062d\u0627\u0644\u064a\u0627",
   },
+  "tab.say": {
+    en: "Say", zh: "说", ja: "発言", ko: "말하기",
+    de: "Sagen", fr: "Dire", es: "Decir",
+    pt: "Dizer", ru: "Сказать", it: "Dire", ar: "قل",
+  },
+  "tab.do": {
+    en: "Do", zh: "行动", ja: "行動", ko: "행동",
+    de: "Tun", fr: "Agir", es: "Hacer",
+    pt: "Fazer", ru: "Действие", it: "Fare", ar: "افعل",
+  },
+  "btn.execute_action": {
+    en: "Execute action", zh: "执行", ja: "実行", ko: "실행",
+    de: "Ausführen", fr: "Exécuter", es: "Ejecutar",
+    pt: "Executar", ru: "Выполнить", it: "Esegui", ar: "نفّذ",
+  },
+  "hint.first_turn": {
+    en: "It's your turn! Type a response in character, or tap a suggestion below.",
+    zh: "轮到你了！输入你的台词，或点击下方建议。",
+    ja: "あなたの番です！キャラクターとして返答を入力するか、下の提案をタップしてください。",
+    ko: "당신 차례입니다! 캐릭터로 답변을 입력하거나 아래 제안을 탭하세요.",
+    de: "Du bist dran! Antworte als dein Charakter oder tippe auf einen Vorschlag.",
+    fr: "C'est votre tour ! Répondez en personnage ou tapez sur une suggestion.",
+    es: "¡Es tu turno! Escribe una respuesta en personaje o toca una sugerencia.",
+    pt: "É a sua vez! Digite uma resposta no personagem ou toque em uma sugestão.",
+    ru: "Ваш ход! Напишите ответ за персонажа или нажмите на подсказку.",
+    it: "Tocca a te! Scrivi una risposta in personaggio o tocca un suggerimento.",
+    ar: "دورك! اكتب ردًا بشخصيتك أو انقر على اقتراح أدناه.",
+  },
+  "channel.default_room": {
+    en: "Game Room", zh: "游戏大厅", ja: "ゲームルーム", ko: "게임 룸",
+    de: "Spielraum", fr: "Salle de jeu", es: "Sala de juego",
+    pt: "Sala de jogo", ru: "Игровая", it: "Stanza di gioco", ar: "غرفة اللعبة",
+  },
 
   // ── Labels ─────────────────────────────────────────────────────────────
   "label.players": {

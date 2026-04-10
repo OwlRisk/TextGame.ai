@@ -305,7 +305,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
             }`}
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            <span>Say</span>
+            <span>{t("tab.say", lang)}</span>
           </button>
           <button
             type="button"
@@ -317,7 +317,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
             }`}
           >
             <Swords className="h-3.5 w-3.5" />
-            <span>Do</span>
+            <span>{t("tab.do", lang)}</span>
             {hasDoActions && inputMode !== "do" && (
               <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
             )}
@@ -549,29 +549,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
             </div>
           ) : (
             <>
-              {/* Action buttons */}
-              {gameActions.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {gameActions.map((action) => (
-                    <button
-                      key={action.label}
-                      type="button"
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-amber-500/30 bg-amber-900/20 hover:bg-amber-600/25 hover:border-amber-400/50 text-amber-200 hover:text-amber-100 transition-all duration-150"
-                      disabled={sendDisabled}
-                      onClick={() => handleDoAction(action)}
-                    >
-                      {action.icon && <span>{action.icon}</span>}
-                      <span>{action.label}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-3 text-xs text-zinc-500">
-                  {t("do.no_actions", lang)}
-                </div>
-              )}
-
-              {/* Free-text action input */}
+              {/* Free-text action input — primary */}
               <div className="flex gap-2 items-end">
                 <div className="relative flex-1 min-w-0">
                   <Textarea
@@ -602,8 +580,8 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                   disabled={!input.trim() || sendDisabled}
                   size="icon"
                   className="bg-amber-600 hover:bg-amber-500 h-10 w-10 flex-shrink-0"
-                  title="Execute action"
-                  aria-label="Execute action"
+                  title={t("btn.execute_action", lang)}
+                  aria-label={t("btn.execute_action", lang)}
                 >
                   {isSending ? (
                     <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -612,6 +590,24 @@ export const ChatInputArea = React.memo(function ChatInputArea({
                   )}
                 </Button>
               </div>
+
+              {/* Quick action suggestions — secondary */}
+              {gameActions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {gameActions.map((action) => (
+                    <button
+                      key={action.label}
+                      type="button"
+                      className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-amber-500/20 bg-amber-900/10 hover:bg-amber-600/20 hover:border-amber-400/40 text-amber-300/70 hover:text-amber-200 transition-all duration-150"
+                      disabled={sendDisabled}
+                      onClick={() => handleDoAction(action)}
+                    >
+                      {action.icon && <span className="text-[11px]">{action.icon}</span>}
+                      <span>{action.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>

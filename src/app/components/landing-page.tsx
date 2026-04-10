@@ -249,7 +249,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90" />
                 </div>
-                <span className="text-sm font-semibold text-zinc-300"># game-room</span>
+                <span className="text-sm font-semibold text-zinc-300"># {t("channel.default_room", getAppLanguage()).toLowerCase()}</span>
               </div>
               {/* Streaming messages */}
               <div className="p-4 h-[340px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">

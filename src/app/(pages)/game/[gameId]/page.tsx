@@ -330,7 +330,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   });
 
   const introYourTurnHint = !hasUserSentFirstMsg && gamePhase === "active" && currentSpeakerId === userId
-    ? "It's your turn! Type a response in character, or tap a suggestion below."
+    ? t("hint.first_turn", getBrowserLanguage())
     : undefined;
 
   // Game actions (context-sensitive action buttons)
@@ -365,7 +365,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     players,
     gameId,
     channelId: selectedChannelId ?? undefined,
-    channelName: gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room",
+    channelName: gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? t("channel.default_room", getBrowserLanguage()),
     isOwner: isOwner ? true : undefined,
     gameTemplate: currentGame?.config?.template,
   });
@@ -571,7 +571,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           <div className="relative flex-1 flex flex-col min-h-0">
           <GameEventOverlay event={currentGameEvent} onDismiss={dismissGameEvent} />
           <ChatArea
-            channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? "game-room"}
+            channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? t("channel.default_room", getBrowserLanguage())}
             channelId={selectedChannelId ?? undefined}
             messages={messagesForChannel}
             players={playersForChannel}
