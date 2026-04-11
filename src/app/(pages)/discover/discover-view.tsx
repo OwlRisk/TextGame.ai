@@ -115,7 +115,7 @@ export default function DiscoverView() {
         config: {
           name: preset.name,
           template: preset.templateId || "custom",
-          playerCount: configuredPlayers.length || preset.playerCount ?? tmpl?.recommendedAICount ?? 4,
+          playerCount: configuredPlayers.length || (preset.playerCount ?? tmpl?.recommendedAICount ?? 4),
           rules: gameRules,
           ...(gamePlayerRules && { playerRules: gamePlayerRules }),
           hostId: "narrator",
