@@ -293,6 +293,98 @@ const T: Record<string, Record<string, string>> = {
     ar: "ستظهر الأدلة هنا مع تقدم التحقيق.",
   },
 
+  // ── Player Rules (Script Kill) ──────────────────────────────────────
+  "pr.is_dead": {
+    en: "is dead. You are the detective.",
+    zh: "死了。你是侦探。",
+    ja: "は死んだ。あなたは探偵です。",
+    ko: "이(가) 죽었습니다. 당신은 탐정입니다.",
+    de: "ist tot. Du bist der Ermittler.",
+    fr: "est mort(e). Vous êtes le détective.",
+    es: "ha muerto. Tú eres el detective.",
+    pt: "está morto(a). Você é o detetive.",
+    ru: "мертв(а). Вы — детектив.",
+    it: "è morto/a. Tu sei il detective.",
+    ar: "مات. أنت المحقق.",
+  },
+  "pr.suspects": {
+    en: "Suspects", zh: "嫌疑人", ja: "容疑者", ko: "용의자",
+    de: "Verdächtige", fr: "Suspects", es: "Sospechosos",
+    pt: "Suspeitos", ru: "Подозреваемые", it: "Sospetti", ar: "المشتبهون",
+  },
+  "pr.how_to_play": {
+    en: "How to Play", zh: "玩法说明", ja: "遊び方", ko: "플레이 방법",
+    de: "Spielanleitung", fr: "Comment jouer", es: "Cómo jugar",
+    pt: "Como jogar", ru: "Как играть", it: "Come giocare", ar: "كيفية اللعب",
+  },
+  "pr.ask_questions": {
+    en: "Ask questions", zh: "提问", ja: "質問する", ko: "질문하기",
+    de: "Fragen stellen", fr: "Poser des questions", es: "Hacer preguntas",
+    pt: "Fazer perguntas", ru: "Задавать вопросы", it: "Fare domande", ar: "اطرح أسئلة",
+  },
+  "pr.ask_questions_desc": {
+    en: "interrogate suspects, challenge their stories, look for contradictions.",
+    zh: "审问嫌疑人，质疑他们的说法，寻找矛盾之处。",
+    ja: "容疑者を尋問し、話の矛盾を見つけましょう。",
+    ko: "용의자를 심문하고, 진술의 모순을 찾으세요.",
+    de: "Verdächtige verhören, Geschichten hinterfragen, Widersprüche finden.",
+    fr: "interrogez les suspects, remettez en question leurs histoires, cherchez les contradictions.",
+    es: "interroga a los sospechosos, cuestiona sus historias, busca contradicciones.",
+  },
+  "pr.collect_evidence": {
+    en: "Collect evidence", zh: "收集证据", ja: "証拠を集める", ko: "증거 수집",
+    de: "Beweise sammeln", fr: "Collecter des preuves", es: "Recoger pruebas",
+  },
+  "pr.collect_evidence_desc": {
+    en: "your evidence board updates as you investigate. Check it often.",
+    zh: "随着调查推进，证据板会更新。经常查看。",
+    ja: "調査が進むと証拠ボードが更新されます。こまめにチェックしましょう。",
+    ko: "조사가 진행되면 증거 보드가 업데이트됩니다. 자주 확인하세요.",
+  },
+  "pr.present_evidence": {
+    en: "Present evidence", zh: "出示证据", ja: "証拠を提示", ko: "증거 제시",
+    de: "Beweise vorlegen", fr: "Présenter des preuves", es: "Presentar pruebas",
+  },
+  "pr.present_evidence_desc": {
+    en: "confront suspects with what you've found. Watch how they react.",
+    zh: "用你找到的证据质问嫌疑人。观察他们的反应。",
+    ja: "見つけた証拠で容疑者を問い詰めましょう。反応を観察してください。",
+    ko: "발견한 증거로 용의자를 추궁하세요. 반응을 관찰하세요.",
+  },
+  "pr.make_accusation": {
+    en: "Make your accusation", zh: "做出指控", ja: "告発する", ko: "고발하기",
+    de: "Anklage erheben", fr: "Faire votre accusation", es: "Hacer tu acusación",
+  },
+  "pr.make_accusation_desc": {
+    en: "when you're ready, name the killer. You only get one shot.",
+    zh: "准备好了就指出凶手。机会只有一次。",
+    ja: "準備ができたら犯人を指名してください。チャンスは一度だけです。",
+    ko: "준비가 되면 범인을 지목하세요. 기회는 한 번뿐입니다.",
+  },
+  "pr.tips": {
+    en: "Tips", zh: "小贴士", ja: "ヒント", ko: "팁",
+    de: "Tipps", fr: "Conseils", es: "Consejos",
+    pt: "Dicas", ru: "Советы", it: "Suggerimenti", ar: "نصائح",
+  },
+  "pr.tip_lies": {
+    en: "Suspects will lie. Pay attention to details that don't add up.",
+    zh: "嫌疑人会撒谎。注意那些对不上的细节。",
+    ja: "容疑者は嘘をつきます。辻褄が合わない部分に注意してください。",
+    ko: "용의자는 거짓말을 합니다. 맞지 않는 세부 사항에 주의하세요.",
+  },
+  "pr.tip_nervous": {
+    en: "Push harder when someone gets nervous — they might crack.",
+    zh: "有人紧张的时候加把劲——他们可能会露出破绽。",
+    ja: "誰かが動揺したら追及してください——口を割るかもしれません。",
+    ko: "누군가 긴장하면 더 밀어붙이세요 — 무너질 수도 있습니다.",
+  },
+  "pr.tip_no_rush": {
+    en: "Don't rush. A wrong accusation means the killer walks free.",
+    zh: "别急。指控错了，凶手就逍遥法外了。",
+    ja: "焦らないで。間違った告発は犯人を逃がすことになります。",
+    ko: "서두르지 마세요. 잘못된 고발은 범인을 풀어주는 것입니다.",
+  },
+
   // ── Labels ─────────────────────────────────────────────────────────────
   "label.players": {
     en: "Players", zh: "\u73a9\u5bb6", de: "Spieler", fr: "Joueurs",

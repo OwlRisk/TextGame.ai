@@ -12,6 +12,7 @@ import { trackEvent } from "@/lib/analytics";
 import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
+import { getAppLanguage } from "@/lib/i18n";
 import { getScene } from "@/lib/scenes";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
@@ -48,7 +49,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     try {
       trackEvent("template_selected", { template: preset.id, source: "landing" });
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
-      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id) : null;
+      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id, getAppLanguage()) : null;
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;

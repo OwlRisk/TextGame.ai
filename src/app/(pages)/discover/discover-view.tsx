@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getPresetById } from "@/data/discover-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
+import { getAppLanguage } from "@/lib/i18n";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -58,7 +59,7 @@ export default function DiscoverView() {
 
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
       const gameIcon = tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
-      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id) : null;
+      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id, getAppLanguage()) : null;
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;

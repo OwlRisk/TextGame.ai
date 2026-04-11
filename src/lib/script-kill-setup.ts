@@ -6,6 +6,7 @@
 import { getMysteryCase } from "@/data/mystery-cases";
 import { buildCaseRulesText } from "./suspect-prompt-builder";
 import { getGameTemplate } from "./game-templates";
+import { t } from "@/lib/i18n";
 
 const PRESET_TO_CASE: Record<string, string> = {
   "script-kill-moonlight": "moonlight-inn",
@@ -37,7 +38,7 @@ export interface ScriptKillSetup {
   playerCount: number;
 }
 
-export function buildScriptKillGame(presetId: string): ScriptKillSetup | null {
+export function buildScriptKillGame(presetId: string, lang?: string): ScriptKillSetup | null {
   const caseId = getCaseIdFromPreset(presetId);
   if (!caseId) return null;
 
@@ -61,22 +62,22 @@ export function buildScriptKillGame(presetId: string): ScriptKillSetup | null {
   const playerRules = [
     `# ${caseData.title}`,
     "",
-    `**${caseData.victim.name}** is dead. You are the detective.`,
+    `**${caseData.victim.name}** ${t("pr.is_dead", lang)}`,
     "",
-    `**Suspects:** ${suspectNames}`,
+    `**${t("pr.suspects", lang)}:** ${suspectNames}`,
     "",
-    "## How to Play",
+    `## ${t("pr.how_to_play", lang)}`,
     "",
-    "- **Ask questions** — interrogate suspects, challenge their stories, look for contradictions.",
-    "- **Collect evidence** — your evidence board updates as you investigate. Check it often.",
-    "- **Present evidence** — confront suspects with what you've found. Watch how they react.",
-    "- **Make your accusation** — when you're ready, name the killer. You only get one shot.",
+    `- **${t("pr.ask_questions", lang)}** — ${t("pr.ask_questions_desc", lang)}`,
+    `- **${t("pr.collect_evidence", lang)}** — ${t("pr.collect_evidence_desc", lang)}`,
+    `- **${t("pr.present_evidence", lang)}** — ${t("pr.present_evidence_desc", lang)}`,
+    `- **${t("pr.make_accusation", lang)}** — ${t("pr.make_accusation_desc", lang)}`,
     "",
-    "## Tips",
+    `## ${t("pr.tips", lang)}`,
     "",
-    "- Suspects will lie. Pay attention to details that don't add up.",
-    "- Push harder when someone gets nervous — they might crack.",
-    "- Don't rush. A wrong accusation means the killer walks free.",
+    `- ${t("pr.tip_lies", lang)}`,
+    `- ${t("pr.tip_nervous", lang)}`,
+    `- ${t("pr.tip_no_rush", lang)}`,
   ].join("\n");
 
   return {
