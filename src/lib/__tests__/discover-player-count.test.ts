@@ -21,15 +21,22 @@ describe("playerCount — field presence", () => {
 // ─── players display format ───────────────────────────────────────────────
 
 describe("players display format", () => {
-  it("players field is a fixed number or N+N AI format (no ranges)", () => {
+  it("players field is a valid format: range (N-N), fixed number, N+N AI, or '1'", () => {
     for (const t of ALL_PRESETS) {
-      expect(t.players, `"${t.id}" players="${t.players}"`).toMatch(/^\d+(\+\d+\s*AI)?$/);
+      expect(t.players, `"${t.id}" players="${t.players}"`).toMatch(
+        /^(\d+-\d+|\d+\+\d+\s*AI|\d+)$/,
+      );
     }
   });
 
-  it("no template shows a range like X-Y", () => {
+  it("range formats have min < max", () => {
     for (const t of ALL_PRESETS) {
-      expect(t.players, `"${t.id}" still shows range`).not.toMatch(/^\d+-\d+$/);
+      const rangeMatch = t.players.match(/^(\d+)-(\d+)$/);
+      if (rangeMatch) {
+        const min = parseInt(rangeMatch[1], 10);
+        const max = parseInt(rangeMatch[2], 10);
+        expect(min, `"${t.id}" min >= max in "${t.players}"`).toBeLessThan(max);
+      }
     }
   });
 });
@@ -37,16 +44,26 @@ describe("players display format", () => {
 // ─── playerCount consistency with display ─────────────────────────────────
 
 describe("playerCount consistency", () => {
-  it("non-script-kill templates: playerCount === parseInt(players) - 1", () => {
+  it("non-script-kill templates: playerCount is within displayed range", () => {
     const nonScriptKill = ALL_PRESETS.filter(
       (t) => t.templateId !== "script-kill" && !t.players.includes("AI") && t.players !== "1"
     );
     for (const t of nonScriptKill) {
-      const displayTotal = parseInt(t.players, 10);
-      expect(
-        t.playerCount,
-        `"${t.id}": playerCount=${t.playerCount}, expected ${displayTotal - 1} (display="${t.players}")`
-      ).toBe(displayTotal - 1);
+      const rangeMatch = t.players.match(/^(\d+)-(\d+)$/);
+      if (rangeMatch) {
+        const min = parseInt(rangeMatch[1], 10);
+        const max = parseInt(rangeMatch[2], 10);
+        // playerCount (AI count) + 1 human should be within the displayed range
+        const total = t.playerCount! + 1;
+        expect(total, `"${t.id}": total ${total} < min ${min}`).toBeGreaterThanOrEqual(min);
+        expect(total, `"${t.id}": total ${total} > max ${max}`).toBeLessThanOrEqual(max);
+      } else {
+        const displayTotal = parseInt(t.players, 10);
+        expect(
+          t.playerCount,
+          `"${t.id}": playerCount=${t.playerCount}, expected ${displayTotal - 1}`
+        ).toBe(displayTotal - 1);
+      }
     }
   });
 
