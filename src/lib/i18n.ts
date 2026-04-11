@@ -502,6 +502,26 @@ const T: Record<string, Record<string, string>> = {
     es: "A\u00f1adir personaje", ja: "\u30ad\u30e3\u30e9\u30af\u30bf\u30fc\u3092\u8ffd\u52a0", ko: "\uce90\ub9ad\ud130 \ucd94\uac00",
     pt: "Adicionar personagem", ru: "\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0430", it: "Aggiungi personaggio", ar: "\u0625\u0636\u0627\u0641\u0629 \u0634\u062e\u0635\u064a\u0629",
   },
+  "btn.start_game": {
+    en: "Start Game", zh: "开始游戏", ja: "ゲーム開始", ko: "게임 시작",
+    de: "Spiel starten", fr: "Commencer", es: "Iniciar juego",
+  },
+  "lobby.players_in_lobby": {
+    en: "{count} players in lobby", zh: "{count} 位玩家已就位", ja: "{count}人がロビーにいます", ko: "{count}명 로비 대기 중",
+    de: "{count} Spieler in der Lobby", fr: "{count} joueurs dans le salon", es: "{count} jugadores en sala",
+  },
+  "lobby.max_seats": {
+    en: "max {max}", zh: "最多 {max} 人", ja: "最大{max}人", ko: "최대 {max}명",
+  },
+  "lobby.recommended": {
+    en: "Recommended: {min}–{max} players", zh: "推荐 {min}–{max} 人", ja: "推奨: {min}〜{max}人", ko: "추천: {min}–{max}명",
+  },
+  "lobby.waiting_for_host": {
+    en: "Waiting for host to start the game…", zh: "等待房主开始游戏…", ja: "ホストがゲームを開始するのを待っています…", ko: "호스트가 게임을 시작하기를 기다리는 중…",
+  },
+  "lobby.players": {
+    en: "Players", zh: "玩家", ja: "プレイヤー", ko: "플레이어",
+  },
 
   // ── Quick actions (scene) ──────────────────────────────────────────────
   "action.look_around": {

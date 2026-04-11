@@ -7,6 +7,7 @@ import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import type { Player } from "@/types/player";
 import { cn } from "@/app/components/ui/utils";
 import { t, getBrowserLanguage } from "@/lib/i18n";
+import { getGameTemplate } from "@/lib/game-templates";
 
 interface LobbyViewProps {
   gameName: string;
@@ -43,6 +44,8 @@ export function LobbyView({
   const nonHost = players.filter((p) => !p.isGameMaster);
   const aiCount = nonHost.filter((p) => p.isAI).length;
   const humanCount = nonHost.filter((p) => !p.isAI).length;
+  const lang = getBrowserLanguage();
+  const tmpl = getGameTemplate(gameTemplate);
 
   const handleStart = useCallback(async () => {
     setStartingGame(true);
@@ -61,9 +64,14 @@ export function LobbyView({
           <div>
             <h1 className="text-lg font-semibold text-white">{gameName}</h1>
             <p className="text-sm text-zinc-400 mt-0.5">
-              {nonHost.length} player{nonHost.length !== 1 ? "s" : ""} in lobby
-              {maxSeats ? ` · max ${maxSeats}` : ""}
+              {t("lobby.players_in_lobby", lang).replace("{count}", String(nonHost.length))}
+              {maxSeats ? ` · ${t("lobby.max_seats", lang).replace("{max}", String(maxSeats))}` : ""}
             </p>
+            {tmpl && (
+              <p className="text-xs text-zinc-500 mt-0.5">
+                {t("lobby.recommended", lang).replace("{min}", String(tmpl.minPlayers)).replace("{max}", String(tmpl.maxPlayers))}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500">
             <span className="flex items-center gap-1"><Bot className="h-3.5 w-3.5" />{aiCount} {t("label.ai")}</span>
@@ -79,7 +87,7 @@ export function LobbyView({
           <div>
             <h2 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
               <Users className="h-4 w-4 text-zinc-500" />
-              Players
+              {t("lobby.players", lang)}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {nonHost.map((player) => (
@@ -171,13 +179,13 @@ export function LobbyView({
                   className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold px-8 shadow-lg shadow-violet-900/30 disabled:opacity-50"
                 >
                   <Play className="h-4 w-4 mr-2" />
-                  Start Game
+                  {t("btn.start_game", lang)}
                 </Button>
               )}
               {!isOwner && (
                 <div className="text-sm text-zinc-400 flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-violet-400" />
-                  Waiting for host to start the game…
+                  {t("lobby.waiting_for_host", lang)}
                 </div>
               )}
             </>

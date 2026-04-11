@@ -153,7 +153,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     afterSeedSendRef.current = handleSendMessageRef.current;
   });
 
-  // ─── Auto-start: begin the game as soon as a freshly-created lobby is ready ─
+  // ─── Auto-start: only for scene mode (immersive adventures skip the lobby) ─
   const autoStartFiredRef = useRef(false);
   const [autoStarting, setAutoStarting] = useState(false);
   const startGameRef = useRef(startGame);
@@ -162,7 +162,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   useEffect(() => {
     if (autoStartFiredRef.current) return;
     if (!isInitialized || gamePhase !== "lobby") return;
-    if (!isSceneGame && !isFreshLobby) return;
+    if (!isSceneGame) return;
     const nonHostPlayers = players.filter((p) => !p.isGameMaster);
     if (nonHostPlayers.length === 0) return;
     setAutoStarting(true);
@@ -170,7 +170,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     const safetyTimeout = setTimeout(() => setAutoStarting(false), 30000);
     startGameRef.current().finally(() => { clearTimeout(safetyTimeout); setAutoStarting(false); });
     return () => clearTimeout(safetyTimeout);
-  }, [isInitialized, isFreshLobby, isSceneGame, gamePhase, players]);
+  }, [isInitialized, isSceneGame, gamePhase, players]);
 
   // ─── Auto-set channel permissions from template when game starts ──────────
   const channelPermsInitRef = useRef(false);
@@ -540,7 +540,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             onAddCharacter={() => {
               const nonHostCount = players.filter((p) => !p.isGameMaster).length;
               if (nonHostCount >= lobbyMaxSeats) {
-                toast.info(`Lobby is full (max ${lobbyMaxSeats} players).`);
+                toast.info(t("lobby.max_seats", getBrowserLanguage()).replace("{max}", String(lobbyMaxSeats)));
                 return;
               }
               setShowCharacterBrowser(true);
@@ -716,7 +716,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         onSelectCharacter={(char) => {
           const nonHostCount = players.filter((p) => !p.isGameMaster).length;
           if (nonHostCount >= lobbyMaxSeats) {
-            toast.info(`Lobby is full (max ${lobbyMaxSeats} players).`);
+            toast.info(t("lobby.max_seats", getBrowserLanguage()).replace("{max}", String(lobbyMaxSeats)));
             return;
           }
           if (players.some((p) => p.name === char.name)) {

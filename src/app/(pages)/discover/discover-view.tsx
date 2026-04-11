@@ -82,7 +82,7 @@ export default function DiscoverView() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              playerCount: preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4,
+              playerCount: preset.playerCount ?? tmpl?.recommendedAICount ?? 4,
               gameTemplate: preset.templateId,
               rules: preset.rules,
               minPlayers: tmpl?.minPlayers ?? 2,
@@ -115,7 +115,7 @@ export default function DiscoverView() {
         config: {
           name: preset.name,
           template: preset.templateId || "custom",
-          playerCount: configuredPlayers.length || (preset.playerCount ?? (tmpl && tmpl.maxPlayers > 1 ? tmpl.maxPlayers - 1 : tmpl?.recommendedAICount) ?? 4),
+          playerCount: configuredPlayers.length || preset.playerCount ?? tmpl?.recommendedAICount ?? 4,
           rules: gameRules,
           ...(gamePlayerRules && { playerRules: gamePlayerRules }),
           hostId: "narrator",

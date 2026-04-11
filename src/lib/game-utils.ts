@@ -1,11 +1,11 @@
 import { getGameTemplate } from "./game-templates";
 
-/** Fallback AI count — defaults to maxPlayers-1 (full lobby). */
+/** Recommended AI count — uses template's recommendedAICount for a good default experience. */
 export function getDefaultAICountForTemplate(template?: string): number {
   if (!template) return 4;
   const t = getGameTemplate(template);
   if (!t) return 4;
-  return t.maxPlayers > 1 ? t.maxPlayers - 1 : t.recommendedAICount;
+  return t.recommendedAICount;
 }
 
 export const AI_COLORS = [
