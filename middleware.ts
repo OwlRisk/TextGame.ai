@@ -1,36 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isValidSEOLocale } from "@/lib/seo-locales";
 
-/**
- * Middleware handles:
- * 1. Locale prefix validation for /[locale]/* routes
- * 2. Trailing slash normalization (remove trailing /)
- * 3. www → non-www canonical redirect
- * 4. Sets x-locale header for downstream use
- */
+// Inlined to avoid cross-module imports that break Sentry + Turbopack edge bundling.
+// Must stay in sync with SEO_LOCALES in src/lib/seo-locales.ts.
+const SEO_LOCALE_SET = new Set([
+  "zh", "ja", "ko", "es", "fr", "de", "pt", "ru",
+  "it", "ar", "hi", "tr", "id", "vi", "th", "pl", "nl", "uk",
+]);
+
 export function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
-  // ── www → non-www redirect ──
   if (host.startsWith("www.")) {
     const url = request.nextUrl.clone();
     url.host = host.replace(/^www\./, "");
     return NextResponse.redirect(url, 301);
   }
 
-  // ── Trailing slash removal (except root /) ──
   if (pathname !== "/" && pathname.endsWith("/")) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.replace(/\/+$/, "");
     return NextResponse.redirect(url, 301);
   }
 
-  // ── Locale detection from URL prefix ──
   const segments = pathname.split("/").filter(Boolean);
   const maybeLocale = segments[0];
 
-  if (maybeLocale && isValidSEOLocale(maybeLocale)) {
+  if (maybeLocale && SEO_LOCALE_SET.has(maybeLocale)) {
     const response = NextResponse.next();
     response.headers.set("x-locale", maybeLocale);
     response.headers.set("Content-Language", maybeLocale === "zh" ? "zh-CN" : maybeLocale);

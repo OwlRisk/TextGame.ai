@@ -85,6 +85,7 @@ module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), {
   sourcemaps: { disable: !hasSentryToken },
   release: { create: hasSentryToken },
   widenClientFileUpload: true,
+  autoInstrumentMiddleware: false,
   webpack: {
     treeshake: { removeDebugLogging: true },
     automaticVercelMonitors: true,
