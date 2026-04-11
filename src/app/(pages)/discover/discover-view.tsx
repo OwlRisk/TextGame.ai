@@ -11,7 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getPresetById } from "@/data/discover-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
-import { getAppLanguage } from "@/lib/i18n";
+import { getAppLanguage, t } from "@/lib/i18n";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -42,17 +42,18 @@ export default function DiscoverView() {
   }, [selectGame]);
 
   const handleCreateGame = async (preset: DiscoverPreset) => {
+    const lang = getAppLanguage();
     if (!user && !loading) {
       const returnUrl = `/discover`;
       router.push(`/signin?returnUrl=${encodeURIComponent(returnUrl)}`);
-      toast.info("Sign in to create this game");
+      toast.info(t("toast.sign_in_required", lang));
       return;
     }
     if (creating) return;
     setCreating(true);
 
     const toastId = "create-game";
-    toast.loading("Creating game...", { id: toastId });
+    toast.loading(t("toast.creating_game", lang), { id: toastId });
 
     try {
       trackEvent("template_selected", { template: preset.id, source: "discover" });
@@ -76,7 +77,7 @@ export default function DiscoverView() {
       }
 
       if (!scriptKillSetup) {
-        toast.loading("Setting up players...", { id: toastId });
+        toast.loading(t("toast.setting_up_players", lang), { id: toastId });
         try {
           const res = await fetch("/api/generate-players", {
             method: "POST",
@@ -94,10 +95,10 @@ export default function DiscoverView() {
             if (data.players) configuredPlayers = data.players;
             if (data.humanRole) humanRole = data.humanRole;
           } else {
-            toast.warning("Could not generate players — using defaults", { id: toastId });
+            toast.warning(t("toast.players_fallback", lang), { id: toastId });
           }
         } catch {
-          toast.warning("Could not generate players — using defaults", { id: toastId });
+          toast.warning(t("toast.players_fallback", lang), { id: toastId });
         }
       }
 
@@ -143,11 +144,11 @@ export default function DiscoverView() {
         player_count: configuredPlayers.length,
         game_name: preset.name,
       });
-      toast.success(`"${preset.name}" is ready!`, { id: toastId });
+      toast.success(`"${preset.name}" ${t("toast.game_ready", lang)}`, { id: toastId });
       router.push(`/game/${newGame.id}`);
     } catch (error) {
       console.error("Error creating game:", error);
-      toast.error("Failed to create game", { id: toastId });
+      toast.error(t("toast.game_failed", lang), { id: toastId });
     } finally {
       setCreating(false);
     }

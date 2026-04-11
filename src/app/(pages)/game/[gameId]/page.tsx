@@ -31,7 +31,6 @@ import { useGameChannels } from "@/hooks/useGameChannels";
 import { useGameRoomLifecycle } from "@/hooks/useGameRoomLifecycle";
 import { useHostRound } from "@/hooks/useHostRound";
 import { useGameInit } from "@/hooks/useGameInit";
-import { useChatTTS } from "@/hooks/use-chat-tts";
 import { GameEventOverlay, type GameEvent } from "@/app/components/game-event-overlay";
 import { useGameActions, getSceneDialogueChips, getPhaseType } from "@/hooks/useGameActions";
 import { buildInitialChannelPermissions } from "@/lib/game-host-utils";
@@ -80,6 +79,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setGameOverSummary,
     aiSuggestedPrompts,
     addReaction,
+    setGameEvents,
   } = useGameRoomContext();
 
   const [showCharacterBrowser, setShowCharacterBrowser] = useState(false);
@@ -356,20 +356,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     }
     return chips.map(c => ({ ...c, label: tAction(c.label), starter: tTemplate(c.starter) }));
   }, [currentGame?.config?.template, gamePhase, phaseLabel]);
-
-  // ─── TTS (voice) — default off, user can toggle in header ─────────────────
-  const {
-    voiceEnabled, setVoiceEnabled, inworldTTSSupported,
-    displayedContentRef, revealTick,
-  } = useChatTTS({
-    messages: messagesForChannel,
-    players,
-    gameId,
-    channelId: selectedChannelId ?? undefined,
-    channelName: gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? t("channel.default_room", getBrowserLanguage()),
-    isOwner: isOwner ? true : undefined,
-    gameTemplate: currentGame?.config?.template,
-  });
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -653,15 +639,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               handleSendMessage(`I vote for ${choice}`);
             } : undefined}
             timerEndsAt={timerEndsAt}
-            voiceEnabled={voiceEnabled}
-            onToggleVoice={() => {
-              const next = !voiceEnabled;
-              setVoiceEnabled(next);
-              localStorage.setItem('voice_enabled', String(next));
-            }}
-            inworldTTSSupported={inworldTTSSupported}
-            displayedContentRef={displayedContentRef}
-            revealTick={revealTick}
             alivePlayers={players.filter(p => !isPlayerEliminated(p))}
             onReact={(messageId, emoji) => {
               const displayName = humanGameIdentity?.name || "You";
@@ -767,6 +744,20 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             }
             return [...prev, newPlayer];
           });
+
+          const tmpl = getGameTemplate(currentGame?.config?.template || "");
+          if (tmpl?.hasHiddenRoles) {
+            setGameEvents((prev) => [
+              ...prev,
+              `NEW_PLAYER_JOINED: ${char.name} has joined mid-game and needs a role. Use ASSIGN_ROLE to assign an appropriate role and [BOARD:${char.name}] to brief them privately. Narrate their arrival in-character.`,
+            ]);
+            setTimeout(() => {
+              handleSendMessageRef.current?.(
+                `[System: A new player "${char.name}" has joined. Assign them a role with ASSIGN_ROLE and narrate their arrival.]`,
+                { channelId: selectedChannelId ?? undefined },
+              );
+            }, 500);
+          }
         }}
       />
 

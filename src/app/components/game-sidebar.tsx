@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins } from "lucide-react";
-import { t } from "@/lib/i18n";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -93,7 +93,7 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
     }
   };
 
-  const username = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || "Guest";
+  const username = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || t("label.guest", getBrowserLanguage());
   const userAvatar = getUserAvatarUrl(user);
 
   return (

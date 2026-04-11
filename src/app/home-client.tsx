@@ -12,7 +12,7 @@ import { trackEvent } from "@/lib/analytics";
 import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
-import { getAppLanguage } from "@/lib/i18n";
+import { getAppLanguage, t } from "@/lib/i18n";
 import { getScene } from "@/lib/scenes";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
@@ -45,7 +45,8 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     if (creatingRef.current) return;
     creatingRef.current = true;
     const toastId = "landing-create";
-    toast.loading("Creating game...", { id: toastId });
+    const lang = getAppLanguage();
+    toast.loading(t("toast.creating_game", lang), { id: toastId });
     try {
       trackEvent("template_selected", { template: preset.id, source: "landing" });
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
@@ -81,10 +82,10 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
             if (data.players) configuredPlayers = data.players;
             if (data.humanRole) humanRole = data.humanRole;
           } else {
-            toast.warning("Could not generate players — using defaults");
+            toast.warning(t("toast.players_fallback", lang));
           }
         } catch {
-          toast.warning("Could not generate players — using defaults");
+          toast.warning(t("toast.players_fallback", lang));
         }
       }
       const newGame = {
@@ -119,10 +120,10 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       addGame(newGame);
       selectGame(newGame.id);
       trackEvent("game_created", { template: preset.templateId || "custom", player_count: configuredPlayers.length, game_name: preset.name });
-      toast.success(`"${preset.name}" is ready!`, { id: toastId });
+      toast.success(`"${preset.name}" ${t("toast.game_ready", lang)}`, { id: toastId });
       router.push(`/game/${newGame.id}`);
     } catch {
-      toast.error("Failed to create game", { id: toastId });
+      toast.error(t("toast.game_failed", lang), { id: toastId });
       router.push("/discover");
     } finally {
       creatingRef.current = false;
@@ -135,7 +136,8 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     if (creatingRef.current) return;
     creatingRef.current = true;
     const toastId = "scene-create";
-    toast.loading("Gathering your crew...", { id: toastId });
+    const sLang = getAppLanguage();
+    toast.loading(t("toast.gathering_crew", sLang), { id: toastId });
     try {
       trackEvent("scene_selected", { scene: scene.id, source: "home" });
       const configuredPlayers = scene.characters.map((c) => ({
@@ -176,10 +178,10 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       addGame(newGame);
       selectGame(newGame.id);
       trackEvent("game_created", { template: "scene", scene: scene.id, player_count: configuredPlayers.length, game_name: scene.title });
-      toast.success("Let's go!", { id: toastId });
+      toast.success(t("toast.lets_go", sLang), { id: toastId });
       router.push(`/game/${newGame.id}`);
     } catch {
-      toast.error("Failed to create adventure", { id: toastId });
+      toast.error(t("toast.adventure_failed", sLang), { id: toastId });
     } finally {
       creatingRef.current = false;
     }
@@ -206,7 +208,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     try {
       await signInWithGoogle("/");
     } catch {
-      toast.error("Sign-in failed. Please try again.");
+      toast.error(t("toast.signin_failed", getAppLanguage()));
     }
   };
 
@@ -215,7 +217,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     try {
       await signInWithFacebook("/");
     } catch {
-      toast.error("Sign-in failed. Please try again.");
+      toast.error(t("toast.signin_failed", getAppLanguage()));
     }
   };
 

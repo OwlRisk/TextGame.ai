@@ -41,14 +41,14 @@ function getGradeColorClass(grade: string) {
   }
 }
 
-function getGradeLabel(grade: string) {
+function getGradeLabel(grade: string, lang: string) {
   switch (grade) {
-    case "S": return "Perfect Detective";
-    case "A": return "Sharp Investigator";
-    case "B": return "Decent Deduction";
-    case "C": return "Partial Success";
-    case "F": return "Case Cold";
-    default: return "Unknown";
+    case "S": return t("gameover.perfect_detective", lang);
+    case "A": return t("gameover.sharp_investigator", lang);
+    case "B": return t("gameover.decent_deduction", lang);
+    case "C": return t("gameover.partial_success", lang);
+    case "F": return t("gameover.case_cold", lang);
+    default: return t("gameover.unknown", lang);
   }
 }
 
@@ -123,22 +123,22 @@ export function GameOverBanner({
           <div className="flex items-stretch">
             <div className={`flex flex-col items-center justify-center px-5 py-3 border-r border-zinc-700/40 ${getGradeColorClass(caseScore.grade)}`}>
               <span className="text-3xl font-black">{caseScore.grade}</span>
-              <span className="text-[10px] uppercase tracking-wider mt-0.5 opacity-80">{getGradeLabel(caseScore.grade)}</span>
+              <span className="text-[10px] uppercase tracking-wider mt-0.5 opacity-80">{getGradeLabel(caseScore.grade, lang)}</span>
             </div>
             <div className="flex-1 px-4 py-3 space-y-1.5">
               <div className="flex items-center gap-2">
                 <Target className="h-3.5 w-3.5 text-zinc-500" />
                 <span className="text-sm text-zinc-300">
-                  Culprit: {caseScore.correctCulprit
-                    ? <span className="text-emerald-400 font-semibold">Correct</span>
-                    : <span className="text-red-400 font-semibold">Wrong</span>
+                  {t("gameover.culprit", lang)} {caseScore.correctCulprit
+                    ? <span className="text-emerald-400 font-semibold">{t("gameover.correct", lang)}</span>
+                    : <span className="text-red-400 font-semibold">{t("gameover.wrong", lang)}</span>
                   }
                 </span>
               </div>
               {caseScore.total > 0 && (
                 <div className="flex items-center gap-2">
                   <Award className="h-3.5 w-3.5 text-zinc-500" />
-                  <span className="text-sm text-zinc-300">Score: <span className="font-semibold text-white">{caseScore.total}</span> pts</span>
+                  <span className="text-sm text-zinc-300">{t("gameover.score", lang)} <span className="font-semibold text-white">{caseScore.total}</span> {t("gameover.pts", lang)}</span>
                 </div>
               )}
             </div>
@@ -176,8 +176,8 @@ export function GameOverBanner({
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${eliminated ? "bg-red-950/30 border border-red-500/20" : "bg-zinc-800/50 border border-zinc-700/30"}`}
                   >
                     <span className={`font-medium truncate ${isHuman ? "text-amber-300" : "text-zinc-200"}`}>
-                      {isHuman ? (humanName || "You") : p.name}
-                      {isHuman && " (you)"}
+                      {isHuman ? (humanName || t("gameover.you", lang)) : p.name}
+                      {isHuman && t("gameover.you_suffix", lang)}
                     </span>
                     {p.role && (
                       <span className={`ml-auto shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${eliminated ? "bg-red-500/20 text-red-300" : "bg-violet-500/20 text-violet-300"}`}>

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { User, Sparkles, BookOpen } from "lucide-react";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 interface PlayerProfileDialogProps {
   player: Player | null;
@@ -23,6 +24,7 @@ interface PlayerProfileDialogProps {
 }
 
 export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatarImageUrls = {}, onAvatarUrlLoaded, humanGameIdentity, isUserGameMaster }: PlayerProfileDialogProps) {
+  const lang = getBrowserLanguage();
   if (!player) return null;
 
   const isUser = !player.isAI;
@@ -43,13 +45,13 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
             {player.name}
             {isUser && (
               <span className="text-xs font-normal text-blue-400 px-2 py-0.5 rounded bg-blue-500/20 border border-blue-500/30">
-                YOU
+                {t("profile.you", lang)}
               </span>
             )}
           </DialogTitle>
         </DialogHeader>
         <DialogDescription className="sr-only">
-          {isUser ? "Your profile" : `${player.name}'s character profile and background`}
+          {isUser ? t("profile.your_profile", lang) : `${player.name}`}
         </DialogDescription>
 
         <div className="space-y-4 pt-2">
@@ -101,7 +103,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
                 <div>
                   <div className="flex items-center gap-2 text-xs font-semibold text-violet-400 uppercase tracking-wider mb-1.5">
                     <Sparkles className="h-3.5 w-3.5" />
-                    Personality
+                    {t("profile.personality", lang)}
                   </div>
                   <p className="text-sm text-zinc-200 leading-relaxed">{player.personality}</p>
                 </div>
@@ -110,7 +112,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
                 <div>
                   <div className="flex items-center gap-2 text-xs font-semibold text-amber-400/90 uppercase tracking-wider mb-1.5">
                     <BookOpen className="h-3.5 w-3.5" />
-                    Background
+                    {t("profile.background", lang)}
                   </div>
                   <p className="text-sm text-zinc-300 leading-relaxed">{player.background}</p>
                 </div>
@@ -119,7 +121,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
           )}
 
           {isUser && (
-            <p className="text-sm text-zinc-500 italic">Your profile is managed in settings.</p>
+            <p className="text-sm text-zinc-500 italic">{t("profile.managed_in_settings", lang)}</p>
           )}
         </div>
       </DialogContent>

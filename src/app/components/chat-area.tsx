@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { BookOpen, Package, ArrowDown, Timer, Volume2, VolumeOff } from "lucide-react";
+import { BookOpen, Package, ArrowDown, Timer } from "lucide-react";
 import type { GameMood, ActiveVote } from "@/app/config/game-phase";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import type { Player } from "@/types/player";
 import { stripPrivateNotes } from "@/lib/chat-utils";
-import { t } from "@/lib/i18n";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 import { ChatInputArea } from "@/app/components/chat-input-area";
 import { GameOverBanner } from "@/app/components/game-over-banner";
 import { TypingIndicator } from "@/app/components/typing-indicator";
@@ -144,7 +144,7 @@ export function ChatArea({
   typingUsers,
   gameId,
   onOpenPlayerBoard,
-  playerBoardLabel = "My Board",
+  playerBoardLabel = t("label.my_board", getBrowserLanguage()),
   onOpenRules,
   myBoardHasUpdate,
   onHostPostEvent,
@@ -396,18 +396,6 @@ export function ChatArea({
               {myBoardHasUpdate && (
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-400" aria-hidden />
               )}
-            </Button>
-          )}
-          {onToggleVoice && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggleVoice}
-              className="h-8 w-8 hover:bg-zinc-700 text-zinc-400 hover:text-white"
-              title={voiceEnabled ? "Mute voice" : "Enable voice"}
-              aria-label={voiceEnabled ? "Mute voice" : "Enable voice"}
-            >
-              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeOff className="h-4 w-4" />}
             </Button>
           )}
         </div>

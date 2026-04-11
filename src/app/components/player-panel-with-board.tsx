@@ -8,7 +8,7 @@ import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avat
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { isPlayerEliminated, resolveYouBadge } from "@/lib/player-badges";
-import { t } from "@/lib/i18n";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 interface PlayerPanelWithBoardProps {
   players: Player[];
@@ -215,7 +215,7 @@ const PlayerCard = memo(function PlayerCard({
                   </span>
                   {player.isGameMaster && (
                     <Badge className="inline-flex items-center justify-center leading-none bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-2 py-0.5 h-5 font-bold tracking-wider shadow-sm rounded-md">
-                      HOST
+                      {t("label.host", getBrowserLanguage())}
                     </Badge>
                   )}
                   {resolveYouBadge(player, currentUserId) && (

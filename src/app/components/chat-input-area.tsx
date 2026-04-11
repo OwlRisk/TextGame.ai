@@ -475,8 +475,8 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               disabled={!input.trim() || sendDisabled}
               size="icon"
               className="bg-indigo-600 hover:bg-indigo-500 h-10 w-10 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-              title={isSending ? "Sending…" : "Send"}
-              aria-label={isSending ? "Sending" : "Send message"}
+              title={isSending ? t("btn.sending", getBrowserLanguage()) : t("btn.send", getBrowserLanguage())}
+              aria-label={isSending ? t("btn.sending", getBrowserLanguage()) : t("btn.send", getBrowserLanguage())}
             >
               {isSending ? (
                 <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -308,10 +308,6 @@ export const FAQ_ITEMS: FAQItem[] = [
     answer: "Sign in with Google to create games — it only takes a few seconds. New accounts get free starting credits so you can try the platform right away. Friends who join your game don't need an account at all.",
   },
   {
-    question: "Do AI characters have voices?",
-    answer: "Yes. Each AI character speaks with a unique voice powered by text-to-speech. You can toggle voice on or off for any game. It adds a layer of immersion that makes the game feel like a real tabletop session.",
-  },
-  {
     question: "Can I create any type of game?",
     answer: "Absolutely! While we offer 10+ templates for popular games, you have complete freedom to design custom games with unique rules, roles, and victory conditions. Just describe your idea to the Game Master in plain English.",
   },

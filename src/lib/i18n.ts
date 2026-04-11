@@ -540,6 +540,44 @@ const T: Record<string, Record<string, string>> = {
   "gameover.new_game": { en: "New Game", zh: "新游戏", ja: "新しいゲーム", ko: "새 게임" },
   "gameover.resume": { en: "Resume", zh: "继续", ja: "再開", ko: "계속" },
   "gameover.save_characters": { en: "Save Characters", zh: "保存角色", ja: "キャラ保存", ko: "캐릭터 저장" },
+  "gameover.perfect_detective": { en: "Perfect Detective", zh: "完美侦探", ja: "完璧な探偵", ko: "완벽한 탐정" },
+  "gameover.sharp_investigator": { en: "Sharp Investigator", zh: "敏锐调查员", ja: "鋭い調査員", ko: "날카로운 수사관" },
+  "gameover.decent_deduction": { en: "Decent Deduction", zh: "不错的推理", ja: "まずまずの推理", ko: "적절한 추리" },
+  "gameover.partial_success": { en: "Partial Success", zh: "部分成功", ja: "部分的成功", ko: "부분 성공" },
+  "gameover.case_cold": { en: "Case Cold", zh: "案件冷却", ja: "未解決", ko: "미제 사건" },
+  "gameover.unknown": { en: "Unknown", zh: "未知", ja: "不明", ko: "알 수 없음" },
+  "gameover.culprit": { en: "Culprit:", zh: "凶手:", ja: "犯人:", ko: "범인:" },
+  "gameover.correct": { en: "Correct", zh: "正确", ja: "正解", ko: "정답" },
+  "gameover.wrong": { en: "Wrong", zh: "错误", ja: "不正解", ko: "오답" },
+  "gameover.score": { en: "Score:", zh: "得分:", ja: "スコア:", ko: "점수:" },
+  "gameover.pts": { en: "pts", zh: "分", ja: "点", ko: "점" },
+  "gameover.you": { en: "You", zh: "你", ja: "あなた", ko: "당신" },
+  "gameover.you_suffix": { en: " (you)", zh: "（你）", ja: "（あなた）", ko: " (당신)" },
+
+  // ── Player profile dialog ────────────────────────────────────────────
+  "profile.personality": { en: "Personality", zh: "个性", ja: "性格", ko: "성격" },
+  "profile.background": { en: "Background", zh: "背景", ja: "背景", ko: "배경" },
+  "profile.you": { en: "YOU", zh: "你", ja: "あなた", ko: "당신" },
+  "profile.your_profile": { en: "Your profile", zh: "你的资料", ja: "あなたのプロフィール", ko: "내 프로필" },
+  "profile.managed_in_settings": { en: "Your profile is managed in settings.", zh: "你的资料在设置中管理。", ja: "プロフィールは設定で管理します。", ko: "프로필은 설정에서 관리합니다." },
+
+  // ── Chat / input ─────────────────────────────────────────────────────
+  "btn.send": { en: "Send", zh: "发送", ja: "送信", ko: "보내기" },
+  "btn.sending": { en: "Sending…", zh: "发送中…", ja: "送信中…", ko: "전송 중…" },
+  "label.my_board": { en: "My Board", zh: "我的面板", ja: "マイボード", ko: "내 보드" },
+
+  // ── Toast messages ───────────────────────────────────────────────────
+  "toast.sign_in_required": { en: "Sign in to create this game", zh: "请登录以创建游戏", ja: "ゲーム作成にはログインが必要です", ko: "게임 생성하려면 로그인하세요" },
+  "toast.creating_game": { en: "Creating game...", zh: "正在创建游戏…", ja: "ゲーム作成中…", ko: "게임 생성 중…" },
+  "toast.setting_up_players": { en: "Setting up players...", zh: "正在配置玩家…", ja: "プレイヤー設定中…", ko: "플레이어 설정 중…" },
+  "toast.players_fallback": { en: "Could not generate players — using defaults", zh: "无法生成玩家——使用默认配置", ja: "プレイヤー生成失敗 — デフォルト使用", ko: "플레이어 생성 실패 — 기본값 사용" },
+  "toast.game_ready": { en: "is ready!", zh: "已准备好！", ja: "準備完了！", ko: "준비 완료!" },
+  "toast.game_failed": { en: "Failed to create game", zh: "创建游戏失败", ja: "ゲーム作成に失敗しました", ko: "게임 생성에 실패했습니다" },
+  "toast.gathering_crew": { en: "Gathering your crew...", zh: "正在集结队伍…", ja: "メンバー集合中…", ko: "팀 모집 중…" },
+  "toast.lets_go": { en: "Let's go!", zh: "出发！", ja: "行こう！", ko: "출발!" },
+  "toast.adventure_failed": { en: "Failed to create adventure", zh: "创建冒险失败", ja: "冒険の作成に失敗しました", ko: "모험 생성 실패" },
+  "toast.signin_failed": { en: "Sign-in failed. Please try again.", zh: "登录失败，请重试。", ja: "ログイン失敗。再試行してください。", ko: "로그인 실패. 다시 시도하세요." },
+
   "lobby.remove_ai": {
     en: "Remove AI Player", zh: "移除AI玩家", ja: "AIプレイヤーを削除", ko: "AI 플레이어 제거",
   },
