@@ -141,7 +141,15 @@ export async function runPlayerSpeak(
         gameId: ctx.gameId,
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (res.status === 402) {
+        const err = new Error("CREDITS_EXHAUSTED");
+        (err as any).status = 402;
+        throw err;
+      }
+      console.warn(`player-speak failed for ${speaker.name}: HTTP ${res.status}`);
+      return null;
+    }
     const data = await res.json();
     const rawMessage = (data.message || "").trim();
     if (!rawMessage || /^\.{1,5}$|^\u2026$/.test(rawMessage)) return null;
@@ -320,6 +328,8 @@ export async function speakAndReveal(
   const txt = await runPlayerSpeak(ctx, player, ctx.recentForNext.current);
   const remaining = upcomingPlayers.slice(0, 3).map(toTyping);
   ctx.setTypingUsers(remaining);
+  // Null means player chose silence or non-fatal error; message already logged.
+  // CREDITS_EXHAUSTED errors propagate to caller via thrown exception.
   if (txt) {
     const speed = getTypewriterSpeed(player.personality);
     const revealedMsgId = await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
@@ -346,6 +356,9 @@ export async function speakAndReveal(
 /**
  * Run the speaker queue. During night phase, skip all AI public speech —
  * night actions are handled exclusively through private channels (AUTO_CHANNEL).
+ *
+ * Throws CREDITS_EXHAUSTED if any player-speak call returns 402 so the
+ * caller (useHostRound) can show a toast and abort the round.
  */
 export async function runSpeakerQueue(
   ctx: SpeakerQueueContext,
@@ -374,8 +387,6 @@ export async function runSpeakerQueue(
         }
       }
       ctx.setTypingUsers([]);
-      // "Everyone" means open-table chatter, not "hand control back to human now".
-      // Let outer auto-advance logic continue and decide whether to trigger the next beat.
       continue;
     }
 

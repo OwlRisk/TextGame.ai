@@ -849,8 +849,15 @@ export function useHostRound({
 
       if (!humanReached) setCurrentSpeakerId((id) => (id === userId ? id : null));
     } catch (error) {
-      console.error("Error getting AI response:", error);
-      toast.error("Failed to get response from Game Master");
+      setTypingUsers([]);
+      const is402 = error instanceof Error && (error.message === "CREDITS_EXHAUSTED" || (error as any).status === 402);
+      if (is402) {
+        console.warn("Credits exhausted during AI player speak");
+        toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
+      } else {
+        console.error("Error getting AI response:", error);
+        toast.error("Failed to get response from Game Master");
+      }
       setLastFailedSendContent(content);
     } finally {
       setIsRoundInProgress(false);

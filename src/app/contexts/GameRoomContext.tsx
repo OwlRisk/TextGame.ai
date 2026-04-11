@@ -220,15 +220,29 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
 
   // Load game room state: local-first (show cache immediately, then sync from DB)
   useEffect(() => {
-    function applyState(state: Record<string, unknown>) {
-      if (state.messages && Array.isArray(state.messages)) {
-        setMessages(
-          (state.messages as any[]).map((m: any) => ({
-            ...m,
-            timestamp: new Date(m.timestamp),
-          }))
-        );
+    function applyMessages(state: Record<string, unknown>, merge: boolean) {
+      if (!state.messages || !Array.isArray(state.messages)) return;
+      const incoming = (state.messages as any[]).map((m: any) => ({
+        ...m,
+        timestamp: new Date(m.timestamp),
+        isStreaming: false,
+      }));
+      if (merge) {
+        setMessages((prev) => {
+          if (prev.length === 0) return incoming;
+          const localIds = new Set(prev.map((m) => m.id));
+          const fresh = incoming.filter((m: any) => !localIds.has(m.id));
+          if (fresh.length === 0) return prev;
+          const merged = [...prev, ...fresh];
+          merged.sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
+          return merged.length > 60 ? merged.slice(-60) : merged;
+        });
+      } else {
+        setMessages(incoming);
       }
+    }
+
+    function applyNonMessageState(state: Record<string, unknown>) {
       if (state.players) setPlayers(state.players as Player[]);
       if (state.gamePhase) setGamePhase(state.gamePhase as string);
       if (state.gamePhaseState) setGamePhaseState(state.gamePhaseState as GamePhaseState);
@@ -268,13 +282,21 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
 
     try {
       const saved = localStorage.getItem(`gameRoom_${gameId}`);
-      if (saved) applyState(JSON.parse(saved));
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        applyMessages(parsed, false);
+        applyNonMessageState(parsed);
+      }
     } catch (_) {}
 
     getGameRoomState(gameId)
       .then(({ data, error }) => {
         if (!error && data != null) {
-          applyState(data as Record<string, unknown>);
+          const state = data as Record<string, unknown>;
+          // Merge messages from DB to avoid wiping in-memory messages
+          // generated between localStorage restore and DB response.
+          applyMessages(state, true);
+          applyNonMessageState(state);
         }
         setIsHydrated(true);
       });
