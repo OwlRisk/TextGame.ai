@@ -6,6 +6,7 @@ import { GameProvider } from "@/app/contexts/GameContext";
 import { AuthProvider } from "@/app/contexts/AuthContext";
 import { SuppressFastRefreshLogs } from "@/app/components/suppress-fast-refresh-logs";
 import { SITE_NAME, SITE_DOMAIN, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
+import { buildHreflangAlternates } from "@/lib/seo-locales";
 
 import { GoogleAnalyticsWrapper } from "@/app/components/google-analytics";
 import { CookieConsent } from "@/app/components/cookie-consent";
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_DOMAIN),
   title: {
     default: SITE_TITLE,
-    template: "%s",
+    template: "%s | TextGame.ai",
   },
   description: SITE_DESCRIPTION,
   manifest: "/site.webmanifest",
@@ -79,6 +80,7 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: "/",
+    languages: buildHreflangAlternates("/"),
   },
   openGraph: {
     title: SITE_TITLE,
@@ -110,6 +112,7 @@ const websiteJsonLd = {
   name: SITE_NAME,
   url: SITE_DOMAIN,
   description: SITE_DESCRIPTION,
+  inLanguage: "en",
   potentialAction: {
     "@type": "SearchAction",
     target: `${SITE_DOMAIN}/games?q={search_term_string}`,
@@ -141,13 +144,7 @@ const softwareAppJsonLd = {
     priceCurrency: "USD",
     offerCount: "4",
   },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.8",
-    ratingCount: "1264",
-    bestRating: "5",
-    worstRating: "1",
-  },
+  // aggregateRating omitted — add back when real user review data is available
 };
 
 

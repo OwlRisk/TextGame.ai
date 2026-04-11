@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Users, Clock, BarChart2, Star, ChevronRight, BookOpen } from "lucide-react";
 import { getGameSEOData, ALL_GAME_SLUGS, GAME_SEO_DATA } from "@/lib/game-seo-data";
 import { SITE_DOMAIN } from "@/lib/site";
+import { buildHreflangAlternates } from "@/lib/seo-locales";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -23,7 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: game.metaDescription,
     keywords: game.keywords,
-    alternates: { canonical: `/games/${slug}` },
+    alternates: {
+      canonical: `/games/${slug}`,
+      languages: buildHreflangAlternates(`/games/${slug}`),
+    },
     openGraph: {
       title: `${title} · TextGame.ai`,
       description: game.metaDescription,

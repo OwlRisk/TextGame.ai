@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import { FAQ_ITEMS } from "@/data/landing-content";
+import { buildHreflangAlternates } from "@/lib/seo-locales";
 import HomeClient from "./home-client";
 
 export const metadata: Metadata = {
@@ -20,7 +21,10 @@ export const metadata: Metadata = {
     "free ai game",
     "no download party game",
   ],
-  alternates: { canonical: "/" },
+  alternates: {
+    canonical: "/",
+    languages: buildHreflangAlternates("/"),
+  },
   openGraph: {
     title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
     description:

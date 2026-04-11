@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { buildHreflangAlternates } from "@/lib/seo-locales";
 import DiscoverView from "./discover-view";
 
 export const metadata: Metadata = {
@@ -21,7 +22,10 @@ export const metadata: Metadata = {
     "free online party games",
     "games like jackbox",
   ],
-  alternates: { canonical: "/discover" },
+  alternates: {
+    canonical: "/discover",
+    languages: buildHreflangAlternates("/discover"),
+  },
   openGraph: {
     title: "Discover AI Text Games · TextGame.ai",
     description:

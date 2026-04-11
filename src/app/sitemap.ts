@@ -32,14 +32,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
+  const SEO_LOCALES = ["zh", "ja", "ko", "es", "fr", "de", "pt", "ru", "it", "ar", "hi", "tr", "id", "vi", "th", "pl", "nl", "uk"];
+
+  const indexablePages = [
+    { path: "",         changeFrequency: "weekly"  as const, priority: 1   },
+    { path: "/discover", changeFrequency: "daily"   as const, priority: 0.9 },
+    { path: "/games",    changeFrequency: "weekly"  as const, priority: 0.9 },
+  ];
+
+  const localizedPages: MetadataRoute.Sitemap = indexablePages.flatMap(({ path, changeFrequency, priority }) => [
+    { url: `${SITE_DOMAIN}${path}`, lastModified: now, changeFrequency, priority },
+    ...SEO_LOCALES.map((locale) => ({
+      url: `${SITE_DOMAIN}/${locale}${path}`,
+      lastModified: now,
+      changeFrequency,
+      priority: priority * 0.9,
+    })),
+  ]);
+
   return [
-    { url: SITE_DOMAIN,                        lastModified: now, changeFrequency: "weekly",  priority: 1   },
-    { url: `${SITE_DOMAIN}/discover`,           lastModified: now, changeFrequency: "daily",   priority: 0.9 },
-    { url: `${SITE_DOMAIN}/games`,              lastModified: now, changeFrequency: "weekly",  priority: 0.9 },
+    ...localizedPages,
     ...gamePages,
     { url: `${SITE_DOMAIN}/blog`,               lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
     ...blogPages,
-    { url: `${SITE_DOMAIN}/recharge`,            lastModified: SITE_LAUNCH, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_DOMAIN}/cases`,              lastModified: SITE_LAUNCH, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_DOMAIN}/recharge`,           lastModified: SITE_LAUNCH, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_DOMAIN}/signin`,             lastModified: SITE_LAUNCH, changeFrequency: "yearly",  priority: 0.5 },
     { url: `${SITE_DOMAIN}/help`,               lastModified: SITE_LAUNCH, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE_DOMAIN}/terms`,              lastModified: SITE_LAUNCH, changeFrequency: "yearly",  priority: 0.3 },

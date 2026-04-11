@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Users, Clock } from "lucide-react";
 import { GAME_SEO_DATA } from "@/lib/game-seo-data";
+import { buildHreflangAlternates } from "@/lib/seo-locales";
 
 export const metadata: Metadata = {
   title: "AI Game Library",
@@ -16,7 +17,10 @@ export const metadata: Metadata = {
     "free online games",
     "werewolf mafia online",
   ],
-  alternates: { canonical: "/games" },
+  alternates: {
+    canonical: "/games",
+    languages: buildHreflangAlternates("/games"),
+  },
   openGraph: {
     title: "AI Game Library · TextGame.ai",
     description: "Browse 15+ text games with an AI game master. Free to play, no setup needed.",
