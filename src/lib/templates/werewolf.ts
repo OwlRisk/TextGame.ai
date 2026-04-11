@@ -153,6 +153,10 @@ HOW TO PLAY:
   },
 
   quickActions: [
+    { label: "Accuse", template: "I suspect {player} because ", needsTarget: true, icon: "👉", phase: "day", actionType: "social" },
+    { label: "Defend", template: "I'm not the wolf. Here's why: ", icon: "🛡️", phase: "day", actionType: "social" },
+    { label: "Support", template: "I trust {player}. ", needsTarget: true, icon: "🤝", phase: "day", actionType: "social" },
+    { label: "Question", template: "{player}, where were you last night?", needsTarget: true, icon: "❓", phase: "day", actionType: "social" },
     { label: "Vote", template: "I vote to eliminate {player}", needsTarget: true, icon: "🗳️", phase: "vote", actionType: "vote" },
     { label: "Investigate", template: "I want to investigate {player}", needsTarget: true, icon: "🔮", phase: "night", role: "seer", actionType: "investigate" },
     { label: "Protect", template: "I choose to protect {player}", needsTarget: true, icon: "🛡️", phase: "night", role: "doctor", actionType: "defend" },
@@ -160,8 +164,8 @@ HOW TO PLAY:
   ],
 
   dialogueChips: [
-    { label: "Accuse", starter: "I think this person is suspicious because ", icon: "👉" },
-    { label: "Defend", starter: "I'm not the wolf — here's why: ", icon: "🛡️" },
+    { label: "Accuse", starter: "I suspect someone because ", icon: "👉" },
+    { label: "Defend", starter: "I'm innocent — here's why: ", icon: "🛡️" },
     { label: "Question", starter: "Can you explain what happened last night?", icon: "❓" },
   ],
 });

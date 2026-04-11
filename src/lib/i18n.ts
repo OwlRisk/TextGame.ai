@@ -572,9 +572,142 @@ const T: Record<string, Record<string, string>> = {
     pt: "Revisar linha do tempo", ru: "\u041f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c \u0445\u0440\u043e\u043d\u043e\u043b\u043e\u0433\u0438\u044e", it: "Rivedere la cronologia", ar: "\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u062c\u062f\u0648\u0644 \u0627\u0644\u0632\u0645\u0646\u064a",
   },
   "action.final_accusation": {
-    en: "Final accusation", zh: "\u6700\u7ec8\u6307\u63a7", de: "Endanklage", fr: "Accusation finale",
-    es: "Acusaci\u00f3n final", ja: "\u6700\u7d42\u544a\u767a", ko: "\ucd5c\uc885 \uace0\ubc1c",
-    pt: "Acusa\u00e7\u00e3o final", ru: "\u0424\u0438\u043d\u0430\u043b\u044c\u043d\u043e\u0435 \u043e\u0431\u0432\u0438\u043d\u0435\u043d\u0438\u0435", it: "Accusa finale", ar: "\u0627\u0644\u0627\u062a\u0647\u0627\u0645 \u0627\u0644\u0646\u0647\u0627\u0626\u064a",
+    en: "Final accusation", zh: "最终指控", de: "Endanklage", fr: "Accusation finale",
+    es: "Acusación final", ja: "最終告発", ko: "최종 고발",
+    pt: "Acusação final", ru: "Финальное обвинение", it: "Accusa finale", ar: "الاتهام النهائي",
+  },
+  "action.accuse": {
+    en: "Accuse", zh: "指控", ja: "告発", ko: "고발",
+    de: "Anklagen", fr: "Accuser", es: "Acusar",
+  },
+  "action.defend": {
+    en: "Defend", zh: "辩护", ja: "弁護", ko: "변호",
+    de: "Verteidigen", fr: "Défendre", es: "Defender",
+  },
+  "action.support": {
+    en: "Support", zh: "支持", ja: "支持", ko: "지지",
+    de: "Unterstützen", fr: "Soutenir", es: "Apoyar",
+  },
+  "action.question": {
+    en: "Question", zh: "质疑", ja: "質問", ko: "질문",
+    de: "Befragen", fr: "Questionner", es: "Cuestionar",
+  },
+  "action.vote": {
+    en: "Vote", zh: "投票", ja: "投票", ko: "투표",
+    de: "Abstimmen", fr: "Voter", es: "Votar",
+  },
+  "action.protect": {
+    en: "Protect", zh: "保护", ja: "守る", ko: "보호",
+    de: "Schützen", fr: "Protéger", es: "Proteger",
+  },
+  "action.target": {
+    en: "Target", zh: "锁定目标", ja: "ターゲット", ko: "대상",
+    de: "Ziel", fr: "Cibler", es: "Apuntar",
+  },
+  "action.trust": {
+    en: "Trust", zh: "信任", ja: "信頼", ko: "신뢰",
+    de: "Vertrauen", fr: "Faire confiance", es: "Confiar",
+  },
+  "action.guess": {
+    en: "Guess", zh: "猜测", ja: "推測", ko: "추측",
+    de: "Raten", fr: "Deviner", es: "Adivinar",
+  },
+  "action.attack": {
+    en: "Attack", zh: "攻击", ja: "攻撃", ko: "공격",
+    de: "Angreifen", fr: "Attaquer", es: "Atacar",
+  },
+  "action.search": {
+    en: "Search", zh: "搜索", ja: "探す", ko: "검색",
+    de: "Suchen", fr: "Chercher", es: "Buscar",
+  },
+  "action.examine": {
+    en: "Examine", zh: "检查", ja: "調べる", ko: "조사",
+    de: "Untersuchen", fr: "Examiner", es: "Examinar",
+  },
+  "action.nominate": {
+    en: "Nominate", zh: "提名", ja: "指名", ko: "지명",
+    de: "Nominieren", fr: "Nommer", es: "Nominar",
+  },
+  "action.approve_team": {
+    en: "Approve team", zh: "同意组队", ja: "チーム承認", ko: "팀 승인",
+  },
+  "action.reject_team": {
+    en: "Reject team", zh: "拒绝组队", ja: "チーム却下", ko: "팀 거부",
+  },
+  "action.confess_info": {
+    en: "Confess info", zh: "透露信息", ja: "情報告白", ko: "정보 고백",
+  },
+  "action.alibi": {
+    en: "Alibi", zh: "不在场证明", ja: "アリバイ", ko: "알리바이",
+  },
+  "action.suspicious!": {
+    en: "Suspicious!", zh: "可疑！", ja: "怪しい！", ko: "의심스러워!",
+  },
+  "action.second": {
+    en: "Second", zh: "附议", ja: "賛成", ko: "지지",
+  },
+  "action.point_out": {
+    en: "Point out", zh: "指出", ja: "指摘", ko: "지적",
+  },
+  "action.argue": {
+    en: "Argue", zh: "反驳", ja: "反論", ko: "반박",
+  },
+  "action.cast_spell": {
+    en: "Cast Spell", zh: "施法", ja: "魔法を唱える", ko: "주문 시전",
+  },
+  "action.heal_ally": {
+    en: "Heal Ally", zh: "治疗队友", ja: "味方を回復", ko: "아군 치유",
+  },
+  "action.open_door": {
+    en: "Open Door", zh: "开门", ja: "扉を開ける", ko: "문 열기",
+  },
+  "action.disarm_trap": {
+    en: "Disarm Trap", zh: "拆除陷阱", ja: "罠を解除", ko: "함정 해제",
+  },
+  "action.scout_ahead": {
+    en: "Scout Ahead", zh: "前方探索", ja: "先行偵察", ko: "정찰",
+  },
+  "action.rest_&_heal": {
+    en: "Rest & Heal", zh: "休息恢复", ja: "休息＆回復", ko: "휴식 & 치유",
+  },
+  "action.check_inventory": {
+    en: "Check Inventory", zh: "查看背包", ja: "持ち物確認", ko: "인벤토리 확인",
+  },
+  "action.detect_magic": {
+    en: "Detect Magic", zh: "感知魔法", ja: "魔法感知", ko: "마법 감지",
+  },
+  "action.use_item": {
+    en: "Use Item", zh: "使用道具", ja: "アイテム使用", ko: "아이템 사용",
+  },
+  "action.shield_bash": {
+    en: "Shield Bash", zh: "盾击", ja: "シールドバッシュ", ko: "방패 강타",
+  },
+  "action.backstab": {
+    en: "Backstab", zh: "背刺", ja: "バックスタブ", ko: "기습",
+  },
+  "action.revive": {
+    en: "Revive", zh: "复活", ja: "復活", ko: "부활",
+  },
+  "action.trade": {
+    en: "Trade", zh: "交易", ja: "取引", ko: "거래",
+  },
+  "action.give_clue": {
+    en: "Give clue", zh: "给线索", ja: "ヒントを出す", ko: "단서 제공",
+  },
+  "action.combine": {
+    en: "Combine", zh: "组合", ja: "組み合わせ", ko: "조합",
+  },
+  "action.ask_for_hint": {
+    en: "Ask for hint", zh: "求提示", ja: "ヒントを求める", ko: "힌트 요청",
+  },
+  "action.describe": {
+    en: "Describe", zh: "描述", ja: "描写", ko: "묘사",
+  },
+  "action.twist": {
+    en: "Twist", zh: "反转", ja: "転換", ko: "반전",
+  },
+  "action.continue": {
+    en: "Continue", zh: "继续", ja: "続ける", ko: "계속",
   },
 
   // ── Action Templates (prefilled text for player messages) ────────────
@@ -616,6 +749,174 @@ const T: Record<string, Record<string, string>> = {
   },
   "template.that_s": {
     en: "That's ", zh: "这……", ja: "それは…", ko: "그건... ",
+  },
+  "template.i_suspect__player__because": {
+    en: "I suspect {player} because ",
+    zh: "我怀疑{player}，因为",
+    ja: "{player}が怪しいと思う、なぜなら",
+    ko: "{player}이(가) 의심스럽습니다. 왜냐하면 ",
+  },
+  "template.i_m_not_the_wolf_here_s_why": {
+    en: "I'm not the wolf. Here's why: ",
+    zh: "我不是狼人，理由是：",
+    ja: "私は狼じゃない。理由はこうだ：",
+    ko: "나는 늑대가 아닙니다. 이유는: ",
+  },
+  "template.i_m_not_mafia_here_s_why": {
+    en: "I'm not Mafia. Here's why: ",
+    zh: "我不是黑手党，理由是：",
+    ja: "私はマフィアじゃない。理由はこうだ：",
+    ko: "나는 마피아가 아닙니다. 이유는: ",
+  },
+  "template.i_trust__player": {
+    en: "I trust {player}. ",
+    zh: "我信任{player}。",
+    ja: "{player}を信じる。",
+    ko: "{player}을(를) 믿습니다. ",
+  },
+  "template._player___where_were_you_last_night": {
+    en: "{player}, where were you last night?",
+    zh: "{player}，你昨晚在哪？",
+    ja: "{player}、昨夜どこにいた？",
+    ko: "{player}, 어젯밤에 어디 있었어요?",
+  },
+  "template.i_vote_to_eliminate__player": {
+    en: "I vote to eliminate {player}",
+    zh: "我投票淘汰{player}",
+    ja: "{player}の追放に投票する",
+    ko: "{player}을(를) 제거하는 데 투표합니다",
+  },
+  "template.i_want_to_investigate__player": {
+    en: "I want to investigate {player}",
+    zh: "我要查验{player}",
+    ja: "{player}を調べたい",
+    ko: "{player}을(를) 조사하고 싶습니다",
+  },
+  "template.i_choose_to_protect__player": {
+    en: "I choose to protect {player}",
+    zh: "我选择保护{player}",
+    ja: "{player}を守る",
+    ko: "{player}을(를) 보호하겠습니다",
+  },
+  "template.let_s_target__player__tonight": {
+    en: "Let's target {player} tonight",
+    zh: "今晚目标{player}",
+    ja: "今夜は{player}を狙おう",
+    ko: "오늘 밤 {player}을(를) 노리자",
+  },
+  "template.i_suspect_someone_because": {
+    en: "I suspect someone because ",
+    zh: "我怀疑某人，因为",
+    ja: "怪しいと思う人がいる、なぜなら",
+    ko: "의심되는 사람이 있습니다. 왜냐하면 ",
+  },
+  "template.i_m_innocent_here_s_why": {
+    en: "I'm innocent — here's why: ",
+    zh: "我是无辜的——理由是：",
+    ja: "私は無実だ——理由はこうだ：",
+    ko: "나는 무고합니다 — 이유는: ",
+  },
+  "template.can_you_explain_what_happened_last_night": {
+    en: "Can you explain what happened last night?",
+    zh: "你能解释一下昨晚发生了什么吗？",
+    ja: "昨夜何があったか説明してくれる？",
+    ko: "어젯밤에 무슨 일이 있었는지 설명해 주시겠어요?",
+  },
+  "template.i_believe_we_can_trust_them_because": {
+    en: "I believe we can trust them because ",
+    zh: "我觉得我们可以信任他们，因为",
+    ja: "信頼できると思う、なぜなら",
+    ko: "그들을 믿을 수 있다고 생각합니다. 왜냐하면 ",
+  },
+  "template.looks_around_carefully": {
+    en: "looks around carefully",
+    zh: "仔细环顾四周",
+    ja: "周りを注意深く見回す",
+    ko: "주위를 주의 깊게 둘러봅니다",
+  },
+  "template.backs_away_and_runs": {
+    en: "backs away and runs",
+    zh: "后退然后跑了",
+    ja: "後ずさりして走り出す",
+    ko: "뒤로 물러나며 달아납니다",
+  },
+  "template.moves_closer_to_examine_it": {
+    en: "moves closer to examine it",
+    zh: "走近仔细查看",
+    ja: "近づいてよく調べる",
+    ko: "가까이 다가가서 살펴봅니다",
+  },
+  "template.who_are_you_what_do_you_want": {
+    en: "Who are you? What do you want?",
+    zh: "你是谁？你想干什么？",
+    ja: "あなたは誰？何の用？",
+    ko: "당신은 누구죠? 무슨 일이죠?",
+  },
+  "template.let_s_keep_moving_stay_close": {
+    en: "Let's keep moving. Stay close.",
+    zh: "继续走。跟紧了。",
+    ja: "進もう。離れるな。",
+    ko: "계속 가자. 가까이 붙어.",
+  },
+  "template.hold_on_did_you_hear_that": {
+    en: "Hold on. Did you hear that?",
+    zh: "等等。你听到了吗？",
+    ja: "待って。今の聞こえた？",
+    ko: "잠깐. 그거 들었어?",
+  },
+  "template.i_vote_for__player": {
+    en: "I vote for {player}",
+    zh: "我投{player}",
+    ja: "{player}に投票する",
+    ko: "{player}에게 투표합니다",
+  },
+  "template.i_think__player__is_suspicious": {
+    en: "I think {player} is suspicious — ",
+    zh: "我觉得{player}很可疑——",
+    ja: "{player}が怪しいと思う——",
+    ko: "{player}이(가) 의심스럽습니다 — ",
+  },
+  "template.i_think__player__is_evil": {
+    en: "I think {player} is Evil — ",
+    zh: "我觉得{player}是邪恶方——",
+    ja: "{player}は邪悪だと思う——",
+    ko: "{player}이(가) 악의 편이라고 생각합니다 — ",
+  },
+  "template.i_believe__player__is_the_culprit_because": {
+    en: "I believe {player} is the culprit because ",
+    zh: "我认为{player}是嫌疑人，因为",
+    ja: "{player}が犯人だと思う、なぜなら",
+    ko: "{player}이(가) 범인이라고 생각합니다. 왜냐하면 ",
+  },
+  "template.good_point_and_also": {
+    en: "Good point — and also ",
+    zh: "说得对——而且",
+    ja: "いい指摘だ——それに",
+    ko: "좋은 지적이네요 — 그리고 ",
+  },
+  "template.i_disagree_because": {
+    en: "I disagree because ",
+    zh: "我不同意，因为",
+    ja: "反対だ、なぜなら",
+    ko: "동의하지 않습니다. 왜냐하면 ",
+  },
+  "template.that_s_strange__player__said": {
+    en: "That's strange — {player} said ",
+    zh: "奇怪——{player}说过",
+    ja: "おかしいな——{player}は言ったけど",
+    ko: "이상하네요 — {player}이(가) 말하길 ",
+  },
+  "template.i_was_at": {
+    en: "I was at ",
+    zh: "我当时在",
+    ja: "私は",
+    ko: "저는 ",
+  },
+  "template.there_s_something_i_haven_t_mentioned": {
+    en: "There's something I haven't mentioned… ",
+    zh: "有件事我一直没说……",
+    ja: "まだ言ってないことがあるんだ……",
+    ko: "아직 말하지 않은 게 있는데… ",
   },
 
   // ── Navigation ─────────────────────────────────────────────────────────

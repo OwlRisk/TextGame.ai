@@ -23,7 +23,7 @@ import { Menu, Hash, Users, BookOpen, Info } from "lucide-react";
 import { ErrorBoundary } from "@/app/components/error-boundary";
 import { getGameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
 import { isSceneMode } from "@/lib/scenes";
-import { t, getBrowserLanguage } from "@/lib/i18n";
+import { t, getBrowserLanguage, tAction, tTemplate } from "@/lib/i18n";
 import { safeMarked } from "@/lib/safe-marked";
 import { trackEvent } from "@/lib/analytics";
 import { EvidenceBoard } from "@/app/components/evidence-board";
@@ -348,12 +348,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const dialogueChips = useMemo(() => {
     if (gamePhase !== "active") return [];
     const tmplId = currentGame?.config?.template;
+    let chips: Array<{ label: string; starter: string; icon?: string }>;
     if (tmplId && isSceneMode(tmplId)) {
       const phase = getPhaseType(phaseLabel);
-      return getSceneDialogueChips(phase);
+      chips = getSceneDialogueChips(phase);
+    } else if (!tmplId) {
+      chips = [];
+    } else {
+      chips = getGameTemplate(tmplId)?.dialogueChips ?? [];
     }
-    if (!tmplId) return [];
-    return getGameTemplate(tmplId)?.dialogueChips ?? [];
+    return chips.map(c => ({ ...c, label: tAction(c.label), starter: tTemplate(c.starter) }));
   }, [currentGame?.config?.template, gamePhase, phaseLabel]);
 
   // ─── TTS (voice) — default off, user can toggle in header ─────────────────
