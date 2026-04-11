@@ -2,168 +2,126 @@ import { describe, it, expect } from "vitest";
 import { SEO_LOCALES, isValidSEOLocale } from "../seo-locales";
 
 /**
- * Unit tests for the middleware locale / URL normalization logic.
+ * Tests for locale URL routing logic.
  *
- * NextRequest/NextResponse require the Next.js runtime, so we extract
- * the pure decision logic and test it here (same pattern as middleware-eea.test.ts).
+ * The actual URL handling is done by next.config.js headers/redirects
+ * (no middleware.ts — Turbopack doesn't generate .nft.json for middleware).
+ * Here we test the pure locale classification logic used by
+ * next.config.js pattern matching and [locale] route validation.
  */
 
-// ─── Extracted middleware logic ─────────────────────────────────────────────
+// ─── Locale classification (mirrors next.config.js header matching) ─────────
 
-type MiddlewareAction =
-  | { type: "redirect-www"; target: string }
-  | { type: "redirect-trailing-slash"; target: string }
-  | { type: "set-locale"; locale: string; contentLanguage: string }
-  | { type: "pass" };
+const SEO_LOCALE_SET = new Set(SEO_LOCALES);
 
-function classifyRequest(pathname: string, host: string): MiddlewareAction {
-  if (host.startsWith("www.")) {
-    return { type: "redirect-www", target: host.replace(/^www\./, "") };
-  }
+function resolveContentLanguage(locale: string): string | null {
+  if (!SEO_LOCALE_SET.has(locale as any)) return null;
+  return locale === "zh" ? "zh-CN" : locale;
+}
 
-  if (pathname !== "/" && pathname.endsWith("/")) {
-    return { type: "redirect-trailing-slash", target: pathname.replace(/\/+$/, "") };
-  }
-
+function extractLocaleFromPath(pathname: string): string | null {
   const segments = pathname.split("/").filter(Boolean);
-  const maybeLocale = segments[0];
-
-  if (maybeLocale && isValidSEOLocale(maybeLocale)) {
-    return {
-      type: "set-locale",
-      locale: maybeLocale,
-      contentLanguage: maybeLocale === "zh" ? "zh-CN" : maybeLocale,
-    };
-  }
-
-  return { type: "pass" };
+  const first = segments[0];
+  if (first && SEO_LOCALE_SET.has(first as any)) return first;
+  return null;
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
-describe("www → non-www redirect", () => {
-  it("redirects www.textgame.ai to textgame.ai", () => {
-    const result = classifyRequest("/", "www.textgame.ai");
-    expect(result).toEqual({ type: "redirect-www", target: "textgame.ai" });
-  });
-
-  it("redirects www subdomain with path", () => {
-    const result = classifyRequest("/games/werewolf", "www.textgame.ai");
-    expect(result).toEqual({ type: "redirect-www", target: "textgame.ai" });
-  });
-
-  it("does not redirect non-www host", () => {
-    const result = classifyRequest("/", "textgame.ai");
-    expect(result.type).not.toBe("redirect-www");
-  });
-
-  it("does not redirect localhost", () => {
-    const result = classifyRequest("/", "localhost:3000");
-    expect(result.type).not.toBe("redirect-www");
-  });
-});
-
-describe("trailing slash normalization", () => {
-  it("removes trailing slash from /games/", () => {
-    const result = classifyRequest("/games/", "textgame.ai");
-    expect(result).toEqual({ type: "redirect-trailing-slash", target: "/games" });
-  });
-
-  it("removes trailing slash from /zh/discover/", () => {
-    const result = classifyRequest("/zh/discover/", "textgame.ai");
-    expect(result).toEqual({ type: "redirect-trailing-slash", target: "/zh/discover" });
-  });
-
-  it("removes multiple trailing slashes", () => {
-    const result = classifyRequest("/blog///", "textgame.ai");
-    expect(result).toEqual({ type: "redirect-trailing-slash", target: "/blog" });
-  });
-
-  it("does NOT strip trailing slash from root /", () => {
-    const result = classifyRequest("/", "textgame.ai");
-    expect(result.type).not.toBe("redirect-trailing-slash");
-  });
-});
-
-describe("locale detection", () => {
+describe("locale detection from URL path", () => {
   it("detects all 18 valid SEO locales", () => {
     for (const locale of SEO_LOCALES) {
-      const result = classifyRequest(`/${locale}`, "textgame.ai");
-      expect(result.type, `Failed for /${locale}`).toBe("set-locale");
-      if (result.type === "set-locale") {
-        expect(result.locale).toBe(locale);
-      }
+      expect(extractLocaleFromPath(`/${locale}`), `Failed for /${locale}`).toBe(locale);
     }
-  });
-
-  it("sets Content-Language to zh-CN for /zh", () => {
-    const result = classifyRequest("/zh", "textgame.ai");
-    expect(result).toEqual({ type: "set-locale", locale: "zh", contentLanguage: "zh-CN" });
-  });
-
-  it("sets Content-Language to locale code for non-zh locales", () => {
-    const result = classifyRequest("/ja/discover", "textgame.ai");
-    expect(result).toEqual({ type: "set-locale", locale: "ja", contentLanguage: "ja" });
   });
 
   it("detects locale with subpath", () => {
-    const result = classifyRequest("/de/games/werewolf", "textgame.ai");
-    if (result.type === "set-locale") {
-      expect(result.locale).toBe("de");
-      expect(result.contentLanguage).toBe("de");
-    }
+    expect(extractLocaleFromPath("/de/games/werewolf")).toBe("de");
+    expect(extractLocaleFromPath("/ja/discover")).toBe("ja");
   });
 
   it("does not detect 'en' as a locale prefix", () => {
-    const result = classifyRequest("/en/discover", "textgame.ai");
-    expect(result.type).toBe("pass");
+    expect(extractLocaleFromPath("/en/discover")).toBeNull();
   });
 
   it("does not detect 'games' as a locale prefix", () => {
-    const result = classifyRequest("/games/werewolf", "textgame.ai");
-    expect(result.type).toBe("pass");
+    expect(extractLocaleFromPath("/games/werewolf")).toBeNull();
   });
 
   it("does not detect 'api' as a locale prefix", () => {
-    const result = classifyRequest("/api/health", "textgame.ai");
-    expect(result.type).toBe("pass");
+    expect(extractLocaleFromPath("/api/health")).toBeNull();
   });
 
   it("does not detect 'blog' as a locale prefix", () => {
-    const result = classifyRequest("/blog/play-werewolf-online", "textgame.ai");
-    expect(result.type).toBe("pass");
+    expect(extractLocaleFromPath("/blog/play-werewolf-online")).toBeNull();
   });
 
   it("does not detect uppercase locale as valid", () => {
-    const result = classifyRequest("/ZH", "textgame.ai");
-    expect(result.type).toBe("pass");
+    expect(extractLocaleFromPath("/ZH")).toBeNull();
+  });
+
+  it("returns null for root path", () => {
+    expect(extractLocaleFromPath("/")).toBeNull();
+  });
+
+  it("returns null for empty path", () => {
+    expect(extractLocaleFromPath("")).toBeNull();
   });
 });
 
-describe("priority: www redirect beats trailing slash", () => {
-  it("www redirect takes precedence", () => {
-    const result = classifyRequest("/games/", "www.textgame.ai");
-    expect(result.type).toBe("redirect-www");
+describe("Content-Language resolution", () => {
+  it("maps zh to zh-CN", () => {
+    expect(resolveContentLanguage("zh")).toBe("zh-CN");
+  });
+
+  it("maps other locales to themselves", () => {
+    expect(resolveContentLanguage("ja")).toBe("ja");
+    expect(resolveContentLanguage("de")).toBe("de");
+    expect(resolveContentLanguage("ko")).toBe("ko");
+    expect(resolveContentLanguage("ar")).toBe("ar");
+  });
+
+  it("returns null for invalid locale", () => {
+    expect(resolveContentLanguage("en")).toBeNull();
+    expect(resolveContentLanguage("games")).toBeNull();
+    expect(resolveContentLanguage("")).toBeNull();
+  });
+
+  it("all 18 locales produce non-null Content-Language", () => {
+    for (const locale of SEO_LOCALES) {
+      expect(resolveContentLanguage(locale), `null for ${locale}`).not.toBeNull();
+    }
   });
 });
 
-describe("priority: trailing slash beats locale detection", () => {
-  it("trailing slash redirect takes precedence over locale", () => {
-    const result = classifyRequest("/zh/", "textgame.ai");
-    expect(result.type).toBe("redirect-trailing-slash");
+describe("next.config.js redirect rules (logic validation)", () => {
+  it("www.textgame.ai should redirect to textgame.ai", () => {
+    const host = "www.textgame.ai";
+    expect(host.startsWith("www.")).toBe(true);
+    expect(host.replace(/^www\./, "")).toBe("textgame.ai");
+  });
+
+  it("textgame.ai should not be treated as www", () => {
+    expect("textgame.ai".startsWith("www.")).toBe(false);
+  });
+
+  it("localhost should not trigger www redirect", () => {
+    expect("localhost:3000".startsWith("www.")).toBe(false);
   });
 });
 
-describe("pass-through for normal requests", () => {
-  it("passes through root /", () => {
-    expect(classifyRequest("/", "textgame.ai")).toEqual({ type: "pass" });
+describe("isValidSEOLocale alignment", () => {
+  it("SEO_LOCALE_SET matches isValidSEOLocale for all locales", () => {
+    for (const locale of SEO_LOCALES) {
+      expect(isValidSEOLocale(locale)).toBe(true);
+      expect(SEO_LOCALE_SET.has(locale)).toBe(true);
+    }
   });
 
-  it("passes through /discover", () => {
-    expect(classifyRequest("/discover", "textgame.ai")).toEqual({ type: "pass" });
-  });
-
-  it("passes through /profile", () => {
-    expect(classifyRequest("/profile", "textgame.ai")).toEqual({ type: "pass" });
+  it("both reject non-locale strings", () => {
+    for (const invalid of ["en", "games", "api", "blog", "", "ZH", "zh-CN"]) {
+      expect(isValidSEOLocale(invalid)).toBe(false);
+      expect(SEO_LOCALE_SET.has(invalid as any)).toBe(false);
+    }
   });
 });

@@ -38,35 +38,43 @@ const nextConfig = {
     qualities: [75, 90, 100],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
-  async headers() {
+  async redirects() {
     return [
+      // www → non-www canonical redirect
       {
         source: '/:path*',
-        headers: [
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          // Content-Security-Policy: defence-in-depth against XSS.
-          // script-src 'self' + unsafe-eval is required by Next.js/Turbopack in dev/prod.
-          // img-src allows data: URIs (avatars) and DALL-E/OpenAI CDN for generated images.
-          // connect-src allows the OpenAI API and Supabase for client-side requests.
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.openai.com https://*.oaiusercontent.com https://*.supabase.co https://*.googleusercontent.com https://www.google-analytics.com",
-              "font-src 'self' data:",
-              "media-src 'self' blob: https://*.supabase.co",
-              "connect-src 'self' https://*.openai.com https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.sentry.io https://*.ingest.sentry.io",
-              "frame-ancestors 'none'",
-              "object-src 'none'",
-              "base-uri 'self'",
-            ].join('; '),
-          },
-        ],
+        has: [{ type: 'host', value: 'www.textgame.ai' }],
+        destination: 'https://textgame.ai/:path*',
+        permanent: true,
       },
+    ];
+  },
+  async headers() {
+    const securityHeaders = [
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Content-Security-Policy',
+        value: [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob: https://*.openai.com https://*.oaiusercontent.com https://*.supabase.co https://*.googleusercontent.com https://www.google-analytics.com",
+          "font-src 'self' data:",
+          "media-src 'self' blob: https://*.supabase.co",
+          "connect-src 'self' https://*.openai.com https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.sentry.io https://*.ingest.sentry.io",
+          "frame-ancestors 'none'",
+          "object-src 'none'",
+          "base-uri 'self'",
+        ].join('; '),
+      },
+    ];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // Content-Language headers for locale routes
+      { source: '/:locale(zh)/:path*', headers: [...securityHeaders, { key: 'Content-Language', value: 'zh-CN' }] },
+      { source: '/:locale(ja|ko|es|fr|de|pt|ru|it|ar|hi|tr|id|vi|th|pl|nl|uk)/:path*', headers: [...securityHeaders, { key: 'Content-Language', value: ':locale' }] },
     ];
   },
 }
@@ -85,7 +93,6 @@ module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), {
   sourcemaps: { disable: !hasSentryToken },
   release: { create: hasSentryToken },
   widenClientFileUpload: true,
-  autoInstrumentMiddleware: false,
   webpack: {
     treeshake: { removeDebugLogging: true },
     automaticVercelMonitors: true,
