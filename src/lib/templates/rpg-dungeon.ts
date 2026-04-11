@@ -123,14 +123,14 @@ TONE: Epic, atmospheric, with moments of humor. Build tension before boss fights
 
   quickActions: [
     // Combat actions — available to all
-    { label: "Attack", template: "I attack {player} with my weapon!", needsTarget: true, icon: "⚔️", phase: "combat", actionType: "attack", targetType: "enemy" },
+    { label: "Attack", template: "I attack the enemy with my weapon!", icon: "⚔️", phase: "combat", actionType: "attack" },
     { label: "Defend", template: "I raise my guard and defend this round.", icon: "🛡️", phase: "combat", actionType: "defend" },
     { label: "Use Item", template: "I use a potion from my inventory.", icon: "🧪", phase: "combat", actionType: "use" },
 
     // Combat — class-specific
-    { label: "Shield Bash", template: "I shield bash {player} to stun them!", needsTarget: true, icon: "💥", phase: "combat", role: "warrior", actionType: "attack", targetType: "enemy" },
-    { label: "Cast Spell", template: "I cast a spell at {player}!", needsTarget: true, icon: "🔮", phase: "combat", role: "mage", actionType: "attack", targetType: "enemy" },
-    { label: "Backstab", template: "I sneak behind {player} and backstab!", needsTarget: true, icon: "🗡️", phase: "combat", role: "rogue", actionType: "attack", targetType: "enemy" },
+    { label: "Shield Bash", template: "I shield bash the enemy to stun them!", icon: "💥", phase: "combat", role: "warrior", actionType: "attack" },
+    { label: "Cast Spell", template: "I cast a spell at the enemy!", icon: "🔮", phase: "combat", role: "mage", actionType: "attack" },
+    { label: "Backstab", template: "I sneak behind the enemy and backstab!", icon: "🗡️", phase: "combat", role: "rogue", actionType: "attack" },
     { label: "Heal Ally", template: "I cast a healing spell on {player}!", needsTarget: true, icon: "💚", phase: "combat", role: "healer", actionType: "support" },
     { label: "Revive", template: "I revive {player} from unconsciousness!", needsTarget: true, icon: "✨", phase: "combat", role: "healer", actionType: "support" },
 
@@ -145,7 +145,7 @@ TONE: Epic, atmospheric, with moments of humor. Build tension before boss fights
     { label: "Rest & Heal", template: "I rest and tend to my wounds.", icon: "🏕️", phase: "rest", actionType: "meta" },
     { label: "Check Inventory", template: "I check my inventory and equipment.", icon: "🎒", phase: "rest", actionType: "meta" },
     { label: "Trade", template: "I want to trade items with {player}.", needsTarget: true, icon: "🤝", phase: "rest", actionType: "support" },
-    { label: "Heal Ally", template: "I spend time healing {player}'s wounds.", needsTarget: true, icon: "💚", phase: "rest", role: "healer", actionType: "support" },
+    { label: "Heal party", template: "I spend time healing {player}'s wounds.", needsTarget: true, icon: "💚", phase: "rest", role: "healer", actionType: "support" },
 
     // Always available
     { label: "Inspect", template: "I look around and inspect my surroundings.", icon: "👀", actionType: "investigate" },

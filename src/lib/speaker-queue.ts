@@ -251,7 +251,7 @@ const ENGAGEMENT_RATIO: Record<number, { chanceMultiplier: number; maxRatio: num
 };
 
 const MAX_REACTIONS_PER_MESSAGE = 3;
-const recentReactors = new Set<string>();
+const recentReactorsByGame = new Map<string, Set<string>>();
 
 export function triggerPassiveReactions(
   ctx: SpeakerQueueContext,
@@ -266,6 +266,10 @@ export function triggerPassiveReactions(
     (p) => p.isAI && !p.isGameMaster && p.id !== excludePlayerId
   );
   if (candidates.length === 0) return;
+
+  const gameKey = ctx.gameId;
+  if (!recentReactorsByGame.has(gameKey)) recentReactorsByGame.set(gameKey, new Set());
+  const recentReactors = recentReactorsByGame.get(gameKey)!;
 
   const mood = detectMessageMood(messageContent);
   const clamped = Math.max(1, Math.min(5, engagementScore));
@@ -297,6 +301,11 @@ export function triggerPassiveReactions(
 
   recentReactors.clear();
   for (const id of thisRoundReactors) recentReactors.add(id);
+}
+
+/** Clean up per-game reaction state when a game ends */
+export function clearReactionState(gameId: string): void {
+  recentReactorsByGame.delete(gameId);
 }
 
 export async function speakAndReveal(

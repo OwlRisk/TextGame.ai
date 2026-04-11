@@ -57,7 +57,7 @@ HOW THE STORY ENDS:
 
   pacing: {
     progressionThreshold: 3,
-    maxRounds: 4,
+    maxRounds: 6,
     hint: "Day discussion: ensure all living players speak before transitioning to vote. Keep individual speeches focused — no rambling monologues.",
   },
 

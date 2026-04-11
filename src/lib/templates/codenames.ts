@@ -117,7 +117,7 @@ HOW TO PLAY:
 - AVOID clues that could lead to the Assassin — that's an instant loss.
 - Think about how your team will interpret the clue, not just how you see it.
 - Higher numbers are riskier but catch you up faster. Play it safe when ahead.`,
-      field_operative: `You're a Field Operative. Your Spymaster gives clues — you and your team guess which words they mean.
+      "field operative": `You're a Field Operative. Your Spymaster gives clues — you and your team guess which words they mean.
 
 HOW TO PLAY:
 - When you hear the clue, brainstorm which board words connect to it.
@@ -130,8 +130,8 @@ HOW TO PLAY:
 
   quickActions: [
     { label: "Give clue", template: "My clue is: ", icon: "🔑", role: "spymaster" },
-    { label: "Guess", template: "I want to guess: ", icon: "🎯", role: "field_operative" },
-    { label: "Discuss", template: "I think the clue connects to ", icon: "💬", role: "field_operative" },
-    { label: "Stop guessing", template: "Let's stop here and pass the turn.", icon: "✋", role: "field_operative" },
+    { label: "Guess", template: "I want to guess: ", icon: "🎯", role: "field operative" },
+    { label: "Discuss", template: "I think the clue connects to ", icon: "💬", role: "field operative" },
+    { label: "Stop guessing", template: "Let's stop here and pass the turn.", icon: "✋", role: "field operative" },
   ],
 });

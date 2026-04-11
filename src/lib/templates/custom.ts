@@ -15,7 +15,7 @@ export const custom = withDefaults({
   estimatedTime: "Varies",
   roles: [],
 
-  mechanicsPrompt: "",
+  mechanicsPrompt: "This is a custom game. Follow whatever rules the players have defined. If no rules are set, ask players what kind of game they'd like to play and adapt accordingly. Use NEXT_SPEAKER to manage turn order.",
 
   playerPrompts: {
     default:
@@ -33,5 +33,5 @@ export const custom = withDefaults({
     { label: "React", template: "That's ", icon: "😮" },
   ],
 
-  defaultRules: "",
+  defaultRules: "A free-form game — define your own rules, roles, and objectives. The host will adapt to whatever you create.",
 });

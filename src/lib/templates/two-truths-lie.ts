@@ -54,13 +54,9 @@ SCORING:
   },
 
   quickActions: [
+    { label: "My statements", template: "1. \n2. \n3. ", icon: "📝", actionType: "social" },
     { label: "Lie is #", template: "I think the lie is #", icon: "🎯", actionType: "vote" },
-    {
-      label: "Suspicious!",
-      template: "That one sounds suspicious! ",
-      icon: "🤔",
-      actionType: "social",
-    },
+    { label: "Suspicious!", template: "That one sounds suspicious! ", icon: "🤔", actionType: "social" },
     { label: "Tell more", template: "Tell us more about #", icon: "🔍", actionType: "investigate" },
   ],
 

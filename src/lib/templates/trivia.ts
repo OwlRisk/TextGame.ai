@@ -19,7 +19,7 @@ export const trivia = withDefaults({
     maxSentences: 1, silentByDefault: false, drama: "medium",
     narrativeStyle: `Write like an energetic game show host — without being a character. Think of it as the voice-over that sets up each question and reacts to answers. Correct answers get a burst of excitement. Wrong answers get a sympathetic "ooh." Streaks and comebacks deserve commentary. Keep the energy high and the pace snappy. Between rounds, tease what's coming next. Make knowledge feel exciting, not academic.`,
   },
-  speakerMode: "round-table",
+  speakerMode: "selective",
 
   pacing: {
     progressionThreshold: 2,

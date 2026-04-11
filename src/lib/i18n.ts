@@ -691,6 +691,36 @@ const T: Record<string, Record<string, string>> = {
   "action.trade": {
     en: "Trade", zh: "交易", ja: "取引", ko: "거래",
   },
+  "action.heal": {
+    en: "Heal", zh: "治疗", ja: "治療", ko: "치유",
+  },
+  "action.poison": {
+    en: "Poison", zh: "毒杀", ja: "毒殺", ko: "독살",
+  },
+  "action.shoot": {
+    en: "Shoot", zh: "射击", ja: "射撃", ko: "사격",
+  },
+  "action.open": {
+    en: "Open", zh: "开场陈述", ja: "冒頭陳述", ko: "개회 진술",
+  },
+  "action.rebut": {
+    en: "Rebut", zh: "反驳", ja: "反駁", ko: "반박",
+  },
+  "action.cross-examine": {
+    en: "Cross-examine", zh: "质询", ja: "反対尋問", ko: "반대 심문",
+  },
+  "action.summarize": {
+    en: "Summarize", zh: "总结", ja: "まとめ", ko: "요약",
+  },
+  "action.concede_point": {
+    en: "Concede point", zh: "让步", ja: "譲歩", ko: "양보",
+  },
+  "action.my_statements": {
+    en: "My statements", zh: "我的陈述", ja: "私の発言", ko: "내 진술",
+  },
+  "action.heal_party": {
+    en: "Heal party", zh: "治疗队伍", ja: "パーティ回復", ko: "파티 치유",
+  },
   "action.give_clue": {
     en: "Give clue", zh: "给线索", ja: "ヒントを出す", ko: "단서 제공",
   },
@@ -783,9 +813,6 @@ const T: Record<string, Record<string, string>> = {
   },
   "action.suggest": {
     en: "Suggest", zh: "建议", ja: "提案", ko: "제안",
-  },
-  "action.give_clue": {
-    en: "Give clue", zh: "给线索", ja: "ヒントを出す", ko: "단서 제공",
   },
 
   // ── Action Templates (prefilled text for player messages) ────────────
@@ -1184,6 +1211,84 @@ const T: Record<string, Record<string, string>> = {
   },
   "template.let_s_keep_moving": {
     en: "Let's keep moving. ", zh: "继续走。", ja: "進もう。", ko: "계속 가자. ",
+  },
+  "template.i_use_my_heal_potion_to_save_tonight_s_victim": {
+    en: "I use my heal potion to save tonight's victim.",
+    zh: "我使用治疗药水拯救今晚的受害者。",
+    ja: "今夜の被害者を治療薬で救う。",
+    ko: "오늘 밤 희생자를 치유 물약으로 구합니다.",
+  },
+  "template.i_use_my_poison_potion_on_player": {
+    en: "I use my poison potion on {player}.",
+    zh: "我对{player}使用毒药。",
+    ja: "{player}に毒薬を使う。",
+    ko: "{player}에게 독약을 사용합니다.",
+  },
+  "template.i_use_my_death_shot_on_player": {
+    en: "I use my death shot on {player}!",
+    zh: "我对{player}发动猎人之枪！",
+    ja: "{player}に最後の一撃を放つ！",
+    ko: "{player}에게 사망 사격을 합니다!",
+  },
+  "template.my_core_argument_is": {
+    en: "My core argument is: ",
+    zh: "我的核心论点是：",
+    ja: "私の核心的主張は：",
+    ko: "제 핵심 주장은: ",
+  },
+  "template.that_argument_fails_because": {
+    en: "That argument fails because ",
+    zh: "那个论点站不住脚，因为",
+    ja: "その論点には欠陥がある、なぜなら",
+    ko: "그 주장은 틀렸습니다. 왜냐하면 ",
+  },
+  "template._player_can_you_explain": {
+    en: "{player}, can you explain ",
+    zh: "{player}，你能解释一下",
+    ja: "{player}、説明してもらえますか",
+    ko: "{player}, 설명해 주시겠어요 ",
+  },
+  "template.in_closing_the_strongest_evidence_is": {
+    en: "In closing, the strongest evidence is ",
+    zh: "总结来说，最有力的证据是",
+    ja: "最後に、最も有力な証拠は",
+    ko: "결론적으로, 가장 강력한 증거는 ",
+  },
+  "template.i_ll_grant_that_but_consider": {
+    en: "I'll grant that, but consider ",
+    zh: "我承认这一点，但请考虑",
+    ja: "それは認めるが、考えてほしい",
+    ko: "그 점은 인정하지만, 생각해 보세요 ",
+  },
+  "template.1_2_3": {
+    en: "1. \n2. \n3. ",
+    zh: "1. \n2. \n3. ",
+    ja: "1. \n2. \n3. ",
+    ko: "1. \n2. \n3. ",
+  },
+  "template.i_attack_the_enemy_with_my_weapon": {
+    en: "I attack the enemy with my weapon!",
+    zh: "我用武器攻击敌人！",
+    ja: "武器で敵を攻撃する！",
+    ko: "무기로 적을 공격합니다!",
+  },
+  "template.i_shield_bash_the_enemy_to_stun_them": {
+    en: "I shield bash the enemy to stun them!",
+    zh: "我用盾击击晕敌人！",
+    ja: "敵にシールドバッシュで気絶させる！",
+    ko: "방패 강타로 적을 기절시킵니다!",
+  },
+  "template.i_cast_a_spell_at_the_enemy": {
+    en: "I cast a spell at the enemy!",
+    zh: "我对敌人施法！",
+    ja: "敵に魔法を唱える！",
+    ko: "적에게 주문을 시전합니다!",
+  },
+  "template.i_sneak_behind_the_enemy_and_backstab": {
+    en: "I sneak behind the enemy and backstab!",
+    zh: "我潜到敌人身后背刺！",
+    ja: "敵の背後に忍び寄りバックスタブ！",
+    ko: "적의 뒤에서 기습합니다!",
   },
 
   // ── Navigation ─────────────────────────────────────────────────────────

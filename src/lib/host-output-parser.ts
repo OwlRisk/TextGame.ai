@@ -149,7 +149,8 @@ export function parseHostResult(
         speakerQueue.push({ type: "everyone" });
         break;
       } else {
-        const player = players.find((p) => !p.isGameMaster && p.name === name);
+        const player = players.find((p) => !p.isGameMaster &&
+          (p.name === name || p.name.toLowerCase() === name.toLowerCase()));
         if (player?.isAI) speakerQueue.push({ type: "ai", player });
       }
     }

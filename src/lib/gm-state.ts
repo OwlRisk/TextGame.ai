@@ -45,14 +45,38 @@ export const EMPTY_GM_STATE: GmState = {
 };
 
 /**
+ * Extract the first balanced JSON object from a string starting at the first `{`.
+ * Handles nested braces, quoted strings with escaped characters.
+ */
+function extractBalancedJson(str: string): string | null {
+  const start = str.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < str.length; i++) {
+    const ch = str[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    else if (ch === "}") { depth--; if (depth === 0) return str.slice(start, i + 1); }
+  }
+  return null;
+}
+
+/**
  * Parse GM_STATE from the directives section of host output.
  * Returns null if not found or malformed (caller should keep previous state).
  */
 export function parseGmState(directives: string): GmState | null {
-  const match = directives.match(/GM_STATE:\s*(\{[\s\S]*?\})\s*(?:\n|$)/);
-  if (!match) return null;
+  const prefix = directives.indexOf("GM_STATE:");
+  if (prefix === -1) return null;
+  const jsonStr = extractBalancedJson(directives.slice(prefix));
+  if (!jsonStr) return null;
   try {
-    const raw = JSON.parse(match[1]);
+    const raw = JSON.parse(jsonStr);
     if (typeof raw !== "object" || raw === null) return null;
     return {
       act: typeof raw.act === "number" ? raw.act : 1,
@@ -88,8 +112,15 @@ export function parseCharacterDirections(directives: string): CharacterDirection
  * so they don't leak into visible content or event log.
  */
 export function stripGmDirectives(directives: string): string {
-  return directives
-    .replace(/GM_STATE:\s*\{[\s\S]*?\}\s*(?:\n|$)/g, "")
-    .replace(/CHARACTER_DIRECTION:\s*[^\n]+\n?/g, "")
-    .trim();
+  let result = directives;
+  const gmIdx = result.indexOf("GM_STATE:");
+  if (gmIdx !== -1) {
+    const jsonStr = extractBalancedJson(result.slice(gmIdx));
+    if (jsonStr) {
+      const end = gmIdx + "GM_STATE:".length + result.slice(gmIdx + "GM_STATE:".length).indexOf(jsonStr[0]) + jsonStr.length;
+      result = result.slice(0, gmIdx) + result.slice(end);
+    }
+  }
+  result = result.replace(/CHARACTER_DIRECTION:\s*[^\n]+\n?/g, "");
+  return result.trim();
 }

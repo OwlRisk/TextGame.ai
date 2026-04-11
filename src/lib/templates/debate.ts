@@ -52,15 +52,12 @@ DRAMA:
   },
 
   quickActions: [
-    { label: "Argue", template: "I disagree because ", icon: "⚔️", actionType: "attack" },
-    { label: "Support", template: "Good point — and also ", icon: "🤝", actionType: "support" },
-    {
-      label: "Challenge",
-      template: "{player}, but what about ",
-      icon: "🎯",
-      needsTarget: true,
-      actionType: "social",
-    },
+    { label: "Open", template: "My core argument is: ", icon: "📜", phase: "day", actionType: "social" },
+    { label: "Rebut", template: "That argument fails because ", icon: "⚔️", phase: "day", actionType: "attack" },
+    { label: "Cross-examine", template: "{player}, can you explain ", icon: "🎯", needsTarget: true, phase: "day", actionType: "social" },
+    { label: "Support", template: "Good point — and also ", icon: "🤝", phase: "day", actionType: "support" },
+    { label: "Summarize", template: "In closing, the strongest evidence is ", icon: "📋", phase: "day", actionType: "social" },
+    { label: "Concede point", template: "I'll grant that, but consider ", icon: "🤝", phase: "day", actionType: "social" },
   ],
 
   defaultRules: `SETTING: A structured debate where players argue assigned positions — whether they personally agree with them or not — on philosophical, ethical, political, or deliberately absurd topics.

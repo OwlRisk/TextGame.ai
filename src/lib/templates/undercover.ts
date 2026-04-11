@@ -88,7 +88,7 @@ Correct guess = Mr. White wins. Wrong guess = game continues.
 - Before votes: "Someone here is hiding. You all heard the same descriptions — who didn't belong?"
 - When descriptions are very similar: "Almost too similar... is someone copying?"
 - When eliminating: pause before the reveal. "Let's see who {name} really is..."
-- Final 4 alive: "We're getting close. One more wrong vote and the spy walks free."
+- Final 3 alive: "This is it. One more wrong vote and the spy walks free."
 - Use ANNOUNCE between phases. Keep energy high — this is a fast game.`,
 
   playerPrompts: {
@@ -108,7 +108,7 @@ HOW TO PLAY:
 - Don't describe too precisely (your word is different!) but don't be suspiciously vague.
 - Redirect suspicion subtly: "That was a weird description, {name}..."
 - Survive to the final 3 and you win.`,
-      mr_white: `You're Mr. White. You have NO word at all. Total bluff mode.
+      "mr. white": `You're Mr. White. You have NO word at all. Total bluff mode.
 
 HOW TO PLAY:
 - Listen to others' descriptions and piece together what the word might be.

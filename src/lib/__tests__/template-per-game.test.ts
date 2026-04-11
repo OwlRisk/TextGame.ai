@@ -207,7 +207,7 @@ describe("i18n: quickAction labels have Chinese translations", () => {
 });
 
 describe("i18n: quickAction templates have Chinese translations", () => {
-  const SKIP_TEMPLATES = new Set(["@{player} ", "{player}, "]);
+  const SKIP_TEMPLATES = new Set(["@{player} ", "{player}, ", "1. \n2. \n3. "]);
   for (const tmplId of ALL_TEMPLATE_IDS) {
     const t = getGameTemplate(tmplId)!;
     for (const qa of t.quickActions) {
@@ -324,7 +324,7 @@ describe("role-specific player prompts", () => {
     mafia: ["mafia", "detective", "doctor", "town member"],
     avalon: ["merlin", "assassin", "mordred"],
     spyfall: ["spy"],
-    undercover: ["undercover", "mr_white"],
+    undercover: ["undercover", "mr. white"],
     "detective-mystery": ["detective", "suspect", "witness", "culprit"],
     "script-kill": ["detective"],
   };

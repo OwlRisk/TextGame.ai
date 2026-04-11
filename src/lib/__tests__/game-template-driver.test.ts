@@ -66,9 +66,12 @@ describe("game-template-driver", () => {
       expect(buildTemplateMechanics("trivia").length).toBeGreaterThan(50);
     });
 
-    it("returns empty for custom/unknown templates", () => {
-      expect(buildTemplateMechanics("custom")).toBe("");
+    it("returns empty for unknown templates", () => {
       expect(buildTemplateMechanics(undefined)).toBe("");
+    });
+
+    it("custom template has minimal mechanics", () => {
+      expect(buildTemplateMechanics("custom").length).toBeGreaterThan(0);
     });
   });
 

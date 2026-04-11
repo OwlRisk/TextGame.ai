@@ -72,8 +72,10 @@ DRAMA:
   quickActions: [
     { label: "Approve team", template: "I approve this team for the quest.", icon: "✅", phase: "vote" },
     { label: "Reject team", template: "I reject this team — ", icon: "❌", phase: "vote" },
-    { label: "Play Success", template: "I play Success on this quest.", icon: "🏆", phase: "day" },
-    { label: "Play Fail", template: "I play Fail on this quest.", icon: "💀", phase: "day" },
+    { label: "Play Success", template: "I play Success on this quest.", icon: "🏆", phase: "day", actionType: "support" },
+    { label: "Play Fail", template: "I play Fail on this quest.", icon: "💀", phase: "day", role: "assassin", actionType: "attack" },
+    { label: "Play Fail", template: "I play Fail on this quest.", icon: "💀", phase: "day", role: "mordred", actionType: "attack" },
+    { label: "Play Fail", template: "I play Fail on this quest.", icon: "💀", phase: "day", role: "minion of mordred", actionType: "attack" },
     { label: "Nominate", template: "I nominate {player} for the quest team.", icon: "👑", needsTarget: true, phase: "day" },
     { label: "Accuse", template: "I think {player} is Evil — ", icon: "🔍", needsTarget: true, phase: "day" },
   ],
@@ -99,7 +101,7 @@ PHASES:
 1. Leader nominates a team for the current quest (team size varies by round).
 2. All players vote Approve / Reject. Majority decides. After 5 consecutive rejections, Evil wins automatically.
 3. If approved: team members secretly play Quest Success or Quest Fail.
-   - Resistance members MUST play Success.
+   - Good players MUST play Success.
    - Evil players may choose either.
    - Most rounds: 1 Fail = failed quest. Round 4 (7+ players): 2 Fails required.
 

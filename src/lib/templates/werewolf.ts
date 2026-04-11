@@ -161,6 +161,9 @@ HOW TO PLAY:
     { label: "Investigate", template: "I want to investigate {player}", needsTarget: true, icon: "🔮", phase: "night", role: "seer", actionType: "investigate" },
     { label: "Protect", template: "I choose to protect {player}", needsTarget: true, icon: "🛡️", phase: "night", role: "doctor", actionType: "defend" },
     { label: "Target", template: "Let's target {player} tonight", needsTarget: true, icon: "🎯", phase: "night", role: "werewolf", actionType: "attack" },
+    { label: "Heal", template: "I use my heal potion to save tonight's victim.", icon: "💊", phase: "night", role: "witch", actionType: "defend" },
+    { label: "Poison", template: "I use my poison potion on {player}.", needsTarget: true, icon: "☠️", phase: "night", role: "witch", actionType: "attack" },
+    { label: "Shoot", template: "I use my death shot on {player}!", needsTarget: true, icon: "🔫", phase: "day", role: "hunter", actionType: "attack" },
   ],
 
   dialogueChips: [

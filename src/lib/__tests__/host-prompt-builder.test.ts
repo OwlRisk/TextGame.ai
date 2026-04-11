@@ -109,7 +109,7 @@ describe("buildHostSystemPrompt", () => {
       const opts = defaultOpts({ gameTemplate: "werewolf" });
       const output = buildHostSystemPrompt(opts);
       expect(output).toContain("PACING & PROGRESSION");
-      expect(output).toContain("Force state changes");
+      expect(output).toContain("Force escalation");
     });
 
     it("injects quiz progression policy for quiz templates", () => {

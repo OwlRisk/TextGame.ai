@@ -26,6 +26,7 @@ export const detectiveMystery = withDefaults({
 
   pacing: {
     progressionThreshold: 3,
+    maxRounds: 12,
     hint: "Reveal evidence like breadcrumbs — one clue per act. If the Detective stalls, have a witness volunteer new information or introduce a twist.",
   },
 
@@ -69,12 +70,12 @@ DRAMA:
   },
 
   quickActions: [
-    { label: "Ask", template: "{player}, tell me about ", icon: "❓", needsTarget: true, role: "detective", actionType: "investigate" },
-    { label: "Examine", template: "I want to examine ", icon: "🔍", role: "detective", actionType: "investigate" },
-    { label: "Accuse", template: "I believe {player} is the culprit because ", icon: "⚖️", needsTarget: true, role: "detective", actionType: "social" },
-    { label: "Alibi", template: "I was at ", icon: "🛡️", actionType: "defend" },
-    { label: "Point out", template: "That's strange — {player} said ", icon: "👉", needsTarget: true, actionType: "social" },
-    { label: "Confess info", template: "There's something I haven't mentioned… ", icon: "💬", actionType: "social" },
+    { label: "Ask", template: "{player}, tell me about ", icon: "❓", needsTarget: true, role: "detective", phase: "day", actionType: "investigate" },
+    { label: "Examine", template: "I want to examine ", icon: "🔍", role: "detective", phase: "day", actionType: "investigate" },
+    { label: "Accuse", template: "I believe {player} is the culprit because ", icon: "⚖️", needsTarget: true, role: "detective", phase: "day", actionType: "social" },
+    { label: "Alibi", template: "I was at ", icon: "🛡️", phase: "day", actionType: "defend" },
+    { label: "Point out", template: "That's strange — {player} said ", icon: "👉", needsTarget: true, phase: "day", actionType: "social" },
+    { label: "Confess info", template: "There's something I haven't mentioned… ", icon: "💬", phase: "day", actionType: "social" },
   ],
 
   defaultRules: `SETTING: A crime has been committed. One detective must unravel the truth. Suspects have alibis, witnesses have fragments of the truth, and the culprit hides in plain sight.
