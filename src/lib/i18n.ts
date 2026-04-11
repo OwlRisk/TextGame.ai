@@ -709,18 +709,93 @@ const T: Record<string, Record<string, string>> = {
   "action.continue": {
     en: "Continue", zh: "继续", ja: "続ける", ko: "계속",
   },
+  "action.suspect": {
+    en: "Suspect", zh: "怀疑", ja: "容疑", ko: "의심",
+  },
+  "action.ask_about...": {
+    en: "Ask about...", zh: "询问…", ja: "質問する…", ko: "질문하기…",
+  },
+  "action.draw_another_card": {
+    en: "Draw another card", zh: "再抽一张", ja: "もう一枚引く", ko: "카드 한 장 더",
+  },
+  "action.tell_me_more": {
+    en: "Tell me more", zh: "告诉我更多", ja: "もっと教えて", ko: "더 알려주세요",
+  },
+  "action.new_spread": {
+    en: "New spread", zh: "新牌阵", ja: "新しいスプレッド", ko: "새 배열",
+  },
+  "action.discuss": {
+    en: "Discuss", zh: "讨论", ja: "議論", ko: "토론",
+  },
+  "action.stop_guessing": {
+    en: "Stop guessing", zh: "停止猜测", ja: "推測をやめる", ko: "추측 멈추기",
+  },
+  "action.play_success": {
+    en: "Play Success", zh: "打出成功", ja: "成功を出す", ko: "성공 플레이",
+  },
+  "action.play_fail": {
+    en: "Play Fail", zh: "打出失败", ja: "失敗を出す", ko: "실패 플레이",
+  },
+  "action.ask_question": {
+    en: "Ask question", zh: "提问", ja: "質問する", ko: "질문하기",
+  },
+  "action.guess_location": {
+    en: "Guess location", zh: "猜测地点", ja: "場所を推測", ko: "장소 추측",
+  },
+  "action.vote_guilty": {
+    en: "Vote guilty", zh: "投有罪", ja: "有罪に投票", ko: "유죄 투표",
+  },
+  "action.vote_innocent": {
+    en: "Vote innocent", zh: "投无罪", ja: "無罪に投票", ko: "무죄 투표",
+  },
+  "action.try": {
+    en: "Try", zh: "尝试", ja: "試す", ko: "시도",
+  },
+  "action.answer": {
+    en: "Answer", zh: "回答", ja: "回答", ko: "답변",
+  },
+  "action.steal": {
+    en: "Steal", zh: "抢答", ja: "横取り", ko: "빼앗기",
+  },
+  "action.wager": {
+    en: "Wager", zh: "押注", ja: "賭ける", ko: "베팅",
+  },
+  "action.pick_category": {
+    en: "Pick category", zh: "选择类别", ja: "カテゴリ選択", ko: "카테고리 선택",
+  },
+  "action.add_to_story": {
+    en: "Add to story", zh: "续写故事", ja: "物語に追加", ko: "이야기 추가",
+  },
+  "action.yes/no?": {
+    en: "Yes/No?", zh: "是/否？", ja: "はい/いいえ？", ko: "예/아니오?",
+  },
+  "action.lie_is_#": {
+    en: "Lie is #", zh: "谎言是#", ja: "嘘は#", ko: "거짓말은 #",
+  },
+  "action.tell_more": {
+    en: "Tell more", zh: "多说说", ja: "もっと話して", ko: "더 이야기해",
+  },
+  "action.inspect": {
+    en: "Inspect", zh: "检查", ja: "調査", ko: "검사",
+  },
+  "action.let's_go": {
+    en: "Let's go", zh: "走吧", ja: "行こう", ko: "가자",
+  },
+  "action.suggest": {
+    en: "Suggest", zh: "建议", ja: "提案", ko: "제안",
+  },
+  "action.give_clue": {
+    en: "Give clue", zh: "给线索", ja: "ヒントを出す", ko: "단서 제공",
+  },
 
   // ── Action Templates (prefilled text for player messages) ────────────
-  "template._player_": {
-    en: "{player}, ", zh: "{player}，", ja: "{player}、", ko: "{player}, ",
-  },
-  "template.i_d_like_to_show__player__the_evidence": {
+  "template.i_d_like_to_show_player_the_evidence": {
     en: "I'd like to show {player} the evidence: ",
     zh: "我想给{player}看一个证据：",
     ja: "{player}に証拠を見せたい：",
     ko: "{player}에게 증거를 보여주고 싶습니다: ",
   },
-  "template._player___you_said_earlier_that": {
+  "template._player_you_said_earlier_that": {
     en: "{player}, you said earlier that ",
     zh: "{player}，你之前说过",
     ja: "{player}、さっき言ったことだけど",
@@ -750,7 +825,7 @@ const T: Record<string, Record<string, string>> = {
   "template.that_s": {
     en: "That's ", zh: "这……", ja: "それは…", ko: "그건... ",
   },
-  "template.i_suspect__player__because": {
+  "template.i_suspect_player_because": {
     en: "I suspect {player} because ",
     zh: "我怀疑{player}，因为",
     ja: "{player}が怪しいと思う、なぜなら",
@@ -768,37 +843,37 @@ const T: Record<string, Record<string, string>> = {
     ja: "私はマフィアじゃない。理由はこうだ：",
     ko: "나는 마피아가 아닙니다. 이유는: ",
   },
-  "template.i_trust__player": {
+  "template.i_trust_player": {
     en: "I trust {player}. ",
     zh: "我信任{player}。",
     ja: "{player}を信じる。",
     ko: "{player}을(를) 믿습니다. ",
   },
-  "template._player___where_were_you_last_night": {
+  "template._player_where_were_you_last_night": {
     en: "{player}, where were you last night?",
     zh: "{player}，你昨晚在哪？",
     ja: "{player}、昨夜どこにいた？",
     ko: "{player}, 어젯밤에 어디 있었어요?",
   },
-  "template.i_vote_to_eliminate__player": {
+  "template.i_vote_to_eliminate_player": {
     en: "I vote to eliminate {player}",
     zh: "我投票淘汰{player}",
     ja: "{player}の追放に投票する",
     ko: "{player}을(를) 제거하는 데 투표합니다",
   },
-  "template.i_want_to_investigate__player": {
+  "template.i_want_to_investigate_player": {
     en: "I want to investigate {player}",
     zh: "我要查验{player}",
     ja: "{player}を調べたい",
     ko: "{player}을(를) 조사하고 싶습니다",
   },
-  "template.i_choose_to_protect__player": {
+  "template.i_choose_to_protect_player": {
     en: "I choose to protect {player}",
     zh: "我选择保护{player}",
     ja: "{player}を守る",
     ko: "{player}을(를) 보호하겠습니다",
   },
-  "template.let_s_target__player__tonight": {
+  "template.let_s_target_player_tonight": {
     en: "Let's target {player} tonight",
     zh: "今晚目标{player}",
     ja: "今夜は{player}を狙おう",
@@ -864,25 +939,25 @@ const T: Record<string, Record<string, string>> = {
     ja: "待って。今の聞こえた？",
     ko: "잠깐. 그거 들었어?",
   },
-  "template.i_vote_for__player": {
+  "template.i_vote_for_player": {
     en: "I vote for {player}",
     zh: "我投{player}",
     ja: "{player}に投票する",
     ko: "{player}에게 투표합니다",
   },
-  "template.i_think__player__is_suspicious": {
+  "template.i_think_player_is_suspicious": {
     en: "I think {player} is suspicious — ",
     zh: "我觉得{player}很可疑——",
     ja: "{player}が怪しいと思う——",
     ko: "{player}이(가) 의심스럽습니다 — ",
   },
-  "template.i_think__player__is_evil": {
+  "template.i_think_player_is_evil": {
     en: "I think {player} is Evil — ",
     zh: "我觉得{player}是邪恶方——",
     ja: "{player}は邪悪だと思う——",
     ko: "{player}이(가) 악의 편이라고 생각합니다 — ",
   },
-  "template.i_believe__player__is_the_culprit_because": {
+  "template.i_believe_player_is_the_culprit_because": {
     en: "I believe {player} is the culprit because ",
     zh: "我认为{player}是嫌疑人，因为",
     ja: "{player}が犯人だと思う、なぜなら",
@@ -900,7 +975,7 @@ const T: Record<string, Record<string, string>> = {
     ja: "反対だ、なぜなら",
     ko: "동의하지 않습니다. 왜냐하면 ",
   },
-  "template.that_s_strange__player__said": {
+  "template.that_s_strange_player_said": {
     en: "That's strange — {player} said ",
     zh: "奇怪——{player}说过",
     ja: "おかしいな——{player}は言ったけど",
@@ -917,6 +992,198 @@ const T: Record<string, Record<string, string>> = {
     zh: "有件事我一直没说……",
     ja: "まだ言ってないことがあるんだ……",
     ko: "아직 말하지 않은 게 있는데… ",
+  },
+  "template.my_word_makes_me_think_of": {
+    en: "My word makes me think of ", zh: "我的词让我想到", ja: "私の言葉で思い浮かぶのは", ko: "내 단어를 들으면 떠오르는 건 ",
+  },
+  "template.i_think_player_has_a_different_word_because": {
+    en: "I think {player} has a different word because ",
+    zh: "我觉得{player}的词不一样，因为",
+    ja: "{player}は違う言葉だと思う、なぜなら",
+    ko: "{player}의 단어가 다르다고 생각합니다. 왜냐하면 ",
+  },
+  "template.i_d_like_to_ask_about": {
+    en: "I'd like to ask about ", zh: "我想问问", ja: "聞きたいのですが", ko: "묻고 싶은 게 있는데 ",
+  },
+  "template.can_you_draw_another_card": {
+    en: "Can you draw another card?", zh: "能再抽一张牌吗？", ja: "もう一枚引いてもらえますか？", ko: "카드 한 장 더 뽑아 주시겠어요?",
+  },
+  "template.tell_me_more_about_that_card": {
+    en: "Tell me more about that card — ", zh: "跟我多说说这张牌——", ja: "そのカードについてもっと教えて——", ko: "그 카드에 대해 더 알려주세요 — ",
+  },
+  "template.let_s_try_a_different_spread": {
+    en: "Let's try a different spread — ", zh: "换一种牌阵试试——", ja: "別のスプレッドを試そう——", ko: "다른 배열을 해보죠 — ",
+  },
+  "template.my_clue_is": {
+    en: "My clue is: ", zh: "我的线索是：", ja: "私のヒントは：", ko: "내 단서는: ",
+  },
+  "template.i_want_to_guess": {
+    en: "I want to guess: ", zh: "我要猜：", ja: "当てたい：", ko: "맞추고 싶습니다: ",
+  },
+  "template.i_think_the_clue_connects_to": {
+    en: "I think the clue connects to ", zh: "我觉得这条线索指向", ja: "このヒントは繋がると思う：", ko: "이 단서가 연결되는 건 ",
+  },
+  "template.let_s_stop_here_and_pass_the_turn": {
+    en: "Let's stop here and pass the turn.", zh: "到此为止，结束回合。", ja: "ここで止めて、ターンを終わろう。", ko: "여기서 멈추고 턴을 넘기죠.",
+  },
+  "template.i_approve_this_team_for_the_quest": {
+    en: "I approve this team for the quest.", zh: "我同意这个队伍执行任务。", ja: "このチームでクエストに行くことに賛成だ。", ko: "이 팀으로 퀘스트를 진행하는 것에 동의합니다.",
+  },
+  "template.i_reject_this_team": {
+    en: "I reject this team — ", zh: "我反对这个队伍——", ja: "このチームには反対だ——", ko: "이 팀에 반대합니다 — ",
+  },
+  "template.i_play_success_on_this_quest": {
+    en: "I play Success on this quest.", zh: "我为这次任务打出成功。", ja: "このクエストに成功を出す。", ko: "이 퀘스트에 성공을 냅니다.",
+  },
+  "template.i_play_fail_on_this_quest": {
+    en: "I play Fail on this quest.", zh: "我为这次任务打出失败。", ja: "このクエストに失敗を出す。", ko: "이 퀘스트에 실패를 냅니다.",
+  },
+  "template.i_nominate_player_for_the_quest_team": {
+    en: "I nominate {player} for the quest team.", zh: "我提名{player}加入任务队伍。", ja: "{player}をクエストチームに指名する。", ko: "{player}을(를) 퀘스트 팀에 지명합니다.",
+  },
+  "template.ask_player_a_question_about_the_location": {
+    en: "Ask {player} a question about the location", zh: "问{player}一个关于地点的问题", ja: "{player}に場所について質問する", ko: "{player}에게 장소에 대해 질문하기",
+  },
+  "template.i_accuse_player_of_being_the_spy": {
+    en: "I accuse {player} of being the Spy!", zh: "我指控{player}是间谍！", ja: "{player}がスパイだと告発する！", ko: "{player}이(가) 스파이라고 고발합니다!",
+  },
+  "template.i_second_that_accusation": {
+    en: "I second that accusation!", zh: "我附议这个指控！", ja: "その告発に賛成だ！", ko: "그 고발에 동의합니다!",
+  },
+  "template.i_think_the_location_is": {
+    en: "I think the location is ", zh: "我觉得地点是", ja: "場所は", ko: "장소는 ",
+  },
+  "template.i_vote_that_they_are_the_spy": {
+    en: "I vote that they ARE the Spy.", zh: "我投票认为他们是间谍。", ja: "彼らがスパイだと投票する。", ko: "그 사람이 스파이라고 투표합니다.",
+  },
+  "template.i_vote_that_they_are_not_the_spy": {
+    en: "I vote that they are NOT the Spy.", zh: "我投票认为他们不是间谍。", ja: "彼らはスパイではないと投票する。", ko: "그 사람은 스파이가 아니라고 투표합니다.",
+  },
+  "template._player_tell_me_about": {
+    en: "{player}, tell me about ", zh: "{player}，跟我说说", ja: "{player}、教えてくれ、", ko: "{player}, 말해봐요 ",
+  },
+  "template.i_want_to_examine": {
+    en: "I want to examine ", zh: "我想检查", ja: "調べたい：", ko: "확인하고 싶습니다: ",
+  },
+  "template.let_me_examine": {
+    en: "Let me examine ", zh: "让我看看", ja: "調べさせてくれ：", ko: "살펴보겠습니다: ",
+  },
+  "template.i_want_to_try": {
+    en: "I want to try ", zh: "我想试试", ja: "試してみたい：", ko: "시도해 보고 싶습니다: ",
+  },
+  "template.what_if_we_combine": {
+    en: "What if we combine ", zh: "如果我们把这些组合起来呢", ja: "これを組み合わせたらどうだろう：", ko: "이것들을 조합하면 어떨까요 ",
+  },
+  "template.we_re_stuck_can_we_get_a_hint": {
+    en: "We're stuck — can we get a hint?", zh: "我们卡住了——能给个提示吗？", ja: "行き詰まった——ヒントをもらえる？", ko: "막혔는데 — 힌트 좀 주시겠어요?",
+  },
+  "template.i_search_around": {
+    en: "I search around ", zh: "我搜索一下", ja: "周りを探す：", ko: "주변을 수색합니다 ",
+  },
+  "template.i_use_the": {
+    en: "I use the ", zh: "我使用", ja: "使うのは：", ko: "사용하겠습니다: ",
+  },
+  "template.my_answer_is": {
+    en: "My answer is ", zh: "我的答案是", ja: "私の答えは", ko: "제 답은 ",
+  },
+  "template.i_ll_guess": {
+    en: "I'll guess ", zh: "我猜", ja: "推測する：", ko: "추측하겠습니다: ",
+  },
+  "template.i_ll_steal_my_answer_is": {
+    en: "I'll steal — my answer is ", zh: "我来抢答——答案是", ja: "横取りする——答えは", ko: "빼앗겠습니다 — 답은 ",
+  },
+  "template.i_wager": {
+    en: "I wager ", zh: "我押注", ja: "賭けるのは", ko: "베팅합니다 ",
+  },
+  "template.i_want_the_category": {
+    en: "I want the category: ", zh: "我选择类别：", ja: "カテゴリ：", ko: "카테고리: ",
+  },
+  "template._player_but_what_about": {
+    en: "{player}, but what about ", zh: "{player}，但是关于", ja: "{player}、でもさ、", ko: "{player}, 하지만 ",
+  },
+  "template.and_then": {
+    en: "And then... ", zh: "然后……", ja: "そして……", ko: "그리고... ",
+  },
+  "template.but_suddenly": {
+    en: "But suddenly... ", zh: "但突然……", ja: "しかし突然……", ko: "그런데 갑자기... ",
+  },
+  "template.the_scene_felt_like": {
+    en: "The scene felt like... ", zh: "那个场景感觉像……", ja: "その場面は……", ko: "그 장면은... ",
+  },
+  "template.is_it": {
+    en: "Is it ", zh: "是不是", ja: "それは", ko: "혹시 ",
+  },
+  "template.i_think_it_s": {
+    en: "I think it's ", zh: "我觉得是", ja: "たぶん", ko: "아마 ",
+  },
+  "template.i_think_the_lie_is": {
+    en: "I think the lie is #", zh: "我觉得谎言是第#个", ja: "嘘は#番だと思う", ko: "거짓말은 #번이라고 생각합니다",
+  },
+  "template.that_one_sounds_suspicious": {
+    en: "That one sounds suspicious! ", zh: "这个听起来很可疑！", ja: "それ怪しいな！", ko: "그건 좀 수상한데! ",
+  },
+  "template.tell_us_more_about": {
+    en: "Tell us more about #", zh: "多讲讲第#个", ja: "#番についてもっと聞かせて", ko: "#번에 대해 더 이야기해 주세요",
+  },
+  "template.i_attack_player_with_my_weapon": {
+    en: "I attack {player} with my weapon!", zh: "我用武器攻击{player}！", ja: "{player}を武器で攻撃する！", ko: "{player}을(를) 무기로 공격합니다!",
+  },
+  "template.i_raise_my_guard_and_defend_this_round": {
+    en: "I raise my guard and defend this round.", zh: "我举盾防御这一回合。", ja: "ガードを上げてこのラウンドは防御する。", ko: "이번 라운드는 방어 자세를 취합니다.",
+  },
+  "template.i_use_a_potion_from_my_inventory": {
+    en: "I use a potion from my inventory.", zh: "我使用背包里的药水。", ja: "持ち物からポーションを使う。", ko: "인벤토리에서 물약을 사용합니다.",
+  },
+  "template.i_shield_bash_player_to_stun_them": {
+    en: "I shield bash {player} to stun them!", zh: "我用盾击击晕{player}！", ja: "{player}にシールドバッシュで気絶させる！", ko: "{player}에게 방패 강타로 기절시킵니다!",
+  },
+  "template.i_cast_a_spell_at_player": {
+    en: "I cast a spell at {player}!", zh: "我对{player}施法！", ja: "{player}に魔法を唱える！", ko: "{player}에게 주문을 시전합니다!",
+  },
+  "template.i_sneak_behind_player_and_backstab": {
+    en: "I sneak behind {player} and backstab!", zh: "我潜到{player}身后背刺！", ja: "{player}の背後に忍び寄りバックスタブ！", ko: "{player}의 뒤에서 기습합니다!",
+  },
+  "template.i_cast_a_healing_spell_on_player": {
+    en: "I cast a healing spell on {player}!", zh: "我对{player}施放治疗术！", ja: "{player}に回復魔法を唱える！", ko: "{player}에게 치유 마법을 시전합니다!",
+  },
+  "template.i_revive_player_from_unconsciousness": {
+    en: "I revive {player} from unconsciousness!", zh: "我把{player}从昏迷中救醒！", ja: "{player}を気絶から復活させる！", ko: "{player}을(를) 기절에서 되살립니다!",
+  },
+  "template.i_search_the_area_for_anything_useful": {
+    en: "I search the area for anything useful.", zh: "我搜索这个区域寻找有用的东西。", ja: "この辺りで何か使えるものがないか探す。", ko: "이 지역에서 쓸 만한 것을 찾습니다.",
+  },
+  "template.i_carefully_open_the_door_ahead": {
+    en: "I carefully open the door ahead.", zh: "我小心翼翼地打开前面的门。", ja: "慎重に前方の扉を開ける。", ko: "앞에 있는 문을 조심스럽게 엽니다.",
+  },
+  "template.i_check_for_traps_and_try_to_disarm_them": {
+    en: "I check for traps and try to disarm them.", zh: "我检查陷阱并尝试拆除。", ja: "罠がないか調べて解除を試みる。", ko: "함정이 있는지 확인하고 해제를 시도합니다.",
+  },
+  "template.i_cast_detect_magic_to_sense_hidden_enchantments": {
+    en: "I cast Detect Magic to sense hidden enchantments.", zh: "我施放感知魔法来探测隐藏的魔力。", ja: "隠された魔法を感知するためディテクトマジックを唱える。", ko: "숨겨진 마법을 감지하기 위해 마법 감지를 시전합니다.",
+  },
+  "template.i_sneak_ahead_to_scout_the_next_room": {
+    en: "I sneak ahead to scout the next room.", zh: "我偷偷前进侦察下一个房间。", ja: "こっそり先行して次の部屋を偵察する。", ko: "몰래 앞서 나가 다음 방을 정찰합니다.",
+  },
+  "template.i_rest_and_tend_to_my_wounds": {
+    en: "I rest and tend to my wounds.", zh: "我休息一下处理伤口。", ja: "休息して傷の手当てをする。", ko: "휴식하며 상처를 돌봅니다.",
+  },
+  "template.i_check_my_inventory_and_equipment": {
+    en: "I check my inventory and equipment.", zh: "我检查一下背包和装备。", ja: "持ち物と装備を確認する。", ko: "인벤토리와 장비를 확인합니다.",
+  },
+  "template.i_want_to_trade_items_with_player": {
+    en: "I want to trade items with {player}.", zh: "我想和{player}交换物品。", ja: "{player}とアイテムを交換したい。", ko: "{player}과(와) 아이템을 교환하고 싶습니다.",
+  },
+  "template.i_spend_time_healing_player_s_wounds": {
+    en: "I spend time healing {player}'s wounds.", zh: "我花时间治疗{player}的伤口。", ja: "{player}の傷を治療する。", ko: "{player}의 상처를 치료합니다.",
+  },
+  "template.i_look_around_and_inspect_my_surroundings": {
+    en: "I look around and inspect my surroundings.", zh: "我环顾四周检查周围环境。", ja: "周りを見回して周囲を調べる。", ko: "주변을 둘러보며 환경을 살핍니다.",
+  },
+  "template.let_s_keep_going": {
+    en: "Let's keep going — ", zh: "继续走——", ja: "続けよう——", ko: "계속 가죠 — ",
+  },
+  "template.let_s_keep_moving": {
+    en: "Let's keep moving. ", zh: "继续走。", ja: "進もう。", ko: "계속 가자. ",
   },
 
   // ── Navigation ─────────────────────────────────────────────────────────
