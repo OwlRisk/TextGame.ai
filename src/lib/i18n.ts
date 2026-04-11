@@ -2607,9 +2607,9 @@ const T: Record<string, Record<string, string>> = {
     pt: "Ver todos os jogos →", ru: "Все игры →", it: "Vedi tutti i giochi →", ar: "تصفح جميع الألعاب →",
   },
   "home.featured_title": {
-    en: "All Games", zh: "全部游戏", ja: "すべてのゲーム", ko: "모든 게임",
-    de: "Alle Spiele", fr: "Tous les jeux", es: "Todos los juegos",
-    pt: "Todos os jogos", ru: "Все игры", it: "Tutti i giochi", ar: "جميع الألعاب",
+    en: "Popular Templates", zh: "热门模板", ja: "人気テンプレート", ko: "인기 템플릿",
+    de: "Beliebte Vorlagen", fr: "Modèles populaires", es: "Plantillas populares",
+    pt: "Modelos populares", ru: "Популярные шаблоны", it: "Modelli popolari", ar: "قوالب شائعة",
   },
   "home.featured_desc": {
     en: "Pick a game and start playing in seconds", zh: "选一个游戏，秒开即玩",
@@ -2623,6 +2623,40 @@ const T: Record<string, Record<string, string>> = {
     en: "Play Now", zh: "立即开玩", ja: "今すぐプレイ", ko: "지금 플레이",
     de: "Jetzt spielen", fr: "Jouer maintenant", es: "Jugar ahora",
     pt: "Jogar agora", ru: "Играть", it: "Gioca ora", ar: "العب الآن",
+  },
+  "home.create_new": {
+    en: "Create New Game", zh: "创建新游戏", ja: "新しいゲームを作る", ko: "새 게임 만들기",
+    de: "Neues Spiel erstellen", fr: "Créer un nouveau jeu", es: "Crear nuevo juego",
+    pt: "Criar novo jogo", ru: "Создать игру", it: "Crea nuovo gioco", ar: "إنشاء لعبة جديدة",
+  },
+  "home.create_new_desc": {
+    en: "Pick a template and jump right in", zh: "选择模板，一键开始",
+    ja: "テンプレートを選んですぐ開始", ko: "템플릿을 선택하고 바로 시작",
+    de: "Wähle eine Vorlage und leg los", fr: "Choisissez un modèle et lancez-vous",
+    es: "Elige una plantilla y comienza", pt: "Escolha um modelo e comece",
+    ru: "Выберите шаблон и начните", it: "Scegli un modello e inizia",
+    ar: "اختر قالباً وابدأ فوراً",
+  },
+  "home.game_plaza": {
+    en: "Game Plaza", zh: "游戏广场", ja: "ゲームプラザ", ko: "게임 광장",
+    de: "Spielplatz", fr: "Place des jeux", es: "Plaza de juegos",
+    pt: "Praça de jogos", ru: "Игровая площадь", it: "Piazza dei giochi", ar: "ساحة الألعاب",
+  },
+  "home.game_plaza_desc": {
+    en: "Explore all game templates and categories", zh: "浏览全部游戏模板和分类",
+    ja: "すべてのゲームテンプレートとカテゴリを探索", ko: "모든 게임 템플릿과 카테고리 탐색",
+    de: "Erkunde alle Spielvorlagen und Kategorien", fr: "Explorez tous les modèles et catégories",
+    es: "Explora todas las plantillas y categorías", pt: "Explore todos os modelos e categorias",
+    ru: "Все шаблоны и категории игр", it: "Esplora tutti i modelli e le categorie",
+    ar: "استكشف جميع القوالب والفئات",
+  },
+  "home.subtitle": {
+    en: "Ready to create amazing game experiences?", zh: "准备好创造精彩的游戏体验了吗？",
+    ja: "素晴らしいゲーム体験を作る準備はできていますか？", ko: "멋진 게임 경험을 만들 준비가 되셨나요?",
+    de: "Bereit für großartige Spielerlebnisse?", fr: "Prêt à créer des expériences de jeu incroyables ?",
+    es: "¿Listo para crear experiencias de juego increíbles?", pt: "Pronto para criar experiências de jogo incríveis?",
+    ru: "Готовы создавать удивительные игры?", it: "Pronto a creare esperienze di gioco straordinarie?",
+    ar: "هل أنت مستعد لإنشاء تجارب ألعاب مذهلة؟",
   },
 };
 
