@@ -45,7 +45,7 @@ export function LobbyView({
   const aiCount = nonHost.filter((p) => p.isAI).length;
   const humanCount = nonHost.filter((p) => !p.isAI).length;
   const lang = getBrowserLanguage();
-  const tmpl = getGameTemplate(gameTemplate);
+  const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
 
   const handleStart = useCallback(async () => {
     setStartingGame(true);
