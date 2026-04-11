@@ -10,7 +10,7 @@ import { formatMessageTime, stripEmotionTags, stripPrivateNotes } from "@/lib/ch
 import { parseInlineFormatting, type InlineFormattingOptions } from "@/lib/format-message";
 import { stripDirectiveLines } from "@/lib/game-host-utils";
 import type { Player } from "@/types/player";
-import { t } from "@/lib/i18n";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 // ─── Cursor injection ─────────────────────────────────────────────────────
 /** Append a trailing node (blinking cursor) inside the last line of formatted content. */
@@ -250,7 +250,10 @@ export const ChatMessage = React.memo(function ChatMessage({
   const messagePlayer = players.find(
     p => p.id === message.senderId || (message.isAI && p.name === message.senderName)
   ) ?? null;
-  const isHost = messagePlayer?.isGameMaster || (messagePlayer && getAvatarPropsForPlayer(messagePlayer).type === "host");
+  const isHost =
+    message.senderId === "gm-1" ||
+    messagePlayer?.isGameMaster === true ||
+    (messagePlayer != null && getAvatarPropsForPlayer(messagePlayer).type === "host");
 
   // Narrator: render all host/GM messages as atmospheric narration without avatar/name
   if (isHost) {
@@ -306,12 +309,23 @@ export const ChatMessage = React.memo(function ChatMessage({
     const actionText = isSceneStyleAction
       ? displayText.trim().slice(1, -1)
       : displayText.trim();
+    const lang = getBrowserLanguage();
+    // Human [ACTION:…] lines use templates that read like GM narration; don't lead with the
+    // detective's name — it looks like the player is narrating NPCs. AI characters keep their name.
+    let actionLead = message.senderName;
+    if (!message.isAI && isTaggedAction) {
+      const targetMatch = _actionMeta.match(/\btarget\s*=\s*([^\s\]]+)/i);
+      const target = targetMatch?.[1]?.trim();
+      actionLead = target
+        ? t("chat.action_you_toward", lang, { target })
+        : t("chat.action_you", lang);
+    }
     return (
       <div className={`${showAvatar ? "mt-5" : "mt-1"}`}>
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-amber-500/[0.06] border border-amber-500/15">
           <span className="text-amber-400 text-xs flex-shrink-0">⚡</span>
           <div className="flex-1 min-w-0 text-sm text-amber-200/90 italic leading-relaxed">
-            <span className="font-medium not-italic text-amber-300/80">{message.senderName}</span>
+            <span className="font-medium not-italic text-amber-300/80">{actionLead}</span>
             {" "}
             {actionText}
           </div>
@@ -574,7 +588,7 @@ function MessageAvatar({
       name={avatarProps.name || message.senderName}
       gameId={gameId}
       enabled={true}
-      initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || message.senderName, avatarProps.type)]}
+      initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || message.senderName, avatarProps.type, undefined, avatarProps.gender)]}
       onAvatarLoaded={onAvatarUrlLoaded}
       className="h-11 w-11"
       fallbackColor={avatarColor}

@@ -177,7 +177,7 @@ const PlayerCard = memo(function PlayerCard({
               enabled={true}
               className={`h-9 w-9 shadow-md transition-transform duration-200 ${isSpeaking ? "ring-2 ring-green-500/50 scale-105" : "group-hover:scale-105"}`}
               fallbackColor={player.avatar}
-              initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
+              initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type, undefined, avatarProps.gender)]}
               onAvatarLoaded={onAvatarUrlLoaded}
             />
           ) : (

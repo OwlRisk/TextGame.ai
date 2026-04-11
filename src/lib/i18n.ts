@@ -64,6 +64,32 @@ const T: Record<string, Record<string, string>> = {
     it: "I giocatori IA stanno rispondendo \u2014 puoi scrivere",
     ar: "\u0644\u0627\u0639\u0628\u0648 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a \u064a\u0631\u062f\u0648\u0646 \u2014 \u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0643\u062a\u0627\u0628\u0629",
   },
+  "status.host_narrating": {
+    en: "The narrator is writing \u2014 you can type ahead",
+    zh: "\u4e3b\u6301\u4eba\u6b63\u5728\u63cf\u8ff0\u5267\u60c5\u2014\u2014\u4f60\u53ef\u4ee5\u63d0\u524d\u8f93\u5165",
+    de: "Der Erz\u00e4hler schreibt \u2014 du kannst schon tippen",
+    fr: "Le narrateur \u00e9crit \u2014 vous pouvez taper en attendant",
+    es: "El narrador est\u00e1 escribiendo \u2014 puedes escribir mientras",
+    ja: "\u30db\u30b9\u30c8\u304c\u6587\u3092\u51fa\u529b\u4e2d\u2014\u2014\u5148\u306b\u5165\u529b\u3067\u304d\u307e\u3059",
+    ko: "\ub098\ub808\uc774\ud130\uac00 \ucd9c\ub825 \uc911 \u2014 \ubbf8\ub9ac \uc785\ub825\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4",
+    pt: "O narrador est\u00e1 escrevendo \u2014 voc\u00ea pode digitar",
+    ru: "\u0412\u0435\u0434\u0443\u0449\u0438\u0439 \u043f\u0438\u0448\u0435\u0442 \u2014 \u043c\u043e\u0436\u0435\u0442\u0435 \u043f\u0438\u0441\u0430\u0442\u044c",
+    it: "Il narratore sta scrivendo \u2014 puoi scrivere",
+    ar: "\u0627\u0644\u0631\u0648\u0627\u0626\u064a \u064a\u0643\u062a\u0628 \u2014 \u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0643\u062a\u0627\u0628\u0629",
+  },
+  "status.round_generating": {
+    en: "Generating \u2014 you can type ahead",
+    zh: "\u6b63\u5728\u751f\u6210\u2014\u2014\u4f60\u53ef\u4ee5\u63d0\u524d\u8f93\u5165",
+    de: "Wird generiert \u2014 du kannst schon tippen",
+    fr: "G\u00e9n\u00e9ration en cours \u2014 vous pouvez taper en attendant",
+    es: "Generando \u2014 puedes escribir mientras",
+    ja: "\u751f\u6210\u4e2d\u2014\u2014\u5148\u306b\u5165\u529b\u3067\u304d\u307e\u3059",
+    ko: "\uc0dd\uc131 \uc911 \u2014 \ubbf8\ub9ac \uc785\ub825\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4",
+    pt: "Gerando \u2014 voc\u00ea pode digitar",
+    ru: "\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u2014 \u043c\u043e\u0436\u0435\u0442\u0435 \u043f\u0438\u0441\u0430\u0442\u044c",
+    it: "Generazione in corso \u2014 puoi scrivere",
+    ar: "\u062c\u0627\u0631\u064d \u0627\u0644\u0625\u0646\u0634\u0627\u0621 \u2014 \u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0643\u062a\u0627\u0628\u0629",
+  },
   "status.setting_scene": {
     en: "Setting the scene\u2026",
     zh: "\u6b63\u5728\u8bbe\u5b9a\u573a\u666f\u2026",
@@ -292,6 +318,36 @@ const T: Record<string, Record<string, string>> = {
     it: "Le prove appariranno qui con il progresso dell'indagine.",
     ar: "ستظهر الأدلة هنا مع تقدم التحقيق.",
   },
+  "board.type.physical": {
+    en: "Physical", zh: "物证", ja: "物的証拠", ko: "물적 증거",
+    de: "Physisch", fr: "Physique", es: "Física",
+    pt: "Física", ru: "Физическая", it: "Fisica", ar: "مادي",
+  },
+  "board.type.testimony": {
+    en: "Testimony", zh: "证词", ja: "証言", ko: "증언",
+    de: "Aussage", fr: "Témoignage", es: "Testimonio",
+    pt: "Testemunho", ru: "Показание", it: "Testimonianza", ar: "شهادة",
+  },
+  "board.type.document": {
+    en: "Document", zh: "文书", ja: "文書", ko: "문서",
+    de: "Dokument", fr: "Document", es: "Documento",
+    pt: "Documento", ru: "Документ", it: "Documento", ar: "وثيقة",
+  },
+  "board.type.digital": {
+    en: "Digital", zh: "数字证据", ja: "デジタル", ko: "디지털",
+    de: "Digital", fr: "Numérique", es: "Digital",
+    pt: "Digital", ru: "Цифровая", it: "Digitale", ar: "رقمي",
+  },
+  "board.type.unknown": {
+    en: "Other", zh: "其他", ja: "その他", ko: "기타",
+    de: "Sonstige", fr: "Autre", es: "Otro",
+    pt: "Outro", ru: "Другое", it: "Altro", ar: "أخرى",
+  },
+  "board.no_content_yet": {
+    en: "No content yet.", zh: "暂无内容。", ja: "まだ内容がありません。", ko: "아직 내용이 없습니다.",
+    de: "Noch kein Inhalt.", fr: "Pas encore de contenu.", es: "Sin contenido aún.",
+    pt: "Nenhum conteúdo ainda.", ru: "Пока нет содержимого.", it: "Ancora nessun contenuto.", ar: "لا محتوى بعد.",
+  },
 
   // ── Player Rules (Script Kill) ──────────────────────────────────────
   "pr.is_dead": {
@@ -459,6 +515,33 @@ const T: Record<string, Record<string, string>> = {
     es: "Tu objetivo ahora", ja: "\u4eca\u306e\u30bf\u30b9\u30af", ko: "\uc9c0\uae08 \ud574\uc57c \ud560 \uc77c",
     pt: "O que fazer agora", ru: "\u0422\u0435\u043a\u0443\u0449\u0430\u044f \u0437\u0430\u0434\u0430\u0447\u0430",
     it: "Cosa fare ora", ar: "\u0645\u0627 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0641\u064a\u0643 \u0627\u0644\u0622\u0646",
+  },
+  /** Lead label for [ACTION]-tagged messages from the human (not the character name — avoids looking like third-person narration is “spoken by” the detective). */
+  "chat.action_you": {
+    en: "Your action",
+    zh: "\u4f60\u7684\u884c\u52a8",
+    de: "Deine Aktion",
+    fr: "Ton action",
+    es: "Tu acci\u00f3n",
+    ja: "\u3042\u306a\u305f\u306e\u884c\u52d5",
+    ko: "\ub2f9\uc2e0\uc758 \ud589\ub3d9",
+    pt: "Sua a\u00e7\u00e3o",
+    ru: "\u0422\u0432\u043e\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435",
+    it: "La tua azione",
+    ar: "\u0625\u062c\u0631\u0627\u0624\u0643",
+  },
+  "chat.action_you_toward": {
+    en: "Your action \u2192 {target}",
+    zh: "\u4f60\u7684\u884c\u52a8 \u2192 {target}",
+    de: "Deine Aktion \u2192 {target}",
+    fr: "Ton action \u2192 {target}",
+    es: "Tu acci\u00f3n \u2192 {target}",
+    ja: "\u3042\u306a\u305f\u306e\u884c\u52d5 \u2192 {target}",
+    ko: "\ub2f9\uc2e0\uc758 \ud589\ub3d9 \u2192 {target}",
+    pt: "Sua a\u00e7\u00e3o \u2192 {target}",
+    ru: "\u0422\u0432\u043e\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435 \u2192 {target}",
+    it: "La tua azione \u2192 {target}",
+    ar: "\u0625\u062c\u0631\u0627\u0624\u0643 \u2192 {target}",
   },
   // ── Eliminated / ghost ─────────────────────────────────────────────────
   "eliminated.watching": {
@@ -2487,6 +2570,59 @@ const T: Record<string, Record<string, string>> = {
     en: "Untitled Game", zh: "\u65e0\u6807\u9898\u6e38\u620f", ja: "\u7121\u984c\u306e\u30b2\u30fc\u30e0", ko: "\uc81c\ubaa9 \uc5c6\ub294 \uac8c\uc784",
     de: "Unbenanntes Spiel", fr: "Jeu sans titre", es: "Juego sin t\u00edtulo",
     pt: "Jogo sem t\u00edtulo", ru: "\u0411\u0435\u0437 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u044f", it: "Gioco senza titolo", ar: "\u0644\u0639\u0628\u0629 \u0628\u062f\u0648\u0646 \u0639\u0646\u0648\u0627\u0646",
+  },
+
+  // ── Dashboard (logged-in home) ────────────────────────────────────────
+  "home.greeting_morning": {
+    en: "Good morning, {name}", zh: "早上好，{name}", ja: "おはようございます、{name}",
+    ko: "좋은 아침이에요, {name}", de: "Guten Morgen, {name}", fr: "Bonjour, {name}",
+    es: "Buenos días, {name}", pt: "Bom dia, {name}", ru: "Доброе утро, {name}",
+    it: "Buongiorno, {name}", ar: "صباح الخير، {name}",
+  },
+  "home.greeting_afternoon": {
+    en: "Good afternoon, {name}", zh: "下午好，{name}", ja: "こんにちは、{name}",
+    ko: "안녕하세요, {name}", de: "Guten Tag, {name}", fr: "Bon après-midi, {name}",
+    es: "Buenas tardes, {name}", pt: "Boa tarde, {name}", ru: "Добрый день, {name}",
+    it: "Buon pomeriggio, {name}", ar: "مساء الخير، {name}",
+  },
+  "home.greeting_evening": {
+    en: "Good evening, {name}", zh: "晚上好，{name}", ja: "こんばんは、{name}",
+    ko: "좋은 저녁이에요, {name}", de: "Guten Abend, {name}", fr: "Bonsoir, {name}",
+    es: "Buenas noches, {name}", pt: "Boa noite, {name}", ru: "Добрый вечер, {name}",
+    it: "Buonasera, {name}", ar: "مساء الخير، {name}",
+  },
+  "home.quick_start": {
+    en: "Quick Start", zh: "快速开始", ja: "クイックスタート", ko: "빠른 시작",
+    de: "Schnellstart", fr: "Démarrage rapide", es: "Inicio rápido",
+    pt: "Início rápido", ru: "Быстрый старт", it: "Avvio rapido", ar: "بداية سريعة",
+  },
+  "home.random_game": {
+    en: "Surprise Me", zh: "随便玩一局", ja: "おまかせ", ko: "랜덤 게임",
+    de: "Überrasch mich", fr: "Surprise", es: "Sorpréndeme",
+    pt: "Me surpreenda", ru: "Наугад", it: "Sorprendimi", ar: "فاجئني",
+  },
+  "home.browse_all": {
+    en: "Browse All Games →", zh: "浏览全部游戏 →", ja: "すべてのゲームを見る →", ko: "모든 게임 보기 →",
+    de: "Alle Spiele ansehen →", fr: "Voir tous les jeux →", es: "Ver todos los juegos →",
+    pt: "Ver todos os jogos →", ru: "Все игры →", it: "Vedi tutti i giochi →", ar: "تصفح جميع الألعاب →",
+  },
+  "home.featured_title": {
+    en: "All Games", zh: "全部游戏", ja: "すべてのゲーム", ko: "모든 게임",
+    de: "Alle Spiele", fr: "Tous les jeux", es: "Todos los juegos",
+    pt: "Todos os jogos", ru: "Все игры", it: "Tutti i giochi", ar: "جميع الألعاب",
+  },
+  "home.featured_desc": {
+    en: "Pick a game and start playing in seconds", zh: "选一个游戏，秒开即玩",
+    ja: "ゲームを選んですぐプレイ", ko: "게임을 골라 바로 시작하세요",
+    de: "Wähle ein Spiel und spiele sofort los", fr: "Choisissez un jeu et jouez en quelques secondes",
+    es: "Elige un juego y empieza a jugar en segundos", pt: "Escolha um jogo e comece a jogar em segundos",
+    ru: "Выберите игру и начните играть за секунды", it: "Scegli un gioco e inizia a giocare in pochi secondi",
+    ar: "اختر لعبة وابدأ اللعب في ثوانٍ",
+  },
+  "home.play_now": {
+    en: "Play Now", zh: "立即开玩", ja: "今すぐプレイ", ko: "지금 플레이",
+    de: "Jetzt spielen", fr: "Jouer maintenant", es: "Jugar ahora",
+    pt: "Jogar agora", ru: "Играть", it: "Gioca ora", ar: "العب الآن",
   },
 };
 

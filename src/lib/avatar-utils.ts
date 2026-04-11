@@ -1,15 +1,16 @@
 /**
  * Utility functions for avatar generation to ensure consistency across all components.
- * Role design: see docs/ROLES.md (Game Master, Host, AI Player, User).
+ * Role design: see docs/ROLES.md (Game Master, in-room narrator, AI Player, User).
  */
 
 import type { Player } from "@/types/player";
 import { AvatarStyle } from "./avatar-style-constants";
+import { resolvePlayerGender } from "@/lib/player-gender";
 
 /**
  * Get standardized avatar props for a player.
  * - User (!isAI): "You", type "player".
- * - Host (isGameMaster): type "host"; identity from Host selector or generated Host.
+ * - In-room narrator (isGameMaster): type "host"; optional style hint in background — not a playable character.
  * - AI Player (isAI && !isGameMaster): type "player".
  * Use getAvatarPropsForPlayer + gameId when rendering GeneratedAvatar.
  *
@@ -50,20 +51,25 @@ export function getAvatarPropsForPlayer(
     };
   }
 
-  // Host vs AI Player: Host uses background if provided; AI Player uses role-based default
+  // Narrator vs AI Player: GM uses background if provided; AI Player uses role-based default
   // Avoid "game", "player" plural to reduce multi-face avatar output
   const normalizedBackground = player.background?.trim() || undefined;
   const background = player.isGameMaster
-    ? (normalizedBackground ?? `Professional presenter, charismatic host.`)
+    ? (normalizedBackground ?? `Omniscient third-person story narrator — scene and atmosphere only, not a named in-world character.`)
     : (normalizedBackground ?? `Avatar portrait. Role: ${player.role ?? "Player"}.`);
 
   // Normalize role, personality, gender for consistency
   const normalizedRole = player.role?.trim() || undefined;
   const normalizedPersonality = player.personality?.trim() || undefined;
   const normalizedGender = player.gender?.trim().toLowerCase() || undefined;
-  const gender = normalizedGender === 'male' || normalizedGender === 'female' || normalizedGender === 'other'
-    ? normalizedGender
-    : undefined;
+  const hasValidGender =
+    normalizedGender === "male" || normalizedGender === "female" || normalizedGender === "other";
+  const gender = hasValidGender
+    ? (normalizedGender as "male" | "female" | "other")
+    : resolvePlayerGender(player.name || "Player", player.gender, {
+        personality: player.personality,
+        background: player.background,
+      });
 
   return {
     name: player.name,

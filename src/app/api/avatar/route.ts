@@ -9,6 +9,7 @@ import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 import { logger } from '@/lib/logger';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+import { resolvePlayerGender, poolGenderBinary } from '@/lib/player-gender';
 
 const limiter = createRateLimiter('avatar', { limit: 10, windowSeconds: 60 });
 
@@ -59,7 +60,8 @@ export function getPoolAvatarUrl(name: string, type: AvatarType, gender?: string
   if (!supabaseUrl) return null;
   const key = `${name}|${type}`;
   const hash = crypto.createHash('sha256').update(key).digest('hex');
-  const g = (gender?.trim().toLowerCase() === 'female') ? 'female' : 'male';
+  const resolved = resolvePlayerGender(name, gender, {});
+  const g = poolGenderBinary(resolved, name);
   const baseIndex = parseInt(hash.slice(0, 8), 16) % MIN_POOL_SIZE;
   const index = ((baseIndex + offset) % MIN_POOL_SIZE) + 1;
   const padded = String(index).padStart(3, '0');
@@ -468,6 +470,12 @@ export async function POST(request: NextRequest) {
     }
 
     const avatarType: AvatarType = type === 'host' ? 'host' : 'player';
+    const personalityStr = typeof personality === 'string' ? personality : undefined;
+    const backgroundStr = typeof background === 'string' ? background : undefined;
+    const genderResolved = resolvePlayerGender(name, typeof gender === 'string' ? gender : undefined, {
+      personality: personalityStr,
+      background: backgroundStr,
+    });
     const customPath = avatarStoragePath(name, avatarType);
     logger.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', customPath, 'forceRegenerate:', !!forceRegenerate);
 
@@ -516,9 +524,9 @@ export async function POST(request: NextRequest) {
       }
 
       const prompt = buildPrompt(name, avatarType, {
-        background: typeof background === 'string' ? background : undefined,
-        personality: typeof personality === 'string' ? personality : undefined,
-        gender: typeof gender === 'string' ? gender : undefined,
+        background: backgroundStr,
+        personality: personalityStr,
+        gender: genderResolved,
       });
 
       logger.log(`[Avatar] Force-regenerating with DALL-E 3 for: ${name}, prompt length: ${prompt.length}`);
@@ -577,24 +585,23 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const genderStr = typeof gender === 'string' ? gender : undefined;
       const prompt = buildPrompt(name, avatarType, {
-        background: typeof background === 'string' ? background : undefined,
-        personality: typeof personality === 'string' ? personality : undefined,
-        gender: genderStr,
+        background: backgroundStr,
+        personality: personalityStr,
+        gender: genderResolved,
       });
 
-      logger.log(`[Avatar] generateAndPool for: ${name}, gender: ${genderStr}, prompt length: ${prompt.length}`);
+      logger.log(`[Avatar] generateAndPool for: ${name}, gender: ${genderResolved}, prompt length: ${prompt.length}`);
 
       const imageDataUrl = await generateWithDalle3(prompt);
-      const g: 'male' | 'female' = (genderStr?.trim().toLowerCase() === 'female') ? 'female' : 'male';
+      const g = poolGenderBinary(genderResolved, name);
 
       const poolBuffer = await resizeForPool(imageDataUrl);
       const newPoolUrl = await uploadToPool(poolBuffer, g);
 
       await saveCharacterToDb({
         name,
-        gender: genderStr,
+        gender: genderResolved,
         personality: typeof personality === 'string' ? personality : undefined,
         background: typeof background === 'string' ? background : undefined,
         avatarUrl: newPoolUrl || undefined,
@@ -639,8 +646,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Fallback: hash-based pick from same-gender pool
-      const g = (typeof gender === 'string' && gender.trim().toLowerCase() === 'female') ? 'female' : 'male';
+      // Fallback: hash-based pick from same-gender pool (binary: DB rows are male/female)
+      const g = poolGenderBinary(genderResolved, name);
       const { data: chars } = await supabaseAdmin
         .from('ai_characters')
         .select('avatar_url, avatar_styles')
@@ -710,9 +717,9 @@ export async function POST(request: NextRequest) {
     }
 
     const fallbackPrompt = buildPrompt(name, avatarType, {
-      background: typeof background === 'string' ? background : undefined,
-      personality: typeof personality === 'string' ? personality : undefined,
-      gender: typeof gender === 'string' ? gender : undefined,
+      background: backgroundStr,
+      personality: personalityStr,
+      gender: genderResolved,
     });
 
     let imageDataUrl: string;

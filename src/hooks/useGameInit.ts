@@ -16,6 +16,7 @@ import { buildSuspectPrompt, buildInitialEvidenceBoard } from "@/lib/suspect-pro
 import { getScene, isSceneMode } from "@/lib/scenes";
 import { extractPreferredName, detectBrowserLanguage } from "@/lib/content-language";
 import { t, setAppLanguage, getAppLanguage } from "@/lib/i18n";
+import { resolvePlayerGender } from "@/lib/player-gender";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string, lang?: string): string {
   const label = t("board.your_role", lang, { role });
@@ -122,8 +123,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         id: "gm-1",
         name: hostName,
         avatar: hostColor,
-        role: "Narrator",
-        status: "Narrator",
         isGameMaster: true,
         isAI: true,
         isMuted: false,
@@ -150,7 +149,11 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       background: configPlayer.background || "A game enthusiast",
       speechStyle: configPlayer.speechStyle || configPlayer.speech_style || undefined,
       quirk: configPlayer.quirk || undefined,
-      gender: configPlayer.gender as "male" | "female" | "other" | undefined,
+      gender: resolvePlayerGender(
+        configPlayer.name || `AI-${i + 1}`,
+        configPlayer.gender,
+        { personality: configPlayer.personality, background: configPlayer.background },
+      ),
       status: "online" as const,
       voiceId: (configPlayer.voice_id as string | undefined) ?? undefined,
       voiceSampleUrl: (configPlayer.voice_sample_url as string | undefined) ?? undefined,
@@ -454,7 +457,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       if (isScriptKill && caseData) {
         setMyBoardContent((prev) => ({
           ...prev,
-          [userId]: buildInitialEvidenceBoard(caseData),
+          [userId]: buildInitialEvidenceBoard(caseData, contentLanguage),
         }));
       } else if (humanRole) {
         const roleDesc = buildRoleBoardContent(tmpl, humanRole, contentLanguage);

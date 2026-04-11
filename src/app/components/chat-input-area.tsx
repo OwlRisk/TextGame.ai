@@ -39,6 +39,8 @@ export interface ChatInputAreaProps {
   investigationSectionContent?: string;
   /** Host CHANNEL_GOAL — current task for the player */
   channelTaskHint?: string | null;
+  /** Channel messages (same channel as input) — used to show host vs AI streaming status */
+  messages?: Array<{ isStreaming?: boolean; senderId: string; isAI?: boolean }>;
 }
 
 const MIN_INPUT_HEIGHT = 40;
@@ -70,6 +72,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   phaseLabel = "",
   investigationSectionContent,
   channelTaskHint,
+  messages = [],
 }: ChatInputAreaProps) {
   const [input, setInput] = useState("");
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
@@ -220,6 +223,23 @@ export const ChatInputArea = React.memo(function ChatInputArea({
 
   const lang = getBrowserLanguage();
 
+  /** Bottom strip: host narration vs AI line vs “generating” before first stream chunk */
+  const streamingStatusKey = useMemo(():
+    | "status.host_narrating"
+    | "status.ai_responding"
+    | "status.round_generating" => {
+    if (!isRoundInProgress) return "status.round_generating";
+    const streaming = messages.find((m) => m.isStreaming);
+    if (!streaming) return "status.round_generating";
+    const fromPlayer = players.find((p) => p.id === streaming.senderId);
+    // Host stream messages may still carry isAI:true in the payload — GM check first.
+    const isHost =
+      streaming.senderId === "gm-1" || fromPlayer?.isGameMaster === true;
+    if (isHost) return "status.host_narrating";
+    if (streaming.isAI) return "status.ai_responding";
+    return "status.round_generating";
+  }, [isRoundInProgress, messages, players]);
+
   return (
     <div className="p-4 pt-3 border-t border-violet-900/20 bg-zinc-900">
       {channelTaskHint?.trim() && isGameActive && !effectivelyEliminated && (
@@ -286,7 +306,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
       {isRoundInProgress && !isEliminated && isGameActive && (
         <div className="mb-2 text-xs text-violet-400 flex items-center gap-1.5">
           <span className="inline-block w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-          {t("status.ai_responding", lang)}
+          {t(streamingStatusKey, lang)}
         </div>
       )}
       {lastFailedSendContent && onRetryLastMessage && (

@@ -15,8 +15,14 @@ type AvatarDisplayType = 'gm' | 'host' | 'player';
  * Callers that don't know the style yet may omit it and receive the base key —
  * the GameRoomContext clears the map on style change so stale entries are evicted.
  */
-export function avatarCacheKey(name: string, type: 'host' | 'player', style?: string): string {
-  return style ? `${name}|${type}|${style}` : `${name}|${type}`;
+/** Persisted URL map key — must match identity logic in `src/lib/avatar.ts` (optional gender segment). */
+export function avatarCacheKey(name: string, type: 'host' | 'player', style?: string, gender?: string): string {
+  const g = gender?.trim().toLowerCase();
+  const genderSeg = g === "male" || g === "female" || g === "other" ? g : "";
+  if (!style && !genderSeg) return `${name}|${type}`;
+  if (!style) return `${name}|${type}|${genderSeg}`;
+  if (!genderSeg) return `${name}|${type}|${style}`;
+  return `${name}|${type}|${genderSeg}|${style}`;
 }
 
 interface GeneratedAvatarProps extends Omit<UseGeneratedAvatarOptions, 'type'> {
@@ -87,8 +93,8 @@ export function GeneratedAvatar({
   // Persist URL using a style-aware key so that different styles never share an entry.
   // The base key (without style) is also registered for backward-compat with call sites
   // that look up avatarImageUrls[avatarCacheKey(name, type)] without a style.
-  const baseKey = name && apiType ? avatarCacheKey(name, apiType) : "";
-  const styledKey = baseKey && resolvedStyle ? avatarCacheKey(name!, apiType, resolvedStyle) : baseKey;
+  const baseKey = name && apiType ? avatarCacheKey(name, apiType, undefined, gender) : "";
+  const styledKey = baseKey && resolvedStyle ? avatarCacheKey(name!, apiType, resolvedStyle, gender) : baseKey;
   useEffect(() => {
     if (!onAvatarLoaded || !src || !(src.startsWith("http") || src.startsWith("data:"))) return;
     if (styledKey) onAvatarLoaded(styledKey, src);

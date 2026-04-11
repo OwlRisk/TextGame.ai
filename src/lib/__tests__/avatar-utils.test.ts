@@ -78,13 +78,13 @@ describe('getAvatarPropsForPlayer – host', () => {
 
   it('falls back to default background when none provided', () => {
     const props = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true, background: undefined }));
-    expect(props.background).toContain('host');
+    expect(props.background).toContain('narrator');
   });
 
   it('trims whitespace-only background', () => {
     const props = getAvatarPropsForPlayer(makePlayer({ isGameMaster: true, background: '   ' }));
     // whitespace-only background is treated as undefined → use default
-    expect(props.background).toContain('host');
+    expect(props.background).toContain('narrator');
   });
 });
 
@@ -115,10 +115,10 @@ describe('getAvatarPropsForPlayer – AI player', () => {
     ).toBe('female');
   });
 
-  it('rejects unknown gender values', () => {
+  it('falls back to inferred gender when value is not male/female/other', () => {
     expect(
       getAvatarPropsForPlayer(makePlayer({ gender: 'robot' })).gender
-    ).toBeUndefined();
+    ).toBe('other');
   });
 
   it('accepts "other" gender', () => {

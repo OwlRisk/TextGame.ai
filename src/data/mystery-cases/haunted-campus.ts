@@ -68,6 +68,7 @@ export const hauntedCampus: MysteryCase = {
   suspects: [
     {
       id: "ryan-calder",
+      gender: "male",
       name: "Ryan Calder",
       personality: "Laid-back theater tech in his late 20s. Speaks casually, uses humor to deflect. Gets serious and defensive when pressed about his timeline.",
       relationship: "Theater technician and Helen's former student, now staff. Had a friendly but complicated relationship with Helen.",
@@ -90,6 +91,7 @@ export const hauntedCampus: MysteryCase = {
     },
     {
       id: "nora-bishop",
+      gender: "female",
       name: "Nora Bishop",
       personality: "Tense, articulate literature professor in her 40s. Speaks in measured, academic sentences. Becomes increasingly agitated when the conversation turns to plagiarism or her career.",
       relationship: "Colleague in the English department. Helen's plagiarism book was about to name Nora's early published papers as containing unattributed passages.",
@@ -113,6 +115,7 @@ export const hauntedCampus: MysteryCase = {
     },
     {
       id: "dex-okafor",
+      gender: "male",
       name: "Dex Okafor",
       personality: "Nervous, earnest graduate student in his early 20s. Speaks quickly, rambles when anxious. Genuinely remorseful but terrified of being accused of murder.",
       relationship: "Helen's graduate advisee. She had recently discovered his master's thesis contained plagiarized sections and was threatening to expel him.",
@@ -140,5 +143,51 @@ export const hauntedCampus: MysteryCase = {
     motive: "Helen's upcoming book would have publicly exposed Nora's early academic work as containing plagiarized passages, destroying her career and reputation. When Helen refused to remove the allegations during their confrontation, Nora snapped.",
     method: "Nora entered through the backstage door that Ryan had propped open, confronted Helen in the prop room, and in a moment of rage struck her with a brass candlestick from the Macbeth production. She wiped the weapon but left a partial palm print.",
     keyEvidence: ["candlestick-wiped", "security-footage"],
+  },
+
+  translations: {
+    zh: {
+      title: "话剧室之死",
+      victim: { causeOfDeath: "被黄铜烛台击中后脑，钝性创伤致死" },
+      evidence: {
+        "propped-door": {
+          name: "被撑开的后台门",
+          description:
+            "后台门被一块普通红砖撑开。砖上没有指纹——当晚下着雨，砖块是湿的。",
+        },
+        "candlestick-wiped": {
+          name: "被擦拭过的烛台",
+          description:
+            "黄铜烛台（凶器）在尸体旁被发现。曾被部分擦拭——大部分指纹已被抹去，但底座上仍留有一个淡淡的手掌印。与海伦或瑞安不符。",
+        },
+        "missing-laptop": {
+          name: "Helen失踪的笔记本电脑",
+          description:
+            "海伦的电脑包在椅子上敞着口被找到，但笔记本本身不见了。大家都知道她把抄袭调查书稿存在里面。",
+        },
+        "security-footage": {
+          name: "停车场监控录像",
+          description:
+            "停车场监控（唯一的外部摄像头）显示：瑞安的车于晚上10:12抵达、10:35离开；诺拉的车于10:55抵达、11:22离开；德克斯的车于11:24抵达、11:33离开。",
+        },
+      },
+      suspects: {
+        "ryan-calder": {
+          relationship:
+            "剧院技术员，海伦曾经的学生，现为职员。与海伦关系友好但微妙。",
+          alibi: "称整晚在家看电视，没去过校园。",
+        },
+        "nora-bishop": {
+          relationship:
+            "英语系同事。海伦的抄袭调查专著即将点名诺拉早年发表论文中存在未注明出处的大段引用。",
+          alibi: "声称校外的教师聚餐一直到午夜，然后直接回了家。",
+        },
+        "dex-okafor": {
+          relationship:
+            "海伦指导的研究生。她最近发现其硕士论文含抄袭片段，并威胁开除他。",
+          alibi: "称整晚都在研究生图书馆改论文。",
+        },
+      },
+    },
   },
 };

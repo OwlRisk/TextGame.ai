@@ -522,7 +522,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
-                    <p className="text-sm font-medium">No content yet.</p>
+                    <p className="text-sm font-medium">{t("board.no_content_yet")}</p>
                   </div>
                 )}
               </div>
@@ -536,7 +536,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             channelName={gameRoomEntries.find((c) => c.id === selectedChannelId)?.name ?? selectedChannelId ?? t("channel.default_room", getBrowserLanguage())}
             channelId={selectedChannelId ?? undefined}
             messages={messagesForChannel}
-            players={playersForChannel}
+            players={playersForChannel.filter((p) => !p.isGameMaster)}
             onSendMessage={handleSendMessage}
             isGameActive={gamePhase !== "ended"}
             currentSpeakerId={currentSpeakerId}

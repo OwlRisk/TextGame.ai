@@ -203,7 +203,7 @@ function PlayerCard({
                   {...avatarProps}
                   gameId={gameId}
                   enabled={true}
-                  initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
+                  initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type, undefined, avatarProps.gender)]}
                   onAvatarLoaded={onAvatarUrlLoaded}
                   className={`h-9 w-9 shadow-md transition-transform duration-200 ${
                     isSpeaking ? "ring-2 ring-green-500/60 scale-105" : "group-hover:scale-105"

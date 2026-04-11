@@ -23,6 +23,8 @@ export interface Evidence {
 export interface Suspect {
   id: string;
   name: string;
+  /** Used for avatar / voice consistency (pool + prompts default to male when omitted). */
+  gender?: "male" | "female" | "other";
   /** Strongly differentiated personality (e.g. "nervous stutterer", "arrogant aristocrat") */
   personality: string;
   relationship: string;
@@ -46,6 +48,18 @@ export interface CaseSolution {
   keyEvidence: string[];
 }
 
+/** Localized display strings for a mystery case (board-visible fields only). */
+export interface CaseTranslation {
+  title?: string;
+  victim?: {
+    name?: string;
+    description?: string;
+    causeOfDeath?: string;
+  };
+  evidence?: Record<string, { name?: string; description?: string }>;
+  suspects?: Record<string, { name?: string; relationship?: string; alibi?: string }>;
+}
+
 export interface MysteryCase {
   id: string;
   title: string;
@@ -62,6 +76,7 @@ export interface MysteryCase {
   evidence: Evidence[];
   suspects: Suspect[];
   solution: CaseSolution;
+  translations?: Partial<Record<string, CaseTranslation>>;
 }
 
 export interface CaseAccusation {

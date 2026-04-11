@@ -459,7 +459,11 @@ export function ChatArea({
           })}
           {/* Typing Indicator — always hide invisible narrator */}
           {typingUsers && typingUsers.length > 0 && streamingNames.size === 0 && (() => {
-            const hostNames = new Set(players.filter(p => p.isGameMaster).map(p => p.name));
+            // Players list may omit GM (narrator is not a roster card); still hide their typing row.
+            const hostNames = new Set([
+              ...players.filter(p => p.isGameMaster).map(p => p.name),
+              "Narrator",
+            ]);
             const filtered = typingUsers.filter(u => !hostNames.has(u.name));
             if (filtered.length === 0) return null;
             return (
@@ -523,6 +527,7 @@ export function ChatArea({
         gameTemplate={gameTemplate}
         phaseLabel={gamePhaseLabel}
         channelTaskHint={channelTaskHint}
+        messages={messages}
       />
       </div>
     </div>

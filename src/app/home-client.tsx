@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppLayoutWithSidebar } from "@/app/components/app-layout-with-sidebar";
 import { LandingPage } from "@/app/components/landing-page";
+import { DashboardHome } from "@/app/components/dashboard-home";
 import { Toaster } from "@/app/components/ui/sonner";
 import { useGameContext } from "@/app/contexts/GameContext";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -221,6 +222,13 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     }
   };
 
+  const isLoggedIn = !!user && !loading;
+
+  const userName = user?.user_metadata?.full_name
+    || user?.user_metadata?.name
+    || user?.email?.split("@")[0]
+    || "Player";
+
   return (
     <AppLayoutWithSidebar
       mobileTitle="Home"
@@ -230,13 +238,20 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       onOpenProfile={() => router.push("/profile")}
       onUpdateGame={updateGame}
     >
-      <LandingPage
-        onSignIn={handleSignIn}
-        onSignInFacebook={handleSignInFacebook}
-        onCreateGame={handleCreateGame}
-        onExploreGames={handleExploreGames}
-        heroHeadline={heroHeadline}
-      />
+      {isLoggedIn ? (
+        <DashboardHome
+          userName={userName}
+          onCreateGame={(presetId) => createGameFromPreset(presetId)}
+        />
+      ) : (
+        <LandingPage
+          onSignIn={handleSignIn}
+          onSignInFacebook={handleSignInFacebook}
+          onCreateGame={handleCreateGame}
+          onExploreGames={handleExploreGames}
+          heroHeadline={heroHeadline}
+        />
+      )}
 
       <Toaster
         position="top-right"

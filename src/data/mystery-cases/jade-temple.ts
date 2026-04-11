@@ -104,6 +104,7 @@ export const jadeTemple: MysteryCase = {
   suspects: [
     {
       id: "victor-hahn",
+      gender: "male",
       name: "Victor Hahn",
       personality: "Cultured, multilingual Austrian 'art historian and photographer' in his early 50s. Impeccably polite, deeply knowledgeable about Buddhist art. Speaks with warm authority. When challenged, he becomes condescending, dismissing questions as 'misunderstandings.' A practiced sociopath who has done this many times.",
       relationship: "Visiting guest — claimed to be documenting Buddhist art for a European museum exhibition. In reality, an international art thief who scouts, forges, and swaps priceless artifacts.",
@@ -133,6 +134,7 @@ export const jadeTemple: MysteryCase = {
     },
     {
       id: "lin-xiaomei",
+      gender: "female",
       name: "Lin Xiaomei",
       personality: "Gentle, devout young woman in her late 20s who serves as the monastery's herbalist and tea maker. Speaks softly and respectfully. Deeply grief-stricken by Chen Wei's death — he was her spiritual mentor. Becomes anxious when her knowledge of toxic plants is brought up.",
       relationship: "Monastery herbalist for 5 years. Chen Wei personally trained her. She prepared his nightly tea without fail.",
@@ -150,6 +152,7 @@ export const jadeTemple: MysteryCase = {
     },
     {
       id: "mei-zhao",
+      gender: "female",
       name: "Mei Zhao",
       personality: "Pragmatic, sharp-tongued businesswoman in her 40s. A major donor to the monastery. Speaks bluntly and impatiently. Sees the monastery as both a spiritual place and a business that needs modernizing. Defensive about the argument with Chen Wei but not deceitful.",
       relationship: "Primary financial patron. Has donated over ¥5 million to the monastery over the past decade. Wanted influence over how the funds were used.",
@@ -167,6 +170,7 @@ export const jadeTemple: MysteryCase = {
     },
     {
       id: "brother-jian",
+      gender: "male",
       name: "Brother Jian",
       personality: "Solemn, dignified senior monk in his 60s. Speaks in measured, philosophical tones. Second in seniority at the monastery. Loyal to Chen Wei and the order. Calm under pressure — only shows anger when the desecration of the Jade Hall is discussed.",
       relationship: "Senior monk and keeper of the emergency master key. Had served alongside Chen Wei for 30 years.",
@@ -184,6 +188,7 @@ export const jadeTemple: MysteryCase = {
     },
     {
       id: "dr-wu-li",
+      gender: "female",
       name: "Dr. Wu Li",
       personality: "Academic, reserved art conservation specialist in her 50s. Invited to assess the monastery's collection for preservation needs. Speaks thoughtfully, with careful precision. Uncomfortable with conflict but intellectually honest. Will share observations if asked directly.",
       relationship: "Independent art conservator hired by the monastery to catalog and assess the collection. Has been on-site for one week.",
@@ -206,5 +211,89 @@ export const jadeTemple: MysteryCase = {
     motive: "Victor Hahn is an international art thief who systematically targets remote Buddhist monasteries in Asia. He poses as an art historian or photographer to gain access, creates expert forgeries of priceless artifacts, and swaps them. The Jade Buddha — worth an estimated $12 million — was his most ambitious target. When he learned that Abbot Chen Wei was investigating the pattern of thefts and had contacted Interpol, he decided to eliminate Chen Wei and execute the theft immediately during the Lantern Festival.",
     method: "Victor poisoned Chen Wei's nightly medicinal tea with aconitine (extracted from monkshood in the monastery's herb garden) while the herbalist Lin Xiaomei was momentarily away from the kitchen. After Chen Wei died during his locked meditation, Victor used a duplicate key (made from a wax impression taken weeks earlier) to enter the Jade Hall, swap the real Jade Buddha with an expert forgery, and re-lock the door. He concealed the real statue in a false-bottom compartment in his oversized camera case.",
     keyEvidence: ["poisoned-tea", "wax-impression", "camera-case", "chen-wei-notes", "victor-past-thefts"],
+  },
+
+  translations: {
+    zh: {
+      title: "玉佛疑案",
+      victim: {
+        name: "陈维大师",
+        causeOfDeath: "每晚药茶中被投入乌头碱（附子提取物）中毒身亡",
+      },
+      evidence: {
+        "poisoned-tea": {
+          name: "被下毒的药茶",
+          description:
+            "对陈维茶杯中残余茶汤的化验显示含有乌头碱，壶内也有痕迹。乌头碱是在送茶前加入的——在壶里而非杯中。寺院药草园里遍植附子（乌头）。",
+        },
+        "forged-buddha": {
+          name: "赝品玉佛",
+          description:
+            "赝品水平极高但仍可辨识：比真品轻约400克，紫外线下玉的色调略有不同。艺术专家能做出此等赝品，但须掌握原物的详细尺寸。",
+        },
+        "wax-impression": {
+          name: "玉佛堂门锁上的蜡痕",
+          description:
+            "对玉佛堂门锁的法医检验显示钥匙孔内留有造型蜡痕迹，与用蜡取钥匙印模的做法相符。蜡的品牌与欧洲美术用品店所售一致。",
+        },
+        "camera-case": {
+          name: "Victor超大号的相机箱",
+          description:
+            "Victor Hahn 带来一只特大号 Pelican 相机箱，说是装摄影器材。箱内有夹层暗格。检查时，真品玉佛裹在丝棉垫料中被发现。",
+        },
+        "victor-past-thefts": {
+          name: "Victor与失窃文物的关联",
+          description:
+            "国际刑警数据库显示，过去两年东南亚另有三座佛教寺院报告类似案件——无价文物被赝品替换。每次案发前都有一名「欧洲艺术史学家或摄影师」到访。特征与 Victor Hahn 相符。",
+        },
+        "lin-herbs": {
+          name: "林小梅的草药学知识",
+          description:
+            "林小梅是寺院的草药师兼备茶人，对附子及其毒性十分熟悉。她负责陈维全部药茶，并能不受监督地接触茶壶。",
+        },
+        "mei-chen-argument": {
+          name: "赵梅与陈维的争论",
+          description:
+            "多名僧人听到下午5点赵梅与陈维因「出售寺院资产」发生争执。赵梅希望出售次要石雕筹资修缮屋顶，陈维拒绝，斥之为亵渎。",
+        },
+        "chen-wei-notes": {
+          name: "住持的私人调查笔记",
+          description:
+            "陈维禅房内藏有一本笔记，记录两年来对文物失窃的调查。他辨认出一种模式——每次失窃前都有一名欧洲访客。他写道：「摄影师 Hahn——我必须核实他的身份，总觉得不对。」节前两天他已向国际刑警艺术犯罪部门发邮件。",
+        },
+      },
+      suspects: {
+        "victor-hahn": {
+          name: "Victor Hahn",
+          relationship:
+            "来访宾客——自称受欧洲博物馆展览之托记录佛教艺术。实为跨国文物盗贼，踩点、伪造并调包无价文物。",
+          alibi:
+            "声称当晚9点起一直在客房用笔记本电脑整理照片，并说在高海拔地区会早睡。",
+        },
+        "lin-xiaomei": {
+          name: "林小梅",
+          relationship: "寺院药草师，已任职五年。陈维亲自带她修行，她每晚为他备茶从不间断。",
+          alibi: "晚8点30分送茶后前往禅堂参加晚课至晚10点，之后回房休息。",
+        },
+        "mei-zhao": {
+          name: "赵梅",
+          relationship:
+            "主要出资人。过去十年向寺院捐赠超过500万元，希望资金用途有一定发言权。",
+          alibi:
+            "与陈维争执后共进晚餐，晚9点回客房。9点30分致电上海的助理（通话记录证实通话约45分钟）。",
+        },
+        "brother-jian": {
+          name: "释坚法师",
+          relationship: "资深僧众，保管应急万能钥匙。与陈维共事三十年。",
+          alibi:
+            "晚8点30分至10点参加晚课，之后回寮房。凌晨5点20分起床准备晨钟，5点30分前往玉佛堂。",
+        },
+        "dr-wu-li": {
+          name: "吴丽博士",
+          relationship: "寺院聘请的独立艺术品修复师，负责清点并评估藏品，已在寺一周。",
+          alibi: "在修复工作室整理经卷至午夜，之后回房。工作到深夜对她而言是常态。",
+        },
+      },
+    },
   },
 };

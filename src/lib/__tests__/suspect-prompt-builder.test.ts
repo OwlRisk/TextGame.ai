@@ -266,4 +266,37 @@ describe("buildInitialEvidenceBoard", () => {
     expect(board).toContain("Suspect Notes");
     expect(board).not.toContain("Broken vase");
   });
+
+  it("uses translations when lang is provided", () => {
+    const translatedCase: MysteryCase = {
+      ...stubCase,
+      translations: {
+        zh: {
+          title: "测试谋杀案",
+          victim: { causeOfDeath: "钝器打击致死" },
+          evidence: {
+            "broken-vase": { name: "破碎的花瓶", description: "书桌旁的碎片" },
+          },
+          suspects: {
+            alice: { relationship: "受害者的助手", alibi: "我在房间里看书" },
+          },
+        },
+      },
+    };
+    const board = buildInitialEvidenceBoard(translatedCase, "zh");
+    expect(board).toContain("测试谋杀案");
+    expect(board).toContain("钝器打击致死");
+    expect(board).toContain("破碎的花瓶");
+    expect(board).toContain("书桌旁的碎片");
+    expect(board).toContain("受害者的助手");
+    expect(board).toContain("我在房间里看书");
+    expect(board).not.toContain("The Test Murder");
+    expect(board).not.toContain("blunt force trauma");
+  });
+
+  it("falls back to English when translation lang is missing", () => {
+    const board = buildInitialEvidenceBoard(stubCase, "fr");
+    expect(board).toContain("The Test Murder");
+    expect(board).toContain("blunt force trauma");
+  });
 });

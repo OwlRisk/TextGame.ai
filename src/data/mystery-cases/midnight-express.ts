@@ -96,6 +96,7 @@ export const midnightExpress: MysteryCase = {
   suspects: [
     {
       id: "nadine-richter",
+      gender: "female",
       name: "Nadine Richter",
       personality: "Aristocratic German woman in her 40s. Poised and articulate but barely containing fury. Speaks with cutting precision. Breaks down when her family honor is questioned.",
       relationship: "Granddaughter of a WWII-era art collector accused in Krone's research of acquiring looted artwork",
@@ -118,6 +119,7 @@ export const midnightExpress: MysteryCase = {
     },
     {
       id: "oleg-petrov",
+      gender: "male",
       name: "Oleg Petrov",
       personality: "Smooth, urbane Russian antiquarian book dealer in his 50s. Impeccable manners, dry humor, never rushed. Maintains perfect composure until physical evidence is presented — then turns ice-cold and calculating.",
       relationship: "Rare book dealer whose family (the Volkovs) is implicated in the art fraud Krone was about to expose",
@@ -144,6 +146,7 @@ export const midnightExpress: MysteryCase = {
     },
     {
       id: "theo-adler",
+      gender: "male",
       name: "Theo Adler",
       personality: "Intense, disheveled investigative journalist in his 30s. Speaks rapidly, interrupts himself, and jumps between topics. Passionate about truth but ethically flexible about how he gets it.",
       relationship: "Journalist who was working with Krone to publish the art fraud exposé",
@@ -166,6 +169,7 @@ export const midnightExpress: MysteryCase = {
     },
     {
       id: "yuki-tanaka",
+      gender: "female",
       name: "Yuki Tanaka",
       personality: "Calm, observant Japanese art restorer in her 30s. Speaks softly with precise word choices. Extremely detail-oriented — notices things others miss. Reluctant to share observations unless directly asked.",
       relationship: "Art restorer hired by a Swiss auction house to authenticate pieces from the collection Krone was investigating",
@@ -187,6 +191,7 @@ export const midnightExpress: MysteryCase = {
     },
     {
       id: "margaux-duval",
+      gender: "female",
       name: "Margaux Duval",
       personality: "Theatrical French socialite in her 60s. Speaks in dramatic, sweeping statements. Loves gossip and attention. Will share observations freely if she feels important. Exaggerates but rarely outright lies.",
       relationship: "Old acquaintance of both Krone and the Richter family. Patron of the arts with connections to every major gallery in Europe.",
@@ -213,5 +218,80 @@ export const midnightExpress: MysteryCase = {
     motive: "Oleg Petrov is actually Oleg Volkov. Krone's Istanbul presentation would have exposed the Volkov family's $80 million art restitution fraud — forging provenance documents to legitimize looted WWII artwork and selling it through Swiss auction houses. The exposure would mean criminal prosecution and the loss of everything.",
     method: "Oleg stole the conductor's spare master key during the evening. At 1:30 AM, he used it to enter Krone's locked compartment and strangled the professor with a silk cord from his own Ottoman manuscript collection. He took the incriminating documents from Krone's briefcase and hid them in his coat lining. He returned to his compartment by 1:40 AM.",
     keyEvidence: ["corridor-camera", "olegs-passport", "silk-cord", "hidden-documents", "theo-recording"],
+  },
+
+  translations: {
+    zh: {
+      title: "午夜快车谋杀案",
+      victim: { causeOfDeath: "被编织丝绳勒死" },
+      evidence: {
+        "silk-cord": {
+          name: "编织丝绳",
+          description:
+            "凶器是一条醒目的编织丝绳，长约 80 厘米。其编法与古奥斯曼手稿中用作书签丝带的绳式一致——这是部分珍本书商专攻的领域。",
+        },
+        "corridor-camera": {
+          name: "3号车厢走廊监控录像",
+          description:
+            "时间戳记录显示午夜至凌晨 2 点间共有五人进入 3 号车厢走廊：Nadine（0:00）、Oleg（0:20 与 1:30）、Theo（0:45）、Yuki（1:10）、Margaux（1:50）。Oleg 是唯一进出过两次的人。",
+        },
+        "nadine-letter": {
+          name: "Nadine的威胁信",
+          description:
+            "Krone 车厢内的一封信，两周前由 Nadine Richter 寄出：「若你发表那份报告，会毁了我家声誉。我绝不允许。到火车上见我，否则后果自负。」",
+        },
+        "master-key": {
+          name: "丢失的万能钥匙",
+          description:
+            "列车员报告称，当晚早些时候 3 号车厢的一把备用万能钥匙在服务柜中失踪。晚上 11 点至午夜之间该服务柜未上锁。",
+        },
+        "olegs-passport": {
+          name: "Oleg的第二本护照",
+          description:
+            "藏在 Oleg 行李中：以「Alexei Volkov」为名的第二本护照，上有土耳其与瑞士签证——两国均有大型艺术品拍卖行。照片与 Oleg 相符。",
+        },
+        "theo-recording": {
+          name: "Theo的秘密录音",
+          description:
+            "Theo 承认他曾偷偷录下与 Krone 的对话。手机中的录音录到 Krone 说：「Volkov 家族才是诈骗的核心。我有证据。」凌晨 12:50 时 Krone 仍清醒活着。",
+        },
+        "hidden-documents": {
+          name: "Oleg大衣夹层中的文件",
+          description:
+            "彻底搜查 Oleg 的包间后发现，Krone 失踪的文件缝在 Oleg 冬大衣的夹层里。文件详述了 Volkov 家族涉案金额 8000 万美元的艺术品归还诈骗计划。",
+        },
+      },
+      suspects: {
+        "nadine-richter": {
+          relationship:
+            "二战时期艺术品收藏家的孙女；Krone 的研究指控其祖父曾收购被掠夺的艺术品",
+          alibi:
+            "称她午夜拜访 Krone 是为了就家族藏品进行文明讨论，随后回到自己的包间入睡。",
+        },
+        "oleg-petrov": {
+          relationship:
+            "珍本书商；其家族（Volkovs）被卷入 Krone 即将揭发的艺术品诈骗案",
+          alibi:
+            "称凌晨 0:20 去酒吧车厢时曾走过一次 3 号车厢走廊，约凌晨 1:30 返回后便直接回包间睡觉。",
+        },
+        "theo-adler": {
+          relationship: "与 Krone 合作准备发表艺术品诈骗曝光报道的记者",
+          alibi:
+            "称凌晨 0:45 敲 Krone 的门讨论合作事宜，被拒后回到自己的包间。",
+        },
+        "yuki-tanaka": {
+          relationship:
+            "受瑞士一家拍卖行委托，为 Krone 正在调查的藏品中的作品做鉴定的艺术品修复师",
+          alibi:
+            "称凌晨 1:10 走过 3 号车厢去接水，注意到 Krone 门缝下有灯光。未与任何人交谈。",
+        },
+        "margaux-duval": {
+          relationship:
+            "与 Krone 及 Richter 家族均为旧识。资助艺术的赞助人，与欧洲各大画廊都有往来。",
+          alibi:
+            "称凌晨 1:50 从洗手间返回时路过，注意到 Krone 的门微开，以为他暂时离开。",
+        },
+      },
+    },
   },
 };

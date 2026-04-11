@@ -74,7 +74,7 @@ export function TypingIndicator({
               name={avatarProps.name || typingUser.name}
               gameId={gameId}
               enabled={true}
-              initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || typingUser.name, avatarProps.type)]}
+              initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name || typingUser.name, avatarProps.type, undefined, avatarProps.gender)]}
               onAvatarLoaded={onAvatarUrlLoaded}
               className="h-8 w-8 ring-2 ring-zinc-900"
               fallbackColor={avatarColor}

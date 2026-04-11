@@ -2,7 +2,7 @@
  * Build AI system prompts for Script Kill suspects and inject case data into Host rules.
  */
 
-import type { MysteryCase, Suspect, Evidence } from "@/types/mystery-case";
+import type { MysteryCase, Suspect, Evidence, CaseTranslation } from "@/types/mystery-case";
 
 /**
  * Build a character-specific system prompt for an AI suspect.
@@ -134,15 +134,24 @@ function formatEvidence(e: Evidence): string {
 /**
  * Build the initial evidence board content (Markdown) for the detective.
  * Shown via [BOARD:You] at game start.
+ * When `lang` is provided and the case has matching translations, the board
+ * content is rendered in the target language.  Structural labels (Victim,
+ * Evidence, etc.) are always in English so `parseBoard` can parse reliably,
+ * but the case content (names, descriptions) uses translations.
  */
-export function buildInitialEvidenceBoard(caseData: MysteryCase): string {
+export function buildInitialEvidenceBoard(caseData: MysteryCase, lang?: string): string {
+  const tr: CaseTranslation | undefined = lang ? caseData.translations?.[lang] : undefined;
   const act1Evidence = caseData.evidence.filter((e) => e.revealAct === 1);
 
+  const title = tr?.title ?? caseData.title;
+  const victimName = tr?.victim?.name ?? caseData.victim.name;
+  const causeOfDeath = tr?.victim?.causeOfDeath ?? caseData.victim.causeOfDeath;
+
   const lines: string[] = [
-    `# ${caseData.title}`,
+    `# ${title}`,
     "",
-    `**Victim:** ${caseData.victim.name}`,
-    `**Cause of Death:** ${caseData.victim.causeOfDeath}`,
+    `**Victim:** ${victimName}`,
+    `**Cause of Death:** ${causeOfDeath}`,
     "",
     "---",
     "",
@@ -152,16 +161,18 @@ export function buildInitialEvidenceBoard(caseData: MysteryCase): string {
 
   if (act1Evidence.length > 0) {
     for (const e of act1Evidence) {
-      lines.push(`**${e.name}** _(${e.type})_`);
-      lines.push(`${e.description}`);
+      const eTr = tr?.evidence?.[e.id];
+      lines.push(`**${eTr?.name ?? e.name}** _(${e.type})_`);
+      lines.push(`${eTr?.description ?? e.description}`);
       lines.push("");
     }
   }
 
   lines.push("---", "", "## Suspect Notes", "");
   for (const s of caseData.suspects) {
-    lines.push(`**${s.name}** — ${s.relationship}`);
-    lines.push(`_Alibi:_ ${s.alibi}`);
+    const sTr = tr?.suspects?.[s.id];
+    lines.push(`**${sTr?.name ?? s.name}** — ${sTr?.relationship ?? s.relationship}`);
+    lines.push(`_Alibi:_ ${sTr?.alibi ?? s.alibi}`);
     lines.push("");
   }
 

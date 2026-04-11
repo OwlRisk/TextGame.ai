@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, gptUsageToCoins, estimatedTokensToCoins, hasTokens } from '@/lib/tokens';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
+import { resolvePlayerGender } from '@/lib/player-gender';
 
 const limiter = createRateLimiter('generate-players', { limit: 10, windowSeconds: 60 });
 
@@ -179,8 +180,16 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
         throw new Error('Response is not an array');
       }
 
-      const validPlayers = players.filter((p: any) => 
-        p.name && p.gender && p.personality && p.background
+      const enrichedPlayers = players.map((p: Record<string, unknown>) => ({
+        ...p,
+        gender: resolvePlayerGender(String(p.name || "Player"), p.gender as string | undefined, {
+          personality: typeof p.personality === "string" ? p.personality : undefined,
+          background: typeof p.background === "string" ? p.background : undefined,
+        }),
+      }));
+
+      const validPlayers = enrichedPlayers.filter((p: any) =>
+        p.name && p.personality && p.background
       );
 
       if (validPlayers.length === 0) {

@@ -16,11 +16,14 @@ const PERSIST_MAX_KEYS = 200;
 const PERSIST_EVICT_COUNT = 30;
 
 /**
- * Identity-only cache key: same person = same avatar everywhere.
- * Cache lookup uses only name + type so avatars don't change when
- * gameId, role, background, or personality change.
+ * Identity cache key: name + type + optional gender (male|female|other).
+ * Including gender avoids reusing a male-pooled image after we learn the character is female.
  */
-function identityCacheKey(name: string, type: AvatarType): string {
+function identityCacheKey(name: string, type: AvatarType, gender?: string): string {
+  const g = gender?.trim().toLowerCase();
+  if (g === 'male' || g === 'female' || g === 'other') {
+    return [name, type, g].join('|');
+  }
   return [name, type].join('|');
 }
 
@@ -102,7 +105,7 @@ export async function fetchGeneratedAvatar(
   forceRegenerate?: boolean,
   style?: string,
 ): Promise<string> {
-  const baseKey = identityCacheKey(name, type);
+  const baseKey = identityCacheKey(name, type, gender);
   // Include style in the cache key so switching style packs never returns stale avatars.
   const key = style ? `${baseKey}|${style}` : baseKey;
 
@@ -207,7 +210,7 @@ export async function fetchAvatarsForRoom(
   const fetchOne = async (player: RoomPlayerInfo, extraBody?: Record<string, unknown>) => {
     const pType: AvatarType = (player.type ?? 'player') as AvatarType;
     // Result key (name|type) is used by the room to look up avatars in avatarImageUrls.
-    const resultKey = identityCacheKey(player.name, pType);
+    const resultKey = identityCacheKey(player.name, pType, player.gender);
     // Cache key includes style so switching style packs always fetches fresh avatars.
     const cacheKey = style ? `${resultKey}|${style}` : resultKey;
 
@@ -269,7 +272,7 @@ export async function fetchAvatarsForRoom(
       for (let i = 1; i < keys.length; i++) {
         globalOffset++;
         const collidingResultKey = keys[i];
-        const player = players.find(p => identityCacheKey(p.name, (p.type ?? 'player') as AvatarType) === collidingResultKey);
+        const player = players.find(p => identityCacheKey(p.name, (p.type ?? 'player') as AvatarType, p.gender) === collidingResultKey);
         if (!player) continue;
         cache.delete(collidingResultKey);
         if (style) cache.delete(`${collidingResultKey}|${style}`);
@@ -310,7 +313,7 @@ export function useGeneratedAvatar(
     style,
     enabled = true,
   } = options;
-  const baseKey = (name && enabled) ? identityCacheKey(name, type) : '';
+  const baseKey = (name && enabled) ? identityCacheKey(name, type, gender) : '';
   // Include style in cache key so switching style packs always re-fetches from the correct bucket.
   const key = (baseKey && style) ? `${baseKey}|${style}` : baseKey;
   // Always start with null so server and client first paint match (no localStorage on server).

@@ -30,31 +30,45 @@ interface ParsedBoard {
   suspects: ParsedSuspect[];
 }
 
+function classifyType(raw: string): "physical" | "document" | "digital" | "testimony" | "unknown" {
+  const s = raw.toLowerCase();
+  if (s.includes("physical") || s.includes("物证")) return "physical";
+  if (s.includes("document") || s.includes("文书")) return "document";
+  if (s.includes("digital") || s.includes("数字")) return "digital";
+  if (s.includes("testimony") || s.includes("证词")) return "testimony";
+  return "unknown";
+}
+
 function getEvidenceIcon(type: string) {
-  const t = type.toLowerCase();
-  if (t.includes("physical")) return <Fingerprint className="h-4 w-4" />;
-  if (t.includes("document")) return <FileText className="h-4 w-4" />;
-  if (t.includes("digital")) return <Monitor className="h-4 w-4" />;
-  if (t.includes("testimony")) return <MessageSquareQuote className="h-4 w-4" />;
+  const c = classifyType(type);
+  if (c === "physical") return <Fingerprint className="h-4 w-4" />;
+  if (c === "document") return <FileText className="h-4 w-4" />;
+  if (c === "digital") return <Monitor className="h-4 w-4" />;
+  if (c === "testimony") return <MessageSquareQuote className="h-4 w-4" />;
   return <HelpCircle className="h-4 w-4" />;
 }
 
 function getEvidenceColor(type: string) {
-  const t = type.toLowerCase();
-  if (t.includes("physical")) return "border-amber-500/30 bg-amber-950/20";
-  if (t.includes("document")) return "border-blue-500/30 bg-blue-950/20";
-  if (t.includes("digital")) return "border-cyan-500/30 bg-cyan-950/20";
-  if (t.includes("testimony")) return "border-purple-500/30 bg-purple-950/20";
+  const c = classifyType(type);
+  if (c === "physical") return "border-amber-500/30 bg-amber-950/20";
+  if (c === "document") return "border-blue-500/30 bg-blue-950/20";
+  if (c === "digital") return "border-cyan-500/30 bg-cyan-950/20";
+  if (c === "testimony") return "border-purple-500/30 bg-purple-950/20";
   return "border-zinc-500/30 bg-zinc-950/20";
 }
 
 function getEvidenceIconColor(type: string) {
-  const t = type.toLowerCase();
-  if (t.includes("physical")) return "text-amber-400";
-  if (t.includes("document")) return "text-blue-400";
-  if (t.includes("digital")) return "text-cyan-400";
-  if (t.includes("testimony")) return "text-purple-400";
+  const c = classifyType(type);
+  if (c === "physical") return "text-amber-400";
+  if (c === "document") return "text-blue-400";
+  if (c === "digital") return "text-cyan-400";
+  if (c === "testimony") return "text-purple-400";
   return "text-zinc-400";
+}
+
+function translateType(raw: string, lang: string): string {
+  const c = classifyType(raw);
+  return t(`board.type.${c}` as any, lang);
 }
 
 function parseBoard(content: string): ParsedBoard {
@@ -79,22 +93,22 @@ function parseBoard(content: string): ParsedBoard {
       continue;
     }
 
-    if (/^\*\*Victim:\*\*/i.test(trimmed)) {
-      board.victim = trimmed.replace(/^\*\*Victim:\*\*\s*/i, "");
+    if (/^\*\*(Victim|受害者):\*\*/i.test(trimmed)) {
+      board.victim = trimmed.replace(/^\*\*(Victim|受害者):\*\*\s*/i, "");
       continue;
     }
-    if (/^\*\*Cause of Death:\*\*/i.test(trimmed)) {
-      board.causeOfDeath = trimmed.replace(/^\*\*Cause of Death:\*\*\s*/i, "");
+    if (/^\*\*(Cause of Death|死因):\*\*/i.test(trimmed)) {
+      board.causeOfDeath = trimmed.replace(/^\*\*(Cause of Death|死因):\*\*\s*/i, "");
       continue;
     }
 
-    if (/^##\s*Evidence/i.test(trimmed)) {
+    if (/^##\s*(Evidence|证据|已收集证据)/i.test(trimmed)) {
       section = "evidence";
       if (currentEvidence?.name) board.evidence.push(currentEvidence as ParsedEvidence);
       currentEvidence = null;
       continue;
     }
-    if (/^##\s*Suspect/i.test(trimmed)) {
+    if (/^##\s*(Suspect|嫌疑人)/i.test(trimmed)) {
       section = "suspects";
       if (currentEvidence?.name) board.evidence.push(currentEvidence as ParsedEvidence);
       currentEvidence = null;
@@ -134,9 +148,9 @@ function parseBoard(content: string): ParsedBoard {
         continue;
       }
       if (currentSuspect) {
-        const alibiMatch = trimmed.match(/^_Alibi:_\s*(.+)/i);
+        const alibiMatch = trimmed.match(/^_(Alibi|不在场证明):_\s*(.+)/i);
         if (alibiMatch) {
-          currentSuspect.alibi = alibiMatch[1];
+          currentSuspect.alibi = alibiMatch[2];
           continue;
         }
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
@@ -201,7 +215,7 @@ export const EvidenceBoard = React.memo(function EvidenceBoard({
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-white">{e.name}</span>
                       <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">
-                        {e.type}
+                        {translateType(e.type, lang)}
                       </span>
                     </div>
                     <p className="text-xs text-zinc-300 leading-relaxed">{e.description}</p>

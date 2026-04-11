@@ -73,11 +73,11 @@ describe("getAvatarPropsForPlayer", () => {
     expect(result.background).toBe("Former spy, now retired.");
   });
 
-  it("AI GM player: type is 'host', background uses custom or default 'Professional presenter...'", () => {
+  it("AI GM player: type is 'host', background uses custom or default omniscient narrator hint", () => {
     const player = mkPlayer({ id: "3", name: "Host", isAI: true, isGameMaster: true });
     const result = getAvatarPropsForPlayer(player);
     expect(result.type).toBe("host");
-    expect(result.background).toBe("Professional presenter, charismatic host.");
+    expect(result.background).toContain("narrator");
   });
 
   it("AI GM with custom background: uses that background", () => {
@@ -98,18 +98,18 @@ describe("getAvatarPropsForPlayer", () => {
     })).gender).toBe("other");
   });
 
-  it("gender unknown value: returns undefined", () => {
+  it("gender unknown value: falls back to inferred (typically other)", () => {
     const result = getAvatarPropsForPlayer(mkPlayer({
       id: "a", name: "A", isAI: true, gender: "unknown",
     }));
-    expect(result.gender).toBeUndefined();
+    expect(result.gender).toBe("other");
   });
 
-  it("gender empty string: returns undefined", () => {
+  it("gender empty string: falls back to inferred", () => {
     const result = getAvatarPropsForPlayer(mkPlayer({
       id: "a", name: "A", isAI: true, gender: "",
     }));
-    expect(result.gender).toBeUndefined();
+    expect(result.gender).toBe("other");
   });
 
   it("role and personality normalization: trims whitespace", () => {

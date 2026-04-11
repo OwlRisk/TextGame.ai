@@ -88,6 +88,7 @@ export const poisonBanquet: MysteryCase = {
   suspects: [
     {
       id: "marcus-belmont",
+      gender: "male",
       name: "Marcus Belmont",
       personality: "Smooth, charming man in his late 30s. Speaks with practiced ease, casually deflects with humor and family anecdotes. Becomes cold and calculating when cornered. A skilled liar.",
       relationship: "Victor's eldest son. Vice president at Belmont Real Estate, though largely a figurehead. Known for lavish spending and failed side ventures.",
@@ -114,6 +115,7 @@ export const poisonBanquet: MysteryCase = {
     },
     {
       id: "isabelle-belmont",
+      gender: "female",
       name: "Isabelle Belmont",
       personality: "Poised, elegant woman in her late 60s. Speaks deliberately and with authority. Protective of the family image. Shows genuine grief but maintains composure.",
       relationship: "Victor's wife of 42 years. Endured his controlling nature for decades. Stood to inherit the majority of the estate regardless of will changes.",
@@ -132,6 +134,7 @@ export const poisonBanquet: MysteryCase = {
     },
     {
       id: "thomas-belmont",
+      gender: "male",
       name: "Thomas Belmont",
       personality: "Hot-tempered, blunt younger son in his early 30s. Speaks impulsively, raises his voice easily. Wears his emotions on his sleeve. Despite the temper, genuinely loved his father.",
       relationship: "Victor's younger son. Works as a sports agent. Has significant gambling debts ($2M) that he was counting on his inheritance to cover.",
@@ -151,6 +154,7 @@ export const poisonBanquet: MysteryCase = {
     },
     {
       id: "claire-belmont",
+      gender: "female",
       name: "Claire Belmont",
       personality: "Sharp, analytical daughter in her mid-30s. Corporate lawyer. Speaks precisely and measures every word. Cooperative but guarded — treats the interrogation like a deposition.",
       relationship: "Victor's only daughter. Successful attorney who distanced herself from the family business. Has a complicated respect for her father.",
@@ -175,5 +179,77 @@ export const poisonBanquet: MysteryCase = {
     motive: "Victor's new will slashed Marcus's inheritance from 30% to just 5%, citing irresponsible financial behavior. Marcus learned this two weeks before the dinner. Facing mounting debts and the loss of his lifestyle, he planned the murder to ensure the original will — with his 30% share — would remain in effect.",
     method: "Marcus prepared a potassium cyanide paste using chemicals from his photography darkroom. During his 'ice run' to the kitchen at 11:00 PM, he applied the paste to the inner rim of Victor's monogrammed 'VB' champagne flute. When Victor drank the midnight toast, the champagne dissolved the paste. After Victor collapsed, Marcus rinsed the flute in the kitchen sink, but trace cyanide residue remained.",
     keyEvidence: ["monogrammed-flute", "darkroom-chemicals", "will-changes"],
+  },
+
+  translations: {
+    zh: {
+      title: "最后一杯祝酒",
+      victim: {
+        name: "Victor Belmont",
+        causeOfDeath: "经其香槟酒杯摄入氰化物所致的急性中毒",
+      },
+      evidence: {
+        "monogrammed-flute": {
+          name: "Victor 刻有姓名首字母的香槟杯",
+          description:
+            "Victor 的酒杯底部刻有姓名首字母「VB」。酒杯在厨房水槽中被发现，部分经过冲洗。实验室分析显示，杯口内侧氰化物残留集中，表明毒物涂在杯壁而非溶在酒液中。",
+        },
+        "kitchen-access": {
+          name: "厨房出入时间线",
+          description:
+            "Isabelle 于晚上 10:45 备好酒杯。Marcus 在晚上 11:00 以「取冰」为由进入厨房。在 Isabelle 于 11:30 将托盘端出客厅之前，并无他人进入厨房。",
+        },
+        "darkroom-chemicals": {
+          name: "Marcus 的摄影暗房",
+          description:
+            "Marcus 是业余摄影师，公寓里有暗房。搜查发现铁氰化钾（正规摄影用化学品）以及藏在显影盘后的几乎见底的氰化钾容器。其网络浏览记录显示，三周前曾搜索「cyanide lethal dose champagne」，并通过他认为无法追踪的 VPN 访问。",
+        },
+        "will-changes": {
+          name: "Victor 新遗嘱草案",
+          description:
+            "在 Victor 的书桌上发现。新遗嘱将 Marcus 的份额从 30% 降至 5%，理由是「不负责任的财务行为」。Thomas 的份额上升。Claire 与 Isabelle 的份额不变。Marcus 两周前偶然听到 Victor 与律师通话时得知此事。",
+        },
+        "thomas-argument": {
+          name: "Thomas 的激烈争吵",
+          description:
+            "多名家庭成员证实，Thomas 在祝酒前约十分钟对 Victor 大喊「You'll regret this!」。Thomas 有 200 万美元赌债，原本指望旧遗嘱能覆盖。",
+        },
+        "claire-photos": {
+          name: "Claire 手机中的照片",
+          description:
+            "Claire 的手机里有晚上 11:15 拍摄的遗嘱草案照片。她称自己查看遗嘱是为了「保护自身利益」，但当晚并未向任何人透露内容。",
+        },
+      },
+      suspects: {
+        "marcus-belmont": {
+          name: "Marcus Belmont",
+          relationship:
+            "Victor 的长子。Belmont Real Estate 副总裁，但多数时候只是挂名。以挥霍和失败的副业投资著称。",
+          alibi:
+            "自称整晚都在客厅。承认去过厨房取冰，但称「只待了一分钟左右」。",
+        },
+        "isabelle-belmont": {
+          name: "Isabelle Belmont",
+          relationship:
+            "Victor 的妻子，婚龄 42 年。多年来忍受他的控制欲。无论遗嘱如何变更，她本可继承遗产的大头。",
+          alibi:
+            "曾在厨房准备香槟杯（晚上 10:45），随后在客厅。11:30 之后未再离开众人。",
+        },
+        "thomas-belmont": {
+          name: "Thomas Belmont",
+          relationship:
+            "Victor 的次子。从事体育经纪人工作。背负约 200 万美元赌债，原本指望用继承款偿还。",
+          alibi:
+            "整晚在客厅。晚上 11:50 与 Victor 的争吵在场者均有记录。",
+        },
+        "claire-belmont": {
+          name: "Claire Belmont",
+          relationship:
+            "Victor 唯一的女儿。事业有成的律师，已与家族企业保持距离。对父亲感情复杂，既敬重又有隔阂。",
+          alibi:
+            "晚间大多在客厅。承认约在晚上 11:15 曾离开去洗手间。",
+        },
+      },
+    },
   },
 };

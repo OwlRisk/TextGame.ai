@@ -69,6 +69,7 @@ export const moonlightInn: MysteryCase = {
   suspects: [
     {
       id: "diana-cole",
+      gender: "female",
       name: "Diana Cole",
       personality: "Composed, sharp-tongued woman in her 40s. Speaks precisely and deflects with wit. Cracks when emotionally cornered.",
       relationship: "Gerald's estranged niece and current primary beneficiary of his will",
@@ -89,6 +90,7 @@ export const moonlightInn: MysteryCase = {
     },
     {
       id: "marcus-webb",
+      gender: "male",
       name: "Marcus Webb",
       personality: "Quiet, polite man in his 30s. Fidgets when nervous. Overly helpful and eager to appear cooperative. Answers get shorter when pressed.",
       relationship: "Claims to be a travel writer passing through. Actually Gerald's illegitimate son, abandoned at birth.",
@@ -113,6 +115,7 @@ export const moonlightInn: MysteryCase = {
     },
     {
       id: "lionel-sharpe",
+      gender: "male",
       name: "Lionel Sharpe",
       personality: "Loud, blustering retired colonel. Speaks in declarations. Gets defensive and red-faced when challenged but is fundamentally honest.",
       relationship: "Gerald's old business partner from his banking days. They had a falling out 10 years ago over a failed investment.",
@@ -137,5 +140,50 @@ export const moonlightInn: MysteryCase = {
     motive: "Gerald abandoned Marcus at birth. Marcus tracked him down, discovered Gerald was about to donate his entire fortune to charity rather than acknowledge his son. Rage and a lifetime of resentment drove him to kill.",
     method: "During the 25-minute blackout, Marcus climbed the drainpipe to Gerald's open study window, entered the room, and stabbed him with the letter opener on the desk. He exited through the window and returned to the common room.",
     keyEvidence: ["mud-on-drainpipe", "torn-cuff", "phone-records"],
+  },
+
+  translations: {
+    zh: {
+      title: "月光客栈谋杀案",
+      victim: {
+        causeOfDeath: "胸部单处刺伤，凶器为黄铜开信刀",
+      },
+      evidence: {
+        "mud-on-drainpipe": {
+          name: "落水管上的新鲜泥土",
+          description:
+            "Gerald 书房窗外的落水管上有新鲜的刮擦痕迹和泥手印，尽管雨水已冲刷过大部分表面。最近有人曾攀爬过此处。",
+        },
+        "will-change": {
+          name: "Gerald 的遗嘱修订稿",
+          description:
+            "在 Gerald 书桌上发现的一份遗嘱草案，将 Diana Cole 从第一顺位受益人中除名，并将全部财产留给一家慈善机构。日期为当天，尚未签字。",
+        },
+        "torn-cuff": {
+          name: "带血迹的撕裂衬衫袖口",
+          description:
+            "在窗闩上卡住的一小块蓝色布料，带有小块血迹。Marcus Webb 晚餐时穿的是蓝色衬衫。",
+        },
+        "phone-records": {
+          name: "Gerald 的通话记录",
+          description:
+            "Gerald 最后一通在晚上 9:30 打给伦敦一位事务律师，通话持续 8 分钟。律师证实 Gerald 当时在敲定遗嘱变更，并提到「过去认识的某个人出现了」。",
+        },
+      },
+      suspects: {
+        "diana-cole": {
+          relationship: "Gerald 疏远的外甥女，目前是其遗嘱的第一顺位受益人",
+          alibi: "声称晚餐后整晚都在自己房间读小说。",
+        },
+        "marcus-webb": {
+          relationship: "自称路过此地的旅行作家。实为 Gerald 的私生子，出生时即被抛弃。",
+          alibi: "称整晚都在公共休息室，停电期间去了洗手间。",
+        },
+        "lionel-sharpe": {
+          relationship: "Gerald 银行时代的老生意伙伴。十年前因一次失败的投资闹翻。",
+          alibi: "称在公共休息室喝威士忌，停电期间上楼去查看 Gerald 的情况。",
+        },
+      },
+    },
   },
 };

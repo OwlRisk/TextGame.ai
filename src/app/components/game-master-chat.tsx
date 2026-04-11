@@ -897,20 +897,31 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           const poolChars: Array<{ name: string; gender?: string; personality?: string; background?: string; avatar_url?: string; voice_id?: string; voice_sample_url?: string }> = poolData.characters ?? [];
 
           if (finalConfiguredPlayers.length > 0) {
-            // Enrich LLM-configured players with pool avatars/voices, matched by index.
-            // Deduplicate: track assigned avatar URLs to avoid giving two players the same image.
+            // Enrich configured players with pool avatars/voices.
+            // Match by gender first so female characters get female avatars.
+            const poolByGender: Record<string, typeof poolChars> = {};
+            for (const pc of poolChars) {
+              const g = (pc.gender || "male").toLowerCase();
+              (poolByGender[g] ??= []).push(pc);
+            }
             const assignedAvatarUrls = new Set<string>();
-            finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => {
-              let avatarUrl = poolChars[i]?.avatar_url ?? cp.avatar_url;
+            finalConfiguredPlayers = finalConfiguredPlayers.map((cp) => {
+              const cpGender = ((cp as { gender?: string }).gender || "").toLowerCase();
+              const bucket = cpGender && poolByGender[cpGender]?.length
+                ? poolByGender[cpGender]
+                : poolByGender["male"] ?? poolByGender["female"] ?? poolChars;
+              const matched = bucket.shift();
+              let avatarUrl = matched?.avatar_url ?? cp.avatar_url;
               if (avatarUrl && assignedAvatarUrls.has(avatarUrl)) {
                 avatarUrl = undefined;
               }
               if (avatarUrl) assignedAvatarUrls.add(avatarUrl);
               return {
                 ...cp,
+                gender: (cp as { gender?: string }).gender ?? matched?.gender,
                 avatar_url: avatarUrl,
-                voice_id: cp.voice_id ?? poolChars[i]?.voice_id,
-                voice_sample_url: poolChars[i]?.voice_sample_url ?? (cp as any).voice_sample_url,
+                voice_id: cp.voice_id ?? matched?.voice_id,
+                voice_sample_url: matched?.voice_sample_url ?? (cp as any).voice_sample_url,
               };
             });
           } else if (poolChars.length >= needCount) {

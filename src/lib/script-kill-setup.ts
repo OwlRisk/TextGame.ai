@@ -50,6 +50,7 @@ export function buildScriptKillGame(presetId: string, lang?: string): ScriptKill
 
   const configuredPlayers = caseData.suspects.map((s) => ({
     name: s.name,
+    gender: s.gender,
     personality: s.personality,
     background: s.relationship,
     role: "Suspect",

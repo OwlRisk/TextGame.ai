@@ -113,6 +113,7 @@ export const cyberCorp: MysteryCase = {
   suspects: [
     {
       id: "nadia-cross",
+      gender: "female",
       name: "Nadia Cross",
       personality: "Brilliant, intense AI researcher in her early 40s. NovaTech's co-founder and original chief scientist. Speaks with quiet precision, every word deliberate. Carries deep resentment but masks it with professional composure. When her equity dilution is brought up, her calm cracks and real fury shows through.",
       relationship: "Co-founded NovaTech with Reeves 8 years ago. Her core algorithm is the foundation of the entire product line. Reeves systematically sidelined her from leadership while using her technology. The IPO was about to make Reeves a billionaire while reducing her share to nearly nothing.",
@@ -140,6 +141,7 @@ export const cyberCorp: MysteryCase = {
     },
     {
       id: "priya-sharma",
+      gender: "female",
       name: "Priya Sharma",
       personality: "Principled, sharp-minded security engineer in her early 30s. Speaks directly and stands her ground. Frustrated by corporate politics but deeply ethical. Gets visibly angry when discussing the buried vulnerability — not because of Reeves's death, but because of the risk to users.",
       relationship: "Head of Security Engineering. Discovered a critical vulnerability that Reeves ordered buried before the IPO. She refused and he threatened her career.",
@@ -157,6 +159,7 @@ export const cyberCorp: MysteryCase = {
     },
     {
       id: "kyle-bennett",
+      gender: "male",
       name: "Kyle Bennett",
       personality: "Casual, overconfident systems architect in his late 20s. Speaks quickly with tech jargon, tries to seem helpful and transparent. Becomes evasive and fidgety when the conversation turns to the server room or his finances. Not a violent person — he's a white-collar criminal, not a killer.",
       relationship: "Senior systems architect. Has been selling NovaTech's proprietary code to competitor Meridian Systems for six months, earning $500K in payments routed through cryptocurrency.",
@@ -178,6 +181,7 @@ export const cyberCorp: MysteryCase = {
     },
     {
       id: "james-harlow",
+      gender: "male",
       name: "James Harlow",
       personality: "Polished, careful CFO in his late 50s. Old-school finance executive. Speaks with measured authority, always considering legal implications. Cooperative but guarded — he knows how investigations work and won't volunteer information. Not hiding guilt, but protecting the company.",
       relationship: "Chief Financial Officer. Managed the IPO process. Stood to earn $50M in stock options upon successful IPO. Had a professional but cold relationship with Reeves.",
@@ -195,6 +199,7 @@ export const cyberCorp: MysteryCase = {
     },
     {
       id: "rachel-kim",
+      gender: "female",
       name: "Rachel Kim",
       personality: "Energetic, ambitious VP of Communications in her mid-30s. Speaks confidently and thinks fast. Media-savvy, always thinking about 'the narrative.' Genuinely shocked by the murder and worried about the IPO optics. Helpful but tends to steer conversations toward PR concerns.",
       relationship: "VP of Communications, responsible for the IPO media strategy. Worked closely with Reeves on public image. Respected his vision but found him 'exhausting.'",
@@ -217,5 +222,93 @@ export const cyberCorp: MysteryCase = {
     motive: "Nadia Cross co-founded NovaTech and built the core AI algorithm that made the company valuable. Over 8 years, Daniel Reeves systematically sidelined her from leadership while profiting from her work. The final betrayal was the IPO restructuring that diluted her equity from 15% to 3% — Reeves would become a billionaire while she was erased from the company she helped create. After weeks of planning, she decided that if she couldn't have what was rightfully hers, neither would he.",
     method: "Nadia purchased veterinary-grade insulin and micro-needle syringes via a PO Box under a false name ('N. Carter'). She entered the NovaTech building at 1:00 AM Sunday using her access card. She found Reeves asleep at his desk. She injected him in the neck with a lethal dose of insulin using a micro-needle — the injection was nearly undetectable. She then disposed of the syringe in the women's restroom sanitary bin on the 3rd floor and left the building at 1:45 AM.",
     keyEvidence: ["access-logs", "syringe-disposal", "po-box-delivery", "equity-emails", "nadia-search-history"],
+  },
+
+  translations: {
+    zh: {
+      title: "死代码",
+      victim: {
+        causeOfDeath: "通过微型针头注射到颈部的胰岛素过量致死",
+      },
+      evidence: {
+        "needle-mark": {
+          name: "微型针头注射痕迹",
+          description:
+            "在Reeves颈部左侧发现一处几乎看不见的针痕。法医证实与微型针头胰岛素注射相符。Reeves没有胰岛素处方，也非糖尿病患者。",
+        },
+        "access-logs": {
+          name: "大楼门禁记录（周末）",
+          description:
+            "门禁卡记录：Priya Sharma——周六下午2:00进入，5:00离开。Kyle Bennett——周六晚上7:00进入，8:00离开。Nadia Cross——周日凌晨1:00进入，1:45离开。James Harlow——周日上午9:00进入，9:30离开。Rachel Kim——周日下午3:00进入，5:00离开。Daniel Reeves——周六上午10:00进入，未记录离开。",
+        },
+        "syringe-disposal": {
+          name: "被丢弃的注射器",
+          description:
+            "在三楼女洗手间卫生弃置桶内发现一支使用过的胰岛素微型针头注射器。表面擦拭过无法采集指纹，但检出与Reeves血液中类型一致的微量胰岛素。",
+        },
+        "po-box-delivery": {
+          name: "邮政信箱快递记录",
+          description:
+            "三周前，一箱微型针头注射器及兽用级胰岛素被投递至以「N. Carter」名义租借的邮政信箱。信箱租用协议上的笔迹经鉴定与Nadia Cross一致。",
+        },
+        "equity-emails": {
+          name: "Nadia的股权争议邮件",
+          description:
+            "案发两周前Nadia Cross与Daniel Reeves之间的邮件往来。IPO重组中，Nadia作为联合创始人的股权从15%被稀释至3%。她最后一封邮件写道：「这家公司是建在我的算法上的。你别想把我抹去。这事还没完。」",
+        },
+        "security-vuln": {
+          name: "被隐瞒的安全漏洞",
+          description:
+            "Priya Sharma的审计报告标注「机密——请勿归档」，记录了NovaTech旗舰产品中一处关键零日漏洞。若在IPO前披露，可能导致股价暴跌。Reeves下令压下此事。Priya极为愤怒。",
+        },
+        "kyle-espionage": {
+          name: "Kyle的外置硬盘",
+          description:
+            "Kyle Bennett办公桌抽屉里有一块外置硬盘，内含40GB NovaTech专有源代码。数字取证显示文件于周六晚间被复制。与Meridian Systems近期专利申请交叉比对，算法高度相似，十分可疑。",
+        },
+        "nadia-search-history": {
+          name: "Nadia已删除的浏览记录",
+          description:
+            "对Nadia Cross个人笔记本的取证恢复显示，三周前曾删除过以下搜索：「胰岛素过量尸检识别」「对熟睡者使用微型针头注射」「胰岛素过量多久致死」「未经处方如何获得胰岛素」。",
+        },
+      },
+      suspects: {
+        "nadia-cross": {
+          name: "Nadia Cross",
+          relationship:
+            "八年前与Reeves共同创立NovaTech。她的核心算法是整条产品线的基石。Reeves在利用其技术的同时，系统性地将她排挤出管理层。IPO将把Reeves送上亿万富翁之列，而她的股份却几乎被稀释殆尽。",
+          alibi:
+            "声称整个周末都在家。「我没理由去公司——自股权纠纷后我就一直在休假。」",
+        },
+        "priya-sharma": {
+          name: "Priya Sharma",
+          relationship:
+            "安全工程负责人。发现一处关键漏洞，Reeves下令在IPO前隐瞒；她拒绝服从，遭到他以事业相要挟。",
+          alibi:
+            "周六与Reeves对峙后于下午5点离开大楼。周日在家与伴侣共度（伴侣可证实）。未再返回大楼。",
+        },
+        "kyle-bennett": {
+          name: "Kyle Bennett",
+          relationship:
+            "资深系统架构师。六个月来向竞争对手Meridian Systems兜售NovaTech专有代码，通过加密货币收到约50万美元。",
+          alibi:
+            "周六晚上因「例行诊断」在办公室。晚上8点离开，未靠近Reeves的办公室。周末其余时间在家。",
+        },
+        "james-harlow": {
+          name: "James Harlow",
+          relationship:
+            "首席财务官。负责IPO流程。成功上市后可获5000万美元股票期权。与Reeves仅限公事、关系冷淡。",
+          alibi:
+            "周日上午短暂到访（9:00–9:30），到二楼办公室取印好的财务摘要。门禁记录证实他未前往高管所在的四楼（Reeves办公室所在地）。",
+        },
+        "rachel-kim": {
+          name: "Rachel Kim",
+          relationship:
+            "传播副总裁，负责IPO媒体策略。与Reeves紧密合作塑造公众形象。敬重其愿景，但觉得他「让人精疲力竭」。",
+          alibi:
+            "周日下午（15–17点）前来定稿新闻稿。看见Reeves办公室灯亮着，但以为是他忘了关。未上前查看。门禁记录证实她仅出现在二楼（传播办公室）。",
+        },
+      },
+    },
   },
 };

@@ -39,6 +39,7 @@ describe("SCENES data integrity", () => {
         expect(char.quirk).toBeTruthy();
         expect(char.speechStyle).toBeTruthy();
         expect(char.attitudeToUser).toBeTruthy();
+        expect(["male", "female", "other"]).toContain(char.gender);
       }
     }
   });

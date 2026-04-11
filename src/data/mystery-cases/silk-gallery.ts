@@ -79,6 +79,7 @@ export const silkGallery: MysteryCase = {
   suspects: [
     {
       id: "renata-voss",
+      gender: "female",
       name: "Renata Voss",
       personality: "Imperious gallery owner in her 50s. Speaks in clipped, elegant sentences. Treats everything as beneath her. Becomes venomous when her reputation is questioned.",
       relationship: "Gallery owner and Victor's longtime rival in the art collecting world",
@@ -100,6 +101,7 @@ export const silkGallery: MysteryCase = {
     },
     {
       id: "julian-park",
+      gender: "male",
       name: "Julian Park",
       personality: "Charming, soft-spoken art dealer in his late 30s. Always smiling. Deflects questions with compliments and humor. When cornered, his charm drops and he becomes cold and calculating.",
       relationship: "Up-and-coming art dealer who Victor mentored — then betrayed by stealing his biggest client list",
@@ -124,6 +126,7 @@ export const silkGallery: MysteryCase = {
     },
     {
       id: "sable-chen",
+      gender: "female",
       name: "Sable Chen",
       personality: "Quiet, observant young curator in her late 20s. Answers in thoughtful, measured sentences. Genuinely helpful but becomes evasive about her personal relationship with Victor.",
       relationship: "Junior curator at the gallery and Victor's secret romantic partner for the past year",
@@ -144,6 +147,7 @@ export const silkGallery: MysteryCase = {
     },
     {
       id: "ivan-drake",
+      gender: "male",
       name: "Ivan Drake",
       personality: "Gruff, anxious businessman in his 50s. Sweats visibly. Talks too fast. Prone to outbursts of frustration followed by deflated apologies.",
       relationship: "Property developer who owes Victor $340,000 from a failed joint investment",
@@ -171,5 +175,64 @@ export const silkGallery: MysteryCase = {
     motive: "Victor had mentored Julian early in his career, then systematically destroyed his gallery business by poaching every major client. Julian spent years rebuilding and planning revenge. He used the exhibition opening — a night he helped organize — as the perfect cover.",
     method: "Julian entered the VIP lounge at 10:30 PM and poured Victor a fresh champagne, dropping a cyanide capsule into the glass. He left at 10:40 PM, then used a stolen maintenance keycard to access the security room and loop the camera feed for 30 minutes, covering the window of the murder.",
     keyEvidence: ["champagne-glass", "camera-gap", "pharmacy-receipt"],
+  },
+
+  translations: {
+    zh: {
+      title: "丝绸画廊命案",
+      victim: { causeOfDeath: "通过香槟投放氰化物中毒身亡" },
+      evidence: {
+        "champagne-glass": {
+          name: "Victor的香槟酒杯",
+          description:
+            "酒杯中检出氰化钾残留。除Victor本人外，杯上只有一组指纹——属于Julian Park。",
+        },
+        "angry-email": {
+          name: "Renata发给Victor的邮件",
+          description:
+            "三天前发出：「你若在莫雷尔画作收购上再压我的价，我会让你身败名裂。这不是威胁，是承诺。」Victor 回复：「你下不了手。」",
+        },
+        "camera-gap": {
+          name: "监控录像空白段",
+          description:
+            "监控显示晚上 10:45 至 11:15 间为 30 分钟的循环画面。安保室门禁记录显示，门是以一张上周已报失的维护门卡开启的。",
+        },
+        "pharmacy-receipt": {
+          name: "化学品采购记录",
+          description:
+            "Julian Park 于五天前用公司账户从特种化学品供应商处购买了含氰化钾的工业清洁剂。该笔采购曾被标记异常，但未获追查。",
+        },
+        "debt-note": {
+          name: "Ivan的欠条",
+          description:
+            "在 Victor 外套中发现的手写便条：「Ivan Drake —— 欠款 34 万美元。最后期限：今晚。」便条上留有 Ivan 的指纹。",
+        },
+      },
+      suspects: {
+        "renata-voss": {
+          name: "Renata Voss",
+          relationship: "画廊经营者，亦是 Victor 在艺术品收藏界多年的宿敌",
+          alibi: "自称晚上 10 点已离开贵宾休息室，此后一直在主展厅与宾客应酬。",
+        },
+        "julian-park": {
+          name: "Julian Park",
+          relationship:
+            "曾受 Victor 指点的后起之秀艺术经纪人，随后窃取其最重要的客户名单而行背叛之举",
+          alibi:
+            "称约晚上 10:30 曾短暂进入贵宾休息室打招呼，之后便一直在主展厅。",
+        },
+        "sable-chen": {
+          name: "Sable Chen",
+          relationship: "画廊助理策展人，近一年来与 Victor 为秘密恋人关系",
+          alibi:
+            "称约晚上 10:50 曾短暂到贵宾休息室送画册，当时注意到 Victor 显得疲惫。",
+        },
+        "ivan-drake": {
+          name: "Ivan Drake",
+          relationship: "房地产开发商，因一笔失败合资项目欠 Victor 34 万美元",
+          alibi: "坚称当晚从未进入贵宾休息室。",
+        },
+      },
+    },
   },
 };

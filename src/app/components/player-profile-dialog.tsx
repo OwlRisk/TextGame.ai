@@ -82,7 +82,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
                     {...avatarProps}
                     gameId={gameId}
                     enabled={true}
-                    initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type)]}
+                    initialUrl={avatarImageUrls[avatarCacheKey(avatarProps.name ?? player.name, avatarProps.type, undefined, avatarProps.gender)]}
                     onAvatarLoaded={onAvatarUrlLoaded}
                     className="h-24 w-24 rounded-xl ring-2 ring-zinc-600"
                     fallbackColor={player.avatar}
