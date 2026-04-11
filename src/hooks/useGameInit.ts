@@ -327,7 +327,12 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       const tmplMeta = getGameTemplate(kickoff.gameTemplate || "custom");
       const isSoloGame = tmplMeta?.maxPlayers === 1;
       const playerCount = playersRef.current.filter((p) => !p.isGameMaster).length;
-      if (isSoloGame) {
+      const templateId = kickoff.gameTemplate || "custom";
+      const templateGreeting = t(`greeting.${templateId}` as Parameters<typeof t>[0], contentLanguage, { count: playerCount });
+      const isTemplateFallback = templateGreeting === `greeting.${templateId}`;
+      if (!isTemplateFallback) {
+        hostGreeting = templateGreeting;
+      } else if (isSoloGame) {
         hostGreeting = t("greeting.solo", contentLanguage);
       } else if (tmplMeta?.hasHiddenRoles) {
         hostGreeting = t("greeting.hidden_roles", contentLanguage, { count: playerCount });

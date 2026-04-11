@@ -99,10 +99,11 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
 
           {!isUser && (player.personality || player.background) && (
             <div className="space-y-3 border-t border-zinc-700/80 pt-4">
+              <p className="text-[11px] text-zinc-500 leading-snug">{t("profile.ai_content_note", lang)}</p>
               {player.personality && (
                 <div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-violet-400 uppercase tracking-wider mb-1.5">
-                    <Sparkles className="h-3.5 w-3.5" />
+                  <div className="flex items-center gap-2 text-xs font-semibold text-violet-400 tracking-wide mb-1.5">
+                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
                     {t("profile.personality", lang)}
                   </div>
                   <p className="text-sm text-zinc-200 leading-relaxed">{player.personality}</p>
@@ -110,8 +111,8 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
               )}
               {player.background && (
                 <div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-400/90 uppercase tracking-wider mb-1.5">
-                    <BookOpen className="h-3.5 w-3.5" />
+                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-400/90 tracking-wide mb-1.5">
+                    <BookOpen className="h-3.5 w-3.5 shrink-0" />
                     {t("profile.background", lang)}
                   </div>
                   <p className="text-sm text-zinc-300 leading-relaxed">{player.background}</p>

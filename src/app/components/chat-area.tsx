@@ -110,16 +110,6 @@ interface ChatAreaProps {
   timerEndsAt?: number | null;
   /** Called when user reacts with an emoji to a message */
   onReact?: (messageId: string, emoji: string) => void;
-  /** TTS voice enabled state */
-  voiceEnabled?: boolean;
-  /** Toggle voice on/off */
-  onToggleVoice?: () => void;
-  /** Whether Inworld TTS is available */
-  inworldTTSSupported?: boolean;
-  /** Ref to TTS-synced displayed content per message id */
-  displayedContentRef?: React.MutableRefObject<Map<string, string>>;
-  /** Tick counter that increments when displayed content updates */
-  revealTick?: number;
   /** Context-sensitive game actions */
   gameActions?: import("@/hooks/useGameActions").GameAction[];
   /** Template-defined conversation starters for Say mode */
@@ -130,6 +120,8 @@ interface ChatAreaProps {
   humanName?: string;
   /** Game template ID — passed to sub-components for template-specific UI */
   gameTemplate?: string;
+  /** Host `CHANNEL_GOAL:` text — shown above the input as the current task */
+  channelTaskHint?: string | null;
 }
 
 export function ChatArea({ 
@@ -177,16 +169,12 @@ export function ChatArea({
   onVote,
   timerEndsAt,
   onReact,
-  voiceEnabled = false,
-  onToggleVoice,
-  inworldTTSSupported = false,
-  displayedContentRef,
-  revealTick,
   gameActions = [],
   dialogueChips = [],
   gameEvents = [],
   humanName,
   gameTemplate,
+  channelTaskHint,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -443,9 +431,7 @@ export function ChatArea({
           )}
           {visibleMessages.map((message, index) => {
             const rawContent = stripPrivateNotes(message.content ?? '');
-            const ttsSynced = (voiceEnabled && inworldTTSSupported && displayedContentRef)
-              ? (displayedContentRef.current.get(message.id) ?? '')
-              : rawContent;
+            const ttsSynced = rawContent;
             const showAvatar = index === 0 || visibleMessages[index - 1].senderId !== message.senderId;
             const isShowingCursor = !!message.isStreaming;
 
@@ -472,7 +458,7 @@ export function ChatArea({
             );
           })}
           {/* Typing Indicator — always hide invisible narrator */}
-          {typingUsers && typingUsers.length > 0 && (() => {
+          {typingUsers && typingUsers.length > 0 && streamingNames.size === 0 && (() => {
             const hostNames = new Set(players.filter(p => p.isGameMaster).map(p => p.name));
             const filtered = typingUsers.filter(u => !hostNames.has(u.name));
             if (filtered.length === 0) return null;
@@ -536,6 +522,7 @@ export function ChatArea({
         dialogueChips={dialogueChips}
         gameTemplate={gameTemplate}
         phaseLabel={gamePhaseLabel}
+        channelTaskHint={channelTaskHint}
       />
       </div>
     </div>

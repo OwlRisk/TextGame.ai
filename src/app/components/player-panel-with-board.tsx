@@ -268,11 +268,12 @@ const PlayerCard = memo(function PlayerCard({
           )}
           {isUserGameMaster && !player.isGameMaster && (
           <>
+            {onToggleMute && (
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 hover:bg-zinc-600/50"
-              onClick={(e) => { e.stopPropagation(); onToggleMute?.(player.id); }}
+              onClick={(e) => { e.stopPropagation(); onToggleMute(player.id); }}
               aria-label={player.isMuted ? `Unmute ${player.name}` : `Mute ${player.name}`}
             >
               {player.isMuted ? (
@@ -281,6 +282,7 @@ const PlayerCard = memo(function PlayerCard({
                 <Volume2 className="h-3 w-3 text-zinc-400 hover:text-white" />
               )}
             </Button>
+            )}
             {player.isAI && onRemovePlayer && (
               <Button
                 variant="ghost"

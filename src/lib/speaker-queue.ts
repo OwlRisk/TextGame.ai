@@ -326,8 +326,9 @@ export async function speakAndReveal(
   await thinkingDelay(queueIdx, ctx.convMode, isScene);
   ctx.setTypingUsers([toTyping(player), ...upcomingPlayers.slice(0, 2).map(toTyping)]);
   const txt = await runPlayerSpeak(ctx, player, ctx.recentForNext.current);
-  const remaining = upcomingPlayers.slice(0, 3).map(toTyping);
-  ctx.setTypingUsers(remaining);
+  // Clear "typing" during typewriter/subtitle reveal — otherwise upcoming AI names
+  // stay in the typing row and read like "still composing" while text streams.
+  ctx.setTypingUsers([]);
   // Null means player chose silence or non-fatal error; message already logged.
   // CREDITS_EXHAUSTED errors propagate to caller via thrown exception.
   if (txt) {

@@ -47,12 +47,19 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
   }, []);
 
   // ─── Voice enabled state (scene mode defaults to off) ────────────────
-  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
+  const [voiceEnabled, setVoiceEnabledState] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     if (gameTemplate === "scene") return false;
     const stored = localStorage.getItem('voice_enabled');
     return stored === 'true';
   });
+  const setVoiceEnabled = useCallback((next: boolean | ((prev: boolean) => boolean)) => {
+    setVoiceEnabledState((prev) => {
+      const resolved = typeof next === "function" ? (next as (p: boolean) => boolean)(prev) : next;
+      if (typeof window !== "undefined") localStorage.setItem("voice_enabled", String(resolved));
+      return resolved;
+    });
+  }, []);
   const { play: playInworldTTS, stop: stopInworldTTS, queueDeferred: queueDeferredTTS, isPlaying: isTTSPlaying, supported: inworldTTSSupported } = useInworldTTS();
 
   // ─── Refs for TTS progress tracking ───────────────────────────────────
@@ -169,6 +176,18 @@ export function useChatTTS({ messages, players, gameId, channelId, channelName, 
       if (m.isStreaming) {
         // Keep hidden while the AI is still streaming. We only reveal once
         // the full reply is complete so text and voice can start together.
+        return;
+      }
+
+      const playerForTts = players.find(
+        (p) => p.id === m.senderId || (p.name || "").trim() === (m.senderName || "").trim(),
+      );
+      if (playerForTts?.isMuted) {
+        ttsQueuedRef.current.add(m.id);
+        hasQueuedTTSInSessionRef.current = true;
+        displayedContentRef.current.set(m.id, content);
+        ttsCompletedRef.current.add(m.id);
+        setRevealTick((t) => t + 1);
         return;
       }
 

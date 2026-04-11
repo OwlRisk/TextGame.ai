@@ -135,6 +135,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     lastFailedSendContent,
     handleSendMessageRef,
     msgCountRef,
+    channelTaskHint,
   } = useHostRound({
     gameId,
     channelPermissions,
@@ -644,6 +645,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               const displayName = humanGameIdentity?.name || "You";
               addReaction(messageId, emoji, displayName);
             }}
+            channelTaskHint={channelTaskHint}
           />
           </div>
         ) : null)}

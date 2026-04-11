@@ -37,6 +37,8 @@ export interface ChatInputAreaProps {
   gameTemplate?: string;
   phaseLabel?: string;
   investigationSectionContent?: string;
+  /** Host CHANNEL_GOAL — current task for the player */
+  channelTaskHint?: string | null;
 }
 
 const MIN_INPUT_HEIGHT = 40;
@@ -67,6 +69,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   gameTemplate,
   phaseLabel = "",
   investigationSectionContent,
+  channelTaskHint,
 }: ChatInputAreaProps) {
   const [input, setInput] = useState("");
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(true);
@@ -219,6 +222,14 @@ export const ChatInputArea = React.memo(function ChatInputArea({
 
   return (
     <div className="p-4 pt-3 border-t border-violet-900/20 bg-zinc-900">
+      {channelTaskHint?.trim() && isGameActive && !effectivelyEliminated && (
+        <div className="mb-3 rounded-lg border border-amber-500/25 bg-amber-950/25 px-3 py-2.5 backdrop-blur-sm">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-400/90 mb-1">
+            {t("chat.current_task", lang)}
+          </div>
+          <p className="text-sm text-amber-100/95 leading-snug">{channelTaskHint.trim()}</p>
+        </div>
+      )}
       {/* ── Status banners ── */}
       {isEliminated && !isInAfterlife && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800/80 border border-zinc-600/40 text-zinc-400">

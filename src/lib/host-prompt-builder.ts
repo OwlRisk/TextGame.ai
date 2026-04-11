@@ -220,7 +220,7 @@ const CATEGORY_PACING: Record<string, string> = {
 function buildProgressionPolicy(tmpl: GameTemplate | undefined, recentNonHostTurns: number): string {
   const lines: string[] = [
     'On "Continue"/"Ready"/"What\'s next?": advance in ONE sentence, assign next speaker.',
-    "Never dwell on the same beat twice. Never re-explain rules. Never re-confirm established facts.",
+    "In your FIRST narration, briefly set the scene and guide players on what to do next. After that, never dwell on the same beat twice. Never re-explain rules. Never re-confirm established facts.",
   ];
 
   const category = tmpl?.category ?? "open";
@@ -410,6 +410,7 @@ Output format (in directives section): GM_STATE: {"act":1,"tension":3,"ingredien
 - mood: current atmosphere
 
 Use this to track game progress, avoid repeating reveals, and drive toward a satisfying conclusion.
+Also output \`CHANNEL_GOAL: <one short line>\` in the directives when the human's current objective changes — the game client shows this as "what you need to do" above the input.
 ` : ''}${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
 
 ## PLAYER INPUT FORMAT

@@ -123,6 +123,8 @@ export interface ParseHostResultOutput {
   speakerQueue: SpeakerQueueItem[];
   autoChannelId: string | null;
   autoChannelGoal: string | null;
+  /** Current room / scene task from `CHANNEL_GOAL:` (shown to the player in the input area). */
+  channelGoal: string | null;
 }
 
 export function parseHostResult(
@@ -168,5 +170,13 @@ export function parseHostResult(
     hostContent = hostContent.replace(/(?:^|\n)AUTO_CHANNEL:\s*.+?\s*$/im, "").trim();
   }
 
-  return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal };
+  let channelGoal: string | null = null;
+  hostContent = hostContent.replace(/^\s*CHANNEL_GOAL:\s*(.+)$/gim, (_, g: string) => {
+    const t = g.trim();
+    if (t) channelGoal = t;
+    return "";
+  });
+  hostContent = hostContent.replace(/\n{3,}/g, "\n\n").trim();
+
+  return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal };
 }

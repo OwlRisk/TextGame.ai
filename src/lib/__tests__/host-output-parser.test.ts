@@ -533,6 +533,19 @@ describe("parseHostResult", () => {
       expect(result.autoChannelId).toBe("ch-2");
       expect(result.autoChannelGoal).toBe("Discuss");
     });
+
+    it("extracts CHANNEL_GOAL and strips from hostContent", () => {
+      const raw = [
+        "Discuss clues.",
+        "CHANNEL_GOAL: Interview two suspects before dinner",
+        "NEXT_SPEAKER: Alice",
+      ].join("\n");
+      const result = parseHostResult(raw, players, "You", GAME_ROOM_ENTRIES);
+      expect(result.channelGoal).toBe("Interview two suspects before dinner");
+      expect(result.hostContent).toBe("Discuss clues.");
+      expect(result.who).toBe("Alice");
+      expect(result.hostContent).not.toContain("CHANNEL_GOAL");
+    });
   });
 
   describe("Content without directives", () => {

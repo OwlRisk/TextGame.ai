@@ -69,6 +69,8 @@ export interface UseHostRoundReturn {
   lastFailedSendContent: string | null;
   handleSendMessageRef: React.MutableRefObject<((content: string, options?: SendMessageOptions) => Promise<void>) | null>;
   msgCountRef: React.MutableRefObject<number>;
+  /** Latest `CHANNEL_GOAL:` from the host for this channel (shown above the input). */
+  channelTaskHint: string | null;
 }
 
 export function useHostRound({
@@ -124,6 +126,7 @@ export function useHostRound({
 
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
+  const [channelTaskHint, setChannelTaskHint] = useState<string | null>(null);
   const msgCountRef = useRef(0);
   const pendingHumanMsgRef = useRef<string | null>(null);
   const interruptRef = useRef(false);
@@ -519,7 +522,7 @@ export function useHostRound({
       const getStreamingDisplay = getStreamingDisplayUtil;
       const splitHostOutput = splitHostOutputUtil;
 
-      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
+      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; channelGoal: string | null; imageUrl?: string }> => {
         const isScene = isSceneMode(tmplId);
         const isDeductionGame = tmplDef?.category === "deduction";
         const streamTokenBudget = isScene
@@ -543,9 +546,9 @@ export function useHostRound({
             setTypingUsers([]);
             if (res.status === 402) {
               toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
-              return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
+              return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
             }
-            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
+            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
           }
 
           // Read SSE stream and accumulate full content
@@ -601,7 +604,7 @@ export function useHostRound({
           const cleanedDirectives = (isScene || isDeductionGame) ? stripGmDirectives(directives) : directives;
 
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
-          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(cleanedDirectives);
+          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal } = parseHostResult(cleanedDirectives);
           const afterActions = applyHostActionsAndClean(directivesClean);
           const afterRoles = applyHostRoleAssignments(afterActions);
           const displayContent = splitMessage || afterRoles;
@@ -619,7 +622,7 @@ export function useHostRound({
             setMessages((prev) => prev.filter((m) => m.id !== messageId));
           }
           setTypingUsers([]);
-          return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal };
+          return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal };
         } catch (e) {
           setTypingUsers([]);
           console.error("Host stream error:", e);
@@ -667,7 +670,7 @@ export function useHostRound({
             const retryDirCleaned = (isScene || isDeductionGame) ? stripGmDirectives(retryDir) : retryDir;
 
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
-            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDirCleaned);
+            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal } = parseHostResult(retryDirCleaned);
             const retryAfterActions = applyHostActionsAndClean(retryClean);
             const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
             const retryDisplay = retryMsg || retryAfterRoles;
@@ -679,9 +682,9 @@ export function useHostRound({
             } else if (messageId) {
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             }
-            return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal };
+            return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal };
           } catch {
-            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null };
+            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
           }
         }
       };
@@ -722,7 +725,8 @@ export function useHostRound({
       pendingDecisionSummariesRef.current = [];
 
       const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
+      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, channelGoal: firstChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
+      if (firstChannelGoal?.trim()) setChannelTaskHint(firstChannelGoal.trim());
       let isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
         if (tmplDef?.hostAnswersQuestions && content.includes("?")) {
@@ -734,6 +738,7 @@ export function useHostRound({
             hostContent = retryResult.hostContent;
             who = retryResult.who;
             speakerQueue = retryResult.speakerQueue;
+            if (retryResult.channelGoal?.trim()) setChannelTaskHint(retryResult.channelGoal.trim());
             isSilentTurn = !hostContent;
           } else {
             setCurrentSpeakerId(null);
@@ -808,6 +813,7 @@ export function useHostRound({
           `${autoAdvanceHint}\n\nRecent messages for context:\n${recentSummary}`,
           channelId
         );
+        if (advanced.channelGoal?.trim()) setChannelTaskHint(advanced.channelGoal.trim());
         if (!advanced.hostContent && advanced.speakerQueue.length === 0 && !advanced.autoChannelId) break;
         if (advanced.hostContent) {
           lastBeatContentLen = advanced.hostContent.length;
@@ -835,6 +841,7 @@ export function useHostRound({
             `[System: There are unanswered yes/no questions from players. You are the Thinker — answer each one now (Q<n>: Yes/No/Sometimes). Then pick exactly ONE Guesser via NEXT_SPEAKER.]\n\nRecent messages:\n${recentSummary}`,
             channelId
           );
+          if (answerResult.channelGoal?.trim()) setChannelTaskHint(answerResult.channelGoal.trim());
           if (answerResult.hostContent) {
             recentForNextRef.current = [
               ...recentForNextRef.current,
@@ -907,5 +914,6 @@ export function useHostRound({
     lastFailedSendContent,
     handleSendMessageRef,
     msgCountRef,
+    channelTaskHint,
   };
 }
