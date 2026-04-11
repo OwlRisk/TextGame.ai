@@ -82,6 +82,20 @@ function MessageList({
 }
 
 
+const TAG_I18N: Record<string, Record<string, string>> = {
+  "Murder Mystery": { zh: "谋杀悬疑", ja: "殺人ミステリー", ko: "살인 미스터리", de: "Mordmysterium", fr: "Mystère", es: "Misterio", pt: "Mistério", ru: "Детектив", it: "Mistero", ar: "لغز الجريمة" },
+  "New":            { zh: "新", ja: "新着", ko: "신규", de: "Neu", fr: "Nouveau", es: "Nuevo", pt: "Novo", ru: "Новое", it: "Nuovo", ar: "جديد" },
+  "Social Deduction": { zh: "社交推理", ja: "社会的推理", ko: "사회적 추리", de: "Soziale Deduktion", fr: "Déduction sociale", es: "Deducción social", pt: "Dedução social", ru: "Социальная дедукция", it: "Deduzione sociale", ar: "استنتاج اجتماعي" },
+  "Classic":        { zh: "经典", ja: "定番", ko: "클래식", de: "Klassisch", fr: "Classique", es: "Clásico", pt: "Clássico", ru: "Классика", it: "Classico", ar: "كلاسيكي" },
+  "Word Game":      { zh: "文字游戏", ja: "ワードゲーム", ko: "단어 게임", de: "Wortspiel", fr: "Jeu de mots", es: "Juego de palabras", pt: "Jogo de palavras", ru: "Словесная игра", it: "Gioco di parole", ar: "لعبة كلمات" },
+  "Party":          { zh: "派对", ja: "パーティー", ko: "파티", de: "Party", fr: "Fête", es: "Fiesta", pt: "Festa", ru: "Вечеринка", it: "Festa", ar: "حفلة" },
+};
+
+function localizeTag(tag: string, lang: string): string {
+  const key = lang.toLowerCase().startsWith("zh") ? "zh" : lang.toLowerCase().split("-")[0];
+  return TAG_I18N[tag]?.[key] ?? tag;
+}
+
 export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExploreGames, heroHeadline }: LandingPageProps) {
   const lang = getAppLanguage();
   const localScenarios = useMemo(() => localizeScenarios(GAME_SCENARIOS, lang), [lang]);
@@ -164,8 +178,8 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
               </div>
             </div>
 
-            {/* Headline — server-rendered slot for LCP (heroHeadline comes from page.tsx server component) */}
-            {heroHeadline ?? (
+            {/* Headline — use SSR slot for English (LCP), i18n for other languages */}
+            {lang === "en" && heroHeadline ? heroHeadline : (
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
                 {t("landing.hero_1")}{" "}
                 <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
@@ -428,12 +442,12 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {game.tags.map((tag) => (
                       <span key={tag} className="text-[11px] font-medium px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-full">
-                        {tag}
+                        {localizeTag(tag, lang)}
                       </span>
                     ))}
                     <span className="text-[11px] font-medium px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-full flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {game.players} {t("landing.players_suffix")}
+                      {game.players === "Solo" ? t("landing.solo") : game.players} {game.players !== "Solo" ? t("landing.players_suffix") : ""}
                     </span>
                   </div>
 

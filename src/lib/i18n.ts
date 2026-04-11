@@ -1793,6 +1793,11 @@ const T: Record<string, Record<string, string>> = {
     de: "Spieler", fr: "joueurs", es: "jugadores",
     pt: "jogadores", ru: "\u0438\u0433\u0440\u043e\u043a\u043e\u0432", it: "giocatori", ar: "\u0644\u0627\u0639\u0628\u064a\u0646",
   },
+  "landing.solo": {
+    en: "Solo", zh: "单人", ja: "ソロ", ko: "솔로",
+    de: "Solo", fr: "Solo", es: "Solo",
+    pt: "Solo", ru: "Соло", it: "Solo", ar: "فردي",
+  },
   "landing.start_free": {
     en: "Start Your First Game \u2014 Free", zh: "\u514d\u8d39\u5f00\u59cb\u4f60\u7684\u7b2c\u4e00\u5c40\u6e38\u620f",
     ja: "\u6700\u521d\u306e\u30b2\u30fc\u30e0\u3092\u7121\u6599\u3067\u59cb\u3081\u3088\u3046", ko: "\ucc98\uc74c \uac8c\uc784\uc744 \ubb34\ub8cc\ub85c \uc2dc\uc791\ud558\uc138\uc694",
