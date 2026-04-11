@@ -485,6 +485,47 @@ const T: Record<string, Record<string, string>> = {
     pt: "Acusa\u00e7\u00e3o final", ru: "\u0424\u0438\u043d\u0430\u043b\u044c\u043d\u043e\u0435 \u043e\u0431\u0432\u0438\u043d\u0435\u043d\u0438\u0435", it: "Accusa finale", ar: "\u0627\u0644\u0627\u062a\u0647\u0627\u0645 \u0627\u0644\u0646\u0647\u0627\u0626\u064a",
   },
 
+  // ── Action Templates (prefilled text for player messages) ────────────
+  "template._player_": {
+    en: "{player}, ", zh: "{player}，", ja: "{player}、", ko: "{player}, ",
+  },
+  "template.i_d_like_to_show__player__the_evidence": {
+    en: "I'd like to show {player} the evidence: ",
+    zh: "我想给{player}看一个证据：",
+    ja: "{player}に証拠を見せたい：",
+    ko: "{player}에게 증거를 보여주고 싶습니다: ",
+  },
+  "template._player___you_said_earlier_that": {
+    en: "{player}, you said earlier that ",
+    zh: "{player}，你之前说过",
+    ja: "{player}、さっき言ったことだけど",
+    ko: "{player}, 아까 말했잖아요 ",
+  },
+  "template.i_want_to_look_more_closely_at": {
+    en: "I want to look more closely at ",
+    zh: "我想仔细看看",
+    ja: "もっとよく見たい：",
+    ko: "더 자세히 살펴보고 싶습니다: ",
+  },
+  "template.let_me_review_the_timeline": {
+    en: "Let me review the timeline — ",
+    zh: "让我梳理一下时间线——",
+    ja: "タイムラインを確認させて——",
+    ko: "타임라인을 정리해 보겠습니다 — ",
+  },
+  "template.i_m_ready_to_make_my_accusation_i_believe_the_killer_is": {
+    en: "I'm ready to make my accusation. I believe the killer is ",
+    zh: "我准备好指控了。我认为凶手是",
+    ja: "告発します。犯人は",
+    ko: "고발하겠습니다. 범인은 ",
+  },
+  "template._player": {
+    en: "@{player} ", zh: "@{player} ", ja: "@{player} ", ko: "@{player} ",
+  },
+  "template.that_s": {
+    en: "That's ", zh: "这……", ja: "それは…", ko: "그건... ",
+  },
+
   // ── Navigation ─────────────────────────────────────────────────────────
   "nav.home": {
     en: "Home", zh: "\u9996\u9875", de: "Startseite", fr: "Accueil",
@@ -1357,6 +1398,19 @@ export function tAction(label: string, lang?: string): string {
   const effectiveLang = lang ?? getAppLanguage();
   const base = resolveKey(effectiveLang);
   return entry[base] ?? entry.en ?? label;
+}
+
+/**
+ * Translate an action template string (the prefilled text sent as the player's message).
+ * Uses the English template as the lookup key (normalized).
+ */
+export function tTemplate(template: string, lang?: string): string {
+  const key = `template.${template.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/_+$/, "")}`;
+  const entry = T[key];
+  if (!entry) return template;
+  const effectiveLang = lang ?? getAppLanguage();
+  const base = resolveKey(effectiveLang);
+  return entry[base] ?? entry.en ?? template;
 }
 
 /**

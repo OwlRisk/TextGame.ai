@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { Player } from "@/types/player";
 import { getGameTemplate } from "@/lib/game-templates";
 import type { QuickAction } from "@/lib/templates/types";
-import { tAction } from "@/lib/i18n";
+import { tAction, tTemplate } from "@/lib/i18n";
 
 export interface GameAction {
   label: string;
@@ -126,7 +126,7 @@ export function useGameActions({
       .filter((qa) => matchesPhase(qa, phase) && matchesRole(qa, roleLower))
       .map((qa) => ({
         label: tAction(qa.label),
-        template: qa.template,
+        template: tTemplate(qa.template),
         needsTarget: qa.needsTarget,
         icon: qa.icon,
         actionType: qa.actionType,
@@ -136,11 +136,11 @@ export function useGameActions({
     if (actions.length === 0) {
       if (gameTemplate === "scene") {
         const sceneActions = getSceneQuickActions(phase);
-        actions.push(...sceneActions.map(a => ({ ...a, label: tAction(a.label) })));
+        actions.push(...sceneActions.map(a => ({ ...a, label: tAction(a.label), template: tTemplate(a.template) })));
       } else {
         actions.push(
-          { label: tAction("Respond"), template: "@{player} ", needsTarget: true, icon: "💬", actionType: "social" },
-          { label: tAction("React"), template: "That's ", icon: "😮", actionType: "social" },
+          { label: tAction("Respond"), template: tTemplate("@{player} "), needsTarget: true, icon: "💬", actionType: "social" },
+          { label: tAction("React"), template: tTemplate("That's "), icon: "😮", actionType: "social" },
         );
       }
     }
