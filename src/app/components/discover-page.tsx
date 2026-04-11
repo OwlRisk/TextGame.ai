@@ -92,7 +92,10 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
-          <div className="absolute top-2.5 right-2.5">
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+            {template.badge && (
+              <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px]">{template.badge}</Badge>
+            )}
             <Badge className={`${getStyleColor(template.style)} border text-[10px]`}>{tStyle(template.style)}</Badge>
           </div>
         </div>

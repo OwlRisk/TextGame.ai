@@ -20,6 +20,7 @@ export const storyteller = withDefaults({
     maxSentences: 3, silentByDefault: false, drama: "medium",
     narrativeStyle: `Write like a collaborative fiction author. Your narration weaves between what characters do and what the world does in response. Be literary but accessible — vivid imagery, unexpected metaphors, emotional resonance. When players contribute ideas, build on them generously. Surprise them with consequences they didn't expect. The story should feel alive, growing in directions no one predicted. Vary your rhythm: short punchy lines for action, flowing prose for emotional beats.`,
   },
+  pacing: { progressionThreshold: 4, maxRounds: 15, hint: "Nudge with clues or consequences if stalled. Inject obstacles if pace drops." },
   speakerMode: "round-table",
   playerLimits: {
     tokenLimit: 300,

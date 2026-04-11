@@ -1,10 +1,11 @@
 "use client";
 
-import { BookOpen, Play, Heart, Trophy, Eye, Scroll, RotateCcw, Target, Search, Award } from "lucide-react";
+import { BookOpen, Play, Heart, Trophy, Eye, Scroll, RotateCcw, Target, Search, Award, RefreshCw } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import type { Player } from "@/types/player";
 import { isPlayerEliminated } from "@/lib/player-badges";
 import { useState, useMemo } from "react";
+import { t, getBrowserLanguage } from "@/lib/i18n";
 
 interface ParsedCaseScore {
   grade: string;
@@ -55,6 +56,7 @@ interface GameOverBannerProps {
   gameOverSummary: string;
   onResumeGame?: () => void;
   onNewGame?: () => void;
+  onRematch?: () => void;
   onSaveCharacters?: () => void;
   players?: Player[];
   gameEvents?: string[];
@@ -68,6 +70,7 @@ export function GameOverBanner({
   gameOverSummary,
   onResumeGame,
   onNewGame,
+  onRematch,
   onSaveCharacters,
   players = [],
   gameEvents = [],
@@ -76,6 +79,7 @@ export function GameOverBanner({
   humanName,
   gameTemplate,
 }: GameOverBannerProps) {
+  const lang = getBrowserLanguage();
   const [showRoles, setShowRoles] = useState(true);
   const caseScore = useMemo(
     () => (gameTemplate === "script-kill" ? parseCaseScore(gameOverSummary) : null),
@@ -102,12 +106,12 @@ export function GameOverBanner({
         </div>
         <div>
           <h3 className="text-lg font-black text-amber-200 tracking-wide uppercase">
-            {gameTemplate === "script-kill" ? "Case Closed" : "Game Over"}
+            {gameTemplate === "script-kill" ? t("gameover.case_closed", lang) : t("gameover.title", lang)}
           </h3>
           <p className="text-xs text-zinc-400 mt-0.5">
             {gameTemplate === "script-kill"
-              ? `${messageCount} messages · Investigation complete`
-              : `${survived ? "You survived!" : "You were eliminated."} · ${messageCount} messages · ${totalRounds} phase${totalRounds !== 1 ? "s" : ""}`
+              ? `${messageCount} ${t("gameover.messages", lang)} · ${t("gameover.investigation_complete", lang)}`
+              : `${survived ? t("gameover.you_survived", lang) : t("gameover.you_eliminated", lang)} · ${messageCount} ${t("gameover.messages", lang)} · ${totalRounds} ${t("gameover.phases", lang)}`
             }
           </p>
         </div>
@@ -159,7 +163,7 @@ export function GameOverBanner({
             onClick={() => setShowRoles(!showRoles)}
           >
             <Eye className="h-3.5 w-3.5" />
-            Role Reveals {showRoles ? "▾" : "▸"}
+            {t("gameover.role_reveals", lang)} {showRoles ? "▾" : "▸"}
           </button>
           {showRoles && (
             <div className="grid grid-cols-2 gap-1.5">
@@ -194,7 +198,7 @@ export function GameOverBanner({
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-zinc-400">
             <Scroll className="h-3.5 w-3.5" />
-            Key Moments
+            {t("gameover.key_moments", lang)}
           </div>
           <div className="space-y-1 max-h-24 overflow-y-auto scrollbar-hide">
             {gameEvents.slice(-8).map((event, i) => (
@@ -210,33 +214,38 @@ export function GameOverBanner({
       <div className="flex gap-4 mb-4 text-center">
         <div className="flex-1 rounded-lg bg-zinc-800/40 px-3 py-2">
           <div className="text-lg font-bold text-white">{messageCount}</div>
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Messages</div>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{t("gameover.messages", lang)}</div>
         </div>
         <div className="flex-1 rounded-lg bg-zinc-800/40 px-3 py-2">
           <div className="text-lg font-bold text-white">{totalRounds}</div>
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Phases</div>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{t("gameover.phases", lang)}</div>
         </div>
         <div className="flex-1 rounded-lg bg-zinc-800/40 px-3 py-2">
           <div className="text-lg font-bold text-white">{eliminatedCount}</div>
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Eliminated</div>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{t("gameover.eliminated", lang)}</div>
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
+        {onRematch && (
+          <Button size="sm" className="bg-amber-600 hover:bg-amber-500 text-white font-semibold gap-1.5 flex-1 sm:flex-none" onClick={onRematch}>
+            <RefreshCw className="h-3.5 w-3.5" /> {t("gameover.rematch", lang)}
+          </Button>
+        )}
         {onNewGame && (
-          <Button size="sm" className="bg-amber-600 hover:bg-amber-500 text-white font-semibold gap-1.5 flex-1 sm:flex-none" onClick={onNewGame}>
-            <RotateCcw className="h-3.5 w-3.5" /> Play Again
+          <Button size="sm" variant="outline" className="border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white gap-1.5" onClick={onNewGame}>
+            <RotateCcw className="h-3.5 w-3.5" /> {t("gameover.new_game", lang)}
           </Button>
         )}
         {onResumeGame && (
           <Button size="sm" variant="outline" className="border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white gap-1.5" onClick={onResumeGame}>
-            <Play className="h-3.5 w-3.5" /> Resume
+            <Play className="h-3.5 w-3.5" /> {t("gameover.resume", lang)}
           </Button>
         )}
         {onSaveCharacters && (
           <Button size="sm" variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white gap-1.5" onClick={onSaveCharacters}>
-            <Heart className="h-3.5 w-3.5" /> Save Characters
+            <Heart className="h-3.5 w-3.5" /> {t("gameover.save_characters", lang)}
           </Button>
         )}
       </div>

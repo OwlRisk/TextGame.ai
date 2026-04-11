@@ -9,6 +9,7 @@ export const custom = withDefaults({
   recommendedAICount: 4,
   hasHiddenRoles: false,
   hasElimination: false,
+  pacing: { progressionThreshold: 6, maxRounds: 20, hint: "Creative freedom, but no dead air. Drop a hook if momentum fades." },
   category: "open",
   icon: "✨",
   color: "from-violet-600 to-fuchsia-600",

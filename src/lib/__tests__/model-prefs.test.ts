@@ -30,10 +30,18 @@ describe("getPreferredModel", () => {
     expect(getPreferredModel()).toBe(DEFAULT_AI_MODEL);
   });
 
-  it("always returns DEFAULT_AI_MODEL (model is now unified)", () => {
+  it("returns stored model when it is in ALLOWED_MODELS", () => {
     vi.stubGlobal("window", {});
     vi.stubGlobal("localStorage", {
       getItem: vi.fn().mockReturnValue("gpt-4o"),
+    });
+    expect(getPreferredModel()).toBe("gpt-4o");
+  });
+
+  it("returns DEFAULT_AI_MODEL when stored model is not in ALLOWED_MODELS", () => {
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn().mockReturnValue("invalid-model"),
     });
     expect(getPreferredModel()).toBe(DEFAULT_AI_MODEL);
   });

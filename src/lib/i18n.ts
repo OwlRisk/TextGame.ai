@@ -396,6 +396,9 @@ const T: Record<string, Record<string, string>> = {
     es: "T\u00da", ja: "\u3042\u306a\u305f", ko: "\ub098",
     pt: "VOC\u00ca", ru: "\u0412\u042b", it: "TU", ar: "\u0623\u0646\u062a",
   },
+  "label.share": { en: "Share", zh: "分享", ja: "共有", ko: "공유" },
+  "label.link_copied": { en: "Invite link copied!", zh: "邀请链接已复制！", ja: "招待リンクをコピーしました！", ko: "초대 링크가 복사되었습니다!" },
+  "label.login_required": { en: "Please log in first", zh: "请先登录", ja: "先にログインしてください", ko: "먼저 로그인해 주세요" },
   "label.rules": {
     en: "Rules", zh: "\u89c4\u5219", de: "Regeln", fr: "R\u00e8gles",
     es: "Reglas", ja: "\u30eb\u30fc\u30eb", ko: "\uaddc\uce59",
@@ -518,6 +521,27 @@ const T: Record<string, Record<string, string>> = {
   },
   "lobby.waiting_for_host": {
     en: "Waiting for host to start the game…", zh: "等待房主开始游戏…", ja: "ホストがゲームを開始するのを待っています…", ko: "호스트가 게임을 시작하기를 기다리는 중…",
+  },
+  "lobby.add_ai": {
+    en: "Add AI Player", zh: "添加AI玩家", ja: "AIプレイヤーを追加", ko: "AI 플레이어 추가",
+  },
+  // ── Game Over ──────────────────────────────────────────────────────────
+  "gameover.title": { en: "Game Over", zh: "游戏结束", ja: "ゲーム終了", ko: "게임 종료" },
+  "gameover.case_closed": { en: "Case Closed", zh: "案件终结", ja: "事件解決", ko: "사건 종결" },
+  "gameover.messages": { en: "Messages", zh: "消息", ja: "メッセージ", ko: "메시지" },
+  "gameover.phases": { en: "Phases", zh: "阶段", ja: "フェーズ", ko: "단계" },
+  "gameover.eliminated": { en: "Eliminated", zh: "淘汰", ja: "脱落", ko: "탈락" },
+  "gameover.you_survived": { en: "You survived!", zh: "你存活了！", ja: "生き残った！", ko: "생존했습니다!" },
+  "gameover.you_eliminated": { en: "You were eliminated.", zh: "你被淘汰了。", ja: "脱落しました。", ko: "탈락했습니다." },
+  "gameover.investigation_complete": { en: "Investigation complete", zh: "调查完毕", ja: "捜査完了", ko: "수사 완료" },
+  "gameover.role_reveals": { en: "Role Reveals", zh: "角色揭晓", ja: "役職公開", ko: "역할 공개" },
+  "gameover.key_moments": { en: "Key Moments", zh: "关键时刻", ja: "重要な瞬間", ko: "주요 순간" },
+  "gameover.rematch": { en: "Rematch", zh: "再来一局", ja: "再戦", ko: "다시 하기" },
+  "gameover.new_game": { en: "New Game", zh: "新游戏", ja: "新しいゲーム", ko: "새 게임" },
+  "gameover.resume": { en: "Resume", zh: "继续", ja: "再開", ko: "계속" },
+  "gameover.save_characters": { en: "Save Characters", zh: "保存角色", ja: "キャラ保存", ko: "캐릭터 저장" },
+  "lobby.remove_ai": {
+    en: "Remove AI Player", zh: "移除AI玩家", ja: "AIプレイヤーを削除", ko: "AI 플레이어 제거",
   },
   "lobby.players": {
     en: "Players", zh: "玩家", ja: "プレイヤー", ko: "플레이어",

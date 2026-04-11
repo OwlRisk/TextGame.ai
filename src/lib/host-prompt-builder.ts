@@ -205,6 +205,8 @@ export interface HostPromptOpts {
   /** Custom action buttons from GameConfig (overrides template). */
   configQuickActions?: Array<{ label: string; template: string; icon: string; needsTarget?: boolean; phase?: string; role?: string; actionType?: string; targetType?: string }>;
   contentLanguage?: string;
+  /** GM's persistent state from the previous turn (deduction games). */
+  previousGmState?: import("@/lib/gm-state").GmState | null;
 }
 
 const CATEGORY_PACING: Record<string, string> = {
@@ -277,7 +279,7 @@ export function buildHostSystemPrompt(opts: HostPromptOpts): string {
     playerRoster, eventLogSummary, boardSummary, rulesText,
     hostName, hostPersonality, hostCustomSystemPrompt,
     recentNonHostTurns, quickGame, roundNumber,
-    configQuickActions, contentLanguage,
+    configQuickActions, contentLanguage, previousGmState,
   } = opts;
 
   const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
@@ -344,7 +346,11 @@ Stay silent ONLY when:
     ? `${hostMaxSentences} sentences for dramatic scenes, reveals, and transitions. 1 sentence for simple beats.`
     : 'ONE sentence max.';
 
-  return `You are the invisible narrator for "${gameName}". You are NOT a character. You have no name, no avatar, no personality. Your words appear as atmospheric narration — setting descriptions, dramatic reveals, phase transitions, and consequences.
+  const identityLine = hostName
+    ? `You are "${hostName}", the narrator for "${gameName}".${hostPersonality ? ` Personality: ${hostPersonality}.` : ''} Your words appear as atmospheric narration — setting descriptions, dramatic reveals, phase transitions, and consequences.`
+    : `You are the invisible narrator for "${gameName}". You are NOT a character. You have no name, no avatar, no personality. Your words appear as atmospheric narration — setting descriptions, dramatic reveals, phase transitions, and consequences.`;
+
+  return `${identityLine}
 
 ## OUTPUT FORMAT — MANDATORY
 Every reply MUST be split into exactly two sections by a line containing only "---":
@@ -389,7 +395,22 @@ ${tmpl?.hostVoice.narrativeStyle ? `\nSTYLE: ${tmpl.hostVoice.narrativeStyle}\n`
 - When players argue: let it escalate 2-3 exchanges before you intervene with a phase change.
 - Create urgency with narrative pressure: "Only two villagers remain." / "This is the last round."
 - If a player has been quiet, have the narrator note the tension: "All eyes turn to ${humanName}."
-${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
+${tmpl?.category === "deduction" ? `
+## GM STATE — YOUR PERSISTENT MEMORY
+You have a persistent state object that carries across turns. After "---", output an updated GM_STATE JSON every turn.
+${previousGmState ? `Your state from LAST TURN:\n${JSON.stringify(previousGmState, null, 2)}\n` : 'No previous state — this is the first turn. Initialize it.'}
+Output format (in directives section): GM_STATE: {"act":1,"tension":3,"ingredientsUsed":[],"ingredientsAvailable":["clue1","clue2"],"playerKnows":["fact1"],"playerDoesntKnow":["secret1"],"activeThreats":["suspicion on X"],"mood":"tense"}
+- act: current act/phase number
+- tension: 1-5 scale of current dramatic tension
+- ingredientsUsed: clues/evidence already revealed
+- ingredientsAvailable: clues/evidence you can still reveal
+- playerKnows: what the human player has figured out
+- playerDoesntKnow: secrets still hidden
+- activeThreats: current dangers, suspicions, time pressure
+- mood: current atmosphere
+
+Use this to track game progress, avoid repeating reveals, and drive toward a satisfying conclusion.
+` : ''}${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
 
 ## PLAYER INPUT FORMAT
 The human player's messages are tagged:
@@ -441,6 +462,6 @@ ${boardSummary}
 ## GAME RULES (enforce only, do not modify)
 ${rulesText || "No specific rules defined."}
 
-## REMEMBER
-You are invisible. You are the world itself speaking. No character name, no "I", no meta-commentary. Narrate what happens — atmosphere, consequences, reveals — then let the players drive the story.${buildLanguageInstruction(contentLanguage)}`.trim();
+${hostCustomSystemPrompt ? `## CUSTOM HOST INSTRUCTIONS\n${hostCustomSystemPrompt}\n\n` : ''}## REMEMBER
+${hostName ? `You are "${hostName}".` : 'You are invisible. You are the world itself speaking.'} No meta-commentary. Narrate what happens — atmosphere, consequences, reveals — then let the players drive the story.${buildLanguageInstruction(contentLanguage)}`.trim();
 }

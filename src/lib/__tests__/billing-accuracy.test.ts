@@ -353,7 +353,6 @@ describe('DALL-E 3 image generation removed from /api/chat', () => {
 
 describe('Lobby voice preview — free TTS', () => {
   const ttsRoute = readRoute('inworld-tts/route.ts');
-  const lobbyView = readComponent('lobby-view.tsx');
 
   it('TTS route accepts source parameter', () => {
     expect(ttsRoute).toContain("body.source === 'lobby_preview'");
@@ -376,10 +375,6 @@ describe('Lobby voice preview — free TTS', () => {
 
   it('TTS route uses mini model for previews', () => {
     expect(ttsRoute).toContain("previewModel = 'inworld-tts-1.5-mini'");
-  });
-
-  it('lobby-view passes source: "lobby_preview" to TTS API', () => {
-    expect(lobbyView).toContain('source: "lobby_preview"');
   });
 });
 

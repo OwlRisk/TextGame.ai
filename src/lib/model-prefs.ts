@@ -33,6 +33,22 @@ export function isGeminiModel(model: string): boolean {
   return model.startsWith('gemini-');
 }
 
+const STORAGE_KEY = 'tg_preferred_model';
+
 export function getPreferredModel(): string {
+  if (typeof window === 'undefined') return DEFAULT_AI_MODEL;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && ALLOWED_MODELS.includes(stored)) return stored;
+  } catch {}
   return DEFAULT_AI_MODEL;
+}
+
+export function setPreferredModel(model: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (ALLOWED_MODELS.includes(model)) {
+      localStorage.setItem(STORAGE_KEY, model);
+    }
+  } catch {}
 }

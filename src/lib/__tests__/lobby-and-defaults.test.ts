@@ -243,11 +243,11 @@ describe("byRole keys match runtime role names", () => {
       }
 
       it("all byRole keys match a role from the roles array (lowercased)", () => {
-        const templateRoles = new Set(tmpl.roles.map(r => r.toLowerCase()));
+        const templateRoles = new Set((tmpl.roles ?? []).map(r => r.toLowerCase()));
         for (const key of Object.keys(tmpl.playerPrompts.byRole!)) {
           expect(
             templateRoles.has(key),
-            `byRole key "${key}" has no matching role in ${templateId}.roles: [${tmpl.roles.join(", ")}]`,
+            `byRole key "${key}" has no matching role in ${templateId}.roles: [${(tmpl.roles ?? []).join(", ")}]`,
           ).toBe(true);
         }
       });

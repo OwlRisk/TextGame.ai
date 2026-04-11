@@ -164,20 +164,24 @@ describe("ALL_PRESETS templateId validity", () => {
 // Host prompt — identity and greeting (smoke tests)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("Host prompt — invisible narrator", () => {
-  it("always identifies as invisible narrator, regardless of hostName", () => {
+describe("Host prompt — narrator identity", () => {
+  it("defaults to invisible narrator when no hostName given", () => {
+    const output = buildHostSystemPrompt(defaultOpts());
+    expect(output).toContain("invisible narrator");
+  });
+
+  it("uses hostName when provided", () => {
     const output = buildHostSystemPrompt(
       defaultOpts({ hostName: "Luna the Enchantress" }),
     );
-    expect(output).toContain("invisible narrator");
-    expect(output).toContain("You are NOT a character");
+    expect(output).toContain("Luna the Enchantress");
   });
 
-  it("never uses host personality in output", () => {
+  it("includes host personality when provided", () => {
     const output = buildHostSystemPrompt(
-      defaultOpts({ hostPersonality: "mysterious and dramatic" }),
+      defaultOpts({ hostName: "Luna", hostPersonality: "mysterious and dramatic" }),
     );
-    expect(output).not.toContain("mysterious and dramatic");
+    expect(output).toContain("mysterious and dramatic");
   });
 
   it("contains REMEMBER section with narrator identity", () => {

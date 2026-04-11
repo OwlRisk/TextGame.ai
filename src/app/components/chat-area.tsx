@@ -92,6 +92,8 @@ interface ChatAreaProps {
   onResumeGame?: () => void;
   /** Navigate to new game */
   onNewGame?: () => void;
+  /** Rematch: create a new game with the same template */
+  onRematch?: () => void;
   /** Save AI characters from this game to user's collection */
   onSaveCharacters?: () => void;
   /** True when this player has been eliminated (spectator mode) */
@@ -166,6 +168,7 @@ export function ChatArea({
   gameOverSummary,
   onResumeGame,
   onNewGame,
+  onRematch,
   onSaveCharacters,
   isEliminated = false,
   isInAfterlife = false,
@@ -416,6 +419,7 @@ export function ChatArea({
           gameOverSummary={gameOverSummary}
           onResumeGame={onResumeGame}
           onNewGame={onNewGame}
+          onRematch={onRematch}
           onSaveCharacters={onSaveCharacters}
           players={players}
           gameEvents={gameEvents}

@@ -10,7 +10,6 @@ import { ChannelList } from "@/app/components/channel-list";
 import { ChatArea } from "@/app/components/chat-area";
 import dynamic from "next/dynamic";
 
-const LobbyView = dynamic(() => import("@/app/components/lobby-view").then(m => m.LobbyView), { ssr: false });
 const CharacterBrowser = dynamic(() => import("@/app/components/character-browser").then(m => m.CharacterBrowser), { ssr: false });
 const PlayerPanelWithBoard = dynamic(() => import("@/app/components/player-panel-with-board").then(m => m.PlayerPanelWithBoard), { ssr: false });
 import { isPlayerEliminated } from "@/lib/player-badges";
@@ -125,7 +124,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     seedCancelledRef,
     afterSeedSendRef,
     isInitialized,
-    isFreshLobby,
     contentLanguage,
   } = useGameInit(gameId);
 
@@ -153,7 +151,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     afterSeedSendRef.current = handleSendMessageRef.current;
   });
 
-  // ─── Auto-start: only for scene mode (immersive adventures skip the lobby) ─
+  // ─── Auto-start: always skip the lobby — start immediately once players exist ─
   const autoStartFiredRef = useRef(false);
   const [autoStarting, setAutoStarting] = useState(false);
   const startGameRef = useRef(startGame);
@@ -162,7 +160,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   useEffect(() => {
     if (autoStartFiredRef.current) return;
     if (!isInitialized || gamePhase !== "lobby") return;
-    if (!isSceneGame) return;
     const nonHostPlayers = players.filter((p) => !p.isGameMaster);
     if (nonHostPlayers.length === 0) return;
     setAutoStarting(true);
@@ -170,7 +167,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     const safetyTimeout = setTimeout(() => setAutoStarting(false), 30000);
     startGameRef.current().finally(() => { clearTimeout(safetyTimeout); setAutoStarting(false); });
     return () => clearTimeout(safetyTimeout);
-  }, [isInitialized, isSceneGame, gamePhase, players]);
+  }, [isInitialized, gamePhase, players]);
 
   // ─── Auto-set channel permissions from template when game starts ──────────
   const channelPermsInitRef = useRef(false);
@@ -519,38 +516,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             </div>
           </ScrollArea>
         ) : gamePhase === "lobby" ? (
-          (autoStarting || isScene) ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <div className="h-8 w-8 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
               <p className="text-sm text-zinc-400">
                 {isScene ? t("status.setting_scene", getBrowserLanguage()) : t("status.preparing_game", getBrowserLanguage())}
               </p>
             </div>
-          ) : (
-          <LobbyView
-            gameName={currentGame?.name ?? "Game"}
-            gameTemplate={currentGame?.config?.template}
-            players={players}
-            isOwner={isOwner}
-            gameId={gameId}
-            avatarImageUrls={avatarImageUrls}
-            onAvatarUrlLoaded={onAvatarUrlLoaded}
-            onStartGame={startGame}
-            autoStarting={autoStarting}
-            onAddCharacter={() => {
-              const nonHostCount = players.filter((p) => !p.isGameMaster).length;
-              if (nonHostCount >= lobbyMaxSeats) {
-                toast.info(t("lobby.max_seats", getBrowserLanguage()).replace("{max}", String(lobbyMaxSeats)));
-                return;
-              }
-              setShowCharacterBrowser(true);
-            }}
-            onRemovePlayer={(playerId) => {
-              setPlayers((prev) => prev.filter((p) => p.id !== playerId));
-            }}
-            maxSeats={lobbyMaxSeats}
-          />
-          )
         ) : (() => {
           const activeSection = sections.find((s) => s.id === selectedChannelId);
           if (activeSection) return (
@@ -626,6 +597,28 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             onNewGame={gameOverSummary ? () => {
               router.push("/discover");
             } : undefined}
+            onRematch={gameOverSummary && currentGame?.config?.template ? () => {
+              const cfg = currentGame.config;
+              const tmpl = getGameTemplate(cfg.template);
+              const newId = crypto.randomUUID();
+              const newGame = {
+                id: newId,
+                name: currentGame.name,
+                icon: currentGame.icon,
+                color: currentGame.color,
+                config: {
+                  ...cfg,
+                  configuredPlayers: cfg.configuredPlayers ?? [],
+                  humanRole: cfg.humanRole,
+                },
+                isActive: true,
+                updatedAt: new Date().toISOString(),
+              };
+              addGame(newGame);
+              selectGame(newId);
+              trackEvent("game_rematch", { template: cfg.template, player_count: tmpl?.recommendedAICount ?? 4 });
+              router.push(`/game/${newId}`);
+            } : undefined}
             onSaveCharacters={gameOverSummary && isOwner && session?.access_token ? async () => {
               const aiPlayers = players.filter((p) => p.isAI && !p.isGameMaster);
               if (aiPlayers.length === 0) { toast.info("No AI characters to save"); return; }
@@ -690,6 +683,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
                 currentUserId={userId}
                 isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
+                isUserGameMaster={isOwner}
+                onAddAI={() => {
+                  const nonHostCount = players.filter((p) => !p.isGameMaster).length;
+                  if (nonHostCount >= lobbyMaxSeats) {
+                    toast.info(t("lobby.max_seats", getBrowserLanguage()).replace("{max}", String(lobbyMaxSeats)));
+                    return;
+                  }
+                  setShowCharacterBrowser(true);
+                }}
+                onRemovePlayer={(playerId) => setPlayers((prev) => prev.filter((p) => p.id !== playerId))}
+                maxSeats={lobbyMaxSeats}
               />
             </div>
 
@@ -703,6 +707,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
                   currentUserId={userId}
                   isHiddenRoleGame={currentGame?.config?.hideRolesInPlayerList ?? false}
+                  isUserGameMaster={isOwner}
+                  onAddAI={() => {
+                    const nonHostCount = players.filter((p) => !p.isGameMaster).length;
+                    if (nonHostCount >= lobbyMaxSeats) {
+                      toast.info(t("lobby.max_seats", getBrowserLanguage()).replace("{max}", String(lobbyMaxSeats)));
+                      return;
+                    }
+                    setShowCharacterBrowser(true);
+                  }}
+                  onRemovePlayer={(playerId) => setPlayers((prev) => prev.filter((p) => p.id !== playerId))}
+                  maxSeats={lobbyMaxSeats}
                 />
               </SheetContent>
             </Sheet>

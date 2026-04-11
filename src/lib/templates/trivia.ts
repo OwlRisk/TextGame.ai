@@ -23,6 +23,7 @@ export const trivia = withDefaults({
 
   pacing: {
     progressionThreshold: 2,
+    maxRounds: 10,
     hint: "Keep rounds crisp — reveal the answer within 2 turns of the question. If nobody answers, give a hint then move on. Never let a single question drag.",
   },
 

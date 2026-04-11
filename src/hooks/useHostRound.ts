@@ -339,14 +339,15 @@ export function useHostRound({
           eventLogSummary: freshEvents,
           boardSummary: freshBoard.length > 0 ? freshBoard.join("\n\n") : "(No private board content yet)",
           rulesText,
-          hostName: undefined,
-          hostPersonality: undefined,
-          hostCustomSystemPrompt: undefined,
+          hostName: currentGame?.config?.generatedHost?.name || undefined,
+          hostPersonality: currentGame?.config?.generatedHost?.personality || undefined,
+          hostCustomSystemPrompt: currentGame?.config?.generatedHost?.systemPrompt || undefined,
           recentNonHostTurns,
           quickGame: (() => { try { return !localStorage.getItem("tg_game_completed"); } catch { return false; } })(),
           roundNumber,
           configQuickActions: currentGame?.config?.quickActions ?? undefined,
           contentLanguage,
+          previousGmState: gmStateRef.current,
         });
       };
 
@@ -520,6 +521,7 @@ export function useHostRound({
 
       const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; imageUrl?: string }> => {
         const isScene = isSceneMode(tmplId);
+        const isDeductionGame = tmplDef?.category === "deduction";
         const streamTokenBudget = isScene
           ? 2048
           : Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
@@ -590,13 +592,13 @@ export function useHostRound({
           // Full directive parsing on the complete response
           const { message: rawSplitMessage, directives } = splitHostOutput(acc);
 
-          // Extract GM brain state before stripping
-          if (isScene) {
+          // Extract GM brain state before stripping (scene + deduction games)
+          if (isScene || isDeductionGame) {
             const newGmState = parseGmState(directives);
             if (newGmState) gmStateRef.current = newGmState;
             characterDirectionsRef.current = parseCharacterDirections(directives);
           }
-          const cleanedDirectives = isScene ? stripGmDirectives(directives) : directives;
+          const cleanedDirectives = (isScene || isDeductionGame) ? stripGmDirectives(directives) : directives;
 
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
           const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal } = parseHostResult(cleanedDirectives);
@@ -657,12 +659,12 @@ export function useHostRound({
             }
             const { message: rawRetryMsg, directives: retryDir } = splitHostOutput(retryAcc);
 
-            if (isScene) {
+            if (isScene || isDeductionGame) {
               const retryGm = parseGmState(retryDir);
               if (retryGm) gmStateRef.current = retryGm;
               characterDirectionsRef.current = parseCharacterDirections(retryDir);
             }
-            const retryDirCleaned = isScene ? stripGmDirectives(retryDir) : retryDir;
+            const retryDirCleaned = (isScene || isDeductionGame) ? stripGmDirectives(retryDir) : retryDir;
 
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
             const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal } = parseHostResult(retryDirCleaned);

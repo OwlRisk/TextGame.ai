@@ -93,8 +93,12 @@ export default function DiscoverView() {
             const data = await res.json();
             if (data.players) configuredPlayers = data.players;
             if (data.humanRole) humanRole = data.humanRole;
+          } else {
+            toast.warning("Could not generate players — using defaults", { id: toastId });
           }
-        } catch {}
+        } catch {
+          toast.warning("Could not generate players — using defaults", { id: toastId });
+        }
       }
 
       const generatedHost = {

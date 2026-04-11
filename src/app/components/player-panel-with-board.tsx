@@ -1,5 +1,5 @@
 import { useState, useCallback, memo } from "react";
-import { Volume2, VolumeX, User, Info, RefreshCw } from "lucide-react";
+import { Volume2, VolumeX, User, Info, RefreshCw, Plus, X } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -29,6 +29,12 @@ interface PlayerPanelWithBoardProps {
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   /** Force-regenerate a player avatar with DALL-E 3 (costs tokens). */
   onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
+  /** Add an AI player to the game (shown in active game, not just lobby). */
+  onAddAI?: () => void;
+  /** Remove an AI player from the game. */
+  onRemovePlayer?: (playerId: string) => void;
+  /** Max player seats allowed by template. */
+  maxSeats?: number;
 }
 
 export function PlayerPanelWithBoard({ 
@@ -44,6 +50,9 @@ export function PlayerPanelWithBoard({
   avatarImageUrls = {},
   onAvatarUrlLoaded,
   onRegenerateAvatar,
+  onAddAI,
+  onRemovePlayer,
+  maxSeats,
 }: PlayerPanelWithBoardProps) {
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -64,12 +73,17 @@ export function PlayerPanelWithBoard({
         onAvatarUrlLoaded={onAvatarUrlLoaded}
         humanGameIdentity={humanGameIdentity}
       />
-      <div className="h-14 px-5 flex items-center border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
+      <div className="h-14 px-5 flex items-center justify-between border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
         <div className="flex items-center gap-2 text-zinc-300">
           <User className="h-4 w-4" />
           <span className="text-sm font-semibold">{t("label.players")}</span>
-          <span className="text-xs text-zinc-500">({players.filter(p => !p.isGameMaster).length})</span>
+          <span className="text-xs text-zinc-500">({players.filter(p => !p.isGameMaster).length}{maxSeats ? `/${maxSeats}` : ""})</span>
         </div>
+        {onAddAI && (!maxSeats || players.filter(p => !p.isGameMaster).length < maxSeats) && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-violet-600/30" title={t("lobby.add_ai")} onClick={onAddAI}>
+            <Plus className="h-4 w-4 text-violet-400" />
+          </Button>
+        )}
       </div>
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3 space-y-3">
@@ -89,6 +103,7 @@ export function PlayerPanelWithBoard({
                 avatarImageUrls={avatarImageUrls}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
                 onRegenerateAvatar={onRegenerateAvatar}
+                onRemovePlayer={onRemovePlayer}
               />
             ))}
           </div>
@@ -111,6 +126,7 @@ const PlayerCard = memo(function PlayerCard({
   avatarImageUrls = {},
   onAvatarUrlLoaded,
   onRegenerateAvatar,
+  onRemovePlayer,
 }: { 
   player: Player;
   isSpeaking: boolean;
@@ -124,6 +140,7 @@ const PlayerCard = memo(function PlayerCard({
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   onRegenerateAvatar?: (playerName: string, type: 'host' | 'player', opts?: { gender?: string; background?: string; personality?: string; role?: string }) => Promise<string | null>;
+  onRemovePlayer?: (playerId: string) => void;
 }) {
   const [regenerating, setRegenerating] = useState(false);
   const canViewProfile = !!onViewProfile;
@@ -264,6 +281,18 @@ const PlayerCard = memo(function PlayerCard({
                 <Volume2 className="h-3 w-3 text-zinc-400 hover:text-white" />
               )}
             </Button>
+            {player.isAI && onRemovePlayer && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-red-600/30"
+                onClick={(e) => { e.stopPropagation(); onRemovePlayer(player.id); }}
+                aria-label={`Remove ${player.name}`}
+                title={t("lobby.remove_ai")}
+              >
+                <X className="h-3 w-3 text-zinc-400 hover:text-red-400" />
+              </Button>
+            )}
           </>
           )}
         </div>

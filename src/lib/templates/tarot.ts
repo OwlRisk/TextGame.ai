@@ -46,6 +46,7 @@ TONE: Thoughtful, warm, and slightly mystical. This is a tool for self-reflectio
 
   pacing: {
     progressionThreshold: 6,
+    maxRounds: 10,
     hint: "Let the querent set the pace. Draw cards when asked, offer deeper interpretation when invited. No rushing — this is a reflective experience.",
   },
 

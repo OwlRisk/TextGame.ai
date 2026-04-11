@@ -21,6 +21,7 @@ export const twentyQuestions = withDefaults({
     maxSentences: 1, silentByDefault: false, drama: "medium",
     narrativeStyle: `Write like a puzzle master who enjoys watching people think. React to clever questions with approval. When players are getting warm, build excitement. When they go cold, add a gentle hint through environmental description. The countdown of remaining questions should build tension naturally. The final guess moment should feel like a dramatic reveal.`,
   },
+  pacing: { progressionThreshold: 2, maxRounds: 20, hint: "Keep rounds crisp. Adjudicate quickly, then next question." },
   speakerMode: "selective",
 
   mechanicsPrompt: `20 QUESTIONS — YOU ARE THE THINKER

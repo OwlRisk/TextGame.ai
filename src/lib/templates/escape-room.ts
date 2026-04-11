@@ -22,6 +22,7 @@ export const escapeRoom = withDefaults({
 
   pacing: {
     progressionThreshold: 4,
+    maxRounds: 20,
     hint: "If the team is stuck for 3+ turns, offer a subtle hint through environmental storytelling. After 5+ turns stuck, make the hint more direct. Inject time pressure events to maintain urgency.",
   },
 
