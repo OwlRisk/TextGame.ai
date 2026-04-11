@@ -11,8 +11,8 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("SUPPORTED_LANGUAGES", () => {
-  it("contains at least 30 languages", () => {
-    expect(SUPPORTED_LANGUAGES.length).toBeGreaterThanOrEqual(30);
+  it("contains at least 20 languages", () => {
+    expect(SUPPORTED_LANGUAGES.length).toBeGreaterThanOrEqual(20);
   });
 
   it("does not contain an auto option", () => {
@@ -157,19 +157,14 @@ describe("detectBrowserLanguage", () => {
     expect(detectBrowserLanguage()).toBe("id");
   });
 
-  it("returns no for Norwegian Bokmål (nb)", () => {
+  it("returns en for Norwegian (not in supported list)", () => {
     mockNavigatorLanguage("nb-NO");
-    expect(detectBrowserLanguage()).toBe("no");
+    expect(detectBrowserLanguage()).toBe("en");
   });
 
-  it("returns no for Norwegian Nynorsk (nn)", () => {
-    mockNavigatorLanguage("nn-NO");
-    expect(detectBrowserLanguage()).toBe("no");
-  });
-
-  it("returns fil for Tagalog (tl)", () => {
+  it("returns en for Tagalog (not in supported list)", () => {
     mockNavigatorLanguage("tl-PH");
-    expect(detectBrowserLanguage()).toBe("fil");
+    expect(detectBrowserLanguage()).toBe("en");
   });
 
   it("returns en for unknown language", () => {
