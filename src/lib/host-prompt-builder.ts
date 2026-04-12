@@ -51,6 +51,7 @@ RECORD_EVENT: <summary> — key plot points.
 PHASE: <label>
 GAME_OVER: <outcome>
 CHANNEL_GOAL: <text> — what the player should do now (shown above input box).
+QUICK_ACTIONS: <action1> | <action2> | <action3> — 2-4 short action options for the player, shown as buttons. Update every turn based on the current situation.
 
 ## GM_STATE
 ${previousGmState ? `Last turn:\n${JSON.stringify(previousGmState, null, 2)}\nUpdate every turn.` : "First turn. Initialize based on the scene."}

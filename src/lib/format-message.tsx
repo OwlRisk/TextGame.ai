@@ -53,6 +53,11 @@ export function parseInlineFormatting(
   const parts: (string | React.ReactElement)[] = [];
   let currentIndex = 0;
 
+  // Pre-clean orphaned [/ACTION] tags and normalize [ACTION: ...] variants
+  text = text.replace(/\[\/ACTION\]/gi, "");
+  text = text.replace(/\[ACTION:\s*([^\]|]+?)(?:\|[^\]]*?)?\]\s*/gi, "[ACTION]$1[/ACTION] ");
+  text = text.replace(/\[ACTION\]\s*\[\/ACTION\]/gi, "");
+
   const patterns = [
     { regex: /\[ACTION\](.*?)\[\/ACTION\]/gi, type: "action" as const },
     { regex: /\*\*(.*?)\*\*/g, type: "bold" as const },

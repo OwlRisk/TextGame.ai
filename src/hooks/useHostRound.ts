@@ -70,6 +70,8 @@ export interface UseHostRoundReturn {
   msgCountRef: React.MutableRefObject<number>;
   /** Latest `CHANNEL_GOAL:` from the host for this channel (shown above the input). */
   channelTaskHint: string | null;
+  /** Dynamic quick actions from GM's `QUICK_ACTIONS:` directive. */
+  dynamicQuickActions: string[] | null;
 }
 
 export function useHostRound({
@@ -126,6 +128,7 @@ export function useHostRound({
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [channelTaskHint, setChannelTaskHint] = useState<string | null>(null);
+  const [dynamicQuickActions, setDynamicQuickActions] = useState<string[] | null>(null);
   const msgCountRef = useRef(0);
   const pendingHumanMsgRef = useRef<string | null>(null);
   const interruptRef = useRef(false);
@@ -502,14 +505,14 @@ export function useHostRound({
       const getStreamingDisplay = getStreamingDisplayUtil;
       const splitHostOutput = splitHostOutputUtil;
 
-      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: null | string; autoChannelGoal: string | null; channelGoal: string | null; imageUrl?: string }> => {
+      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: null | string; autoChannelGoal: string | null; channelGoal: string | null; quickActions: string[] | null; imageUrl?: string }> => {
         const isScene = isSceneMode(tmplId);
         const streamTokenBudget = isScene
           ? 2048
           : Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
         let messageId: string | null = null;
         setTypingUsers([{ name: gmName, avatar: gmColor }]);
-        const emptyResult = { hostContent: "", who: null, speakerQueue: [] as SpeakerQueueItem[], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
+        const emptyResult = { hostContent: "", who: null, speakerQueue: [] as SpeakerQueueItem[], autoChannelId: null, autoChannelGoal: null, channelGoal: null, quickActions: null };
         try {
           const ac = roundAbortRef.current;
           const fetchTimer = setTimeout(() => ac?.abort(), FETCH_TIMEOUT_MS);
@@ -597,7 +600,7 @@ export function useHostRound({
           const cleanedDirectives = stripGmDirectives(directives);
 
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
-          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal } = parseHostResult(cleanedDirectives);
+          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal, quickActions } = parseHostResult(cleanedDirectives);
           const afterActions = applyHostActionsAndClean(directivesClean);
           const afterRoles = applyHostRoleAssignments(afterActions);
           const displayContent = splitMessage || afterRoles;
@@ -615,7 +618,7 @@ export function useHostRound({
             setMessages((prev) => prev.filter((m) => m.id !== messageId));
           }
           setTypingUsers([]);
-          return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal };
+          return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal, quickActions };
         } catch (e) {
           setTypingUsers([]);
           if (e instanceof DOMException && e.name === "AbortError") throw e;
@@ -678,7 +681,7 @@ export function useHostRound({
             const retryDirCleaned = stripGmDirectives(retryDir);
 
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
-            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal } = parseHostResult(retryDirCleaned);
+            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal, quickActions: retryQuickActions } = parseHostResult(retryDirCleaned);
             const retryAfterActions = applyHostActionsAndClean(retryClean);
             const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
             const retryDisplay = retryMsg || retryAfterRoles;
@@ -690,7 +693,7 @@ export function useHostRound({
             } else if (messageId) {
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             }
-            return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal };
+            return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal, quickActions: retryQuickActions };
           } catch (retryErr) {
             if (retryErr instanceof DOMException && retryErr.name === "AbortError") throw retryErr;
             return emptyResult;
@@ -735,8 +738,9 @@ export function useHostRound({
       pendingDecisionSummariesRef.current = [];
 
       const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, channelGoal: firstChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
+      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, channelGoal: firstChannelGoal, quickActions: firstQuickActions, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
       if (firstChannelGoal?.trim()) setChannelTaskHint(firstChannelGoal.trim());
+      if (firstQuickActions) setDynamicQuickActions(firstQuickActions);
       let isSilentTurn = !hostContent && !firstImageUrl;
       if (isSilentTurn && speakerQueue.length === 0) {
         setCurrentSpeakerId(null);
@@ -804,6 +808,7 @@ export function useHostRound({
           channelId
         );
         if (advanced.channelGoal?.trim()) setChannelTaskHint(advanced.channelGoal.trim());
+        if (advanced.quickActions) setDynamicQuickActions(advanced.quickActions);
         if (!advanced.hostContent && advanced.speakerQueue.length === 0 && !advanced.autoChannelId) break;
         if (advanced.hostContent) {
           lastBeatContentLen = advanced.hostContent.length;
@@ -887,5 +892,6 @@ export function useHostRound({
     handleSendMessageRef,
     msgCountRef,
     channelTaskHint,
+    dynamicQuickActions,
   };
 }

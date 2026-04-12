@@ -136,6 +136,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     handleSendMessageRef,
     msgCountRef,
     channelTaskHint,
+    dynamicQuickActions,
   } = useHostRound({
     gameId,
     channelPermissions,
@@ -335,7 +336,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Game actions (context-sensitive action buttons)
   const humanPlayer = players.find((p) => p.id === userId);
-  const gameActions = useGameActions({
+  const templateActions = useGameActions({
     gameTemplate: currentGame?.config?.template,
     gamePhase,
     phaseLabel,
@@ -345,8 +346,21 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     configQuickActions: currentGame?.config?.quickActions,
   });
 
+  const gameActions = useMemo(() => {
+    if (dynamicQuickActions && dynamicQuickActions.length > 0) {
+      return dynamicQuickActions.map((label) => ({
+        label,
+        template: label,
+        icon: undefined,
+        actionType: "dynamic" as const,
+      }));
+    }
+    return templateActions;
+  }, [dynamicQuickActions, templateActions]);
+
   const dialogueChips = useMemo(() => {
     if (gamePhase !== "active") return [];
+    if (dynamicQuickActions && dynamicQuickActions.length > 0) return [];
     const tmplId = currentGame?.config?.template;
     let chips: Array<{ label: string; starter: string; icon?: string }>;
     if (tmplId && isSceneMode(tmplId)) {
@@ -358,7 +372,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       chips = getGameTemplate(tmplId)?.dialogueChips ?? [];
     }
     return chips.map(c => ({ ...c, label: tAction(c.label), starter: tTemplate(c.starter) }));
-  }, [currentGame?.config?.template, gamePhase, phaseLabel]);
+  }, [currentGame?.config?.template, gamePhase, phaseLabel, dynamicQuickActions]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
 

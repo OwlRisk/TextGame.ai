@@ -125,6 +125,8 @@ export interface ParseHostResultOutput {
   autoChannelGoal: string | null;
   /** Current room / scene task from `CHANNEL_GOAL:` (shown to the player in the input area). */
   channelGoal: string | null;
+  /** Dynamic quick actions from `QUICK_ACTIONS:` directive. */
+  quickActions: string[] | null;
 }
 
 export function parseHostResult(
@@ -175,7 +177,15 @@ export function parseHostResult(
     if (t) channelGoal = t;
     return "";
   });
+
+  let quickActions: string[] | null = null;
+  hostContent = hostContent.replace(/^\s*QUICK_ACTIONS:\s*(.+)$/gim, (_, g: string) => {
+    const items = g.split("|").map((s: string) => s.trim()).filter(Boolean);
+    if (items.length > 0) quickActions = items.slice(0, 5);
+    return "";
+  });
+
   hostContent = hostContent.replace(/\n{3,}/g, "\n\n").trim();
 
-  return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal };
+  return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal, quickActions };
 }
