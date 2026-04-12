@@ -59,37 +59,16 @@ export interface SpeakerQueueContext {
   channelGoal?: string | null;
 }
 
-export function isNightPhase(phaseLabel: string | undefined): boolean {
-  if (!phaseLabel) return false;
-  return /\bnight\b/i.test(phaseLabel);
+/** @deprecated Night phase removed in narrative-focus mode */
+export function isNightPhase(_phaseLabel: string | undefined): boolean {
+  return false;
 }
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
 
-import { getPlayerCharLimit } from "@/lib/player-speak-prompt";
-
-function clampSpokenReply(text: string, template?: string): string {
-  const normalized = (text || "").replace(/\s+/g, " ").trim();
-  if (!normalized) return "";
-
-  const charLimit = getPlayerCharLimit(template);
-  if (normalized.length <= charLimit) return normalized;
-
-  // Only truncate if over the character safety net — find a natural sentence break
-  const sentenceMatches = normalized.match(/[^.!?]+[.!?]+/g) ?? [];
-  if (sentenceMatches.length > 0) {
-    let result = "";
-    for (const s of sentenceMatches) {
-      if ((result + s).length > charLimit) break;
-      result += s;
-    }
-    if (result.trim()) return result.trim();
-  }
-
-  const cut = normalized.slice(0, charLimit);
-  const lastSpace = cut.lastIndexOf(" ");
-  const base = lastSpace > 90 ? cut.slice(0, lastSpace) : cut;
-  return `${base.trimEnd()}…`;
+/** No clamping in narrative-focus mode — trust AI output length */
+function cleanReply(text: string): string {
+  return (text || "").replace(/\s+/g, " ").trim();
 }
 
 function buildPlayerSpeakBody(
@@ -269,7 +248,7 @@ export async function streamPlayerSpeak(
     }
   }
 
-  const publicReply = clampSpokenReply(cleanContent, ctx.gameTemplate);
+  const publicReply = cleanReply(cleanContent);
   if (messageId) {
     if (publicReply) {
       ctx.updateStreamingMessage(messageId, publicReply, true);
@@ -343,7 +322,7 @@ export async function runPlayerSpeak(
     }
   }
 
-  return clampSpokenReply(cleanContent, ctx.gameTemplate) || null;
+  return cleanReply(cleanContent) || null;
 }
 
 // ─── Passive reactions: content-aware emoji reactions from AI players ─────────
@@ -531,8 +510,6 @@ export async function runSpeakerQueue(
   ctx: SpeakerQueueContext,
   queue: SpeakerQueueItem[],
 ): Promise<boolean> {
-  const night = isNightPhase(ctx.phaseLabel);
-
   for (let qi = 0; qi < queue.length; qi++) {
     const item = queue[qi];
     if (item.type === "human") {
@@ -541,10 +518,8 @@ export async function runSpeakerQueue(
     }
     if (item.type === "everyone") {
       ctx.setCurrentSpeakerId(null);
-      if (!night && ctx.aiOnly.length > 0) {
-        const count = ctx.convMode === "freeform"
-          ? Math.min(ctx.aiOnly.length, 2 + Math.floor(Math.random() * 2))
-          : 1;
+      if (ctx.aiOnly.length > 0) {
+        const count = Math.min(ctx.aiOnly.length, 2 + Math.floor(Math.random() * 2));
         const shuffled = [...ctx.aiOnly].sort(() => Math.random() - 0.5);
         const picks = shuffled.slice(0, count);
         for (let pi = 0; pi < picks.length; pi++) {
@@ -554,11 +529,6 @@ export async function runSpeakerQueue(
         }
       }
       ctx.setTypingUsers([]);
-      continue;
-    }
-
-    if (night) {
-      ctx.setCurrentSpeakerId(null);
       continue;
     }
 

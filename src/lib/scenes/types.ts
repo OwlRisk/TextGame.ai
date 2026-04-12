@@ -20,7 +20,7 @@ export interface Scene {
   id: string;
   title: string;
   hook: string;
-  genre: "adventure" | "mystery" | "survival" | "heist";
+  genre: "adventure" | "mystery" | "survival" | "heist" | "fantasy" | "sci-fi" | "horror";
   openingNarration: string;
   openingSequence?: SceneOpeningMessage[];
   characters: SceneCharacter[];

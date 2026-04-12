@@ -1,47 +1,16 @@
 export type { GameTemplate, QuickAction, PartialTemplate, TemplateChannel, ActionType, TargetType } from "./types";
 export { withDefaults, AFTERLIFE_CHANNEL_ID } from "./types";
 
-import { werewolf } from "./werewolf";
-import { mafia } from "./mafia";
-import { undercover } from "./undercover";
-import { tarot } from "./tarot";
-import { codenames } from "./codenames";
-import { avalon } from "./avalon";
-import { spyfall } from "./spyfall";
-import { detectiveMystery } from "./detective-mystery";
-import { escapeRoom } from "./escape-room";
-import { trivia } from "./trivia";
-import { debate } from "./debate";
-import { storyteller } from "./storyteller";
-import { twentyQuestions } from "./twenty-questions";
-import { twoTruthsLie } from "./two-truths-lie";
-import { rpgDungeon } from "./rpg-dungeon";
-import { scriptKill } from "./script-kill";
-import { custom } from "./custom";
 import type { GameTemplate } from "./types";
 
-export const GAME_TEMPLATES: GameTemplate[] = [
-  werewolf,
-  mafia,
-  undercover,
-  tarot,
-  codenames,
-  avalon,
-  spyfall,
-  detectiveMystery,
-  escapeRoom,
-  trivia,
-  debate,
-  storyteller,
-  twentyQuestions,
-  twoTruthsLie,
-  rpgDungeon,
-  scriptKill,
-  custom,
-];
+/**
+ * No game templates in narrative-focus mode.
+ * Scene mode (adventures) is the primary experience.
+ */
+export const GAME_TEMPLATES: GameTemplate[] = [];
 
-export function getGameTemplate(id: string): GameTemplate | undefined {
-  return GAME_TEMPLATES.find((t) => t.id === id);
+export function getGameTemplate(_id: string): GameTemplate | undefined {
+  return undefined;
 }
 
 const TAILWIND_HEX: Record<string, string> = {
@@ -52,11 +21,8 @@ const TAILWIND_HEX: Record<string, string> = {
   slate: "#64748b",
 };
 
-export function getTemplateHexColor(templateId: string): string {
-  const t = getGameTemplate(templateId);
-  if (!t) return "#7c3aed";
-  const m = t.color.match(/from-(\w+)/);
-  return (m && TAILWIND_HEX[m[1]]) || "#7c3aed";
+export function getTemplateHexColor(_templateId: string): string {
+  return "#7c3aed";
 }
 
 export function getAvatarStyleForTemplate(_templateId?: string): "valorant" | "semi-realistic" | "toon3d" {
