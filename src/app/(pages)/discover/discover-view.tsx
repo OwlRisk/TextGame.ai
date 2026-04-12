@@ -78,29 +78,28 @@ function DiscoverViewInner() {
         caseId = scriptKillSetup.caseId;
       }
 
-      // For scene-mode games, use the scene's predefined characters
-      // so they match directorNotes and openingSequence
       const sceneData = preset.templateId === "scene" ? getScene(preset.id) : null;
 
-      if (sceneData) {
-        configuredPlayers = sceneData.characters.map((c) => ({
-          name: c.name,
-          gender: c.gender,
-          personality: c.personality,
-          background: c.background,
-          speechStyle: c.speechStyle,
-          quirk: c.quirk,
-        }));
-      } else if (!scriptKillSetup) {
+      if (!scriptKillSetup) {
         toast.loading(t("toast.setting_up_players", lang), { id: toastId });
+
+        // For scenes, pass character archetypes so generated characters fit the story
+        const sceneContext = sceneData
+          ? `\n\nThis is a ${sceneData.genre} adventure: "${sceneData.hook}"\n` +
+            `Create characters that fit this story. Use these archetypes as inspiration (new names, fresh details, but similar ROLES):\n` +
+            sceneData.characters.map((c) =>
+              `- Role: ${c.personality}. Fear: ${c.fear}. Goal: ${c.goal}. Speech: ${c.speechStyle}`
+            ).join("\n")
+          : "";
+
         try {
           const res = await fetch("/api/generate-players", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              playerCount: preset.playerCount ?? tmpl?.recommendedAICount ?? 4,
+              playerCount: sceneData?.characters.length ?? preset.playerCount ?? tmpl?.recommendedAICount ?? 4,
               gameTemplate: preset.templateId,
-              rules: preset.rules,
+              rules: (preset.rules || "") + sceneContext,
               minPlayers: tmpl?.minPlayers ?? 2,
               maxPlayers: tmpl?.maxPlayers ?? 20,
             }),

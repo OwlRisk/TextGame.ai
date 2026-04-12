@@ -264,33 +264,39 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     const isScene = isSceneMode(kickoff.gameTemplate);
     const sceneData = isScene && kickoff.sceneId ? getScene(kickoff.sceneId) : undefined;
 
-    // Scene games with openingSequence: play pre-written messages, skip AI generation
+    // Scene games with openingSequence: only use if character names match actual players
     if (sceneData?.openingSequence && sceneData.openingSequence.length > 0) {
       const humanName = kickoff.humanPlayerName || "You";
       const playersByName = new Map(
         kickoff.aiPlayers.map((p) => [p.name, p])
       );
 
-      for (let i = 0; i < sceneData.openingSequence.length; i++) {
-        if (seedCancelledRef.current) return;
-        const msg = sceneData.openingSequence[i];
-        const text = msg.text.replace(/\{playerName\}/g, humanName);
+      // Check if the opening sequence characters match actual players
+      const speakerNames = sceneData.openingSequence
+        .filter((m) => m.speaker !== "narrator")
+        .map((m) => m.speaker);
+      const allMatch = speakerNames.every((name) => playersByName.has(name));
 
-        if (msg.speaker === "narrator") {
-          addMessage(
-            {
-              id: `opening-${gameId}-${i}-${Date.now()}`,
-              senderId: "gm-1",
-              senderName: kickoff.hostName,
-              senderAvatar: kickoff.hostColor,
-              content: text,
-              isAI: true,
-            },
-            kickoff.channelId
-          );
-        } else {
-          const player = playersByName.get(msg.speaker);
-          if (player) {
+      if (allMatch) {
+        for (let i = 0; i < sceneData.openingSequence.length; i++) {
+          if (seedCancelledRef.current) return;
+          const msg = sceneData.openingSequence[i];
+          const text = msg.text.replace(/\{playerName\}/g, humanName);
+
+          if (msg.speaker === "narrator") {
+            addMessage(
+              {
+                id: `opening-${gameId}-${i}-${Date.now()}`,
+                senderId: "gm-1",
+                senderName: kickoff.hostName,
+                senderAvatar: kickoff.hostColor,
+                content: text,
+                isAI: true,
+              },
+              kickoff.channelId
+            );
+          } else {
+            const player = playersByName.get(msg.speaker)!;
             addMessage(
               {
                 id: `opening-${gameId}-${i}-${Date.now()}`,
@@ -302,32 +308,21 @@ export function useGameInit(gameId: string): UseGameInitReturn {
               },
               kickoff.channelId
             );
-          } else {
-            addMessage(
-              {
-                id: `opening-${gameId}-${i}-${Date.now()}`,
-                senderId: "gm-1",
-                senderName: msg.speaker,
-                senderAvatar: kickoff.hostColor,
-                content: text,
-                isAI: true,
-              },
-              kickoff.channelId
-            );
+          }
+
+          if (i < sceneData.openingSequence.length - 1 && msg.delay) {
+            await new Promise((r) => setTimeout(r, msg.delay));
           }
         }
 
-        if (i < sceneData.openingSequence.length - 1 && msg.delay) {
-          await new Promise((r) => setTimeout(r, msg.delay));
-        }
+        afterSeedTimerRef.current = setTimeout(() => {
+          afterSeedTimerRef.current = null;
+          afterSeedSendRef.current?.("[Continue]", { skipAddMessage: true, channelId: kickoff.channelId });
+        }, 800);
+        return;
       }
-
-      // After pre-set opening, hand control to the AI host to continue
-      afterSeedTimerRef.current = setTimeout(() => {
-        afterSeedTimerRef.current = null;
-        afterSeedSendRef.current?.("[Continue]", { skipAddMessage: true, channelId: kickoff.channelId });
-      }, 800);
-      return;
+      // If names don't match (dynamically generated characters), fall through
+      // to openingNarration path below
     }
 
     // Non-scene games (or scenes without openingSequence): original flow

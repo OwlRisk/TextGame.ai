@@ -31,6 +31,8 @@ ${playerNamesList} and ${humanName} are the players. They speak for themselves. 
 ## SCENE
 ${directorNotes}
 
+Note: The scene notes may reference character names from a template cast. Your actual cast is listed below in CURRENT STATE. Adapt character-specific moments to whoever in your cast best fits the trait (e.g. a "claustrophobia" moment goes to whoever fears tight spaces).
+
 ## OUTPUT FORMAT
 NARRATION, then a line with only "---", then DIRECTIVES.
 
