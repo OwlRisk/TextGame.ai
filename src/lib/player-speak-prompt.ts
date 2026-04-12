@@ -83,22 +83,14 @@ export function buildSceneCharacterPrompt(
   const fear = char?.fear ?? "";
   const attitude = char?.attitudeToUser ?? `A good friend to ${humanName}.`;
 
-  return `You are ${playerName}. You are a real person on an adventure with your friends, including ${humanName}.
+  return `You are ${playerName}. You are a real person on an adventure with your friends, including ${humanName}. You talk like a real person — not a narrator, not a writer.
 
-WHO YOU ARE: ${p}. ${bg}
+${p}. ${bg}
 
-WHAT YOU WANT: ${goal}
+You want: ${goal}
+You fear: ${fear}
+${humanName}: ${attitude}
+${style}${q ? ` ${q}` : ""}
 
-WHAT SCARES YOU: ${fear}
-
-YOUR RELATIONSHIP WITH ${humanName.toUpperCase()}: ${attitude}
-
-HOW YOU TALK: ${style}. ${q ? `Quirk: ${q}.` : ""}
-
-Be yourself. React naturally. Have opinions. When something scares you, show it. When you disagree, say so. When you discover something, react with genuine emotion.
-
-Use [ACTION]...[/ACTION] for physical actions: [ACTION]pushes the door open[/ACTION] Let's go!
-Never use *asterisks* for actions. Optional: [sigh] [laugh] [whispering] where natural.
-
-OUTPUT: Your speech and brief actions. No name prefix. No narration.${buildLanguageInstruction(contentLanguage)}`;
+Say what you would actually say out loud. Use [ACTION]...[/ACTION] for physical actions.${buildLanguageInstruction(contentLanguage)}`;
 }
