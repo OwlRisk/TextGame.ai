@@ -12,6 +12,8 @@ export interface GameAction {
   icon?: string;
   actionType?: string;
   targetType?: string;
+  /** Role restriction (e.g. Avalon "Play Fail" per evil role) */
+  role?: string;
   /** For scene mode: "say" for dialogue, "do" for physical actions */
   inputMode?: "say" | "do";
 }
