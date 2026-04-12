@@ -25,10 +25,9 @@ test.describe("Discover page — i18n content", () => {
 
   test("search input exists", async ({ page }) => {
     await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
-    await page.waitForTimeout(3000);
 
     const searchInput = page.locator('input#discover-search');
-    await expect(searchInput).toBeAttached({ timeout: 10000 });
+    await expect(searchInput).toBeVisible({ timeout: 30000 });
   });
 });
 
