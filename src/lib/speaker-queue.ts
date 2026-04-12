@@ -112,39 +112,43 @@ export async function runPlayerSpeak(
 
     const ac = new AbortController();
     const fetchTimer = setTimeout(() => ac.abort(), 45_000);
-    const res = await fetch("/api/chat/player-speak", {
-      method: "POST",
-      headers,
-      signal: ac.signal,
-      body: JSON.stringify({
-        gameName: ctx.gameName,
-        gameTemplate: ctx.gameTemplate,
-        rules: ctx.gameRules,
-        gamePhase: ctx.gamePhase,
-        player: {
-          name: speaker.name,
-          role: speaker.role,
-          personality: speaker.personality,
-          background: speaker.background,
-          speechStyle: speaker.speechStyle,
-          quirk: speaker.quirk,
-          boardContent: ctx.myBoardContent[speaker.id] ?? undefined,
-        },
-        ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
-        recentMessages: recent,
-        playerRoster,
-        preferredModel: getPreferredModel(),
-        ...(channelGoal ? { channelGoal } : {}),
-        ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
-        ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
-        ...(ctx.contentLanguage ? { contentLanguage: ctx.contentLanguage } : {}),
-        ...(ctx.characterDirections?.find((d) => d.name === speaker.name) ? {
-          characterDirection: ctx.characterDirections.find((d) => d.name === speaker.name)!.direction,
-        } : {}),
-        gameId: ctx.gameId,
-      }),
-    });
-    clearTimeout(fetchTimer);
+    let res: Response;
+    try {
+      res = await fetch("/api/chat/player-speak", {
+        method: "POST",
+        headers,
+        signal: ac.signal,
+        body: JSON.stringify({
+          gameName: ctx.gameName,
+          gameTemplate: ctx.gameTemplate,
+          rules: ctx.gameRules,
+          gamePhase: ctx.gamePhase,
+          player: {
+            name: speaker.name,
+            role: speaker.role,
+            personality: speaker.personality,
+            background: speaker.background,
+            speechStyle: speaker.speechStyle,
+            quirk: speaker.quirk,
+            boardContent: ctx.myBoardContent[speaker.id] ?? undefined,
+          },
+          ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
+          recentMessages: recent,
+          playerRoster,
+          preferredModel: getPreferredModel(),
+          ...(channelGoal ? { channelGoal } : {}),
+          ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
+          ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
+          ...(ctx.contentLanguage ? { contentLanguage: ctx.contentLanguage } : {}),
+          ...(ctx.characterDirections?.find((d) => d.name === speaker.name) ? {
+            characterDirection: ctx.characterDirections.find((d) => d.name === speaker.name)!.direction,
+          } : {}),
+          gameId: ctx.gameId,
+        }),
+      });
+    } finally {
+      clearTimeout(fetchTimer);
+    }
     if (!res.ok) {
       if (res.status === 402) {
         const err = new Error("CREDITS_EXHAUSTED");
@@ -400,10 +404,19 @@ export async function runSpeakerQueue(
       continue;
     }
 
-    if (night) continue;
+    if (night) {
+      ctx.setCurrentSpeakerId(null);
+      continue;
+    }
 
     const freshPlayer = ctx.playersRef.current.find((p) => p.id === item.player.id) ?? item.player;
-    if (isPlayerEliminated(freshPlayer)) continue;
+    if (isPlayerEliminated(freshPlayer)) {
+      const nextItem = queue[qi + 1];
+      if (nextItem?.type === "human") ctx.setCurrentSpeakerId(ctx.userId);
+      else if (nextItem?.type === "ai") ctx.setCurrentSpeakerId(nextItem.player.id);
+      else if (!nextItem) ctx.setCurrentSpeakerId(null);
+      continue;
+    }
     const upcomingAiPlayers: Player[] = [];
     for (let ni = qi + 1; ni < queue.length; ni++) {
       const next = queue[ni];

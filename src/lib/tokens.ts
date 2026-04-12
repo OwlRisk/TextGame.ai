@@ -58,7 +58,7 @@ export function rechargeCoinsFromPayment(amountCents: number): number {
  * GPT/TTS API cost (USD) → coins to deduct (including platform markup multiplier)
  */
 export function usdToCoins(usd: number): number {
-  if (usd <= 0) return 1;
+  if (usd <= 0) return 0;
   return Math.max(1, Math.ceil((usd / COIN_VALUE_USD) * PLATFORM_MARKUP));
 }
 
@@ -124,7 +124,7 @@ export function gptUsageToCoins(
  * Conservative estimate when only total token count is known (e.g. streaming with no usage data); estimates using a higher-priced model
  */
 export function estimatedTokensToCoins(totalTokens: number, model?: string): number {
-  if (totalTokens <= 0) return 1;
+  if (totalTokens <= 0) return 0;
   const { input, output } = getModelPrice(model ?? 'gpt-5.3-chat-latest');
   const half = totalTokens / 2;
   const usd = (half / 1_000_000) * input + (half / 1_000_000) * output;
@@ -280,7 +280,7 @@ export async function deductTokens(
     await client.query('BEGIN');
     try {
       const balanceResult = await client.query(
-        'SELECT tokens, subscription_status FROM user_profiles WHERE user_id = $1',
+        'SELECT tokens, subscription_status FROM user_profiles WHERE user_id = $1 FOR UPDATE',
         [userId]
       );
       if (balanceResult.rows.length === 0) {

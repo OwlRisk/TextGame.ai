@@ -76,10 +76,20 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch('/api/user/balance', { headers: { Authorization: `Bearer ${session.access_token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.tokens != null) setCreditBalance(data.tokens); })
-      .catch(() => {});
+    const fetchBalance = () => {
+      fetch('/api/user/balance', { headers: { Authorization: `Bearer ${session.access_token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data?.tokens != null) setCreditBalance(data.tokens); })
+        .catch(() => {});
+    };
+    fetchBalance();
+    const onVisibility = () => { if (document.visibilityState === 'visible') fetchBalance(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    const interval = setInterval(fetchBalance, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      clearInterval(interval);
+    };
   }, [session?.access_token]);
 
   const handleSignOut = async () => {

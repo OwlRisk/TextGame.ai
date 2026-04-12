@@ -431,8 +431,8 @@ describe('Model pricing table coverage', () => {
 // ─── 10. Edge cases ──────────────────────────────────────────────────────────
 
 describe('Billing edge cases', () => {
-  it('zero input + zero output = minimum 1 coin', () => {
-    expect(gptUsageToCoins('gpt-5.3-chat-latest', 0, 0)).toBe(1);
+  it('zero input + zero output = 0 coins (callers enforce minimum via Math.max)', () => {
+    expect(gptUsageToCoins('gpt-5.3-chat-latest', 0, 0)).toBe(0);
   });
 
   it('1 input + 0 output = minimum 1 coin', () => {
@@ -449,12 +449,12 @@ describe('Billing edge cases', () => {
     expect(large).toBeGreaterThan(small * 50);
   });
 
-  it('coins are always positive integers', () => {
+  it('coins are always non-negative integers', () => {
     const models = ['gpt-5.3-chat-latest', 'gpt-4o-mini', 'gpt-5-nano'];
     for (const m of models) {
       for (const [i, o] of [[0, 0], [1, 1], [100, 10], [10000, 1000]]) {
         const coins = gptUsageToCoins(m, i, o);
-        expect(coins).toBeGreaterThanOrEqual(1);
+        expect(coins).toBeGreaterThanOrEqual(0);
         expect(Number.isInteger(coins)).toBe(true);
       }
     }

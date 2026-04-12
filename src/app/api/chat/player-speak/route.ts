@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { buildSystemPrompt, buildSceneCharacterPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
-import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins, estimateTokensFromText } from '@/lib/tokens';
+import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
@@ -114,6 +114,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'player.name and recentMessages array required' }, { status: 400 });
     }
 
+    if (recentMessages.length > 50) recentMessages.splice(0, recentMessages.length - 50);
+    if (typeof rules === 'string' && rules.length > 10_000) (body as Record<string, unknown>).rules = (rules as string).slice(0, 10_000);
+    if (player.boardContent && player.boardContent.length > 10_000) player.boardContent = player.boardContent.slice(0, 10_000);
+
     const chatModel = sanitizeModel(preferredModel);
     const estCoins = estimatedTokensToCoins(1500, chatModel);
     if (!(await hasTokens(user.id, estCoins))) {
@@ -203,15 +207,19 @@ export async function POST(request: NextRequest) {
 
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 30_000);
-    const completion = await openai.chat.completions.create({
-      model: chatModel,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: userContent },
-      ],
-      max_completion_tokens: getPlayerTokenLimit(gameTemplate),
-    }, { signal: ac.signal });
-    clearTimeout(timer);
+    let completion: OpenAI.Chat.Completions.ChatCompletion;
+    try {
+      completion = await openai.chat.completions.create({
+        model: chatModel,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: userContent },
+        ],
+        max_completion_tokens: getPlayerTokenLimit(gameTemplate),
+      }, { signal: ac.signal });
+    } finally {
+      clearTimeout(timer);
+    }
 
     const message = (completion.choices[0]?.message?.content || '').trim();
 
@@ -220,7 +228,10 @@ export async function POST(request: NextRequest) {
     const actualModel = (completion as { model?: string }).model ?? chatModel;
     if (promptTokens + completionTokens > 0) {
       const coins = gptUsageToCoins(actualModel, promptTokens, completionTokens);
-      await deductTokens(user.id, Math.max(1, coins), 'ai_player_speak', `Player speak ${promptTokens}+${completionTokens} tokens (${actualModel})`, bodyGameId);
+      const deducted = await deductTokens(user.id, Math.max(1, coins), 'ai_player_speak', `Player speak ${promptTokens}+${completionTokens} tokens (${actualModel})`, bodyGameId);
+      if (!deducted) {
+        console.warn(`[player-speak] deductTokens returned false for user ${user.id} (${coins} coins) — OpenAI call already completed, continuing`);
+      }
     }
 
     return NextResponse.json({ message });

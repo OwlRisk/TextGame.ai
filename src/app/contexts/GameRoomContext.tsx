@@ -243,10 +243,10 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     }
 
     function applyNonMessageState(state: Record<string, unknown>) {
-      if (state.players) setPlayers(state.players as Player[]);
-      if (state.gamePhase) setGamePhase(state.gamePhase as string);
+      if (state.players && (state.players as Player[]).length > 0) setPlayers(state.players as Player[]);
+      if (state.gamePhase !== undefined) setGamePhase(state.gamePhase as string);
       if (state.gamePhaseState) setGamePhaseState(state.gamePhaseState as GamePhaseState);
-      if (state.selectedChannelId) setSelectedChannelId(state.selectedChannelId as string | null);
+      if (state.selectedChannelId !== undefined) setSelectedChannelId(state.selectedChannelId as string | null);
       if (state.myBoardContent) setMyBoardContent((state.myBoardContent as Record<string, string>) ?? {});
       if (state.playerNotes && typeof state.playerNotes === "object") {
         setPlayerNotes(state.playerNotes as Record<string, string>);
@@ -298,6 +298,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           applyMessages(state, true);
           applyNonMessageState(state);
         }
+      })
+      .catch((err) => {
+        console.error("Failed to load game room state from DB:", err);
+      })
+      .finally(() => {
         setIsHydrated(true);
       });
   }, [gameId, user?.id]);
@@ -595,7 +600,10 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         isStreaming: true,
         ...(channelId != null && { channelId }),
       };
-      setMessages((prev) => [...prev, newMessage]);
+      setMessages((prev) => {
+        const updated = [...prev, newMessage];
+        return updated.length > 60 ? updated.slice(-60) : updated;
+      });
       return messageId;
     },
     []
@@ -689,6 +697,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setTypingUsers([]);
     setPrivateMessages({});
     setMyBoardContent({});
+    setPlayerNotes({});
     setGameEvents([]);
     setGameEnded(false);
     setGameResult(null);

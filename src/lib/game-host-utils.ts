@@ -16,10 +16,14 @@ export function resolveChannelByName(
   const n = name.toLowerCase().trim();
   const exact = channels.find((c) => c.name.toLowerCase() === n);
   if (exact) return exact.id;
-  const partial = channels.find(
-    (c) => c.name.toLowerCase().includes(n) || n.includes(c.name.toLowerCase()),
+  const channelContainsSearch = channels.find(
+    (c) => c.name.toLowerCase().includes(n),
   );
-  return partial?.id ?? null;
+  if (channelContainsSearch) return channelContainsSearch.id;
+  const searchContainsChannel = channels.find(
+    (c) => n.includes(c.name.toLowerCase()),
+  );
+  return searchContainsChannel?.id ?? null;
 }
 
 /**

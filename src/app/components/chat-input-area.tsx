@@ -520,9 +520,9 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           {/* Dialogue chips */}
           {dialogueChips.length > 0 && !effectivelyEliminated && isGameActive && (
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {dialogueChips.map((chip) => (
+              {dialogueChips.map((chip, idx) => (
                 <button
-                  key={chip.label}
+                  key={`${chip.label}-${idx}`}
                   type="button"
                   className="px-2.5 py-1 text-xs rounded-full border border-zinc-700/50 bg-zinc-800/40 hover:bg-violet-600/20 hover:border-violet-500/40 text-zinc-400 hover:text-violet-200 transition-all duration-150"
                   disabled={sendDisabled}
@@ -625,9 +625,9 @@ export const ChatInputArea = React.memo(function ChatInputArea({
               {/* Quick action suggestions — secondary */}
               {gameActions.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  {gameActions.map((action) => (
+                  {gameActions.map((action, idx) => (
                     <button
-                      key={action.label}
+                      key={`${action.label}-${action.role ?? idx}`}
                       type="button"
                       className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-amber-500/20 bg-amber-900/10 hover:bg-amber-600/20 hover:border-amber-400/40 text-amber-300/70 hover:text-amber-200 transition-all duration-150"
                       disabled={sendDisabled}

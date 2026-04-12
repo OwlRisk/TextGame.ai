@@ -58,10 +58,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // Load: from DB when logged in (games + icons), from localStorage when not
   useEffect(() => {
+    let isCancelled = false;
     if (user) {
       setGamesLoading(true);
       getGames(user.id)
         .then(({ data, error }) => {
+          if (isCancelled) return;
           if (error) {
             setGames([]);
             const msg = (error as { message?: string })?.message ?? "";
@@ -74,6 +76,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           if (data) setGames(sortGamesByUpdatedAt(data.map(rowToGame)));
         })
         .finally(() => {
+          if (isCancelled) return;
           setGamesLoading(false);
           setIsHydrated(true);
         });
@@ -97,6 +100,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
       setIsHydrated(true);
     }
+    return () => { isCancelled = true; };
   }, [user?.id]);
 
   // Save to localStorage when not logged in

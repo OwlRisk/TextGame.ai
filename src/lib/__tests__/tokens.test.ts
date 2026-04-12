@@ -76,9 +76,9 @@ describe('usdToCoins', () => {
     expect(usdToCoins(0.005)).toBe(1);
   });
 
-  it('zero or negative → minimum 1 coin', () => {
-    expect(usdToCoins(0)).toBe(1);
-    expect(usdToCoins(-5)).toBe(1);
+  it('zero or negative → 0 coins (callers enforce minimum via Math.max)', () => {
+    expect(usdToCoins(0)).toBe(0);
+    expect(usdToCoins(-5)).toBe(0);
   });
 
   it('very small cost → still at least 1', () => {
@@ -136,8 +136,8 @@ describe('gptUsageToCoins', () => {
     expect(nano).toBeLessThan(mini);
   });
 
-  it('zero tokens → minimum 1 coin', () => {
-    expect(gptUsageToCoins('gpt-4o', 0, 0)).toBe(1);
+  it('zero tokens → 0 coins (callers enforce minimum via Math.max)', () => {
+    expect(gptUsageToCoins('gpt-4o', 0, 0)).toBe(0);
   });
 
   it('small real-world usage (1k prompt, 500 completion)', () => {
@@ -153,9 +153,9 @@ describe('estimatedTokensToCoins', () => {
     expect(estimatedTokensToCoins(100)).toBeGreaterThanOrEqual(1);
   });
 
-  it('returns 1 for zero or negative tokens', () => {
-    expect(estimatedTokensToCoins(0)).toBe(1);
-    expect(estimatedTokensToCoins(-100)).toBe(1);
+  it('returns 0 for zero or negative tokens', () => {
+    expect(estimatedTokensToCoins(0)).toBe(0);
+    expect(estimatedTokensToCoins(-100)).toBe(0);
   });
 
   it('larger token counts cost more', () => {

@@ -158,6 +158,6 @@ TONE: Epic, atmospheric, with moments of humor. Build tension before boss fights
 
   channels: [
     { id: "general", name: "Dungeon", roomType: "public" as const },
-    { id: AFTERLIFE_CHANNEL_ID, name: "Fallen Heroes", roomType: "public" as const },
+    { id: AFTERLIFE_CHANNEL_ID, name: "Fallen Heroes", roomType: "private_ai" as const },
   ],
 });

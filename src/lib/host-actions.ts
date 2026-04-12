@@ -211,7 +211,7 @@ export function parseHostActions(rawContent: string): ParseHostActionsResult {
       }),
     },
     {
-      regex: /^ENGAGEMENT:\s*(\d)$/gim,
+      regex: /^ENGAGEMENT:\s*(\d+)$/gim,
       parse: (m) => ({
         type: "engagement",
         score: Math.max(1, Math.min(5, parseInt(m[1], 10))),

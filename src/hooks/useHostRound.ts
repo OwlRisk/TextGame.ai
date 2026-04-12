@@ -857,6 +857,7 @@ export function useHostRound({
       if (!humanReached) setCurrentSpeakerId((id) => (id === userId ? id : null));
     } catch (error) {
       setTypingUsers([]);
+      setCurrentSpeakerId(null);
       const is402 = error instanceof Error && (error.message === "CREDITS_EXHAUSTED" || (error as any).status === 402);
       if (is402) {
         console.warn("Credits exhausted during AI player speak");

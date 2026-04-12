@@ -119,6 +119,9 @@ export function stripGmDirectives(directives: string): string {
     if (jsonStr) {
       const end = gmIdx + "GM_STATE:".length + result.slice(gmIdx + "GM_STATE:".length).indexOf(jsonStr[0]) + jsonStr.length;
       result = result.slice(0, gmIdx) + result.slice(end);
+    } else {
+      // extractBalancedJson failed (malformed/truncated JSON) — strip from GM_STATE: to end of JSON-like block or end of line
+      result = result.slice(0, gmIdx) + result.slice(gmIdx).replace(/GM_STATE:\s*\{[^}]*\}?.*/, "");
     }
   }
   result = result.replace(/CHARACTER_DIRECTION:\s*[^\n]+\n?/g, "");

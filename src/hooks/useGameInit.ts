@@ -105,14 +105,21 @@ export function useGameInit(gameId: string): UseGameInitReturn {
   const readyKickoffRef = useRef<OpeningKickoffState | null>(null);
   const gameStartingRef = useRef(false);
   const afterSeedSendRef = useRef<((content: string, options?: { skipAddMessage?: boolean; channelId?: string }) => Promise<void>) | null>(null);
-  const langFetchedRef = useRef(false);
+  const langFetchedRef = useRef<string | null>(null);
+  const afterSeedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
 
   useEffect(() => {
     seedCancelledRef.current = false;
     readyKickoffRef.current = null;
-    return () => { seedCancelledRef.current = true; };
+    return () => {
+      seedCancelledRef.current = true;
+      if (afterSeedTimerRef.current) {
+        clearTimeout(afterSeedTimerRef.current);
+        afterSeedTimerRef.current = null;
+      }
+    };
   }, [gameId]);
 
   const buildHostPlayer = useCallback((config: any) => {
@@ -316,7 +323,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       }
 
       // After pre-set opening, hand control to the AI host to continue
-      setTimeout(() => {
+      afterSeedTimerRef.current = setTimeout(() => {
+        afterSeedTimerRef.current = null;
         afterSeedSendRef.current?.("[Continue]", { skipAddMessage: true, channelId: kickoff.channelId });
       }, 800);
       return;
@@ -375,14 +383,15 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       contentLanguage,
     }).then(() => {
       if (seedCancelledRef.current) return;
-      setTimeout(() => {
+      afterSeedTimerRef.current = setTimeout(() => {
+        afterSeedTimerRef.current = null;
         afterSeedSendRef.current?.("[Continue]", { skipAddMessage: true, channelId: kickoff.channelId });
       }, 800);
     }).catch((e) => {
       console.warn("Initial player replies failed", e);
       toast.error("Some AI players failed to respond. You can still play normally.");
     });
-  }, [addMessage, addStreamingMessage, gameId, session?.access_token, setCurrentSpeakerId, setGamePhase, setTypingUsers, updateStreamingMessage]);
+  }, [addMessage, addStreamingMessage, contentLanguage, gameId, session?.access_token, setCurrentSpeakerId, setGamePhase, setTypingUsers, updateStreamingMessage]);
 
   const startGame = useCallback(async () => {
     if (!currentGame || !currentGame.config) return;
@@ -518,7 +527,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     } finally {
       gameStartingRef.current = false;
     }
-  }, [currentGame, gamePhase, buildHostPlayer, setPlayers, setPlayerNotes, setGamePhase, gameId, humanGameIdentity?.name, launchOpeningRound, setCurrentSpeakerId, userId, addMessage, setMyBoardContent]);
+  }, [currentGame, gamePhase, buildHostPlayer, setPlayers, setPlayerNotes, setGamePhase, gameId, humanGameIdentity?.name, launchOpeningRound, setCurrentSpeakerId, userId, addMessage, setMyBoardContent, contentLanguage]);
 
   // Initialize game room: wait for room state to load, then set up lobby if fresh
   const humanIdentityFetchedRef = useRef<string | null>(null);
@@ -547,6 +556,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       } catch (err) {
         console.error("initializeLobby failed — will retry on next effect run:", err);
       }
+    } else if (!isInitialized && players.length === 0 && hasSavedState) {
+      setIsInitialized(true);
     } else if (!isInitialized && players.length > 0) {
       const needsVoiceFix = players.some((p) => {
         if (!p.isAI || !p.voiceId || !p.gender) return false;
@@ -607,8 +618,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
 
   // Fetch content language from user preferences; auto-save browser language if not set
   useEffect(() => {
-    if (!session?.access_token || langFetchedRef.current) return;
-    langFetchedRef.current = true;
+    if (!session?.access_token || langFetchedRef.current === session.access_token) return;
+    langFetchedRef.current = session.access_token;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${session.access_token}`,

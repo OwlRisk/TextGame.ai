@@ -171,21 +171,23 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   }, [isInitialized, gamePhase, players]);
 
   // ─── Auto-set channel permissions from template when game starts ──────────
-  const channelPermsInitRef = useRef(false);
+  const channelPermsRoleFingerprintRef = useRef<string>("");
   useEffect(() => {
-    if (channelPermsInitRef.current) return;
     if (gamePhase !== "active") return;
     const templateId = currentGame?.config?.template;
     if (!templateId) return;
     const tmpl = getGameTemplate(templateId);
     if (!tmpl?.channels) return;
 
+    const roleFingerprint = players
+      .map(p => `${p.id}:${p.role ?? ""}`)
+      .sort()
+      .join("|");
+    if (roleFingerprint === channelPermsRoleFingerprintRef.current) return;
+    channelPermsRoleFingerprintRef.current = roleFingerprint;
+
     const initialPerms = buildInitialChannelPermissions(tmpl.channels, players);
-    channelPermsInitRef.current = true;
-    setChannelPermissions(prev => {
-      if (Object.keys(prev).length > 0) return prev;
-      return initialPerms;
-    });
+    setChannelPermissions(initialPerms);
   }, [gamePhase, currentGame?.config?.template, players]);
 
   // ─── My Board update indicator ────────────────────────────────────────────

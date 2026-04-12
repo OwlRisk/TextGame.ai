@@ -203,6 +203,18 @@ export async function POST(request: NextRequest) {
           }
         } catch (err) {
           clearTimeout(timer);
+          if (fullContent.length > 0) {
+            const partialTokens = Math.ceil(fullContent.length / 3);
+            const partialCoins = estimatedTokensToCoins(systemTokens + messagesTokens + partialTokens, actualModelUsed);
+            if (partialCoins > 0) {
+              try {
+                await deductTokens(userId, Math.max(1, partialCoins), 'ai_chat',
+                  `Chat partial ~${partialTokens} tokens (stream error)`, bodyGameId);
+              } catch (e) {
+                console.error('[stream] Failed to bill partial output:', e);
+              }
+            }
+          }
           const errMsg = err instanceof Error ? err.message : 'Stream interrupted';
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: errMsg })}\n\n`));
           controller.close();
