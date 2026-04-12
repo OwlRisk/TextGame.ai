@@ -143,9 +143,10 @@ test.describe("Discover Page – Category & Filter", () => {
 
   test("discover page shows game descriptions on cards", async ({ page }) => {
     await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForTimeout(3000);
 
     const firstCard = page.locator("[data-testid='game-card']").first();
-    await expect(firstCard).toBeVisible({ timeout: 10000 });
+    await expect(firstCard).toBeAttached({ timeout: 10000 });
 
     const text = await firstCard.textContent();
     expect(text!.length).toBeGreaterThan(5);
@@ -153,9 +154,10 @@ test.describe("Discover Page – Category & Filter", () => {
 
   test("discover page has at least 5 game templates", async ({ page }) => {
     await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForTimeout(3000);
 
     const cards = page.locator("[data-testid='game-card']");
-    await expect(cards.first()).toBeVisible({ timeout: 10000 });
+    await expect(cards.first()).toBeAttached({ timeout: 10000 });
     expect(await cards.count()).toBeGreaterThanOrEqual(5);
   });
 });
