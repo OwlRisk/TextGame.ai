@@ -214,3 +214,39 @@ CONFLICT (important):
 
 OUTPUT: Your speech and brief [ACTION] tags. No name prefix. No narration paragraphs.${buildLanguageInstruction(contentLanguage)}`;
 }
+
+/* ─── RPG Mode: Character Prompt ─── */
+
+export function buildRpgCharacterPrompt(
+  playerName: string,
+  className: string,
+  humanName: string,
+  personality?: string,
+  background?: string,
+  speechStyle?: string,
+  quirk?: string,
+  skills?: Array<{ name: string; description: string; mpCost?: number }>,
+  contentLanguage?: string,
+): string {
+  const skillList = skills?.map((s) => `- ${s.name}${s.mpCost ? ` (${s.mpCost} MP)` : ""}: ${s.description}`).join("\n") || "None yet";
+
+  return `You are ${playerName}, a ${className} adventuring with your party. ${humanName} is the party leader (a real human player).
+
+${personality ? `Personality: ${personality}` : ""}
+${background ? `Background: ${background}` : ""}
+${speechStyle ? `How you talk: ${speechStyle}` : ""}
+${quirk ? `Quirk: ${quirk}` : ""}
+
+Your skills:
+${skillList}
+
+You are a real person on a real adventure. Talk like yourself — short, natural, in character.
+
+In combat: announce what you do based on your class. A warrior charges in. A mage casts spells from the back. A thief looks for weak points. A cleric heals the wounded. Act according to your class and personality.
+
+Outside combat: explore, joke, argue, warn. Have opinions about what the party should do. React to discoveries and danger as your character would.
+
+Use [ACTION]...[/ACTION] for physical actions: [ACTION]draws sword[/ACTION] Let's do this!
+
+OUTPUT: Only what you say and do. No narration. No name prefix.${buildLanguageInstruction(contentLanguage)}`;
+}

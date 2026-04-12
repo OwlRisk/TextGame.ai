@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 
 const CharacterBrowser = dynamic(() => import("@/app/components/character-browser").then(m => m.CharacterBrowser), { ssr: false });
 const PlayerPanelWithBoard = dynamic(() => import("@/app/components/player-panel-with-board").then(m => m.PlayerPanelWithBoard), { ssr: false });
+const RpgPanel = dynamic(() => import("@/app/components/rpg-panel").then(m => m.RpgPanel), { ssr: false });
 import { isPlayerEliminated } from "@/lib/player-badges";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
@@ -136,6 +137,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     handleSendMessageRef,
     msgCountRef,
     channelTaskHint,
+    dynamicQuickActions,
   } = useHostRound({
     gameId,
     channelPermissions,
@@ -335,7 +337,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Game actions (context-sensitive action buttons)
   const humanPlayer = players.find((p) => p.id === userId);
-  const gameActions = useGameActions({
+  const isRpgMode = !!(currentGame?.config as any)?.rpgWorldId;
+  const templateActions = useGameActions({
     gameTemplate: currentGame?.config?.template,
     gamePhase,
     phaseLabel,
@@ -344,6 +347,17 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     humanRole: humanPlayer?.role,
     configQuickActions: currentGame?.config?.quickActions,
   });
+  const gameActions = useMemo(() => {
+    if (dynamicQuickActions && dynamicQuickActions.length > 0) {
+      return dynamicQuickActions.map((label) => ({
+        label,
+        template: label,
+        icon: undefined as string | undefined,
+        actionType: "dynamic" as const,
+      }));
+    }
+    return templateActions;
+  }, [dynamicQuickActions, templateActions]);
 
   const dialogueChips = useMemo(() => {
     if (gamePhase !== "active") return [];
@@ -656,6 +670,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
       {/* Player panel */}
             <div className="hidden md:block flex-shrink-0 w-80">
+              {isRpgMode ? (
+                <RpgPanel
+                  players={playersForChannel}
+                  currentSpeakerId={currentSpeakerId}
+                  currentUserId={userId}
+                  gameId={gameId}
+                  avatarImageUrls={avatarImageUrls}
+                  onAvatarUrlLoaded={onAvatarUrlLoaded}
+                />
+              ) : (
               <PlayerPanelWithBoard
                 players={isScene ? playersForChannel.filter(p => !p.isGameMaster) : playersForChannel}
                 gameId={gameId}
@@ -676,10 +700,21 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                 onRemovePlayer={(playerId) => setPlayers((prev) => prev.filter((p) => p.id !== playerId))}
                 maxSeats={lobbyMaxSeats}
               />
+              )}
             </div>
 
             <Sheet open={mobileRightDrawer} onOpenChange={setMobileRightDrawer}>
               <SheetContent side="right" title="Players" className="w-[18rem] max-w-[85vw] p-0 bg-zinc-850 border-l border-zinc-700 [&>button:last-child]:hidden">
+                {isRpgMode ? (
+                  <RpgPanel
+                    players={playersForChannel}
+                    currentSpeakerId={currentSpeakerId}
+                    currentUserId={userId}
+                    gameId={gameId}
+                    avatarImageUrls={avatarImageUrls}
+                    onAvatarUrlLoaded={onAvatarUrlLoaded}
+                  />
+                ) : (
                 <PlayerPanelWithBoard
                   players={isScene ? playersForChannel.filter(p => !p.isGameMaster) : playersForChannel}
                   gameId={gameId}
@@ -700,6 +735,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   onRemovePlayer={(playerId) => setPlayers((prev) => prev.filter((p) => p.id !== playerId))}
                   maxSeats={lobbyMaxSeats}
                 />
+                )}
               </SheetContent>
             </Sheet>
       </div>

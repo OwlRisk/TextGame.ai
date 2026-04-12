@@ -17,6 +17,8 @@ import { getScene, isSceneMode } from "@/lib/scenes";
 import { extractPreferredName, detectBrowserLanguage } from "@/lib/content-language";
 import { t, setAppLanguage, getAppLanguage } from "@/lib/i18n";
 import { resolvePlayerGender } from "@/lib/player-gender";
+import { getWorldById, type WorldSetting } from "@/lib/rpg/worlds";
+import { createCharacterFromClass } from "@/lib/rpg/classes";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string, lang?: string): string {
   const label = t("board.your_role", lang, { role });
@@ -164,6 +166,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       status: "online" as const,
       voiceId: (configPlayer.voice_id as string | undefined) ?? undefined,
       voiceSampleUrl: (configPlayer.voice_sample_url as string | undefined) ?? undefined,
+      ...(configPlayer.rpg ? { rpg: configPlayer.rpg } : {}),
     }));
   }, []);
 
@@ -176,6 +179,17 @@ export function useGameInit(gameId: string): UseGameInitReturn {
 
     const userName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "You";
     const userProfileAvatar = getUserAvatarUrl(session?.user) ?? "#6366f1";
+    const rpgWorldId = (config as any)?.rpgWorldId as string | undefined;
+    const rpgWorld = rpgWorldId ? getWorldById(rpgWorldId) : undefined;
+    const humanRpg = (() => {
+      if (!rpgWorld) return undefined;
+      const aiClasses = new Set(aiPlayers.map((p: any) => p.rpg?.class).filter(Boolean));
+      const available = rpgWorld.classes.filter((c) => !aiClasses.has(c.id));
+      const cls = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : rpgWorld.classes[0];
+      const faction = rpgWorld.factions[Math.floor(Math.random() * rpgWorld.factions.length)]?.name;
+      return createCharacterFromClass(cls, faction);
+    })();
+
     const userPlayer = {
       id: userId,
       name: userName,
@@ -185,6 +199,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       isAI: false,
       isMuted: false,
       status: "online" as const,
+      ...(humanRpg ? { rpg: humanRpg } : {}),
     };
 
     const speakersNeedingVoice = [

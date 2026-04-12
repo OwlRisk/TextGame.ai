@@ -1,3 +1,5 @@
+import type { RpgCharacter } from "./rpg";
+
 export interface Player {
   id: string;
   name: string;
@@ -5,6 +7,8 @@ export interface Player {
   role?: string;
   status?: string;
   stats?: Record<string, string | number>;
+  /** RPG character sheet — level, HP/MP, skills, equipment, inventory */
+  rpg?: RpgCharacter;
   isMuted?: boolean;
   isGameMaster?: boolean;
   isAI: boolean;

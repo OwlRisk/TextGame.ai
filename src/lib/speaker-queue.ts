@@ -57,6 +57,8 @@ export interface SpeakerQueueContext {
   characterDirections?: import("@/lib/gm-state").CharacterDirection[];
   /** Current channel goal from the GM (e.g. "vote on team proposal") */
   channelGoal?: string | null;
+  /** RPG world ID — triggers RPG-specific player speak prompts */
+  rpgWorldId?: string;
 }
 
 export function isNightPhase(phaseLabel: string | undefined): boolean {
@@ -107,6 +109,10 @@ function buildPlayerSpeakBody(
       isHuman: !p.isAI,
     }));
 
+  const rpg = speaker.rpg;
+  const rpgClassId = rpg?.class;
+  const rpgSkills = rpg?.skills?.map((s) => ({ name: s.name, description: s.description, mpCost: s.mpCost }));
+
   return {
     gameName: ctx.gameName,
     gameTemplate: ctx.gameTemplate,
@@ -120,6 +126,8 @@ function buildPlayerSpeakBody(
       speechStyle: speaker.speechStyle,
       quirk: speaker.quirk,
       boardContent: ctx.myBoardContent[speaker.id] ?? undefined,
+      ...(rpgClassId ? { rpgClass: rpgClassId } : {}),
+      ...(rpgSkills?.length ? { rpgSkills } : {}),
     },
     ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
     recentMessages: recent,
@@ -129,6 +137,7 @@ function buildPlayerSpeakBody(
     ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
     ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
     ...(ctx.contentLanguage ? { contentLanguage: ctx.contentLanguage } : {}),
+    ...(ctx.rpgWorldId ? { rpgWorldId: ctx.rpgWorldId } : {}),
     ...(ctx.characterDirections?.find((d) => d.name === speaker.name) ? {
       characterDirection: ctx.characterDirections.find((d) => d.name === speaker.name)!.direction,
     } : {}),

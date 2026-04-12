@@ -1,4 +1,5 @@
 import type { Player } from "@/types/player";
+import type { RpgUpdate } from "@/types/rpg";
 import { resolveChannelByName as resolveChannelByNameUtil } from "@/lib/game-host-utils";
 
 // ─── SpeakerQueueItem ──────────────────────────────────────────────────────
@@ -117,6 +118,12 @@ export function parseRoleAssignments(
 
 // ─── parseHostResult ───────────────────────────────────────────────────────
 
+/** RPG PLAYER_UPDATE parsed entry */
+export interface PlayerUpdateEntry {
+  playerName: string;
+  update: RpgUpdate;
+}
+
 export interface ParseHostResultOutput {
   hostContent: string;
   who: string | null;
@@ -125,6 +132,14 @@ export interface ParseHostResultOutput {
   autoChannelGoal: string | null;
   /** Current room / scene task from `CHANNEL_GOAL:` (shown to the player in the input area). */
   channelGoal: string | null;
+  /** Dynamic quick action buttons from GM */
+  quickActions: string[] | null;
+  /** RPG: per-player stat updates */
+  playerUpdates: PlayerUpdateEntry[];
+  /** RPG: combat start enemy data */
+  combatStart: Array<{ name: string; hp: number; maxHp: number }> | null;
+  /** RPG: combat end result */
+  combatEnd: string | null;
 }
 
 export function parseHostResult(
@@ -175,7 +190,42 @@ export function parseHostResult(
     if (t) channelGoal = t;
     return "";
   });
+
+  // QUICK_ACTIONS
+  let quickActions: string[] | null = null;
+  hostContent = hostContent.replace(/^\s*QUICK_ACTIONS:\s*(.+)$/gim, (_, g: string) => {
+    const items = g.split("|").map((s: string) => s.trim()).filter(Boolean);
+    if (items.length > 0) quickActions = items.slice(0, 6);
+    return "";
+  });
+
+  // PLAYER_UPDATE
+  const playerUpdates: PlayerUpdateEntry[] = [];
+  hostContent = hostContent.replace(/^\s*PLAYER_UPDATE:\s*(.+?)\s*\|\s*(\{.+\})\s*$/gim, (_, name: string, json: string) => {
+    try {
+      const update = JSON.parse(json) as RpgUpdate;
+      playerUpdates.push({ playerName: name.trim(), update });
+    } catch { /* skip malformed */ }
+    return "";
+  });
+
+  // COMBAT_START
+  let combatStart: Array<{ name: string; hp: number; maxHp: number }> | null = null;
+  hostContent = hostContent.replace(/^\s*COMBAT_START:\s*(\[.+\])\s*$/gim, (_, json: string) => {
+    try {
+      combatStart = JSON.parse(json);
+    } catch { /* skip malformed */ }
+    return "";
+  });
+
+  // COMBAT_END
+  let combatEnd: string | null = null;
+  hostContent = hostContent.replace(/^\s*COMBAT_END:\s*(.+)$/gim, (_, text: string) => {
+    combatEnd = text.trim();
+    return "";
+  });
+
   hostContent = hostContent.replace(/\n{3,}/g, "\n\n").trim();
 
-  return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal };
+  return { hostContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal, quickActions, playerUpdates, combatStart, combatEnd };
 }

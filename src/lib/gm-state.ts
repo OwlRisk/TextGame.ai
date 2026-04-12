@@ -23,6 +23,20 @@ export interface GmState {
   activeThreats: string[];
   /** Current emotional tone */
   mood: string;
+
+  // ── RPG extensions ──
+  /** Average party level */
+  partyLevel?: number;
+  /** Current location name */
+  location?: string;
+  /** Active quest log entries */
+  questLog?: string[];
+  /** Pending loot to distribute */
+  loot?: string[];
+  /** Whether combat is in progress */
+  combatActive?: boolean;
+  /** Active enemies in combat */
+  enemies?: { name: string; hp: number; maxHp: number }[];
 }
 
 export interface CharacterDirection {
@@ -78,7 +92,7 @@ export function parseGmState(directives: string): GmState | null {
   try {
     const raw = JSON.parse(jsonStr);
     if (typeof raw !== "object" || raw === null) return null;
-    return {
+    const state: GmState = {
       act: typeof raw.act === "number" ? raw.act : 1,
       tension: typeof raw.tension === "number" ? raw.tension : 1,
       ingredientsUsed: Array.isArray(raw.ingredientsUsed) ? raw.ingredientsUsed : [],
@@ -88,6 +102,13 @@ export function parseGmState(directives: string): GmState | null {
       activeThreats: Array.isArray(raw.activeThreats) ? raw.activeThreats : [],
       mood: typeof raw.mood === "string" ? raw.mood : "curious",
     };
+    if (typeof raw.partyLevel === "number") state.partyLevel = raw.partyLevel;
+    if (typeof raw.location === "string") state.location = raw.location;
+    if (Array.isArray(raw.questLog)) state.questLog = raw.questLog;
+    if (Array.isArray(raw.loot)) state.loot = raw.loot;
+    if (typeof raw.combatActive === "boolean") state.combatActive = raw.combatActive;
+    if (Array.isArray(raw.enemies)) state.enemies = raw.enemies;
+    return state;
   } catch {
     return null;
   }

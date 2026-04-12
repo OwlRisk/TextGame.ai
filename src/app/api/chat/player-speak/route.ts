@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { buildSystemPrompt, buildSceneCharacterPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
+import { buildSystemPrompt, buildSceneCharacterPrompt, buildRpgCharacterPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
 import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins, estimateTokensFromText } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId, gameId: bodyGameId, contentLanguage, characterDirection } = body as {
+    const { gameName, gameTemplate, rules, gamePhase, player, recentMessages, playerRoster, preferredModel, channelGoal, playerNotes, isSeedGreeting, humanName, sceneId, gameId: bodyGameId, contentLanguage, characterDirection, rpgWorldId } = body as {
       gameName?: string;
       gameTemplate?: string;
       rules?: string;
@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
       playerNotes?: string;
       /** Secret direction from the GM for this specific character this turn */
       characterDirection?: string;
+      /** RPG world ID for class-based prompts */
+      rpgWorldId?: string;
       player: {
         name: string;
         role?: string;
@@ -101,6 +103,10 @@ export async function POST(request: NextRequest) {
         background?: string;
         speechStyle?: string;
         quirk?: string;
+        /** RPG class id (e.g. "warrior", "mage") */
+        rpgClass?: string;
+        /** RPG skills for prompt context */
+        rpgSkills?: Array<{ name: string; description: string; mpCost?: number }>;
         /** Private My Board content the host wrote for this player (secret info they know). */
         boardContent?: string;
       };
@@ -134,7 +140,9 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
-    const system = (gameTemplate === 'scene' && sceneId)
+    const system = rpgWorldId && player.rpgClass
+      ? buildRpgCharacterPrompt(player.name, player.rpgClass, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, player.rpgSkills, contentLanguage)
+      : (gameTemplate === 'scene' && sceneId)
       ? buildSceneCharacterPrompt(player.name, sceneId, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, contentLanguage)
       : buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk, contentLanguage);
 

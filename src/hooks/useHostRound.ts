@@ -26,7 +26,8 @@ import {
   hostPace,
   dynamicPace,
 } from "@/lib/game-pace";
-import { buildHostSystemPrompt, buildSceneDirectorPrompt } from "@/lib/host-prompt-builder";
+import { buildHostSystemPrompt, buildSceneDirectorPrompt, buildRpgDirectorPrompt } from "@/lib/host-prompt-builder";
+import { getWorldById } from "@/lib/rpg/worlds";
 import { isSceneMode, getScene } from "@/lib/scenes";
 import { type GmState, type CharacterDirection, parseGmState, parseCharacterDirections, stripGmDirectives, EMPTY_GM_STATE } from "@/lib/gm-state";
 import {
@@ -43,6 +44,8 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { AFTERLIFE_CHANNEL_ID } from "@/lib/templates/types";
 import type { Player } from "@/types/player";
+import { applyRpgUpdate } from "@/types/rpg";
+import type { PlayerUpdateEntry } from "@/lib/host-output-parser";
 
 export interface SendMessageOptions {
   skipAddMessage?: boolean;
@@ -71,6 +74,8 @@ export interface UseHostRoundReturn {
   msgCountRef: React.MutableRefObject<number>;
   /** Latest `CHANNEL_GOAL:` from the host for this channel (shown above the input). */
   channelTaskHint: string | null;
+  /** Dynamic quick action buttons from GM's QUICK_ACTIONS directive */
+  dynamicQuickActions: string[] | null;
 }
 
 export function useHostRound({
@@ -127,6 +132,7 @@ export function useHostRound({
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [channelTaskHint, setChannelTaskHint] = useState<string | null>(null);
+  const [dynamicQuickActions, setDynamicQuickActions] = useState<string[] | null>(null);
   const msgCountRef = useRef(0);
   const pendingHumanMsgRef = useRef<string | null>(null);
   const interruptRef = useRef(false);
@@ -315,6 +321,30 @@ export function useHostRound({
         const freshEvents = gameEvents.length > 0
           ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
           : "(No events recorded yet)";
+
+        const rpgWorldId = (currentGame?.config as any)?.rpgWorldId as string | undefined;
+        if (rpgWorldId) {
+          const world = getWorldById(rpgWorldId);
+          const rpgRoster = freshNonHost.map((p) => {
+            const isH = p.id === userId;
+            const n = isH ? humanName : p.name;
+            const rpg = p.rpg;
+            if (!rpg) return `  • ${n} [${isH ? "HUMAN" : "AI"}]`;
+            return `  • ${n} [${isH ? "HUMAN" : "AI"}] | Lv.${rpg.level} ${rpg.class} | HP: ${rpg.hp}/${rpg.maxHp} | MP: ${rpg.mp}/${rpg.maxMp} | ATK: ${rpg.attack} DEF: ${rpg.defense} SPD: ${rpg.speed}${rpg.faction ? ` | ${rpg.faction}` : ""}`;
+          }).join("\n");
+          return buildRpgDirectorPrompt({
+            worldId: rpgWorldId,
+            worldName: world?.name ?? rpgWorldId,
+            humanName,
+            nonHostPlayerNames: freshNonHost.filter(p => p.id !== userId).map((p) => p.name),
+            playerRoster: rpgRoster,
+            eventLogSummary: freshEvents,
+            contentLanguage,
+            previousGmState: gmStateRef.current,
+            adventureNotes: (currentGame?.config as any)?.rpgAdventureNotes,
+            world,
+          });
+        }
 
         if (isSceneMode(tmplId) && sceneId) {
           return buildSceneDirectorPrompt({
@@ -536,14 +566,25 @@ export function useHostRound({
       const getStreamingDisplay = getStreamingDisplayUtil;
       const splitHostOutput = splitHostOutputUtil;
 
-      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: null | string; autoChannelGoal: string | null; channelGoal: string | null; imageUrl?: string }> => {
+      const applyPlayerUpdates = (entries: PlayerUpdateEntry[]) => {
+        if (entries.length === 0) return;
+        setPlayers((prev) =>
+          prev.map((p) => {
+            const entry = entries.find((e) => e.playerName === p.name || (p.id === userId && e.playerName === humanName));
+            if (!entry || !p.rpg) return p;
+            return { ...p, rpg: applyRpgUpdate(p.rpg, entry.update) };
+          })
+        );
+      };
+
+      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: null | string; autoChannelGoal: string | null; channelGoal: string | null; quickActions: string[] | null; playerUpdates: PlayerUpdateEntry[]; imageUrl?: string }> => {
         const isScene = isSceneMode(tmplId);
         const streamTokenBudget = isScene
           ? 2048
           : Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
         let messageId: string | null = null;
         setTypingUsers([{ name: gmName, avatar: gmColor }]);
-        const emptyResult = { hostContent: "", who: null, speakerQueue: [] as SpeakerQueueItem[], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
+        const emptyResult = { hostContent: "", who: null, speakerQueue: [] as SpeakerQueueItem[], autoChannelId: null, autoChannelGoal: null, channelGoal: null, quickActions: null as string[] | null, playerUpdates: [] as PlayerUpdateEntry[] };
         try {
           const ac = roundAbortRef.current;
           const fetchTimer = setTimeout(() => ac?.abort(), FETCH_TIMEOUT_MS);
@@ -631,7 +672,7 @@ export function useHostRound({
           const cleanedDirectives = stripGmDirectives(directives);
 
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
-          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal } = parseHostResult(cleanedDirectives);
+          const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal, quickActions, playerUpdates, combatStart, combatEnd } = parseHostResult(cleanedDirectives);
           const afterActions = applyHostActionsAndClean(directivesClean);
           const afterRoles = applyHostRoleAssignments(afterActions);
           const displayContent = splitMessage || afterRoles;
@@ -649,7 +690,15 @@ export function useHostRound({
             setMessages((prev) => prev.filter((m) => m.id !== messageId));
           }
           setTypingUsers([]);
-          return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal };
+          applyPlayerUpdates(playerUpdates);
+          if (quickActions) setDynamicQuickActions(quickActions);
+          if (combatStart) {
+            gmStateRef.current = { ...(gmStateRef.current ?? EMPTY_GM_STATE), combatActive: true, enemies: combatStart };
+          }
+          if (combatEnd) {
+            gmStateRef.current = { ...(gmStateRef.current ?? EMPTY_GM_STATE), combatActive: false, enemies: undefined };
+          }
+          return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal, quickActions, playerUpdates };
         } catch (e) {
           setTypingUsers([]);
           if (e instanceof DOMException && e.name === "AbortError") throw e;
@@ -712,7 +761,7 @@ export function useHostRound({
             const retryDirCleaned = stripGmDirectives(retryDir);
 
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
-            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal } = parseHostResult(retryDirCleaned);
+            const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal, quickActions: retryQA, playerUpdates: retryPU } = parseHostResult(retryDirCleaned);
             const retryAfterActions = applyHostActionsAndClean(retryClean);
             const retryAfterRoles = applyHostRoleAssignments(retryAfterActions);
             const retryDisplay = retryMsg || retryAfterRoles;
@@ -724,13 +773,17 @@ export function useHostRound({
             } else if (messageId) {
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             }
-            return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal };
+            applyPlayerUpdates(retryPU);
+            if (retryQA) setDynamicQuickActions(retryQA);
+            return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal, quickActions: retryQA, playerUpdates: retryPU };
           } catch (retryErr) {
             if (retryErr instanceof DOMException && retryErr.name === "AbortError") throw retryErr;
             return emptyResult;
           }
         }
       };
+
+      const rpgWorldIdCtx = (currentGame?.config as any)?.rpgWorldId as string | undefined;
 
       const buildSpeakerCtx = (recentRef: { current: Array<{ senderName: string; content: string }> }, currentChannelGoal?: string | null): SpeakerQueueContext => ({
         userId, channelId,
@@ -758,6 +811,7 @@ export function useHostRound({
         setCurrentSpeakerId, setTypingUsers, setPlayerNotes,
         addStreamingMessage, updateStreamingMessage,
         addReaction,
+        rpgWorldId: rpgWorldIdCtx,
         engagementScore: latestEngagementScore,
         characterDirections: characterDirectionsRef.current,
         channelGoal: currentChannelGoal,
@@ -769,9 +823,9 @@ export function useHostRound({
       pendingDecisionSummariesRef.current = [];
 
       const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, channelGoal: firstChannelGoal, imageUrl: firstImageUrl } = await callHostStream(firstUserContent, channelId);
+      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, channelGoal: firstChannelGoal } = await callHostStream(firstUserContent, channelId);
       if (firstChannelGoal?.trim()) setChannelTaskHint(firstChannelGoal.trim());
-      let isSilentTurn = !hostContent && !firstImageUrl;
+      let isSilentTurn = !hostContent;
       if (isSilentTurn && speakerQueue.length === 0) {
         if (tmplDef?.hostAnswersQuestions && content.includes("?")) {
           const retryResult = await callHostStream(
@@ -980,5 +1034,6 @@ export function useHostRound({
     handleSendMessageRef,
     msgCountRef,
     channelTaskHint,
+    dynamicQuickActions,
   };
 }

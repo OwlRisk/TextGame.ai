@@ -77,6 +77,8 @@ function DiscoverViewInner() {
         caseId = scriptKillSetup.caseId;
       }
 
+      const rpgWorldId = (preset as any).rpgWorldId as string | undefined;
+
       if (!scriptKillSetup) {
         toast.loading(t("toast.setting_up_players", lang), { id: toastId });
         try {
@@ -89,6 +91,7 @@ function DiscoverViewInner() {
               rules: preset.rules,
               minPlayers: tmpl?.minPlayers ?? 2,
               maxPlayers: tmpl?.maxPlayers ?? 20,
+              ...(rpgWorldId && { rpgWorldId }),
             }),
           });
           if (res.ok) {
@@ -132,6 +135,8 @@ function DiscoverViewInner() {
           ...(tmpl?.channels && {
             channels: tmpl.channels.map(c => ({ id: c.id, name: c.name, roomType: c.roomType })),
           }),
+          ...(rpgWorldId && { rpgWorldId }),
+          ...((preset as any).rpgAdventureNotes && { rpgAdventureNotes: (preset as any).rpgAdventureNotes }),
           generatedHost,
         },
         isActive: true,

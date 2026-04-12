@@ -4,6 +4,9 @@ import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { deductTokens, gptUsageToCoins, estimatedTokensToCoins, hasTokens } from '@/lib/tokens';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 import { resolvePlayerGender } from '@/lib/player-gender';
+import { getWorldById } from '@/lib/rpg/worlds';
+import { createCharacterFromClass } from '@/lib/rpg/classes';
+import type { ClassDefinition } from '@/lib/rpg/classes';
 
 const limiter = createRateLimiter('generate-players', { limit: 10, windowSeconds: 60 });
 
@@ -32,16 +35,116 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let body: { playerCount?: number; gameTemplate?: string; rules?: string; minPlayers?: number; maxPlayers?: number };
+    let body: { playerCount?: number; gameTemplate?: string; rules?: string; minPlayers?: number; maxPlayers?: number; rpgWorldId?: string };
     try {
       body = (await request.json()) as typeof body;
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    let { playerCount, gameTemplate, rules, minPlayers, maxPlayers } = body;
+    let { playerCount, gameTemplate, rules, minPlayers, maxPlayers, rpgWorldId } = body;
 
     if (playerCount == null || playerCount < 1) {
       playerCount = 0;
+    }
+
+    // ─── RPG mode: generate class-based party members ───
+    if (rpgWorldId) {
+      const world = getWorldById(rpgWorldId);
+      if (!world) {
+        return NextResponse.json({ error: `Unknown world: ${rpgWorldId}` }, { status: 400 });
+      }
+      const count = playerCount || 3;
+      const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';
+      const minCoinsNeeded = estimatedTokensToCoins(1500, chatModel);
+      if (!(await hasTokens(user.id, minCoinsNeeded))) {
+        return NextResponse.json({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }, { status: 402 });
+      }
+
+      const selectedClasses: ClassDefinition[] = [];
+      const shuffled = [...world.classes].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < count; i++) {
+        selectedClasses.push(shuffled[i % shuffled.length]);
+      }
+
+      const factionNames = world.factions.map(f => f.name).join(', ');
+      const classDescriptions = selectedClasses.map((c, i) => `Player ${i + 1}: ${c.name} (${c.nameZh}) — ${c.description}`).join('\n');
+
+      const openai = getOpenAI();
+      const randomSeed = Math.random().toString(36).substring(7);
+      const rpgPrompt = `Generate ${count} RPG party members for a ${world.name} (${world.nameZh}) adventure. (Seed: ${randomSeed})
+
+World: ${world.description}
+
+Each character has a pre-assigned class. Give them fitting names, personalities, and backgrounds that match their class and the world setting.
+
+Classes assigned:
+${classDescriptions}
+
+Available factions: ${factionNames}
+
+For ${world.id === 'wuxia' ? 'Wuxia: use Chinese names (e.g. 林剑心, 方悟空). Backgrounds should reference sects, martial arts, jianghu lore.' : 'Western Fantasy: use fantasy names (e.g. Aldric Stone, Lyra Frost). Backgrounds should reference guilds, quests, magical lore.'}
+
+Requirements:
+1. Each name must be SHORT (1-3 words, max 20 characters). No titles or class in the name.
+2. Personality must be SPECIFIC behavioral details, not generic. How they react in combat, what they fear, how they argue.
+3. speechStyle must make each character sound DIFFERENT in dialogue.
+4. Assign each character to a faction from the list above.
+
+Output ONLY valid JSON:
+{ "players": [
+  {
+    "name": "Character Name",
+    "gender": "male/female",
+    "classId": "${selectedClasses[0].id}",
+    "faction": "Faction Name",
+    "personality": "Specific behavioral details...",
+    "background": "Background that fits class and world...",
+    "speechStyle": "How they talk...",
+    "quirk": "Memorable behavioral quirk..."
+  }
+] }`;
+
+      const completion = await openai.chat.completions.create({
+        model: chatModel,
+        messages: [
+          { role: 'system', content: 'You are an RPG character generator. Output only valid JSON.' },
+          { role: 'user', content: rpgPrompt },
+        ],
+        max_completion_tokens: 2000,
+      });
+
+      const response = completion.choices[0]?.message?.content || '{}';
+      const stripped = response.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      const parsed = JSON.parse(stripped);
+      const rawPlayers = Array.isArray(parsed) ? parsed : (parsed.players || []);
+
+      const rpgPlayers = rawPlayers.map((p: any, i: number) => {
+        const cls = selectedClasses[i] || selectedClasses[0];
+        const faction = p.faction || world.factions[0]?.name;
+        const rpgChar = createCharacterFromClass(cls, faction);
+        return {
+          name: p.name || `${cls.name} ${i + 1}`,
+          gender: resolvePlayerGender(String(p.name || cls.name), p.gender, {
+            personality: p.personality,
+            background: p.background,
+          }),
+          personality: p.personality || cls.description,
+          background: p.background || '',
+          speechStyle: p.speechStyle || '',
+          quirk: p.quirk || '',
+          rpg: rpgChar,
+        };
+      });
+
+      const gp = completion.usage?.prompt_tokens ?? 0;
+      const gc = completion.usage?.completion_tokens ?? 0;
+      const actualModel = (completion as { model?: string }).model ?? chatModel;
+      const totalCoins = gptUsageToCoins(actualModel, gp, gc);
+      if (totalCoins > 0) {
+        await deductTokens(user.id, Math.max(1, totalCoins), 'generate_players', `RPG party ${count} chars ${gp}+${gc} tokens (${actualModel})`);
+      }
+
+      return NextResponse.json({ players: rpgPlayers, count: rpgPlayers.length, rpgWorldId });
     }
 
     const chatModel = process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';

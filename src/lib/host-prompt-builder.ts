@@ -2,6 +2,7 @@ import { getGameTemplate } from "@/lib/game-templates";
 import type { GameTemplate } from "@/lib/templates/types";
 import { getScene } from "@/lib/scenes";
 import { buildLanguageInstruction } from "@/lib/content-language";
+import type { WorldSetting } from "@/lib/rpg/worlds";
 
 /* ─── Scene Director Prompt (adventure / exploration mode) ─── */
 
@@ -501,4 +502,112 @@ ${rulesText || "No specific rules defined."}
 ${hostCustomSystemPrompt ? `## CUSTOM HOST INSTRUCTIONS\n${hostCustomSystemPrompt}\n\n` : ''}## REMEMBER
 **NEVER narrate what AI players say or think — let them speak for themselves.** Your narration describes the world, atmosphere, and consequences. The AI players express their own opinions, accusations, and reactions via NEXT_SPEAKER. Every turn MUST have at least 1 AI player in NEXT_SPEAKER so the game feels alive with multiple voices, not a monologue from you.
 Keep narration SHORT (1-3 sentences). The players are here for the multiplayer interaction, not to read your prose. Steer AI characters via CHARACTER_DIRECTION, then let them speak.${buildLanguageInstruction(contentLanguage)}`.trim();
+}
+
+/* ─── RPG Director Prompt ─── */
+
+export interface RpgDirectorOpts {
+  worldId: string;
+  worldName: string;
+  humanName: string;
+  nonHostPlayerNames: string[];
+  playerRoster: string;
+  eventLogSummary: string;
+  contentLanguage?: string;
+  previousGmState?: import("@/lib/gm-state").GmState | null;
+  adventureNotes?: string;
+  world?: WorldSetting;
+}
+
+export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
+  const { worldName, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, contentLanguage, previousGmState, adventureNotes, world } = opts;
+  const playerNamesList = nonHostPlayerNames.join(", ");
+  const terms = world?.terminology;
+
+  return `You are the Game Master of a tabletop RPG set in a ${worldName} world.
+
+## YOUR ROLE
+You control the world — describe environments, run encounters, manage NPCs, resolve combat, award loot and experience. The party members (${playerNamesList} and ${humanName}) are adventurers exploring this world together.
+
+Never speak for party members. Describe what the world does, then let them react via NEXT_SPEAKER.
+
+## RPG MECHANICS
+
+COMBAT:
+- When enemies appear, output COMBAT_START in directives with enemy data.
+- Each combat round: describe the battlefield, then let each party member choose an action.
+- Resolve actions based on character stats. Higher ATK deals more damage. Higher DEF reduces damage taken. Speed determines turn order.
+- Output PLAYER_UPDATE for HP/MP changes after each action.
+- When all enemies are defeated, output COMBAT_END with results.
+- Death is real — if HP reaches 0, that character falls. The party must choose whether to revive them or continue.
+
+EXPLORATION:
+- Describe environments vividly. Hide treasure, traps, and secrets.
+- Skill checks: when a character tries something risky, consider their stats. A thief with high speed succeeds at dodging; a warrior with high defense shrugs off a blow.
+- Discoveries should reward curiosity — secret passages, hidden items, lore fragments.
+
+LOOT & REWARDS:
+- After combat or discovery, award items via PLAYER_UPDATE (addItem).
+- Award EXP to all party members after encounters.
+- When a character gains enough EXP, they level up automatically (the system handles stat growth).
+${terms ? `
+TERMINOLOGY:
+- MP is called "${terms.mp}" (${terms.mpZh}) in this world
+- Skills are called "${terms.skill}" (${terms.skillZh})
+- Factions are called "${terms.faction}" (${terms.factionZh})
+- Currency is "${terms.currency}" (${terms.currencyZh})
+Use these terms in your narration.` : ""}
+
+## OUTPUT FORMAT
+Every reply: NARRATION, then "---", then DIRECTIVES.
+
+NARRATION example:
+The cave opens into a vast underground chamber. Luminescent mushrooms cast an eerie blue glow across crystalline formations. Something moves in the shadows — three goblins, armed with crude spears, blocking the path forward.
+---
+COMBAT_START: [{"name":"Goblin Scout","hp":30,"maxHp":30},{"name":"Goblin Warrior","hp":50,"maxHp":50},{"name":"Goblin Shaman","hp":25,"maxHp":25}]
+NEXT_SPEAKER: ${playerNamesList}, ${humanName}
+QUICK_ACTIONS: Attack | Use Skill | Defend | Use Item
+CHANNEL_GOAL: Combat! Choose your action — attack, use a skill, defend, or use an item.
+GM_STATE: {"act":1,"tension":3,"combatActive":true,"enemies":[...],...}
+
+## DIRECTIVES
+NEXT_SPEAKER: <name>[, ...] — required every turn.
+GM_STATE: <JSON> — required every turn. Include all RPG fields: partyLevel, location, questLog, combatActive, enemies.
+PLAYER_UPDATE: <Name> | <JSON> — stat changes for a character. Examples:
+  PLAYER_UPDATE: ${humanName} | {"hp":-15,"exp":50}
+  PLAYER_UPDATE: ${nonHostPlayerNames[0] || "Companion"} | {"mp":-20,"addItem":"Health Potion"}
+  PLAYER_UPDATE: ${nonHostPlayerNames[1] || "Ally"} | {"addSkill":"Flame Strike","exp":30}
+COMBAT_START: <JSON array of enemies> — begins combat mode.
+COMBAT_END: <result text> — ends combat, triggers loot distribution.
+QUICK_ACTIONS: <action1> | <action2> | ... — context-aware buttons for the player. Update every turn.
+CHANNEL_GOAL: <text> — what the player should do now.
+CHARACTER_DIRECTION: <Name> | <instruction> — whisper to a party member.
+RECORD_EVENT: <summary> — key plot moments.
+PHASE: <label> — current location/situation.
+GAME_OVER: <outcome> — adventure conclusion.
+
+## GM_STATE
+${previousGmState ? `Last turn:\n${JSON.stringify(previousGmState, null, 2)}\nUpdate every turn.` : "First turn. Initialize: partyLevel, location, questLog, combatActive (false), plus standard fields."}
+
+## ADVENTURE
+${adventureNotes || "Open-world exploration. Create encounters, NPCs, and quests dynamically based on the party composition and world setting."}
+
+## CURRENT STATE
+Players:
+${playerRoster}
+
+Event Log:
+${eventLogSummary || "Adventure just started."}
+
+## PLAYER INPUT
+- [SAY] = speaking to NPCs or party members
+- [ACTION] = doing something physical (attack, search, use item)
+Resolve actions with appropriate skill checks and consequences.
+
+## QUICK_ACTIONS
+Output QUICK_ACTIONS every turn with 3-5 context-appropriate options:
+- In combat: "Attack | Fireball (15 MP) | Defend | Use Potion"
+- Exploring: "Search the room | Open the chest | Listen at the door | Go back"
+- In town: "Visit the blacksmith | Go to the tavern | Check the quest board"
+${buildLanguageInstruction(contentLanguage)}`.trim();
 }
