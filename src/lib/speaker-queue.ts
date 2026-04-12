@@ -110,9 +110,12 @@ export async function runPlayerSpeak(
         isHuman: !p.isAI,
       }));
 
+    const ac = new AbortController();
+    const fetchTimer = setTimeout(() => ac.abort(), 45_000);
     const res = await fetch("/api/chat/player-speak", {
       method: "POST",
       headers,
+      signal: ac.signal,
       body: JSON.stringify({
         gameName: ctx.gameName,
         gameTemplate: ctx.gameTemplate,
@@ -141,6 +144,7 @@ export async function runPlayerSpeak(
         gameId: ctx.gameId,
       }),
     });
+    clearTimeout(fetchTimer);
     if (!res.ok) {
       if (res.status === 402) {
         const err = new Error("CREDITS_EXHAUSTED");
@@ -179,6 +183,9 @@ export async function runPlayerSpeak(
     const publicReply = clampSpokenReply(cleanContent, ctx.gameTemplate);
     return publicReply || null;
   } catch (err) {
+    if (err instanceof Error && (err.message === "CREDITS_EXHAUSTED" || (err as unknown as { status?: number }).status === 402)) {
+      throw err;
+    }
     console.error("Error generating AI player reply:", err);
     return null;
   }
@@ -325,12 +332,14 @@ export async function speakAndReveal(
   const isScene = ctx.gameTemplate === "scene";
   await thinkingDelay(queueIdx, ctx.convMode, isScene);
   ctx.setTypingUsers([toTyping(player), ...upcomingPlayers.slice(0, 2).map(toTyping)]);
-  const txt = await runPlayerSpeak(ctx, player, ctx.recentForNext.current);
-  // Clear "typing" during typewriter/subtitle reveal — otherwise upcoming AI names
-  // stay in the typing row and read like "still composing" while text streams.
+  let txt: string | null = null;
+  try {
+    txt = await runPlayerSpeak(ctx, player, ctx.recentForNext.current);
+  } catch (err) {
+    ctx.setTypingUsers([]);
+    throw err;
+  }
   ctx.setTypingUsers([]);
-  // Null means player chose silence or non-fatal error; message already logged.
-  // CREDITS_EXHAUSTED errors propagate to caller via thrown exception.
   if (txt) {
     const speed = getTypewriterSpeed(player.personality);
     const revealedMsgId = await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
