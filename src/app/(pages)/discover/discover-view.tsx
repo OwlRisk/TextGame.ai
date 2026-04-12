@@ -77,7 +77,7 @@ function DiscoverViewInner() {
         caseId = scriptKillSetup.caseId;
       }
 
-      const rpgWorldId = (preset as any).rpgWorldId as string | undefined;
+      const rpgWorldId = preset.rpgWorldId;
 
       if (!scriptKillSetup) {
         toast.loading(t("toast.setting_up_players", lang), { id: toastId });

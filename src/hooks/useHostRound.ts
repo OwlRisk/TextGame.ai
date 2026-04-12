@@ -322,7 +322,7 @@ export function useHostRound({
           ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
           : "(No events recorded yet)";
 
-        const rpgWorldId = (currentGame?.config as any)?.rpgWorldId as string | undefined;
+        const rpgWorldId = currentGame?.config?.rpgWorldId;
         if (rpgWorldId) {
           const world = getWorldById(rpgWorldId);
           const rpgRoster = freshNonHost.map((p) => {
@@ -783,7 +783,7 @@ export function useHostRound({
         }
       };
 
-      const rpgWorldIdCtx = (currentGame?.config as any)?.rpgWorldId as string | undefined;
+      const rpgWorldIdCtx = currentGame?.config?.rpgWorldId;
 
       const buildSpeakerCtx = (recentRef: { current: Array<{ senderName: string; content: string }> }, currentChannelGoal?: string | null): SpeakerQueueContext => ({
         userId, channelId,

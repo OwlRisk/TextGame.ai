@@ -59,6 +59,7 @@ export function getTemplateHexColor(templateId: string): string {
   return (m && TAILWIND_HEX[m[1]]) || "#7c3aed";
 }
 
-export function getAvatarStyleForTemplate(_templateId?: string): "valorant" | "semi-realistic" | "toon3d" {
+export function getAvatarStyleForTemplate(templateId?: string, rpgWorldId?: string): "valorant" | "semi-realistic" | "toon3d" | "anime" {
+  if (rpgWorldId) return "anime";
   return "semi-realistic";
 }

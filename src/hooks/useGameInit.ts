@@ -179,7 +179,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
 
     const userName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "You";
     const userProfileAvatar = getUserAvatarUrl(session?.user) ?? "#6366f1";
-    const rpgWorldId = (config as any)?.rpgWorldId as string | undefined;
+    const rpgWorldId = config?.rpgWorldId;
     const rpgWorld = rpgWorldId ? getWorldById(rpgWorldId) : undefined;
     const humanRpg = (() => {
       if (!rpgWorld) return undefined;
@@ -250,7 +250,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       }
     }
     if (roomPlayersNeedingAvatar.length > 0) {
-      const avatarStyle = getAvatarStyleForTemplate(config.template || "custom");
+      const avatarStyle = getAvatarStyleForTemplate(config.template || "custom", config.rpgWorldId);
       fetchAvatarsForRoom(roomPlayersNeedingAvatar, gameId, avatarStyle).then((urlMap) => {
         for (const [key, url] of Object.entries(urlMap)) {
           onAvatarUrlLoaded(key, url);

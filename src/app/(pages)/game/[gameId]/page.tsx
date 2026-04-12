@@ -337,7 +337,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // Game actions (context-sensitive action buttons)
   const humanPlayer = players.find((p) => p.id === userId);
-  const isRpgMode = !!(currentGame?.config as any)?.rpgWorldId;
+  const rpgWorldId = currentGame?.config?.rpgWorldId;
+  const isRpgMode = !!rpgWorldId;
+  const rpgAvatarStyle = isRpgMode ? getAvatarStyleForTemplate(undefined, rpgWorldId) : undefined;
   const templateActions = useGameActions({
     gameTemplate: currentGame?.config?.template,
     gamePhase,
@@ -678,6 +680,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   gameId={gameId}
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
+                  avatarStyle={rpgAvatarStyle}
                 />
               ) : (
               <PlayerPanelWithBoard
@@ -713,6 +716,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                     gameId={gameId}
                     avatarImageUrls={avatarImageUrls}
                     onAvatarUrlLoaded={onAvatarUrlLoaded}
+                    avatarStyle={rpgAvatarStyle}
                   />
                 ) : (
                 <PlayerPanelWithBoard
@@ -744,7 +748,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         open={showCharacterBrowser}
         onClose={() => setShowCharacterBrowser(false)}
         gameId={gameId}
-        style={getAvatarStyleForTemplate(currentGame?.config?.template || "custom")}
+        style={getAvatarStyleForTemplate(currentGame?.config?.template || "custom", currentGame?.config?.rpgWorldId)}
         onSelectCharacter={(char) => {
           const nonHostCount = players.filter((p) => !p.isGameMaster).length;
           if (nonHostCount >= lobbyMaxSeats) {

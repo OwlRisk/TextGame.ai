@@ -213,6 +213,15 @@ const SHARED_CORE_STYLE =
   FRIENDLY_SAFE + ' ' +
   CLEAN_PORTRAIT;
 
+/** Anime / Japanese mobile game style — Fate/Grand Order / Blue Archive aesthetic. */
+const ANIME_CORE_STYLE =
+  'High-quality Japanese mobile game character portrait illustration. ' +
+  'Style inspired by Fate/Grand Order and Blue Archive — polished cel-shading, fine linework, detailed hair and costume, vivid expressive eyes. ' +
+  SOLO_PORTRAIT + ' ' +
+  BOTH_EYES_REQUIRED + ' ' +
+  'Soft gradient background. ' +
+  CLEAN_PORTRAIT;
+
 /** Gender phrase for prompt: avatar appearance must match name gender */
 function genderPhrase(gender?: string): string {
   if (!gender || !gender.trim()) return '';
@@ -274,20 +283,20 @@ function sanitizeScaryDescription(text: string): string {
 function buildPrompt(
   _name: string,
   type: AvatarType,
-  opts: { background?: string; personality?: string; gender?: string }
+  opts: { background?: string; personality?: string; gender?: string; style?: string }
 ): string {
-  const { background, personality, gender } = opts;
+  const { background, personality, gender, style } = opts;
   const genderPrefix = genderPhrase(gender);
+  const isAnime = style === 'anime';
 
   const MAX_PROMPT_LENGTH = 1000;
 
-  const singleStart = 'Semi-realistic character portrait. ';
+  const coreStyle = isAnime ? ANIME_CORE_STYLE : SHARED_CORE_STYLE;
+  const singleStart = isAnime ? 'Anime character portrait. ' : 'Semi-realistic character portrait. ';
   const singleEnd = ' Solo individual, centered composition.';
 
-  const basePrompt = singleStart + genderPrefix + SHARED_CORE_STYLE + singleEnd;
+  const basePrompt = singleStart + genderPrefix + coreStyle + singleEnd;
 
-  // Merge personality and background into a single description so the avatar
-  // reflects both the character's traits and their story context.
   const parts: string[] = [];
   if (personality?.trim()) parts.push(personality.trim());
   if (background?.trim()) parts.push(background.trim());
@@ -307,11 +316,11 @@ function buildPrompt(
   }
 
   const prefix = singleStart + genderPrefix + 'Description: ';
-  const suffix = '. ' + SHARED_CORE_STYLE + singleEnd;
+  const suffix = '. ' + coreStyle + singleEnd;
 
   const availableLength = MAX_PROMPT_LENGTH - prefix.length - suffix.length;
   if (availableLength <= 0) {
-    return `${genderPrefix}${SHARED_CORE_STYLE}`;
+    return `${genderPrefix}${coreStyle}`;
   }
 
   const truncatedDesc = trimmedDesc.length > availableLength
@@ -470,6 +479,7 @@ export async function POST(request: NextRequest) {
     }
 
     const avatarType: AvatarType = type === 'host' ? 'host' : 'player';
+    const resolvedStyle: AvatarStyle = (typeof style === 'string' && isValidStyle(style)) ? style : DEFAULT_STYLE;
     const personalityStr = typeof personality === 'string' ? personality : undefined;
     const backgroundStr = typeof background === 'string' ? background : undefined;
     const genderResolved = resolvePlayerGender(name, typeof gender === 'string' ? gender : undefined, {
@@ -527,9 +537,10 @@ export async function POST(request: NextRequest) {
         background: backgroundStr,
         personality: personalityStr,
         gender: genderResolved,
+        style: resolvedStyle,
       });
 
-      logger.log(`[Avatar] Force-regenerating with DALL-E 3 for: ${name}, prompt length: ${prompt.length}`);
+      logger.log(`[Avatar] Force-regenerating with DALL-E 3 for: ${name}, style: ${resolvedStyle}, prompt length: ${prompt.length}`);
 
       const imageDataUrl = await generateWithDalle3(prompt);
       const image64 = await resizeAvatarTo64(imageDataUrl);
@@ -589,9 +600,10 @@ export async function POST(request: NextRequest) {
         background: backgroundStr,
         personality: personalityStr,
         gender: genderResolved,
+        style: resolvedStyle,
       });
 
-      logger.log(`[Avatar] generateAndPool for: ${name}, gender: ${genderResolved}, prompt length: ${prompt.length}`);
+      logger.log(`[Avatar] generateAndPool for: ${name}, style: ${resolvedStyle}, gender: ${genderResolved}, prompt length: ${prompt.length}`);
 
       const imageDataUrl = await generateWithDalle3(prompt);
       const g = poolGenderBinary(genderResolved, name);
@@ -720,6 +732,7 @@ export async function POST(request: NextRequest) {
       background: backgroundStr,
       personality: personalityStr,
       gender: genderResolved,
+      style: resolvedStyle,
     });
 
     let imageDataUrl: string;

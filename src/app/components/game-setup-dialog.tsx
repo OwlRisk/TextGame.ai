@@ -84,6 +84,10 @@ export interface GameConfig {
     actionType?: string;
     targetType?: string;
   }>;
+  /** RPG world identifier — when set, enables RPG mode with class-based characters. */
+  rpgWorldId?: string;
+  /** Optional GM notes for the RPG adventure. */
+  rpgAdventureNotes?: string;
 }
 
 interface ChatMessage {

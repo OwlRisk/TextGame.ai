@@ -1104,6 +1104,22 @@ const T: Record<string, Record<string, string>> = {
     uk: "Описи написані мовою контенту гри і можуть відрізнятися від мови інтерфейсу.",
   },
 
+  // ── RPG panel ────────────────────────────────────────────────────────
+  "rpg.party": { en: "Party", zh: "队伍", ja: "パーティー", ko: "파티" },
+  "rpg.party_count": { en: "{n} adventurers", zh: "{n}人冒险", ja: "{n}人の冒険者", ko: "{n}명 모험가" },
+  "rpg.no_data": { en: "No character data", zh: "暂无角色数据", ja: "キャラデータなし", ko: "캐릭터 데이터 없음" },
+  "rpg.tab_stats": { en: "Stats", zh: "属性", ja: "ステータス", ko: "스탯" },
+  "rpg.tab_skills": { en: "Skills", zh: "技能", ja: "スキル", ko: "스킬" },
+  "rpg.tab_equip": { en: "Equip", zh: "装备", ja: "装備", ko: "장비" },
+  "rpg.tab_bag": { en: "Bag", zh: "背包", ja: "持ち物", ko: "가방" },
+  "rpg.no_skills": { en: "No skills learned", zh: "尚未学会技能", ja: "スキル未習得", ko: "배운 스킬 없음" },
+  "rpg.bag_empty": { en: "Inventory empty", zh: "背包为空", ja: "持ち物なし", ko: "인벤토리 비어 있음" },
+  "rpg.slot_weapon": { en: "Weapon", zh: "武器", ja: "武器", ko: "무기" },
+  "rpg.slot_armor": { en: "Armor", zh: "防具", ja: "防具", ko: "방어구" },
+  "rpg.slot_accessory": { en: "Accessory", zh: "饰品", ja: "装飾品", ko: "장신구" },
+  "rpg.slot_empty": { en: "Empty", zh: "空", ja: "空", ko: "비어 있음" },
+  "rpg.class": { en: "Class", zh: "职业", ja: "職業", ko: "직업" },
+
   // ── Chat / input ─────────────────────────────────────────────────────
   "btn.send": { en: "Send", zh: "发送", ja: "送信", ko: "보내기", de: "Senden", fr: "Envoyer", es: "Enviar", pt: "Enviar", ru: "Отправить", it: "Invia", ar: "إرسال", tr: "Gönder", hi: "भेजें", id: "Kirim", vi: "Gửi", th: "ส่ง", pl: "Wyślij", nl: "Verstuur", uk: "Надіслати" },
   "btn.sending": { en: "Sending…", zh: "发送中…", ja: "送信中…", ko: "전송 중…", de: "Senden…", fr: "Envoi…", es: "Enviando…", pt: "Enviando…", ru: "Отправка…", it: "Invio…", ar: "جارٍ الإرسال…", tr: "Gönderiliyor…", hi: "भेज रहे हैं…", id: "Mengirim…", vi: "Đang gửi…", th: "กำลังส่ง…", pl: "Wysyłanie…", nl: "Verzenden…", uk: "Надсилання…" },

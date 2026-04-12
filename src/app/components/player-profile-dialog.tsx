@@ -4,10 +4,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import type { Player } from "@/types/player";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { User, Sparkles, BookOpen } from "lucide-react";
+import { User, Sparkles, BookOpen, Sword } from "lucide-react";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { t, getBrowserLanguage } from "@/lib/i18n";
+import { getClassById } from "@/lib/rpg/classes";
 
 interface PlayerProfileDialogProps {
   player: Player | null;
@@ -91,7 +92,26 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
               })()
             )}
             <div className="flex-1 min-w-0">
-              {player.role && (isUser || isUserGameMaster || player.roleRevealed) && (
+              {player.rpg && (() => {
+                const classDef = getClassById(player.rpg.class);
+                const className = lang.startsWith("zh") ? (classDef?.nameZh ?? classDef?.name ?? player.rpg.class) : (classDef?.name ?? player.rpg.class);
+                return (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Sword className="h-3.5 w-3.5 text-amber-400" />
+                      <span className="text-sm font-medium text-amber-300">Lv.{player.rpg.level} {className}</span>
+                    </div>
+                    {player.rpg.faction && (
+                      <p className="text-xs text-zinc-400">{player.rpg.faction}</p>
+                    )}
+                    <div className="flex gap-3 text-xs">
+                      <span className="text-red-400">HP {player.rpg.hp}/{player.rpg.maxHp}</span>
+                      <span className="text-blue-400">MP {player.rpg.mp}/{player.rpg.maxMp}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+              {player.role && !player.rpg && (isUser || isUserGameMaster || player.roleRevealed) && (
                 <p className="text-sm font-medium text-zinc-300">{player.role}</p>
               )}
             </div>

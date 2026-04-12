@@ -11,6 +11,8 @@ import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { getClassById } from "@/lib/rpg/classes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
+import { t, getBrowserLanguage } from "@/lib/i18n";
+import type { AvatarStyle } from "@/lib/avatar-style-constants";
 
 interface RpgPanelProps {
   players: Player[];
@@ -19,6 +21,7 @@ interface RpgPanelProps {
   gameId?: string;
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  avatarStyle?: AvatarStyle;
 }
 
 export function RpgPanel({
@@ -28,7 +31,9 @@ export function RpgPanel({
   gameId,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  avatarStyle,
 }: RpgPanelProps) {
+  const lang = getBrowserLanguage();
   const partyMembers = useMemo(() => players.filter((p) => !p.isGameMaster), [players]);
 
   return (
@@ -36,8 +41,8 @@ export function RpgPanel({
       <div className="h-14 px-5 flex items-center justify-between border-b border-violet-900/20 bg-zinc-900/40 backdrop-blur-md">
         <div className="flex items-center gap-2 text-zinc-300">
           <Swords className="h-4 w-4 text-amber-400" />
-          <span className="text-sm font-semibold">Party</span>
-          <span className="text-xs text-zinc-500">({partyMembers.length})</span>
+          <span className="text-sm font-semibold">{t("rpg.party", lang)}</span>
+          <span className="text-xs text-zinc-500">· {t("rpg.party_count", lang).replace("{n}", String(partyMembers.length))}</span>
         </div>
       </div>
       <ScrollArea className="flex-1 min-h-0">
@@ -51,6 +56,7 @@ export function RpgPanel({
               gameId={gameId}
               avatarImageUrls={avatarImageUrls}
               onAvatarUrlLoaded={onAvatarUrlLoaded}
+              avatarStyle={avatarStyle}
             />
           ))}
         </div>
@@ -74,6 +80,7 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
   gameId,
   avatarImageUrls = {},
   onAvatarUrlLoaded,
+  avatarStyle,
 }: {
   player: Player;
   isSpeaking: boolean;
@@ -81,12 +88,14 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
   gameId?: string;
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  avatarStyle?: AvatarStyle;
 }) {
+  const lang = getBrowserLanguage();
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<"stats" | "skills" | "equip" | "bag">("stats");
   const rpg = player.rpg;
   const classDef = rpg ? getClassById(rpg.class) : undefined;
-  const avatarProps = player.isAI ? getAvatarPropsForPlayer(player) : null;
+  const avatarProps = player.isAI ? getAvatarPropsForPlayer(player, avatarStyle) : null;
   const { user } = useAuth();
   const userAvatarUrl = !player.isAI ? getUserAvatarUrl(user) : undefined;
 
@@ -141,7 +150,7 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
             <>
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="text-[10px] text-amber-400 font-medium">
-                  Lv.{rpg.level} {classDef?.name ?? rpg.class}
+                  Lv.{rpg.level} {lang.startsWith("zh") ? (classDef?.nameZh ?? classDef?.name ?? rpg.class) : (classDef?.name ?? rpg.class)}
                 </span>
                 {rpg.faction && (
                   <span className="text-[10px] text-zinc-500">· {rpg.faction}</span>
@@ -155,7 +164,7 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
               <StatBar label="EXP" current={rpg.exp} max={rpg.expToNext} color="bg-amber-500" bgColor="bg-amber-900/40" icon={<Star className="h-3 w-3 text-amber-400" />} tiny />
             </>
           ) : (
-            <span className="text-xs text-zinc-500">No character data</span>
+            <span className="text-xs text-zinc-500">{t("rpg.no_data", lang)}</span>
           )}
         </div>
 
@@ -189,10 +198,10 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
                 }`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === "stats" && "Stats"}
-                {tab === "skills" && `Skills (${rpg.skills.length})`}
-                {tab === "equip" && "Equip"}
-                {tab === "bag" && `Bag (${rpg.inventory.length})`}
+                {tab === "stats" && t("rpg.tab_stats", lang)}
+                {tab === "skills" && `${t("rpg.tab_skills", lang)} (${rpg.skills.length})`}
+                {tab === "equip" && t("rpg.tab_equip", lang)}
+                {tab === "bag" && `${t("rpg.tab_bag", lang)} (${rpg.inventory.length})`}
               </button>
             ))}
           </div>
@@ -246,7 +255,8 @@ function StatsTab({ rpg }: { rpg: RpgCharacter }) {
 }
 
 function SkillsTab({ skills }: { skills: RpgSkill[] }) {
-  if (skills.length === 0) return <p className="text-xs text-zinc-500 text-center py-2">No skills learned</p>;
+  const lang = getBrowserLanguage();
+  if (skills.length === 0) return <p className="text-xs text-zinc-500 text-center py-2">{t("rpg.no_skills", lang)}</p>;
   return (
     <div className="space-y-1.5">
       {skills.map((skill) => (
@@ -274,10 +284,11 @@ function SkillsTab({ skills }: { skills: RpgSkill[] }) {
 }
 
 function EquipTab({ rpg }: { rpg: RpgCharacter }) {
+  const lang = getBrowserLanguage();
   const slots = [
-    { label: "Weapon", item: rpg.equipment.weapon },
-    { label: "Armor", item: rpg.equipment.armor },
-    { label: "Accessory", item: rpg.equipment.accessory },
+    { label: t("rpg.slot_weapon", lang), item: rpg.equipment.weapon },
+    { label: t("rpg.slot_armor", lang), item: rpg.equipment.armor },
+    { label: t("rpg.slot_accessory", lang), item: rpg.equipment.accessory },
   ];
   return (
     <div className="space-y-1.5">
@@ -292,7 +303,7 @@ function EquipTab({ rpg }: { rpg: RpgCharacter }) {
               </span>
             </div>
           ) : (
-            <p className="text-[10px] text-zinc-600 mt-0.5">Empty</p>
+            <p className="text-[10px] text-zinc-600 mt-0.5">{t("rpg.slot_empty", lang)}</p>
           )}
         </div>
       ))}
@@ -301,7 +312,8 @@ function EquipTab({ rpg }: { rpg: RpgCharacter }) {
 }
 
 function BagTab({ items }: { items: RpgItem[] }) {
-  if (items.length === 0) return <p className="text-xs text-zinc-500 text-center py-2">Inventory empty</p>;
+  const lang = getBrowserLanguage();
+  if (items.length === 0) return <p className="text-xs text-zinc-500 text-center py-2">{t("rpg.bag_empty", lang)}</p>;
   return (
     <div className="space-y-1">
       {items.map((item) => (

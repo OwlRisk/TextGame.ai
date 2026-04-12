@@ -46,6 +46,30 @@ export interface ChatInputAreaProps {
 const MIN_INPUT_HEIGHT = 40;
 const MAX_INPUT_HEIGHT = 120;
 
+/**
+ * Parse a CHANNEL_GOAL hint like "选择路线：左侧下坡，或右侧长廊" into
+ * { description: "选择路线", choices: ["左侧下坡", "右侧长廊"] }.
+ * Supports Chinese delimiters (，、或/还是) and English (or / , / |).
+ */
+function parseTaskHintChoices(hint: string): { description: string; choices: string[] } {
+  const cleaned = hint.replace(/[？?！!。]+$/, "").trim();
+  // Try splitting on colon / dash / em-dash to get description vs choices part
+  const colonMatch = cleaned.match(/^(.+?)[：:—–]\s*(.+)$/);
+  const description = colonMatch ? colonMatch[1].trim() : "";
+  const body = colonMatch ? colonMatch[2].trim() : cleaned;
+
+  // Split on common choice delimiters: ，或 / 或者 / 还是 / 或 / or / | / 、/ ,
+  const parts = body
+    .split(/[，,]\s*(?:或者?|还是)|(?:或者|还是)|[，,、]|\s+or\s+|\s*\|\s*/g)
+    .map((s) => s.replace(/^或\s*/, "").trim())
+    .filter(Boolean);
+
+  if (parts.length >= 2) {
+    return { description, choices: parts };
+  }
+  return { description: "", choices: [] };
+}
+
 export const ChatInputArea = React.memo(function ChatInputArea({
   channelName,
   onSendMessage,
@@ -242,14 +266,44 @@ export const ChatInputArea = React.memo(function ChatInputArea({
 
   return (
     <div className="p-4 pt-3 border-t border-violet-900/20 bg-zinc-900">
-      {channelTaskHint?.trim() && isGameActive && !effectivelyEliminated && (
-        <div className="mb-3 rounded-lg border border-amber-500/25 bg-amber-950/25 px-3 py-2.5 backdrop-blur-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-400/90 mb-1">
-            {t("chat.current_task", lang)}
+      {channelTaskHint?.trim() && isGameActive && !effectivelyEliminated && (() => {
+        const hint = channelTaskHint.trim();
+        const parsed = parseTaskHintChoices(hint);
+        return (
+          <div className="mb-3 rounded-lg border border-amber-500/25 bg-amber-950/25 px-3 py-2.5 backdrop-blur-sm">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-400/90 mb-1">
+              {t("chat.current_task", lang)}
+            </div>
+            {parsed.choices.length > 0 ? (
+              <>
+                {parsed.description && (
+                  <p className="text-sm text-amber-100/95 leading-snug mb-2">{parsed.description}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {parsed.choices.map((choice, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={sendDisabled}
+                      className="px-3 py-1.5 text-sm rounded-md border border-amber-500/30 bg-amber-800/20 hover:bg-amber-600/30 hover:border-amber-400/50 text-amber-100 hover:text-white transition-all duration-150 disabled:opacity-40"
+                      onClick={() => {
+                        sendingLockRef.current = true;
+                        setIsSending(true);
+                        onSendMessage(`[ACTION] ${choice}`);
+                        setTimeout(() => { sendingLockRef.current = false; setIsSending(false); }, 500);
+                      }}
+                    >
+                      {choice}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-amber-100/95 leading-snug">{hint}</p>
+            )}
           </div>
-          <p className="text-sm text-amber-100/95 leading-snug">{channelTaskHint.trim()}</p>
-        </div>
-      )}
+        );
+      })()}
       {/* ── Status banners ── */}
       {isEliminated && !isInAfterlife && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800/80 border border-zinc-600/40 text-zinc-400">

@@ -1,20 +1,18 @@
 /**
  * Single source of truth for avatar style configuration.
  *
- * Two styles are kept: semi-realistic (for serious/deduction games) and toon3d
- * (for party/quiz/open games). The style is auto-selected per game template via
- * getAvatarStyleForTemplate() in game-templates.ts — there is no user-facing
- * style picker.
+ * Styles are auto-selected per game template via getAvatarStyleForTemplate()
+ * in game-templates.ts — there is no user-facing style picker.
  *
- * Legacy styles (anime, painted, pixel, cyberpunk) remain in the DB
- * avatar_styles column for backward compatibility but are no longer generated
- * or actively served.
+ * Legacy styles (painted, pixel, cyberpunk) remain in the DB avatar_styles
+ * column for backward compatibility but are no longer generated or actively served.
  */
 
 export const VALID_STYLES = [
   'valorant',
   'semi-realistic',
   'toon3d',
+  'anime',
 ] as const;
 
 export type AvatarStyle = (typeof VALID_STYLES)[number];
