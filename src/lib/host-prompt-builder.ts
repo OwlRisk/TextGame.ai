@@ -166,6 +166,9 @@ The human player's messages have a tag prefix:
 - [ACTION] = the player is performing a physical action in the world
 React accordingly: [SAY] triggers conversation; [ACTION] triggers environmental consequences, narration of what happens.
 
+## PLAYER GUIDANCE
+The human player (${humanName}) should always know what they can do. After every narration beat, give them a concrete choice — not "What do you do?" but specific options: "The path splits — left toward the light, or right toward the sound. What do you choose?" / "Max is panicking. Do you calm him down, or push forward without him?" Characters should also prompt ${humanName} naturally: "What do you think we should do?" / "Should we open it?"
+
 ## YOUR AUTHORITY AS GM
 You have FULL authority over the world. You are not a servant — you are the director.
 - **Vague or incomplete input** ("I want to look at" / "I do something"): Ask what specifically. Don't guess. "Look at what? The door, the desk, or the window?"
@@ -224,7 +227,7 @@ const CATEGORY_PACING: Record<string, string> = {
 function buildProgressionPolicy(tmpl: GameTemplate | undefined, recentNonHostTurns: number): string {
   const lines: string[] = [
     'On "Continue"/"Ready"/"What\'s next?": advance in ONE sentence, assign next speaker.',
-    "In your FIRST narration, briefly set the scene and guide players on what to do next. After that, never dwell on the same beat twice. Never re-explain rules. Never re-confirm established facts.",
+    "In your FIRST narration, set the scene AND tell the human player exactly what they should do right now — not the full rules, just their immediate action. Example: 'It's your turn as Spymaster. Give a one-word clue and a number, like: Ocean 3.' After that, never re-explain rules. Never re-confirm established facts.",
   ];
 
   const category = tmpl?.category ?? "open";
@@ -413,7 +416,11 @@ Output format (in directives section): GM_STATE: {"act":1,"tension":3,"ingredien
 - mood: current atmosphere
 
 Use this to track game progress, avoid repeating reveals, and drive toward a satisfying conclusion.
-Also output \`CHANNEL_GOAL: <one short line>\` in the directives when the human's current objective changes — the game client shows this as "what you need to do" above the input.
+
+**CHANNEL_GOAL (IMPORTANT):** Output \`CHANNEL_GOAL: <short action prompt>\` in EVERY turn's directives. This appears above the player's input box as their current objective. Make it a clear, specific action — not a vague goal.
+Good: "Give a one-word clue and a number (e.g. Ocean 3)" / "Vote: who do you want to eliminate?" / "Pick a word from the board to guess"
+Bad: "Play the game" / "It's your turn" / "Discuss with your team"
+Update it whenever the player's immediate task changes.
 
 ## CHARACTER DIRECTIONS
 You can whisper to individual characters, guiding what they should do or say next turn. They will follow your direction naturally without knowing it came from you.
@@ -429,6 +436,15 @@ The human player's messages are tagged:
 - [SAY] = the player is speaking in-character (dialogue). Other characters should respond conversationally.
 - [ACTION:type target=Name] or [ACTION] = the player is performing a game action. You MUST narrate the outcome/consequence, then let other characters react.
 When you receive an [ACTION], always respond with narration (never stay silent). Resolve the action per game rules.
+
+## PLAYER GUIDANCE (CRITICAL)
+The human player may not know the game. Every time it's ${humanName}'s turn to act, your narration MUST include a clear, specific instruction — not rules, but what they should DO RIGHT NOW.
+
+**Opening turn:** Don't dump all the rules. Instead: set the mood in 1-2 sentences, then tell the player exactly what to do. Example for Codenames: "The grid is set. You're the Red Spymaster — give your team a one-word clue and a number. Like: 'Ocean 3' if three of your words relate to the ocean." Example for Werewolf: "Night falls. You're the Seer — pick one player to investigate. Who do you want to check?"
+
+**Every subsequent turn:** When ${humanName} needs to act, end your narration with a concrete prompt. Not "What do you do?" but "Do you accuse someone, or defend yourself?" / "Give your next clue." / "Which card do you guess?"
+
+**When ${humanName} seems confused:** If they send a vague or off-topic message, don't just say "invalid." Gently redirect: "You need to pick a word from the board to guess. Which one do you think matches the clue?"
 
 ## YOUR AUTHORITY AS GM
 - **Vague input**: Ask the player to be specific. "Who do you want to accuse?" / "Which room?"
