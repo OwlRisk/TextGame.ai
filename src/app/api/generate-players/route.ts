@@ -92,10 +92,10 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
   {
     "name": "Name or character title that fits the game",
     "gender": "male/female/other",
-    "personality": "Unique personality (5-10 words)",
-    "background": "Unique background (5-10 words)",
-    "speechStyle": "How they talk: e.g. blunt and sarcastic / poetic and flowery / nervous stammering / street slang / deadpan dry / overly formal",
-    "quirk": "A behavioral quirk: e.g. always uses food metaphors / interrupts others / asks rhetorical questions / speaks in short bursts / narrates own actions"`;
+    "personality": "2-3 sentences: how they think, react, and behave. Include specific speech patterns, emotional tendencies, and tells (e.g. 'Gets louder when nervous. Speaks in short bursts. Always returns to evidence over gut feeling.')",
+    "background": "2-3 sentences: their real-life background that shapes how they play. Include details that create conversation hooks (e.g. 'Former ER nurse. Stays calm in chaos but panics over small social conflicts. Brings up medical analogies.')",
+    "speechStyle": "Specific speech pattern — NOT generic. e.g. 'Terse fragments, drops pronouns, never says please' / 'Dramatic and theatrical, treats everything like a stage performance' / 'Nervous run-on sentences that trail off mid-thought'",
+    "quirk": "A memorable behavioral quirk that other players will notice — e.g. 'Always sides with the underdog then switches at the last second' / 'Gets suspicious of whoever is being too quiet' / 'Makes dark jokes when the situation gets tense'"`;
     if (needsRoles) {
       outputFormat += `,
     "role": "Role from rules"`;
@@ -140,11 +140,12 @@ Based on this game's theme and setting, decide what naming style fits best:
 IMPORTANT: The "name" field must be a SHORT character name (1-3 words, max 20 characters). Do NOT include commas, occupations, titles, or role descriptions in the name. Occupations/backgrounds go in the "background" field.
 
 Requirements:
-1. ${playerCount} completely unique, diverse players
+1. ${playerCount} completely unique, diverse players who feel like REAL PEOPLE, not archetypes
 2. Mix genders naturally
-3. Each personality must be distinct and memorable
-4. Create backgrounds that enhance the game experience
-5. CRITICAL — speechStyle and quirk: Every player MUST have a completely different speech style and quirk. These make each AI sound like a distinct person. Examples of speechStyle diversity: one player speaks in terse fragments, another is verbose and dramatic, another peppers in slang, another is painfully polite. Examples of quirk diversity: one always brings up their past, another deflects with humor, another gets paranoid easily, another trusts everyone too quickly.${roleInstructions}${wordInstructions}
+3. Each personality MUST include specific behavioral details — how they react under pressure, what triggers them, how they argue. Generic traits like "friendly and helpful" are BANNED. Be specific: "Agrees enthusiastically then quietly undermines the plan. Gets defensive when called out — deflects by complimenting the accuser."
+4. Backgrounds should create NATURAL CONFLICT between characters — one is a control freak while another hates being told what to do. One trusts too easily, another sees conspiracies everywhere. These dynamics make the game dramatic without the GM forcing it.
+5. CRITICAL — speechStyle and quirk: Every player MUST sound completely different when they talk. One speaks in terse fragments, another is verbose and dramatic, another peppers in slang, another is painfully polite. Quirks should be things OTHER players would notice and react to.
+6. Give each character a RELATIONSHIP SEED — a detail that naturally creates interaction with other players (e.g. "Immediately trusts whoever speaks first" or "Always challenges the loudest person in the room")${roleInstructions}${wordInstructions}
 
 Output ONLY valid JSON:${outputFormat}${wordPairFormat ? `
 
@@ -164,7 +165,7 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
           content: prompt
         }
       ],
-      max_completion_tokens: 1200,
+      max_completion_tokens: 2500,
     });
 
     const response = completion.choices[0]?.message?.content || '{}';

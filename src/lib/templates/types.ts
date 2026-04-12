@@ -137,7 +137,7 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     hasNightPhase: false,
     hostVoice: { maxSentences: 2, silentByDefault: false, drama: "high" },
     speakerMode: "round-table",
-    playerLimits: { tokenLimit: 220, sentenceMax: 3, sentencePreferred: 2, charLimit: 280, mustContribute: true },
+    playerLimits: { tokenLimit: 400, sentenceMax: 5, sentencePreferred: 2, charLimit: 500, mustContribute: true },
     pacing: { progressionThreshold: 3, hint: "Force state changes (vote / phase transition) after a few discussion turns." },
     quickActions: [
       { label: "Accuse", template: "I think {player} is suspicious — ", needsTarget: true, icon: "🔍", phase: "day", actionType: "social" },
@@ -149,9 +149,9 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
   quiz: {
     hasVotingPhase: false,
     hasNightPhase: false,
-    hostVoice: { maxSentences: 1, silentByDefault: false, drama: "medium" },
+    hostVoice: { maxSentences: 2, silentByDefault: false, drama: "medium" },
     speakerMode: "round-table",
-    playerLimits: { tokenLimit: 180, sentenceMax: 2, sentencePreferred: 1, charLimit: 180, mustContribute: true },
+    playerLimits: { tokenLimit: 350, sentenceMax: 4, sentencePreferred: 1, charLimit: 400, mustContribute: true },
     pacing: { progressionThreshold: 2, hint: "Keep rounds crisp. Adjudicate quickly, then next question." },
     quickActions: [
       { label: "Answer", template: "My answer is ", icon: "✋", actionType: "use" },
@@ -163,7 +163,7 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     hasNightPhase: false,
     hostVoice: { maxSentences: 3, silentByDefault: false, drama: "medium" },
     speakerMode: "selective",
-    playerLimits: { tokenLimit: 300, sentenceMax: 4, sentencePreferred: 2, charLimit: 350, mustContribute: false },
+    playerLimits: { tokenLimit: 450, sentenceMax: 5, sentencePreferred: 2, charLimit: 500, mustContribute: false },
     pacing: { progressionThreshold: 4, hint: "Nudge with clues or consequences if stalled. Inject obstacles if pace drops." },
     quickActions: [
       { label: "Suggest", template: "What if we try ", icon: "💡", actionType: "social" },
@@ -173,9 +173,9 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
   party: {
     hasVotingPhase: false,
     hasNightPhase: false,
-    hostVoice: { maxSentences: 1, silentByDefault: false, drama: "medium" },
+    hostVoice: { maxSentences: 2, silentByDefault: false, drama: "medium" },
     speakerMode: "round-table",
-    playerLimits: { tokenLimit: 220, sentenceMax: 3, sentencePreferred: 1, charLimit: 250, mustContribute: true },
+    playerLimits: { tokenLimit: 400, sentenceMax: 5, sentencePreferred: 1, charLimit: 450, mustContribute: true },
     pacing: { progressionThreshold: 3, hint: "Energy high, rounds snappy. Next round quickly after each answer/vote." },
     quickActions: [
       { label: "Respond", template: "@{player} ", needsTarget: true, icon: "💬", actionType: "social" },
@@ -187,7 +187,7 @@ const CATEGORY_DEFAULTS: Record<GameTemplate["category"], CategoryDefaults> = {
     hasNightPhase: false,
     hostVoice: { maxSentences: 3, silentByDefault: false, drama: "medium" },
     speakerMode: "selective",
-    playerLimits: { tokenLimit: 300, sentenceMax: 4, sentencePreferred: 2, charLimit: 350, mustContribute: false },
+    playerLimits: { tokenLimit: 450, sentenceMax: 5, sentencePreferred: 2, charLimit: 500, mustContribute: false },
     pacing: { progressionThreshold: 6, hint: "Creative freedom, but no dead air. Drop a hook if momentum fades." },
     quickActions: [
       { label: "Continue", template: "Let's keep going — ", icon: "▶️", actionType: "meta" },

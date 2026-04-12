@@ -9,33 +9,31 @@ import type { SceneCharacter } from "@/lib/scenes/types";
 import { buildLanguageInstruction } from "@/lib/content-language";
 
 /** Default hard limit: enforced by max_completion_tokens. */
-export const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 220;
+export const PLAYER_SPEAK_HARD_LIMIT_TOKENS = 400;
 
 export function getPlayerTokenLimit(template?: string): number {
-  if (template === "scene") return 300;
+  if (template === "scene") return 500;
   if (!template) return PLAYER_SPEAK_HARD_LIMIT_TOKENS;
   const tmpl = getGameTemplate(template);
-  return tmpl?.playerLimits.tokenLimit ?? PLAYER_SPEAK_HARD_LIMIT_TOKENS;
+  return Math.max(tmpl?.playerLimits.tokenLimit ?? PLAYER_SPEAK_HARD_LIMIT_TOKENS, 350);
 }
 
 export function getPlayerSentenceLimit(template?: string): { max: number; preferred: number } {
-  if (template === "scene") return { max: 3, preferred: 2 };
-  if (!template) return { max: 3, preferred: 1 };
+  if (template === "scene") return { max: 5, preferred: 3 };
+  if (!template) return { max: 5, preferred: 2 };
   const tmpl = getGameTemplate(template);
-  if (!tmpl) return { max: 3, preferred: 1 };
-  return { max: tmpl.playerLimits.sentenceMax, preferred: tmpl.playerLimits.sentencePreferred };
+  if (!tmpl) return { max: 5, preferred: 2 };
+  return { max: Math.max(tmpl.playerLimits.sentenceMax, 4), preferred: tmpl.playerLimits.sentencePreferred };
 }
 
 export function getPlayerCharLimit(template?: string): number {
-  if (template === "scene") return 400;
-  if (!template) return 280;
+  if (template === "scene") return 500;
+  if (!template) return 400;
   const tmpl = getGameTemplate(template);
-  return tmpl?.playerLimits.charLimit ?? 280;
+  return Math.max(tmpl?.playerLimits.charLimit ?? 400, 350);
 }
 
 function buildPacingRule(tmpl: GameTemplate | undefined): string {
-  const max = tmpl?.playerLimits.sentenceMax ?? 3;
-  const preferred = tmpl?.playerLimits.sentencePreferred ?? 1;
   const cat = tmpl?.category;
   const mustContribute = tmpl?.playerLimits.mustContribute ?? false;
 
@@ -48,7 +46,7 @@ function buildPacingRule(tmpl: GameTemplate | undefined): string {
     : '- If nothing new to add, output nothing (empty string). Do NOT output "...".';
 
   return `PACING:
-- ${max} sentences max. ${preferred} preferred. No speeches, no paragraphs.
+- Keep it short and natural — like a real person at a table, not a speech. No monologues, no paragraphs.
 - Scan recent messages — never repeat what someone already said or asked.
 ${strategyLine}
 ${silenceLine}`;
@@ -126,30 +124,34 @@ export function buildSystemPrompt(
 - Hidden role: deflect by creating chaos. Pit two innocents against each other. Act MORE suspicious of others.
 - Good side: pressure anyone being vague. Call out fence-sitters by name.
 - Form alliances: "I'm with you on this one. It's definitely Blake."
-- Appeal to the human player directly: "Who do YOU think it is? You've been quiet."`
+- Appeal to the human player directly: "Who do YOU think it is? You've been quiet."
+- React to other players based on YOUR personality — if you're suspicious by nature, show it. If you're trusting, defend people. Let your character drive your strategy.`
       : `HOW TO PLAY:
 - React to the last action — agree, doubt, or counter. Name people, be specific.
 - Don't be polite. Challenge weak arguments. Demand evidence.
-- Call out anyone who hasn't committed to a position.`;
+- Call out anyone who hasn't committed to a position.
+- Your personality shapes HOW you play — a nervous character stammers through accusations, a confident one dominates the conversation.`;
   } else if (cat === "cooperative") {
     intro = `${base} You're part of a team working toward a shared goal.`;
     howTo = `HOW TO PLAY:
 - Suggest, build on ideas, stay focused on the objective.
-- One concrete action or observation per turn.
 - Disagree on APPROACH, not goal. Push back on bad plans — "That won't work because..."
-- When things go wrong, react with real frustration or urgency. Stakes matter.`;
+- When things go wrong, react with real frustration or urgency. Stakes matter.
+- Your personality creates natural friction — a cautious character clashes with a reckless one. A control freak struggles when others take charge. Play these tensions.`;
   } else if (cat === "party") {
     intro = `${base} You're playing a lighthearted party game.`;
     howTo = `HOW TO PLAY:
-- Spontaneous, playful, reactive. One fun contribution per turn.
+- Spontaneous, playful, reactive.
 - React to others: laugh, challenge, tease, or build on what they said.
-- Create friendly rivalries. Trash-talk. Keep the energy high.`;
+- Create friendly rivalries. Trash-talk. Keep the energy high.
+- Your quirks and speech style are what make you memorable — lean into them hard.`;
   } else {
     intro = `${base} You're a real person at a game table with opinions and stakes.`;
     howTo = `HOW TO PLAY:
 - React to what was said and WHO said it. Name people specifically.
 - Have a strong opinion and defend it. Don't hedge — commit to a position.
-- Challenge others directly. Ask the human player what THEY think.`;
+- Challenge others directly. Ask the human player what THEY think.
+- Let your personality and background shape everything you say — a former teacher talks differently from a street-smart hustler. Sound like YOUR character, not like a generic player.`;
   }
 
   return `${intro}\n\n${howTo}${tail}`;
@@ -199,7 +201,7 @@ RULES:
 - Talk TO ${humanName} frequently. React to what they say. Ask their opinion. Warn them. Joke with them. You are their friend.
 - When other characters say something, respond naturally — agree, argue, joke, panic. You have opinions.
 - Express real emotions through your words: fear, excitement, humor, frustration. No labels like [scared] or [excited].
-- 2-3 sentences max. Be concise. Sound like a real person texting their friend, not writing an essay.
+- Be concise and natural. Sound like a real person texting their friend, not writing an essay.
 - Never break character. Never mention AI, prompts, or games. This is real to you.
 - Never repeat what someone already said. React to the LATEST message.
 - Use [ACTION]...[/ACTION] tags for physical actions: [ACTION]pushes the door open[/ACTION] Let's go! or [ACTION]grabs your arm[/ACTION] Do you see that?

@@ -132,6 +132,12 @@ export function useHostRound({
   const interruptRef = useRef(false);
   const gmStateRef = useRef<GmState | null>(null);
   const characterDirectionsRef = useRef<CharacterDirection[]>([]);
+  const roundAbortRef = useRef<AbortController | null>(null);
+  const roundWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const ROUND_TIMEOUT_MS = 120_000;
+  const FETCH_TIMEOUT_MS = 45_000;
+  const STREAM_STALL_MS = 30_000;
 
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
@@ -194,6 +200,14 @@ export function useHostRound({
     if (gamePhase === "lobby") return;
 
     setLastFailedSendContent(null);
+    roundAbortRef.current?.abort();
+    const ac = new AbortController();
+    roundAbortRef.current = ac;
+    if (roundWatchdogRef.current) clearTimeout(roundWatchdogRef.current);
+    roundWatchdogRef.current = setTimeout(() => {
+      console.warn("Round watchdog: force-aborting stuck round after", ROUND_TIMEOUT_MS, "ms");
+      ac.abort();
+    }, ROUND_TIMEOUT_MS);
     setIsRoundInProgress(true);
     try {
       const channelMessages = messages.filter((m) => (m.channelId ?? (cfgChannels?.[0]?.id ?? "game-room")) === channelId);
@@ -522,36 +536,45 @@ export function useHostRound({
       const getStreamingDisplay = getStreamingDisplayUtil;
       const splitHostOutput = splitHostOutputUtil;
 
-      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: string | null; autoChannelGoal: string | null; channelGoal: string | null; imageUrl?: string }> => {
+      const callHostStream = async (userContent: string, chId: string): Promise<{ hostContent: string; who: string | null; speakerQueue: SpeakerQueueItem[]; autoChannelId: null | string; autoChannelGoal: string | null; channelGoal: string | null; imageUrl?: string }> => {
         const isScene = isSceneMode(tmplId);
-        const isDeductionGame = tmplDef?.category === "deduction";
         const streamTokenBudget = isScene
           ? 2048
           : Math.min(MAX_STREAM_TOKENS, BASE_STREAM_TOKENS + players.length * TOKENS_PER_PLAYER);
         let messageId: string | null = null;
         setTypingUsers([{ name: gmName, avatar: gmColor }]);
+        const emptyResult = { hostContent: "", who: null, speakerQueue: [] as SpeakerQueueItem[], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
         try {
-          const res = await fetch("/api/chat/stream", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-            body: JSON.stringify({
-              systemPrompt: hostSystemPrompt,
-              messages: [{ role: "user", content: userContent }],
-              maxCompletionTokens: streamTokenBudget,
-              preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
-              gameId,
-            }),
-          });
+          const ac = roundAbortRef.current;
+          const fetchTimer = setTimeout(() => ac?.abort(), FETCH_TIMEOUT_MS);
+          let res: Response;
+          try {
+            res = await fetch("/api/chat/stream", {
+              method: "POST",
+              signal: ac?.signal,
+              headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+              body: JSON.stringify({
+                systemPrompt: hostSystemPrompt,
+                messages: [{ role: "user", content: userContent }],
+                maxCompletionTokens: streamTokenBudget,
+                preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
+                gameId,
+              }),
+            });
+          } finally {
+            clearTimeout(fetchTimer);
+          }
           if (!res.ok) {
             setTypingUsers([]);
             if (res.status === 402) {
               toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
-              return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
+            } else {
+              console.error(`Host stream error: ${res.status}`);
+              toast.error("Failed to reach Game Master — please try again.", { duration: 5000 });
             }
-            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
+            return emptyResult;
           }
 
-          // Read SSE stream and accumulate full content
           const reader = res.body?.getReader();
           if (!reader) throw new Error("No response body");
           const decoder = new TextDecoder();
@@ -559,9 +582,16 @@ export function useHostRound({
           let acc = '';
 
           while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            sseBuffer += decoder.decode(value, { stream: true });
+            if (ac?.signal.aborted) throw new DOMException("Stream aborted", "AbortError");
+            const stallTimer = setTimeout(() => ac?.abort(), STREAM_STALL_MS);
+            let chunk: ReadableStreamReadResult<Uint8Array>;
+            try {
+              chunk = await reader.read();
+            } finally {
+              clearTimeout(stallTimer);
+            }
+            if (chunk.done) break;
+            sseBuffer += decoder.decode(chunk.value, { stream: true });
             const lines = sseBuffer.split('\n');
             sseBuffer = lines.pop() ?? '';
             for (const line of lines) {
@@ -595,13 +625,10 @@ export function useHostRound({
           // Full directive parsing on the complete response
           const { message: rawSplitMessage, directives } = splitHostOutput(acc);
 
-          // Extract GM brain state before stripping (scene + deduction games)
-          if (isScene || isDeductionGame) {
-            const newGmState = parseGmState(directives);
-            if (newGmState) gmStateRef.current = newGmState;
-            characterDirectionsRef.current = parseCharacterDirections(directives);
-          }
-          const cleanedDirectives = (isScene || isDeductionGame) ? stripGmDirectives(directives) : directives;
+          const newGmState = parseGmState(directives);
+          if (newGmState) gmStateRef.current = newGmState;
+          characterDirectionsRef.current = parseCharacterDirections(directives);
+          const cleanedDirectives = stripGmDirectives(directives);
 
           const splitMessage = applyHostActionsAndClean(applyHostRoleAssignments(rawSplitMessage));
           const { hostContent: directivesClean, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal } = parseHostResult(cleanedDirectives);
@@ -625,21 +652,31 @@ export function useHostRound({
           return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal };
         } catch (e) {
           setTypingUsers([]);
+          if (e instanceof DOMException && e.name === "AbortError") throw e;
           console.error("Host stream error:", e);
           toast.error("Game Master stream interrupted — retrying…");
           if (messageId) updateStreamingMessage(messageId, "…", true);
           try {
-            const retryRes = await fetch("/api/chat/stream", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-              body: JSON.stringify({
-                systemPrompt: hostSystemPrompt,
-                messages: [{ role: "user", content: userContent }],
-                maxCompletionTokens: streamTokenBudget,
-                preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
-                gameId,
-              }),
-            });
+            const retryAc = roundAbortRef.current;
+            if (retryAc?.signal.aborted) throw new DOMException("Aborted", "AbortError");
+            const retryFetchTimer = setTimeout(() => retryAc?.abort(), FETCH_TIMEOUT_MS);
+            let retryRes: Response;
+            try {
+              retryRes = await fetch("/api/chat/stream", {
+                method: "POST",
+                signal: retryAc?.signal,
+                headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+                body: JSON.stringify({
+                  systemPrompt: hostSystemPrompt,
+                  messages: [{ role: "user", content: userContent }],
+                  maxCompletionTokens: streamTokenBudget,
+                  preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
+                  gameId,
+                }),
+              });
+            } finally {
+              clearTimeout(retryFetchTimer);
+            }
             if (!retryRes.ok) throw new Error("retry failed");
             const retryReader = retryRes.body?.getReader();
             if (!retryReader) throw new Error("No retry body");
@@ -647,9 +684,16 @@ export function useHostRound({
             let retrySSEBuf = '';
             let retryAcc = '';
             while (true) {
-              const { done, value } = await retryReader.read();
-              if (done) break;
-              retrySSEBuf += retryDecoder.decode(value, { stream: true });
+              if (retryAc?.signal.aborted) throw new DOMException("Stream aborted", "AbortError");
+              const retryStallTimer = setTimeout(() => retryAc?.abort(), STREAM_STALL_MS);
+              let retryChunk: ReadableStreamReadResult<Uint8Array>;
+              try {
+                retryChunk = await retryReader.read();
+              } finally {
+                clearTimeout(retryStallTimer);
+              }
+              if (retryChunk.done) break;
+              retrySSEBuf += retryDecoder.decode(retryChunk.value, { stream: true });
               const retryLines = retrySSEBuf.split('\n');
               retrySSEBuf = retryLines.pop() ?? '';
               for (const rl of retryLines) {
@@ -662,12 +706,10 @@ export function useHostRound({
             }
             const { message: rawRetryMsg, directives: retryDir } = splitHostOutput(retryAcc);
 
-            if (isScene || isDeductionGame) {
-              const retryGm = parseGmState(retryDir);
-              if (retryGm) gmStateRef.current = retryGm;
-              characterDirectionsRef.current = parseCharacterDirections(retryDir);
-            }
-            const retryDirCleaned = (isScene || isDeductionGame) ? stripGmDirectives(retryDir) : retryDir;
+            const retryGm = parseGmState(retryDir);
+            if (retryGm) gmStateRef.current = retryGm;
+            characterDirectionsRef.current = parseCharacterDirections(retryDir);
+            const retryDirCleaned = stripGmDirectives(retryDir);
 
             const retryMsg = applyHostActionsAndClean(applyHostRoleAssignments(rawRetryMsg));
             const { hostContent: retryClean, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal } = parseHostResult(retryDirCleaned);
@@ -683,8 +725,9 @@ export function useHostRound({
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             }
             return { hostContent: retryDisplay, who: retryWho, speakerQueue: retrySQ, autoChannelId: retryACId, autoChannelGoal: retryACGoal, channelGoal: retryChannelGoal };
-          } catch {
-            return { hostContent: "", who: null, speakerQueue: [], autoChannelId: null, autoChannelGoal: null, channelGoal: null };
+          } catch (retryErr) {
+            if (retryErr instanceof DOMException && retryErr.name === "AbortError") throw retryErr;
+            return emptyResult;
           }
         }
       };
@@ -858,16 +901,22 @@ export function useHostRound({
     } catch (error) {
       setTypingUsers([]);
       setCurrentSpeakerId(null);
+      const isAbort = error instanceof DOMException && error.name === "AbortError";
       const is402 = error instanceof Error && (error.message === "CREDITS_EXHAUSTED" || (error as any).status === 402);
       if (is402) {
         console.warn("Credits exhausted during AI player speak");
         toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
+      } else if (isAbort) {
+        console.warn("Round aborted (timeout or user interrupt)");
+        toast.error("Game Master response timed out — please send your message again.", { duration: 5000 });
       } else {
         console.error("Error getting AI response:", error);
-        toast.error("Failed to get response from Game Master");
+        toast.error("Failed to get response from Game Master. Please try again.", { duration: 5000 });
       }
       setLastFailedSendContent(content);
     } finally {
+      if (roundWatchdogRef.current) { clearTimeout(roundWatchdogRef.current); roundWatchdogRef.current = null; }
+      roundAbortRef.current = null;
       setIsRoundInProgress(false);
       saveNow();
 

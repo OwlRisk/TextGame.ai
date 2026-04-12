@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI();
     const recentText = recentMessages
-      .slice(-15)
+      .slice(-30)
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 

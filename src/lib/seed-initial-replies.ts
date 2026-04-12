@@ -1,4 +1,6 @@
 import { getGameTemplate } from "./game-templates";
+import { INITIAL_PLAYER_REPLIES } from "./game-room-constants";
+import { typewriterReveal, getTypewriterSpeed } from "./game-pace";
 
 export interface SeedPlayerInfo {
   id: string;
@@ -23,7 +25,7 @@ export interface SeedInitialRepliesOpts {
   gameName: string;
   rules?: string;
   playerNotesById?: Record<string, string>;
-  addStreamingMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; isAI: boolean }, channelId?: string) => string;
+  addStreamingMessage: (msg: { senderId: string; senderName: string; senderAvatar: string; isAI: boolean }, channelId?: string, initialContent?: string) => string;
   updateStreamingMessage: (messageId: string, content: string, isComplete?: boolean) => void;
   setTypingUsers?: (users: { name: string; avatar: string }[]) => void;
   sessionToken: string | undefined;
@@ -59,7 +61,7 @@ export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
   // Solo games (e.g. tarot) or games with 0 AI skip seeding
   if (tmpl && tmpl.maxPlayers <= 1) return;
 
-  const seedCount = Math.min(aiPlayers.length, aiPlayers.length <= 3 ? 2 : 3);
+  const seedCount = Math.min(aiPlayers.length, INITIAL_PLAYER_REPLIES);
   const chosen = shuffle(aiPlayers).slice(0, seedCount);
 
   const recentMessages = [{ senderName: hostName, content: hostContent }];
@@ -110,16 +112,15 @@ export async function seedInitialPlayerReplies(opts: SeedInitialRepliesOpts) {
 
       if (isCancelled?.()) return;
 
-      const msgId = addStreamingMessage(
-        { senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true },
-        channelId,
-      );
-      updateStreamingMessage(msgId, content, true);
+      const speed = getTypewriterSpeed(player.personality);
+      await typewriterReveal(content, addStreamingMessage, updateStreamingMessage, {
+        senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true,
+      }, channelId, speed);
 
       recentMessages.push({ senderName: player.name, content });
 
       // Brief pause between replies for natural pacing
-      await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
+      await new Promise((r) => setTimeout(r, 400 + Math.random() * 300));
     } catch {
       // Silently skip failed seed replies
     }

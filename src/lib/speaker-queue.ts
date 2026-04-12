@@ -65,22 +65,26 @@ export function isNightPhase(phaseLabel: string | undefined): boolean {
 
 const toTyping = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
 
-import { getPlayerSentenceLimit, getPlayerCharLimit } from "@/lib/player-speak-prompt";
+import { getPlayerCharLimit } from "@/lib/player-speak-prompt";
 
 function clampSpokenReply(text: string, template?: string): string {
   const normalized = (text || "").replace(/\s+/g, " ").trim();
   if (!normalized) return "";
 
-  const { max } = getPlayerSentenceLimit(template);
   const charLimit = getPlayerCharLimit(template);
+  if (normalized.length <= charLimit) return normalized;
 
+  // Only truncate if over the character safety net — find a natural sentence break
   const sentenceMatches = normalized.match(/[^.!?]+[.!?]+/g) ?? [];
-  const clamped = sentenceMatches.slice(0, max).join(" ").trim();
-  if (clamped) {
-    return clamped.length > charLimit ? `${clamped.slice(0, charLimit).trimEnd()}…` : clamped;
+  if (sentenceMatches.length > 0) {
+    let result = "";
+    for (const s of sentenceMatches) {
+      if ((result + s).length > charLimit) break;
+      result += s;
+    }
+    if (result.trim()) return result.trim();
   }
 
-  if (normalized.length <= charLimit) return normalized;
   const cut = normalized.slice(0, charLimit);
   const lastSpace = cut.lastIndexOf(" ");
   const base = lastSpace > 90 ? cut.slice(0, lastSpace) : cut;
@@ -466,26 +470,34 @@ export async function runPrivateChannelConversation(
       const goalLine = goal ? `Task: ${goal}\n` : "";
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (ctx.sessionToken) headers.Authorization = `Bearer ${ctx.sessionToken}`;
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          messages: [
-            {
-              role: "system",
-              content:
-                'You decide whether a group conversation has reached a clear consensus. ' +
-                'If yes, reply with exactly "YES: <one sentence stating the decision, including specific names/choices>". ' +
-                'If no, reply with exactly "NO". No other output.',
-            },
-            {
-              role: "user",
-              content: `${goalLine}Channel: ${channelName}\n\n${transcript}\n\nHas the group reached a decision?`,
-            },
-          ],
-          preferredModel: getPreferredModel(),
-        }),
-      });
+      const consensusAc = new AbortController();
+      const consensusTimer = setTimeout(() => consensusAc.abort(), 30_000);
+      let res: Response;
+      try {
+        res = await fetch("/api/chat", {
+          method: "POST",
+          headers,
+          signal: consensusAc.signal,
+          body: JSON.stringify({
+            messages: [
+              {
+                role: "system",
+                content:
+                  'You decide whether a group conversation has reached a clear consensus. ' +
+                  'If yes, reply with exactly "YES: <one sentence stating the decision, including specific names/choices>". ' +
+                  'If no, reply with exactly "NO". No other output.',
+              },
+              {
+                role: "user",
+                content: `${goalLine}Channel: ${channelName}\n\n${transcript}\n\nHas the group reached a decision?`,
+              },
+            ],
+            preferredModel: getPreferredModel(),
+          }),
+        });
+      } finally {
+        clearTimeout(consensusTimer);
+      }
       if (!res.ok) return null;
       const data = await res.json();
       const msg = (data.message || "").trim();
@@ -539,17 +551,25 @@ export async function runPrivateChannelConversation(
           const goalLine = goal ? ` (task: ${goal})` : "";
           const headers: Record<string, string> = { "Content-Type": "application/json" };
           if (ctx.sessionToken) headers.Authorization = `Bearer ${ctx.sessionToken}`;
-          const res = await fetch("/api/chat", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              messages: [
-                { role: "system", content: "Summarise the group's decision in exactly one concise sentence. Include specific names and choices. No preamble." },
-                { role: "user", content: `Channel: ${channelName}${goalLine}\n\n${transcript}\n\nSummarise:` },
-              ],
-              preferredModel: getPreferredModel(),
-            }),
-          });
+          const sumAc = new AbortController();
+          const sumTimer = setTimeout(() => sumAc.abort(), 30_000);
+          let res: Response;
+          try {
+            res = await fetch("/api/chat", {
+              method: "POST",
+              headers,
+              signal: sumAc.signal,
+              body: JSON.stringify({
+                messages: [
+                  { role: "system", content: "Summarise the group's decision in exactly one concise sentence. Include specific names and choices. No preamble." },
+                  { role: "user", content: `Channel: ${channelName}${goalLine}\n\n${transcript}\n\nSummarise:` },
+                ],
+                preferredModel: getPreferredModel(),
+              }),
+            });
+          } finally {
+            clearTimeout(sumTimer);
+          }
           if (!res.ok) return null;
           const data = await res.json();
           return (data.message || "").trim() || null;

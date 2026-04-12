@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
       ? Math.min(4096, Math.max(256, maxCompletionTokens))
-      : 500;
+      : 800;
     const systemTokens = estimateTokensFromText(systemMessage);
     const messagesTokens = (messages as { content?: string }[]).reduce(
       (sum, m) => sum + estimateTokensFromText(m?.content ?? ''),
