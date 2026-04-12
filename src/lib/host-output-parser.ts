@@ -144,12 +144,11 @@ export function parseHostResult(
     const names = who.split(",").map((n) => n.trim()).filter(Boolean);
     for (const name of names) {
       const nameLower = name.toLowerCase();
-      if (nameLower === "you" || (humanName && nameLower === humanName.toLowerCase())) {
-        speakerQueue.push({ type: "human" });
-        break;
-      } else if (nameLower === "everyone") {
+      if (nameLower === "everyone") {
         speakerQueue.push({ type: "everyone" });
         break;
+      } else if (nameLower === "you" || (humanName && nameLower === humanName.toLowerCase())) {
+        speakerQueue.push({ type: "human" });
       } else {
         const player = players.find((p) => !p.isGameMaster &&
           (p.name === name || p.name.toLowerCase() === name.toLowerCase()));

@@ -3,17 +3,20 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Users, Clock, Sparkles, Play, ChevronRight, Compass, TrendingUp, Shuffle } from "lucide-react";
+import { Users, Clock, Sparkles, Play, ChevronRight, Compass, TrendingUp, Shuffle, History } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
 import { t, getAppLanguage } from "@/lib/i18n";
 import { getTemplateI18n } from "@/data/template-i18n";
 import { type GameTemplate, ALL_PRESETS } from "@/data/discover-templates";
+import type { Game } from "@/app/contexts/GameContext";
 
 interface DashboardHomeProps {
   userName: string;
+  games?: Game[];
   onCreateGame: (presetId: string) => void;
   onNavigateToDiscover: () => void;
+  onSelectGame?: (gameId: string) => void;
 }
 
 const POPULAR_IDS = ["werewolf-classic", "script-kill-moonlight", "codenames", "spyfall", "mafia-classic", "avalon"];
@@ -25,8 +28,13 @@ function getGreetingKey(): string {
   return "home.greeting_evening";
 }
 
-export function DashboardHome({ userName, onCreateGame, onNavigateToDiscover }: DashboardHomeProps) {
+export function DashboardHome({ userName, games = [], onCreateGame, onNavigateToDiscover, onSelectGame }: DashboardHomeProps) {
   const lang = getAppLanguage();
+
+  const recentGames = useMemo(
+    () => [...games].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 6),
+    [games],
+  );
 
   const popularTemplates = useMemo(
     () => POPULAR_IDS.map((id) => ALL_PRESETS.find((p) => p.id === id)).filter(Boolean) as GameTemplate[],
@@ -100,6 +108,49 @@ export function DashboardHome({ userName, onCreateGame, onNavigateToDiscover }: 
             </button>
           </div>
         </div>
+
+        {/* Recent Games */}
+        {recentGames.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="h-5 w-5 text-amber-500" />
+              <h2 className="text-xl font-bold text-white">{t("home.recent_games", lang)}</h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentGames.map((game) => (
+                <button
+                  key={game.id}
+                  type="button"
+                  onClick={() => {
+                    trackEvent("dashboard_recent_click", { game: game.id });
+                    onSelectGame?.(game.id);
+                  }}
+                  className="group relative bg-zinc-800/60 border border-zinc-700 hover:border-amber-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                >
+                  <div className={`relative h-20 overflow-hidden bg-gradient-to-br ${game.color} flex items-center justify-center`}>
+                    <span className="text-4xl">{game.icon}</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/30 to-transparent" />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-white text-sm mb-1 group-hover:text-amber-300 transition-colors truncate">
+                      {game.name}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-500">
+                        {game.config?.template ?? ""}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs font-semibold text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Play className="h-3 w-3" />
+                        {t("home.continue_game", lang)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Popular Templates */}
         <div className="mb-10">

@@ -241,8 +241,10 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
       {isLoggedIn ? (
         <DashboardHome
           userName={userName}
+          games={games}
           onCreateGame={(presetId) => createGameFromPreset(presetId)}
           onNavigateToDiscover={handleExploreGames}
+          onSelectGame={(gameId) => selectGame(gameId)}
         />
       ) : (
         <LandingPage

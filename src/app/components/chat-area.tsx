@@ -209,7 +209,7 @@ export function ChatArea({
   const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
   const humanPlayer = players.find((p) => p.id === userId);
-  const useGeneratedAvatarForUser = !!(gameId && humanPlayer);
+  const useGeneratedAvatarForUser = !!(gameId && humanPlayer) && !userAvatarUrl;
   const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
 
   // Follow scroll when new content appears: new messages, last message content/streaming,

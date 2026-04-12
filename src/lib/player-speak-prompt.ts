@@ -41,15 +41,11 @@ function buildPacingRule(tmpl: GameTemplate | undefined): string {
     ? '- No meta talk about prompting or game system mechanics. Strategy discussion and accusations ARE the game — go for it.'
     : '- No meta-commentary about game procedure. Just play.';
 
-  const silenceLine = mustContribute
-    ? '- Every player MUST contribute each turn. If you have nothing new, react to what someone else said.'
-    : '- If nothing new to add, output nothing (empty string). Do NOT output "...".';
-
   return `PACING:
 - Keep it short and natural — like a real person at a table, not a speech. No monologues, no paragraphs.
 - Scan recent messages — never repeat what someone already said or asked.
-${strategyLine}
-${silenceLine}`;
+- You MUST say something every turn. If you have nothing new, react to what someone else said or express your feelings about the situation.
+${strategyLine}`;
 }
 
 function shouldIncludeNotes(tmpl: GameTemplate | undefined): boolean {

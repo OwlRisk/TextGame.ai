@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { buildSystemPrompt, buildSceneCharacterPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
-import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins } from '@/lib/tokens';
+import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins, estimateTokensFromText } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
@@ -119,8 +119,12 @@ export async function POST(request: NextRequest) {
     if (player.boardContent && player.boardContent.length > 10_000) player.boardContent = player.boardContent.slice(0, 10_000);
 
     const chatModel = sanitizeModel(preferredModel);
+    const streamMode = (body as Record<string, unknown>).stream === true;
     const estCoins = estimatedTokensToCoins(1500, chatModel);
     if (!(await hasTokens(user.id, estCoins))) {
+      if (streamMode) {
+        return new Response(JSON.stringify({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }), { status: 402, headers: { 'Content-Type': 'application/json' } });
+      }
       return NextResponse.json({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }, { status: 402 });
     }
 
@@ -134,14 +138,12 @@ export async function POST(request: NextRequest) {
       ? buildSceneCharacterPrompt(player.name, sceneId, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, contentLanguage)
       : buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk, contentLanguage);
 
-    // Build user content: game context + private knowledge + recent chat
     const lines: string[] = [];
     lines.push(`Game: ${gameName || 'Unknown game'}`);
     if (gameTemplate) lines.push(`Type: ${gameTemplate}`);
     if (gamePhase) lines.push(`Current phase: ${gamePhase}`);
     lines.push('');
 
-    // Private info this player knows (from Host's My Board)
     if (player.boardContent?.trim()) {
       lines.push(`Your private info (only you know this — act accordingly):\n${player.boardContent.trim()}`);
       lines.push('');
@@ -149,15 +151,11 @@ export async function POST(request: NextRequest) {
       lines.push(`Your secret role: ${player.role}`);
     }
 
-    // Personality and background are already in the system prompt — no need to repeat here
-
-    // Player's own persistent notes from previous turns
     if (playerNotes?.trim()) {
       lines.push('');
       lines.push(`Your private notes from previous turns:\n${playerNotes.trim().slice(0, 500)}`);
     }
 
-    // Player roster: same list the human sees in the sidebar
     if (playerRoster && playerRoster.length > 0) {
       const rosterLines = playerRoster.map((p) => {
         const tag = p.isHuman ? ' (human)' : '';
@@ -204,7 +202,84 @@ export async function POST(request: NextRequest) {
     }
 
     const userContent = lines.join('\n');
+    const maxTokens = getPlayerTokenLimit(gameTemplate);
 
+    // ─── Streaming mode ─────────────────────────────────────────────
+    if (streamMode) {
+      const systemTokens = estimateTokensFromText(system);
+      const userTokens = estimateTokensFromText(userContent);
+      const userId = user.id;
+      const encoder = new TextEncoder();
+
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 45_000);
+
+      let openaiStream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
+      try {
+        openaiStream = await openai.chat.completions.create({
+          model: chatModel,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: userContent },
+          ],
+          max_completion_tokens: maxTokens,
+          stream: true,
+          stream_options: { include_usage: true },
+        }, { signal: ac.signal }) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
+      } catch (e) {
+        clearTimeout(timer);
+        console.error('[player-speak-stream] OpenAI create error:', e);
+        return new Response(JSON.stringify({ error: 'Generation failed' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          let promptTokens = 0;
+          let completionTokens = 0;
+          let fullContent = '';
+          try {
+            for await (const chunk of openaiStream) {
+              const delta = chunk.choices?.[0]?.delta?.content;
+              if (delta) {
+                fullContent += delta;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta })}\n\n`));
+              }
+              if (chunk.usage) {
+                promptTokens = chunk.usage.prompt_tokens ?? 0;
+                completionTokens = chunk.usage.completion_tokens ?? 0;
+              }
+            }
+            controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+            controller.close();
+            clearTimeout(timer);
+
+            const actualCoins = (promptTokens + completionTokens) > 0
+              ? gptUsageToCoins(chatModel, promptTokens, completionTokens)
+              : estimatedTokensToCoins(systemTokens + userTokens + Math.ceil(fullContent.length / 3), chatModel);
+            try {
+              await deductTokens(userId, Math.max(1, actualCoins), 'ai_player_speak',
+                (promptTokens + completionTokens) > 0
+                  ? `Player speak stream ${promptTokens}+${completionTokens} tokens (${chatModel})`
+                  : `Player speak stream ~${systemTokens + userTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`,
+                bodyGameId);
+            } catch (de) {
+              console.error('[player-speak-stream] deduct error:', de);
+            }
+          } catch (err) {
+            clearTimeout(timer);
+            const errMsg = err instanceof Error ? err.message : 'Stream interrupted';
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: errMsg })}\n\n`));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(readable, {
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
+      });
+    }
+
+    // ─── Non-streaming mode (legacy / seed greetings) ───────────────
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 30_000);
     let completion: OpenAI.Chat.Completions.ChatCompletion;
@@ -215,7 +290,7 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: system },
           { role: 'user', content: userContent },
         ],
-        max_completion_tokens: getPlayerTokenLimit(gameTemplate),
+        max_completion_tokens: maxTokens,
       }, { signal: ac.signal });
     } finally {
       clearTimeout(timer);

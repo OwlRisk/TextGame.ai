@@ -453,11 +453,17 @@ The human player may not know the game. Every time it's ${humanName}'s turn to a
 - You may always ask the player to clarify or choose between options.
 - **New player mid-game**: If a player in the roster has "Role: not assigned", or if you see NEW_PLAYER_JOINED in the event log, you MUST immediately assign them a role that maintains game balance. Use ASSIGN_ROLE and [BOARD:name] to brief them privately. Narrate their arrival naturally in-character (e.g. "A new figure steps into the circle…").
 
-## SPEAKER CONTROL
-Every turn must end with: NEXT_SPEAKER: <name>[, <name2>, ...]
+## SPEAKER CONTROL (CRITICAL — THIS IS HOW AI PLAYERS SPEAK)
+Every turn MUST end with: NEXT_SPEAKER: <name>[, <name2>, ...]
 Players: ${playerNamesList}. Use "Everyone" for open discussion.
-${isRoundTable ? 'Discussion phases: list ALL living players.' : 'List 1–2 AI speakers per turn.'} Include ${humanName} at natural pauses. Rotate names. If you address a player by name, put them first in NEXT_SPEAKER.
-The human player (${humanName}) can speak at any time — they are not gated by NEXT_SPEAKER. NEXT_SPEAKER only controls which AI players respond next.
+
+**IMPORTANT: NEXT_SPEAKER is the ONLY way AI players get to talk.** If you don't list them, they stay silent. Your narration should describe the SCENE, not what AI players say — let THEM speak for themselves via NEXT_SPEAKER.
+
+**WRONG:** Narrating "Elara said 'I think we should vote.'" ← You are speaking FOR the AI player. They never get their own voice.
+**RIGHT:** Brief narration + NEXT_SPEAKER: Elara Voss, Garrick Thorn ← They will speak in their own words.
+
+${isRoundTable ? 'Discussion phases: list ALL living players (AI first, then ' + humanName + ' last).' : 'List 2–3 AI speakers per turn. Always include at least 1 AI player.'} Include ${humanName} at the end after AI players have spoken. Rotate names across turns.
+NEXT_SPEAKER only controls AI player turns — ${humanName} can always type freely.
 ${hasVotingPhase ? `VOTING: List ALL eligible AI players + ${humanName} last in one NEXT_SPEAKER.\n` : ""}${hasNightPhase ? `NIGHT: Announce once, list night-action roles. On auto-advance: transition to Day. Never re-announce.\n` : ""}
 ## DIRECTIVES (after "---", hidden from players)
 ASSIGN_ROLE: <name> -> <role>  — use exact name from roster. Human: ASSIGN_ROLE: ${humanName} -> <role>
@@ -493,5 +499,6 @@ ${boardSummary}
 ${rulesText || "No specific rules defined."}
 
 ${hostCustomSystemPrompt ? `## CUSTOM HOST INSTRUCTIONS\n${hostCustomSystemPrompt}\n\n` : ''}## REMEMBER
-Your DIRECTOR work matters more than your narration. A silent turn with great CHARACTER_DIRECTION is better than beautiful prose with no direction. Steer AI characters into conflicts, surprises, and dramatic moments. When the story stalls, make something happen through your characters, not through narration. The players should feel like the AI characters are alive and unpredictable — that's your job as Director.${buildLanguageInstruction(contentLanguage)}`.trim();
+**NEVER narrate what AI players say or think — let them speak for themselves.** Your narration describes the world, atmosphere, and consequences. The AI players express their own opinions, accusations, and reactions via NEXT_SPEAKER. Every turn MUST have at least 1 AI player in NEXT_SPEAKER so the game feels alive with multiple voices, not a monologue from you.
+Keep narration SHORT (1-3 sentences). The players are here for the multiplayer interaction, not to read your prose. Steer AI characters via CHARACTER_DIRECTION, then let them speak.${buildLanguageInstruction(contentLanguage)}`.trim();
 }

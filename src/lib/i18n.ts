@@ -3628,6 +3628,18 @@ const T: Record<string, Record<string, string>> = {
     tr: "Tüm Oyunları Gör →", hi: "सभी गेम ब्राउज़ करें →", id: "Jelajahi Semua Game →", vi: "Xem tất cả trò chơi →",
     th: "ดูเกมทั้งหมด →", pl: "Przeglądaj wszystkie gry →", nl: "Alle spellen bekijken →", uk: "Переглянути всі ігри →",
   },
+  "home.recent_games": {
+    en: "Recent Games", zh: "最近玩的", ja: "最近のゲーム", ko: "최근 게임",
+    de: "Letzte Spiele", fr: "Parties récentes", es: "Juegos recientes",
+    pt: "Jogos recentes", ru: "Недавние игры", it: "Partite recenti", ar: "ألعاب حديثة",
+    tr: "Son Oyunlar", hi: "हाल के खेल", id: "Game Terbaru", vi: "Game gần đây",
+  },
+  "home.continue_game": {
+    en: "Continue", zh: "继续", ja: "続ける", ko: "계속",
+    de: "Fortsetzen", fr: "Continuer", es: "Continuar",
+    pt: "Continuar", ru: "Продолжить", it: "Continua", ar: "متابعة",
+    tr: "Devam", hi: "जारी रखें", id: "Lanjutkan", vi: "Tiếp tục",
+  },
   "home.featured_title": {
     en: "Popular Templates", zh: "热门模板", ja: "人気テンプレート", ko: "인기 템플릿",
     de: "Beliebte Vorlagen", fr: "Modèles populaires", es: "Plantillas populares",

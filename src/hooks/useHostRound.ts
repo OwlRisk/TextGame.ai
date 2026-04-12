@@ -732,7 +732,7 @@ export function useHostRound({
         }
       };
 
-      const buildSpeakerCtx = (recentRef: { current: Array<{ senderName: string; content: string }> }): SpeakerQueueContext => ({
+      const buildSpeakerCtx = (recentRef: { current: Array<{ senderName: string; content: string }> }, currentChannelGoal?: string | null): SpeakerQueueContext => ({
         userId, channelId,
         convMode: getConversationMode(currentGame?.config?.template),
         playersRef, aiOnly,
@@ -760,6 +760,7 @@ export function useHostRound({
         addReaction,
         engagementScore: latestEngagementScore,
         characterDirections: characterDirectionsRef.current,
+        channelGoal: currentChannelGoal,
       });
 
       const decisionSummaryPrefix = pendingDecisionSummariesRef.current.length > 0
@@ -795,6 +796,20 @@ export function useHostRound({
         }
       }
 
+      // Fallback: if GM spoke but didn't queue any AI players, inject AI speakers
+      const hasAiInQueue = speakerQueue.some((s) => s.type === "ai" || s.type === "everyone");
+      if (!hasAiInQueue && aiOnly.length > 0 && gamePhaseRef.current === "active") {
+        const count = Math.min(aiOnly.length, 2 + Math.floor(Math.random() * 2));
+        const shuffled = [...aiOnly].sort(() => Math.random() - 0.5).slice(0, count);
+        const humanIdx = speakerQueue.findIndex((s) => s.type === "human");
+        const aiItems: SpeakerQueueItem[] = shuffled.map((p) => ({ type: "ai" as const, player: p }));
+        if (humanIdx >= 0) {
+          speakerQueue.splice(humanIdx, 0, ...aiItems);
+        } else {
+          speakerQueue.push(...aiItems, { type: "human" });
+        }
+      }
+
       const firstInQueue = speakerQueue[0];
       if (firstInQueue?.type === "human") setCurrentSpeakerId(userId);
       else if (firstInQueue?.type === "everyone") setCurrentSpeakerId(null);
@@ -816,7 +831,7 @@ export function useHostRound({
         ...(hostContent ? [{ senderName: gmName, content: hostContent }] : []),
       ] as Array<{ senderName: string; content: string }> };
 
-      const sqCtx = buildSpeakerCtx(recentForNextRef);
+      const sqCtx = buildSpeakerCtx(recentForNextRef, firstChannelGoal);
 
       // Auto-trigger template-defined private conversations when night phase begins
       const autoTriggerTemplateChannels = async (explicitAutoChannelId: string | null) => {

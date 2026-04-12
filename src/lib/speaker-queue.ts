@@ -6,7 +6,6 @@ import { getPreferredModel } from "@/lib/model-prefs";
 import { isPlayerEliminated } from "@/lib/player-badges";
 import {
   thinkingDelay,
-  getTypewriterSpeed,
   typewriterReveal,
   dynamicPace,
   HOST_PACE_BASE_MS,
@@ -56,6 +55,8 @@ export interface SpeakerQueueContext {
   engagementScore?: number;
   /** GM whispers to individual characters for this turn */
   characterDirections?: import("@/lib/gm-state").CharacterDirection[];
+  /** Current channel goal from the GM (e.g. "vote on team proposal") */
+  channelGoal?: string | null;
 }
 
 export function isNightPhase(phaseLabel: string | undefined): boolean {
@@ -91,6 +92,197 @@ function clampSpokenReply(text: string, template?: string): string {
   return `${base.trimEnd()}…`;
 }
 
+function buildPlayerSpeakBody(
+  ctx: SpeakerQueueContext,
+  speaker: Player,
+  recent: Array<{ senderName: string; content: string }>,
+  channelGoal?: string | null,
+  stream = false,
+): Record<string, unknown> {
+  const playerRoster = ctx.playersRef.current
+    .filter((p) => !p.isGameMaster)
+    .map((p) => ({
+      name: p.name,
+      role: p.roleRevealed ? (p.role ?? undefined) : undefined,
+      isHuman: !p.isAI,
+    }));
+
+  return {
+    gameName: ctx.gameName,
+    gameTemplate: ctx.gameTemplate,
+    rules: ctx.gameRules,
+    gamePhase: ctx.gamePhase,
+    player: {
+      name: speaker.name,
+      role: speaker.role,
+      personality: speaker.personality,
+      background: speaker.background,
+      speechStyle: speaker.speechStyle,
+      quirk: speaker.quirk,
+      boardContent: ctx.myBoardContent[speaker.id] ?? undefined,
+    },
+    ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
+    recentMessages: recent,
+    playerRoster,
+    preferredModel: getPreferredModel(),
+    ...(channelGoal ? { channelGoal } : {}),
+    ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
+    ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
+    ...(ctx.contentLanguage ? { contentLanguage: ctx.contentLanguage } : {}),
+    ...(ctx.characterDirections?.find((d) => d.name === speaker.name) ? {
+      characterDirection: ctx.characterDirections.find((d) => d.name === speaker.name)!.direction,
+    } : {}),
+    gameId: ctx.gameId,
+    stream,
+  };
+}
+
+function stripPrivateContent(raw: string): string {
+  return raw.replace(/\[MY_NOTES\][\s\S]*?\[\/MY_NOTES\]/gi, "")
+            .replace(/\[\/MY_NOTES\]/gi, "")
+            .replace(/\[MY_NOTES\]/gi, "")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+}
+
+/**
+ * Stream an AI player's response via SSE — content appears in chat in real-time.
+ * Returns the final cleaned public reply, or null if nothing was said.
+ */
+export async function streamPlayerSpeak(
+  ctx: SpeakerQueueContext,
+  speaker: Player,
+  recent: Array<{ senderName: string; content: string }>,
+  channelGoal?: string | null,
+): Promise<{ text: string | null; messageId: string | null }> {
+  if (isPlayerEliminated(speaker)) return { text: null, messageId: null };
+
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (ctx.sessionToken) headers.Authorization = `Bearer ${ctx.sessionToken}`;
+
+  const ac = new AbortController();
+  const fetchTimer = setTimeout(() => ac.abort(), 45_000);
+  let res: Response;
+  try {
+    res = await fetch("/api/chat/player-speak", {
+      method: "POST",
+      headers,
+      signal: ac.signal,
+      body: JSON.stringify(buildPlayerSpeakBody(ctx, speaker, recent, channelGoal, true)),
+    });
+  } finally {
+    clearTimeout(fetchTimer);
+  }
+
+  if (!res.ok) {
+    if (res.status === 402) {
+      const err = new Error("CREDITS_EXHAUSTED");
+      (err as any).status = 402;
+      throw err;
+    }
+    console.warn(`[player-speak-stream] ${speaker.name}: HTTP ${res.status}`);
+    return { text: null, messageId: null };
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) return { text: null, messageId: null };
+
+  const decoder = new TextDecoder();
+  let sseBuffer = "";
+  let acc = "";
+  let messageId: string | null = null;
+
+  const STALL_MS = 30_000;
+
+  while (true) {
+    if (ac.signal.aborted) break;
+    const stallTimer = setTimeout(() => ac.abort(), STALL_MS);
+    let chunk: ReadableStreamReadResult<Uint8Array>;
+    try {
+      chunk = await reader.read();
+    } finally {
+      clearTimeout(stallTimer);
+    }
+    if (chunk.done) break;
+
+    sseBuffer += decoder.decode(chunk.value, { stream: true });
+    const lines = sseBuffer.split("\n");
+    sseBuffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith("data: ")) continue;
+      const payload = trimmed.slice(6);
+      if (payload === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(payload);
+        if (parsed.error) {
+          console.warn(`[player-speak-stream] ${speaker.name}: server error:`, parsed.error);
+          break;
+        }
+        if (parsed.content) {
+          acc += parsed.content;
+          const preview = stripPrivateContent(acc);
+          if (preview && !messageId) {
+            ctx.setTypingUsers([]);
+            messageId = ctx.addStreamingMessage(
+              { senderId: speaker.id, senderName: speaker.name, senderAvatar: speaker.avatar ?? "#8b5cf6", isAI: true },
+              ctx.channelId,
+              preview,
+            );
+          } else if (preview && messageId) {
+            ctx.updateStreamingMessage(messageId, preview, false);
+          }
+        }
+      } catch {
+        // ignore malformed SSE lines
+      }
+    }
+  }
+
+  // Post-process the complete response
+  const rawMessage = acc.trim();
+  if (!rawMessage || /^\.{1,5}$|^\u2026$/.test(rawMessage)) {
+    if (messageId) ctx.updateStreamingMessage(messageId, "…", true);
+    return { text: null, messageId };
+  }
+
+  const { cleanContent, actions } = parseHostActions(rawMessage);
+  const notesAction = actions.find((a) => a.type === "player_notes");
+  if (notesAction && notesAction.type === "player_notes") {
+    ctx.setPlayerNotes((prev) => ({ ...prev, [speaker.id]: notesAction.content }));
+  }
+
+  if (ctx.addReaction) {
+    for (const a of actions) {
+      if (a.type === "react") {
+        const targetMsg = a.targetSender
+          ? [...ctx.messages].reverse().find(
+              (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming &&
+                m.senderName.toLowerCase() === a.targetSender!.toLowerCase()
+            )
+          : [...ctx.messages].reverse().find(
+              (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
+            );
+        if (targetMsg?.id) ctx.addReaction(targetMsg.id, a.emoji, speaker.name);
+      }
+    }
+  }
+
+  const publicReply = clampSpokenReply(cleanContent, ctx.gameTemplate);
+  if (messageId) {
+    if (publicReply) {
+      ctx.updateStreamingMessage(messageId, publicReply, true);
+    } else {
+      ctx.updateStreamingMessage(messageId, "…", true);
+    }
+  }
+  return { text: publicReply || null, messageId };
+}
+
+/**
+ * Legacy non-streaming player speak (used for private channels, seed greetings).
+ */
 export async function runPlayerSpeak(
   ctx: SpeakerQueueContext,
   speaker: Player,
@@ -99,104 +291,59 @@ export async function runPlayerSpeak(
 ): Promise<string | null> {
   if (isPlayerEliminated(speaker)) return null;
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (ctx.sessionToken) headers.Authorization = `Bearer ${ctx.sessionToken}`;
+
+  const ac = new AbortController();
+  const fetchTimer = setTimeout(() => ac.abort(), 45_000);
+  let res: Response;
   try {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (ctx.sessionToken) headers.Authorization = `Bearer ${ctx.sessionToken}`;
+    res = await fetch("/api/chat/player-speak", {
+      method: "POST",
+      headers,
+      signal: ac.signal,
+      body: JSON.stringify(buildPlayerSpeakBody(ctx, speaker, recent, channelGoal, false)),
+    });
+  } finally {
+    clearTimeout(fetchTimer);
+  }
 
-    // Build player roster so AI sees the same player list as the human sidebar.
-    // Only include name and public role (not private board content of others).
-    const playerRoster = ctx.playersRef.current
-      .filter((p) => !p.isGameMaster)
-      .map((p) => ({
-        name: p.name,
-        // Hidden-role games should not expose private roles through roster context.
-        role: p.roleRevealed ? (p.role ?? undefined) : undefined,
-        isHuman: !p.isAI,
-      }));
-
-    const ac = new AbortController();
-    const fetchTimer = setTimeout(() => ac.abort(), 45_000);
-    let res: Response;
-    try {
-      res = await fetch("/api/chat/player-speak", {
-        method: "POST",
-        headers,
-        signal: ac.signal,
-        body: JSON.stringify({
-          gameName: ctx.gameName,
-          gameTemplate: ctx.gameTemplate,
-          rules: ctx.gameRules,
-          gamePhase: ctx.gamePhase,
-          player: {
-            name: speaker.name,
-            role: speaker.role,
-            personality: speaker.personality,
-            background: speaker.background,
-            speechStyle: speaker.speechStyle,
-            quirk: speaker.quirk,
-            boardContent: ctx.myBoardContent[speaker.id] ?? undefined,
-          },
-          ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
-          recentMessages: recent,
-          playerRoster,
-          preferredModel: getPreferredModel(),
-          ...(channelGoal ? { channelGoal } : {}),
-          ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
-          ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
-          ...(ctx.contentLanguage ? { contentLanguage: ctx.contentLanguage } : {}),
-          ...(ctx.characterDirections?.find((d) => d.name === speaker.name) ? {
-            characterDirection: ctx.characterDirections.find((d) => d.name === speaker.name)!.direction,
-          } : {}),
-          gameId: ctx.gameId,
-        }),
-      });
-    } finally {
-      clearTimeout(fetchTimer);
-    }
-    if (!res.ok) {
-      if (res.status === 402) {
-        const err = new Error("CREDITS_EXHAUSTED");
-        (err as any).status = 402;
-        throw err;
-      }
-      console.warn(`player-speak failed for ${speaker.name}: HTTP ${res.status}`);
-      return null;
-    }
-    const data = await res.json();
-    const rawMessage = (data.message || "").trim();
-    if (!rawMessage || /^\.{1,5}$|^\u2026$/.test(rawMessage)) return null;
-
-    const { cleanContent, actions } = parseHostActions(rawMessage);
-    const notesAction = actions.find((a) => a.type === "player_notes");
-    if (notesAction && notesAction.type === "player_notes") {
-      ctx.setPlayerNotes((prev) => ({ ...prev, [speaker.id]: notesAction.content }));
-    }
-
-    if (ctx.addReaction) {
-      for (const a of actions) {
-        if (a.type === "react") {
-          const targetMsg = a.targetSender
-            ? [...ctx.messages].reverse().find(
-                (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming &&
-                  m.senderName.toLowerCase() === a.targetSender!.toLowerCase()
-              )
-            : [...ctx.messages].reverse().find(
-                (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
-              );
-          if (targetMsg?.id) ctx.addReaction(targetMsg.id, a.emoji, speaker.name);
-        }
-      }
-    }
-
-    const publicReply = clampSpokenReply(cleanContent, ctx.gameTemplate);
-    return publicReply || null;
-  } catch (err) {
-    if (err instanceof Error && (err.message === "CREDITS_EXHAUSTED" || (err as unknown as { status?: number }).status === 402)) {
+  if (!res.ok) {
+    if (res.status === 402) {
+      const err = new Error("CREDITS_EXHAUSTED");
+      (err as any).status = 402;
       throw err;
     }
-    console.error("Error generating AI player reply:", err);
+    console.warn(`[player-speak] ${speaker.name}: HTTP ${res.status}`);
     return null;
   }
+  const data = await res.json();
+  const rawMessage = (data.message || "").trim();
+  if (!rawMessage || /^\.{1,5}$|^\u2026$/.test(rawMessage)) return null;
+
+  const { cleanContent, actions } = parseHostActions(rawMessage);
+  const notesAction = actions.find((a) => a.type === "player_notes");
+  if (notesAction && notesAction.type === "player_notes") {
+    ctx.setPlayerNotes((prev) => ({ ...prev, [speaker.id]: notesAction.content }));
+  }
+
+  if (ctx.addReaction) {
+    for (const a of actions) {
+      if (a.type === "react") {
+        const targetMsg = a.targetSender
+          ? [...ctx.messages].reverse().find(
+              (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming &&
+                m.senderName.toLowerCase() === a.targetSender!.toLowerCase()
+            )
+          : [...ctx.messages].reverse().find(
+              (m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming
+            );
+        if (targetMsg?.id) ctx.addReaction(targetMsg.id, a.emoji, speaker.name);
+      }
+    }
+  }
+
+  return clampSpokenReply(cleanContent, ctx.gameTemplate) || null;
 }
 
 // ─── Passive reactions: content-aware emoji reactions from AI players ─────────
@@ -340,20 +487,22 @@ export async function speakAndReveal(
   const isScene = ctx.gameTemplate === "scene";
   await thinkingDelay(queueIdx, ctx.convMode, isScene);
   ctx.setTypingUsers([toTyping(player), ...upcomingPlayers.slice(0, 2).map(toTyping)]);
+
   let txt: string | null = null;
+  let revealedMsgId: string | null = null;
+
   try {
-    txt = await runPlayerSpeak(ctx, player, ctx.recentForNext.current);
+    const result = await streamPlayerSpeak(ctx, player, ctx.recentForNext.current, ctx.channelGoal);
+    txt = result.text;
+    revealedMsgId = result.messageId;
   } catch (err) {
     ctx.setTypingUsers([]);
     throw err;
   }
   ctx.setTypingUsers([]);
-  if (txt) {
-    const speed = getTypewriterSpeed(player.personality);
-    const revealedMsgId = await typewriterReveal(txt, ctx.addStreamingMessage, ctx.updateStreamingMessage, {
-      senderId: player.id, senderName: player.name, senderAvatar: player.avatar ?? "#8b5cf6", isAI: true,
-    }, ctx.channelId, speed);
-    if (revealedMsgId) triggerPassiveReactions(ctx, revealedMsgId, txt, player.id, ctx.engagementScore);
+
+  if (txt && revealedMsgId) {
+    triggerPassiveReactions(ctx, revealedMsgId, txt, player.id, ctx.engagementScore);
     const totalPace = Math.min(
       HOST_PACE_BASE_MS + Math.floor(txt.length / 50) * HOST_PACE_PER_50_CHARS_MS,
       HOST_PACE_MAX_MS,

@@ -576,7 +576,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     }
   }, [currentGame, isInitialized, players.length, gameId, isRoomLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch human in-game identity (skip for scene mode — use real name)
+  // Set human in-game identity from the user's actual profile name
   useEffect(() => {
     if (isRoomLoading) return;
     if (!currentGame?.config || !session?.access_token) return;
@@ -584,30 +584,9 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     if (humanIdentityFetchedRef.current === currentGame.id) return;
     humanIdentityFetchedRef.current = currentGame.id;
 
-    if (isSceneMode(currentGame.config.template)) {
-      const fullName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "Player";
-      setHumanGameIdentity({ name: extractPreferredName(fullName) });
-      return;
-    }
-
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    headers["Authorization"] = `Bearer ${session.access_token}`;
-    fetch("/api/generate-human-game-identity", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        gameName: currentGame.name,
-        rules: currentGame.config.rules,
-        contentLanguage,
-      }),
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Failed"))))
-      .then((data: { name?: string }) => {
-        const name = (data.name && data.name.trim()) ? data.name.trim().slice(0, 40) : "Player";
-        setHumanGameIdentity({ name });
-      })
-      .catch(() => setHumanGameIdentity({ name: "Player" }));
-  }, [isRoomLoading, currentGame?.id, currentGame?.name, currentGame?.config?.rules, session?.access_token, humanGameIdentity, setHumanGameIdentity, session?.user]);
+    const fullName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "Player";
+    setHumanGameIdentity({ name: extractPreferredName(fullName) });
+  }, [isRoomLoading, currentGame?.id, currentGame?.config, session?.access_token, humanGameIdentity, setHumanGameIdentity, session?.user]);
 
   // Sync human player display name
   useEffect(() => {

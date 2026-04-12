@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { PlayerBoardData } from "@/app/components/player-board";
 import { Badge } from "@/app/components/ui/badge";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
+import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 
 import type { Player } from "@/types/player";
 export type { Player } from "@/types/player";
@@ -145,8 +146,9 @@ function PlayerCard({
 }) {
   const isClickable = !!onOpenProfile;
   const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
-  // Always use the game avatar in-game so all player types share the same art style.
-  const useGameAvatarForHuman = !player.isAI && !!gameId;
+  const { user } = useAuth();
+  const userAvatarUrl = getUserAvatarUrl(user);
+  const useGameAvatarForHuman = !player.isAI && !!gameId && !userAvatarUrl;
 
   return (
     <div
@@ -188,6 +190,7 @@ function PlayerCard({
                 isSpeaking ? "ring-2 ring-green-500/60 scale-105" : "group-hover:scale-105"
               }`}
             >
+              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={humanAvatarName} className="object-cover" />}
               <AvatarFallback
                 className="text-sm font-semibold text-white"
                 style={{ backgroundColor: player.avatar }}
