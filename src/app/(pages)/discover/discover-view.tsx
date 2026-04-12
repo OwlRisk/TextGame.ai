@@ -12,6 +12,7 @@ import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getPresetById } from "@/data/discover-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
 import { getAppLanguage, t } from "@/lib/i18n";
+import { getScene } from "@/lib/scenes";
 import { Loader2 } from "lucide-react";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
@@ -77,7 +78,20 @@ function DiscoverViewInner() {
         caseId = scriptKillSetup.caseId;
       }
 
-      if (!scriptKillSetup) {
+      // For scene-mode games, use the scene's predefined characters
+      // so they match directorNotes and openingSequence
+      const sceneData = preset.templateId === "scene" ? getScene(preset.id) : null;
+
+      if (sceneData) {
+        configuredPlayers = sceneData.characters.map((c) => ({
+          name: c.name,
+          gender: c.gender,
+          personality: c.personality,
+          background: c.background,
+          speechStyle: c.speechStyle,
+          quirk: c.quirk,
+        }));
+      } else if (!scriptKillSetup) {
         toast.loading(t("toast.setting_up_players", lang), { id: toastId });
         try {
           const res = await fetch("/api/generate-players", {
@@ -116,11 +130,12 @@ function DiscoverViewInner() {
       const newGame = {
         id: crypto.randomUUID(),
         name: preset.name,
-        icon: gameIcon,
-        color: templateToHex(preset.templateId),
+        icon: sceneData?.icon ?? gameIcon,
+        color: sceneData ? "#7c3aed" : templateToHex(preset.templateId),
         config: {
           name: preset.name,
           template: preset.templateId || "custom",
+          ...(sceneData && { sceneId: sceneData.id }),
           playerCount: configuredPlayers.length || (preset.playerCount ?? tmpl?.recommendedAICount ?? 4),
           rules: gameRules,
           ...(gamePlayerRules && { playerRules: gamePlayerRules }),
