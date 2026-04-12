@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { GameSidebar } from "@/app/components/game-sidebar";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Button } from "@/app/components/ui/button";
@@ -37,7 +37,7 @@ export function AppLayoutWithSidebar({
   onUpdateGame,
   children,
 }: AppLayoutWithSidebarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sidebarProps = {
     games,
@@ -47,14 +47,16 @@ export function AppLayoutWithSidebar({
     onUpdateGame,
   };
 
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
   return (
-    <div className="h-[100dvh] flex flex-col md:flex-row bg-zinc-900 text-white overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-zinc-900 text-white overflow-hidden">
       <header className={`${hideMobileHeader ? "hidden" : "md:hidden"} flex-shrink-0 h-12 px-3 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95`}>
         <Button
           variant="ghost"
           size="icon"
           className="h-9 w-9 rounded-lg min-w-[44px] min-h-[44px]"
-          onClick={() => setMobileMenuOpen(true)}
+          onClick={() => setSidebarOpen(true)}
           aria-label="Open menu"
         >
           <Menu className="size-5 text-zinc-300" />
@@ -62,18 +64,31 @@ export function AppLayoutWithSidebar({
         <span className="text-sm font-medium text-zinc-300 ml-2 truncate flex-1">{mobileTitle}</span>
       </header>
       <div className="flex-1 flex overflow-hidden min-h-0">
-        <div className="hidden md:flex flex-shrink-0 z-10">
-          <GameSidebar {...sidebarProps} />
-        </div>
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        {/* Desktop toggle — thin strip on the left edge */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="hidden md:flex flex-shrink-0 w-5 h-full items-center justify-center bg-zinc-950/60 hover:bg-violet-900/30 border-r border-violet-900/20 transition-colors group cursor-pointer"
+          aria-label="Open sidebar"
+        >
+          <div className="flex flex-col gap-[3px] opacity-40 group-hover:opacity-100 transition-opacity">
+            <span className="block w-3 h-[2px] rounded-full bg-zinc-400 group-hover:bg-violet-400 transition-colors" />
+            <span className="block w-3 h-[2px] rounded-full bg-zinc-400 group-hover:bg-violet-400 transition-colors" />
+            <span className="block w-3 h-[2px] rounded-full bg-zinc-400 group-hover:bg-violet-400 transition-colors" />
+          </div>
+        </button>
+
+        {/* Sidebar drawer (both mobile and desktop) */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent
             side="left"
             title={mobileTitle}
             className="w-[5rem] max-w-[5rem] p-0 border-r border-violet-900/20 bg-gradient-to-b from-zinc-950 via-[#0a0510] to-zinc-950"
           >
-            <GameSidebar {...sidebarProps} onNavigate={() => setMobileMenuOpen(false)} />
+            <GameSidebar {...sidebarProps} onNavigate={closeSidebar} />
           </SheetContent>
         </Sheet>
+
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">{children}</main>
       </div>
     </div>
