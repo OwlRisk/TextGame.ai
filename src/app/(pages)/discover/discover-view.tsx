@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DiscoverPage, type DiscoverPreset } from "@/app/components/discover-page";
 import { Toaster } from "@/app/components/ui/sonner";
@@ -12,6 +12,7 @@ import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getPresetById } from "@/data/discover-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
 import { getAppLanguage, t } from "@/lib/i18n";
+import { Loader2 } from "lucide-react";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -29,7 +30,7 @@ function templateToHex(templateId: string | undefined): string {
   return (match && TAILWIND_TO_HEX[match[1]]) || "#8b5cf6";
 }
 
-export default function DiscoverView() {
+function DiscoverViewInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectGame, addGame } = useGameContext();
@@ -169,5 +170,19 @@ export default function DiscoverView() {
       <DiscoverPage onCreateGame={handleCreateGame} />
       <Toaster position="top-right" expand={false} richColors closeButton offset={{ top: "72px", right: "20px" }} gap={12} toastOptions={{ style: { zIndex: 9999 }, duration: 4000 }} />
     </>
+  );
+}
+
+export default function DiscoverView() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+        </div>
+      }
+    >
+      <DiscoverViewInner />
+    </Suspense>
   );
 }
