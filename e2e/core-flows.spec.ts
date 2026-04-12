@@ -105,7 +105,7 @@ test.describe("Accessibility - Keyboard Navigation", () => {
 
 test.describe("Error handling", () => {
   test("404 page for non-existent routes", async ({ page }) => {
-    const response = await page.goto("/this-route-does-not-exist-12345");
+    const response = await page.goto("/nonexistent/page-does-not-exist-12345");
     expect(response?.status()).toBe(404);
   });
 

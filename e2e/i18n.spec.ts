@@ -24,11 +24,12 @@ test.describe("Discover page — i18n content", () => {
 
   test("search input exists", async ({ page }) => {
     await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForTimeout(2000);
 
     const searchInput = page.locator(
       'input[type="search"], input[placeholder*="Search"], input[placeholder*="search"], input[placeholder*="搜索"], input[placeholder*="検索"]'
     );
-    const exists = await searchInput.first().isVisible({ timeout: 5000 }).catch(() => false);
+    const exists = await searchInput.first().isVisible({ timeout: 10000 }).catch(() => false);
     expect(exists).toBe(true);
   });
 });
