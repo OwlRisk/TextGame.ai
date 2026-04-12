@@ -2673,12 +2673,19 @@ const T: Record<string, Record<string, string>> = {
     tr: "Rekabetçi", hi: "प्रतिस्पर्धी", id: "Kompetitif", vi: "Cạnh tranh",
     th: "แข่งขัน", pl: "Rywalizacyjna", nl: "Competitief", uk: "Змагальна",
   },
-  "discover.multiplayer": {
-    en: "Multiplayer", zh: "\u591a\u4eba\u6e38\u620f", de: "Mehrspieler", fr: "Multijoueur",
-    es: "Multijugador", ja: "\u30de\u30eb\u30c1\u30d7\u30ec\u30a4\u30e4\u30fc", ko: "\uba40\ud2f0\ud50c\ub808\uc774\uc5b4",
-    pt: "Multijogador", ru: "\u041c\u043d\u043e\u0433\u043e\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c\u0441\u043a\u0430\u044f", it: "Multigiocatore", ar: "\u0645\u062a\u0639\u062f\u062f \u0627\u0644\u0644\u0627\u0639\u0628\u064a\u0646",
-    tr: "Çok Oyunculu", hi: "मल्टीप्लेयर", id: "Multipemain", vi: "Nhiều người chơi",
-    th: "หลายผู้เล่น", pl: "Wieloosobowa", nl: "Multiplayer", uk: "Багатокористувацька",
+  "discover.ai_characters": {
+    en: "AI Characters", zh: "AI \u89d2\u8272", de: "KI-Charaktere", fr: "Personnages IA",
+    es: "Personajes IA", ja: "AI\u30ad\u30e3\u30e9", ko: "AI \uce90\ub9ad\ud130",
+    pt: "Personagens IA", ru: "\u0418\u0418-\u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0438", it: "Personaggi IA", ar: "\u0634\u062e\u0635\u064a\u0627\u062a \u0630\u0643\u0627\u0621 \u0627\u0635\u0637\u0646\u0627\u0639\u064a",
+    tr: "AI Karakterler", hi: "AI \u0915\u093f\u0930\u0926\u093e\u0930", id: "Karakter AI", vi: "Nh\u00e2n v\u1eadt AI",
+    th: "\u0e15\u0e31\u0e27\u0e25\u0e30\u0e04\u0e23 AI", pl: "Postacie AI", nl: "AI-personages", uk: "\u0410\u0406-\u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0456",
+  },
+  "discover.solo": {
+    en: "Solo", zh: "\u5355\u4eba", de: "Solo", fr: "Solo",
+    es: "Solo", ja: "\u30bd\u30ed", ko: "\uc194\ub85c",
+    pt: "Solo", ru: "\u0421\u043e\u043b\u043e", it: "Solo", ar: "\u0641\u0631\u062f\u064a",
+    tr: "Solo", hi: "\u0938\u094b\u0932\u094b", id: "Solo", vi: "M\u1ed9t m\u00ecnh",
+    th: "\u0e40\u0e14\u0e35\u0e48\u0e22\u0e27", pl: "Solo", nl: "Solo", uk: "\u0421\u043e\u043b\u043e",
   },
 
   // ── Landing page ──────────────────────────────────────────────────────

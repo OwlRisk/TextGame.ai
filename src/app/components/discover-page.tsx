@@ -114,12 +114,10 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
               <span className="text-zinc-700">·</span>
               <Clock className="h-3 w-3" />
               <span>{template.duration}</span>
-              {parseInt(template.players) > 1 && (
-                <>
-                  <span className="text-zinc-700">·</span>
-                  <span className="text-emerald-500 font-semibold">{t("discover.multiplayer")}</span>
-                </>
-              )}
+              <span className="text-zinc-700">·</span>
+              <span className="text-emerald-500 font-semibold">
+                {parseInt(template.players) > 1 ? t("discover.ai_characters") : t("discover.solo")}
+              </span>
             </div>
             <span className="text-xs font-semibold text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
               {t("discover.play")}
