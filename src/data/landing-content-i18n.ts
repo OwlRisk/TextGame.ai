@@ -324,6 +324,11 @@ export function localizeScenarios(
 
 // ─── Marquee Characters ──────────────────────────────────────────────────────
 
+const NAME: Record<string, L> = {
+  Jianxin: { zh: "林剑心", ja: "剣心", ko: "검심" },
+  Wukong:  { zh: "方悟空", ja: "悟空", ko: "오공" },
+};
+
 const ROLE: Record<string, L> = {
   Villager:  { zh: "村民", ja: "村人", ko: "마을 주민", de: "Dorfbewohner", fr: "Villageois", es: "Aldeano", pt: "Aldeão", ru: "Житель", it: "Villico", ar: "قروي" },
   Doctor:    { zh: "医生", ja: "医者", ko: "의사", de: "Arzt", fr: "Médecin", es: "Doctor", pt: "Médico", ru: "Доктор", it: "Dottore", ar: "طبيب" },
@@ -332,6 +337,15 @@ const ROLE: Record<string, L> = {
   Spy:       { zh: "间谍", ja: "スパイ", ko: "스파이", de: "Spion", fr: "Espion", es: "Espía", pt: "Espião", ru: "Шпион", it: "Spia", ar: "جاسوس" },
   Witness:   { zh: "目击者", ja: "目撃者", ko: "목격자", de: "Zeuge", fr: "Témoin", es: "Testigo", pt: "Testemunha", ru: "Свидетель", it: "Testimone", ar: "شاهد" },
   Suspect:   { zh: "嫌疑人", ja: "容疑者", ko: "용의자", de: "Verdächtiger", fr: "Suspect", es: "Sospechoso", pt: "Suspeito", ru: "Подозреваемый", it: "Sospettato", ar: "مشتبه به" },
+  Knight:           { zh: "骑士", ja: "騎士", ko: "기사", de: "Ritter", fr: "Chevalier", es: "Caballero", pt: "Cavaleiro", ru: "Рыцарь", it: "Cavaliere", ar: "فارس" },
+  Rogue:            { zh: "盗贼", ja: "盗賊", ko: "도적", de: "Schurke", fr: "Voleur", es: "Pícaro", pt: "Ladino", ru: "Плут", it: "Furfante", ar: "محتال" },
+  Cleric:           { zh: "牧师", ja: "聖職者", ko: "성직자", de: "Kleriker", fr: "Clerc", es: "Clérigo", pt: "Clérigo", ru: "Жрец", it: "Chierico", ar: "كاهن" },
+  Ranger:           { zh: "游侠", ja: "レンジャー", ko: "레인저", de: "Waldläufer", fr: "Rôdeur", es: "Guardabosques", pt: "Patrulheiro", ru: "Следопыт", it: "Ranger", ar: "حارس" },
+  Swordmaster:      { zh: "剑客", ja: "剣士", ko: "검객", de: "Schwertmeister", fr: "Maître d'épée", es: "Maestro de espada", pt: "Espadachim", ru: "Мечник", it: "Maestro di spada", ar: "سيّاف" },
+  Monk:             { zh: "武僧", ja: "武僧", ko: "무승", de: "Mönch", fr: "Moine", es: "Monje", pt: "Monge", ru: "Монах", it: "Monaco", ar: "راهب" },
+  "Wandering Doctor": { zh: "游医", ja: "旅医者", ko: "떠돌이 의원", de: "Wanderarzt", fr: "Médecin itinérant", es: "Médico errante", pt: "Médico andarilho", ru: "Странствующий лекарь", it: "Medico errante", ar: "طبيب جوّال" },
+  Assassin:         { zh: "刺客", ja: "暗殺者", ko: "암살자", de: "Assassine", fr: "Assassin", es: "Asesino", pt: "Assassino", ru: "Убийца", it: "Assassino", ar: "قاتل" },
+  Mage:             { zh: "法师", ja: "魔法使い", ko: "마법사", de: "Magier", fr: "Mage", es: "Mago", pt: "Mago", ru: "Маг", it: "Mago", ar: "ساحر" },
 };
 
 const PERSONALITY: Record<string, L> = {
@@ -344,6 +358,15 @@ const PERSONALITY: Record<string, L> = {
   "Nervous, detail-oriented":             { zh: "紧张敏感，注重细节", ja: "神経質、細部にこだわる", ko: "긴장하며 세부 사항에 집중", de: "Nervös, detailorientiert", fr: "Nerveux, soucieux des détails", es: "Nervioso, atento a los detalles", pt: "Nervoso, atento aos detalhes", ru: "Нервный, внимателен к деталям", it: "Nervoso, attento ai dettagli", ar: "متوتر، يهتم بالتفاصيل" },
   "Confrontational, quick to contradict": { zh: "对抗性强，反应迅速", ja: "対立的、すぐに反論する", ko: "대립적이고 반박이 빠름", de: "Konfrontativ, widerspricht schnell", fr: "Confrontant, contredit rapidement", es: "Confrontacional, rápido en contradecir", pt: "Confrontador, rápido em contradizer", ru: "Конфликтный, быстро возражает", it: "Combattivo, pronto a contraddire", ar: "مواجه، سريع في المعارضة" },
   "Quiet, watchful observer":             { zh: "沉默寡言，善于观察", ja: "静かで注意深い観察者", ko: "조용하고 관찰력이 뛰어남", de: "Ruhig, aufmerksamer Beobachter", fr: "Discret, observateur attentif", es: "Callado, observador atento", pt: "Quieto, observador atento", ru: "Тихий, внимательный наблюдатель", it: "Silenzioso, osservatore attento", ar: "هادئ، مراقب يقظ" },
+  "Stoic and honorable, rushes to protect others":     { zh: "坚韧正直，奋不顾身守护他人", ja: "寡黙で高潔、仲間を守るために駆けつける", ko: "과묵하고 명예로움, 다른 이를 보호하려 달려감" },
+  "Sharp-tongued and street-smart, spots traps first": { zh: "伶牙俐齿，精明老练，最先发现陷阱", ja: "毒舌で世渡り上手、罠を真っ先に見破る", ko: "말이 날카롭고 눈치 빠름, 함정을 먼저 발견" },
+  "Compassionate healer, judges silently":             { zh: "心怀慈悲的治疗者，沉默中洞察一切", ja: "慈悲深い癒し手、静かに見極める", ko: "자비로운 치유사, 조용히 판단함" },
+  "Quiet and observant, prefers the wilderness":       { zh: "沉默寡言善于观察，钟情于荒野", ja: "寡黙で観察力に優れ、荒野を好む", ko: "조용하고 관찰력이 뛰어남, 야생을 선호" },
+  "Disciplined, seeks harmony between body and blade": { zh: "自律克己，追求身剑合一", ja: "規律正しく、体と刃の調和を求める", ko: "절제력 있고, 몸과 검의 조화를 추구" },
+  "Calm but fierce in combat, speaks in proverbs":     { zh: "平时沉静，战时如雷，言谈间尽是禅意", ja: "普段は穏やかだが戦いでは猛烈、ことわざで語る", ko: "평소엔 차분하지만 전투에선 맹렬, 속담으로 말함" },
+  "Gentle-hearted, refuses to turn away from anyone":  { zh: "心地善良，绝不弃任何人于不顾", ja: "優しい心の持ち主、誰も見捨てない", ko: "마음이 따뜻하고, 누구도 외면하지 않음" },
+  "Cold and professional, dry humor surfaces":         { zh: "冷酷专业，偶尔露出冷幽默", ja: "冷徹でプロフェッショナル、時折辛辣なユーモア", ko: "냉철하고 프로적, 가끔 건조한 유머" },
+  "Intellectually curious, excited by anomalies":      { zh: "求知欲旺盛，对异常现象兴奋不已", ja: "知的好奇心旺盛、異常現象に目を輝かせる", ko: "지적 호기심이 강하고, 이상 현상에 흥분" },
 };
 
 const GAME: Record<string, L> = {
@@ -351,6 +374,8 @@ const GAME: Record<string, L> = {
   Mafia:          { zh: "黑手党", ja: "マフィア", ko: "마피아", de: "Mafia", fr: "Mafia", es: "Mafia", pt: "Máfia", ru: "Мафия", it: "Mafia", ar: "المافيا" },
   "Who's the Spy": { zh: "谁是卧底", ja: "スパイは誰だ", ko: "스파이는 누구", de: "Wer ist der Spion", fr: "Qui est l'espion", es: "¿Quién es el espía?", pt: "Quem é o espião", ru: "Кто шпион", it: "Chi è la spia", ar: "من هو الجاسوس" },
   Mystery:        { zh: "谜案", ja: "ミステリー", ko: "미스터리", de: "Krimi", fr: "Mystère", es: "Misterio", pt: "Mistério", ru: "Детектив", it: "Mistero", ar: "لغز" },
+  "Fantasy RPG":  { zh: "奇幻RPG", ja: "ファンタジーRPG", ko: "판타지 RPG", de: "Fantasy-RPG", fr: "RPG fantaisie", es: "RPG de fantasía", pt: "RPG de fantasia", ru: "Фэнтези RPG", it: "RPG fantasy", ar: "آر بي جي فانتازيا" },
+  "Wuxia RPG":    { zh: "武侠RPG", ja: "武侠RPG", ko: "무협 RPG", de: "Wuxia-RPG", fr: "RPG wuxia", es: "RPG wuxia", pt: "RPG wuxia", ru: "Ушу RPG", it: "RPG wuxia", ar: "آر بي جي ووشيا" },
 };
 
 export function localizeMarqueeCharacters(
@@ -361,6 +386,7 @@ export function localizeMarqueeCharacters(
   if (key === "en") return characters;
   return characters.map((c) => ({
     ...c,
+    name: pick(NAME[c.name] ?? {}, lang) ?? c.name,
     role: pick(ROLE[c.role] ?? {}, lang) ?? c.role,
     personality: pick(PERSONALITY[c.personality] ?? {}, lang) ?? c.personality,
     game: pick(GAME[c.game] ?? {}, lang) ?? c.game,

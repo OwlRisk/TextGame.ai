@@ -91,6 +91,16 @@ export const LANDING_AVATAR_MAP: Record<string, string> = {
   "Warden Lunaris":  "/avatars/preview/landing-avatar-warden-lunaris.webp",
   "Don Ferrante":    "/avatars/preview/landing-avatar-don-ferrante.webp",
   "Detective Kate":  "/avatars/preview/landing-avatar-detective-kate.webp",
+  // Marquee characters (AI Players section)
+  Aldric:           "/avatars/preview/landing-avatar-aldric.webp",
+  Lyra:             "/avatars/preview/landing-avatar-lyra.webp",
+  Sera:             "/avatars/preview/landing-avatar-sera.webp",
+  Kael:             "/avatars/preview/landing-avatar-kael.webp",
+  Jianxin:          "/avatars/preview/landing-avatar-jianxin.webp",
+  Wukong:           "/avatars/preview/landing-avatar-wukong.webp",
+  Mira:             "/avatars/preview/landing-avatar-mira.webp",
+  Dusk:             "/avatars/preview/landing-avatar-dusk.webp",
+  Elara:            "/avatars/preview/landing-avatar-elara.webp",
 };
 
 export const INSIDE_GAME_STEPS: InsideGameStep[] = [
@@ -307,15 +317,15 @@ export const FAQ_ITEMS: FAQItem[] = [
 ];
 
 const BASE_MARQUEE_CHARACTERS: MarqueeCharacter[] = [
-  { name: "Aldric",  role: "Knight",            personality: "Stoic and honorable, rushes to protect others",     game: "Fantasy RPG" },
-  { name: "Lyra",    role: "Rogue",             personality: "Sharp-tongued and street-smart, spots traps first", game: "Fantasy RPG" },
-  { name: "Sera",    role: "Cleric",            personality: "Compassionate healer, judges silently",             game: "Fantasy RPG" },
-  { name: "Kael",    role: "Ranger",            personality: "Quiet and observant, prefers the wilderness",       game: "Fantasy RPG" },
-  { name: "林剑心",  role: "Swordmaster",       personality: "Disciplined, seeks harmony between body and blade", game: "Wuxia RPG" },
-  { name: "方悟空",  role: "Monk",              personality: "Calm but fierce in combat, speaks in proverbs",     game: "Wuxia RPG" },
-  { name: "Mira",    role: "Wandering Doctor",  personality: "Gentle-hearted, refuses to turn away from anyone",  game: "Wuxia RPG" },
-  { name: "Dusk",    role: "Assassin",          personality: "Cold and professional, dry humor surfaces",         game: "Fantasy RPG" },
-  { name: "Elara",   role: "Mage",              personality: "Intellectually curious, excited by anomalies",      game: "Fantasy RPG" },
+  { name: "Aldric",   role: "Knight",            personality: "Stoic and honorable, rushes to protect others",     game: "Fantasy RPG" },
+  { name: "Lyra",     role: "Rogue",             personality: "Sharp-tongued and street-smart, spots traps first", game: "Fantasy RPG" },
+  { name: "Sera",     role: "Cleric",            personality: "Compassionate healer, judges silently",             game: "Fantasy RPG" },
+  { name: "Kael",     role: "Ranger",            personality: "Quiet and observant, prefers the wilderness",       game: "Fantasy RPG" },
+  { name: "Jianxin",  role: "Swordmaster",       personality: "Disciplined, seeks harmony between body and blade", game: "Wuxia RPG" },
+  { name: "Wukong",   role: "Monk",              personality: "Calm but fierce in combat, speaks in proverbs",     game: "Wuxia RPG" },
+  { name: "Mira",     role: "Wandering Doctor",  personality: "Gentle-hearted, refuses to turn away from anyone",  game: "Wuxia RPG" },
+  { name: "Dusk",     role: "Assassin",          personality: "Cold and professional, dry humor surfaces",         game: "Fantasy RPG" },
+  { name: "Elara",    role: "Mage",              personality: "Intellectually curious, excited by anomalies",      game: "Fantasy RPG" },
 ];
 
 /** Duplicated for seamless infinite marquee loop */
