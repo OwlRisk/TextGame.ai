@@ -133,10 +133,11 @@ export function useGameMasterSessions({
     const sessionTitle = generateSessionTitle(selectedTemplate, playerCount, gameName);
 
     const existing = sessions.find((s) => s.id === currentSessionId);
+    const existingMsgs = existing?.messages ?? [];
     const messagesChanged = existing
-      ? existing.messages.length !== messages.length ||
+      ? existingMsgs.length !== messages.length ||
         (messages.length > 0 &&
-          existing.messages[existing.messages.length - 1]?.id !==
+          existingMsgs[existingMsgs.length - 1]?.id !==
             messages[messages.length - 1]?.id)
       : true;
 
@@ -206,7 +207,8 @@ export function useGameMasterSessions({
 
       if (fromHistoryClick) didLoadSessionRef.current = true;
       setCurrentSessionId(session.id);
-      const migratedMessages = session.messages.map((m) => {
+      const sessionMsgs = session.messages ?? [];
+      const migratedMessages = sessionMsgs.map((m) => {
         if (m.role !== "gm" || !m.content) return m;
         let c = m.content;
         c = c.replace(/rules panel(?:\s+directly)?\s+on the right/gi, "Game Rules directly");
@@ -226,7 +228,7 @@ export function useGameMasterSessions({
       setCustomRules(session.customRules);
       setGameName(session.gameName);
       setSelectedHostId(session.selectedHostId);
-      setIsGMTyping(session.messages.length === 0 && !fromHistoryClick);
+      setIsGMTyping(sessionMsgs.length === 0 && !fromHistoryClick);
     },
     [
       sessions,

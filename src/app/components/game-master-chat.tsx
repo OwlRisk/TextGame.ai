@@ -1183,10 +1183,11 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
                     <div className="text-xs text-zinc-500 truncate">
                       {(() => {
                         const dateStr = new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        if (session.messages.length === 0) return `${dateStr} · No messages yet`;
-                        const last = session.messages[session.messages.length - 1];
+                        const msgs = session.messages ?? [];
+                        if (msgs.length === 0) return `${dateStr} · No messages yet`;
+                        const last = msgs[msgs.length - 1];
                         const preview = (last?.content ?? '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\n+/g, ' ').trim();
-                        return preview ? `${dateStr} — ${preview}` : `${dateStr} · ${session.messages.length} msgs`;
+                        return preview ? `${dateStr} — ${preview}` : `${dateStr} · ${msgs.length} msgs`;
                       })()}
                     </div>
                   </button>
