@@ -102,7 +102,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
   const localCharacters = useMemo(() => localizeMarqueeCharacters(MARQUEE_CHARACTERS, lang), [lang]);
   const localFeatures = useMemo(() => localizeFeatures(FEATURES, lang), [lang]);
 
-  const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>("werewolf");
+  const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>(Object.keys(GAME_SCENARIOS)[0]);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [visibleCount, setVisibleCount] = useState(1);
 
@@ -137,7 +137,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
     });
   }, []);
 
-  const currentScenario = localScenarios[selectedGame];
+  const currentScenario = localScenarios[selectedGame] ?? Object.values(localScenarios)[0];
 
   return (
     <div className="flex-1 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-y-auto">
