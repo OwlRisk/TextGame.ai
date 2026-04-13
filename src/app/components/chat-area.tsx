@@ -13,6 +13,7 @@ import { ChatInputArea } from "@/app/components/chat-input-area";
 import { GameOverBanner } from "@/app/components/game-over-banner";
 import { TypingIndicator } from "@/app/components/typing-indicator";
 import { ChatMessage } from "@/app/components/chat-message";
+import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
 
 export interface Message {
   id: string;
@@ -122,6 +123,10 @@ interface ChatAreaProps {
   gameTemplate?: string;
   /** Host `CHANNEL_GOAL:` text — shown above the input as the current task */
   channelTaskHint?: string | null;
+  /** Human player identity for avatar key matching */
+  humanGameIdentity?: { name: string } | null;
+  /** Whether the current user is the game master */
+  isUserGameMaster?: boolean;
 }
 
 export function ChatArea({ 
@@ -175,10 +180,18 @@ export function ChatArea({
   humanName,
   gameTemplate,
   channelTaskHint,
+  humanGameIdentity,
+  isUserGameMaster,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [timerDisplay, setTimerDisplay] = useState("");
+  const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const handlePlayerClick = useCallback((player: Player) => {
+    setProfilePlayer(player);
+    setProfileOpen(true);
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -454,6 +467,7 @@ export function ChatArea({
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
                 onReact={onReact}
                 gameTemplate={gameTemplate}
+                onPlayerClick={handlePlayerClick}
               />
             );
           })}
@@ -530,6 +544,17 @@ export function ChatArea({
         messages={messages}
       />
       </div>
+
+      <PlayerProfileDialog
+        player={profilePlayer}
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        gameId={gameId}
+        avatarImageUrls={avatarImageUrls}
+        onAvatarUrlLoaded={onAvatarUrlLoaded}
+        humanGameIdentity={humanGameIdentity}
+        isUserGameMaster={isUserGameMaster}
+      />
     </div>
   );
 }

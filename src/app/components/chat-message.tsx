@@ -184,12 +184,14 @@ export interface ChatMessageProps {
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   onReact?: (messageId: string, emoji: string) => void;
   gameTemplate?: string;
+  onPlayerClick?: (player: Player) => void;
 }
 
 export const ChatMessage = React.memo(function ChatMessage({
   message, showAvatar, syncedContent, rawContent, isShowingCursor,
   userId, userAvatarUrl, useGeneratedAvatarForUser, humanPlayer, userAvatarName,
   gameId, players, avatarImageUrls, onAvatarUrlLoaded, onReact, gameTemplate,
+  onPlayerClick,
 }: ChatMessageProps) {
   if (message.isAnnouncement) {
     return (
@@ -411,7 +413,11 @@ export const ChatMessage = React.memo(function ChatMessage({
       )}
       {showAvatar ? (
         <div className="flex gap-4">
-          <div className="relative flex-shrink-0" title={message.senderName}>
+          <button
+            className="relative flex-shrink-0 cursor-pointer rounded-xl transition-opacity hover:opacity-80"
+            title={message.senderName}
+            onClick={() => messagePlayer && onPlayerClick?.(messagePlayer)}
+          >
             <MessageAvatar
               message={message}
               userId={userId}
@@ -424,7 +430,7 @@ export const ChatMessage = React.memo(function ChatMessage({
               avatarImageUrls={avatarImageUrls}
               onAvatarUrlLoaded={onAvatarUrlLoaded}
             />
-          </div>
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 mb-2">
                 <span

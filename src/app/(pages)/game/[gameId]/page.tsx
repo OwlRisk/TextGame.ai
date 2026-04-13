@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 const CharacterBrowser = dynamic(() => import("@/app/components/character-browser").then(m => m.CharacterBrowser), { ssr: false });
 const PlayerPanelWithBoard = dynamic(() => import("@/app/components/player-panel-with-board").then(m => m.PlayerPanelWithBoard), { ssr: false });
 const RpgPanel = dynamic(() => import("@/app/components/rpg-panel").then(m => m.RpgPanel), { ssr: false });
+const PlayerProfileDialog = dynamic(() => import("@/app/components/player-profile-dialog").then(m => m.PlayerProfileDialog), { ssr: false });
 import { isPlayerEliminated } from "@/lib/player-badges";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
@@ -85,6 +86,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   const [showCharacterBrowser, setShowCharacterBrowser] = useState(false);
   const [channelPermissions, setChannelPermissions] = useState<Record<string, string[]>>({});
+  const [profilePlayer, setProfilePlayer] = useState<import("@/types/player").Player | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const handlePlayerClick = useCallback((player: import("@/types/player").Player) => {
+    setProfilePlayer(player);
+    setProfileOpen(true);
+  }, []);
   const pathname = usePathname();
 
   const currentGame = games.find((g) => g.id === gameId);
@@ -664,6 +671,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
               addReaction(messageId, emoji, displayName);
             }}
             channelTaskHint={channelTaskHint}
+            humanGameIdentity={humanGameIdentity}
+            isUserGameMaster={isOwner}
           />
           </div>
         ) : null)}
@@ -681,6 +690,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   avatarImageUrls={avatarImageUrls}
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
                   avatarStyle={rpgAvatarStyle}
+                  onPlayerClick={handlePlayerClick}
                 />
               ) : (
               <PlayerPanelWithBoard
@@ -717,6 +727,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                     avatarImageUrls={avatarImageUrls}
                     onAvatarUrlLoaded={onAvatarUrlLoaded}
                     avatarStyle={rpgAvatarStyle}
+                    onPlayerClick={handlePlayerClick}
                   />
                 ) : (
                 <PlayerPanelWithBoard
@@ -805,6 +816,18 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         }}
       />
 
+
+      <PlayerProfileDialog
+        player={profilePlayer}
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        gameId={gameId}
+        avatarImageUrls={avatarImageUrls}
+        onAvatarUrlLoaded={onAvatarUrlLoaded}
+        humanGameIdentity={humanGameIdentity}
+        isUserGameMaster={isOwner}
+        avatarStyle={rpgAvatarStyle}
+      />
 
       <Toaster
         position="top-right"

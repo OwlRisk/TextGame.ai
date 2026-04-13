@@ -22,6 +22,7 @@ interface RpgPanelProps {
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   avatarStyle?: AvatarStyle;
+  onPlayerClick?: (player: Player) => void;
 }
 
 export function RpgPanel({
@@ -32,6 +33,7 @@ export function RpgPanel({
   avatarImageUrls = {},
   onAvatarUrlLoaded,
   avatarStyle,
+  onPlayerClick,
 }: RpgPanelProps) {
   const lang = getBrowserLanguage();
   const partyMembers = useMemo(() => players.filter((p) => !p.isGameMaster), [players]);
@@ -57,6 +59,7 @@ export function RpgPanel({
               avatarImageUrls={avatarImageUrls}
               onAvatarUrlLoaded={onAvatarUrlLoaded}
               avatarStyle={avatarStyle}
+              onPlayerClick={onPlayerClick}
             />
           ))}
         </div>
@@ -81,6 +84,7 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
   avatarImageUrls = {},
   onAvatarUrlLoaded,
   avatarStyle,
+  onPlayerClick,
 }: {
   player: Player;
   isSpeaking: boolean;
@@ -89,6 +93,7 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
   avatarImageUrls?: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   avatarStyle?: AvatarStyle;
+  onPlayerClick?: (player: Player) => void;
 }) {
   const lang = getBrowserLanguage();
   const [expanded, setExpanded] = useState(false);
@@ -110,7 +115,7 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
       {/* Compact header */}
       <button
         className="w-full p-2.5 flex items-start gap-2.5 text-left"
-        onClick={() => rpg && setExpanded(!expanded)}
+        onClick={() => onPlayerClick ? onPlayerClick(player) : rpg && setExpanded(!expanded)}
       >
         {/* Avatar */}
         <div className="relative flex-shrink-0">
