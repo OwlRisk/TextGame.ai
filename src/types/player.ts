@@ -21,6 +21,12 @@ export interface Player {
   speechStyle?: string;
   /** AI-only: behavioral quirk (e.g. "always uses food metaphors", "gets paranoid easily") */
   quirk?: string;
+  /** AI-only: character motivation (e.g. "Find the legendary sword of her ancestors") */
+  goal?: string;
+  /** AI-only: character fear (e.g. "Being trapped underground with no way out") */
+  fear?: string;
+  /** AI-only: how this character relates to the human player (e.g. "Loyal but sometimes overprotective") */
+  attitudeToPlayer?: string;
   /** Player gender (male, female, other) - used for avatar generation and TTS voice matching */
   gender?: string;
   /** Whether this player's role has been publicly revealed by the Host (via REVEAL_ROLE directive). */

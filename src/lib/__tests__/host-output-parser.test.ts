@@ -421,7 +421,7 @@ describe("parseHostResult", () => {
       expect((result.speakerQueue[1] as { type: "ai"; player: Player }).player.name).toBe("Bob");
     });
 
-    it("human breaks the loop when mixed with AI names", () => {
+    it("human does not break the loop when mixed with AI names", () => {
       const raw = "NEXT_SPEAKER: Alice, You, Bob";
       const result = parseHostResult(
         raw,
@@ -432,6 +432,7 @@ describe("parseHostResult", () => {
       expect(result.speakerQueue).toEqual([
         { type: "ai", player: players[0] },
         { type: "human" },
+        { type: "ai", player: players[1] },
       ]);
     });
 

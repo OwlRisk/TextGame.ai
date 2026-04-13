@@ -121,12 +121,21 @@ interface ChatAreaProps {
   humanName?: string;
   /** Game template ID — passed to sub-components for template-specific UI */
   gameTemplate?: string;
+  /** RPG dungeon / revival banner when game-over is a revival beat */
+  isRpgMode?: boolean;
+  rpgWorldId?: string;
   /** Host `CHANNEL_GOAL:` text — shown above the input as the current task */
   channelTaskHint?: string | null;
   /** Human player identity for avatar key matching */
   humanGameIdentity?: { name: string } | null;
   /** Whether the current user is the game master */
   isUserGameMaster?: boolean;
+  /** Callback to fetch older messages from DB when user scrolls past the in-memory buffer */
+  onLoadMoreMessages?: () => void;
+  /** Whether there are more messages in the DB to fetch */
+  hasMoreDbMessages?: boolean;
+  /** Whether older messages are currently being fetched */
+  isLoadingMoreMessages?: boolean;
 }
 
 export function ChatArea({ 
@@ -179,9 +188,14 @@ export function ChatArea({
   gameEvents = [],
   humanName,
   gameTemplate,
+  isRpgMode,
+  rpgWorldId,
   channelTaskHint,
   humanGameIdentity,
   isUserGameMaster,
+  onLoadMoreMessages,
+  hasMoreDbMessages,
+  isLoadingMoreMessages,
 }: ChatAreaProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -269,7 +283,10 @@ export function ChatArea({
 
   // Load more when user scrolls up: IntersectionObserver on top sentinel
   useEffect(() => {
-    if (!hasMoreOlder || !loadMoreSentinelRef.current) return;
+    const canLoadInMemory = hasMoreOlder;
+    const canLoadFromDb = hasMoreDbMessages && !isLoadingMoreMessages;
+    if (!canLoadInMemory && !canLoadFromDb) return;
+    if (!loadMoreSentinelRef.current) return;
     const sentinel = loadMoreSentinelRef.current;
     const viewport = sentinel.closest('[data-slot="scroll-area-viewport"]') as HTMLElement | null;
     if (!viewport) return;
@@ -278,15 +295,19 @@ export function ChatArea({
       (entries) => {
         const [e] = entries;
         if (!e?.isIntersecting) return;
-        if (visibleCount >= messages.length) return;
-        scrollPreserveRef.current = { scrollTop: viewport.scrollTop, scrollHeight: viewport.scrollHeight };
-        setVisibleCount((c) => Math.min(c + PAGE_SIZE, messages.length));
+        if (visibleCount < messages.length) {
+          scrollPreserveRef.current = { scrollTop: viewport.scrollTop, scrollHeight: viewport.scrollHeight };
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, messages.length));
+        } else if (hasMoreDbMessages && !isLoadingMoreMessages && onLoadMoreMessages) {
+          scrollPreserveRef.current = { scrollTop: viewport.scrollTop, scrollHeight: viewport.scrollHeight };
+          onLoadMoreMessages();
+        }
       },
       { root: viewport, rootMargin: "100px 0px 0px 0px", threshold: 0 }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMoreOlder, visibleCount, messages.length]);
+  }, [hasMoreOlder, visibleCount, messages.length, hasMoreDbMessages, isLoadingMoreMessages, onLoadMoreMessages]);
 
   // Keep scroll position when prepending older messages
   useLayoutEffect(() => {
@@ -416,15 +437,21 @@ export function ChatArea({
           userId={userId}
           humanName={humanName}
           gameTemplate={gameTemplate}
+          isRpgMode={isRpgMode}
+          rpgWorldId={rpgWorldId}
         />
       )}
 
       {/* Messages - min-h-0 allows flex child to shrink so scroll works; only render last visibleCount, load more on scroll up */}
       <ScrollArea className="flex-1 min-h-0 px-6 relative" role="log" aria-label="Chat messages">
         <div className="py-6 space-y-5" aria-live="polite" aria-relevant="additions">
-          {hasMoreOlder && (
+          {(hasMoreOlder || hasMoreDbMessages) && (
             <div ref={loadMoreSentinelRef} className="flex justify-center py-3" role="status" aria-label="Loading older messages">
-              <span className="text-xs text-zinc-500">{t("chat.pull_older")}</span>
+              {isLoadingMoreMessages ? (
+                <span className="text-xs text-zinc-400 animate-pulse">Loading...</span>
+              ) : (
+                <span className="text-xs text-zinc-500">{t("chat.pull_older")}</span>
+              )}
             </div>
           )}
           {messages.length === 0 && !isRoundInProgress && (

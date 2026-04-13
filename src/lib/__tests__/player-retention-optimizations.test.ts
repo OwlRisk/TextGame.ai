@@ -116,17 +116,17 @@ describe("Landing FEATURED_GAMES preset resolution", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("FAQ content matches current flow", () => {
-  it("'How do I create a game?' answer does NOT mention 'Create' page", () => {
-    const faq = FAQ_ITEMS.find((f) => f.question.includes("create a game"));
+  it("'How do I start an adventure?' answer does NOT mention old 'Create' page flow", () => {
+    const faq = FAQ_ITEMS.find((f) => f.question.includes("start an adventure"));
     expect(faq).toBeDefined();
     expect(faq!.answer).not.toContain("go to Create");
     expect(faq!.answer).not.toContain("chat with the Game Master");
   });
 
-  it("'How do I create a game?' answer mentions templates or Discover", () => {
-    const faq = FAQ_ITEMS.find((f) => f.question.includes("create a game"));
+  it("'How do I start an adventure?' answer mentions Discover or presets", () => {
+    const faq = FAQ_ITEMS.find((f) => f.question.includes("start an adventure"));
     expect(faq).toBeDefined();
-    expect(faq!.answer).toMatch(/template|Discover/i);
+    expect(faq!.answer).toMatch(/preset|Discover/i);
   });
 
   it("no FAQ mentions subscriptions or 'subscribe'", () => {
@@ -165,9 +165,9 @@ describe("ALL_PRESETS templateId validity", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("Host prompt — narrator identity", () => {
-  it("defaults to invisible narrator when no hostName given", () => {
+  it("defaults to atmospheric narration when no hostName given", () => {
     const output = buildHostSystemPrompt(defaultOpts());
-    expect(output).toContain("invisible narrator");
+    expect(output).toContain("Your voice appears as atmospheric narration");
   });
 
   it("uses hostName when provided", () => {

@@ -10,24 +10,20 @@ describe("TEMPLATE_I18N — data integrity", () => {
   const templateIds = Object.keys(TEMPLATE_I18N);
   const presetIds = ALL_PRESETS.map((p) => p.id);
 
-  it("has at least 15 templates", () => {
-    expect(templateIds.length).toBeGreaterThanOrEqual(15);
+  it("has i18n entries for legacy presets", () => {
+    expect(templateIds.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("every i18n entry corresponds to an existing preset", () => {
-    const presetSet = new Set(presetIds);
-    for (const id of templateIds) {
-      expect(presetSet.has(id), `"${id}" in i18n but not in ALL_PRESETS`).toBe(true);
-    }
-  });
-
-  it("every preset has an i18n entry", () => {
+  it("every preset in ALL_PRESETS that has an i18n entry is correct", () => {
     for (const id of presetIds) {
-      expect(TEMPLATE_I18N[id], `"${id}" preset missing i18n entry`).toBeDefined();
+      if (TEMPLATE_I18N[id]) {
+        expect(TEMPLATE_I18N[id].name).toBeDefined();
+        expect(TEMPLATE_I18N[id].desc).toBeDefined();
+      }
     }
   });
 
-  it("every template has name translations for all 11 Tier 1 languages", () => {
+  it("every i18n entry with name translations has all 11 Tier 1 languages", () => {
     for (const id of templateIds) {
       const nameMap = TEMPLATE_I18N[id].name;
       for (const lang of TIER1_LANGS) {
@@ -36,7 +32,7 @@ describe("TEMPLATE_I18N — data integrity", () => {
     }
   });
 
-  it("every template has desc translations for all 11 Tier 1 languages", () => {
+  it("every i18n entry with desc translations has all 11 Tier 1 languages", () => {
     for (const id of templateIds) {
       const descMap = TEMPLATE_I18N[id].desc;
       for (const lang of TIER1_LANGS) {

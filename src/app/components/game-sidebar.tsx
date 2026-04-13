@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins } from "lucide-react";
+import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins, Users } from "lucide-react";
 import { t, getBrowserLanguage } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -44,6 +44,22 @@ interface Game {
 }
 
 import { getGameTemplate } from "@/lib/game-templates";
+
+function GameSaveHint({ gameId }: { gameId: string }) {
+  const [hint, setHint] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`gameRoom_${gameId}`);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed.gmState?.location) {
+        setHint(parsed.gmState.location);
+      }
+    } catch {}
+  }, [gameId]);
+  if (!hint) return null;
+  return <p className="text-[10px] text-zinc-400 mt-0.5 truncate">📍 {hint}</p>;
+}
 
 function getGameIcon(game: Game): string | null {
   if (game.icon && typeof game.icon === "string" && game.icon.startsWith("http")) return game.icon;
@@ -189,6 +205,32 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
             </TooltipContent>
           </Tooltip>
 
+          {/* Gallery */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
+                  selectedGameId === "gallery"
+                    ? "bg-fuchsia-600 rounded-xl shadow-lg shadow-fuchsia-500/50 hover:!bg-fuchsia-600"
+                    : "bg-zinc-800 hover:bg-fuchsia-600 hover:rounded-xl"
+                }`}
+                asChild
+              >
+                <Link href="/gallery" prefetch aria-label={t("nav.gallery")} onClick={() => { onSelectGame("gallery"); onNavigate?.(); }}>
+                  <Users className="h-7 w-7 text-white" aria-hidden="true" />
+                  {selectedGameId === "gallery" && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
+                  )}
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
+              {t("nav.gallery")}
+            </TooltipContent>
+          </Tooltip>
+
           {/* Create (GM Chat) */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -257,8 +299,9 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                           )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white [&>svg]:hidden">
-                        {game.name}
+                      <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white [&>svg]:hidden max-w-[200px]">
+                        <p className="font-semibold">{game.name}</p>
+                        <GameSaveHint gameId={game.id} />
                       </TooltipContent>
                     </Tooltip>
                   </ContextMenuTrigger>

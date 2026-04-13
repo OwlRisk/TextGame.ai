@@ -14,6 +14,7 @@ import {
 } from "@/app/config/game-phase";
 import { fetchGeneratedAvatar, invalidateAvatarCache } from "@/lib/avatar";
 import { AVATAR_STYLE_CHANGED_EVENT } from "@/lib/avatar-style-constants";
+import type { GmState } from "@/lib/gm-state";
 
 interface PrivateMessage {
   id: string;
@@ -62,6 +63,10 @@ interface GameRoomContextType {
   gameOverSummary: string;
   /** Programmatic round counter */
   roundNumber: number;
+  /** GM's persistent state — act, tension, quest log, location, etc. */
+  gmState: GmState | null;
+  /** LLM-generated story summary for session resume */
+  storySummary: string;
 
   // Actions - Messages
   addMessage: (msg: Omit<Message, "id" | "timestamp"> & { id?: string }, channelId?: string) => string | undefined;
@@ -101,6 +106,8 @@ interface GameRoomContextType {
   setTimerEndsAt: React.Dispatch<React.SetStateAction<number | null>>;
   setGameOverSummary: React.Dispatch<React.SetStateAction<string>>;
   setRoundNumber: React.Dispatch<React.SetStateAction<number>>;
+  setGmState: React.Dispatch<React.SetStateAction<GmState | null>>;
+  setStorySummary: React.Dispatch<React.SetStateAction<string>>;
 
   // Utility
   resetGame: () => void;
@@ -144,8 +151,13 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
   const [gameOverSummary, setGameOverSummary] = useState("");
   const [roundNumber, setRoundNumber] = useState(0);
+  const [gmState, setGmState] = useState<GmState | null>(null);
+  const [storySummary, setStorySummary] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveTrigger, setSaveTrigger] = useState(0);
+
+  // Track which messages have been persisted to game_messages table
+  const savedMessageIdsRef = useRef<Set<string>>(new Set());
 
   const onAvatarUrlLoaded = useCallback((key: string, url: string) => {
     if (!key || !url || !url.startsWith("http")) return;
@@ -273,6 +285,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (state.mood === "dark" || state.mood === "light" || state.mood === "neutral") setMood(state.mood);
       if (typeof state.gameOverSummary === "string") setGameOverSummary(state.gameOverSummary);
       if (typeof state.roundNumber === "number") setRoundNumber(state.roundNumber);
+      if (state.gmState && typeof state.gmState === "object") setGmState(state.gmState as GmState);
+      if (typeof state.storySummary === "string") setStorySummary(state.storySummary);
     }
 
     if (!user?.id) {
@@ -328,6 +342,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   const moodRef = useRef(mood);
   const gameOverSummaryRef = useRef(gameOverSummary);
   const roundNumberRef = useRef(roundNumber);
+  const gmStateRef = useRef(gmState);
+  const storySummaryRef = useRef(storySummary);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
   useEffect(() => { gamePhaseStateRef.current = gamePhaseState; }, [gamePhaseState]);
@@ -343,6 +359,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   useEffect(() => { moodRef.current = mood; }, [mood]);
   useEffect(() => { gameOverSummaryRef.current = gameOverSummary; }, [gameOverSummary]);
   useEffect(() => { roundNumberRef.current = roundNumber; }, [roundNumber]);
+  useEffect(() => { gmStateRef.current = gmState; }, [gmState]);
+  useEffect(() => { storySummaryRef.current = storySummary; }, [storySummary]);
 
   // Synchronously save to localStorage on page close to prevent state loss
   useEffect(() => {
@@ -375,6 +393,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           mood: moodRef.current !== "neutral" ? moodRef.current : undefined,
           gameOverSummary: gameOverSummaryRef.current || undefined,
           roundNumber: roundNumberRef.current || undefined,
+          gmState: gmStateRef.current || undefined,
+          storySummary: storySummaryRef.current || undefined,
           savedAt: new Date().toISOString(),
           clientId: clientIdRef.current,
         };
@@ -406,6 +426,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     avatarImageUrls,
     phaseLabel,
     roundNumber,
+    gmState,
+    storySummary,
   ]);
 
   // Save game room state: fixed dependency array to satisfy React strict rules
@@ -448,8 +470,9 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       mood: mood !== "neutral" ? mood : undefined,
       gameOverSummary: gameOverSummary || undefined,
       roundNumber: roundNumber || undefined,
+      gmState: gmState || undefined,
+      storySummary: storySummary || undefined,
       savedAt: new Date().toISOString(),
-      // Per-session ID so Realtime subscribers can skip their own echoes
       clientId: clientIdRef.current as string,
     };
 
@@ -458,6 +481,36 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         saveGameRoomState(gameId, user.id, state).catch((e) =>
           console.error("Error saving game room state to DB:", e)
         );
+
+        // Persist new messages to game_messages table (append-only)
+        const newMessages = messages.filter((m) => !savedMessageIdsRef.current.has(m.id) && !m.isStreaming);
+        if (newMessages.length > 0) {
+          const payload = newMessages.map((m) => ({
+            id: m.id,
+            senderId: m.senderId,
+            senderName: m.senderName,
+            senderAvatar: m.senderAvatar,
+            content: m.content,
+            channelId: m.channelId || null,
+            isAI: m.isAI,
+            isSystemMessage: m.isSystemMessage || false,
+            isPrivate: m.isPrivate || false,
+            isAnnouncement: m.isAnnouncement || false,
+            imageUrl: m.imageUrl || null,
+            reactions: m.reactions || [],
+          }));
+          fetch(`/api/games/${gameId}/messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: payload }),
+          })
+            .then((res) => {
+              if (res.ok) {
+                for (const m of newMessages) savedMessageIdsRef.current.add(m.id);
+              }
+            })
+            .catch((e) => console.error("Error saving messages to DB:", e));
+        }
       }
       const key = `gameRoom_${gameId}`;
       const payload = JSON.stringify(state);
@@ -710,6 +763,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setTimerEndsAt(null);
     setGameOverSummary("");
     setRoundNumber(0);
+    setGmState(null);
+    setStorySummary("");
   }, []);
 
   const contextValue = useMemo(() => ({
@@ -738,6 +793,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     timerEndsAt,
     gameOverSummary,
     roundNumber,
+    gmState,
+    storySummary,
     onAvatarUrlLoaded,
     regenerateAvatar,
     addMessage,
@@ -769,6 +826,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     setTimerEndsAt,
     setGameOverSummary,
     setRoundNumber,
+    setGmState,
+    setStorySummary,
     resetGame,
     saveNow,
     userId,
@@ -778,7 +837,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     myBoardContent, playerNotes, sections, sectionsLoading, gameEvents,
     gameEnded, gameResult, aiSuggestedPrompts, humanGameIdentity,
     avatarImageUrls, isHydrated, phaseLabel, mood, activeVote, timerEndsAt,
-    gameOverSummary, roundNumber, onAvatarUrlLoaded, regenerateAvatar, addMessage,
+    gameOverSummary, roundNumber, gmState, storySummary, onAvatarUrlLoaded, regenerateAvatar, addMessage,
     addStreamingMessage, updateStreamingMessage, addEventNotification,
     addPrivateMessage, addReaction, updatePlayer, resetGame, saveNow, userId,
   ]);

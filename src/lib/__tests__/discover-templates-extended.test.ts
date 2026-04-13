@@ -5,27 +5,16 @@ import {
   CATEGORY_MAP,
   getPresetById,
   getStyleColor,
-  CORE_TEMPLATES,
-  SOCIAL_DEDUCTION,
-  PARTY_GAMES,
-  MYSTERY_GAMES,
-  ROLEPLAY_GAMES,
-  EDUCATIONAL_GAMES,
-  EXTRA_GAMES,
+  RPG_ADVENTURES,
 } from "@/data/discover-templates";
 
 describe("Discover templates — ALL_PRESETS aggregate", () => {
-  it("contains all sub-arrays", () => {
-    const expected =
-      1 + // werewolf-classic (standalone)
-      CORE_TEMPLATES.length +
-      SOCIAL_DEDUCTION.length +
-      PARTY_GAMES.length +
-      MYSTERY_GAMES.length +
-      ROLEPLAY_GAMES.length +
-      EDUCATIONAL_GAMES.length +
-      EXTRA_GAMES.length;
-    expect(ALL_PRESETS.length).toBe(expected);
+  it("contains exactly the RPG_ADVENTURES", () => {
+    expect(ALL_PRESETS.length).toBe(RPG_ADVENTURES.length);
+    const allIds = ALL_PRESETS.map((t) => t.id);
+    for (const adv of RPG_ADVENTURES) {
+      expect(allIds).toContain(adv.id);
+    }
   });
 
   it("has no duplicate IDs", () => {
@@ -48,9 +37,10 @@ describe("Discover templates — ALL_PRESETS aggregate", () => {
     }
   });
 
-  it("script-kill presets appear before other templates", () => {
-    const firstScriptKill = ALL_PRESETS.findIndex((t) => t.templateId === "script-kill");
-    expect(firstScriptKill).toBe(0);
+  it("all presets are RPG category", () => {
+    for (const t of ALL_PRESETS) {
+      expect(t.category).toBe("RPG");
+    }
   });
 });
 
@@ -67,8 +57,12 @@ describe("Discover templates — CATEGORIES", () => {
     }
   });
 
-  it("has at least 5 categories", () => {
-    expect(CATEGORIES.length).toBeGreaterThanOrEqual(5);
+  it("has exactly 3 categories (all, wuxia, fantasy)", () => {
+    expect(CATEGORIES.length).toBe(3);
+    const ids = CATEGORIES.map((c) => c.id);
+    expect(ids).toContain("all");
+    expect(ids).toContain("wuxia");
+    expect(ids).toContain("fantasy");
   });
 });
 
@@ -158,7 +152,7 @@ describe("Discover templates — template data quality", () => {
     }
   });
 
-  it("player count format is valid (e.g. '4-8' or '3-6')", () => {
+  it("player count format is valid", () => {
     for (const t of ALL_PRESETS) {
       expect(t.players).toMatch(/\d+/);
     }

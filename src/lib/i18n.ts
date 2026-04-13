@@ -1028,6 +1028,11 @@ const T: Record<string, Record<string, string>> = {
   "gameover.pts": { en: "pts", zh: "分", ja: "点", ko: "점", de: "Pkt", fr: "pts", es: "pts", pt: "pts", ru: "очк.", it: "pti", ar: "نقاط", tr: "puan", hi: "अंक", id: "poin", vi: "đ", th: "คะแนน", pl: "pkt", nl: "ptn", uk: "очк." },
   "gameover.you": { en: "You", zh: "你", ja: "あなた", ko: "당신", de: "Du", fr: "Vous", es: "Tú", pt: "Você", ru: "Вы", it: "Tu", ar: "أنت", tr: "Sen", hi: "आप", id: "Kamu", vi: "Bạn", th: "คุณ", pl: "Ty", nl: "Jij", uk: "Ви" },
   "gameover.you_suffix": { en: " (you)", zh: "（你）", ja: "（あなた）", ko: " (당신)", de: " (du)", fr: " (vous)", es: " (tú)", pt: " (você)", ru: " (вы)", it: " (tu)", ar: " (أنت)", tr: " (sen)", hi: " (आप)", id: " (kamu)", vi: " (bạn)", th: " (คุณ)", pl: " (ty)", nl: " (jij)", uk: " (ви)" },
+  "gameover.rpg_revival": { en: "Revival", zh: "复活", ja: "復活", ko: "부활", de: "Wiederauferstehung", fr: "Renaissance", es: "Renacer", pt: "Renascimento", ru: "Возрождение", it: "Rinascita", ar: "إحياء", tr: "Diriliş", hi: "पुनर्जीवन", id: "Kebangkitan", vi: "Hồi sinh", th: "คืนชีพ", pl: "Odrodzenie", nl: "Herleving", uk: "Відродження" },
+  "gameover.rpg_revival_subtitle": { en: "Your party has been revived at a safe haven. Adventure continues\u2026", zh: "\u4f60\u7684\u961f\u4f0d\u5728\u5b89\u5168\u636e\u70b9\u590d\u6d3b\u4e86\uff0c\u5192\u9669\u7ee7\u7eed\u2026", ja: "\u4e00\u884c\u306f\u5b89\u5168\u306a\u636e\u70b9\u3067\u5fa9\u6d3b\u3057\u307e\u3057\u305f\u3002\u5192\u967a\u306f\u7d9a\u304d\u307e\u3059\u2026", ko: "\ud30c\ud2f0\uac00 \uc548\uc804\ud55c \uc544\uc9c0\ud2b8\uc5d0\uc11c \ubd80\ud65c\ud588\uc2b5\ub2c8\ub2e4. \ubaa8\ud5d8\uc740 \uacc4\uc18d\ub429\ub2c8\ub2e4\u2026", de: "Eure Gruppe wurde an einem sicheren Ort wiederbelebt. Das Abenteuer geht weiter\u2026", fr: "Votre groupe a \u00e9t\u00e9 ressuscit\u00e9 dans un havre de s\u00fbret\u00e9. L\u2019aventure continue\u2026", es: "Tu grupo ha revivido en un refugio seguro. La aventura contin\u00faa\u2026", pt: "Seu grupo foi revivido em um ref\u00fagio seguro. A aventura continua\u2026", ru: "\u0412\u0430\u0448\u0430 \u0433\u0440\u0443\u043f\u043f\u0430 \u0432\u043e\u0441\u043a\u0440\u0435\u0448\u0435\u043d\u0430 \u0432 \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u043c \u0443\u0431\u0435\u0436\u0438\u0449\u0435. \u041f\u0440\u0438\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0430\u0435\u0442\u0441\u044f\u2026", it: "Il tuo gruppo \u00e8 stato rianimato in un rifugio sicuro. L\u2019avventura continua\u2026", ar: "\u062a\u0645 \u0625\u062d\u064a\u0627\u0621 \u0641\u0631\u064a\u0642\u0643 \u0641\u064a \u0645\u0644\u062c\u0623 \u0622\u0645\u0646. \u0645\u063a\u0627\u0645\u0631\u0629 \u0627\u0644\u0645\u063a\u0627\u0645\u0631\u0629 \u062a\u0633\u062a\u0645\u0631\u2026", tr: "Grubunuz g\u00fcvenli bir s\u0131\u011f\u0131nakta canland\u0131r\u0131ld\u0131. Macera devam ediyor\u2026", hi: "\u0906\u092a\u0915\u0940 \u091f\u0940\u092e \u090f\u0915 \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924 \u0920\u093f\u0915\u093e\u0928\u0947 \u092a\u0941\u0928\u0930\u094d\u091c\u0940\u0935\u093f\u0924 \u0939\u0941\u0908\u0964 \u0938\u0939\u0938 \u091c\u093e\u0930\u0940 \u0930\u0939\u0947\u0917\u0940\u2026", id: "Pemainmu dibangkitkan di tempat aman. Petualangan berlanjut\u2026", vi: "Nh\u00f3m c\u1ee7a b\u1ea1n \u0111\u00e3 \u0111\u01b0\u1ee3c h\u1ed3i sinh t\u1ea1i n\u01a1i tr\u00fa \u1ea9n an to\u00e0n. Cu\u1ed9c phi\u00eau l\u01b0u ti\u1ebfp t\u1ee5c\u2026", th: "\u0e1b\u0e32\u0e23\u0e4c\u0e15\u0e35\u0e49\u0e02\u0e2d\u0e07\u0e04\u0e38\u0e13\u0e21\u0e35\u0e0a\u0e35\u0e27\u0e34\u0e15\u0e43\u0e19\u0e17\u0e35\u0e48\u0e1b\u0e25\u0e2d\u0e14\u0e20\u0e31\u0e22\u0e01\u0e32\u0e23\u0e1c\u0e08\u0e0d\u0e20\u0e31\u0e22\u0e43\u0e19\u0e17\u0e35\u0e48\u0e1b\u0e25\u0e2d\u0e14\u0e44\u0e27\u0e49\u0e01\u0e32\u0e23\u0e15\u0e32\u0e21\u0e17\u0e35\u0e48\u0e1b\u0e25\u0e2d\u0e14\u0e20\u0e31\u0e22\u0e15\u0e48\u0e2d\u0e44\u0e1b\u2026", pl: "Twoja dru\u017cyna zosta\u0142a wskrzeszona w bezpiecznej przystani. Przygoda trwa\u2026", nl: "Je groep is herleefd in een veilige haven. Het avontuur gaat verder\u2026", uk: "\u0412\u0430\u0448\u0443 \u0433\u0440\u0443\u043f\u0443 \u0432\u0456\u0434\u0440\u043e\u0434\u0436\u0435\u043d\u043e \u0443 \u0431\u0435\u0437\u043f\u0435\u0447\u043d\u043e\u043c\u0443 \u043f\u0440\u0438\u0442\u0443\u043b\u043e\u043a\u0443. \u041f\u0440\u0438\u0433\u043e\u0434\u0430 \u043f\u0440\u043e\u0434\u043e\u0432\u0436\u0443\u0454\u0442\u044c\u0441\u044f\u2026" },
+  "gameover.rpg_resume_adventure": { en: "Resume Adventure", zh: "\u7ee7\u7eed\u5192\u9669", ja: "\u5192\u967a\u3092\u518d\u958b", ko: "\ubaa8\ud5d8 \uacc4\uc18d", de: "Abenteuer fortsetzen", fr: "Reprendre l\u2019aventure", es: "Reanudar aventura", pt: "Retomar aventura", ru: "\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u043f\u0440\u0438\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435", it: "Riprendi l\u2019avventura", ar: "\u0627\u0633\u062a\u0626\u0646\u0627\u0641 \u0627\u0644\u0645\u063a\u0627\u0645\u0631\u0629", tr: "Maceraya devam et", hi: "\u0938\u0939\u0938 \u091c\u093e\u0930\u0940 \u0930\u0916\u0947\u0902", id: "Lanjutkan petualangan", vi: "Ti\u1ebfp t\u1ee5c phi\u00eau l\u01b0u", th: "\u0e40\u0e14\u0e34\u0e19\u0e17\u0e32\u0e07\u0e15\u0e48\u0e2d", pl: "Wzn\u00f3w przygod\u0119", nl: "Avontuur hervatten", uk: "\u041f\u0440\u043e\u0434\u043e\u0432\u0436\u0438\u0442\u0438 \u043f\u0440\u0438\u0433\u043e\u0434\u0443" },
+  "gameover.rpg_new_adventure": { en: "New Adventure", zh: "\u65b0\u5192\u9669", ja: "\u65b0\u3057\u3044\u5192\u967a", ko: "\uc0c8 \ubaa8\ud5d8", de: "Neues Abenteuer", fr: "Nouvelle aventure", es: "Nueva aventura", pt: "Nova aventura", ru: "\u041d\u043e\u0432\u043e\u0435 \u043f\u0440\u0438\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435", it: "Nuova avventura", ar: "\u0645\u063a\u0627\u0645\u0631\u0629 \u062c\u062f\u064a\u062f\u0629", tr: "Yeni macera", hi: "\u0928\u0908 \u0938\u0939\u0938\u093f\u0915\u093e", id: "Petualangan baru", vi: "Cu\u1ed9c phi\u00eau l\u01b0u m\u1edbi", th: "\u0e01\u0e32\u0e23\u0e1c\u0e08\u0e0d\u0e20\u0e31\u0e22\u0e43\u0e2b\u0e21\u0e48", pl: "Nowa przygoda", nl: "Nieuw avontuur", uk: "\u041d\u043e\u0432\u0430 \u043f\u0440\u0438\u0433\u043e\u0434\u0430" },
+  "gameover.rpg_penalty": { en: "Penalty", zh: "\u60e9\u7f5a", ja: "\u30da\u30ca\u30eb\u30c6\u30a3", ko: "\ud2c0\uac9c", de: "Strafe", fr: "P\u00e9nalit\u00e9", es: "Penalizaci\u00f3n", pt: "Penalidade", ru: "\u0428\u0442\u0440\u0430\u0444", it: "Penalit\u00e0", ar: "\u0639\u0642\u0648\u0628\u0629", tr: "Ceza", hi: "\u0926\u0902\u0921", id: "Penalti", vi: "H\u00ecnh ph\u1ea1t", th: "\u0e1a\u0e17\u0e25\u0e07\u0e17\u0e32\u0e22", pl: "Kara", nl: "Straf", uk: "\u0428\u0442\u0440\u0430\u0444" },
 
   // ── Player profile dialog ────────────────────────────────────────────
   "profile.personality": {
@@ -1962,6 +1967,13 @@ const T: Record<string, Record<string, string>> = {
     tr: "Ke\u015ffet", hi: "\u0916\u094b\u091c\u0947\u0902", id: "Jelajahi", vi: "Kh\u00e1m ph\u00e1",
     th: "\u0e2a\u0e33\u0e23\u0e27\u0e08", pl: "Odkryj", nl: "Ontdekken", uk: "\u041e\u0433\u043b\u044f\u0434",
   },
+  "nav.gallery": {
+    en: "Gallery", zh: "\u89d2\u8272\u56fe\u9274", de: "Galerie", fr: "Galerie",
+    es: "Galer\u00eda", ja: "\u30ae\u30e3\u30e9\u30ea\u30fc", ko: "\uac24\ub7ec\ub9ac",
+    pt: "Galeria", ru: "\u0413\u0430\u043b\u0435\u0440\u0435\u044f", it: "Galleria", ar: "\u0645\u0639\u0631\u0636",
+    tr: "Galeri", hi: "\u0917\u0948\u0932\u0930\u0940", id: "Galeri", vi: "B\u1ed9 s\u01b0u t\u1eadp",
+    th: "\u0e41\u0e01\u0e25\u0e40\u0e25\u0e2d\u0e23\u0e35", pl: "Galeria", nl: "Galerij", uk: "\u0413\u0430\u043b\u0435\u0440\u0435\u044f",
+  },
   "nav.create_game": {
     en: "Create Game", zh: "\u521b\u5efa\u6e38\u620f", de: "Spiel erstellen", fr: "Cr\u00e9er un jeu",
     es: "Crear juego", ja: "\u30b2\u30fc\u30e0\u4f5c\u6210", ko: "\uac8c\uc784 \ub9cc\ub4e4\uae30",
@@ -1975,6 +1987,35 @@ const T: Record<string, Record<string, string>> = {
     pt: "Entrar", ru: "\u0412\u043e\u0439\u0442\u0438", it: "Accedi", ar: "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
     tr: "Giri\u015f Yap", hi: "\u0938\u093e\u0907\u0928 \u0907\u0928", id: "Masuk", vi: "\u0110\u0103ng nh\u1eadp",
     th: "\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a", pl: "Zaloguj si\u0119", nl: "Inloggen", uk: "\u0423\u0432\u0456\u0439\u0442\u0438",
+  },
+
+  // ── Gallery page ────────────────────────────────────────────────────────
+  "gallery.title": {
+    en: "Character Gallery", zh: "\u89d2\u8272\u56fe\u9274",
+  },
+  "gallery.subtitle": {
+    en: "Browse the AI RPG character archetypes", zh: "\u6d4f\u89c8 AI RPG \u89d2\u8272\u539f\u578b",
+  },
+  "gallery.filter_all": {
+    en: "All Worlds", zh: "\u5168\u90e8\u4e16\u754c",
+  },
+  "gallery.filter_western": {
+    en: "Western Fantasy", zh: "\u897f\u65b9\u5947\u5e7b",
+  },
+  "gallery.filter_wuxia": {
+    en: "Wuxia", zh: "\u6b66\u4fa0",
+  },
+  "gallery.personality": {
+    en: "Personality", zh: "\u6027\u683c",
+  },
+  "gallery.goal": {
+    en: "Goal", zh: "\u76ee\u6807",
+  },
+  "gallery.fear": {
+    en: "Fear", zh: "\u6050\u60e7",
+  },
+  "gallery.search_placeholder": {
+    en: "Search characters\u2026", zh: "\u641c\u7d22\u89d2\u8272\u2026",
   },
 
   // ── Game page ──────────────────────────────────────────────────────────

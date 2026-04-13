@@ -75,6 +75,7 @@ function CreateGamePageContent() {
               rules: config.rules,
               minPlayers: GAME_TEMPLATES.find(t => t.id === config.template)?.minPlayers ?? 2,
               maxPlayers: GAME_TEMPLATES.find(t => t.id === config.template)?.maxPlayers ?? 20,
+              ...(config.rpgWorldId && { rpgWorldId: config.rpgWorldId }),
             }),
           });
           if (playersRes.ok) {

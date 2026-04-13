@@ -83,7 +83,7 @@ describe("buildSystemPrompt — all templates", () => {
   it("default prompt is generic and flexible", () => {
     const prompt = buildSystemPrompt("Player", undefined, "Custom");
     expect(prompt).toContain("game table");
-    expect(prompt).toContain("No speeches");
+    expect(prompt).toContain("No monologues");
   });
 });
 
@@ -93,9 +93,9 @@ describe("player-speak constants", () => {
     expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBeLessThan(500);
   });
 
-  it("prompts contain sentence limits", () => {
+  it("prompts contain brevity rules", () => {
     const prompt = buildSystemPrompt("Test", "werewolf", "G");
-    expect(prompt).toContain("3 sentences max");
+    expect(prompt).toContain("Keep it short and natural");
   });
 
   it("deduction prompts contain [MY_NOTES] section", () => {
@@ -111,26 +111,26 @@ describe("player-speak constants", () => {
 });
 
 describe("scene mode limits", () => {
-  it("getPlayerTokenLimit returns 300 for scene", () => {
-    expect(getPlayerTokenLimit("scene")).toBe(300);
+  it("getPlayerTokenLimit returns 500 for scene", () => {
+    expect(getPlayerTokenLimit("scene")).toBe(500);
   });
 
   it("getPlayerTokenLimit returns hard limit for undefined", () => {
     expect(getPlayerTokenLimit(undefined)).toBe(PLAYER_SPEAK_HARD_LIMIT_TOKENS);
   });
 
-  it("getPlayerSentenceLimit returns max:3 preferred:2 for scene", () => {
+  it("getPlayerSentenceLimit returns max:5 preferred:3 for scene", () => {
     const limit = getPlayerSentenceLimit("scene");
-    expect(limit.max).toBe(3);
-    expect(limit.preferred).toBe(2);
+    expect(limit.max).toBe(5);
+    expect(limit.preferred).toBe(3);
   });
 
-  it("getPlayerCharLimit returns 400 for scene", () => {
-    expect(getPlayerCharLimit("scene")).toBe(400);
+  it("getPlayerCharLimit returns 500 for scene", () => {
+    expect(getPlayerCharLimit("scene")).toBe(500);
   });
 
-  it("getPlayerCharLimit returns 280 for undefined", () => {
-    expect(getPlayerCharLimit(undefined)).toBe(280);
+  it("getPlayerCharLimit returns 400 for undefined", () => {
+    expect(getPlayerCharLimit(undefined)).toBe(400);
   });
 });
 

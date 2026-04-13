@@ -14,7 +14,6 @@ import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { buildScriptKillGame } from "@/lib/script-kill-setup";
 import { getAppLanguage, t } from "@/lib/i18n";
-import { getScene } from "@/lib/scenes";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -76,6 +75,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
               rules: preset.rules,
               minPlayers: tmpl?.minPlayers ?? 2,
               maxPlayers: tmpl?.maxPlayers ?? 20,
+              ...(preset.rpgWorldId && { rpgWorldId: preset.rpgWorldId }),
             }),
           });
           if (res.ok) {
@@ -105,7 +105,9 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
           configuredPlayers,
           humanRole,
           ...(caseId && { caseId }),
-          generatedHost: {
+          ...(preset.rpgWorldId && { rpgWorldId: preset.rpgWorldId }),
+          ...(preset.rpgAdventureNotes && { rpgAdventureNotes: preset.rpgAdventureNotes }),
+          generatedHost: preset.rpgWorldId ? undefined : {
             name: "Narrator",
             personality: "Invisible storyteller and director",
             voiceStyle: "atmospheric",
@@ -126,63 +128,6 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     } catch {
       toast.error(t("toast.game_failed", lang), { id: toastId });
       router.push("/discover");
-    } finally {
-      creatingRef.current = false;
-    }
-  };
-
-  const createSceneGame = async (sceneId: string) => {
-    const scene = getScene(sceneId);
-    if (!scene) return;
-    if (creatingRef.current) return;
-    creatingRef.current = true;
-    const toastId = "scene-create";
-    const sLang = getAppLanguage();
-    toast.loading(t("toast.gathering_crew", sLang), { id: toastId });
-    try {
-      trackEvent("scene_selected", { scene: scene.id, source: "home" });
-      const configuredPlayers = scene.characters.map((c) => ({
-        name: c.name,
-        gender: c.gender,
-        personality: c.personality,
-        background: c.background,
-        speechStyle: c.speechStyle,
-        quirk: c.quirk,
-      }));
-      const newGame = {
-        id: crypto.randomUUID(),
-        name: scene.title,
-        icon: scene.icon,
-        color: "#7c3aed",
-        config: {
-          name: scene.title,
-          template: "scene",
-          sceneId: scene.id,
-          playerCount: configuredPlayers.length,
-          rules: "",
-          hostId: "narrator",
-          hideRolesInPlayerList: false,
-          configuredPlayers,
-          generatedHost: {
-            name: "Narrator",
-            personality: "Invisible storyteller and director",
-            voiceStyle: "atmospheric",
-            systemPrompt: "",
-            icon: "",
-            color: "#52525b",
-            gender: "other" as const,
-          },
-        },
-        isActive: true,
-        updatedAt: new Date().toISOString(),
-      };
-      addGame(newGame);
-      selectGame(newGame.id);
-      trackEvent("game_created", { template: "scene", scene: scene.id, player_count: configuredPlayers.length, game_name: scene.title });
-      toast.success(t("toast.lets_go", sLang), { id: toastId });
-      router.push(`/game/${newGame.id}`);
-    } catch {
-      toast.error(t("toast.adventure_failed", sLang), { id: toastId });
     } finally {
       creatingRef.current = false;
     }

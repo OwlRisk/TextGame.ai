@@ -11,6 +11,12 @@ export interface RpgSkill {
   cooldown?: number;
   damage?: number;
   effect?: string;
+  /** Skill evolution tier (1 = base, 2 = advanced, 3 = master) */
+  tier?: number;
+  /** ID of the evolved version of this skill */
+  evolvesTo?: string;
+  /** Character level required to evolve this skill */
+  evolveLevel?: number;
 }
 
 export interface RpgItem {
@@ -24,6 +30,14 @@ export interface RpgItem {
   effects?: string;
   /** Stat bonuses when equipped */
   statBonus?: Partial<Record<"attack" | "defense" | "speed" | "luck" | "maxHp" | "maxMp", number>>;
+  /** Equipment quality tier */
+  quality?: "common" | "uncommon" | "rare" | "epic" | "legendary";
+  /** Whether this item can be crafted at a workshop */
+  craftable?: boolean;
+  /** Materials required to craft this item */
+  craftRecipe?: { itemId: string; quantity: number }[];
+  /** Equipment set name — wearing multiple pieces grants a bonus */
+  setBonus?: string;
 }
 
 export interface RpgEquipment {
@@ -38,6 +52,14 @@ export interface StatusEffect {
   icon?: string;
   turnsRemaining?: number;
   effect: string;
+}
+
+export interface RpgAchievement {
+  id: string;
+  name: string;
+  description: string;
+  unlockedAt?: string;
+  icon?: string;
 }
 
 export interface RpgCharacter {
@@ -58,6 +80,19 @@ export interface RpgCharacter {
   inventory: RpgItem[];
   statusEffects: StatusEffect[];
   faction?: string;
+  achievements?: RpgAchievement[];
+}
+
+/** Enemy in combat — includes optional boss fields for multi-phase encounters */
+export interface RpgEnemy {
+  name: string;
+  hp: number;
+  maxHp: number;
+  isBoss?: boolean;
+  phases?: number;
+  currentPhase?: number;
+  weakness?: string;
+  specialMechanics?: string;
 }
 
 /** Partial update payload from GM's PLAYER_UPDATE directive */

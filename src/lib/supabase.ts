@@ -172,6 +172,41 @@ export interface Database {
           updated_at?: string;
         };
       };
+      game_messages: {
+        Row: {
+          id: string;
+          game_id: string;
+          sender_id: string;
+          sender_name: string;
+          sender_avatar: string;
+          content: string;
+          channel_id: string | null;
+          is_ai: boolean;
+          is_system_message: boolean;
+          is_private: boolean;
+          is_announcement: boolean;
+          image_url: string | null;
+          reactions: any;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          game_id: string;
+          sender_id: string;
+          sender_name: string;
+          sender_avatar?: string;
+          content?: string;
+          channel_id?: string | null;
+          is_ai?: boolean;
+          is_system_message?: boolean;
+          is_private?: boolean;
+          is_announcement?: boolean;
+          image_url?: string | null;
+          reactions?: any;
+          created_at?: string;
+        };
+        Update: {};
+      };
     };
   };
 }

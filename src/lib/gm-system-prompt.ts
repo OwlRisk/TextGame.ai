@@ -17,6 +17,7 @@ interface GameContext {
   category?: string;
   hasHiddenRoles?: boolean;
   hasElimination?: boolean;
+  rpgWorldId?: string;
 }
 
 interface HostPersonality {
@@ -37,7 +38,11 @@ export function buildGMSystemPrompt(opts: {
     return customSystemPrompt.trim();
   }
 
-  let s = hostPersonality
+  const isRpg = !!gameContext?.rpgWorldId;
+
+  let s = isRpg
+    ? `You are Chronicle, the RPG Game Master. Help the user design their RPG adventure world — setting, tone, lore, starting scenario, and adventure hooks. Be creative, enthusiastic, and collaborative. Ask questions to understand what kind of world they want, then help build it.`
+    : hostPersonality
     ? `You are the game Host: ${hostPersonality.name}. ${hostPersonality.description || ''}${hostPersonality.personality ? ` Personality: ${hostPersonality.personality}` : ''} Run the game, narrate phases, and manage turns. Never break character.`
     : `You are the Game Master for a text-based game platform. Help the user design the game (rules, template, player count). Be friendly, concise, and helpful.`;
 
@@ -71,6 +76,12 @@ export function buildGMSystemPrompt(opts: {
 
   if (!isSetup) {
     s += GAMEPLAY_PROMPT;
+  } else if (isRpg) {
+    s += `\n\nThis chat is for RPG world design. The adventure runs on a separate screen after "Create Room".`;
+    if (gameContext?.conversationState === "confirmation") {
+      s += ` World design complete—help the user click "Create Room" to start the adventure.`;
+    }
+    s += RPG_SETUP_PROMPT;
   } else {
     if (!hostPersonality) {
       s += `\n\nThis chat is for game setup. The game runs on a separate screen after "Create Room".`;
@@ -127,3 +138,33 @@ When using a known template (werewolf, mafia, etc.), the template already has ac
 BACKGROUND: <UPDATE_GENERAL>[world/story premise]</UPDATE_GENERAL> — for narrative games only. Skip for trivia/party.
 
 PACING: Always set concrete times in rules (e.g. "45s per question", "2 min per round").`;
+
+const RPG_SETUP_PROMPT = `
+
+You are a collaborative RPG world designer. Help the user build their adventure world through conversation.
+
+EDITING TAGS (invisible to user, update rules panel silently):
+1. <EDIT_RULES>[full world setting & adventure notes]</EDIT_RULES> — initial world setup or major rewrite
+2. <ADD_TO_RULES section="desc">[new content]</ADD_TO_RULES> — add lore, locations, NPCs, quests
+3. <REPLACE_IN_RULES section="desc" old="old" new="new"></REPLACE_IN_RULES> — modify specific content
+
+GAME NAME: <SET_GAME_NAME>name</SET_GAME_NAME> — set the adventure's display name.
+
+PLAYER COUNT: <SET_PLAYER_COUNT>N</SET_PLAYER_COUNT> where N = party members (AI companions). Default 3.
+
+WORLD DESIGN FLOW:
+1. Ask what kind of world they want (fantasy, wuxia, sci-fi, post-apocalyptic, etc.)
+2. Help define the tone (dark & gritty, lighthearted, epic, horror)
+3. Suggest a starting scenario and adventure hooks
+4. Build the world rules: magic system, combat style, key factions, notable locations
+5. Wrap it all into adventure notes via EDIT_RULES
+
+CONTENT FORMAT for EDIT_RULES (the "rules" become the adventure world document):
+- WORLD: Name, setting, era, tone
+- LORE: Key history, magic/power system, important factions
+- STARTING LOCATION: Where the adventure begins
+- ADVENTURE HOOKS: 2-3 story threads for the GM to weave
+- SPECIAL RULES: Any custom mechanics (e.g. "corruption system", "honor tracking")
+
+Keep chat messages SHORT and natural. All world-building content goes inside tags only.
+Suggest vivid, specific details — not generic fantasy. Make the world feel unique.`;

@@ -165,14 +165,15 @@ describe('avatar style resolution (pool API)', () => {
 // ─── Section 4: VALID_STYLES contract ────────────────────────────────────────
 
 describe('VALID_STYLES (imported from avatar-style-constants)', () => {
-  it('contains exactly 3 style packs', () => {
-    expect(VALID_STYLES).toHaveLength(3);
+  it('contains exactly 4 style packs', () => {
+    expect(VALID_STYLES).toHaveLength(4);
   });
 
   it('includes all expected style names', () => {
     expect(VALID_STYLES).toContain('valorant');
     expect(VALID_STYLES).toContain('semi-realistic');
     expect(VALID_STYLES).toContain('toon3d');
+    expect(VALID_STYLES).toContain('anime');
   });
 
   it('rejects unknown style as invalid', () => {
@@ -180,8 +181,12 @@ describe('VALID_STYLES (imported from avatar-style-constants)', () => {
     expect((VALID_STYLES as readonly string[]).includes(unknown)).toBe(false);
   });
 
+  it('accepts anime as a valid style', () => {
+    expect((VALID_STYLES as readonly string[]).includes('anime')).toBe(true);
+  });
+
   it('rejects legacy styles', () => {
-    for (const legacy of ['anime', 'painted', 'pixel', 'cyberpunk']) {
+    for (const legacy of ['painted', 'pixel', 'cyberpunk']) {
       expect((VALID_STYLES as readonly string[]).includes(legacy)).toBe(false);
     }
   });

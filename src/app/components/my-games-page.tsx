@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
-import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star, Search, X, RotateCcw, Coins } from "lucide-react";
+import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star, Search, X, RotateCcw, Coins, MapPin } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
 import { toast } from "sonner";
 
@@ -71,6 +71,15 @@ function GameCard({
   creditsUsed?: number;
 }) {
   const isActive = game.isActive;
+  const [saveLocation, setSaveLocation] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`gameRoom_${game.id}`);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed.gmState?.location) setSaveLocation(parsed.gmState.location);
+    } catch {}
+  }, [game.id]);
 
   return (
     <div
@@ -142,6 +151,12 @@ function GameCard({
           </span>
         )}
       </div>
+      {saveLocation && (
+        <div className="flex items-center gap-1 text-[11px] text-emerald-400/80 mb-3 truncate">
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{saveLocation}</span>
+        </div>
+      )}
 
       {/* Action */}
       {isActive ? (

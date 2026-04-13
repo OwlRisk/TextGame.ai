@@ -19,14 +19,15 @@ import {
 // ─── 1. Constants contract ────────────────────────────────────────────────────
 
 describe('VALID_STYLES', () => {
-  it('contains exactly 3 style packs', () => {
-    expect(VALID_STYLES).toHaveLength(3);
+  it('contains exactly 4 style packs', () => {
+    expect(VALID_STYLES).toHaveLength(4);
   });
 
   it('includes all expected style names', () => {
     expect(VALID_STYLES).toContain('valorant');
     expect(VALID_STYLES).toContain('semi-realistic');
     expect(VALID_STYLES).toContain('toon3d');
+    expect(VALID_STYLES).toContain('anime');
   });
 
   it('is a readonly tuple (does not include any unknown values)', () => {
@@ -73,8 +74,11 @@ describe('isValidStyle', () => {
     expect(isValidStyle('TOON3D')).toBe(false);
   });
 
+  it('returns true for anime (now a valid style)', () => {
+    expect(isValidStyle('anime')).toBe(true);
+  });
+
   it('returns false for legacy styles', () => {
-    expect(isValidStyle('anime')).toBe(false);
     expect(isValidStyle('painted')).toBe(false);
     expect(isValidStyle('pixel')).toBe(false);
     expect(isValidStyle('cyberpunk')).toBe(false);
@@ -95,8 +99,11 @@ describe('coerceStyle', () => {
     expect(coerceStyle('TOON3D')).toBe(DEFAULT_STYLE);
   });
 
+  it('returns anime as-is (now a valid style)', () => {
+    expect(coerceStyle('anime')).toBe('anime');
+  });
+
   it('falls back to DEFAULT_STYLE for legacy styles', () => {
-    expect(coerceStyle('anime')).toBe(DEFAULT_STYLE);
     expect(coerceStyle('pixel')).toBe(DEFAULT_STYLE);
     expect(coerceStyle('cyberpunk')).toBe(DEFAULT_STYLE);
   });
@@ -140,8 +147,13 @@ describe('useAvatarStyle logic (pure, without React)', () => {
   });
 
   it('coerces legacy style value to DEFAULT_STYLE', () => {
-    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'anime');
+    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'pixel');
     expect(coerceStyle(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY))).toBe(DEFAULT_STYLE);
+  });
+
+  it('reads anime as a valid style from localStorage', () => {
+    localStorage.setItem(AVATAR_STYLE_STORAGE_KEY, 'anime');
+    expect(coerceStyle(localStorage.getItem(AVATAR_STYLE_STORAGE_KEY))).toBe('anime');
   });
 
   it('CustomEvent detail is coerced to AvatarStyle', () => {
@@ -209,7 +221,7 @@ describe('Extensibility: style validation', () => {
   });
 
   it('coerceStyle falls back to DEFAULT_STYLE for any value not in VALID_STYLES', () => {
-    const unknowns = ['', 'watercolor', 'oil', 'sketch', 'cartoon', 'anime', 'pixel'];
+    const unknowns = ['', 'watercolor', 'oil', 'sketch', 'cartoon', 'pixel'];
     for (const u of unknowns) {
       expect(coerceStyle(u)).toBe(DEFAULT_STYLE);
     }

@@ -3,40 +3,36 @@ import { buildHreflangAlternates } from "@/lib/seo-locales";
 import DiscoverView from "./discover-view";
 
 export const metadata: Metadata = {
-  title: "Discover AI Text Games — Werewolf, Mafia, RPG, Mystery & More",
+  title: "Discover RPG Adventures — Fantasy, Wuxia & Custom Worlds",
   description:
-    "Browse 10+ free AI-powered multiplayer text game templates. Play Werewolf, Mafia, Secret Hitler, Who's the Spy, Murder Mystery, Trivia and more — or create your own custom roleplay AI game in minutes. Best free Character.AI & Jackbox alternative for social deduction games.",
+    "Browse RPG adventures powered by AI. Explore fantasy dungeons, wuxia tournaments, and open-world quests — or design your own custom world with the AI Game Master.",
   keywords: [
-    "ai text games",
-    "play werewolf online",
-    "play mafia online",
     "ai rpg",
-    "roleplay ai",
-    "character ai alternative",
-    "social deduction game",
-    "ai game templates",
-    "multiplayer ai game",
+    "text rpg online",
     "ai dungeon master",
-    "text adventure game",
-    "jackbox alternative free",
-    "free online party games",
-    "games like jackbox",
+    "fantasy rpg",
+    "wuxia rpg",
+    "ai adventure game",
+    "text adventure",
+    "rpg with ai companions",
+    "persistent rpg",
+    "custom rpg world",
   ],
   alternates: {
     canonical: "/discover",
     languages: buildHreflangAlternates("/discover"),
   },
   openGraph: {
-    title: "Discover AI Text Games · TextGame.ai",
+    title: "Discover RPG Adventures · TextGame.ai",
     description:
-      "10+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
+      "RPG adventures with an AI Game Master. Fantasy, Wuxia, open-world — or design your own.",
     type: "website",
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover AI Text Games · TextGame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover RPG Adventures · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Discover AI Text Games · TextGame.ai",
-    description: "10+ multiplayer text game templates powered by AI. Werewolf, Mafia, RPG, Mystery, Trivia — pick a template or create your own AI game in seconds.",
+    title: "Discover RPG Adventures · TextGame.ai",
+    description: "RPG adventures with an AI Game Master. Fantasy, Wuxia, open-world — or design your own.",
     images: ["/hero.webp"],
   },
 };

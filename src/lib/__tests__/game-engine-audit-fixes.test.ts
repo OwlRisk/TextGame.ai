@@ -125,16 +125,16 @@ describe("D6: no image tags in host prompt", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("D7: narrative templates have longer host voice", () => {
-  it("tarot NARRATIVE VOICE allows multiple sentences (hostVoice.maxSentences)", () => {
+  it("tarot NARRATIVE VOICE uses medium drama level", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "tarot" }));
-    expect(output).toContain("4 sentences for dramatic scenes, reveals, and transitions");
-    expect(output).not.toContain("ONE sentence max.");
+    expect(output).toContain("DRAMA LEVEL: MEDIUM");
+    expect(output).toContain("a few sentences for dramatic reveals");
   });
 
-  it("werewolf NARRATIVE VOICE uses up to two sentences (hostVoice.maxSentences)", () => {
+  it("werewolf NARRATIVE VOICE uses high drama level", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "werewolf" }));
-    expect(output).toContain("2 sentences for dramatic scenes, reveals, and transitions");
-    expect(output).not.toContain("ONE sentence max.");
+    expect(output).toContain("DRAMA LEVEL: HIGH");
+    expect(output).toContain("a few sentences for dramatic reveals");
   });
 });
 
@@ -145,25 +145,25 @@ describe("D7: narrative templates have longer host voice", () => {
 describe("D8: per-template token/sentence limits", () => {
   it("default limit matches PLAYER_SPEAK_HARD_LIMIT_TOKENS; deduction games use category default", () => {
     expect(getPlayerTokenLimit()).toBe(PLAYER_SPEAK_HARD_LIMIT_TOKENS);
-    expect(getPlayerTokenLimit("werewolf")).toBe(220);
-    expect(getPlayerTokenLimit("mafia")).toBe(220);
+    expect(getPlayerTokenLimit("werewolf")).toBe(400);
+    expect(getPlayerTokenLimit("mafia")).toBe(400);
   });
 
   it("narrative templates get higher token limits where configured", () => {
-    expect(getPlayerTokenLimit("tarot")).toBe(300);
-    expect(getPlayerTokenLimit("detective-mystery")).toBe(220);
-    expect(getPlayerTokenLimit("storyteller")).toBe(300);
-    expect(getPlayerTokenLimit("escape-room")).toBe(300);
+    expect(getPlayerTokenLimit("tarot")).toBe(350);
+    expect(getPlayerTokenLimit("detective-mystery")).toBe(400);
+    expect(getPlayerTokenLimit("storyteller")).toBe(350);
+    expect(getPlayerTokenLimit("escape-room")).toBe(450);
   });
 
   it("debate gets elevated token limit", () => {
-    expect(getPlayerTokenLimit("debate")).toBe(280);
+    expect(getPlayerTokenLimit("debate")).toBe(350);
   });
 
   it("sentence limits scale by template", () => {
-    expect(getPlayerSentenceLimit("werewolf")).toEqual({ max: 3, preferred: 2 });
+    expect(getPlayerSentenceLimit("werewolf")).toEqual({ max: 5, preferred: 2 });
     expect(getPlayerSentenceLimit("tarot")).toEqual({ max: 4, preferred: 2 });
-    expect(getPlayerSentenceLimit("debate")).toEqual({ max: 3, preferred: 2 });
+    expect(getPlayerSentenceLimit("debate")).toEqual({ max: 4, preferred: 2 });
   });
 });
 
@@ -174,7 +174,7 @@ describe("D8: per-template token/sentence limits", () => {
 describe("D9/D10: pacing rules per template", () => {
   it("werewolf prompt requires mandatory contribution, not silence", () => {
     const prompt = buildSystemPrompt("Mira", "werewolf", "Test", "bold");
-    expect(prompt).toContain("MUST contribute each turn");
+    expect(prompt).toContain("MUST say something every turn");
     expect(prompt).not.toContain("output nothing (empty string)");
   });
 
@@ -191,7 +191,7 @@ describe("D9/D10: pacing rules per template", () => {
 
   it("trivia requires mandatory contribution", () => {
     const prompt = buildSystemPrompt("Mira", "trivia", "Test");
-    expect(prompt).toContain("MUST contribute each turn");
+    expect(prompt).toContain("MUST say something every turn");
   });
 });
 
@@ -379,12 +379,12 @@ describe("all game templates have mechanics", () => {
 describe("round-table speaker control in host prompt", () => {
   it("werewolf prompt instructs listing ALL players", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "werewolf" }));
-    expect(output).toContain("Discussion phases: list ALL living players.");
+    expect(output).toContain("Discussion phases: list ALL living players");
   });
 
-  it("escape-room prompt uses selective speaker control (1–2 AI speakers)", () => {
+  it("escape-room prompt uses selective speaker control (2–3 AI speakers)", () => {
     const output = buildHostSystemPrompt(defaultOpts({ gameTemplate: "escape-room" }));
-    expect(output).toContain("List 1–2 AI speakers per turn.");
+    expect(output).toContain("List 2–3 AI speakers per turn");
   });
 });
 
@@ -413,7 +413,7 @@ describe("parseHostResult with many speakers", () => {
     }
   });
 
-  it("human in middle terminates the queue", () => {
+  it("human in middle does not terminate the queue", () => {
     const players = [
       aiPlayer("p1", "Alice"),
       aiPlayer("p2", "Bob"),
@@ -422,8 +422,9 @@ describe("parseHostResult with many speakers", () => {
     ];
     const raw = "NEXT_SPEAKER: Alice, Alex, Carol";
     const result = parseHostResult(raw, players, "Alex", GAME_ROOM_ENTRIES);
-    expect(result.speakerQueue).toHaveLength(2);
+    expect(result.speakerQueue).toHaveLength(3);
     expect(result.speakerQueue[0]).toEqual({ type: "ai", player: players[0] });
     expect(result.speakerQueue[1]).toEqual({ type: "human" });
+    expect(result.speakerQueue[2]).toEqual({ type: "ai", player: players[3] });
   });
 });

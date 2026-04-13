@@ -26,7 +26,6 @@ import {
 import { HOST_PERSONALITIES, getDefaultHost, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
 
 import { OutOfCreditsModal } from "@/app/components/out-of-credits-modal";
-import { HostSelector } from "@/app/components/host-selector";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { useGameMasterSessions } from "@/hooks/useGameMasterSessions";
 import { streamAIChatResponse, type ChatMessage as AIChatMessage } from "@/lib/openai";
@@ -109,7 +108,9 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
-  const [gameStory, setGameStory] = useState<string>(""); // Optional narrative/story prepended to rules
+  const [gameStory, setGameStory] = useState<string>("");
+  const [rpgWorldId, setRpgWorldId] = useState<string | null>(null);
+  const [rpgAdventureNotes, setRpgAdventureNotes] = useState<string>("");
   const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
     name: string;
     gender?: string;
@@ -499,6 +500,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         category: selectedTemplate?.category,
         hasHiddenRoles: selectedTemplate?.hasHiddenRoles,
         hasElimination: selectedTemplate?.hasElimination,
+        ...(rpgWorldId && { rpgWorldId }),
       };
 
       // Snapshot state before streaming so we can revert on cancel
@@ -1003,32 +1005,37 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       }
       type GeneratedHost = { name: string; personality: string; voiceStyle: string; systemPrompt: string; icon: string; color: string; gender?: 'male' | 'female' | 'other' };
       let generatedHostData: GeneratedHost | null = null;
-      setCreatingStep("Generating game host…");
-      toast.loading("Generating host...", { id: startToastId });
-      try {
-        const response = await fetch('/api/generate-host', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: abortCtrl.signal,
-          body: JSON.stringify({
-            gameRules: customRules,
-            gameName: gameName || selectedTemplate?.name || "Custom Game"
-          })
-        });
-        if (response.ok) {
-          const host = await response.json() as GeneratedHost;
-          generatedHostData = host;
-          setSessions(prev => prev.map(s =>
-            s.id === currentSessionId ? { ...s, generatedHost: host } : s
-          ));
-        } else {
-          const errorText = await response.text();
-          console.error('[Game Master] ❌ Host generation failed. Status:', response.status, 'Response:', errorText);
-          toast.warning("⚠️ Host generation failed. Will use default host (Echo).", { id: startToastId, duration: 4000 });
+      // RPG mode uses a fixed GM identity — skip host generation
+      if (rpgWorldId) {
+        generatedHostData = null;
+      } else {
+        setCreatingStep("Generating game host…");
+        toast.loading("Generating host...", { id: startToastId });
+        try {
+          const response = await fetch('/api/generate-host', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: abortCtrl.signal,
+            body: JSON.stringify({
+              gameRules: customRules,
+              gameName: gameName || selectedTemplate?.name || "Custom Game"
+            })
+          });
+          if (response.ok) {
+            const host = await response.json() as GeneratedHost;
+            generatedHostData = host;
+            setSessions(prev => prev.map(s =>
+              s.id === currentSessionId ? { ...s, generatedHost: host } : s
+            ));
+          } else {
+            const errorText = await response.text();
+            console.error('[Game Master] ❌ Host generation failed. Status:', response.status, 'Response:', errorText);
+            toast.warning("⚠️ Host generation failed. Will use default host (Echo).", { id: startToastId, duration: 4000 });
+          }
+        } catch (error) {
+          console.error('[Game Master] ❌ Failed to generate host:', error);
+          toast.warning("⚠️ Host generation error. Will use default host (Echo).", { id: startToastId, duration: 4000 });
         }
-      } catch (error) {
-        console.error('[Game Master] ❌ Failed to generate host:', error);
-        toast.warning("⚠️ Host generation error. Will use default host (Echo).", { id: startToastId, duration: 4000 });
       }
       setCreatingStep("Setting up game room…");
       toast.dismiss(startToastId);
@@ -1047,10 +1054,10 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       }
       const fallbackPlayerCount = (selectedTemplate && selectedTemplate.maxPlayers > 1 ? selectedTemplate.maxPlayers - 1 : selectedTemplate?.recommendedAICount) ?? 4;
       const gameConfig: GameConfig = {
-        template: tid,
+        template: rpgWorldId ? "custom" : tid,
         playerCount: finalPlayerCount || playerCount || fallbackPlayerCount,
         rules: customRules,
-        name: gameName || selectedTemplate?.name || "Custom Game",
+        name: gameName || selectedTemplate?.name || (rpgWorldId ? "RPG Adventure" : "Custom Game"),
         hostId: selectedHostId,
         tone: "balanced",
         hideRolesInPlayerList: selectedTemplate?.hasHiddenRoles ?? false,
@@ -1059,6 +1066,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
         generatedHost: generatedHostData || undefined,
         channels: resolvedChannels,
         ...(gmActions && gmActions.length > 0 && { quickActions: gmActions }),
+        ...(rpgWorldId && { rpgWorldId }),
+        ...(rpgAdventureNotes && { rpgAdventureNotes }),
       };
       await onCreateGame(gameConfig);
     } finally {

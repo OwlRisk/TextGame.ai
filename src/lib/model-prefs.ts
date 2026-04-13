@@ -5,10 +5,13 @@
 export const DEFAULT_AI_MODEL = 'gpt-5.3-chat-latest';
 
 /**
- * Cheaper model used for low-stakes calls: quick reply suggestions, AI player speaks.
- * gpt-4.1-mini: $0.40/1M input, $1.60/1M output — ~4-9x cheaper than gpt-5.3.
+ * Cheapest model for low-stakes generation: player JSON, reply suggestions, tool calls.
+ * gpt-5.4-nano: extremely fast and cheap.
  */
-export const CHEAP_AI_MODEL = 'gpt-4.1-mini';
+export const CHEAP_AI_MODEL = 'gpt-5.4-nano';
+
+/** Mid-tier model for story summarization — good quality at lower cost than flagship. */
+export const SUMMARY_AI_MODEL = 'gpt-5.4-mini';
 
 /** Scene narrator: flagship GPT for strong instruction-following and creative writing. */
 export const SCENE_NARRATOR_MODEL = 'gpt-5.4';

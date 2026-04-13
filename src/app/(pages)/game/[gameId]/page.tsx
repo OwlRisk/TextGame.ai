@@ -32,6 +32,7 @@ import { EvidenceBoard } from "@/app/components/evidence-board";
 import { useGameChannels } from "@/hooks/useGameChannels";
 import { useGameRoomLifecycle } from "@/hooks/useGameRoomLifecycle";
 import { useHostRound } from "@/hooks/useHostRound";
+import { OutOfCreditsModal } from "@/app/components/out-of-credits-modal";
 import { useGameInit } from "@/hooks/useGameInit";
 import { GameEventOverlay, type GameEvent } from "@/app/components/game-event-overlay";
 import { useGameActions, getSceneDialogueChips, getPhaseType } from "@/hooks/useGameActions";
@@ -82,6 +83,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     aiSuggestedPrompts,
     addReaction,
     setGameEvents,
+    gmState,
   } = useGameRoomContext();
 
   const [showCharacterBrowser, setShowCharacterBrowser] = useState(false);
@@ -92,6 +94,57 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setProfilePlayer(player);
     setProfileOpen(true);
   }, []);
+
+  const currentRoom = useMemo(() => {
+    if (!gmState?.worldRooms) return null;
+    return gmState.worldRooms.rooms[gmState.worldRooms.currentRoomId] ?? null;
+  }, [gmState?.worldRooms]);
+
+  // Older message loading from game_messages API
+  const [hasMoreDbMessages, setHasMoreDbMessages] = useState(true);
+  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
+  const loadMoreMessages = useCallback(async () => {
+    if (!session?.access_token || isLoadingMoreMessages) return;
+    setIsLoadingMoreMessages(true);
+    try {
+      const oldest = messages.length > 0 ? messages[0] : null;
+      const before = oldest?.timestamp instanceof Date ? oldest.timestamp.toISOString() : oldest?.timestamp;
+      const url = `/api/games/${gameId}/messages?limit=50${before ? `&before=${before}` : ""}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) { setHasMoreDbMessages(false); return; }
+      const data = await res.json();
+      if (!data.messages?.length) { setHasMoreDbMessages(false); return; }
+      setHasMoreDbMessages(data.hasMore);
+      const existingIds = new Set(messages.map((m: { id: string }) => m.id));
+      const newMsgs = data.messages
+        .filter((m: { id: string }) => !existingIds.has(m.id))
+        .map((m: any) => ({
+          id: m.id,
+          senderId: m.senderId,
+          senderName: m.senderName,
+          senderAvatar: m.senderAvatar,
+          content: m.content,
+          timestamp: new Date(m.timestamp),
+          channelId: m.channelId,
+          isAI: m.isAI,
+          isSystemMessage: m.isSystemMessage,
+          isPrivate: m.isPrivate,
+          isAnnouncement: m.isAnnouncement,
+          imageUrl: m.imageUrl,
+          reactions: m.reactions || [],
+          isStreaming: false,
+        }));
+      if (newMsgs.length > 0) {
+        setMessages((prev: any[]) => [...newMsgs, ...prev]);
+      }
+    } catch (e) {
+      console.error("Failed to load older messages:", e);
+    } finally {
+      setIsLoadingMoreMessages(false);
+    }
+  }, [gameId, session?.access_token, messages, isLoadingMoreMessages, setMessages]);
   const pathname = usePathname();
 
   const currentGame = games.find((g) => g.id === gameId);
@@ -145,6 +198,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     msgCountRef,
     channelTaskHint,
     dynamicQuickActions,
+    creditsExhausted,
+    dismissCreditsExhausted,
   } = useHostRound({
     gameId,
     channelPermissions,
@@ -155,6 +210,10 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     launchOpeningRound,
     contentLanguage,
   });
+
+  const handleRoomNavigate = useCallback((direction: string) => {
+    handleSendMessage(direction);
+  }, [handleSendMessage]);
 
   // Keep the seed-completion callback in sync with the latest host round handler
   useEffect(() => {
@@ -573,6 +632,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             dialogueChips={dialogueChips}
             gameEvents={gameEvents}
             humanName={humanGameIdentity?.name || undefined}
+            isRpgMode={isRpgMode}
+            rpgWorldId={currentGame?.config?.rpgWorldId}
             introYourTurnHint={introYourTurnHint}
             aiSuggestedPrompts={aiSuggestedPrompts}
             lastFailedSendContent={lastFailedSendContent}
@@ -673,6 +734,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             channelTaskHint={channelTaskHint}
             humanGameIdentity={humanGameIdentity}
             isUserGameMaster={isOwner}
+            onLoadMoreMessages={loadMoreMessages}
+            hasMoreDbMessages={hasMoreDbMessages}
+            isLoadingMoreMessages={isLoadingMoreMessages}
           />
           </div>
         ) : null)}
@@ -691,6 +755,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                   onAvatarUrlLoaded={onAvatarUrlLoaded}
                   avatarStyle={rpgAvatarStyle}
                   onPlayerClick={handlePlayerClick}
+                  currentRoom={currentRoom}
+                  onNavigate={handleRoomNavigate}
                 />
               ) : (
               <PlayerPanelWithBoard
@@ -728,6 +794,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
                     onAvatarUrlLoaded={onAvatarUrlLoaded}
                     avatarStyle={rpgAvatarStyle}
                     onPlayerClick={handlePlayerClick}
+                    currentRoom={currentRoom}
+                    onNavigate={handleRoomNavigate}
                   />
                 ) : (
                 <PlayerPanelWithBoard
@@ -828,6 +896,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
         isUserGameMaster={isOwner}
         avatarStyle={rpgAvatarStyle}
       />
+
+      <OutOfCreditsModal open={creditsExhausted} onClose={dismissCreditsExhausted} />
 
       <Toaster
         position="top-right"

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Play, Heart, Trophy, Eye, Scroll, RotateCcw, Target, Search, Award, RefreshCw } from "lucide-react";
+import { BookOpen, Play, Heart, Trophy, Eye, Scroll, RotateCcw, Target, Search, Award, RefreshCw, Flame, AlertTriangle } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import type { Player } from "@/types/player";
 import { isPlayerEliminated } from "@/lib/player-badges";
@@ -28,6 +28,32 @@ function parseCaseScore(summary: string): ParsedCaseScore | null {
     total: totalMatch ? parseInt(totalMatch[1], 10) : 0,
     correctCulprit: culpritCorrect,
   };
+}
+
+/** Pulls a penalty line/block from GM revival text so it can be shown separately. */
+function extractRpgPenalty(summary: string): { narrative: string; penalty: string | null } {
+  const trimmed = summary.trim();
+  if (!trimmed) return { narrative: summary, penalty: null };
+
+  const blockRe = /(?:^|\n)\s*(?:\*\*)?(?:Penalty|惩罚|PENALTY|Setback|代价|损失)(?:\*\*)?\s*[:：]?\s*\n([\s\S]*?)(?=\n\n[^\n]|$)/i;
+  let m = trimmed.match(blockRe);
+  if (m?.[1]) {
+    const penalty = m[1].replace(/\n{3,}/g, "\n\n").trim();
+    if (penalty.length > 0) {
+      const narrative = trimmed.replace(m[0], "").replace(/\n{3,}/g, "\n\n").trim();
+      return { narrative: narrative.length > 0 ? narrative : trimmed, penalty };
+    }
+  }
+
+  const lineRe = /(?:^|\n)\s*(?:\*\*)?(?:Penalty|惩罚|PENALTY|Loss|损失|Cost|代价)(?:\*\*)?\s*[:：]\s*([^\n]+)/i;
+  m = trimmed.match(lineRe);
+  if (m?.[1]) {
+    const penalty = m[1].trim();
+    const narrative = trimmed.replace(m[0], "").replace(/\n{3,}/g, "\n\n").trim();
+    return { narrative: narrative.length > 0 ? narrative : trimmed, penalty };
+  }
+
+  return { narrative: trimmed, penalty: null };
 }
 
 function getGradeColorClass(grade: string) {
@@ -64,6 +90,10 @@ interface GameOverBannerProps {
   userId?: string;
   humanName?: string;
   gameTemplate?: string;
+  /** When true, show RPG revival / penalty UI instead of classic Game Over. */
+  isRpgMode?: boolean;
+  /** Used with `isRpgMode === undefined` to detect RPG games (e.g. dungeon template). */
+  rpgWorldId?: string;
 }
 
 export function GameOverBanner({
@@ -78,13 +108,29 @@ export function GameOverBanner({
   userId,
   humanName,
   gameTemplate,
+  isRpgMode,
+  rpgWorldId,
 }: GameOverBannerProps) {
   const lang = getBrowserLanguage();
   const [showRoles, setShowRoles] = useState(true);
+
+  const rpgRevivalUi =
+    isRpgMode === true
+    || (isRpgMode !== false && (gameTemplate === "rpg-dungeon" || !!rpgWorldId));
+
   const caseScore = useMemo(
-    () => (gameTemplate === "script-kill" ? parseCaseScore(gameOverSummary) : null),
-    [gameTemplate, gameOverSummary],
+    () => (gameTemplate === "script-kill" && !rpgRevivalUi ? parseCaseScore(gameOverSummary) : null),
+    [gameTemplate, gameOverSummary, rpgRevivalUi],
   );
+
+  const { narrative: revivalNarrative, penalty: revivalPenalty } = useMemo(
+    () => (rpgRevivalUi ? extractRpgPenalty(gameOverSummary) : { narrative: gameOverSummary, penalty: null as string | null }),
+    [rpgRevivalUi, gameOverSummary],
+  );
+
+  const narrativeBody = rpgRevivalUi
+    ? (revivalNarrative.trim() ? revivalNarrative : gameOverSummary)
+    : gameOverSummary;
 
   const nonGMPlayers = players.filter((p) => !p.isGameMaster);
   const hasRoles = nonGMPlayers.some((p) => p.role);
@@ -93,25 +139,43 @@ export function GameOverBanner({
   const eliminatedCount = nonGMPlayers.filter((p) => isPlayerEliminated(p)).length;
   const totalRounds = gameEvents.filter((e) => /round|phase|night|day/i.test(e)).length || 1;
 
+  const shellClass = rpgRevivalUi
+    ? "mx-4 mt-3 rounded-2xl border border-violet-600/30 bg-gradient-to-br from-violet-600/10 via-zinc-900/60 to-violet-500/10 px-5 py-5 backdrop-blur-sm shadow-xl"
+    : "mx-4 mt-3 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-zinc-900/60 to-violet-500/10 px-5 py-5 backdrop-blur-sm shadow-xl";
+
+  const summaryIconClass = rpgRevivalUi ? "text-violet-400" : "text-amber-400";
+  const summaryTextClass = rpgRevivalUi ? "text-violet-100/90" : "text-amber-100/90";
+  const summaryBorderClass = rpgRevivalUi ? "border-violet-500/35" : "border-zinc-700/40";
+  const humanHighlightClass = rpgRevivalUi ? "text-violet-300" : "text-amber-300";
+  const momentsIconClass = rpgRevivalUi ? "text-violet-400" : "text-zinc-400";
+
   return (
-    <div className="mx-4 mt-3 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-zinc-900/60 to-violet-500/10 px-5 py-5 backdrop-blur-sm shadow-xl">
+    <div className={shellClass}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 rounded-full bg-amber-500/20">
-          {gameTemplate === "script-kill" ? (
+        <div className={`p-2 rounded-full ${rpgRevivalUi ? "bg-violet-600/20" : "bg-amber-500/20"}`}>
+          {rpgRevivalUi ? (
+            <Flame className="h-6 w-6 text-violet-400" aria-hidden />
+          ) : gameTemplate === "script-kill" ? (
             <Search className="h-6 w-6 text-amber-400" />
           ) : (
             <Trophy className="h-6 w-6 text-amber-400" />
           )}
         </div>
         <div>
-          <h3 className="text-lg font-black text-amber-200 tracking-wide uppercase">
-            {gameTemplate === "script-kill" ? t("gameover.case_closed", lang) : t("gameover.title", lang)}
+          <h3 className={`text-lg font-black tracking-wide ${rpgRevivalUi ? "text-violet-200" : "text-amber-200 uppercase"}`}>
+            {rpgRevivalUi
+              ? t("gameover.rpg_revival", lang)
+              : gameTemplate === "script-kill"
+                ? t("gameover.case_closed", lang)
+                : t("gameover.title", lang)}
           </h3>
           <p className="text-xs text-zinc-400 mt-0.5">
-            {gameTemplate === "script-kill"
-              ? `${messageCount} ${t("gameover.messages", lang)} · ${t("gameover.investigation_complete", lang)}`
-              : `${survived ? t("gameover.you_survived", lang) : t("gameover.you_eliminated", lang)} · ${messageCount} ${t("gameover.messages", lang)} · ${totalRounds} ${t("gameover.phases", lang)}`
+            {rpgRevivalUi
+              ? t("gameover.rpg_revival_subtitle", lang)
+              : gameTemplate === "script-kill"
+                ? `${messageCount} ${t("gameover.messages", lang)} · ${t("gameover.investigation_complete", lang)}`
+                : `${survived ? t("gameover.you_survived", lang) : t("gameover.you_eliminated", lang)} · ${messageCount} ${t("gameover.messages", lang)} · ${totalRounds} ${t("gameover.phases", lang)}`
             }
           </p>
         </div>
@@ -146,13 +210,25 @@ export function GameOverBanner({
         </div>
       )}
 
-      {/* Summary */}
-      <div className="rounded-xl bg-zinc-800/60 border border-zinc-700/40 px-4 py-3 mb-4">
+      {/* Summary / revival narration */}
+      <div className={`rounded-xl bg-zinc-800/60 border px-4 py-3 mb-4 ${summaryBorderClass}`}>
         <div className="flex items-start gap-2">
-          <BookOpen className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-100/90 leading-relaxed whitespace-pre-line">{gameOverSummary}</p>
+          <BookOpen className={`h-4 w-4 flex-shrink-0 mt-0.5 ${summaryIconClass}`} />
+          <p className={`text-sm leading-relaxed whitespace-pre-line ${summaryTextClass}`}>{narrativeBody}</p>
         </div>
       </div>
+
+      {rpgRevivalUi && revivalPenalty && revivalNarrative.trim().length > 0 && (
+        <div className="rounded-xl border border-violet-500/40 bg-violet-950/25 px-4 py-3 mb-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-violet-400 flex-shrink-0 mt-0.5" aria-hidden />
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-violet-300/90 mb-1">{t("gameover.rpg_penalty", lang)}</div>
+              <p className="text-sm text-violet-100/85 leading-relaxed whitespace-pre-line">{revivalPenalty}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Role Reveals */}
       {hasRoles && (
@@ -175,7 +251,7 @@ export function GameOverBanner({
                     key={p.id}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${eliminated ? "bg-red-950/30 border border-red-500/20" : "bg-zinc-800/50 border border-zinc-700/30"}`}
                   >
-                    <span className={`font-medium truncate ${isHuman ? "text-amber-300" : "text-zinc-200"}`}>
+                    <span className={`font-medium truncate ${isHuman ? humanHighlightClass : "text-zinc-200"}`}>
                       {isHuman ? (humanName || t("gameover.you", lang)) : p.name}
                       {isHuman && t("gameover.you_suffix", lang)}
                     </span>
@@ -196,7 +272,7 @@ export function GameOverBanner({
       {/* Key Moments */}
       {gameEvents.length > 0 && (
         <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-zinc-400">
+          <div className={`flex items-center gap-2 mb-2 text-xs font-semibold ${momentsIconClass}`}>
             <Scroll className="h-3.5 w-3.5" />
             {t("gameover.key_moments", lang)}
           </div>
@@ -212,41 +288,58 @@ export function GameOverBanner({
 
       {/* Stats */}
       <div className="flex gap-4 mb-4 text-center">
-        <div className="flex-1 rounded-lg bg-zinc-800/40 px-3 py-2">
-          <div className="text-lg font-bold text-white">{messageCount}</div>
+        <div className={`flex-1 rounded-lg px-3 py-2 ${rpgRevivalUi ? "bg-violet-950/30 border border-violet-500/20" : "bg-zinc-800/40"}`}>
+          <div className={`text-lg font-bold ${rpgRevivalUi ? "text-violet-100" : "text-white"}`}>{messageCount}</div>
           <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{t("gameover.messages", lang)}</div>
         </div>
-        <div className="flex-1 rounded-lg bg-zinc-800/40 px-3 py-2">
-          <div className="text-lg font-bold text-white">{totalRounds}</div>
+        <div className={`flex-1 rounded-lg px-3 py-2 ${rpgRevivalUi ? "bg-violet-950/30 border border-violet-500/20" : "bg-zinc-800/40"}`}>
+          <div className={`text-lg font-bold ${rpgRevivalUi ? "text-violet-100" : "text-white"}`}>{totalRounds}</div>
           <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{t("gameover.phases", lang)}</div>
         </div>
-        <div className="flex-1 rounded-lg bg-zinc-800/40 px-3 py-2">
-          <div className="text-lg font-bold text-white">{eliminatedCount}</div>
+        <div className={`flex-1 rounded-lg px-3 py-2 ${rpgRevivalUi ? "bg-violet-950/30 border border-violet-500/20" : "bg-zinc-800/40"}`}>
+          <div className={`text-lg font-bold ${rpgRevivalUi ? "text-violet-100" : "text-white"}`}>{eliminatedCount}</div>
           <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{t("gameover.eliminated", lang)}</div>
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
-        {onRematch && (
-          <Button size="sm" className="bg-amber-600 hover:bg-amber-500 text-white font-semibold gap-1.5 flex-1 sm:flex-none" onClick={onRematch}>
-            <RefreshCw className="h-3.5 w-3.5" /> {t("gameover.rematch", lang)}
-          </Button>
-        )}
-        {onNewGame && (
-          <Button size="sm" variant="outline" className="border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white gap-1.5" onClick={onNewGame}>
-            <RotateCcw className="h-3.5 w-3.5" /> {t("gameover.new_game", lang)}
-          </Button>
-        )}
-        {onResumeGame && (
-          <Button size="sm" variant="outline" className="border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white gap-1.5" onClick={onResumeGame}>
-            <Play className="h-3.5 w-3.5" /> {t("gameover.resume", lang)}
-          </Button>
-        )}
-        {onSaveCharacters && (
-          <Button size="sm" variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white gap-1.5" onClick={onSaveCharacters}>
-            <Heart className="h-3.5 w-3.5" /> {t("gameover.save_characters", lang)}
-          </Button>
+        {rpgRevivalUi ? (
+          <>
+            {onResumeGame && (
+              <Button size="sm" className="bg-[#7c3aed] hover:bg-violet-500 text-white font-semibold gap-1.5 flex-1 sm:flex-none border-0 shadow-md shadow-violet-900/25" onClick={onResumeGame}>
+                <Play className="h-3.5 w-3.5" /> {t("gameover.rpg_resume_adventure", lang)}
+              </Button>
+            )}
+            {onNewGame && (
+              <Button size="sm" variant="outline" className="border-violet-500/45 bg-violet-500/10 hover:bg-violet-500/20 text-violet-200 hover:text-white gap-1.5" onClick={onNewGame}>
+                <RotateCcw className="h-3.5 w-3.5" /> {t("gameover.rpg_new_adventure", lang)}
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            {onRematch && (
+              <Button size="sm" className="bg-amber-600 hover:bg-amber-500 text-white font-semibold gap-1.5 flex-1 sm:flex-none" onClick={onRematch}>
+                <RefreshCw className="h-3.5 w-3.5" /> {t("gameover.rematch", lang)}
+              </Button>
+            )}
+            {onNewGame && (
+              <Button size="sm" variant="outline" className="border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white gap-1.5" onClick={onNewGame}>
+                <RotateCcw className="h-3.5 w-3.5" /> {t("gameover.new_game", lang)}
+              </Button>
+            )}
+            {onResumeGame && (
+              <Button size="sm" variant="outline" className="border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white gap-1.5" onClick={onResumeGame}>
+                <Play className="h-3.5 w-3.5" /> {t("gameover.resume", lang)}
+              </Button>
+            )}
+            {onSaveCharacters && (
+              <Button size="sm" variant="outline" className="border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-white gap-1.5" onClick={onSaveCharacters}>
+                <Heart className="h-3.5 w-3.5" /> {t("gameover.save_characters", lang)}
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>

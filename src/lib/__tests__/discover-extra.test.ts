@@ -16,12 +16,20 @@ import {
 // ─── getPresetById return shape ─────────────────────────────────────────────
 
 describe("getPresetById – return shape", () => {
-  it("returns exactly 5 fields: id, name, rules, templateId, playerCount", () => {
+  it("returns at least the 5 base fields plus rpg-specific fields for RPG presets", () => {
     const first = ALL_PRESETS[0];
     const preset = getPresetById(first.id);
     expect(preset).not.toBeNull();
     const keys = Object.keys(preset!).sort();
-    expect(keys).toEqual(["id", "name", "playerCount", "rules", "templateId"]);
+    expect(keys).toEqual(
+      expect.arrayContaining(["id", "name", "playerCount", "rules", "templateId"]),
+    );
+    if (first.rpgWorldId) {
+      expect(keys).toContain("rpgWorldId");
+    }
+    if (first.rpgAdventureNotes) {
+      expect(keys).toContain("rpgAdventureNotes");
+    }
   });
 
   it("playerCount is optional — matches the template's value", () => {
@@ -45,23 +53,21 @@ describe("getPresetById – return shape", () => {
 
 describe("CATEGORY_MAP coverage", () => {
   const categorizedIds = new Set(
-    Object.values(CATEGORY_MAP).flat().map((t) => t.id)
+    Object.values(CATEGORY_MAP).flat().map((t) => t.id),
   );
 
-  it("most templates in ALL_PRESETS are in at least one category", () => {
+  it("all RPG adventures are in at least one category", () => {
     const uncategorized = ALL_PRESETS.filter((t) => !categorizedIds.has(t.id));
-    // Featured or core templates may not be in a specific category bucket
-    // but the vast majority should be categorized
-    expect(uncategorized.length).toBeLessThanOrEqual(5);
+    expect(uncategorized.length).toBe(0);
   });
 
-  it("total categorized templates is substantial", () => {
-    expect(categorizedIds.size).toBeGreaterThanOrEqual(14);
+  it("category keys are wuxia and fantasy", () => {
+    expect(Object.keys(CATEGORY_MAP).sort()).toEqual(["fantasy", "wuxia"]);
   });
 
   it("category keys are all lowercase strings", () => {
     for (const key of Object.keys(CATEGORY_MAP)) {
-      expect(key).toMatch(/^[a-z]+$/);
+      expect(key).toMatch(/^[a-z-]+$/);
     }
   });
 });

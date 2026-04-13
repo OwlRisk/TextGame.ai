@@ -29,7 +29,7 @@ import {
 import { buildHostSystemPrompt, buildSceneDirectorPrompt, buildRpgDirectorPrompt } from "@/lib/host-prompt-builder";
 import { getWorldById } from "@/lib/rpg/worlds";
 import { isSceneMode, getScene } from "@/lib/scenes";
-import { type GmState, type CharacterDirection, parseGmState, parseCharacterDirections, stripGmDirectives, EMPTY_GM_STATE } from "@/lib/gm-state";
+import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, stripGmDirectives, buildStorySummary, EMPTY_GM_STATE } from "@/lib/gm-state";
 import {
   type SpeakerQueueItem,
   parseRoleAssignments,
@@ -76,6 +76,10 @@ export interface UseHostRoundReturn {
   channelTaskHint: string | null;
   /** Dynamic quick action buttons from GM's QUICK_ACTIONS directive */
   dynamicQuickActions: string[] | null;
+  /** True when a 402 "insufficient tokens" response was received */
+  creditsExhausted: boolean;
+  /** Dismiss the credits exhausted state (e.g. after modal closes) */
+  dismissCreditsExhausted: () => void;
 }
 
 export function useHostRound({
@@ -125,18 +129,30 @@ export function useHostRound({
     roundNumber,
     setRoundNumber,
     addReaction,
+    gmState: persistedGmState,
+    setGmState,
+    storySummary,
+    setStorySummary,
   } = useGameRoomContext();
 
   const currentGame = games.find((g) => g.id === gameId);
 
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
+  const [creditsExhausted, setCreditsExhausted] = useState(false);
   const [lastFailedSendContent, setLastFailedSendContent] = useState<string | null>(null);
   const [channelTaskHint, setChannelTaskHint] = useState<string | null>(null);
   const [dynamicQuickActions, setDynamicQuickActions] = useState<string[] | null>(null);
   const msgCountRef = useRef(0);
   const pendingHumanMsgRef = useRef<string | null>(null);
   const interruptRef = useRef(false);
-  const gmStateRef = useRef<GmState | null>(null);
+  const gmStateRef = useRef<GmState | null>(persistedGmState);
+  const storySummaryRef = useRef(storySummary);
+  useEffect(() => { storySummaryRef.current = storySummary; }, [storySummary]);
+  // Track resumed session: storySummary is only injected on the first host call after resume
+  const resumedSessionRef = useRef(!!persistedGmState);
+  useEffect(() => {
+    if (persistedGmState && !gmStateRef.current) gmStateRef.current = persistedGmState;
+  }, [persistedGmState]);
   const characterDirectionsRef = useRef<CharacterDirection[]>([]);
   const roundAbortRef = useRef<AbortController | null>(null);
   const roundWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -231,8 +247,9 @@ export function useHostRound({
               })
               .join("\n");
 
-      const gmName = "Narrator";
-      const gmColor = "#52525b";
+      const isRpgMode = !!currentGame?.config?.rpgWorldId;
+      const gmName = isRpgMode ? "Chronicle" : "Narrator";
+      const gmColor = isRpgMode ? "#7c3aed" : "#52525b";
 
       const channelPermsForAiOnly = channelPermissions[channelId];
       const freshPlayers = playersRef.current;
@@ -332,6 +349,8 @@ export function useHostRound({
             if (!rpg) return `  • ${n} [${isH ? "HUMAN" : "AI"}]`;
             return `  • ${n} [${isH ? "HUMAN" : "AI"}] | Lv.${rpg.level} ${rpg.class} | HP: ${rpg.hp}/${rpg.maxHp} | MP: ${rpg.mp}/${rpg.maxMp} | ATK: ${rpg.attack} DEF: ${rpg.defense} SPD: ${rpg.speed}${rpg.faction ? ` | ${rpg.faction}` : ""}`;
           }).join("\n");
+          const resumeSummary = resumedSessionRef.current ? storySummaryRef.current : undefined;
+          if (resumedSessionRef.current) resumedSessionRef.current = false;
           return buildRpgDirectorPrompt({
             worldId: rpgWorldId,
             worldName: world?.name ?? rpgWorldId,
@@ -343,6 +362,7 @@ export function useHostRound({
             previousGmState: gmStateRef.current,
             adventureNotes: (currentGame?.config as any)?.rpgAdventureNotes,
             world,
+            storySummary: resumeSummary || undefined,
           });
         }
 
@@ -402,7 +422,7 @@ export function useHostRound({
 
       const applyHostRoleAssignments = (roleContent: string): string => {
         const result = parseRoleAssignments(roleContent, playersRef.current, userId, humanName, humanGameIdentity?.name ?? null);
-        if (result.isGameOver) {
+        if (result.isGameOver && !isRpgMode) {
           updateGame(gameId, { isActive: false });
           setGamePhase("ended");
           setGameOverSummary(result.gameOverSummary || "Game over!");
@@ -498,7 +518,7 @@ export function useHostRound({
               }
               return [...prev, { id, name: a.title, content: a.content }];
             });
-          } else if (a.type === "game_over") {
+          } else if (a.type === "game_over" && !isRpgMode) {
             updateGame(gameId, { isActive: false });
             setGameOverSummary(a.summary || "Game over!");
             setGamePhase("ended");
@@ -608,7 +628,7 @@ export function useHostRound({
           if (!res.ok) {
             setTypingUsers([]);
             if (res.status === 402) {
-              toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
+              setCreditsExhausted(true);
             } else {
               console.error(`Host stream error: ${res.status}`);
               toast.error("Failed to reach Game Master — please try again.", { duration: 5000 });
@@ -667,7 +687,19 @@ export function useHostRound({
           const { message: rawSplitMessage, directives } = splitHostOutput(acc);
 
           const newGmState = parseGmState(directives);
-          if (newGmState) gmStateRef.current = newGmState;
+          if (newGmState) { gmStateRef.current = newGmState; setGmState(newGmState); }
+
+          const roomUpdate = parseRoomUpdate(directives);
+          if (roomUpdate) {
+            const current = gmStateRef.current ?? EMPTY_GM_STATE;
+            const worldRooms: WorldRooms = current.worldRooms ?? { currentRoomId: roomUpdate.id, rooms: {} };
+            worldRooms.currentRoomId = roomUpdate.id;
+            worldRooms.rooms[roomUpdate.id] = roomUpdate;
+            const updated = { ...current, worldRooms, location: roomUpdate.name };
+            gmStateRef.current = updated;
+            setGmState(updated);
+          }
+
           characterDirectionsRef.current = parseCharacterDirections(directives);
           const cleanedDirectives = stripGmDirectives(directives);
 
@@ -693,10 +725,14 @@ export function useHostRound({
           applyPlayerUpdates(playerUpdates);
           if (quickActions) setDynamicQuickActions(quickActions);
           if (combatStart) {
-            gmStateRef.current = { ...(gmStateRef.current ?? EMPTY_GM_STATE), combatActive: true, enemies: combatStart };
+            const updated = { ...(gmStateRef.current ?? EMPTY_GM_STATE), combatActive: true, enemies: combatStart };
+            gmStateRef.current = updated;
+            setGmState(updated);
           }
           if (combatEnd) {
-            gmStateRef.current = { ...(gmStateRef.current ?? EMPTY_GM_STATE), combatActive: false, enemies: undefined };
+            const updated = { ...(gmStateRef.current ?? EMPTY_GM_STATE), combatActive: false, enemies: undefined };
+            gmStateRef.current = updated;
+            setGmState(updated);
           }
           return { hostContent: displayContent, who, speakerQueue, autoChannelId, autoChannelGoal, channelGoal, quickActions, playerUpdates };
         } catch (e) {
@@ -756,7 +792,19 @@ export function useHostRound({
             const { message: rawRetryMsg, directives: retryDir } = splitHostOutput(retryAcc);
 
             const retryGm = parseGmState(retryDir);
-            if (retryGm) gmStateRef.current = retryGm;
+            if (retryGm) { gmStateRef.current = retryGm; setGmState(retryGm); }
+
+            const retryRoom = parseRoomUpdate(retryDir);
+            if (retryRoom) {
+              const current = gmStateRef.current ?? EMPTY_GM_STATE;
+              const worldRooms: WorldRooms = current.worldRooms ?? { currentRoomId: retryRoom.id, rooms: {} };
+              worldRooms.currentRoomId = retryRoom.id;
+              worldRooms.rooms[retryRoom.id] = retryRoom;
+              const updated = { ...current, worldRooms, location: retryRoom.name };
+              gmStateRef.current = updated;
+              setGmState(updated);
+            }
+
             characterDirectionsRef.current = parseCharacterDirections(retryDir);
             const retryDirCleaned = stripGmDirectives(retryDir);
 
@@ -850,17 +898,27 @@ export function useHostRound({
         }
       }
 
-      // Fallback: if GM spoke but didn't queue any AI players, inject AI speakers
+      // Fallback: if GM spoke but didn't queue any AI players, inject AI speakers.
+      // In RPG mode the GM controls speakers via NEXT_SPEAKER + CHARACTER_DIRECTION,
+      // so we only inject a single companion as a safety net (not random bulk).
       const hasAiInQueue = speakerQueue.some((s) => s.type === "ai" || s.type === "everyone");
       if (!hasAiInQueue && aiOnly.length > 0 && gamePhaseRef.current === "active") {
-        const count = Math.min(aiOnly.length, 2 + Math.floor(Math.random() * 2));
-        const shuffled = [...aiOnly].sort(() => Math.random() - 0.5).slice(0, count);
-        const humanIdx = speakerQueue.findIndex((s) => s.type === "human");
-        const aiItems: SpeakerQueueItem[] = shuffled.map((p) => ({ type: "ai" as const, player: p }));
-        if (humanIdx >= 0) {
-          speakerQueue.splice(humanIdx, 0, ...aiItems);
+        if (rpgWorldIdCtx) {
+          const one = aiOnly[Math.floor(Math.random() * aiOnly.length)];
+          const humanIdx = speakerQueue.findIndex((s) => s.type === "human");
+          const aiItem: SpeakerQueueItem = { type: "ai" as const, player: one };
+          if (humanIdx >= 0) speakerQueue.splice(humanIdx, 0, aiItem);
+          else speakerQueue.push(aiItem, { type: "human" });
         } else {
-          speakerQueue.push(...aiItems, { type: "human" });
+          const count = Math.min(aiOnly.length, 2 + Math.floor(Math.random() * 2));
+          const shuffled = [...aiOnly].sort(() => Math.random() - 0.5).slice(0, count);
+          const humanIdx = speakerQueue.findIndex((s) => s.type === "human");
+          const aiItems: SpeakerQueueItem[] = shuffled.map((p) => ({ type: "ai" as const, player: p }));
+          if (humanIdx >= 0) {
+            speakerQueue.splice(humanIdx, 0, ...aiItems);
+          } else {
+            speakerQueue.push(...aiItems, { type: "human" });
+          }
         }
       }
 
@@ -974,7 +1032,7 @@ export function useHostRound({
       const is402 = error instanceof Error && (error.message === "CREDITS_EXHAUSTED" || (error as any).status === 402);
       if (is402) {
         console.warn("Credits exhausted during AI player speak");
-        toast.error("Token balance insufficient. Please top up to continue the game.", { duration: 8000 });
+        setCreditsExhausted(true);
       } else if (isAbort) {
         console.warn("Round aborted (timeout or user interrupt)");
         toast.error("Game Master response timed out — please send your message again.", { duration: 5000 });
@@ -987,6 +1045,16 @@ export function useHostRound({
       if (roundWatchdogRef.current) { clearTimeout(roundWatchdogRef.current); roundWatchdogRef.current = null; }
       roundAbortRef.current = null;
       setIsRoundInProgress(false);
+
+      // Update story summary for session resume (RPG games only)
+      if (gmStateRef.current && currentGame?.config?.rpgWorldId) {
+        const recent = messagesRef.current
+          .filter((m) => !m.isSystemMessage && !m.isAnnouncement && !m.isStreaming)
+          .slice(-10)
+          .map((m) => ({ senderName: m.senderName, content: m.content }));
+        setStorySummary(buildStorySummary(gmStateRef.current, recent));
+      }
+
       saveNow();
 
       const queued = pendingHumanMsgRef.current;
@@ -1035,5 +1103,7 @@ export function useHostRound({
     msgCountRef,
     channelTaskHint,
     dynamicQuickActions,
+    creditsExhausted,
+    dismissCreditsExhausted: () => setCreditsExhausted(false),
   };
 }

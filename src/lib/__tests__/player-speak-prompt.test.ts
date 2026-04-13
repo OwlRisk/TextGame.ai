@@ -4,23 +4,22 @@ import { buildSystemPrompt, buildSceneCharacterPrompt, PLAYER_SPEAK_HARD_LIMIT_T
 // ─── Constants ────────────────────────────────────────────────────────────
 
 describe('PLAYER_SPEAK_HARD_LIMIT_TOKENS', () => {
-  it('is 220 tokens', () => {
-    expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBe(220);
+  it('is 400 tokens', () => {
+    expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBe(400);
   });
 });
 
 describe('pacing rules in prompt output', () => {
-  it('werewolf prompt enforces sentence limits', () => {
+  it('werewolf prompt enforces brevity rules', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'G');
-    expect(prompt).toMatch(/3 sentences max/i);
-    expect(prompt).toMatch(/2 preferred/i);
-    expect(prompt).toMatch(/No speeches/i);
+    expect(prompt).toMatch(/Keep it short and natural/i);
+    expect(prompt).toMatch(/No monologues/i);
   });
 
-  it('narrative templates get higher sentence limits', () => {
+  it('narrative templates use reflective prompts', () => {
     const prompt = buildSystemPrompt('Alice', 'tarot', 'G');
-    expect(prompt).toMatch(/4 sentences max/i);
-    expect(prompt).toMatch(/2 preferred/i);
+    expect(prompt).toMatch(/reflective/i);
+    expect(prompt).toMatch(/introspective/i);
   });
 });
 
@@ -150,9 +149,9 @@ describe('buildSystemPrompt – default (unknown template)', () => {
     expect(prompt).toContain('PACING');
   });
 
-  it('default prompt forbids speeches and long turns', () => {
+  it('default prompt forbids monologues and long turns', () => {
     const prompt = buildSystemPrompt('Lena', undefined, 'G');
-    expect(prompt).toMatch(/No speeches/i);
+    expect(prompt).toMatch(/No monologues/i);
   });
 });
 
@@ -161,12 +160,12 @@ describe('buildSystemPrompt – default (unknown template)', () => {
 describe('buildSystemPrompt – pacing enforcement', () => {
   it('deduction games require mandatory contribution', () => {
     const prompt = buildSystemPrompt('Alice', 'werewolf', 'Game');
-    expect(prompt).toMatch(/MUST contribute each turn/i);
+    expect(prompt).toMatch(/MUST say something every turn/i);
   });
 
-  it('enforces sentence limits in all templates', () => {
+  it('enforces brevity in all templates', () => {
     const prompt = buildSystemPrompt('Alice', 'mafia', 'Game');
-    expect(prompt).toMatch(/3 sentences max/i);
+    expect(prompt).toMatch(/Keep it short and natural/i);
   });
 });
 

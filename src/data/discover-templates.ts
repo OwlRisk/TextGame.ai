@@ -1024,7 +1024,13 @@ LOOT TABLE:
   },
 ];
 
+/** RPG presets shown prominently on the Discover page */
 export const ALL_PRESETS: GameTemplate[] = [
+  ...RPG_ADVENTURES,
+];
+
+/** Full list including legacy presets — used by getPresetById to keep old games playable */
+const ALL_PRESETS_FULL: GameTemplate[] = [
   ...RPG_ADVENTURES,
   ...SCRIPT_KILL_PRESETS,
   FEATURED_TEMPLATE,
@@ -1039,7 +1045,7 @@ export const ALL_PRESETS: GameTemplate[] = [
 
 export function getPresetById(presetId: string | null): DiscoverPreset | null {
   if (!presetId) return null;
-  const t = ALL_PRESETS.find((g) => g.id === presetId);
+  const t = ALL_PRESETS_FULL.find((g) => g.id === presetId);
   if (!t) return null;
   return {
     id: t.id,
@@ -1052,19 +1058,16 @@ export function getPresetById(presetId: string | null): DiscoverPreset | null {
   };
 }
 
+/** The first RPG adventure — used as "Recommended Adventure" quick-start for new users */
+export const RECOMMENDED_ADVENTURE = RPG_ADVENTURES[0];
+
 export const CATEGORIES = [
-  { id: "all",       label: "All Games",       icon: Flame },
-  { id: "deduction", label: "Social Deduction", icon: Swords },
-  { id: "party",     label: "Party",            icon: MessageCircle },
-  { id: "mystery",   label: "Mystery",          icon: Search },
-  { id: "creative",  label: "Creative",         icon: Drama },
-  { id: "brain",     label: "Brain Games",      icon: Lightbulb },
+  { id: "all",       label: "All Adventures",   icon: Flame },
+  { id: "wuxia",     label: "Wuxia",            icon: Swords },
+  { id: "fantasy",   label: "Fantasy",          icon: Drama },
 ] as const;
 
 export const CATEGORY_MAP: Record<string, GameTemplate[]> = {
-  deduction: [...CORE_TEMPLATES.filter(t => t.category === "Social Deduction"), ...SOCIAL_DEDUCTION, ...EXTRA_GAMES.filter(t => t.category === "Social Deduction")],
-  party:     [...PARTY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Party")],
-  mystery:   [...MYSTERY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Mystery")],
-  creative:  [...ROLEPLAY_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Creative")],
-  brain:     [...EDUCATIONAL_GAMES, ...EXTRA_GAMES.filter(t => t.category === "Knowledge" || t.category === "Educational" || t.category === "Puzzle")],
+  wuxia:   RPG_ADVENTURES.filter(t => t.rpgWorldId === "wuxia"),
+  fantasy: RPG_ADVENTURES.filter(t => t.rpgWorldId === "western-fantasy"),
 };

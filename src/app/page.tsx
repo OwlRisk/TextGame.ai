@@ -5,39 +5,39 @@ import { buildHreflangAlternates } from "@/lib/seo-locales";
 import HomeClient from "./home-client";
 
 export const metadata: Metadata = {
-  title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
+  title: "TextGame.ai — AI-Powered RPG Adventures with Living Companions",
   description:
-    "Play Werewolf, Mafia, Who's the Spy and more with AI characters — free, no download needed. No moderator required — play solo, with friends, or with a mix of both. AI fills every empty seat and reacts like real players.",
+    "Embark on persistent RPG adventures with an AI Game Master and party companions who have real personalities. Explore open worlds, fight epic battles, and shape your own story — no download needed.",
   keywords: [
+    "AI RPG",
+    "text RPG online",
     "AI game master",
-    "text-based games online",
-    "AI party games",
-    "online social deduction game",
-    "werewolf online",
-    "AI host game",
-    "multiplayer text game",
-    "play AI games online",
-    "jackbox alternative",
-    "free ai game",
-    "no download party game",
+    "AI dungeon",
+    "text adventure",
+    "RPG with AI companions",
+    "persistent RPG",
+    "open world text game",
+    "AI DnD",
+    "wuxia RPG",
+    "fantasy RPG online",
   ],
   alternates: {
     canonical: "/",
     languages: buildHreflangAlternates("/"),
   },
   openGraph: {
-    title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
+    title: "TextGame.ai — AI-Powered RPG Adventures",
     description:
-      "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed — play solo or with friends.",
+      "Persistent RPG adventures with an AI Game Master and party companions who argue, joke, and fight alongside you.",
     type: "website",
     url: SITE_DOMAIN,
-    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "TextGame.ai" }],
+    images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "TextGame.ai — AI RPG Adventures" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TextGame.ai — Play Werewolf, Mafia & More with AI Characters",
+    title: "TextGame.ai — AI-Powered RPG Adventures",
     description:
-      "Play Werewolf, Mafia, Who's the Spy and more with AI characters. No moderator needed.",
+      "Persistent RPG adventures with AI companions. Explore open worlds, fight bosses, design your own realm.",
     images: ["/hero.webp"],
   },
 };
@@ -69,10 +69,11 @@ export default function HomePage() {
       <HomeClient
         heroHeadline={
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-            Play multiplayer games{" "}
+            Your AI-powered{" "}
             <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-              with AI characters
-            </span>
+              RPG adventure
+            </span>{" "}
+            awaits
           </h2>
         }
       />

@@ -109,6 +109,12 @@ export async function POST(request: NextRequest) {
         rpgSkills?: Array<{ name: string; description: string; mpCost?: number }>;
         /** Private My Board content the host wrote for this player (secret info they know). */
         boardContent?: string;
+        /** RPG character goal — what drives this character */
+        goal?: string;
+        /** RPG character fear — what they're afraid of */
+        fear?: string;
+        /** RPG character attitude toward the human player */
+        attitudeToPlayer?: string;
       };
       recentMessages: Array<{ senderName: string; content: string }>;
       /** All players in the game — same list the human sees in the sidebar. */
@@ -141,7 +147,7 @@ export async function POST(request: NextRequest) {
       .join('\n');
 
     const system = rpgWorldId && player.rpgClass
-      ? buildRpgCharacterPrompt(player.name, player.rpgClass, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, player.rpgSkills, contentLanguage)
+      ? buildRpgCharacterPrompt(player.name, player.rpgClass, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, player.rpgSkills, contentLanguage, player.goal, player.fear, player.attitudeToPlayer)
       : (gameTemplate === 'scene' && sceneId)
       ? buildSceneCharacterPrompt(player.name, sceneId, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, contentLanguage)
       : buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk, contentLanguage);

@@ -125,18 +125,19 @@ export function useGameInit(gameId: string): UseGameInitReturn {
   }, [gameId]);
 
   const buildHostPlayer = useCallback((config: any) => {
-    const hostColor = "#52525b";
-    const hostName = "Narrator";
+    const isRpg = !!config.rpgWorldId;
+    const hostColor = isRpg ? "#7c3aed" : "#52525b";
+    const hostName = isRpg ? "Chronicle" : "Narrator";
     return {
       player: {
         id: "gm-1",
         name: hostName,
-        avatar: hostColor,
+        avatar: isRpg ? "/rpg-gm-avatar.webp" : hostColor,
         isGameMaster: true,
         isAI: true,
         isMuted: false,
-        background: "Invisible storyteller and director",
-        personality: undefined,
+        background: isRpg ? "The eternal chronicler of realms and adventures" : "Invisible storyteller and director",
+        personality: isRpg ? "Wise, dramatic, and fair — a seasoned Game Master" : undefined,
         gender: "other" as const,
         voiceId: undefined as string | undefined,
       },
@@ -167,6 +168,9 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       voiceId: (configPlayer.voice_id as string | undefined) ?? undefined,
       voiceSampleUrl: (configPlayer.voice_sample_url as string | undefined) ?? undefined,
       ...(configPlayer.rpg ? { rpg: configPlayer.rpg } : {}),
+      ...(configPlayer.goal ? { goal: configPlayer.goal } : {}),
+      ...(configPlayer.fear ? { fear: configPlayer.fear } : {}),
+      ...(configPlayer.attitudeToPlayer ? { attitudeToPlayer: configPlayer.attitudeToPlayer } : {}),
     }));
   }, []);
 

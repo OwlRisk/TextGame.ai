@@ -5,15 +5,14 @@ import {
   getPresetById,
   CATEGORY_MAP,
 } from "@/data/discover-templates";
-import type { GameTemplate } from "@/lib/game-templates";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ALL_PRESETS integrity
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("ALL_PRESETS integrity", () => {
-  it("has at least 10 presets", () => {
-    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(10);
+  it("has exactly 3 RPG adventure presets", () => {
+    expect(ALL_PRESETS.length).toBe(3);
   });
 
   it("every preset has required fields", () => {
@@ -43,6 +42,12 @@ describe("ALL_PRESETS integrity", () => {
         expect(typeof preset.playerCount).toBe("number");
         expect(preset.playerCount).toBeGreaterThanOrEqual(0);
       }
+    }
+  });
+
+  it("all presets are RPG adventures with rpgWorldId", () => {
+    for (const preset of ALL_PRESETS) {
+      expect(preset.rpgWorldId, `${preset.id} missing rpgWorldId`).toBeTruthy();
     }
   });
 });
@@ -75,12 +80,12 @@ describe("getPresetById", () => {
     expect(result?.templateId).toBeTruthy();
   });
 
-  it("works for an EXTRA_GAMES entry", () => {
-    if (EXTRA_GAMES.length === 0) return;
-    const extra = EXTRA_GAMES[0];
-    const result = getPresetById(extra.id);
-    expect(result).not.toBeNull();
-    expect(result?.name).toBe(extra.name);
+  it("still finds legacy presets via ALL_PRESETS_FULL", () => {
+    if (EXTRA_GAMES.length === 0) {
+      const werewolf = getPresetById("werewolf-classic");
+      expect(werewolf).not.toBeNull();
+      expect(werewolf?.name).toBe("Werewolf");
+    }
   });
 });
 
@@ -89,9 +94,9 @@ describe("getPresetById", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("CATEGORY_MAP", () => {
-  it("has expected categories", () => {
+  it("has expected RPG categories", () => {
     expect(Object.keys(CATEGORY_MAP)).toEqual(
-      expect.arrayContaining(["deduction", "party", "mystery", "creative", "brain"]),
+      expect.arrayContaining(["wuxia", "fantasy"]),
     );
   });
 

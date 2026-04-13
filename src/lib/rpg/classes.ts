@@ -23,6 +23,9 @@ export interface ClassDefinition {
 
 // ── Western Fantasy Classes ──
 
+// Warrior skill evolution tree:
+//   Shield Bash (T1) → Fortress Slam (T2, lv5) → Aegis Breaker (T3, lv10)
+//   Power Strike (T1) → Crushing Blow (T2, lv5) → Titan Cleave (T3, lv10)
 export const WARRIOR: ClassDefinition = {
   id: "warrior",
   name: "Warrior",
@@ -33,13 +36,16 @@ export const WARRIOR: ClassDefinition = {
   baseAttack: 18, baseDefense: 16, baseSpeed: 8, baseLuck: 6,
   growthHp: 15, growthMp: 3, growthAttack: 4, growthDefense: 3,
   startSkills: [
-    { id: "shield-bash", name: "Shield Bash", description: "Stun an enemy for one turn.", type: "active", mpCost: 8, damage: 12 },
-    { id: "power-strike", name: "Power Strike", description: "A devastating blow that deals double damage.", type: "active", mpCost: 15, damage: 25 },
+    { id: "shield-bash", name: "Shield Bash", description: "Stun an enemy for one turn.", type: "active", mpCost: 8, damage: 12, tier: 1, evolvesTo: "fortress-slam", evolveLevel: 5 },
+    { id: "power-strike", name: "Power Strike", description: "A devastating blow that deals double damage.", type: "active", mpCost: 15, damage: 25, tier: 1, evolvesTo: "crushing-blow", evolveLevel: 5 },
   ],
-  startWeapon: { id: "iron-sword", name: "Iron Sword", description: "A sturdy blade.", icon: "⚔️", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 5 } },
-  startArmor: { id: "chain-mail", name: "Chain Mail", description: "Linked metal rings.", icon: "🛡️", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 8 } },
+  startWeapon: { id: "iron-sword", name: "Iron Sword", description: "A sturdy blade.", icon: "⚔️", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 5 } },
+  startArmor: { id: "chain-mail", name: "Chain Mail", description: "Linked metal rings.", icon: "🛡️", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 8 } },
 };
 
+// Mage skill evolution tree:
+//   Fireball (T1) → Meteor (T2, lv5) → Cataclysm (T3, lv10)
+//   Ice Shield (T1) → Frost Aegis (T2, lv5) → Absolute Zero (T3, lv10)
 export const MAGE: ClassDefinition = {
   id: "mage",
   name: "Mage",
@@ -50,13 +56,16 @@ export const MAGE: ClassDefinition = {
   baseAttack: 8, baseDefense: 6, baseSpeed: 10, baseLuck: 10,
   growthHp: 6, growthMp: 12, growthAttack: 2, growthDefense: 1,
   startSkills: [
-    { id: "fireball", name: "Fireball", description: "Hurl a ball of flame at the enemy.", type: "active", mpCost: 15, damage: 30 },
-    { id: "ice-shield", name: "Ice Shield", description: "Create a barrier of ice that reduces damage.", type: "active", mpCost: 10, effect: "defense +10 for 3 turns" },
+    { id: "fireball", name: "Fireball", description: "Hurl a ball of flame at the enemy.", type: "active", mpCost: 15, damage: 30, tier: 1, evolvesTo: "meteor", evolveLevel: 5 },
+    { id: "ice-shield", name: "Ice Shield", description: "Create a barrier of ice that reduces damage.", type: "active", mpCost: 10, effect: "defense +10 for 3 turns", tier: 1, evolvesTo: "frost-aegis", evolveLevel: 5 },
   ],
-  startWeapon: { id: "oak-staff", name: "Oak Staff", description: "A gnarled wooden staff.", icon: "🪄", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 3 } },
-  startArmor: { id: "cloth-robe", name: "Cloth Robe", description: "Light mage robes.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 2, maxMp: 15 } },
+  startWeapon: { id: "oak-staff", name: "Oak Staff", description: "A gnarled wooden staff.", icon: "🪄", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 3 } },
+  startArmor: { id: "cloth-robe", name: "Cloth Robe", description: "Light mage robes.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 2, maxMp: 15 } },
 };
 
+// Thief skill evolution tree:
+//   Backstab (T1) → Assassination (T2, lv5) → Death Mark (T3, lv10)
+//   Lockpick (T1) → Master Infiltrator (T2, lv5) → Phantom Hands (T3, lv10)
 export const THIEF: ClassDefinition = {
   id: "thief",
   name: "Thief",
@@ -67,13 +76,16 @@ export const THIEF: ClassDefinition = {
   baseAttack: 14, baseDefense: 8, baseSpeed: 18, baseLuck: 14,
   growthHp: 8, growthMp: 5, growthAttack: 3, growthDefense: 2,
   startSkills: [
-    { id: "backstab", name: "Backstab", description: "Strike from the shadows for triple damage.", type: "active", mpCost: 12, damage: 20 },
-    { id: "lockpick", name: "Lockpick", description: "Open locked doors and chests.", type: "active", mpCost: 5, effect: "unlock" },
+    { id: "backstab", name: "Backstab", description: "Strike from the shadows for triple damage.", type: "active", mpCost: 12, damage: 20, tier: 1, evolvesTo: "assassination", evolveLevel: 5 },
+    { id: "lockpick", name: "Lockpick", description: "Open locked doors and chests.", type: "active", mpCost: 5, effect: "unlock", tier: 1, evolvesTo: "master-infiltrator", evolveLevel: 5 },
   ],
-  startWeapon: { id: "twin-daggers", name: "Twin Daggers", description: "A pair of sharp blades.", icon: "🗡️", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 4, speed: 3 } },
-  startArmor: { id: "leather-vest", name: "Leather Vest", description: "Light and flexible.", icon: "🧥", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 4, speed: 2 } },
+  startWeapon: { id: "twin-daggers", name: "Twin Daggers", description: "A pair of sharp blades.", icon: "🗡️", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 4, speed: 3 } },
+  startArmor: { id: "leather-vest", name: "Leather Vest", description: "Light and flexible.", icon: "🧥", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 4, speed: 2 } },
 };
 
+// Cleric skill evolution tree:
+//   Heal (T1) → Greater Heal (T2, lv5) → Divine Restoration (T3, lv10)
+//   Holy Light (T1) → Sacred Flame (T2, lv5) → Judgment (T3, lv10)
 export const CLERIC: ClassDefinition = {
   id: "cleric",
   name: "Cleric",
@@ -84,15 +96,18 @@ export const CLERIC: ClassDefinition = {
   baseAttack: 10, baseDefense: 12, baseSpeed: 8, baseLuck: 12,
   growthHp: 10, growthMp: 8, growthAttack: 2, growthDefense: 3,
   startSkills: [
-    { id: "heal", name: "Heal", description: "Restore HP to an ally.", type: "active", mpCost: 12, effect: "heal 30 HP" },
-    { id: "holy-light", name: "Holy Light", description: "Blast enemies with radiant energy. Extra damage to undead.", type: "active", mpCost: 18, damage: 22 },
+    { id: "heal", name: "Heal", description: "Restore HP to an ally.", type: "active", mpCost: 12, effect: "heal 30 HP", tier: 1, evolvesTo: "greater-heal", evolveLevel: 5 },
+    { id: "holy-light", name: "Holy Light", description: "Blast enemies with radiant energy. Extra damage to undead.", type: "active", mpCost: 18, damage: 22, tier: 1, evolvesTo: "sacred-flame", evolveLevel: 5 },
   ],
-  startWeapon: { id: "iron-mace", name: "Iron Mace", description: "A heavy blunt weapon.", icon: "🔨", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 4 } },
-  startArmor: { id: "scale-armor", name: "Scale Armor", description: "Overlapping metal scales.", icon: "🛡️", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 6, maxMp: 10 } },
+  startWeapon: { id: "iron-mace", name: "Iron Mace", description: "A heavy blunt weapon.", icon: "🔨", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 4 } },
+  startArmor: { id: "scale-armor", name: "Scale Armor", description: "Overlapping metal scales.", icon: "🛡️", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 6, maxMp: 10 } },
 };
 
 // ── Wuxia Classes ──
 
+// Swordsman skill evolution tree:
+//   Swift Blade (T1) → Phantom Slash (T2, lv5) → Thousand Blades (T3, lv10)
+//   Sword Qi (T1) → Dragon Qi (T2, lv5) → Heaven Splitter (T3, lv10)
 export const SWORDSMAN: ClassDefinition = {
   id: "swordsman",
   name: "Swordsman",
@@ -103,13 +118,16 @@ export const SWORDSMAN: ClassDefinition = {
   baseAttack: 16, baseDefense: 12, baseSpeed: 14, baseLuck: 8,
   growthHp: 12, growthMp: 5, growthAttack: 4, growthDefense: 2,
   startSkills: [
-    { id: "swift-blade", name: "Swift Blade", description: "A lightning-fast slash that strikes twice.", type: "active", mpCost: 10, damage: 18 },
-    { id: "sword-qi", name: "Sword Qi", description: "Project blade energy at distant foes.", type: "active", mpCost: 20, damage: 28 },
+    { id: "swift-blade", name: "Swift Blade", description: "A lightning-fast slash that strikes twice.", type: "active", mpCost: 10, damage: 18, tier: 1, evolvesTo: "phantom-slash", evolveLevel: 5 },
+    { id: "sword-qi", name: "Sword Qi", description: "Project blade energy at distant foes.", type: "active", mpCost: 20, damage: 28, tier: 1, evolvesTo: "dragon-qi", evolveLevel: 5 },
   ],
-  startWeapon: { id: "iron-jian", name: "Iron Jian", description: "A straight double-edged sword.", icon: "⚔️", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 5, speed: 2 } },
-  startArmor: { id: "martial-robe", name: "Martial Robe", description: "Robes suited for combat.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 4, speed: 2 } },
+  startWeapon: { id: "iron-jian", name: "Iron Jian", description: "A straight double-edged sword.", icon: "⚔️", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 5, speed: 2 } },
+  startArmor: { id: "martial-robe", name: "Martial Robe", description: "Robes suited for combat.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 4, speed: 2 } },
 };
 
+// Scholar skill evolution tree:
+//   Qi Blast (T1) → Qi Cannon (T2, lv5) → Celestial Burst (T3, lv10)
+//   Calming Mantra (T1) → Sage's Clarity (T2, lv5) → Transcendence (T3, lv10)
 export const SCHOLAR: ClassDefinition = {
   id: "scholar",
   name: "Scholar",
@@ -120,13 +138,16 @@ export const SCHOLAR: ClassDefinition = {
   baseAttack: 10, baseDefense: 8, baseSpeed: 10, baseLuck: 12,
   growthHp: 7, growthMp: 10, growthAttack: 2, growthDefense: 2,
   startSkills: [
-    { id: "qi-blast", name: "Qi Blast", description: "Release concentrated inner energy.", type: "active", mpCost: 14, damage: 26 },
-    { id: "calming-mantra", name: "Calming Mantra", description: "Restore qi and clear status effects.", type: "active", mpCost: 8, effect: "restore 20 MP, remove debuffs" },
+    { id: "qi-blast", name: "Qi Blast", description: "Release concentrated inner energy.", type: "active", mpCost: 14, damage: 26, tier: 1, evolvesTo: "qi-cannon", evolveLevel: 5 },
+    { id: "calming-mantra", name: "Calming Mantra", description: "Restore qi and clear status effects.", type: "active", mpCost: 8, effect: "restore 20 MP, remove debuffs", tier: 1, evolvesTo: "sages-clarity", evolveLevel: 5 },
   ],
-  startWeapon: { id: "folding-fan", name: "Folding Fan", description: "A deceptively sharp iron fan.", icon: "🪭", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 3, luck: 3 } },
-  startArmor: { id: "silk-robe", name: "Silk Robe", description: "Fine silk with hidden armor plates.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 3, maxMp: 15 } },
+  startWeapon: { id: "folding-fan", name: "Folding Fan", description: "A deceptively sharp iron fan.", icon: "🪭", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 3, luck: 3 } },
+  startArmor: { id: "silk-robe", name: "Silk Robe", description: "Fine silk with hidden armor plates.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 3, maxMp: 15 } },
 };
 
+// Monk skill evolution tree:
+//   Iron Palm (T1) → Vajra Palm (T2, lv5) → Buddha's Wrath (T3, lv10)
+//   Buddha's Guard (T1) → Diamond Body (T2, lv5) → Nirvana Shield (T3, lv10)
 export const MONK: ClassDefinition = {
   id: "monk",
   name: "Monk",
@@ -137,13 +158,16 @@ export const MONK: ClassDefinition = {
   baseAttack: 14, baseDefense: 14, baseSpeed: 10, baseLuck: 8,
   growthHp: 12, growthMp: 6, growthAttack: 3, growthDefense: 3,
   startSkills: [
-    { id: "iron-palm", name: "Iron Palm", description: "A devastating palm strike hardened by years of training.", type: "active", mpCost: 10, damage: 20 },
-    { id: "buddha-guard", name: "Buddha's Guard", description: "Enter a defensive stance and heal slowly.", type: "active", mpCost: 15, effect: "heal 20 HP, defense +5 for 2 turns" },
+    { id: "iron-palm", name: "Iron Palm", description: "A devastating palm strike hardened by years of training.", type: "active", mpCost: 10, damage: 20, tier: 1, evolvesTo: "vajra-palm", evolveLevel: 5 },
+    { id: "buddha-guard", name: "Buddha's Guard", description: "Enter a defensive stance and heal slowly.", type: "active", mpCost: 15, effect: "heal 20 HP, defense +5 for 2 turns", tier: 1, evolvesTo: "diamond-body", evolveLevel: 5 },
   ],
-  startWeapon: { id: "prayer-beads", name: "Prayer Beads", description: "Heavy wooden beads, doubles as a weapon.", icon: "📿", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 4, defense: 2 } },
-  startArmor: { id: "kasaya", name: "Kasaya", description: "A monk's orange robe.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 5, maxHp: 10 } },
+  startWeapon: { id: "prayer-beads", name: "Prayer Beads", description: "Heavy wooden beads, doubles as a weapon.", icon: "📿", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 4, defense: 2 } },
+  startArmor: { id: "kasaya", name: "Kasaya", description: "A monk's orange robe.", icon: "👘", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 5, maxHp: 10 } },
 };
 
+// Assassin skill evolution tree:
+//   Shadow Strike (T1) → Void Step (T2, lv5) → Soul Reaper (T3, lv10)
+//   Poison Needle (T1) → Venom Barrage (T2, lv5) → Death Blossom (T3, lv10)
 export const ASSASSIN: ClassDefinition = {
   id: "assassin",
   name: "Assassin",
@@ -154,11 +178,11 @@ export const ASSASSIN: ClassDefinition = {
   baseAttack: 16, baseDefense: 6, baseSpeed: 20, baseLuck: 12,
   growthHp: 7, growthMp: 5, growthAttack: 4, growthDefense: 1,
   startSkills: [
-    { id: "shadow-strike", name: "Shadow Strike", description: "Attack from stealth for massive damage.", type: "active", mpCost: 14, damage: 24 },
-    { id: "poison-needle", name: "Poison Needle", description: "A hidden needle that poisons the target.", type: "active", mpCost: 8, damage: 10, effect: "poison: 5 damage per turn for 3 turns" },
+    { id: "shadow-strike", name: "Shadow Strike", description: "Attack from stealth for massive damage.", type: "active", mpCost: 14, damage: 24, tier: 1, evolvesTo: "void-step", evolveLevel: 5 },
+    { id: "poison-needle", name: "Poison Needle", description: "A hidden needle that poisons the target.", type: "active", mpCost: 8, damage: 10, effect: "poison: 5 damage per turn for 3 turns", tier: 1, evolvesTo: "venom-barrage", evolveLevel: 5 },
   ],
-  startWeapon: { id: "hidden-blade", name: "Hidden Blade", description: "A retractable wrist blade.", icon: "🗡️", rarity: "common", quantity: 1, type: "equipment", statBonus: { attack: 5, speed: 3 } },
-  startArmor: { id: "shadow-cloak", name: "Shadow Cloak", description: "A dark cloak that blends with shadows.", icon: "🧥", rarity: "common", quantity: 1, type: "equipment", statBonus: { defense: 3, speed: 4 } },
+  startWeapon: { id: "hidden-blade", name: "Hidden Blade", description: "A retractable wrist blade.", icon: "🗡️", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { attack: 5, speed: 3 } },
+  startArmor: { id: "shadow-cloak", name: "Shadow Cloak", description: "A dark cloak that blends with shadows.", icon: "🧥", rarity: "common", quantity: 1, type: "equipment", quality: "common", statBonus: { defense: 3, speed: 4 } },
 };
 
 // ── Registry ──

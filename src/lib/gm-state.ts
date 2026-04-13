@@ -6,6 +6,55 @@
  * and outputs an updated state for next turn's self.
  */
 
+import type { RpgEnemy } from "@/types/rpg";
+
+// ── MUD Room System ──
+
+export interface RoomExit {
+  direction: string;
+  roomId: string;
+  /** Optional label shown to player (e.g. "a narrow passage", "the tavern door") */
+  label?: string;
+  /** Whether the exit is locked/hidden */
+  locked?: boolean;
+  hidden?: boolean;
+}
+
+export interface RoomNpc {
+  id: string;
+  name: string;
+  description: string;
+  /** Whether the NPC is hostile, neutral, or friendly */
+  attitude?: "hostile" | "neutral" | "friendly";
+}
+
+export interface RoomItem {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface MudRoom {
+  id: string;
+  name: string;
+  description: string;
+  exits: RoomExit[];
+  npcs: RoomNpc[];
+  items: RoomItem[];
+  /** Whether this room has been visited before */
+  visited?: boolean;
+  /** Room tags for atmosphere/type (e.g. "safe", "dungeon", "shop", "quest") */
+  tags?: string[];
+}
+
+/** Persistent world graph — all rooms the party has discovered */
+export interface WorldRooms {
+  /** Current room ID the party is in */
+  currentRoomId: string;
+  /** All discovered rooms keyed by ID */
+  rooms: Record<string, MudRoom>;
+}
+
 export interface GmState {
   /** Current story act: 1 (explore), 2 (complicate), 3 (climax) */
   act: number;
@@ -27,7 +76,7 @@ export interface GmState {
   // ── RPG extensions ──
   /** Average party level */
   partyLevel?: number;
-  /** Current location name */
+  /** Current location name (legacy — replaced by worldRooms.currentRoomId for MUD mode) */
   location?: string;
   /** Active quest log entries */
   questLog?: string[];
@@ -35,8 +84,12 @@ export interface GmState {
   loot?: string[];
   /** Whether combat is in progress */
   combatActive?: boolean;
-  /** Active enemies in combat */
-  enemies?: { name: string; hp: number; maxHp: number }[];
+  /** Active enemies in combat (includes optional boss fields) */
+  enemies?: RpgEnemy[];
+
+  // ── MUD room graph ──
+  /** Persistent world room data */
+  worldRooms?: WorldRooms;
 }
 
 export interface CharacterDirection {
@@ -108,7 +161,57 @@ export function parseGmState(directives: string): GmState | null {
     if (Array.isArray(raw.loot)) state.loot = raw.loot;
     if (typeof raw.combatActive === "boolean") state.combatActive = raw.combatActive;
     if (Array.isArray(raw.enemies)) state.enemies = raw.enemies;
+    if (raw.worldRooms && typeof raw.worldRooms === "object") state.worldRooms = raw.worldRooms as WorldRooms;
     return state;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parse ROOM_UPDATE from directives.
+ * The GM outputs the current room state as a JSON object.
+ * Format: ROOM_UPDATE: { "id": "tavern", "name": "The Rusty Flagon", "description": "...", "exits": [...], "npcs": [...], "items": [...] }
+ */
+export function parseRoomUpdate(directives: string): MudRoom | null {
+  const prefix = directives.indexOf("ROOM_UPDATE:");
+  if (prefix === -1) return null;
+  const jsonStr = extractBalancedJson(directives.slice(prefix));
+  if (!jsonStr) return null;
+  try {
+    const raw = JSON.parse(jsonStr);
+    if (typeof raw !== "object" || raw === null || !raw.id) return null;
+    return {
+      id: String(raw.id),
+      name: String(raw.name || raw.id),
+      description: String(raw.description || ""),
+      exits: Array.isArray(raw.exits)
+        ? raw.exits.map((e: any) => ({
+            direction: String(e.direction || ""),
+            roomId: String(e.roomId || e.room_id || ""),
+            label: e.label ? String(e.label) : undefined,
+            locked: e.locked === true,
+            hidden: e.hidden === true,
+          }))
+        : [],
+      npcs: Array.isArray(raw.npcs)
+        ? raw.npcs.map((n: any) => ({
+            id: String(n.id || n.name || ""),
+            name: String(n.name || ""),
+            description: String(n.description || ""),
+            attitude: ["hostile", "neutral", "friendly"].includes(n.attitude) ? n.attitude : "neutral",
+          }))
+        : [],
+      items: Array.isArray(raw.items)
+        ? raw.items.map((i: any) => ({
+            id: String(i.id || i.name || ""),
+            name: String(i.name || ""),
+            description: i.description ? String(i.description) : undefined,
+          }))
+        : [],
+      visited: true,
+      tags: Array.isArray(raw.tags) ? raw.tags.map(String) : undefined,
+    };
   } catch {
     return null;
   }
@@ -132,6 +235,49 @@ export function parseCharacterDirections(directives: string): CharacterDirection
  * Strip GM_STATE and CHARACTER_DIRECTION lines from directives
  * so they don't leak into visible content or event log.
  */
+/**
+ * Build a lightweight story summary from GM state for session resume.
+ * No LLM call needed — uses structured data the GM already maintains.
+ */
+export function buildStorySummary(
+  gmState: GmState,
+  recentMessages: Array<{ senderName: string; content: string }>,
+): string {
+  const parts: string[] = [];
+
+  const currentRoom = gmState.worldRooms?.rooms?.[gmState.worldRooms?.currentRoomId];
+  if (currentRoom) {
+    parts.push(`Current room: ${currentRoom.name} — ${currentRoom.description}`);
+    if (currentRoom.exits.length > 0) {
+      parts.push(`Exits: ${currentRoom.exits.map(e => `${e.direction} → ${e.label || e.roomId}`).join(", ")}`);
+    }
+  } else if (gmState.location) {
+    parts.push(`Location: ${gmState.location}`);
+  }
+  parts.push(`Story act: ${gmState.act}, tension: ${gmState.tension}/5`);
+  if (gmState.mood) parts.push(`Mood: ${gmState.mood}`);
+
+  if (gmState.questLog?.length) {
+    parts.push(`Active quests: ${gmState.questLog.join("; ")}`);
+  }
+  if (gmState.playerKnows.length) {
+    parts.push(`Party knows: ${gmState.playerKnows.join("; ")}`);
+  }
+  if (gmState.activeThreats.length) {
+    parts.push(`Active threats: ${gmState.activeThreats.join("; ")}`);
+  }
+  if (gmState.combatActive && gmState.enemies?.length) {
+    parts.push(`In combat with: ${gmState.enemies.map(e => `${e.name} (${e.hp}/${e.maxHp} HP)`).join(", ")}`);
+  }
+
+  if (recentMessages.length > 0) {
+    const last5 = recentMessages.slice(-5).map(m => `${m.senderName}: ${m.content}`).join("\n");
+    parts.push(`\nLast messages:\n${last5}`);
+  }
+
+  return parts.join("\n");
+}
+
 export function stripGmDirectives(directives: string): string {
   let result = directives;
   const gmIdx = result.indexOf("GM_STATE:");
@@ -143,6 +289,16 @@ export function stripGmDirectives(directives: string): string {
     } else {
       // extractBalancedJson failed (malformed/truncated JSON) — strip from GM_STATE: to end of JSON-like block or end of line
       result = result.slice(0, gmIdx) + result.slice(gmIdx).replace(/GM_STATE:\s*\{[^}]*\}?.*/, "");
+    }
+  }
+  const roomIdx = result.indexOf("ROOM_UPDATE:");
+  if (roomIdx !== -1) {
+    const roomJson = extractBalancedJson(result.slice(roomIdx));
+    if (roomJson) {
+      const roomEnd = roomIdx + "ROOM_UPDATE:".length + result.slice(roomIdx + "ROOM_UPDATE:".length).indexOf(roomJson[0]) + roomJson.length;
+      result = result.slice(0, roomIdx) + result.slice(roomEnd);
+    } else {
+      result = result.slice(0, roomIdx) + result.slice(roomIdx).replace(/ROOM_UPDATE:\s*\{[^}]*\}?.*/, "");
     }
   }
   result = result.replace(/CHARACTER_DIRECTION:\s*[^\n]+\n?/g, "");

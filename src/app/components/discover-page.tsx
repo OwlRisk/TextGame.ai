@@ -14,6 +14,7 @@ import {
   ALL_PRESETS,
   CATEGORIES,
   CATEGORY_MAP,
+  RECOMMENDED_ADVENTURE,
   buildFallbackRules,
   getStyleColor,
 } from "@/data/discover-templates";
@@ -52,6 +53,8 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     rules: t.rules,
     templateId: t.templateId ?? "custom",
     playerCount: t.playerCount,
+    ...(t.rpgWorldId ? { rpgWorldId: t.rpgWorldId } : {}),
+    ...(t.rpgAdventureNotes ? { rpgAdventureNotes: t.rpgAdventureNotes } : {}),
   });
 
   const handleSelect = (t: GameTemplate) => {
@@ -158,6 +161,26 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
             {t("discover.subtitle")}
           </p>
         </div>
+
+        {/* Quick Start — Recommended Adventure */}
+        {RECOMMENDED_ADVENTURE && (
+          <div className="mb-8">
+            <button
+              onClick={() => handleSelect(RECOMMENDED_ADVENTURE)}
+              className="w-full group relative bg-gradient-to-r from-violet-900/40 to-fuchsia-900/30 border border-violet-500/30 hover:border-violet-400/60 rounded-2xl p-6 text-left transition-all duration-300 hover:scale-[1.005]"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Play className="h-5 w-5 text-violet-400" />
+                <span className="text-sm font-bold text-violet-300 uppercase tracking-wider">Quick Start — Jump right in</span>
+              </div>
+              <h2 className="text-2xl font-black text-white mb-1 group-hover:text-violet-200 transition-colors">{RECOMMENDED_ADVENTURE.name}</h2>
+              <p className="text-sm text-zinc-400 max-w-2xl">{RECOMMENDED_ADVENTURE.description}</p>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Play className="h-8 w-8" />
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Category Tabs + Search */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">

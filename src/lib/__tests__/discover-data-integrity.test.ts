@@ -9,8 +9,8 @@ import {
 describe("Discover page data integrity", () => {
   // ── ALL_PRESETS ──────────────────────────────────────────────────────────────
 
-  it("ALL_PRESETS contains at least 10 templates", () => {
-    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(10);
+  it("ALL_PRESETS contains exactly the RPG adventures", () => {
+    expect(ALL_PRESETS.length).toBe(3);
   });
 
   it("every template has a unique id", () => {
@@ -27,9 +27,9 @@ describe("Discover page data integrity", () => {
     }
   });
 
-  it("every template has valid players range", () => {
+  it("every template has valid players format", () => {
     for (const t of ALL_PRESETS) {
-      expect(t.players).toMatch(/^\d+([+-]\d+( AI)?)?$/);
+      expect(t.players).toMatch(/^\d+\s*\+\s*\d+\s*AI$/);
     }
   });
 
@@ -66,26 +66,14 @@ describe("Discover page data integrity", () => {
 
   // ── EXTRA_GAMES visibility ───────────────────────────────────────────────────
 
-  it("EXTRA_GAMES are included in ALL_PRESETS", () => {
-    const allIds = new Set(ALL_PRESETS.map((t) => t.id));
-    for (const g of EXTRA_GAMES) {
-      expect(allIds.has(g.id), `${g.id} missing from ALL_PRESETS`).toBe(true);
-    }
-  });
-
-  it("every EXTRA_GAME appears in at least one CATEGORY_MAP bucket", () => {
-    const allCategorized = new Set(
-      Object.values(CATEGORY_MAP).flat().map((t) => t.id)
-    );
-    for (const g of EXTRA_GAMES) {
-      expect(allCategorized.has(g.id), `${g.id} not in any category`).toBe(true);
-    }
+  it("EXTRA_GAMES is empty", () => {
+    expect(EXTRA_GAMES.length).toBe(0);
   });
 
   // ── CATEGORY_MAP ─────────────────────────────────────────────────────────────
 
-  it("CATEGORY_MAP has entries for all expected categories", () => {
-    const expected = ["deduction", "party", "mystery", "creative", "brain"];
+  it("CATEGORY_MAP has entries for RPG categories", () => {
+    const expected = ["wuxia", "fantasy"];
     for (const cat of expected) {
       expect(CATEGORY_MAP[cat], `missing category: ${cat}`).toBeDefined();
       expect(CATEGORY_MAP[cat].length, `empty category: ${cat}`).toBeGreaterThan(0);
@@ -120,15 +108,7 @@ describe("Discover page data integrity", () => {
     }
   });
 
-  it("preset templateId defaults to 'custom' when not specified", () => {
-    const templateWithout = ALL_PRESETS.find((t) => !t.templateId);
-    if (templateWithout) {
-      const preset = getPresetById(templateWithout.id);
-      expect(preset!.templateId).toBe("custom");
-    }
-  });
-
-  it("preset templateId is preserved when specified", () => {
+  it("getPresetById still finds legacy presets via ALL_PRESETS_FULL", () => {
     const werewolf = getPresetById("werewolf-classic");
     expect(werewolf).not.toBeNull();
     expect(werewolf!.templateId).toBe("werewolf");
@@ -148,16 +128,10 @@ describe("Discover page data integrity", () => {
     }
   });
 
-  it("rules contain OBJECTIVE or WIN CONDITIONS or GAMEPLAY or GOAL or CASE section", () => {
+  it("every RPG adventure has rpgWorldId and rpgAdventureNotes", () => {
     for (const t of ALL_PRESETS) {
-      const hasStructure =
-        /OBJECTIVE/i.test(t.rules) ||
-        /WIN CONDITIONS/i.test(t.rules) ||
-        /GAMEPLAY/i.test(t.rules) ||
-        /SESSION FLOW/i.test(t.rules) ||
-        /\bGOAL:/i.test(t.rules) ||
-        /\bCASE:/i.test(t.rules);
-      expect(hasStructure, `${t.id} rules lack structure headings`).toBe(true);
+      expect(t.rpgWorldId, `${t.id} missing rpgWorldId`).toBeTruthy();
+      expect(t.rpgAdventureNotes, `${t.id} missing rpgAdventureNotes`).toBeTruthy();
     }
   });
 });

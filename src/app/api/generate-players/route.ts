@@ -7,6 +7,8 @@ import { resolvePlayerGender } from '@/lib/player-gender';
 import { getWorldById } from '@/lib/rpg/worlds';
 import { createCharacterFromClass } from '@/lib/rpg/classes';
 import type { ClassDefinition } from '@/lib/rpg/classes';
+import { archetypeIdForClass, archetypeAvatarPath } from '@/lib/rpg/archetypes';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const limiter = createRateLimiter('generate-players', { limit: 10, windowSeconds: 60 });
 
@@ -89,6 +91,9 @@ Requirements:
 2. Personality must be SPECIFIC behavioral details, not generic. How they react in combat, what they fear, how they argue.
 3. speechStyle must make each character sound DIFFERENT in dialogue.
 4. Assign each character to a faction from the list above.
+5. "goal" — a concrete personal motivation that drives this character beyond "survive". It should create roleplay hooks (e.g. "Find the lost grimoire her master hid before dying" or "Prove she's worthy of inheriting the sect").
+6. "fear" — a specific, visceral fear that can surface in gameplay (e.g. "Being sealed underground — she was trapped in a mine collapse as a child" or "Losing control of his berserker rage and hurting allies").
+7. "attitudeToPlayer" — how this character relates to the human party leader. Each character should have a DIFFERENT dynamic (e.g. "Respects the leader's decisions but will argue if lives are at stake" or "Slightly jealous — thinks she should be leading instead").
 
 Output ONLY valid JSON:
 { "players": [
@@ -100,7 +105,10 @@ Output ONLY valid JSON:
     "personality": "Specific behavioral details...",
     "background": "Background that fits class and world...",
     "speechStyle": "How they talk...",
-    "quirk": "Memorable behavioral quirk..."
+    "quirk": "Memorable behavioral quirk...",
+    "goal": "Personal motivation...",
+    "fear": "Specific fear...",
+    "attitudeToPlayer": "Relationship dynamic with the leader..."
   }
 ] }`;
 
@@ -122,17 +130,30 @@ Output ONLY valid JSON:
         const cls = selectedClasses[i] || selectedClasses[0];
         const faction = p.faction || world.factions[0]?.name;
         const rpgChar = createCharacterFromClass(cls, faction);
+        const gender = resolvePlayerGender(String(p.name || cls.name), p.gender, {
+          personality: p.personality,
+          background: p.background,
+        });
+        const archId = archetypeIdForClass(cls.id);
+        let avatarUrl: string | undefined;
+        if (archId && supabaseAdmin) {
+          const storagePath = archetypeAvatarPath(archId, gender);
+          const { data } = supabaseAdmin.storage.from('avatars').getPublicUrl(storagePath);
+          if (data?.publicUrl) avatarUrl = data.publicUrl;
+        }
         return {
           name: p.name || `${cls.name} ${i + 1}`,
-          gender: resolvePlayerGender(String(p.name || cls.name), p.gender, {
-            personality: p.personality,
-            background: p.background,
-          }),
+          gender,
           personality: p.personality || cls.description,
           background: p.background || '',
           speechStyle: p.speechStyle || '',
           quirk: p.quirk || '',
+          goal: p.goal || '',
+          fear: p.fear || '',
+          attitudeToPlayer: p.attitudeToPlayer || '',
           rpg: rpgChar,
+          ...(archId && { archetypeId: archId }),
+          ...(avatarUrl && { avatar_url: avatarUrl }),
         };
       });
 

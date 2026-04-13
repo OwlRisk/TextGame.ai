@@ -36,7 +36,7 @@ describe("buildHostSystemPrompt", () => {
     it("contains the game name in the output", () => {
       const opts = defaultOpts({ gameName: "Werewolf Night" });
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain('for "Werewolf Night"');
+      expect(output).toContain('in "Werewolf Night"');
     });
 
     it("contains the human player name in NEXT_SPEAKER examples", () => {
@@ -239,10 +239,10 @@ describe("buildHostSystemPrompt", () => {
       expect(output).toContain("---");
     });
 
-    it("contains SILENT TURNS section", () => {
+    it("contains ACTIVE NARRATION section", () => {
       const opts = defaultOpts();
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("**SILENT TURNS");
+      expect(output).toContain("**ACTIVE NARRATION");
     });
 
     it("contains DIRECTIVES section heading", () => {
@@ -310,7 +310,7 @@ describe("buildHostSystemPrompt", () => {
       expect(output).toContain(
         'Players: . Use "Everyone" for open discussion.',
       );
-      expect(output).toContain("The human player (Alex) can speak at any time");
+      expect(output).toContain("Alex can always type freely");
     });
   });
 

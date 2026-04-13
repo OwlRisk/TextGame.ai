@@ -44,6 +44,7 @@ const AVATAR_OUTPUT_SIZE = 128;
 const POOL_OUTPUT_SIZE = 256;
 
 import { isValidStyle, DEFAULT_STYLE, type AvatarStyle } from '@/lib/avatar-style-constants';
+import { getArchetype } from '@/lib/rpg/archetypes';
 
 /** Minimum pool size (initial seed); kept for test compatibility. */
 const MIN_POOL_SIZE = 30;
@@ -213,13 +214,14 @@ const SHARED_CORE_STYLE =
   FRIENDLY_SAFE + ' ' +
   CLEAN_PORTRAIT;
 
-/** Anime / Japanese mobile game style — Fate/Grand Order / Blue Archive aesthetic. */
+/** Anime style — Genshin Impact / Honkai Star Rail inspired aesthetic. */
 const ANIME_CORE_STYLE =
-  'High-quality Japanese mobile game character portrait illustration. ' +
-  'Style inspired by Fate/Grand Order and Blue Archive — polished cel-shading, fine linework, detailed hair and costume, vivid expressive eyes. ' +
+  'High-quality anime character portrait in the style of Genshin Impact and Honkai Star Rail. ' +
+  'Polished cel-shading with soft gradients, luminous skin rendering, highly detailed hair strands with color highlights, elaborate fantasy costume with intricate accessories. ' +
+  'Vivid expressive eyes with detailed iris reflections. Dynamic pose with slight wind effect on hair and clothing. ' +
   SOLO_PORTRAIT + ' ' +
   BOTH_EYES_REQUIRED + ' ' +
-  'Soft gradient background. ' +
+  'Cinematic lighting with rim light and soft bloom. Fantasy atmosphere background with subtle particle effects. ' +
   CLEAN_PORTRAIT;
 
 /** Gender phrase for prompt: avatar appearance must match name gender */
@@ -283,9 +285,9 @@ function sanitizeScaryDescription(text: string): string {
 function buildPrompt(
   _name: string,
   type: AvatarType,
-  opts: { background?: string; personality?: string; gender?: string; style?: string }
+  opts: { background?: string; personality?: string; gender?: string; style?: string; archetypeVisualTags?: string }
 ): string {
-  const { background, personality, gender, style } = opts;
+  const { background, personality, gender, style, archetypeVisualTags } = opts;
   const genderPrefix = genderPhrase(gender);
   const isAnime = style === 'anime';
 
@@ -298,6 +300,7 @@ function buildPrompt(
   const basePrompt = singleStart + genderPrefix + coreStyle + singleEnd;
 
   const parts: string[] = [];
+  if (archetypeVisualTags?.trim()) parts.push(archetypeVisualTags.trim());
   if (personality?.trim()) parts.push(personality.trim());
   if (background?.trim()) parts.push(background.trim());
   const combined = parts.join('. ');
@@ -456,6 +459,7 @@ export async function POST(request: NextRequest) {
       forceRegenerate,
       generateAndPool,
       avatarOffset,
+      archetypeId,
     } = body as {
       name?: string;
       type?: AvatarType;
@@ -468,6 +472,7 @@ export async function POST(request: NextRequest) {
       forceRegenerate?: boolean;
       generateAndPool?: boolean;
       avatarOffset?: number;
+      archetypeId?: string;
     };
 
     if (!name || typeof name !== 'string') {
@@ -487,6 +492,7 @@ export async function POST(request: NextRequest) {
       background: backgroundStr,
     });
     const customPath = avatarStoragePath(name, avatarType);
+    const archetypeData = archetypeId ? getArchetype(archetypeId) : undefined;
     logger.log('[Avatar API] key:', `${name}|${avatarType}`, 'path:', customPath, 'forceRegenerate:', !!forceRegenerate);
 
     // --- 1. Check for existing custom avatar (skip when force-regenerating or generateAndPool) ---
@@ -538,6 +544,7 @@ export async function POST(request: NextRequest) {
         personality: personalityStr,
         gender: genderResolved,
         style: resolvedStyle,
+        archetypeVisualTags: archetypeData?.visualTags.join(', '),
       });
 
       logger.log(`[Avatar] Force-regenerating with DALL-E 3 for: ${name}, style: ${resolvedStyle}, prompt length: ${prompt.length}`);
@@ -601,6 +608,7 @@ export async function POST(request: NextRequest) {
         personality: personalityStr,
         gender: genderResolved,
         style: resolvedStyle,
+        archetypeVisualTags: archetypeData?.visualTags.join(', '),
       });
 
       logger.log(`[Avatar] generateAndPool for: ${name}, style: ${resolvedStyle}, gender: ${genderResolved}, prompt length: ${prompt.length}`);
@@ -733,6 +741,7 @@ export async function POST(request: NextRequest) {
       personality: personalityStr,
       gender: genderResolved,
       style: resolvedStyle,
+      archetypeVisualTags: archetypeData?.visualTags.join(', '),
     });
 
     let imageDataUrl: string;

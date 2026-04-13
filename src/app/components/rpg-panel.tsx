@@ -6,6 +6,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
 import type { Player } from "@/types/player";
 import type { RpgCharacter, RpgSkill, RpgItem, StatusEffect } from "@/types/rpg";
+import type { MudRoom } from "@/lib/gm-state";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
 import { getClassById } from "@/lib/rpg/classes";
@@ -23,6 +24,8 @@ interface RpgPanelProps {
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   avatarStyle?: AvatarStyle;
   onPlayerClick?: (player: Player) => void;
+  currentRoom?: MudRoom | null;
+  onNavigate?: (direction: string) => void;
 }
 
 export function RpgPanel({
@@ -34,6 +37,8 @@ export function RpgPanel({
   onAvatarUrlLoaded,
   avatarStyle,
   onPlayerClick,
+  currentRoom,
+  onNavigate,
 }: RpgPanelProps) {
   const lang = getBrowserLanguage();
   const partyMembers = useMemo(() => players.filter((p) => !p.isGameMaster), [players]);
@@ -49,6 +54,9 @@ export function RpgPanel({
       </div>
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-3 space-y-2">
+          {currentRoom && (
+            <RoomCard room={currentRoom} onNavigate={onNavigate} />
+          )}
           {partyMembers.map((player) => (
             <RpgPlayerCard
               key={player.id}
@@ -221,6 +229,78 @@ const RpgPlayerCard = memo(function RpgPlayerCard({
     </div>
   );
 });
+
+function RoomCard({ room, onNavigate }: { room: MudRoom; onNavigate?: (direction: string) => void }) {
+  const lang = getBrowserLanguage();
+  const visibleExits = room.exits.filter(e => !e.hidden);
+  return (
+    <div className="rounded-lg bg-gradient-to-b from-emerald-950/40 to-zinc-800/40 border border-emerald-900/30 overflow-hidden">
+      <div className="px-3 py-2.5">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="text-xs">📍</span>
+          <span className="text-sm font-bold text-emerald-200 truncate">{room.name}</span>
+        </div>
+        <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-3">{room.description}</p>
+      </div>
+
+      {visibleExits.length > 0 && (
+        <div className="px-3 pb-2 flex flex-wrap gap-1">
+          {visibleExits.map((exit) => (
+            <button
+              key={exit.direction}
+              className={`text-[10px] px-2 py-1 rounded-md font-medium transition-colors ${
+                exit.locked
+                  ? "bg-zinc-700/50 text-zinc-500 cursor-not-allowed"
+                  : "bg-emerald-900/40 text-emerald-300 hover:bg-emerald-800/60 cursor-pointer"
+              }`}
+              disabled={exit.locked}
+              onClick={() => !exit.locked && onNavigate?.(exit.label ? `Go ${exit.direction} to ${exit.label}` : `Go ${exit.direction}`)}
+              title={exit.locked ? "Locked" : exit.label || exit.roomId}
+            >
+              {exit.locked ? "🔒 " : ""}{exit.direction}{exit.label ? ` → ${exit.label}` : ""}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {room.npcs.length > 0 && (
+        <div className="px-3 pb-2 border-t border-zinc-700/30 pt-1.5">
+          <span className="text-[9px] text-zinc-500 uppercase tracking-wider font-semibold">{lang.startsWith("zh") ? "NPC" : "NPCs"}</span>
+          <div className="mt-1 space-y-0.5">
+            {room.npcs.map((npc) => (
+              <div key={npc.id} className="flex items-center gap-1.5">
+                <span className="text-[10px]">
+                  {npc.attitude === "hostile" ? "⚔️" : npc.attitude === "friendly" ? "💬" : "👤"}
+                </span>
+                <span className={`text-[11px] font-medium ${
+                  npc.attitude === "hostile" ? "text-red-300" : npc.attitude === "friendly" ? "text-green-300" : "text-zinc-300"
+                }`}>
+                  {npc.name}
+                </span>
+                {npc.description && (
+                  <span className="text-[10px] text-zinc-500 truncate flex-1">{npc.description}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {room.items.length > 0 && (
+        <div className="px-3 pb-2 border-t border-zinc-700/30 pt-1.5">
+          <span className="text-[9px] text-zinc-500 uppercase tracking-wider font-semibold">{lang.startsWith("zh") ? "物品" : "Items"}</span>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {room.items.map((item) => (
+              <span key={item.id} className="text-[10px] bg-amber-900/30 text-amber-300 px-1.5 py-0.5 rounded">
+                {item.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StatBar({ label, current, max, color, bgColor, icon, tiny }: {
   label: string; current: number; max: number; color: string; bgColor: string; icon: React.ReactNode; tiny?: boolean;
