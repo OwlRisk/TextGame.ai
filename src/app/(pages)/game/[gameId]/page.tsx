@@ -727,10 +727,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             } : undefined}
             timerEndsAt={timerEndsAt}
             alivePlayers={players.filter(p => !isPlayerEliminated(p))}
-            onReact={(messageId, emoji) => {
-              const displayName = humanGameIdentity?.name || "You";
-              addReaction(messageId, emoji, displayName);
-            }}
             channelTaskHint={channelTaskHint}
             humanGameIdentity={humanGameIdentity}
             isUserGameMaster={isOwner}

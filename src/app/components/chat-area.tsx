@@ -109,8 +109,6 @@ interface ChatAreaProps {
   onVote?: (choice: string) => void;
   /** Countdown timer end timestamp */
   timerEndsAt?: number | null;
-  /** Called when user reacts with an emoji to a message */
-  onReact?: (messageId: string, emoji: string) => void;
   /** Context-sensitive game actions */
   gameActions?: import("@/hooks/useGameActions").GameAction[];
   /** Template-defined conversation starters for Say mode */
@@ -182,7 +180,6 @@ export function ChatArea({
   activeVote,
   onVote,
   timerEndsAt,
-  onReact,
   gameActions = [],
   dialogueChips = [],
   gameEvents = [],
@@ -492,7 +489,6 @@ export function ChatArea({
                 players={players}
                 avatarImageUrls={avatarImageUrls ?? {}}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
-                onReact={onReact}
                 gameTemplate={gameTemplate}
                 onPlayerClick={handlePlayerClick}
               />

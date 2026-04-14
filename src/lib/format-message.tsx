@@ -55,6 +55,7 @@ export function parseInlineFormatting(
 
   const patterns = [
     { regex: /\[ACTION\](.*?)\[\/ACTION\]/gi, type: "action" as const },
+    { regex: /\[\/?ACTION[^\]]*\]/gi, type: "strip" as const },
     { regex: /\*\*(.*?)\*\*/g, type: "bold" as const },
     { regex: /\*(.*?)\*/g, type: "italic" as const },
     { regex: /`(.*?)`/g, type: "code" as const },
@@ -93,6 +94,10 @@ export function parseInlineFormatting(
   filteredMatches.forEach((match, i) => {
     if (match.start > currentIndex) {
       parts.push(text.substring(currentIndex, match.start));
+    }
+    if (match.type === "strip") {
+      currentIndex = match.end;
+      return;
     }
     if (match.type === "action") {
       parts.push(
