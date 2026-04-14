@@ -289,6 +289,14 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (typeof state.roundNumber === "number") setRoundNumber(state.roundNumber);
       if (state.gmState && typeof state.gmState === "object") setGmState(state.gmState as GmState);
       if (typeof state.storySummary === "string") setStorySummary(state.storySummary);
+      if (typeof state.currentSpeakerId === "string") setCurrentSpeakerId(state.currentSpeakerId);
+      if (state.activeVote && typeof state.activeVote === "object") setActiveVote(state.activeVote as ActiveVote);
+      if (typeof state.timerEndsAt === "number") setTimerEndsAt(state.timerEndsAt);
+      if (typeof state.gameEnded === "boolean") setGameEnded(state.gameEnded);
+      if (state.gameResult && typeof state.gameResult === "object") setGameResult(state.gameResult as { winner: string; message: string });
+      if (state.avatarImageUrls && typeof state.avatarImageUrls === "object") {
+        setAvatarImageUrls((prev) => ({ ...prev, ...(state.avatarImageUrls as Record<string, string>) }));
+      }
     }
 
     if (!user?.id) {
@@ -363,6 +371,16 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   useEffect(() => { roundNumberRef.current = roundNumber; }, [roundNumber]);
   useEffect(() => { gmStateRef.current = gmState; }, [gmState]);
   useEffect(() => { storySummaryRef.current = storySummary; }, [storySummary]);
+  const currentSpeakerIdRef = useRef(currentSpeakerId);
+  const activeVoteRef = useRef(activeVote);
+  const timerEndsAtRef = useRef(timerEndsAt);
+  const gameEndedRef = useRef(gameEnded);
+  const gameResultRef = useRef(gameResult);
+  useEffect(() => { currentSpeakerIdRef.current = currentSpeakerId; }, [currentSpeakerId]);
+  useEffect(() => { activeVoteRef.current = activeVote; }, [activeVote]);
+  useEffect(() => { timerEndsAtRef.current = timerEndsAt; }, [timerEndsAt]);
+  useEffect(() => { gameEndedRef.current = gameEnded; }, [gameEnded]);
+  useEffect(() => { gameResultRef.current = gameResult; }, [gameResult]);
 
   // Synchronously save to localStorage on page close to prevent state loss
   useEffect(() => {
@@ -397,6 +415,18 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
           roundNumber: roundNumberRef.current || undefined,
           gmState: gmStateRef.current || undefined,
           storySummary: storySummaryRef.current || undefined,
+          currentSpeakerId: currentSpeakerIdRef.current || undefined,
+          activeVote: activeVoteRef.current || undefined,
+          timerEndsAt: timerEndsAtRef.current || undefined,
+          gameEnded: gameEndedRef.current || undefined,
+          gameResult: gameResultRef.current || undefined,
+          avatarImageUrls: (() => {
+            const h: Record<string, string> = {};
+            for (const [k, v] of Object.entries(avatarImageUrlsRef.current)) {
+              if (v?.startsWith("http")) h[k] = v;
+            }
+            return Object.keys(h).length ? h : undefined;
+          })(),
           savedAt: new Date().toISOString(),
           clientId: clientIdRef.current,
         };
@@ -430,6 +460,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     roundNumber,
     gmState,
     storySummary,
+    currentSpeakerId,
+    activeVote,
+    timerEndsAt,
+    gameEnded,
+    gameResult,
   ]);
 
   // Save game room state: fixed dependency array to satisfy React strict rules
@@ -456,6 +491,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       if (arr.length) trimmedPrivateMessages[pid] = arr;
     }
 
+    const httpAvatars: Record<string, string> = {};
+    for (const [k, v] of Object.entries(avatarImageUrls)) {
+      if (v?.startsWith("http")) httpAvatars[k] = v;
+    }
+
     const state = {
       messages: trimmedMessages,
       players,
@@ -474,6 +514,12 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
       roundNumber: roundNumber || undefined,
       gmState: gmState || undefined,
       storySummary: storySummary || undefined,
+      currentSpeakerId: currentSpeakerId || undefined,
+      activeVote: activeVote || undefined,
+      timerEndsAt: timerEndsAt || undefined,
+      gameEnded: gameEnded || undefined,
+      gameResult: gameResult || undefined,
+      avatarImageUrls: Object.keys(httpAvatars).length ? httpAvatars : undefined,
       savedAt: new Date().toISOString(),
       clientId: clientIdRef.current as string,
     };
@@ -589,6 +635,21 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (remoteState.mood === "dark" || remoteState.mood === "light" || remoteState.mood === "neutral") setMood(remoteState.mood);
     if (typeof remoteState.gameOverSummary === "string") setGameOverSummary(remoteState.gameOverSummary);
     if (typeof remoteState.roundNumber === "number") setRoundNumber(remoteState.roundNumber);
+    if (remoteState.gmState && typeof remoteState.gmState === "object") setGmState(remoteState.gmState as GmState);
+    if (typeof remoteState.storySummary === "string") setStorySummary(remoteState.storySummary);
+    if (remoteState.playerNotes && typeof remoteState.playerNotes === "object") {
+      setPlayerNotes(remoteState.playerNotes as Record<string, string>);
+    }
+    if (remoteState.sections && Array.isArray(remoteState.sections)) {
+      setSections(remoteState.sections as Array<{ id: string; name: string; content: string }>);
+    }
+    if (remoteState.humanGameIdentity && typeof (remoteState.humanGameIdentity as any).name === "string") {
+      setHumanGameIdentity({ name: (remoteState.humanGameIdentity as any).name });
+    }
+    if (typeof remoteState.currentSpeakerId === "string") setCurrentSpeakerId(remoteState.currentSpeakerId);
+    if (remoteState.activeVote && typeof remoteState.activeVote === "object") setActiveVote(remoteState.activeVote as ActiveVote);
+    if (typeof remoteState.gameEnded === "boolean") setGameEnded(remoteState.gameEnded);
+    if (remoteState.gameResult && typeof remoteState.gameResult === "object") setGameResult(remoteState.gameResult as { winner: string; message: string });
   }, []);
 
   useEffect(() => {
