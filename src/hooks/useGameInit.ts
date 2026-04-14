@@ -6,6 +6,7 @@ import { useGameContext } from "@/app/contexts/GameContext";
 import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { toast } from "sonner";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
+import { avatarCacheKey } from "@/app/components/generated-avatar";
 import { assignVoicesForRoom, pickVoiceForSpeaker, INWORLD_VOICE_META } from "@/lib/inworld-voices";
 import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
@@ -250,7 +251,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     ];
     for (const p of aiPlayers) {
       if (p.avatar?.startsWith('http')) {
-        onAvatarUrlLoaded(p.name, p.avatar);
+        const baseKey = avatarCacheKey(p.name, 'player', undefined, p.gender);
+        onAvatarUrlLoaded(baseKey, p.avatar);
       }
     }
     if (roomPlayersNeedingAvatar.length > 0) {
