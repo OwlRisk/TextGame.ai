@@ -60,7 +60,7 @@ function CreateGamePageContent() {
 
     try {
       const tmpl = GAME_TEMPLATES.find(t => t.id === config.template);
-      const gameIcon = tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
+      const gameIcon = initialPreset?.cover ?? tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
 
       let finalConfig = config;
       if (!config.configuredPlayers || config.configuredPlayers.length === 0) {

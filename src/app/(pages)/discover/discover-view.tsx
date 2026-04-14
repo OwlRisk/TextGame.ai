@@ -60,7 +60,7 @@ function DiscoverViewInner() {
       trackEvent("template_selected", { template: preset.id, source: "discover" });
 
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
-      const gameIcon = tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
+      const gameIcon = preset.cover ?? tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
       const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id, getAppLanguage()) : null;
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];

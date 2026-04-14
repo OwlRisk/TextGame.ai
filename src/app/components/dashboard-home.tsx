@@ -129,7 +129,11 @@ export function DashboardHome({ userName, games = [], onCreateGame, onNavigateTo
                   className="group relative bg-zinc-800/60 border border-zinc-700 hover:border-amber-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                 >
                   <div className={`relative h-20 overflow-hidden bg-gradient-to-br ${game.color} flex items-center justify-center`}>
-                    <span className="text-4xl">{game.icon}</span>
+                    {game.icon && (game.icon.startsWith("/") || game.icon.startsWith("http")) ? (
+                      <img src={game.icon} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-4xl">{game.icon}</span>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/30 to-transparent" />
                   </div>
                   <div className="p-4">
