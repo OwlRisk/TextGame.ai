@@ -14,6 +14,7 @@ import { GameOverBanner } from "@/app/components/game-over-banner";
 import { TypingIndicator } from "@/app/components/typing-indicator";
 import { ChatMessage } from "@/app/components/chat-message";
 import { PlayerProfileDialog } from "@/app/components/player-profile-dialog";
+import { getAvatarStyleForTemplate } from "@/lib/game-templates";
 
 export interface Message {
   id: string;
@@ -235,6 +236,7 @@ export function ChatArea({
   const humanPlayer = players.find((p) => p.id === userId);
   const useGeneratedAvatarForUser = !!(gameId && humanPlayer) && !userAvatarUrl;
   const userAvatarName = (humanPlayer?.name && humanPlayer.name.trim() && humanPlayer.name !== "You") ? humanPlayer.name : "Player";
+  const avatarStyle = useMemo(() => getAvatarStyleForTemplate(gameTemplate, rpgWorldId), [gameTemplate, rpgWorldId]);
 
   // Follow scroll when new content appears: new messages, last message content/streaming,
   // or quick replies expanding (which grow the input area and hide the last message).
@@ -490,6 +492,7 @@ export function ChatArea({
                 avatarImageUrls={avatarImageUrls ?? {}}
                 onAvatarUrlLoaded={onAvatarUrlLoaded}
                 gameTemplate={gameTemplate}
+                avatarStyle={avatarStyle}
                 onPlayerClick={handlePlayerClick}
               />
             );

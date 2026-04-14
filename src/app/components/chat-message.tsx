@@ -180,13 +180,14 @@ export interface ChatMessageProps {
   avatarImageUrls: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
   gameTemplate?: string;
+  avatarStyle?: string;
   onPlayerClick?: (player: Player) => void;
 }
 
 export const ChatMessage = React.memo(function ChatMessage({
   message, showAvatar, syncedContent, rawContent, isShowingCursor,
   userId, userAvatarUrl, useGeneratedAvatarForUser, humanPlayer, userAvatarName,
-  gameId, players, avatarImageUrls, onAvatarUrlLoaded, gameTemplate,
+  gameId, players, avatarImageUrls, onAvatarUrlLoaded, gameTemplate, avatarStyle,
   onPlayerClick,
 }: ChatMessageProps) {
   if (message.isAnnouncement) {
@@ -377,6 +378,7 @@ export const ChatMessage = React.memo(function ChatMessage({
               messagePlayer={messagePlayer}
               avatarImageUrls={avatarImageUrls}
               onAvatarUrlLoaded={onAvatarUrlLoaded}
+              avatarStyle={avatarStyle}
             />
           </button>
           <div className="flex-1 min-w-0">
@@ -418,7 +420,7 @@ export const ChatMessage = React.memo(function ChatMessage({
 function MessageAvatar({
   message, userId, userAvatarUrl, useGeneratedAvatarForUser,
   humanPlayer, userAvatarName, gameId, messagePlayer,
-  avatarImageUrls = {}, onAvatarUrlLoaded,
+  avatarImageUrls = {}, onAvatarUrlLoaded, avatarStyle,
 }: {
   message: ChatMessageProps["message"];
   userId: string;
@@ -430,6 +432,7 @@ function MessageAvatar({
   messagePlayer?: Player | null;
   avatarImageUrls: Record<string, string>;
   onAvatarUrlLoaded?: (key: string, url: string) => void;
+  avatarStyle?: string;
 }) {
   const isCurrentUser = message.senderId === userId;
   if (isCurrentUser) {
@@ -457,7 +460,7 @@ function MessageAvatar({
     );
   }
   const avatarColor = messagePlayer?.avatar || message.senderAvatar;
-  const avatarProps = getAvatarPropsForPlayer(messagePlayer);
+  const avatarProps = getAvatarPropsForPlayer(messagePlayer, avatarStyle as any);
   return (
     <GeneratedAvatar
       {...avatarProps}
