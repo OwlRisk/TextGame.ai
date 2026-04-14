@@ -325,8 +325,9 @@ export function localizeScenarios(
 // ─── Marquee Characters ──────────────────────────────────────────────────────
 
 const NAME: Record<string, L> = {
-  Jianxin: { zh: "林剑心", ja: "剣心", ko: "검심" },
-  Wukong:  { zh: "方悟空", ja: "悟空", ko: "오공" },
+  "Zhao Mei":        { zh: "赵梅", ja: "趙メイ", ko: "자오 메이" },
+  "Kenji Yamamoto":  { zh: "山本健二", ja: "山本健二", ko: "야마모토 켄지" },
+  "Haruka Tanaka":   { zh: "田中遥", ja: "田中はるか", ko: "타나카 하루카" },
 };
 
 const ROLE: Record<string, L> = {
@@ -337,15 +338,15 @@ const ROLE: Record<string, L> = {
   Spy:       { zh: "间谍", ja: "スパイ", ko: "스파이", de: "Spion", fr: "Espion", es: "Espía", pt: "Espião", ru: "Шпион", it: "Spia", ar: "جاسوس" },
   Witness:   { zh: "目击者", ja: "目撃者", ko: "목격자", de: "Zeuge", fr: "Témoin", es: "Testigo", pt: "Testemunha", ru: "Свидетель", it: "Testimone", ar: "شاهد" },
   Suspect:   { zh: "嫌疑人", ja: "容疑者", ko: "용의자", de: "Verdächtiger", fr: "Suspect", es: "Sospechoso", pt: "Suspeito", ru: "Подозреваемый", it: "Sospettato", ar: "مشتبه به" },
-  Knight:           { zh: "骑士", ja: "騎士", ko: "기사", de: "Ritter", fr: "Chevalier", es: "Caballero", pt: "Cavaleiro", ru: "Рыцарь", it: "Cavaliere", ar: "فارس" },
-  Rogue:            { zh: "盗贼", ja: "盗賊", ko: "도적", de: "Schurke", fr: "Voleur", es: "Pícaro", pt: "Ladino", ru: "Плут", it: "Furfante", ar: "محتال" },
-  Cleric:           { zh: "牧师", ja: "聖職者", ko: "성직자", de: "Kleriker", fr: "Clerc", es: "Clérigo", pt: "Clérigo", ru: "Жрец", it: "Chierico", ar: "كاهن" },
-  Ranger:           { zh: "游侠", ja: "レンジャー", ko: "레인저", de: "Waldläufer", fr: "Rôdeur", es: "Guardabosques", pt: "Patrulheiro", ru: "Следопыт", it: "Ranger", ar: "حارس" },
-  Swordmaster:      { zh: "剑客", ja: "剣士", ko: "검객", de: "Schwertmeister", fr: "Maître d'épée", es: "Maestro de espada", pt: "Espadachim", ru: "Мечник", it: "Maestro di spada", ar: "سيّاف" },
-  Monk:             { zh: "武僧", ja: "武僧", ko: "무승", de: "Mönch", fr: "Moine", es: "Monje", pt: "Monge", ru: "Монах", it: "Monaco", ar: "راهب" },
-  "Wandering Doctor": { zh: "游医", ja: "旅医者", ko: "떠돌이 의원", de: "Wanderarzt", fr: "Médecin itinérant", es: "Médico errante", pt: "Médico andarilho", ru: "Странствующий лекарь", it: "Medico errante", ar: "طبيب جوّال" },
-  Assassin:         { zh: "刺客", ja: "暗殺者", ko: "암살자", de: "Assassine", fr: "Assassin", es: "Asesino", pt: "Assassino", ru: "Убийца", it: "Assassino", ar: "قاتل" },
-  Mage:             { zh: "法师", ja: "魔法使い", ko: "마법사", de: "Magier", fr: "Mage", es: "Mago", pt: "Mago", ru: "Маг", it: "Mago", ar: "ساحر" },
+  Deceiver:         { zh: "欺诈者", ja: "欺瞞者", ko: "기만자", de: "Betrüger", fr: "Trompeur", es: "Engañador", pt: "Enganador", ru: "Обманщик", it: "Ingannatore", ar: "مخادع" },
+  Commander:        { zh: "指挥官", ja: "指揮官", ko: "지휘관", de: "Kommandant", fr: "Commandant", es: "Comandante", pt: "Comandante", ru: "Командир", it: "Comandante", ar: "قائد" },
+  Healer:           { zh: "治愈者", ja: "癒し手", ko: "치유사", de: "Heiler", fr: "Guérisseur", es: "Sanador", pt: "Curador", ru: "Целитель", it: "Guaritore", ar: "معالج" },
+  Diplomat:         { zh: "外交官", ja: "外交官", ko: "외교관", de: "Diplomat", fr: "Diplomate", es: "Diplomático", pt: "Diplomata", ru: "Дипломат", it: "Diplomatico", ar: "دبلوماسي" },
+  Enchantress:      { zh: "魅惑者", ja: "魅惑者", ko: "마법사", de: "Zauberin", fr: "Enchanteresse", es: "Hechicera", pt: "Encantadora", ru: "Чародейка", it: "Incantatrice", ar: "ساحرة" },
+  Shadow:           { zh: "暗影", ja: "影", ko: "그림자", de: "Schatten", fr: "Ombre", es: "Sombra", pt: "Sombra", ru: "Тень", it: "Ombra", ar: "ظل" },
+  Trickster:        { zh: "捣蛋鬼", ja: "いたずら者", ko: "장난꾸러기", de: "Schelm", fr: "Farceur", es: "Bromista", pt: "Trapaceiro", ru: "Трикстер", it: "Imbroglione", ar: "محتال" },
+  Champion:         { zh: "勇士", ja: "勇者", ko: "챔피언", de: "Champion", fr: "Champion", es: "Campeón", pt: "Campeão", ru: "Чемпион", it: "Campione", ar: "بطل" },
+  Bard:             { zh: "吟游诗人", ja: "吟遊詩人", ko: "음유시인", de: "Barde", fr: "Barde", es: "Bardo", pt: "Bardo", ru: "Бард", it: "Bardo", ar: "شاعر" },
 };
 
 const PERSONALITY: Record<string, L> = {
@@ -358,15 +359,15 @@ const PERSONALITY: Record<string, L> = {
   "Nervous, detail-oriented":             { zh: "紧张敏感，注重细节", ja: "神経質、細部にこだわる", ko: "긴장하며 세부 사항에 집중", de: "Nervös, detailorientiert", fr: "Nerveux, soucieux des détails", es: "Nervioso, atento a los detalles", pt: "Nervoso, atento aos detalhes", ru: "Нервный, внимателен к деталям", it: "Nervoso, attento ai dettagli", ar: "متوتر، يهتم بالتفاصيل" },
   "Confrontational, quick to contradict": { zh: "对抗性强，反应迅速", ja: "対立的、すぐに反論する", ko: "대립적이고 반박이 빠름", de: "Konfrontativ, widerspricht schnell", fr: "Confrontant, contredit rapidement", es: "Confrontacional, rápido en contradecir", pt: "Confrontador, rápido em contradizer", ru: "Конфликтный, быстро возражает", it: "Combattivo, pronto a contraddire", ar: "مواجه، سريع في المعارضة" },
   "Quiet, watchful observer":             { zh: "沉默寡言，善于观察", ja: "静かで注意深い観察者", ko: "조용하고 관찰력이 뛰어남", de: "Ruhig, aufmerksamer Beobachter", fr: "Discret, observateur attentif", es: "Callado, observador atento", pt: "Quieto, observador atento", ru: "Тихий, внимательный наблюдатель", it: "Silenzioso, osservatore attento", ar: "هادئ، مراقب يقظ" },
-  "Stoic and honorable, rushes to protect others":     { zh: "坚韧正直，奋不顾身守护他人", ja: "寡黙で高潔、仲間を守るために駆けつける", ko: "과묵하고 명예로움, 다른 이를 보호하려 달려감" },
-  "Sharp-tongued and street-smart, spots traps first": { zh: "伶牙俐齿，精明老练，最先发现陷阱", ja: "毒舌で世渡り上手、罠を真っ先に見破る", ko: "말이 날카롭고 눈치 빠름, 함정을 먼저 발견" },
-  "Compassionate healer, judges silently":             { zh: "心怀慈悲的治疗者，沉默中洞察一切", ja: "慈悲深い癒し手、静かに見極める", ko: "자비로운 치유사, 조용히 판단함" },
-  "Quiet and observant, prefers the wilderness":       { zh: "沉默寡言善于观察，钟情于荒野", ja: "寡黙で観察力に優れ、荒野を好む", ko: "조용하고 관찰력이 뛰어남, 야생을 선호" },
-  "Disciplined, seeks harmony between body and blade": { zh: "自律克己，追求身剑合一", ja: "規律正しく、体と刃の調和を求める", ko: "절제력 있고, 몸과 검의 조화를 추구" },
-  "Calm but fierce in combat, speaks in proverbs":     { zh: "平时沉静，战时如雷，言谈间尽是禅意", ja: "普段は穏やかだが戦いでは猛烈、ことわざで語る", ko: "평소엔 차분하지만 전투에선 맹렬, 속담으로 말함" },
-  "Gentle-hearted, refuses to turn away from anyone":  { zh: "心地善良，绝不弃任何人于不顾", ja: "優しい心の持ち主、誰も見捨てない", ko: "마음이 따뜻하고, 누구도 외면하지 않음" },
-  "Cold and professional, dry humor surfaces":         { zh: "冷酷专业，偶尔露出冷幽默", ja: "冷徹でプロフェッショナル、時折辛辣なユーモア", ko: "냉철하고 프로적, 가끔 건조한 유머" },
-  "Intellectually curious, excited by anomalies":      { zh: "求知欲旺盛，对异常现象兴奋不已", ja: "知的好奇心旺盛、異常現象に目を輝かせる", ko: "지적 호기심이 강하고, 이상 현상에 흥분" },
+  "Cold and calculating, thrives in deception":                  { zh: "冷酷精明，在欺骗中如鱼得水", ja: "冷酷で計算高く、欺瞞に長ける", ko: "냉정하고 계산적, 속임수에 능함" },
+  "Dominant and intimidating, directs with precision":          { zh: "强势且令人生畏，精准掌控全局", ja: "支配的で威圧的、正確に指揮する", ko: "지배적이고 위압적, 정확하게 지휘" },
+  "Gentle and nurturing, creates a peaceful atmosphere":        { zh: "温柔体贴，营造和平氛围", ja: "穏やかで包容力があり、和やかな雰囲気を作る", ko: "부드럽고 포용적, 평화로운 분위기 조성" },
+  "Composed and insightful, provides balanced perspectives":    { zh: "沉稳洞察，提供均衡的观点", ja: "冷静で洞察力があり、バランスの取れた視点を提供", ko: "침착하고 통찰력 있음, 균형 잡힌 시각 제공" },
+  "Charming and persuasive, sways others with ease":            { zh: "魅力十足，轻松说服他人", ja: "魅力的で説得力があり、容易に人を動かす", ko: "매력적이고 설득력 있음, 쉽게 상대를 움직임" },
+  "Measured and ominous, adds suspense to every scene":         { zh: "沉着而不祥，为每个场景增添悬疑", ja: "沈着で不穏、あらゆる場面にサスペンスを加える", ko: "신중하고 불길함, 모든 장면에 긴장감 추가" },
+  "Playful and mischievous, uses charm to sway others":         { zh: "调皮捣蛋，用魅力影响他人", ja: "お茶目でいたずら好き、魅力で人を動かす", ko: "장난스럽고 짓궂음, 매력으로 상대를 설득" },
+  "Dramatic and expressive, makes bold decisions":              { zh: "戏剧化且富有表现力，决断果敢", ja: "ドラマチックで表現豊か、大胆な決断を下す", ko: "극적이고 표현력 풍부, 과감한 결정" },
+  "Friendly and optimistic, brings joy to the group":           { zh: "友善乐观，为团队带来欢乐", ja: "友好的で楽観的、グループに喜びをもたらす", ko: "친근하고 낙관적, 그룹에 기쁨을 가져옴" },
 };
 
 const GAME: Record<string, L> = {
@@ -374,8 +375,7 @@ const GAME: Record<string, L> = {
   Mafia:          { zh: "黑手党", ja: "マフィア", ko: "마피아", de: "Mafia", fr: "Mafia", es: "Mafia", pt: "Máfia", ru: "Мафия", it: "Mafia", ar: "المافيا" },
   "Who's the Spy": { zh: "谁是卧底", ja: "スパイは誰だ", ko: "스파이는 누구", de: "Wer ist der Spion", fr: "Qui est l'espion", es: "¿Quién es el espía?", pt: "Quem é o espião", ru: "Кто шпион", it: "Chi è la spia", ar: "من هو الجاسوس" },
   Mystery:        { zh: "谜案", ja: "ミステリー", ko: "미스터리", de: "Krimi", fr: "Mystère", es: "Misterio", pt: "Mistério", ru: "Детектив", it: "Mistero", ar: "لغز" },
-  "Fantasy RPG":  { zh: "奇幻RPG", ja: "ファンタジーRPG", ko: "판타지 RPG", de: "Fantasy-RPG", fr: "RPG fantaisie", es: "RPG de fantasía", pt: "RPG de fantasia", ru: "Фэнтези RPG", it: "RPG fantasy", ar: "آر بي جي فانتازيا" },
-  "Wuxia RPG":    { zh: "武侠RPG", ja: "武侠RPG", ko: "무협 RPG", de: "Wuxia-RPG", fr: "RPG wuxia", es: "RPG wuxia", pt: "RPG wuxia", ru: "Ушу RPG", it: "RPG wuxia", ar: "آر بي جي ووشيا" },
+  "AI Player":    { zh: "AI玩家", ja: "AIプレイヤー", ko: "AI 플레이어", de: "KI-Spieler", fr: "Joueur IA", es: "Jugador IA", pt: "Jogador IA", ru: "ИИ-игрок", it: "Giocatore IA", ar: "لاعب ذكاء اصطناعي" },
 };
 
 export function localizeMarqueeCharacters(

@@ -91,16 +91,16 @@ export const LANDING_AVATAR_MAP: Record<string, string> = {
   "Warden Lunaris":  "/avatars/preview/landing-avatar-warden-lunaris.webp",
   "Don Ferrante":    "/avatars/preview/landing-avatar-don-ferrante.webp",
   "Detective Kate":  "/avatars/preview/landing-avatar-detective-kate.webp",
-  // Marquee characters (AI Players section)
-  Aldric:           "/avatars/preview/landing-avatar-aldric.webp",
-  Lyra:             "/avatars/preview/landing-avatar-lyra.webp",
-  Sera:             "/avatars/preview/landing-avatar-sera.webp",
-  Kael:             "/avatars/preview/landing-avatar-kael.webp",
-  Jianxin:          "/avatars/preview/landing-avatar-jianxin.webp",
-  Wukong:           "/avatars/preview/landing-avatar-wukong.webp",
-  Mira:             "/avatars/preview/landing-avatar-mira.webp",
-  Dusk:             "/avatars/preview/landing-avatar-dusk.webp",
-  Elara:            "/avatars/preview/landing-avatar-elara.webp",
+  // Marquee characters (AI Players section) — anime-style from character pool
+  "Isabelle Frost":    "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Miranda.jpg",
+  "Jasper Kane":       "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Sebastian.jpg",
+  "Serena Lovelace":   "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Serena.jpg",
+  "Arjun Nair":        "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Arjun.jpg",
+  "Zhao Mei":          "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Xiaoyin.jpg",
+  "Silas Grey":        "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Levi.jpg",
+  "Lila Archer":       "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Julia.jpg",
+  "Kenji Yamamoto":    "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Satoshi.jpg",
+  "Haruka Tanaka":     "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Asuka.jpg",
 };
 
 export const INSIDE_GAME_STEPS: InsideGameStep[] = [
@@ -317,15 +317,15 @@ export const FAQ_ITEMS: FAQItem[] = [
 ];
 
 const BASE_MARQUEE_CHARACTERS: MarqueeCharacter[] = [
-  { name: "Aldric",   role: "Knight",            personality: "Stoic and honorable, rushes to protect others",     game: "Fantasy RPG" },
-  { name: "Lyra",     role: "Rogue",             personality: "Sharp-tongued and street-smart, spots traps first", game: "Fantasy RPG" },
-  { name: "Sera",     role: "Cleric",            personality: "Compassionate healer, judges silently",             game: "Fantasy RPG" },
-  { name: "Kael",     role: "Ranger",            personality: "Quiet and observant, prefers the wilderness",       game: "Fantasy RPG" },
-  { name: "Jianxin",  role: "Swordmaster",       personality: "Disciplined, seeks harmony between body and blade", game: "Wuxia RPG" },
-  { name: "Wukong",   role: "Monk",              personality: "Calm but fierce in combat, speaks in proverbs",     game: "Wuxia RPG" },
-  { name: "Mira",     role: "Wandering Doctor",  personality: "Gentle-hearted, refuses to turn away from anyone",  game: "Wuxia RPG" },
-  { name: "Dusk",     role: "Assassin",          personality: "Cold and professional, dry humor surfaces",         game: "Fantasy RPG" },
-  { name: "Elara",    role: "Mage",              personality: "Intellectually curious, excited by anomalies",      game: "Fantasy RPG" },
+  { name: "Isabelle Frost",  role: "Deceiver",    personality: "Cold and calculating, thrives in deception",       game: "AI Player" },
+  { name: "Jasper Kane",     role: "Commander",    personality: "Dominant and intimidating, directs with precision", game: "AI Player" },
+  { name: "Serena Lovelace", role: "Healer",       personality: "Gentle and nurturing, creates a peaceful atmosphere", game: "AI Player" },
+  { name: "Arjun Nair",      role: "Diplomat",     personality: "Composed and insightful, provides balanced perspectives", game: "AI Player" },
+  { name: "Zhao Mei",        role: "Enchantress",  personality: "Charming and persuasive, sways others with ease", game: "AI Player" },
+  { name: "Silas Grey",      role: "Shadow",       personality: "Measured and ominous, adds suspense to every scene", game: "AI Player" },
+  { name: "Lila Archer",     role: "Trickster",    personality: "Playful and mischievous, uses charm to sway others", game: "AI Player" },
+  { name: "Kenji Yamamoto",  role: "Champion",     personality: "Dramatic and expressive, makes bold decisions",    game: "AI Player" },
+  { name: "Haruka Tanaka",   role: "Bard",         personality: "Friendly and optimistic, brings joy to the group", game: "AI Player" },
 ];
 
 /** Duplicated for seamless infinite marquee loop */
