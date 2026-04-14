@@ -53,6 +53,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
     rules: t.rules,
     templateId: t.templateId ?? "custom",
     playerCount: t.playerCount,
+    ...(t.cover ? { cover: t.cover } : {}),
     ...(t.rpgWorldId ? { rpgWorldId: t.rpgWorldId } : {}),
     ...(t.rpgAdventureNotes ? { rpgAdventureNotes: t.rpgAdventureNotes } : {}),
   });

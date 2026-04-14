@@ -17,6 +17,7 @@ export interface DiscoverPreset {
   playerCount?: number;
   rpgWorldId?: string;
   rpgAdventureNotes?: string;
+  cover?: string;
 }
 
 export interface GameTemplate {
@@ -1056,6 +1057,7 @@ export function getPresetById(presetId: string | null): DiscoverPreset | null {
     rules: t.rules,
     templateId: t.templateId ?? "custom",
     playerCount: t.playerCount,
+    ...(t.cover ? { cover: t.cover } : {}),
     ...(t.rpgWorldId ? { rpgWorldId: t.rpgWorldId } : {}),
     ...(t.rpgAdventureNotes ? { rpgAdventureNotes: t.rpgAdventureNotes } : {}),
   };
