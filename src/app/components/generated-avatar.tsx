@@ -72,9 +72,11 @@ export function GeneratedAvatar({
 
   const useInitialUrl = hasValidInitialUrl && !initialUrlFailed;
 
-  // Always run the hook so it pre-loads from localStorage/cache.
-  // This ensures instant fallback if initialUrl turns out to be broken,
-  // without triggering an extra API call (cache/localStorage is checked first).
+  // Only run the generation hook when there is no valid initialUrl.
+  // This prevents /api/avatar from overwriting pre-assigned archetype avatars
+  // (e.g. Supabase pool images). If initialUrl fails to load (onError),
+  // initialUrlFailed flips true → useInitialUrl becomes false → hook re-enables.
+  const hookEnabled = isGM ? false : (enabled && !useInitialUrl);
   const { src, loading } = useGeneratedAvatar(name, {
     type: apiType,
     gameId,
@@ -83,24 +85,21 @@ export function GeneratedAvatar({
     personality,
     gender,
     style: resolvedStyle,
-    enabled: isGM ? false : enabled,
+    enabled: hookEnabled,
   });
 
-  // Prefer initialUrl when valid; fall back to hook src if it failed or isn't set
   const displaySrc = useInitialUrl ? initialUrl : src;
   const displayLoading = useInitialUrl ? false : loading;
 
-  // Persist URL using a style-aware key so that different styles never share an entry.
-  // The base key (without style) is also registered for backward-compat with call sites
-  // that look up avatarImageUrls[avatarCacheKey(name, type)] without a style.
   const baseKey = name && apiType ? avatarCacheKey(name, apiType, undefined, gender) : "";
   const styledKey = baseKey && resolvedStyle ? avatarCacheKey(name!, apiType, resolvedStyle, gender) : baseKey;
   useEffect(() => {
     if (!onAvatarLoaded || !src || !(src.startsWith("http") || src.startsWith("data:"))) return;
+    // Don't overwrite avatarImageUrls when a valid initialUrl is being used
+    if (useInitialUrl) return;
     if (styledKey) onAvatarLoaded(styledKey, src);
-    // Also write the base key so consumers without style context still find a URL.
     if (baseKey && baseKey !== styledKey) onAvatarLoaded(baseKey, src);
-  }, [baseKey, styledKey, onAvatarLoaded, src]);
+  }, [baseKey, styledKey, onAvatarLoaded, src, useInitialUrl]);
 
   if (isGM) {
     return (
