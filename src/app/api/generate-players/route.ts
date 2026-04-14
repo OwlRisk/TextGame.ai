@@ -69,11 +69,11 @@ export async function POST(request: NextRequest) {
       }
 
       const factionNames = world.factions.map(f => f.name).join(', ');
-      const classDescriptions = selectedClasses.map((c, i) => `Player ${i + 1}: ${c.name} (${c.nameZh}) — ${c.description}`).join('\n');
+      const classDescriptions = selectedClasses.map((c, i) => `Player ${i + 1}: ${c.name} — ${c.description}`).join('\n');
 
       const openai = getOpenAI();
       const randomSeed = Math.random().toString(36).substring(7);
-      const rpgPrompt = `Generate ${count} RPG party members for a ${world.name} (${world.nameZh}) adventure. (Seed: ${randomSeed})
+      const rpgPrompt = `Generate ${count} RPG party members for a ${world.name} adventure. (Seed: ${randomSeed})
 
 World: ${world.description}
 
@@ -84,7 +84,7 @@ ${classDescriptions}
 
 Available factions: ${factionNames}
 
-For ${world.id === 'wuxia' ? 'Wuxia: use Chinese names (e.g. 林剑心, 方悟空). Backgrounds should reference sects, martial arts, jianghu lore.' : 'Western Fantasy: use fantasy names (e.g. Aldric Stone, Lyra Frost). Backgrounds should reference guilds, quests, magical lore.'}
+For ${world.id === 'wuxia' ? 'Wuxia: use Romanized Chinese names in pinyin (e.g. Lin Jianxin, Fang Wukong, Shen Duanqiu). Do NOT use Chinese characters — use English/pinyin only. Backgrounds should reference sects, martial arts, jianghu lore.' : 'Western Fantasy: use fantasy names (e.g. Aldric Stone, Lyra Frost). Backgrounds should reference guilds, quests, magical lore.'}
 
 Requirements:
 1. Each name must be SHORT (1-3 words, max 20 characters). No titles or class in the name.
