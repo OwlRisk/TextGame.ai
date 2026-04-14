@@ -124,7 +124,7 @@ Output ONLY valid JSON:
       const response = completion.choices[0]?.message?.content || '{}';
       const stripped = response.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
       const parsed = JSON.parse(stripped);
-      const rawPlayers = Array.isArray(parsed) ? parsed : (parsed.players || []);
+      const rawPlayers = (Array.isArray(parsed) ? parsed : (parsed.players || [])).slice(0, count);
 
       const rpgPlayers = rawPlayers.map((p: any, i: number) => {
         const cls = selectedClasses[i] || selectedClasses[0];
@@ -299,7 +299,7 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
       // Strip markdown code fences (```json ... ```) that models sometimes wrap around JSON.
       const stripped = response.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
       const parsed = JSON.parse(stripped);
-      const players = Array.isArray(parsed) ? parsed : (parsed.players || []);
+      const players = (Array.isArray(parsed) ? parsed : (parsed.players || [])).slice(0, playerCount);
       
       if (!Array.isArray(players)) {
         throw new Error('Response is not an array');

@@ -100,11 +100,11 @@ export function parseInlineFormatting(
       return;
     }
     if (match.type === "action") {
-      parts.push(
-        <em key={`a-${i}`} className="italic text-amber-200/80">
-          {match.content}
-        </em>
-      );
+      if (match.content?.trim()) {
+        parts.push(match.content);
+      }
+      currentIndex = match.end;
+      return;
     } else if (match.type === "bold") {
       parts.push(
         <strong key={`b-${i}`} className={opts.boldClassName}>

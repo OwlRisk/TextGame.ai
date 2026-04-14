@@ -192,8 +192,10 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         style,
       );
       if (newUrl) {
-        const key = `${playerName}|${type}`;
-        setAvatarImageUrls((prev) => ({ ...prev, [key]: newUrl }));
+        const g = opts?.gender?.trim().toLowerCase();
+        const genderSeg = g === "male" || g === "female" || g === "other" ? g : "";
+        const baseKey = genderSeg ? `${playerName}|${type}|${genderSeg}` : `${playerName}|${type}`;
+        setAvatarImageUrls((prev) => ({ ...prev, [baseKey]: newUrl }));
       }
       return newUrl;
     } catch (err) {

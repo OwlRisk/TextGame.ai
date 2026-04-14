@@ -580,6 +580,7 @@ export function ChatArea({
         onAvatarUrlLoaded={onAvatarUrlLoaded}
         humanGameIdentity={humanGameIdentity}
         isUserGameMaster={isUserGameMaster}
+        avatarStyle={avatarStyle}
       />
     </div>
   );

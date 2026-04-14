@@ -66,7 +66,11 @@ Include both tags. 1-2 bullets max. Skip on unimportant turns.`;
 export const EMOTION_TAGS_SECTION = `EMOTION: Express through words, punctuation, rhythm — not labels like [angry] or [happy].
 Optional sound tags where natural: [sigh] [laugh] [cough]`;
 
-const OUTPUT_RULE = `OUTPUT: Only the spoken line. No name prefix, no labels, no stage directions.`;
+const OUTPUT_RULE = `DIALOGUE ONLY:
+- You only produce dialogue — what you SAY out loud. Never describe your own actions or body language.
+- The GM/narrator will describe your physical actions based on what you say.
+- Never use asterisks (*action*), brackets ([ACTION]), or any other action formatting.
+- OUTPUT: Only your spoken dialogue. No name prefix, no labels, no stage directions.`;
 
 /**
  * Build a game-type-aware system prompt for an AI player.
