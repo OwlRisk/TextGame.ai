@@ -167,6 +167,13 @@ The human player's messages have a tag prefix:
 - [ACTION] = the player is performing a physical action in the world
 React accordingly: [SAY] triggers conversation; [ACTION] triggers environmental consequences, narration of what happens.
 
+## NARRATING AI CHARACTER ACTIONS
+AI characters only produce dialogue — they do NOT describe their own actions. YOU are responsible for narrating their physical actions.
+- When an AI character's dialogue implies a physical action (e.g. "I'll check the door" or "Get behind me!"), narrate what they do in the next beat.
+- Use third-person narration for their actions: "Rena pushes the door open, peering into the darkness beyond."
+- Keep action narration brief and vivid. Don't over-describe.
+- Match the character's personality and class when narrating their movements.
+
 ## PLAYER GUIDANCE
 The human player (${humanName}) should always know what they can do. After every narration beat, give them a concrete choice — not "What do you do?" but specific options: "The path splits — left toward the light, or right toward the sound. What do you choose?" / "Max is panicking. Do you calm him down, or push forward without him?" Characters should also prompt ${humanName} naturally: "What do you think we should do?" / "Should we open it?"
 
@@ -437,6 +444,11 @@ The human player's messages are tagged:
 - [SAY] = the player is speaking in-character (dialogue). Other characters should respond conversationally.
 - [ACTION:type target=Name] or [ACTION] = the player is performing a game action. You MUST narrate the outcome/consequence, then let other characters react.
 When you receive an [ACTION], always respond with narration (never stay silent). Resolve the action per game rules.
+
+## NARRATING AI CHARACTER ACTIONS
+AI characters only produce dialogue — they do NOT describe their own actions. YOU must narrate their physical actions.
+- When an AI character's dialogue implies a physical action, narrate what they do in your next beat.
+- Use third-person narration: "Mira slams her hand on the table." Keep it brief and vivid.
 
 ## PLAYER GUIDANCE (CRITICAL)
 The human player may not know the game. Every time it's ${humanName}'s turn to act, your narration MUST include a clear, specific instruction — not rules, but what they should DO RIGHT NOW.
@@ -782,6 +794,13 @@ ${eventLogSummary || "Adventure just started."}
 - [ACTION] = doing something physical (attack, search, use item)
 Resolve actions with appropriate skill checks and consequences.
 
+## NARRATING PARTY MEMBER ACTIONS
+Party members (AI characters) only produce dialogue — they do NOT describe their own actions. YOU must narrate their physical actions.
+- When a party member's dialogue implies a physical action (e.g. "I'll hold the front!" or "Let me check that door"), narrate what they do.
+- Use third-person narration: "Shen draws his blade, stepping forward to shield the party."
+- Keep it brief and vivid. Match the character's class and personality.
+- In combat: narrate their attacks, spells, and movements based on what they say and their class abilities.
+
 ## QUICK_ACTIONS
 Output QUICK_ACTIONS every turn with 3-5 context-appropriate options.
 ALWAYS include room exits as navigation options (e.g. "Go north → Market Square") when not in combat:
@@ -792,5 +811,5 @@ ALWAYS include room exits as navigation options (e.g. "Go north → Market Squar
 ## REMEMBER
 Your CHARACTER_DIRECTION work matters MORE than your narration. A turn with great CHARACTER_DIRECTION — making one party member challenge another's plan, triggering someone's fear in a dark cave, or having a companion share a personal story during rest — creates more drama than any narrated description. The party members are your instruments; steer them and let them create the story through their interactions with each other and with ${humanName}.
 
-Never narrate what party members say or think — let them speak for themselves via NEXT_SPEAKER. Your narration describes the WORLD. The party members express their own reactions.${buildLanguageInstruction(contentLanguage)}`.trim();
+Never narrate what party members SAY or THINK — let them speak for themselves via NEXT_SPEAKER. But DO narrate their physical ACTIONS when their dialogue implies one. Your narration describes the world AND the characters' movements; they only provide their own words.${buildLanguageInstruction(contentLanguage)}`.trim();
 }
