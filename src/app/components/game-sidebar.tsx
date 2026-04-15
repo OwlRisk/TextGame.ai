@@ -46,7 +46,7 @@ interface Game {
 import { getGameTemplate } from "@/lib/game-templates";
 
 function getGameIcon(game: Game): string | null {
-  if (game.icon && typeof game.icon === "string" && game.icon.startsWith("http")) return game.icon;
+  if (game.icon && typeof game.icon === "string" && (game.icon.startsWith("http") || game.icon.startsWith("/"))) return game.icon;
   const template = game.config?.template;
   if (template) {
     const tmpl = getGameTemplate(template);
