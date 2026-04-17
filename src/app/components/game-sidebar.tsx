@@ -3,7 +3,7 @@
 // Sidebar game icons are dynamic (data:/remote/static) inside small fixed cells.
 /* eslint-disable @next/next/no-img-element */
 
-import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins, Users } from "lucide-react";
+import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins } from "lucide-react";
 import { t, getBrowserLanguage } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -204,32 +204,6 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
               {t("nav.discover")}
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Gallery */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`!h-12 !w-12 rounded-2xl transition-all duration-200 relative ${
-                  selectedGameId === "gallery"
-                    ? "bg-fuchsia-600 rounded-xl shadow-lg shadow-fuchsia-500/50 hover:!bg-fuchsia-600"
-                    : "bg-zinc-800 hover:bg-fuchsia-600 hover:rounded-xl"
-                }`}
-                asChild
-              >
-                <Link href="/gallery" prefetch aria-label={t("nav.gallery")} onClick={() => { onSelectGame("gallery"); onNavigate?.(); }}>
-                  <Users className="h-7 w-7 text-white" aria-hidden="true" />
-                  {selectedGameId === "gallery" && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-10 bg-white rounded-r-full" />
-                  )}
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={4} className="bg-zinc-900 text-white font-semibold [&>svg]:hidden">
-              {t("nav.gallery")}
             </TooltipContent>
           </Tooltip>
 

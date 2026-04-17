@@ -1967,13 +1967,6 @@ const T: Record<string, Record<string, string>> = {
     tr: "Ke\u015ffet", hi: "\u0916\u094b\u091c\u0947\u0902", id: "Jelajahi", vi: "Kh\u00e1m ph\u00e1",
     th: "\u0e2a\u0e33\u0e23\u0e27\u0e08", pl: "Odkryj", nl: "Ontdekken", uk: "\u041e\u0433\u043b\u044f\u0434",
   },
-  "nav.gallery": {
-    en: "Gallery", zh: "\u89d2\u8272\u56fe\u9274", de: "Galerie", fr: "Galerie",
-    es: "Galer\u00eda", ja: "\u30ae\u30e3\u30e9\u30ea\u30fc", ko: "\uac24\ub7ec\ub9ac",
-    pt: "Galeria", ru: "\u0413\u0430\u043b\u0435\u0440\u0435\u044f", it: "Galleria", ar: "\u0645\u0639\u0631\u0636",
-    tr: "Galeri", hi: "\u0917\u0948\u0932\u0930\u0940", id: "Galeri", vi: "B\u1ed9 s\u01b0u t\u1eadp",
-    th: "\u0e41\u0e01\u0e25\u0e40\u0e25\u0e2d\u0e23\u0e35", pl: "Galeria", nl: "Galerij", uk: "\u0413\u0430\u043b\u0435\u0440\u0435\u044f",
-  },
   "nav.create_game": {
     en: "Create Game", zh: "\u521b\u5efa\u6e38\u620f", de: "Spiel erstellen", fr: "Cr\u00e9er un jeu",
     es: "Crear juego", ja: "\u30b2\u30fc\u30e0\u4f5c\u6210", ko: "\uac8c\uc784 \ub9cc\ub4e4\uae30",
@@ -1987,35 +1980,6 @@ const T: Record<string, Record<string, string>> = {
     pt: "Entrar", ru: "\u0412\u043e\u0439\u0442\u0438", it: "Accedi", ar: "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
     tr: "Giri\u015f Yap", hi: "\u0938\u093e\u0907\u0928 \u0907\u0928", id: "Masuk", vi: "\u0110\u0103ng nh\u1eadp",
     th: "\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a", pl: "Zaloguj si\u0119", nl: "Inloggen", uk: "\u0423\u0432\u0456\u0439\u0442\u0438",
-  },
-
-  // ── Gallery page ────────────────────────────────────────────────────────
-  "gallery.title": {
-    en: "Character Gallery", zh: "\u89d2\u8272\u56fe\u9274",
-  },
-  "gallery.subtitle": {
-    en: "Browse the AI RPG character archetypes", zh: "\u6d4f\u89c8 AI RPG \u89d2\u8272\u539f\u578b",
-  },
-  "gallery.filter_all": {
-    en: "All Worlds", zh: "\u5168\u90e8\u4e16\u754c",
-  },
-  "gallery.filter_western": {
-    en: "Western Fantasy", zh: "\u897f\u65b9\u5947\u5e7b",
-  },
-  "gallery.filter_wuxia": {
-    en: "Wuxia", zh: "\u6b66\u4fa0",
-  },
-  "gallery.personality": {
-    en: "Personality", zh: "\u6027\u683c",
-  },
-  "gallery.goal": {
-    en: "Goal", zh: "\u76ee\u6807",
-  },
-  "gallery.fear": {
-    en: "Fear", zh: "\u6050\u60e7",
-  },
-  "gallery.search_placeholder": {
-    en: "Search characters\u2026", zh: "\u641c\u7d22\u89d2\u8272\u2026",
   },
 
   // ── Game page ──────────────────────────────────────────────────────────
