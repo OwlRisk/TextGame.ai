@@ -200,7 +200,7 @@ export default function PrivacyPage() {
               <li>
                 <strong className="text-zinc-300">Request by email</strong> — Send a deletion request to{' '}
                 <a href="mailto:info@cvnio.com" className="underline hover:text-zinc-300">info@cvnio.com</a>{' '}
-                with the subject line <em>"Facebook Data Deletion Request"</em>. Include the email address or Facebook name associated with your account. We will process the request within 30 days and send a confirmation.
+                with the subject line <em>&ldquo;Facebook Data Deletion Request&rdquo;</em>. Include the email address or Facebook name associated with your account. We will process the request within 30 days and send a confirmation.
               </li>
             </ol>
             <p className="mt-3">

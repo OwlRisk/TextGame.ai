@@ -504,7 +504,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       let fullResponse = "";
       let tempMessageAdded = false;
       let lastProcessedLength = 0; // Track what we've already processed
-      let processedEditTags = new Set<string>(); // Track which edit tags we've already processed to avoid duplicates
+      const processedEditTags = new Set<string>(); // Track which edit tags we've already processed to avoid duplicates
       let lastRulesPanelUpdate = 0; // Throttle rules panel updates (ms)
       const RULES_UPDATE_THROTTLE_MS = 80; // Min interval between incremental rules updates
       await streamAIChatResponse(
@@ -1612,7 +1612,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Session</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete "{sessionToDelete?.title}"? All conversation history will be lost. This action cannot be undone.
+              Are you sure you want to delete &ldquo;{sessionToDelete?.title}&rdquo;? All conversation history will be lost. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

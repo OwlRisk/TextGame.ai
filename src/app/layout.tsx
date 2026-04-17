@@ -178,13 +178,16 @@ export default async function RootLayout({
               adventures created by other players. The AI Game Master narrates every scene, runs every
               encounter, and brings your characters to life.
             </p>
+            {/* Plain <a> is intentional inside <noscript> — Next.js <Link> requires JS for SPA nav */}
             <nav>
+              {/* eslint-disable @next/next/no-html-link-for-pages */}
               <a href="/discover">Discover Community RPGs</a>
               <a href="/create">Create Your Own RPG</a>
               <a href="/recharge">Buy Credits</a>
               <a href="/signin">Sign In</a>
               <a href="/terms">Terms of Service</a>
               <a href="/privacy">Privacy Policy</a>
+              {/* eslint-enable @next/next/no-html-link-for-pages */}
             </nav>
           </div>
         </noscript>

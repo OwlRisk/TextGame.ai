@@ -37,13 +37,13 @@ const RARITY_COLORS: Record<string, string> = {
 export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatarImageUrls = {}, onAvatarUrlLoaded, humanGameIdentity, isUserGameMaster, avatarStyle }: PlayerProfileDialogProps) {
   const lang = getBrowserLanguage();
   const [activeTab, setActiveTab] = useState<"stats" | "skills" | "equip" | "bag">("stats");
+  const { user } = useAuth();
 
   if (!player) return null;
 
   const isUser = !player.isAI;
   const useGameAvatarForHuman = isUser && !!gameId;
   const humanAvatarName = humanGameIdentity?.name?.trim() && humanGameIdentity.name !== "You" ? humanGameIdentity.name : "Player";
-  const { user } = useAuth();
   const userAvatarUrl = getUserAvatarUrl(user);
   const rpg = player.rpg;
   const classDef = rpg ? getClassById(rpg.class) : undefined;

@@ -352,7 +352,7 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
             // No search results
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Search className="h-12 w-12 text-zinc-600 mb-4" />
-              <p className="text-zinc-400 text-lg font-medium mb-1">No games match "{search}"</p>
+              <p className="text-zinc-400 text-lg font-medium mb-1">No games match &ldquo;{search}&rdquo;</p>
               <p className="text-zinc-600 text-sm mb-4">Try a different name</p>
               <button onClick={() => setSearch("")} className="text-sm text-violet-400 hover:text-violet-300 transition-colors">
                 Clear search

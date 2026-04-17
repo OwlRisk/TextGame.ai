@@ -882,7 +882,9 @@ export function useHostRound({
       pendingDecisionSummariesRef.current = [];
 
       const firstUserContent = `${decisionSummaryPrefix}Recent discussion in this channel (use this to choose next speaker based on context):\n${recentContext}\n\nCurrent message from the human player: ${content}`;
-      let { hostContent, who, speakerQueue, autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, channelGoal: firstChannelGoal } = await callHostStream(firstUserContent, channelId);
+      const firstHostResult = await callHostStream(firstUserContent, channelId);
+      let { hostContent, who, speakerQueue } = firstHostResult;
+      const { autoChannelId: firstAutoChannelId, autoChannelGoal: firstAutoChannelGoal, channelGoal: firstChannelGoal } = firstHostResult;
       if (firstChannelGoal?.trim()) setChannelTaskHint(firstChannelGoal.trim());
       let isSilentTurn = !hostContent;
       if (isSilentTurn && speakerQueue.length === 0) {

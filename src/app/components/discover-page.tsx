@@ -132,7 +132,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
   };
 
   const filteredGames = (() => {
-    let pool = activeCategory === "all"
+    const pool = activeCategory === "all"
       ? ALL_PRESETS
       : (CATEGORY_MAP[activeCategory] ?? []);
     if (!searchQuery.trim()) return pool;

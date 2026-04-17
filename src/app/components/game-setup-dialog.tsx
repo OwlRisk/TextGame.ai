@@ -433,7 +433,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
             <div>
               <DialogTitle className="text-3xl">Game Master</DialogTitle>
               <DialogDescription className="text-zinc-400 text-base">
-                Let's create your perfect game together
+                Let&apos;s create your perfect game together
               </DialogDescription>
             </div>
           </div>
@@ -464,7 +464,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
                 </label>
                 <div className="mt-4">
                   <label className="block text-xs text-zinc-400 mb-1.5 uppercase tracking-wide font-medium">
-                    Private panel name <span className="normal-case text-zinc-500 font-normal">(each player's secret info from Host)</span>
+                    Private panel name <span className="normal-case text-zinc-500 font-normal">(each player&apos;s secret info from Host)</span>
                   </label>
                   <input
                     id="player-board-label"

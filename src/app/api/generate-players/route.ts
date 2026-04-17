@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    let { playerCount, gameTemplate, rules, minPlayers, maxPlayers, rpgWorldId } = body;
+    let { playerCount } = body;
+    const { gameTemplate, rules, minPlayers, maxPlayers, rpgWorldId } = body;
 
     if (playerCount == null || playerCount < 1) {
       playerCount = 0;

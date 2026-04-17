@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Button } from "@/app/components/ui/button";
@@ -160,9 +161,9 @@ function SignInPageInner() {
 
           <p className="text-xs text-center text-zinc-500 leading-relaxed">
             By signing in, you agree to our{" "}
-            <a href="/terms" className="underline hover:text-zinc-400">Terms of Service</a>
+            <Link href="/terms" className="underline hover:text-zinc-400">Terms of Service</Link>
             {" "}and{" "}
-            <a href="/privacy" className="underline hover:text-zinc-400">Privacy Policy</a>
+            <Link href="/privacy" className="underline hover:text-zinc-400">Privacy Policy</Link>
           </p>
         </CardContent>
       </Card>

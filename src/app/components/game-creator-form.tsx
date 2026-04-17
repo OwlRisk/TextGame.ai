@@ -273,7 +273,7 @@ export function GameCreatorForm({ onBack, onCreateGame, onSwitchToChat }: GameCr
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2">You + AI Characters</h3>
                     <p className="text-sm text-zinc-400">
-                      You'll play as one character, and AI will control all other players. 
+                      You&apos;ll play as one character, and AI will control all other players. 
                       No need to wait for others to join!
                     </p>
                   </div>

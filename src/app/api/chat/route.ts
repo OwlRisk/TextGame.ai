@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       await addTokens(user.id, refundDelta, 'refund', `Chat cost adjustment: est ${estCoins} → actual ${actualCoins}`).catch(() => {});
     }
 
-    let response = completion.choices[0]?.message?.content?.trim() ?? '';
+    const response = completion.choices[0]?.message?.content?.trim() ?? '';
 
     if (!response) {
       return NextResponse.json(

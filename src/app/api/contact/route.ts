@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') ?? '';
     let message: string;
-    let attachmentUrls: string[] = [];
-    let emailAttachments: FeedbackAttachment[] = [];
+    const attachmentUrls: string[] = [];
+    const emailAttachments: FeedbackAttachment[] = [];
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();

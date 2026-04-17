@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from "@/app/components/ui/switch";
 import { Label } from "@/app/components/ui/label";
 import { Shield, Settings, Cookie } from "lucide-react";
+import Link from "next/link";
 
 interface CookiePreferences {
   necessary: boolean;
@@ -86,9 +87,9 @@ export function CookieConsent({ inEEA }: { inEEA: boolean }) {
                   We use cookies to enhance your browsing experience and analyze site traffic.
                   By clicking &ldquo;Accept All&rdquo;, you consent to our use of cookies.
                   You can customize your preferences or learn more in our{" "}
-                  <a href="/privacy" className="text-violet-400 hover:text-violet-300 underline">
+                  <Link href="/privacy" className="text-violet-400 hover:text-violet-300 underline">
                     Privacy Policy
-                  </a>.
+                  </Link>.
                 </p>
               </div>
             </div>
