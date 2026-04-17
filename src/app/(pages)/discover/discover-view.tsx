@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
 import { getPresetById } from "@/data/discover-templates";
-import { buildScriptKillGame } from "@/lib/script-kill-setup";
 import { getAppLanguage, t } from "@/lib/i18n";
 import { Loader2 } from "lucide-react";
 
@@ -61,49 +60,35 @@ function DiscoverViewInner() {
 
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
       const gameIcon = preset.cover ?? tmpl?.iconUrl ?? tmpl?.icon ?? "🎮";
-      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id, getAppLanguage()) : null;
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;
-      let gameRules = preset.rules;
-      let gamePlayerRules: string | undefined;
-      let caseId: string | undefined;
-
-      if (scriptKillSetup) {
-        configuredPlayers = scriptKillSetup.configuredPlayers;
-        humanRole = scriptKillSetup.humanRole;
-        gameRules = scriptKillSetup.rules;
-        gamePlayerRules = scriptKillSetup.playerRules;
-        caseId = scriptKillSetup.caseId;
-      }
-
+      const gameRules = preset.rules;
       const rpgWorldId = preset.rpgWorldId;
 
-      if (!scriptKillSetup) {
-        toast.loading(t("toast.setting_up_players", lang), { id: toastId });
-        try {
-          const res = await fetch("/api/generate-players", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              playerCount: preset.playerCount ?? tmpl?.recommendedAICount ?? 4,
-              gameTemplate: preset.templateId,
-              rules: preset.rules,
-              minPlayers: tmpl?.minPlayers ?? 2,
-              maxPlayers: tmpl?.maxPlayers ?? 20,
-              ...(rpgWorldId && { rpgWorldId }),
-            }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.players) configuredPlayers = data.players;
-            if (data.humanRole) humanRole = data.humanRole;
-          } else {
-            toast.warning(t("toast.players_fallback", lang), { id: toastId });
-          }
-        } catch {
+      toast.loading(t("toast.setting_up_players", lang), { id: toastId });
+      try {
+        const res = await fetch("/api/generate-players", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            playerCount: preset.playerCount ?? tmpl?.recommendedAICount ?? 4,
+            gameTemplate: preset.templateId,
+            rules: preset.rules,
+            minPlayers: tmpl?.minPlayers ?? 2,
+            maxPlayers: tmpl?.maxPlayers ?? 20,
+            ...(rpgWorldId && { rpgWorldId }),
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.players) configuredPlayers = data.players;
+          if (data.humanRole) humanRole = data.humanRole;
+        } else {
           toast.warning(t("toast.players_fallback", lang), { id: toastId });
         }
+      } catch {
+        toast.warning(t("toast.players_fallback", lang), { id: toastId });
       }
 
       const generatedHost = {
@@ -126,12 +111,10 @@ function DiscoverViewInner() {
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || (preset.playerCount ?? tmpl?.recommendedAICount ?? 4),
           rules: gameRules,
-          ...(gamePlayerRules && { playerRules: gamePlayerRules }),
           hostId: "narrator",
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
           humanRole,
-          ...(caseId && { caseId }),
           ...(tmpl?.channels && {
             channels: tmpl.channels.map(c => ({ id: c.id, name: c.name, roomType: c.roomType })),
           }),

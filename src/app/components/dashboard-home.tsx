@@ -19,7 +19,7 @@ interface DashboardHomeProps {
   onSelectGame?: (gameId: string) => void;
 }
 
-const POPULAR_IDS = ["werewolf-classic", "script-kill-moonlight", "codenames", "spyfall", "mafia-classic", "avalon"];
+const POPULAR_IDS = ["rpg-jade-peak", "rpg-starfall-dungeon", "rpg-cursed-crossroads"];
 
 function getGreetingKey(): string {
   const h = new Date().getHours();

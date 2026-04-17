@@ -218,25 +218,25 @@ export function WelcomePage({
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                   <button
-                    onClick={() => onCreateGame("werewolf-classic")}
+                    onClick={() => onCreateGame("rpg-jade-peak")}
                     className="group rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6 text-left hover:border-violet-500/25 hover:bg-violet-500/5 transition-all flex flex-col min-h-[160px] sm:min-h-[172px]"
                   >
-                    <span className="text-4xl block mb-3">🐺</span>
-                    <h3 className="font-semibold text-white mb-1">Werewolf</h3>
-                    <p className="text-zinc-500 text-sm mb-auto">Social deduction. 5–12 players.</p>
+                    <span className="text-4xl block mb-3">⚔️</span>
+                    <h3 className="font-semibold text-white mb-1">Jade Peak Tournament</h3>
+                    <p className="text-zinc-500 text-sm mb-auto">Wuxia RPG. Solo + AI party.</p>
                     <span className="text-xs text-zinc-500 group-hover:text-violet-400 transition-colors inline-flex items-center gap-1 mt-3">
-                      Use template <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                      Start adventure <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </button>
                   <button
-                    onClick={() => onCreateGame("undercover-party")}
+                    onClick={() => onCreateGame("rpg-starfall-dungeon")}
                     className="group rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6 text-left hover:border-amber-500/25 hover:bg-amber-500/5 transition-all flex flex-col min-h-[160px] sm:min-h-[172px]"
                   >
-                    <span className="text-4xl block mb-3">🕵️</span>
-                    <h3 className="font-semibold text-white mb-1">Who&apos;s the Spy</h3>
-                    <p className="text-zinc-500 text-sm mb-auto">One word different. 4–10 players.</p>
+                    <span className="text-4xl block mb-3">🐉</span>
+                    <h3 className="font-semibold text-white mb-1">Starfall Dungeon</h3>
+                    <p className="text-zinc-500 text-sm mb-auto">Fantasy dungeon crawl. Solo + AI party.</p>
                     <span className="text-xs text-zinc-500 group-hover:text-amber-400 transition-colors inline-flex items-center gap-1 mt-3">
-                      Use template <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                      Start adventure <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </button>
                   <button

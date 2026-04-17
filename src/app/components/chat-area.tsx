@@ -565,7 +565,6 @@ export function ChatArea({
         gameActions={gameActions}
         dialogueChips={dialogueChips}
         gameTemplate={gameTemplate}
-        phaseLabel={gamePhaseLabel}
         channelTaskHint={channelTaskHint}
         messages={messages}
       />

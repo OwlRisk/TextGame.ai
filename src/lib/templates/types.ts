@@ -207,21 +207,6 @@ export type PartialTemplate = Omit<GameTemplate,
 >>;
 
 const ICON_URLS: Record<string, string> = {
-  werewolf: "/games/sidebar-icon-werewolf.webp",
-  mafia: "/games/sidebar-icon-mafia.webp",
-  undercover: "/games/sidebar-icon-undercover.webp",
-  tarot: "/games/sidebar-icon-tarot.webp",
-  codenames: "/games/sidebar-icon-codenames.webp",
-  avalon: "/games/sidebar-icon-avalon.webp",
-  spyfall: "/games/sidebar-icon-spyfall.webp",
-  "detective-mystery": "/games/sidebar-icon-detective.webp",
-  "script-kill": "/games/sidebar-icon-script-kill.webp",
-  "escape-room": "/games/sidebar-icon-escape-room.webp",
-  trivia: "/games/sidebar-icon-trivia.webp",
-  debate: "/games/sidebar-icon-debate.webp",
-  storyteller: "/games/sidebar-icon-storyteller.webp",
-  "20-questions": "/games/sidebar-icon-20-questions.webp",
-  "two-truths-lie": "/games/sidebar-icon-two-truths.webp",
   "rpg-dungeon": "/games/game-cover-rpg-dungeon.webp",
   custom: "/games/sidebar-icon-custom.webp",
 };

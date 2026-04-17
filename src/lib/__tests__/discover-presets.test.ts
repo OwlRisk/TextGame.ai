@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   ALL_PRESETS,
-  EXTRA_GAMES,
   getPresetById,
   CATEGORY_MAP,
 } from "@/data/discover-templates";
@@ -80,13 +79,6 @@ describe("getPresetById", () => {
     expect(result?.templateId).toBeTruthy();
   });
 
-  it("still finds legacy presets via ALL_PRESETS_FULL", () => {
-    if (EXTRA_GAMES.length === 0) {
-      const werewolf = getPresetById("werewolf-classic");
-      expect(werewolf).not.toBeNull();
-      expect(werewolf?.name).toBe("Werewolf");
-    }
-  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -27,8 +27,6 @@ import { isSceneMode } from "@/lib/scenes";
 import { t, getBrowserLanguage, tAction, tTemplate } from "@/lib/i18n";
 import { safeMarked } from "@/lib/safe-marked";
 import { trackEvent } from "@/lib/analytics";
-import { EvidenceBoard } from "@/app/components/evidence-board";
-
 import { useGameChannels } from "@/hooks/useGameChannels";
 import { useGameRoomLifecycle } from "@/hooks/useGameRoomLifecycle";
 import { useHostRound } from "@/hooks/useHostRound";
@@ -567,17 +565,13 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
             <div className="max-w-2xl p-6">
               <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-zinc-700/50">
                 <Info className="h-5 w-5 text-amber-400" />
-                <h2 className="text-lg font-semibold text-white">{currentGame?.config?.playerBoardLabel || (currentGame?.config?.template === "script-kill" ? t("channel.evidence_board") : t("channel.my_board"))}</h2>
+                <h2 className="text-lg font-semibold text-white">{currentGame?.config?.playerBoardLabel || t("channel.my_board")}</h2>
               </div>
               {boardContentForViewer.trim() ? (
-                currentGame?.config?.template === "script-kill" ? (
-                  <EvidenceBoard boardContent={boardContentForViewer} />
-                ) : (
-                  <div
-                    className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
-                    dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
-                  />
-                )
+                <div
+                  className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-headings:font-bold prose-headings:tracking-wide prose-headings:border-b prose-headings:border-zinc-700 prose-headings:pb-1 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-li:marker:text-white prose-strong:text-white prose-strong:font-semibold prose-code:text-amber-300 prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-hr:border-zinc-700"
+                  dangerouslySetInnerHTML={{ __html: safeMarked(boardContentForViewer) }}
+                />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
                   <p className="text-sm font-medium">{t("game.nothing_here")}</p>

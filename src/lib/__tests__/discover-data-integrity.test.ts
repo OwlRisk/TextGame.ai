@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   ALL_PRESETS,
   CATEGORY_MAP,
-  EXTRA_GAMES,
   getPresetById,
 } from "@/data/discover-templates";
 
@@ -64,12 +63,6 @@ describe("Discover page data integrity", () => {
     }
   });
 
-  // ── EXTRA_GAMES visibility ───────────────────────────────────────────────────
-
-  it("EXTRA_GAMES is empty", () => {
-    expect(EXTRA_GAMES.length).toBe(0);
-  });
-
   // ── CATEGORY_MAP ─────────────────────────────────────────────────────────────
 
   it("CATEGORY_MAP has entries for RPG categories", () => {
@@ -106,16 +99,6 @@ describe("Discover page data integrity", () => {
       expect(preset!.name).toBe(t.name);
       expect(preset!.rules).toBe(t.rules);
     }
-  });
-
-  it("getPresetById still finds legacy presets via ALL_PRESETS_FULL", () => {
-    const werewolf = getPresetById("werewolf-classic");
-    expect(werewolf).not.toBeNull();
-    expect(werewolf!.templateId).toBe("werewolf");
-
-    const undercover = getPresetById("undercover-party");
-    expect(undercover).not.toBeNull();
-    expect(undercover!.templateId).toBe("undercover");
   });
 
   // ── Rules content quality ────────────────────────────────────────────────────

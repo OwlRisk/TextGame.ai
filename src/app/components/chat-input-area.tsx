@@ -9,7 +9,6 @@ import { Textarea } from "@/app/components/ui/textarea";
 import type { Player } from "@/types/player";
 import type { GameAction } from "@/hooks/useGameActions";
 import type { DialogueChip } from "@/lib/templates/types";
-import { InterrogationBudget } from "@/app/components/interrogation-budget";
 import { t, getBrowserLanguage } from "@/lib/i18n";
 
 export interface ChatInputAreaProps {
@@ -35,8 +34,6 @@ export interface ChatInputAreaProps {
   gameActions?: GameAction[];
   dialogueChips?: DialogueChip[];
   gameTemplate?: string;
-  phaseLabel?: string;
-  investigationSectionContent?: string;
   /** Host CHANNEL_GOAL — current task for the player */
   channelTaskHint?: string | null;
   /** Channel messages (same channel as input) — used to show host vs AI streaming status */
@@ -93,8 +90,6 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   gameActions = [],
   dialogueChips = [],
   gameTemplate,
-  phaseLabel = "",
-  investigationSectionContent,
   channelTaskHint,
   messages = [],
 }: ChatInputAreaProps) {
@@ -317,10 +312,6 @@ export const ChatInputArea = React.memo(function ChatInputArea({
           <span className="text-sm font-medium">{t("eliminated.ghost_chat")}</span>
         </div>
       )}
-      {gameTemplate === "script-kill" && phaseLabel && isGameActive && !isEliminated && (
-        <InterrogationBudget phaseLabel={phaseLabel} sectionContent={investigationSectionContent} />
-      )}
-
       {/* ── Active Vote ── */}
       {activeVote && onVote && !isEliminated && (
         <div className="mb-3 rounded-xl border border-violet-500/30 bg-violet-950/30 px-4 py-3 backdrop-blur-sm">

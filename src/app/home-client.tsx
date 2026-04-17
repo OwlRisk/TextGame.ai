@@ -12,7 +12,6 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { trackEvent } from "@/lib/analytics";
 import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
-import { buildScriptKillGame } from "@/lib/script-kill-setup";
 import { getAppLanguage, t } from "@/lib/i18n";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
@@ -50,44 +49,33 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
     try {
       trackEvent("template_selected", { template: preset.id, source: "landing" });
       const tmpl = GAME_TEMPLATES.find(t => t.id === preset.templateId);
-      const scriptKillSetup = preset.templateId === "script-kill" ? buildScriptKillGame(preset.id, getAppLanguage()) : null;
 
       let configuredPlayers: { name: string; gender?: string; personality?: string; background?: string; role?: string }[] = [];
       let humanRole: string | undefined;
-      let gameRules = preset.rules;
-      let gamePlayerRules: string | undefined;
-      let caseId: string | undefined;
+      const gameRules = preset.rules;
 
-      if (scriptKillSetup) {
-        configuredPlayers = scriptKillSetup.configuredPlayers;
-        humanRole = scriptKillSetup.humanRole;
-        gameRules = scriptKillSetup.rules;
-        gamePlayerRules = scriptKillSetup.playerRules;
-        caseId = scriptKillSetup.caseId;
-      } else {
-        try {
-          const res = await fetch("/api/generate-players", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              playerCount: preset.playerCount || tmpl?.recommendedAICount || 4,
-              gameTemplate: preset.templateId,
-              rules: preset.rules,
-              minPlayers: tmpl?.minPlayers ?? 2,
-              maxPlayers: tmpl?.maxPlayers ?? 20,
-              ...(preset.rpgWorldId && { rpgWorldId: preset.rpgWorldId }),
-            }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.players) configuredPlayers = data.players;
-            if (data.humanRole) humanRole = data.humanRole;
-          } else {
-            toast.warning(t("toast.players_fallback", lang));
-          }
-        } catch {
+      try {
+        const res = await fetch("/api/generate-players", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            playerCount: preset.playerCount || tmpl?.recommendedAICount || 4,
+            gameTemplate: preset.templateId,
+            rules: preset.rules,
+            minPlayers: tmpl?.minPlayers ?? 2,
+            maxPlayers: tmpl?.maxPlayers ?? 20,
+            ...(preset.rpgWorldId && { rpgWorldId: preset.rpgWorldId }),
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.players) configuredPlayers = data.players;
+          if (data.humanRole) humanRole = data.humanRole;
+        } else {
           toast.warning(t("toast.players_fallback", lang));
         }
+      } catch {
+        toast.warning(t("toast.players_fallback", lang));
       }
       const newGame = {
         id: crypto.randomUUID(),
@@ -99,12 +87,10 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
           template: preset.templateId || "custom",
           playerCount: configuredPlayers.length || preset.playerCount || tmpl?.recommendedAICount || 4,
           rules: gameRules,
-          ...(gamePlayerRules && { playerRules: gamePlayerRules }),
           hostId: "narrator",
           hideRolesInPlayerList: tmpl?.hasHiddenRoles ?? false,
           configuredPlayers,
           humanRole,
-          ...(caseId && { caseId }),
           ...(preset.rpgWorldId && { rpgWorldId: preset.rpgWorldId }),
           ...(preset.rpgAdventureNotes && { rpgAdventureNotes: preset.rpgAdventureNotes }),
           generatedHost: preset.rpgWorldId ? undefined : {
