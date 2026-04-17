@@ -6,8 +6,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { AI_PLAYER_TRAITS, AIPlayerTraits, pickTraitsForPlayers } from "@/app/config/ai-player-personalities";
-import { HOST_PERSONALITIES, HostPersonality } from "@/app/config/host-config";
-import { pickVoiceForSpeaker } from "@/lib/inworld-voices";
+import { HOST_PERSONALITIES } from "@/app/config/host-config";
 
 // ── Re-implement buildPrompt logic from avatar/route.ts (pure, no I/O) ──────
 
@@ -55,12 +54,6 @@ function buildPrompt(
 
   const result = prefix + truncatedDesc + suffix;
   return result.length > MAX_PROMPT_LENGTH ? result.substring(0, MAX_PROMPT_LENGTH) : result;
-}
-
-// ── Voice hint merging (same as chat-area / lobby-view) ─────────────────────
-
-function buildVoiceHint(personality?: string, background?: string): string | undefined {
-  return [personality, background].filter(Boolean).join(". ") || undefined;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -255,49 +248,11 @@ describe("Fix 4: generatedHost type accepts gender", () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Fix 5: Voice and Avatar unified inputs
-// ══════════════════════════════════════════════════════════════════════════════
-
-describe("Fix 5: Voice hint merges personality + background", () => {
-  it("combines personality and background with period separator", () => {
-    const hint = buildVoiceHint("Skeptical and analytical", "Former debate champion");
-    expect(hint).toBe("Skeptical and analytical. Former debate champion");
-  });
-
-  it("returns personality alone when background is absent", () => {
-    const hint = buildVoiceHint("Warm and trusting", undefined);
-    expect(hint).toBe("Warm and trusting");
-  });
-
-  it("returns background alone when personality is absent", () => {
-    const hint = buildVoiceHint(undefined, "Professional poker player");
-    expect(hint).toBe("Professional poker player");
-  });
-
-  it("returns undefined when both are absent", () => {
-    const hint = buildVoiceHint(undefined, undefined);
-    expect(hint).toBeUndefined();
-  });
-
-  it("returns undefined for empty strings", () => {
-    const hint = buildVoiceHint("", "");
-    expect(hint).toBeUndefined();
-  });
-
-  it("combined hint produces a valid voice from pickVoiceForSpeaker", () => {
-    const hint = buildVoiceHint("Calm, enigmatic, creates atmosphere", "Former chess grandmaster");
-    const voiceId = pickVoiceForSpeaker("male", hint, "EN_US", "Echo");
-    expect(typeof voiceId).toBe("string");
-    expect(voiceId.length).toBeGreaterThan(0);
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
 // End-to-end: full pipeline consistency
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe("End-to-end: AI player attributes flow consistently", () => {
-  it("each trait produces a valid avatar prompt and voice ID", () => {
+  it("each trait produces a valid avatar prompt", () => {
     for (const trait of AI_PLAYER_TRAITS) {
       const prompt = buildPrompt("TestPlayer", {
         personality: trait.personality,
@@ -308,15 +263,10 @@ describe("End-to-end: AI player attributes flow consistently", () => {
       expect(prompt.length).toBeLessThanOrEqual(1000);
       if (trait.gender === "male") expect(prompt).toContain("Male character");
       if (trait.gender === "female") expect(prompt).toContain("Female character");
-
-      const voiceHint = buildVoiceHint(trait.personality, trait.background);
-      const voiceId = pickVoiceForSpeaker(trait.gender, voiceHint, "EN_US", "TestPlayer");
-      expect(typeof voiceId).toBe("string");
-      expect(voiceId.length).toBeGreaterThan(0);
     }
   });
 
-  it("preset hosts produce consistent prompt and voice", () => {
+  it("preset hosts produce consistent prompts", () => {
     for (const host of HOST_PERSONALITIES) {
       const prompt = buildPrompt(host.name, {
         personality: host.voiceStyle,
@@ -324,10 +274,6 @@ describe("End-to-end: AI player attributes flow consistently", () => {
         gender: host.gender,
       });
       expect(prompt.length).toBeGreaterThan(0);
-
-      const voiceHint = buildVoiceHint(host.voiceStyle, host.description);
-      const voiceId = pickVoiceForSpeaker(host.gender, voiceHint, "EN_US", host.name);
-      expect(typeof voiceId).toBe("string");
     }
   });
 });

@@ -27,12 +27,8 @@ export interface Player {
   fear?: string;
   /** AI-only: how this character relates to the human player (e.g. "Loyal but sometimes overprotective") */
   attitudeToPlayer?: string;
-  /** Player gender (male, female, other) - used for avatar generation and TTS voice matching */
+  /** Player gender (male, female, other) - used for avatar generation. */
   gender?: string;
   /** Whether this player's role has been publicly revealed by the Host (via REVEAL_ROLE directive). */
   roleRevealed?: boolean;
-  /** Persistent TTS voice ID (Inworld). Assigned at player creation so each character keeps a stable voice. */
-  voiceId?: string;
-  /** Pre-generated voice greeting sample URL (Supabase Storage). Used for instant lobby voice preview. */
-  voiceSampleUrl?: string;
 }

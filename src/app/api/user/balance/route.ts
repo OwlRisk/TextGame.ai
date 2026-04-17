@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
     const user = await getAuthUserFromRequest(request);
     if (!user) {
-      return NextResponse.json({ tokens: 0, isPro: false, subscriptionStatus: 'free' });
+      return NextResponse.json({ tokens: 0 });
     }
     const cached = getCachedBalance(user.id);
     if (cached) return NextResponse.json(cached);
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
     if (!user) user = await getAuthUserFromRequest(request);
     if (!user) {
-      return NextResponse.json({ tokens: 0, isPro: false, subscriptionStatus: 'free' });
+      return NextResponse.json({ tokens: 0 });
     }
     const cached = getCachedBalance(user.id);
     if (cached) return NextResponse.json(cached);

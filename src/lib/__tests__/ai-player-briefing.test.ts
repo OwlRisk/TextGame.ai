@@ -8,16 +8,8 @@ describe("buildAiPlayerBriefing", () => {
     expect(out).toContain("one concrete game contribution");
   });
 
-  it("adds deception guidance for hidden roles in werewolf/mafia", () => {
-    const out = buildAiPlayerBriefing({ gameTemplate: "werewolf", role: "Werewolf" });
-    expect(out).toContain("hidden side");
-    expect(out).toContain("never reveal your role");
-  });
-
-  it("adds undercover-specific wording and includes secret word when present", () => {
-    const out = buildAiPlayerBriefing({ gameTemplate: "undercover", role: "Undercover", word: "Orange" });
-    expect(out).toContain("Undercover");
-    expect(out).toContain("secret word: Orange");
+  it("includes role when supplied", () => {
+    const out = buildAiPlayerBriefing({ gameTemplate: "rpg-fantasy", role: "Wizard" });
+    expect(out).toContain("Wizard");
   });
 });
-

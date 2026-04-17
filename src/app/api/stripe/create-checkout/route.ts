@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAuthUserFromRequest, getAuthUserFromToken } from '@/lib/auth-server';
 import { getCustomerId, setCustomerId, getTokenPackages, rechargeCoinsFromPayment } from '@/lib/tokens';
-import { getStripePriceIdForTier } from '@/lib/subscription';
 
 const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number; credits: number }> = {
   starter:   { name: 'Starter',    price_cents: 500,   credits: 500 },
@@ -19,7 +18,7 @@ const REFERENCE_PACKAGES: Record<string, { name: string; price_cents: number; cr
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { packageId, subscriptionTier, accessToken: tokenFromBody } = body;
+    const { packageId, accessToken: tokenFromBody } = body;
 
     let user = (typeof tokenFromBody === 'string' && tokenFromBody.trim())
       ? await getAuthUserFromToken(tokenFromBody.trim())
@@ -33,10 +32,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isSubscription = subscriptionTier === 'pro' || subscriptionTier === 'plus' || subscriptionTier === 'ultra';
-    if (!isSubscription && !packageId) {
+    if (!packageId) {
       return NextResponse.json(
-        { error: 'Package ID or subscriptionTier (pro/plus/ultra) is required' },
+        { error: 'Package ID is required' },
         { status: 400 }
       );
     }
@@ -75,47 +73,6 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = request.nextUrl.origin;
-
-    if (isSubscription) {
-      const priceId = getStripePriceIdForTier(subscriptionTier);
-      if (!priceId) {
-        console.error(`[create-checkout] Stripe price not configured for ${subscriptionTier}`);
-        return NextResponse.json(
-          { error: 'Payment processing failed' },
-          { status: 500 }
-        );
-      }
-      if (!priceId.startsWith('price_')) {
-        console.error(`[create-checkout] Invalid Stripe price id for ${subscriptionTier}: ${priceId}`);
-        return NextResponse.json(
-          { error: 'Payment processing failed' },
-          { status: 500 }
-        );
-      }
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: 'subscription',
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${origin}/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/subscription?cancelled=true`,
-        metadata: {
-          userId: user.id,
-          type: 'subscription',
-          tier: subscriptionTier,
-        },
-        subscription_data: { metadata: { userId: user.id, tier: subscriptionTier } },
-        allow_promotion_codes: true,
-      });
-      const checkoutUrl = session.url ?? null;
-      if (!checkoutUrl) {
-        console.error('[create-checkout] Stripe subscription session.url is empty');
-        return NextResponse.json(
-          { error: 'Payment processing failed' },
-          { status: 500 }
-        );
-      }
-      return NextResponse.json({ url: checkoutUrl });
-    }
 
     const successUrl = `${origin}/recharge?success=true&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${origin}/recharge?cancelled=true`;

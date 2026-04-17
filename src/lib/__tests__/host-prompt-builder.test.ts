@@ -105,18 +105,10 @@ describe("buildHostSystemPrompt", () => {
       expect(output).toContain("No specific rules defined.");
     });
 
-    it("injects deduction progression policy for deduction templates", () => {
-      const opts = defaultOpts({ gameTemplate: "werewolf" });
+    it("injects PACING & PROGRESSION section for known templates", () => {
+      const opts = defaultOpts({ gameTemplate: "rpg-dungeon" });
       const output = buildHostSystemPrompt(opts);
       expect(output).toContain("PACING & PROGRESSION");
-      expect(output).toContain("Force escalation");
-    });
-
-    it("injects quiz progression policy for quiz templates", () => {
-      const opts = defaultOpts({ gameTemplate: "trivia" });
-      const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("PACING & PROGRESSION");
-      expect(output).toContain("Adjudicate quickly");
     });
   });
 

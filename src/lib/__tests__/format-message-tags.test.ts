@@ -34,21 +34,12 @@ describe("[ACTION] tag parsing", () => {
     expect(text).toContain("looks around the room");
   });
 
-  it("renders [ACTION] content as <em> element", () => {
+  it("[ACTION] tags are stripped, content kept as plain text", () => {
     const nodes = parseInlineFormatting("[ACTION]walks away[/ACTION]");
-    const emElements = nodes.filter(
-      (n) => React.isValidElement(n) && (n as React.ReactElement).type === "em"
-    );
-    expect(emElements.length).toBe(1);
-  });
-
-  it("[ACTION] element has amber styling class", () => {
-    const nodes = parseInlineFormatting("[ACTION]nods slowly[/ACTION]");
-    const em = nodes.find(
-      (n) => React.isValidElement(n) && (n as React.ReactElement).type === "em"
-    ) as React.ReactElement;
-    expect(em).toBeDefined();
-    expect((em.props as Record<string, string>).className).toContain("amber");
+    const text = renderToText(nodes);
+    expect(text).toContain("walks away");
+    expect(text).not.toContain("[ACTION]");
+    expect(text).not.toContain("[/ACTION]");
   });
 
   it("handles mixed text and [ACTION] tags", () => {
@@ -61,10 +52,10 @@ describe("[ACTION] tag parsing", () => {
 
   it("handles multiple [ACTION] tags", () => {
     const nodes = parseInlineFormatting("[ACTION]stands up[/ACTION] and then [ACTION]walks out[/ACTION]");
-    const emElements = nodes.filter(
-      (n) => React.isValidElement(n) && (n as React.ReactElement).type === "em"
-    );
-    expect(emElements.length).toBe(2);
+    const text = renderToText(nodes);
+    expect(text).toContain("stands up");
+    expect(text).toContain("walks out");
+    expect(text).not.toContain("[ACTION]");
   });
 });
 

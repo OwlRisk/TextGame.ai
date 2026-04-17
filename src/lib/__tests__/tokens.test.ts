@@ -6,13 +6,11 @@ import {
   estimatedTokensToCoins,
   estimateTokensFromText,
   estimateChatTokens,
-  ttsCostToCoins,
   imageGenCostToCoins,
   COIN_VALUE_USD,
   GPT_BUDGET_RATIO,
   PLATFORM_MARKUP,
   TOKEN_COSTS,
-  INWORLD_TTS_PRICE_PER_1M_CHARS,
   IMAGE_GEN_PRICE_USD,
   DEFAULT_COIN_PACKAGES,
 } from '../tokens';
@@ -284,68 +282,6 @@ describe('imageGenCostToCoins', () => {
 
   it('returns at least 1 coin for any model', () => {
     expect(imageGenCostToCoins('dall-e-2')).toBeGreaterThanOrEqual(1);
-  });
-});
-
-// ─── INWORLD_TTS_PRICE_PER_1M_CHARS ──────────────────────────────────────
-
-describe('INWORLD_TTS_PRICE_PER_1M_CHARS', () => {
-  it('covers all supported Inworld TTS models', () => {
-    const expected = ['inworld-tts-1.5-max', 'inworld-tts-1-max', 'inworld-tts-1.5-mini', 'inworld-tts-1'];
-    expected.forEach((model) => {
-      expect(INWORLD_TTS_PRICE_PER_1M_CHARS).toHaveProperty(model);
-      expect(INWORLD_TTS_PRICE_PER_1M_CHARS[model]).toBeGreaterThan(0);
-    });
-  });
-
-  it('max models cost more than mini/standard models', () => {
-    expect(INWORLD_TTS_PRICE_PER_1M_CHARS['inworld-tts-1.5-max'])
-      .toBeGreaterThan(INWORLD_TTS_PRICE_PER_1M_CHARS['inworld-tts-1.5-mini']);
-  });
-});
-
-// ─── ttsCostToCoins ───────────────────────────────────────────────────────
-
-describe('ttsCostToCoins', () => {
-  it('returns 0 for empty text', () => {
-    expect(ttsCostToCoins(0, 'inworld-tts-1.5-mini')).toBe(0);
-  });
-
-  it('returns 0 for negative chars', () => {
-    expect(ttsCostToCoins(-10, 'inworld-tts-1.5-mini')).toBe(0);
-  });
-
-  it('inworld-tts-1.5-mini: 1M chars = 1000 coins ($5/1M × 2x markup)', () => {
-    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-mini')).toBe(1000);
-  });
-
-  it('inworld-tts-1.5-max: 1M chars = 2000 coins ($10/1M × 2x markup)', () => {
-    expect(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-max')).toBe(2000);
-  });
-
-  it('small text (100 chars) costs at least 1 coin', () => {
-    expect(ttsCostToCoins(100, 'inworld-tts-1.5-mini')).toBeGreaterThanOrEqual(1);
-  });
-
-  it('unknown model falls back to inworld-tts-1.5-max pricing', () => {
-    expect(ttsCostToCoins(1_000_000, 'unknown-tts-model'))
-      .toBe(ttsCostToCoins(1_000_000, 'inworld-tts-1.5-max'));
-  });
-
-  it('max model costs more than mini for same char count', () => {
-    const large = 500_000;
-    expect(ttsCostToCoins(large, 'inworld-tts-1.5-max'))
-      .toBeGreaterThan(ttsCostToCoins(large, 'inworld-tts-1.5-mini'));
-  });
-
-  it('typical message (200 chars) costs 1 coin with mini', () => {
-    // 200/1M * $5 = $0.001 → ceil(0.001/0.01 * 2) = ceil(0.2) = 1
-    expect(ttsCostToCoins(200, 'inworld-tts-1.5-mini')).toBe(1);
-  });
-
-  it('2000 chars with max costs 4 coins (2x markup)', () => {
-    // 2000/1M * $10 = $0.02 → ceil(0.02/0.01 * 2) = ceil(4) = 4
-    expect(ttsCostToCoins(2000, 'inworld-tts-1.5-max')).toBe(4);
   });
 });
 

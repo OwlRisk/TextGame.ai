@@ -1,136 +1,40 @@
 import { describe, it, expect } from 'vitest';
 import { GAME_TEMPLATES, getGameTemplate } from '../game-templates';
 
-// ─── GAME_TEMPLATES: structural integrity ─────────────────────────────────
-
 describe('GAME_TEMPLATES – structural integrity', () => {
   it('has at least one template', () => {
     expect(GAME_TEMPLATES.length).toBeGreaterThan(0);
   });
 
-  it('every template has a non-empty id', () => {
+  it('every template has a non-empty id, name, icon, color, estimatedTime', () => {
     for (const t of GAME_TEMPLATES) {
       expect(t.id, `template "${t.name}" is missing id`).toBeTruthy();
+      expect(t.name, `template "${t.id}" is missing name`).toBeTruthy();
+      expect(t.icon, `template "${t.id}" is missing icon`).toBeTruthy();
+      expect(t.color, `template "${t.id}" is missing color`).toBeTruthy();
+      expect(t.estimatedTime, `template "${t.id}" is missing estimatedTime`).toBeTruthy();
     }
   });
 
   it('every template id is unique', () => {
     const ids = GAME_TEMPLATES.map((t) => t.id);
-    const unique = new Set(ids);
-    expect(unique.size).toBe(ids.length);
-  });
-
-  it('every template has a non-empty name', () => {
-    for (const t of GAME_TEMPLATES) {
-      expect(t.name, `template "${t.id}" is missing name`).toBeTruthy();
-    }
-  });
-
-  it('every template has a non-empty icon', () => {
-    for (const t of GAME_TEMPLATES) {
-      expect(t.icon, `template "${t.id}" is missing icon`).toBeTruthy();
-    }
-  });
-
-  it('every template has a non-empty color', () => {
-    for (const t of GAME_TEMPLATES) {
-      expect(t.color, `template "${t.id}" is missing color`).toBeTruthy();
-    }
-  });
-
-  it('every template has a non-empty estimatedTime', () => {
-    for (const t of GAME_TEMPLATES) {
-      expect(t.estimatedTime, `template "${t.id}" is missing estimatedTime`).toBeTruthy();
-    }
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
-
-// ─── GAME_TEMPLATES: player count constraints ─────────────────────────────
 
 describe('GAME_TEMPLATES – player count constraints', () => {
-  it('every template has minPlayers ≥ 1', () => {
+  it('every template has 1 ≤ minPlayers ≤ maxPlayers ≤ 20', () => {
     for (const t of GAME_TEMPLATES) {
-      expect(t.minPlayers, `"${t.id}" minPlayers < 1`).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it('every template has maxPlayers ≥ minPlayers', () => {
-    for (const t of GAME_TEMPLATES) {
-      expect(t.maxPlayers, `"${t.id}" maxPlayers < minPlayers`).toBeGreaterThanOrEqual(t.minPlayers);
-    }
-  });
-
-  it('every template has maxPlayers ≤ 20', () => {
-    for (const t of GAME_TEMPLATES) {
-      expect(t.maxPlayers, `"${t.id}" maxPlayers > 20`).toBeLessThanOrEqual(20);
+      expect(t.minPlayers, `"${t.id}"`).toBeGreaterThanOrEqual(1);
+      expect(t.maxPlayers, `"${t.id}"`).toBeGreaterThanOrEqual(t.minPlayers);
+      expect(t.maxPlayers, `"${t.id}"`).toBeLessThanOrEqual(20);
     }
   });
 });
-
-// ─── GAME_TEMPLATES: roles ────────────────────────────────────────────────
-
-describe('GAME_TEMPLATES – roles array', () => {
-  it('every template has a roles field (array)', () => {
-    for (const t of GAME_TEMPLATES) {
-      expect(Array.isArray(t.roles), `"${t.id}" roles is not an array`).toBe(true);
-    }
-  });
-
-  it('social deduction templates have at least 2 roles', () => {
-    const socialDeduction = ['werewolf', 'mafia', 'undercover'];
-    for (const id of socialDeduction) {
-      const t = GAME_TEMPLATES.find((x) => x.id === id);
-      expect(t?.roles?.length, `"${id}" should have ≥ 2 roles`).toBeGreaterThanOrEqual(2);
-    }
-  });
-
-  it('every role name is a non-empty string', () => {
-    for (const t of GAME_TEMPLATES) {
-      for (const role of t.roles ?? []) {
-        expect(typeof role).toBe('string');
-        expect(role.trim().length, `empty role in "${t.id}"`).toBeGreaterThan(0);
-      }
-    }
-  });
-});
-
-// ─── GAME_TEMPLATES: defaultRules ────────────────────────────────────────
-
-describe('GAME_TEMPLATES – defaultRules', () => {
-  it('social deduction templates have non-empty defaultRules', () => {
-    const required = ['werewolf', 'mafia', 'undercover'];
-    for (const id of required) {
-      const t = GAME_TEMPLATES.find((x) => x.id === id);
-      expect(t?.defaultRules?.trim().length, `"${id}" defaultRules is empty`).toBeGreaterThan(0);
-    }
-  });
-
-  it('werewolf rules mention win/end conditions', () => {
-    const t = GAME_TEMPLATES.find((x) => x.id === 'werewolf');
-    expect(t?.defaultRules).toMatch(/WIN CONDITIONS|HOW THE STORY ENDS/i);
-  });
-
-  it('mafia rules mention ROLES', () => {
-    const t = GAME_TEMPLATES.find((x) => x.id === 'mafia');
-    expect(t?.defaultRules).toMatch(/ROLES/i);
-  });
-});
-
-// ─── getGameTemplate ──────────────────────────────────────────────────────
 
 describe('getGameTemplate', () => {
-  it('returns the correct template for a known id', () => {
-    const t = getGameTemplate('werewolf');
-    expect(t).toBeDefined();
-    expect(t?.id).toBe('werewolf');
-    expect(t?.name).toBe('Werewolf');
-  });
-
-  it('returns undefined for an unknown id', () => {
+  it('returns undefined for unknown ids', () => {
     expect(getGameTemplate('nonexistent')).toBeUndefined();
-  });
-
-  it('returns undefined for empty string', () => {
     expect(getGameTemplate('')).toBeUndefined();
   });
 
@@ -140,4 +44,3 @@ describe('getGameTemplate', () => {
     }
   });
 });
-

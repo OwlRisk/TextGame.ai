@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Loader2, Volume2, Square, Search, X } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { cn } from "@/app/components/ui/utils";
 
 interface PoolCharacter {
@@ -18,8 +18,6 @@ interface PoolCharacter {
   personality: string | null;
   background: string | null;
   avatar_url: string | null;
-  voice_id: string;
-  voice_sample_url: string | null;
 }
 
 interface CharacterBrowserProps {
@@ -30,8 +28,6 @@ interface CharacterBrowserProps {
     gender: string;
     personality: string;
     background: string;
-    voice_id?: string | null;
-    voice_sample_url?: string | null;
     avatar_url?: string | null;
   }) => void;
   gameId?: string;
@@ -96,8 +92,6 @@ export function CharacterBrowser({
         gender: char.gender,
         personality: char.personality || "",
         background: char.background || "",
-        voice_id: char.voice_id,
-        voice_sample_url: char.voice_sample_url,
         avatar_url: char.avatar_url,
       });
       onClose();
@@ -220,7 +214,6 @@ export function CharacterBrowser({
               </div>
 
               <div className="p-4 space-y-2">
-                <VoicePreviewButton char={selected} />
                 <button
                   onClick={() => handleAdd(selected)}
                   className="w-full py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
@@ -287,67 +280,3 @@ function CharacterTile({
   );
 }
 
-function VoicePreviewButton({ char }: { char: PoolCharacter }) {
-  const [playing, setPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const toggle = useCallback(async () => {
-    if (playing && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setPlaying(false);
-      return;
-    }
-
-    if (!char.voice_sample_url) return;
-    setLoading(true);
-    try {
-      const audio = new Audio(char.voice_sample_url);
-      audioRef.current = audio;
-      setPlaying(true);
-      audio.onended = () => {
-        audioRef.current = null;
-        setPlaying(false);
-      };
-      audio.onerror = () => {
-        audioRef.current = null;
-        setPlaying(false);
-      };
-      await audio.play();
-    } catch {
-      setPlaying(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [char.voice_sample_url, playing]);
-
-  if (!char.voice_sample_url) return null;
-
-  return (
-    <button
-      onClick={toggle}
-      disabled={loading}
-      className={cn(
-        "w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2",
-        playing
-          ? "bg-red-600/20 text-red-400 hover:bg-red-600/30"
-          : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-      )}
-    >
-      {loading ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : playing ? (
-        <>
-          <Square className="h-3.5 w-3.5 fill-current" />
-          Stop
-        </>
-      ) : (
-        <>
-          <Volume2 className="h-3.5 w-3.5" />
-          Preview Voice
-        </>
-      )}
-    </button>
-  );
-}

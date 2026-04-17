@@ -24,12 +24,6 @@ describe("sitemap locale entries", () => {
     }
   });
 
-  it("includes locale variants for /games", () => {
-    for (const locale of SEO_LOCALES) {
-      expect(urls, `Missing /${locale}/games`).toContain(`${SITE_DOMAIN}/${locale}/games`);
-    }
-  });
-
   it("locale homepage entries have lower priority than English homepage", () => {
     const enHome = entries.find((e) => e.url === SITE_DOMAIN);
     const zhHome = entries.find((e) => e.url === `${SITE_DOMAIN}/zh`);
@@ -46,13 +40,13 @@ describe("sitemap locale entries", () => {
     expect(jaDiscover!.priority!).toBeLessThan(enDiscover!.priority!);
   });
 
-  it("total locale entries = 18 locales × 3 pages = 54", () => {
+  it("total locale entries = 18 locales × 2 pages = 36", () => {
     const localeUrls = urls.filter((u) => {
       const path = u.replace(SITE_DOMAIN, "");
       const first = path.split("/").filter(Boolean)[0];
       return first && (SEO_LOCALES as readonly string[]).includes(first);
     });
-    expect(localeUrls).toHaveLength(54);
+    expect(localeUrls).toHaveLength(36);
   });
 
   it("no duplicate locale URLs", () => {
@@ -89,8 +83,3 @@ describe("sitemap locale entries", () => {
   });
 });
 
-describe("sitemap includes /cases page", () => {
-  it("includes /cases", () => {
-    expect(urls).toContain(`${SITE_DOMAIN}/cases`);
-  });
-});

@@ -3,10 +3,7 @@ import { getDefaultAICountForTemplate, AI_COLORS } from '../game-utils';
 
 describe('getDefaultAICountForTemplate', () => {
   it('returns recommendedAICount for known templates', () => {
-    expect(getDefaultAICountForTemplate('werewolf')).toBe(5);
-    expect(getDefaultAICountForTemplate('undercover')).toBe(5);
-    expect(getDefaultAICountForTemplate('mafia')).toBe(7);
-    expect(getDefaultAICountForTemplate('tarot')).toBe(0);
+    expect(getDefaultAICountForTemplate('rpg-dungeon')).toBeGreaterThan(0);
   });
   it('returns 4 for unknown or undefined template', () => {
     expect(getDefaultAICountForTemplate('nonexistent')).toBe(4);

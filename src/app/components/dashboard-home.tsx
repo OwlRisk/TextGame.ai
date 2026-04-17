@@ -7,7 +7,6 @@ import { Users, Clock, Sparkles, Play, ChevronRight, Compass, TrendingUp, Shuffl
 import { Button } from "@/app/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
 import { t, getAppLanguage } from "@/lib/i18n";
-import { getTemplateI18n } from "@/data/template-i18n";
 import { type GameTemplate, ALL_PRESETS } from "@/data/discover-templates";
 import type { Game } from "@/app/contexts/GameContext";
 
@@ -183,7 +182,7 @@ export function DashboardHome({ userName, games = [], onCreateGame, onNavigateTo
                   {tmpl.cover ? (
                     <Image
                       src={tmpl.cover}
-                      alt={getTemplateI18n(tmpl.id, "name", lang) ?? tmpl.name}
+                      alt={tmpl.name}
                       fill
                       quality={80}
                       sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
@@ -198,10 +197,10 @@ export function DashboardHome({ userName, games = [], onCreateGame, onNavigateTo
                 </div>
                 <div className="p-4">
                   <h3 className="font-bold text-white text-sm mb-1 group-hover:text-violet-300 transition-colors">
-                    {getTemplateI18n(tmpl.id, "name", lang) ?? tmpl.name}
+                    {tmpl.name}
                   </h3>
                   <p className="text-xs text-zinc-500 line-clamp-1 leading-relaxed mb-2">
-                    {getTemplateI18n(tmpl.id, "desc", lang) ?? tmpl.description}
+                    {tmpl.description}
                   </p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-zinc-600">
@@ -227,7 +226,6 @@ export function DashboardHome({ userName, games = [], onCreateGame, onNavigateTo
           <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-zinc-600">
             <p>© 2026 TextGame.ai</p>
             <div className="flex gap-4">
-              <Link href="/blog" className="hover:text-white transition-colors">{t("landing.blog", lang)}</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">{t("landing.privacy", lang)}</Link>
               <Link href="/terms" className="hover:text-white transition-colors">{t("landing.terms", lang)}</Link>
             </div>

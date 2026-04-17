@@ -1,11 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { getDefaultAICountForTemplate } from "../game-utils";
-import { getGameTemplate, GAME_TEMPLATES } from "../game-templates";
+import { GAME_TEMPLATES } from "../game-templates";
 import { getStreamingDisplay, stripDirectiveLines, resolveChannelByName } from "../game-host-utils";
 import { parseHostResult } from "../host-output-parser";
 import type { Player } from "@/types/player";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function aiPlayer(id: string, name: string): Player {
   return { id, name, isAI: true, isGameMaster: false, avatar: "#000" } as Player;
@@ -16,32 +14,7 @@ function humanPlayer(id: string, name: string): Player {
 
 const GAME_ROOM_ENTRIES = [{ id: "main", name: "Main Hall" }];
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 1. Default AI count uses recommendedAICount (not maxPlayers-1)
-// ═════════════════════════════════════════════════════════════════════════════
-
-describe("getDefaultAICountForTemplate uses recommendedAICount", () => {
-  it.each([
-    ["werewolf", 5],
-    ["mafia", 7],
-    ["undercover", 5],
-    ["avalon", 5],
-    ["codenames", 5],
-    ["spyfall", 4],
-    ["detective-mystery", 4],
-    ["escape-room", 3],
-    ["trivia", 3],
-    ["debate", 3],
-    ["storyteller", 3],
-    ["two-truths-lie", 4],
-    ["rpg-dungeon", 3],
-    ["tarot", 0],
-    ["20-questions", 3],
-    ["custom", 4],
-  ] as const)("%s → %d AI players", (templateId, expected) => {
-    expect(getDefaultAICountForTemplate(templateId)).toBe(expected);
-  });
-
+describe("getDefaultAICountForTemplate", () => {
   it("returns 4 for unknown template", () => {
     expect(getDefaultAICountForTemplate("nonexistent")).toBe(4);
     expect(getDefaultAICountForTemplate(undefined)).toBe(4);
@@ -60,10 +33,6 @@ describe("getDefaultAICountForTemplate uses recommendedAICount", () => {
     }
   });
 });
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 2. Template minPlayers/maxPlayers/recommendedAICount consistency
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe("template player count consistency", () => {
   for (const tmpl of GAME_TEMPLATES) {
@@ -88,10 +57,6 @@ describe("template player count consistency", () => {
     });
   }
 });
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 3. Streaming display strips GM directives
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe("getStreamingDisplay strips GM directives", () => {
   it("strips GM_STATE lines", () => {
@@ -125,7 +90,7 @@ describe("getStreamingDisplay strips GM directives", () => {
 
 describe("stripDirectiveLines handles all directive types", () => {
   it("strips standard directives", () => {
-    const content = "Hello world\nNEXT_SPEAKER: Alice\nASSIGN_ROLE: Alice -> Werewolf\nGoodbye";
+    const content = "Hello world\nNEXT_SPEAKER: Alice\nASSIGN_ROLE: Alice -> Wizard\nGoodbye";
     const result = stripDirectiveLines(content);
     expect(result).not.toContain("NEXT_SPEAKER");
     expect(result).not.toContain("ASSIGN_ROLE");
@@ -146,10 +111,6 @@ describe("stripDirectiveLines handles all directive types", () => {
     expect(stripDirectiveLines("Just normal text")).toBe("Just normal text");
   });
 });
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 4. Case-insensitive NEXT_SPEAKER name matching
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe("parseHostResult case-insensitive name matching", () => {
   it("matches AI player name with different casing", () => {
@@ -187,14 +148,10 @@ describe("parseHostResult case-insensitive name matching", () => {
   });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 5. Channel resolution (fuzzy matching)
-// ═════════════════════════════════════════════════════════════════════════════
-
 describe("resolveChannelByName", () => {
   const channels = [
     { id: "ch1", name: "Town Hall" },
-    { id: "ch2", name: "Mafia Hideout" },
+    { id: "ch2", name: "Tavern" },
     { id: "ch3", name: "Afterlife" },
   ];
 
@@ -204,53 +161,14 @@ describe("resolveChannelByName", () => {
 
   it("case-insensitive match", () => {
     expect(resolveChannelByName("town hall", channels)).toBe("ch1");
-    expect(resolveChannelByName("MAFIA HIDEOUT", channels)).toBe("ch2");
+    expect(resolveChannelByName("TAVERN", channels)).toBe("ch2");
   });
 
   it("partial match", () => {
-    expect(resolveChannelByName("Mafia", channels)).toBe("ch2");
+    expect(resolveChannelByName("Tav", channels)).toBe("ch2");
   });
 
   it("returns null for no match", () => {
     expect(resolveChannelByName("Nonexistent Room", channels)).toBeNull();
   });
-});
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 6. byRole key matches runtime role.toLowerCase()
-// ═════════════════════════════════════════════════════════════════════════════
-
-describe("byRole keys match runtime role names", () => {
-  const ROLE_CHECKS: Record<string, string[]> = {
-    codenames: ["spymaster", "field operative"],
-    undercover: ["undercover", "mr. white"],
-    avalon: ["merlin", "assassin", "mordred", "percival", "minion of mordred", "servant of arthur"],
-    werewolf: ["werewolf", "seer", "doctor", "villager", "hunter", "witch"],
-    mafia: ["mafia", "detective", "doctor", "town member"],
-    "detective-mystery": ["detective", "suspect", "witness", "culprit"],
-  };
-
-  for (const [templateId, roles] of Object.entries(ROLE_CHECKS)) {
-    const tmpl = getGameTemplate(templateId);
-    if (!tmpl?.playerPrompts?.byRole) continue;
-
-    describe(templateId, () => {
-      for (const role of roles) {
-        it(`role "${role}" has matching byRole key`, () => {
-          const key = role.toLowerCase();
-          expect(tmpl.playerPrompts.byRole![key]).toBeDefined();
-        });
-      }
-
-      it("all byRole keys match a role from the roles array (lowercased)", () => {
-        const templateRoles = new Set((tmpl.roles ?? []).map(r => r.toLowerCase()));
-        for (const key of Object.keys(tmpl.playerPrompts.byRole!)) {
-          expect(
-            templateRoles.has(key),
-            `byRole key "${key}" has no matching role in ${templateId}.roles: [${(tmpl.roles ?? []).join(", ")}]`,
-          ).toBe(true);
-        }
-      });
-    });
-  }
 });

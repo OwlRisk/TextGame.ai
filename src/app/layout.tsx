@@ -39,44 +39,18 @@ export const metadata: Metadata = {
   },
   keywords: [
     "TextGame.ai",
-    "AI text game",
-    "text-based game",
-    "AI game host",
-    "multiplayer text adventure",
-    "werewolf game AI",
-    "AI role-playing game",
-    "game design AI",
-    "ai rpg",
-    "ai text adventure",
-    "character ai alternative",
-    "ai character game",
-    "roleplay ai",
-    "ai dungeon master",
-    "ai game generator",
-    "ai game maker",
-    "character ai",
-    "play werewolf online",
-    "play mafia online",
-    "ai storytelling",
-    "social deduction game",
-    "ai npc",
-    "ai characters",
-    "multiplayer ai game",
-    "text based rpg",
-    "ai role play chat",
-    "ai powered game",
-    "online werewolf",
-    "online mafia game",
+    "AI RPG",
+    "AI text adventure",
+    "AI dungeon master",
+    "AI game master",
     "ai text rpg",
-    "character ai game",
-    "free ai game",
-    "ai board game",
-    "custom ai game",
-    "jackbox alternative",
-    "jackbox alternative free",
-    "no sign up ai chat",
-    "free online party games",
-    "ai chat no sign up",
+    "text based rpg",
+    "AI role-playing game",
+    "AI storytelling",
+    "AI game maker",
+    "create your own RPG",
+    "community RPG platform",
+    "user-generated AI games",
   ],
   alternates: {
     canonical: "/",
@@ -115,7 +89,7 @@ const websiteJsonLd = {
   inLanguage: "en",
   potentialAction: {
     "@type": "SearchAction",
-    target: `${SITE_DOMAIN}/games?q={search_term_string}`,
+    target: `${SITE_DOMAIN}/discover?q={search_term_string}`,
     "query-input": "required name=search_term_string",
   },
 };
@@ -196,35 +170,17 @@ export default async function RootLayout({
         {/* Static crawlable content for search engines (hidden from sighted users) */}
         <noscript>
           <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
-            <h1>{SITE_NAME} — AI-Powered Text Game Platform</h1>
+            <h1>{SITE_NAME} — Community AI RPG Platform</h1>
             <p>{SITE_DESCRIPTION}</p>
-            <h2>Play AI Text Games Online</h2>
+            <h2>Create &amp; Play AI Text RPGs</h2>
             <p>
-              Create and play multiplayer text-based games with an AI Game Master and AI characters.
-              The best Character.AI alternative for roleplay, social deduction, and RPG games.
-              Design custom games or choose from 10+ templates — Werewolf, Mafia, Murder Mystery, and more.
+              Build your own AI-powered text RPG in minutes, share it with the community, and play
+              adventures created by other players. The AI Game Master narrates every scene, runs every
+              encounter, and brings your characters to life.
             </p>
-            <h2>AI Game Master &amp; AI Dungeon Master</h2>
-            <p>
-              Your AI Game Master hosts every session — assigns roles, runs phases, narrates the story,
-              and fills every seat with unique AI characters that have their own voice, personality, and strategy.
-              Perfect as an AI dungeon master for text-based RPGs and adventures.
-            </p>
-            <h2>Popular AI Games</h2>
             <nav>
-              <a href="/discover">Discover AI Text Games</a>
-              <a href="/games">Game Library — Browse All Games</a>
-              <a href="/games/werewolf">Play Werewolf Online with AI</a>
-              <a href="/games/mafia">Play Mafia Online with AI</a>
-              <a href="/games/undercover">Play Who&apos;s the Spy / Undercover Online</a>
-              <a href="/games/avalon">Play Avalon Online with AI</a>
-              <a href="/games/escape-room">AI Escape Room Game</a>
-              <a href="/games/trivia">AI Trivia Game</a>
-              <a href="/games/tarot">AI Tarot Reading</a>
-              <a href="/games/secret-hitler">Play Secret Hitler Online with AI</a>
-              <a href="/games/murder-mystery">AI Murder Mystery Game</a>
-              <a href="/blog">Blog — AI Game Guides &amp; Comparisons</a>
-              <a href="/blog/character-ai-alternatives">Best Character.AI Alternatives for Multiplayer Games</a>
+              <a href="/discover">Discover Community RPGs</a>
+              <a href="/create">Create Your Own RPG</a>
               <a href="/recharge">Buy Credits</a>
               <a href="/signin">Sign In</a>
               <a href="/terms">Terms of Service</a>

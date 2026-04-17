@@ -9,15 +9,9 @@ import {
   EMOTION_TAGS_SECTION,
 } from "@/lib/player-speak-prompt";
 
-/**
- * Extended tests for player-speak-prompt.ts covering all game templates
- * and prompt structure requirements.
- */
-
 describe("buildSystemPrompt — all templates", () => {
   const templates = [
-    "werewolf", "mafia", "undercover", "tarot",
-    "trivia", "quiz", "roleplay", "adventure",
+    "custom", "rpg-dungeon", "roleplay", "adventure",
     undefined, "custom-game",
   ] as const;
 
@@ -33,53 +27,6 @@ describe("buildSystemPrompt — all templates", () => {
     });
   }
 
-  it("werewolf prompt contains accusation-focused deduction pacing", () => {
-    const prompt = buildSystemPrompt("Alice", "werewolf", "Werewolf");
-    expect(prompt).toContain("Werewolf");
-    expect(prompt).toContain("accusation");
-    expect(prompt).toMatch(/Strategy discussion and accusations ARE the game/i);
-  });
-
-  it("mafia and werewolf share the same HOW TO PLAY bullets (distinct template text)", () => {
-    const ww = buildSystemPrompt("Alice", "werewolf", "Game");
-    const mf = buildSystemPrompt("Alice", "mafia", "Game");
-    const sharedHowTo =
-      "One concrete accusation, defense, or observation per turn. NAME who and WHY.";
-    expect(ww).toContain(sharedHowTo);
-    expect(mf).toContain(sharedHowTo);
-    expect(ww).toContain("playing Werewolf");
-    expect(mf).toContain("playing Mafia");
-    expect(ww).not.toBe(mf);
-  });
-
-  it("undercover prompt mentions word description / secret word", () => {
-    const prompt = buildSystemPrompt("Bob", "undercover", "UC Game");
-    expect(prompt).toContain("word description game");
-    expect(prompt).toContain("secret word");
-  });
-
-  it("tarot prompt is reflective, not accusatory", () => {
-    const prompt = buildSystemPrompt("Iris", "tarot", "Mystic");
-    expect(prompt).toContain("reflective");
-    expect(prompt).toContain("No meta-commentary about game procedure");
-    expect(prompt).not.toMatch(/concrete accusation/i);
-  });
-
-  it("trivia/quiz prompts mention pub quiz energy", () => {
-    const t = buildSystemPrompt("Sam", "trivia", "Quiz Night");
-    const q = buildSystemPrompt("Sam", "quiz", "Quiz Night");
-    expect(t).toContain("pub quiz");
-    expect(q).not.toContain("pub quiz");
-    expect(q).toMatch(/game table with opinions and stakes/i);
-  });
-
-  it("roleplay/adventure prompts emphasize staying in character", () => {
-    const r = buildSystemPrompt("Hero", "roleplay", "Epic");
-    const a = buildSystemPrompt("Hero", "adventure", "Epic");
-    expect(r).toMatch(/never break character/i);
-    expect(a).toMatch(/never break character/i);
-  });
-
   it("default prompt is generic and flexible", () => {
     const prompt = buildSystemPrompt("Player", undefined, "Custom");
     expect(prompt).toContain("game table");
@@ -93,19 +40,8 @@ describe("player-speak constants", () => {
     expect(PLAYER_SPEAK_HARD_LIMIT_TOKENS).toBeLessThan(500);
   });
 
-  it("prompts contain brevity rules", () => {
-    const prompt = buildSystemPrompt("Test", "werewolf", "G");
-    expect(prompt).toContain("Keep it short and natural");
-  });
-
-  it("deduction prompts contain [MY_NOTES] section", () => {
-    const prompt = buildSystemPrompt("Test", "werewolf", "G");
-    expect(prompt).toContain("[MY_NOTES]");
-    expect(prompt).toContain("[/MY_NOTES]");
-  });
-
   it("EMOTION_TAGS_SECTION mentions emotion and sound tags", () => {
-    expect(EMOTION_TAGS_SECTION).toContain("[angry]");
+    expect(EMOTION_TAGS_SECTION).toMatch(/EMOTION/);
     expect(EMOTION_TAGS_SECTION).toContain("[sigh]");
   });
 });

@@ -9,7 +9,6 @@ import {
   estimateTokensFromText,
 } from '@/lib/tokens';
 import { logger } from '@/lib/logger';
-import { pickVoiceForSpeaker } from '@/lib/inworld-voices';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
 const limiter = createRateLimiter('generate-host', { limit: 10, windowSeconds: 60 });
@@ -136,24 +135,14 @@ Randomness seed: ${seed}`;
         );
       }
     }
-    // Strip any LLM-generated ttsVoice — we assign it ourselves below
     if (hostConfig.ttsVoice) delete hostConfig.ttsVoice;
+    if (hostConfig.voice_id) delete hostConfig.voice_id;
+    if (hostConfig.voiceStyle) delete hostConfig.voiceStyle;
     if (hostConfig.gender && !["male", "female", "other"].includes(String(hostConfig.gender).toLowerCase())) {
       delete hostConfig.gender;
     }
 
-    // Assign a voice_id from the Inworld TTS pool using the same selection logic
-    // as AI players, so the host's voice comes from the same source and is
-    // stored persistently in the game config (not re-assigned every session).
-    const hostVoiceId = pickVoiceForSpeaker(
-      hostConfig.gender ?? null,
-      hostConfig.voiceStyle ?? hostConfig.personality ?? null,
-      'EN_US',
-      hostConfig.name ?? null,
-    );
-    hostConfig.voice_id = hostVoiceId;
-
-    logger.log("[Generate Host] Generated host:", hostConfig.name, "voice:", hostVoiceId);
+    logger.log("[Generate Host] Generated host:", hostConfig.name);
 
     return NextResponse.json(hostConfig);
   } catch (error) {

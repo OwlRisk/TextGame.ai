@@ -100,16 +100,15 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-2">8. Credits &amp; Subscriptions</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">8. Credits</h2>
             <p>
-              Subscription plans are billed monthly via Stripe and include a credit allocation that renews each billing period. Key terms:
+              TextGame.ai is pay-as-you-go. You buy credits in one-time purchases via Stripe — there are no subscriptions or recurring charges. Key terms:
             </p>
             <ul className="mt-1 space-y-1 list-disc list-inside text-zinc-400">
-              <li>Credits are consumed by AI interactions (text generation, voice synthesis, image creation)</li>
+              <li>Credits are consumed by AI interactions (text generation and image creation)</li>
               <li>Credits have no cash value and cannot be transferred between accounts</li>
-              <li>Unused credits carry over within an active subscription</li>
-              <li>Refund requests for subscription charges may be submitted within 7 days of payment — we review each case individually</li>
-              <li>Credits purchased separately (add-on packs) are non-refundable once consumed</li>
+              <li>Unused credits never expire</li>
+              <li>Refund requests may be submitted within 7 days of purchase — we review each case individually; credits already consumed are non-refundable</li>
               <li>In multiplayer rooms, AI interactions consume the room owner&apos;s credits</li>
             </ul>
           </section>

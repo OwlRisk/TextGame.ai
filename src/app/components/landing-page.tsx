@@ -18,12 +18,10 @@ import {
   MARQUEE_CHARACTERS,
 } from "@/data/landing-content";
 import { t, getAppLanguage } from "@/lib/i18n";
-import { getTemplateI18n } from "@/data/template-i18n";
 import {
   localizeScenarios,
   localizeMarqueeCharacters,
   localizeFeatures,
-  localizeBlogLabel,
 } from "@/data/landing-content-i18n";
 import dynamic from "next/dynamic";
 import { SafeAvatar, PreviewAvatar, StreamingText } from "@/app/components/landing/shared";
@@ -416,14 +414,14 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 key={index}
                 type="button"
                 onClick={() => onCreateGame?.(game.presetId)}
-                aria-label={`Play ${getTemplateI18n(game.presetId, "name", getAppLanguage()) ?? game.title}`}
+                aria-label={`Play ${game.title}`}
                 className={`group relative bg-zinc-900/60 border border-zinc-800 ${game.border} rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer overflow-hidden text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500`}
               >
                 {/* Cover image */}
                 <div className="relative h-48 overflow-hidden">
                   <NextImage
                     src={game.cover}
-                    alt={getTemplateI18n(game.presetId, "name", getAppLanguage()) ?? game.title}
+                    alt={game.title}
                     width={400}
                     height={160}
                     loading="lazy"
@@ -435,8 +433,8 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                 </div>
 
                 <div className="p-5">
-                  <h4 className="font-black text-white text-base mb-2">{getTemplateI18n(game.presetId, "name", getAppLanguage()) ?? game.title}</h4>
-                  <p className="text-sm text-zinc-400 leading-relaxed mb-4">{getTemplateI18n(game.presetId, "desc", getAppLanguage()) ?? game.description}</p>
+                  <h4 className="font-black text-white text-base mb-2">{game.title}</h4>
+                  <p className="text-sm text-zinc-400 leading-relaxed mb-4">{game.description}</p>
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1.5 mb-4">
@@ -509,41 +507,11 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
           </div>
         </div>
 
-        {/* ── Blog Links (SEO internal linking) ──────────────────── */}
-        <div className="mb-16">
-          <h3 className="text-lg font-bold text-white mb-4">{t("landing.guides")}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[
-              { href: "/blog/play-werewolf-online", label: "How to Play Werewolf Online" },
-              { href: "/blog/play-mafia-online", label: "Play Mafia Online with AI" },
-              { href: "/blog/best-online-party-games", label: "Best Online Party Games" },
-              { href: "/blog/best-social-deduction-games", label: "Best Social Deduction Games" },
-              { href: "/blog/jackbox-alternatives", label: "Jackbox Alternatives" },
-              { href: "/blog/ai-game-master-guide", label: "What is an AI Game Master?" },
-              { href: "/blog/play-secret-hitler-online", label: "Play Secret Hitler Online" },
-              { href: "/blog/character-ai-alternatives", label: "Character.AI Alternatives" },
-              { href: "/blog/among-us-alternatives", label: "Among Us Alternatives" },
-            ].map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className="text-sm text-zinc-400 hover:text-violet-400 transition-colors truncate"
-              >
-                {localizeBlogLabel(href, label, lang)} →
-              </Link>
-            ))}
-          </div>
-          <Link href="/blog" className="inline-block mt-4 text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
-            {t("landing.view_guides")}
-          </Link>
-        </div>
-
         {/* Footer */}
         <footer className="border-t border-zinc-800 pt-8 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-zinc-600">
             <p>© 2026 {BRAND_CONFIG.name} • {t("landing.footer")}</p>
             <div className="flex gap-6">
-              <Link href="/blog" className="hover:text-white transition-colors">{t("landing.blog")}</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">{t("landing.privacy")}</Link>
               <Link href="/terms" className="hover:text-white transition-colors">{t("landing.terms")}</Link>
             </div>

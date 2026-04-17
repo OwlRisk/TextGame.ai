@@ -134,14 +134,12 @@ function formatMessageUncached(content: string, fmtOpts?: InlineFormattingOption
   return <div className="space-y-0.5">{elements}</div>;
 }
 
-// ─── Message content resolver (handles TTS sync) ─────────────────────────
-function resolveContent(syncedContent: string, rawContent: string, voiceEnabled: boolean, inworldTTSSupported: boolean, isAI: boolean) {
+function resolveContent(syncedContent: string, rawContent: string) {
   const clean = (s: string) => stripDirectiveLines(stripEmotionTags(stripPrivateNotes(s)));
   if (syncedContent.trim()) {
     const c = clean(syncedContent);
     return c ? formatMessage(c) : null;
   }
-  if (voiceEnabled && inworldTTSSupported && isAI && rawContent !== '' && syncedContent === '') return null;
   if (rawContent.trim()) {
     const c = clean(rawContent);
     return c ? formatMessage(c) : null;
@@ -237,7 +235,7 @@ export const ChatMessage = React.memo(function ChatMessage({
               </span>
             </div>
             <div className="text-violet-100 text-sm leading-[1.65] break-words">
-              {resolveContent(syncedContent, rawContent, true, true, message.isAI)}
+              {resolveContent(syncedContent, rawContent)}
             </div>
           </div>
         </div>

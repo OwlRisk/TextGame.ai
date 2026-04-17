@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Send, Mail, CheckCircle2, ChevronDown, Zap, CreditCard, RefreshCw, Bug, ImagePlus, X } from 'lucide-react';
+import { ArrowLeft, Send, Mail, CheckCircle2, ChevronDown, Zap, CreditCard, Bug, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
 import { useRouter } from 'next/navigation';
@@ -17,17 +17,12 @@ const FAQ_ITEMS = [
   {
     icon: Zap,
     q: 'How do credits work?',
-    a: 'Credits power all AI interactions — text generation, voice, and image creation. Subscription plans include a monthly credit allocation that renews automatically. Unused credits carry over.',
+    a: 'Credits power all AI interactions — text generation and image creation. Buy what you need; unused credits never expire.',
   },
   {
     icon: CreditCard,
     q: 'Can I get a refund?',
-    a: 'Subscription charges can be reviewed within 7 days of payment. Reach out to feedback@cvnio.com with your order details and we\'ll take care of it.',
-  },
-  {
-    icon: RefreshCw,
-    q: 'My subscription isn\'t showing — what do I do?',
-    a: 'Occasionally Stripe webhooks are delayed. Wait a few minutes and refresh. If it still doesn\'t show, contact us with your payment receipt and we\'ll sync it manually.',
+    a: 'Recharges can be reviewed within 7 days of payment. Reach out to feedback@cvnio.com with your order details and we\'ll take care of it.',
   },
   {
     icon: Bug,

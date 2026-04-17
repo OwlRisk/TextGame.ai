@@ -664,26 +664,3 @@ export function localizeInsideGameSteps(
   });
 }
 
-// ─── Blog links ───────────────────────────────────────────────────────────────
-
-const BLOG_LABELS: Record<string, L> = {
-  "/blog/play-werewolf-online":         { zh: "如何在线玩狼人杀", ja: "オンラインで人狼をプレイする方法", ko: "온라인 늑대인간 플레이 방법", de: "Werwolf online spielen", fr: "Comment jouer au Loup-garou en ligne", es: "Cómo jugar Hombre Lobo en línea", pt: "Como jogar Lobisomem online", ru: "Как играть в Оборотня онлайн", it: "Come giocare a Lupo Mannaro online", ar: "كيف تلعب المستذئب أونلاين" },
-  "/blog/play-mafia-online":            { zh: "和AI在线玩黑手党", ja: "AIとオンラインでマフィアをプレイ", ko: "AI와 온라인 마피아 플레이", de: "Mafia online mit KI spielen", fr: "Jouer à Mafia en ligne avec l'IA", es: "Jugar Mafia en línea con IA", pt: "Jogar Máfia online com IA", ru: "Играть в Мафию онлайн с ИИ", it: "Gioca a Mafia online con l'IA", ar: "العب المافيا أونلاين مع الذكاء الاصطناعي" },
-  "/blog/best-online-party-games":      { zh: "最佳在线派对游戏", ja: "最高のオンラインパーティーゲーム", ko: "최고의 온라인 파티 게임", de: "Beste Online-Partyspiele", fr: "Meilleurs jeux de fête en ligne", es: "Mejores juegos de fiesta en línea", pt: "Melhores jogos de festa online", ru: "Лучшие онлайн-игры для вечеринок", it: "Migliori giochi di società online", ar: "أفضل ألعاب الحفلات أونلاين" },
-  "/blog/best-social-deduction-games":  { zh: "最佳社交推理游戏", ja: "最高の社会的推理ゲーム", ko: "최고의 사회적 추리 게임", de: "Beste Social-Deduction-Spiele", fr: "Meilleurs jeux de déduction sociale", es: "Mejores juegos de deducción social", pt: "Melhores jogos de dedução social", ru: "Лучшие игры на социальную дедукцию", it: "Migliori giochi di deduzione sociale", ar: "أفضل ألعاب الاستنتاج الاجتماعي" },
-  "/blog/jackbox-alternatives":         { zh: "Jackbox 替代品", ja: "Jackbox の代替", ko: "Jackbox 대안", de: "Jackbox-Alternativen", fr: "Alternatives à Jackbox", es: "Alternativas a Jackbox", pt: "Alternativas ao Jackbox", ru: "Альтернативы Jackbox", it: "Alternative a Jackbox", ar: "بدائل Jackbox" },
-  "/blog/ai-game-master-guide":         { zh: "什么是AI游戏主持人？", ja: "AIゲームマスターとは？", ko: "AI 게임 마스터란?", de: "Was ist ein KI-Game-Master?", fr: "Qu'est-ce qu'un Game Master IA ?", es: "¿Qué es un Game Master IA?", pt: "O que é um Game Master IA?", ru: "Что такое ИИ-Мастер Игры?", it: "Cos'è un Game Master IA?", ar: "ما هو مدير اللعبة بالذكاء الاصطناعي؟" },
-  "/blog/play-secret-hitler-online":    { zh: "在线玩秘密希特勒", ja: "シークレットヒトラーをオンラインでプレイ", ko: "시크릿 히틀러 온라인 플레이", de: "Secret Hitler online spielen", fr: "Jouer à Secret Hitler en ligne", es: "Jugar Secret Hitler en línea", pt: "Jogar Secret Hitler online", ru: "Играть в Секретного Гитлера онлайн", it: "Gioca a Secret Hitler online", ar: "العب هتلر السري أونلاين" },
-  "/blog/character-ai-alternatives":    { zh: "Character.AI 替代品", ja: "Character.AI の代替", ko: "Character.AI 대안", de: "Character.AI-Alternativen", fr: "Alternatives à Character.AI", es: "Alternativas a Character.AI", pt: "Alternativas ao Character.AI", ru: "Альтернативы Character.AI", it: "Alternative a Character.AI", ar: "بدائل Character.AI" },
-  "/blog/among-us-alternatives":        { zh: "Among Us 替代品", ja: "Among Us の代替", ko: "Among Us 대안", de: "Among-Us-Alternativen", fr: "Alternatives à Among Us", es: "Alternativas a Among Us", pt: "Alternativas ao Among Us", ru: "Альтернативы Among Us", it: "Alternative a Among Us", ar: "بدائل Among Us" },
-};
-
-export function localizeBlogLabel(
-  href: string,
-  defaultLabel: string,
-  lang: string,
-): string {
-  const map = BLOG_LABELS[href];
-  if (!map) return defaultLabel;
-  return pick(map, lang) ?? defaultLabel;
-}

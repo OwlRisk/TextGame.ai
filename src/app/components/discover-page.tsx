@@ -4,8 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Users, Clock, Play, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
-import { t, tStyle, tCategory, getAppLanguage } from "@/lib/i18n";
-import { getTemplateI18n } from "@/data/template-i18n";
+import { t, tStyle, tCategory } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
@@ -106,10 +105,10 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
 
         <div className="p-4">
           <h3 className="text-sm font-black text-white mb-1 group-hover:text-violet-300 transition-colors leading-tight">
-            {getTemplateI18n(template.id, "name", getAppLanguage()) ?? template.name}
+            {template.name}
           </h3>
 
-          <p className="text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed">{getTemplateI18n(template.id, "desc", getAppLanguage()) ?? template.description}</p>
+          <p className="text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed">{template.description}</p>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-zinc-600">

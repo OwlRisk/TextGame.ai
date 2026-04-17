@@ -5,7 +5,6 @@ import { sanitizeModel, ALLOWED_MODELS } from "../model-prefs";
  * Tests covering the input validation logic shared across API routes:
  * - message array length limits (chat/stream: max 60)
  * - preferredModel whitelist (all routes using sanitizeModel)
- * - TTS text length limit (inworld-tts: max 2000)
  * - AbortController timeout presence (structural, tested via sanitizeModel fallback)
  */
 
@@ -25,42 +24,6 @@ describe("API route validation: message limits", () => {
   it("accepts exactly 60 messages", () => {
     const msgs = Array.from({ length: 60 }, (_, i) => ({ role: "user", content: `msg ${i}` }));
     expect(msgs.length).toBeLessThanOrEqual(MAX_MESSAGES);
-  });
-});
-
-describe("API route validation: TTS text length", () => {
-  const MAX_TEXT_LENGTH = 2000;
-
-  it("accepts text within limit", () => {
-    expect("a".repeat(2000).length).toBeLessThanOrEqual(MAX_TEXT_LENGTH);
-  });
-
-  it("rejects text exceeding limit", () => {
-    expect("a".repeat(2001).length).toBeGreaterThan(MAX_TEXT_LENGTH);
-  });
-
-  it("rejects empty text", () => {
-    expect("".trim().length).toBe(0);
-  });
-});
-
-describe("API route validation: TTS model whitelist", () => {
-  const VALID_TTS_MODELS = ["inworld-tts-1.5-max", "inworld-tts-1.5-mini", "inworld-tts-1-max", "inworld-tts-1"];
-
-  it("accepts valid TTS models", () => {
-    for (const m of VALID_TTS_MODELS) {
-      expect(VALID_TTS_MODELS.includes(m)).toBe(true);
-    }
-  });
-
-  it("rejects invalid TTS models", () => {
-    expect(VALID_TTS_MODELS.includes("evil-tts")).toBe(false);
-    expect(VALID_TTS_MODELS.includes("")).toBe(false);
-  });
-
-  it("defaults to inworld-tts-1.5-max for unknown", () => {
-    const modelId = VALID_TTS_MODELS.includes("nope") ? "nope" : "inworld-tts-1.5-max";
-    expect(modelId).toBe("inworld-tts-1.5-max");
   });
 });
 

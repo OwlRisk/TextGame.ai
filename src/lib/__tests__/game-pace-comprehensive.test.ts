@@ -19,20 +19,6 @@ import {
 } from "../game-pace";
 import type { StreamMsgMeta } from "../game-pace";
 
-const STRUCTURED_TEMPLATES = [
-  "werewolf",
-  "mafia",
-  "codenames",
-  "undercover",
-  "avalon",
-  "spyfall",
-  "debate",
-  "storyteller",
-  "two-truths-lie",
-  "trivia",
-  "20-questions",
-];
-
 const MSG_META: StreamMsgMeta = {
   senderId: "gm-1",
   senderName: "Host",
@@ -57,12 +43,6 @@ describe("Constants", () => {
 // ─── getConversationMode ────────────────────────────────────────────────────
 
 describe("getConversationMode", () => {
-  STRUCTURED_TEMPLATES.forEach((template) => {
-    it(`returns "structured" for template "${template}"`, () => {
-      expect(getConversationMode(template)).toBe("structured");
-    });
-  });
-
   it("returns 'freeform' for unknown template", () => {
     expect(getConversationMode("poker")).toBe("freeform");
     expect(getConversationMode("chess")).toBe("freeform");
