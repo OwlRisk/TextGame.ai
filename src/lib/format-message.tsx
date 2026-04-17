@@ -138,15 +138,13 @@ export function parseInlineFormatting(
       );
     } else if (match.type === "emotion") {
       const emoji = EMOTION_EMOJI[match.content.toLowerCase()];
-      parts.push(
-        emoji != null ? (
+      if (emoji != null) {
+        parts.push(
           <span key={`e-${i}`} className={opts.emotionClassName} aria-label={match.content}>
             {emoji}
           </span>
-        ) : (
-          <span key={`e-${i}`}>[{match.content}]</span>
-        )
-      );
+        );
+      }
     }
     currentIndex = match.end;
   });

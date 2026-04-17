@@ -12,7 +12,7 @@ import {
   splitHostOutput as splitHostOutputUtil,
   sectionId as sectionIdUtil,
 } from "@/lib/game-host-utils";
-import { getPreferredModel, SCENE_NARRATOR_MODEL } from "@/lib/model-prefs";
+import { getHostModel, SCENE_NARRATOR_MODEL } from "@/lib/model-prefs";
 import { getTemplateHexColor, getGameTemplate } from "@/lib/game-templates";
 import {
   MAX_AUTO_ADVANCES,
@@ -182,8 +182,13 @@ export function useHostRound({
     if (gamePhase === "ended") return;
 
     if (isRoundInProgress) {
+      // Queue the new message and signal interrupt to all in-flight loops.
       pendingHumanMsgRef.current = content;
       interruptRef.current = true;
+      // Abort the in-flight Host stream + speaker queue so we don't keep burning
+      // tokens on a turn the user has already moved past. The `finally` block
+      // of the active round will pick up `pendingHumanMsgRef` and re-trigger.
+      try { roundAbortRef.current?.abort(); } catch { /* noop */ }
       if (!options?.skipAddMessage) {
         addMessage(
           { senderId: userId, senderName: humanGameIdentity?.name || "You", senderAvatar: "#6366f1", content, isAI: false },
@@ -349,7 +354,12 @@ export function useHostRound({
             if (!rpg) return `  • ${n} [${isH ? "HUMAN" : "AI"}]`;
             return `  • ${n} [${isH ? "HUMAN" : "AI"}] | Lv.${rpg.level} ${rpg.class} | HP: ${rpg.hp}/${rpg.maxHp} | MP: ${rpg.mp}/${rpg.maxMp} | ATK: ${rpg.attack} DEF: ${rpg.defense} SPD: ${rpg.speed}${rpg.faction ? ` | ${rpg.faction}` : ""}`;
           }).join("\n");
-          const resumeSummary = resumedSessionRef.current ? storySummaryRef.current : undefined;
+          // Inject the running story summary on every Host turn (not just on
+          // resume). As the recent-message window slides forward, the summary
+          // is the GM's only stable handle on what happened earlier in the
+          // session — withholding it after the first turn caused continuity
+          // drift in long sessions.
+          const resumeSummary = storySummaryRef.current;
           if (resumedSessionRef.current) resumedSessionRef.current = false;
           return buildRpgDirectorPrompt({
             worldId: rpgWorldId,
@@ -618,7 +628,7 @@ export function useHostRound({
                 systemPrompt: hostSystemPrompt,
                 messages: [{ role: "user", content: userContent }],
                 maxCompletionTokens: streamTokenBudget,
-                preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
+                preferredModel: isScene ? SCENE_NARRATOR_MODEL : getHostModel(),
                 gameId,
               }),
             });
@@ -755,7 +765,7 @@ export function useHostRound({
                   systemPrompt: hostSystemPrompt,
                   messages: [{ role: "user", content: userContent }],
                   maxCompletionTokens: streamTokenBudget,
-                  preferredModel: isScene ? SCENE_NARRATOR_MODEL : getPreferredModel(),
+                  preferredModel: isScene ? SCENE_NARRATOR_MODEL : getHostModel(),
                   gameId,
                 }),
               });
@@ -863,6 +873,7 @@ export function useHostRound({
         engagementScore: latestEngagementScore,
         characterDirections: characterDirectionsRef.current,
         channelGoal: currentChannelGoal,
+        interruptRef,
       });
 
       const decisionSummaryPrefix = pendingDecisionSummariesRef.current.length > 0
@@ -968,8 +979,9 @@ export function useHostRound({
         ? (() => { setCurrentSpeakerId(null); return true; })()
         : await runSpeakerQueueFn(sqCtx, currentQueue);
 
-      interruptRef.current = false;
-      pendingHumanMsgRef.current = null;
+      // NOTE: do NOT clear `interruptRef`/`pendingHumanMsgRef` here.
+      // The `finally` block needs them so a queued user message can re-trigger
+      // a new round. Resetting early was causing the round to silently die.
       let lastBeatContentLen = hostContent?.length ?? 0;
       for (let i = 0; i < MAX_AUTO_ADVANCES && !humanReached && gamePhaseRef.current !== "ended" && !interruptRef.current; i++) {
         hostSystemPrompt = buildFreshHostPrompt();

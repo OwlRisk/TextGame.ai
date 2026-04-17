@@ -239,6 +239,12 @@ export async function POST(request: NextRequest) {
           max_completion_tokens: maxTokens,
           stream: true,
           stream_options: { include_usage: true },
+          // AI Player: higher temperature so each NPC sounds distinct and
+          // doesn't collapse into the same agreeable voice.
+          temperature: 0.95,
+          top_p: 0.95,
+          presence_penalty: 0.3,
+          frequency_penalty: 0.3,
         }, { signal: ac.signal }) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
       } catch (e) {
         clearTimeout(timer);
@@ -271,16 +277,33 @@ export async function POST(request: NextRequest) {
               ? gptUsageToCoins(chatModel, promptTokens, completionTokens)
               : estimatedTokensToCoins(systemTokens + userTokens + Math.ceil(fullContent.length / 3), chatModel);
             try {
-              await deductTokens(userId, Math.max(1, actualCoins), 'ai_player_speak',
+              const ok = await deductTokens(userId, Math.max(1, actualCoins), 'ai_player_speak',
                 (promptTokens + completionTokens) > 0
                   ? `Player speak stream ${promptTokens}+${completionTokens} tokens (${chatModel})`
                   : `Player speak stream ~${systemTokens + userTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`,
                 bodyGameId);
+              if (!ok) {
+                console.error('[player-speak-stream] CRITICAL deduct returned false — content delivered but balance was insufficient at commit:', { userId, coins: actualCoins, gameId: bodyGameId });
+              }
             } catch (de) {
               console.error('[player-speak-stream] deduct error:', de);
             }
           } catch (err) {
             clearTimeout(timer);
+            // Partial billing: stream errored mid-response. Bill for whatever the
+            // user already received so we don't leak free generations.
+            if (fullContent.length > 0) {
+              const partialTokens = Math.ceil(fullContent.length / 3);
+              const partialCoins = estimatedTokensToCoins(systemTokens + userTokens + partialTokens, chatModel);
+              if (partialCoins > 0) {
+                try {
+                  await deductTokens(userId, Math.max(1, partialCoins), 'ai_player_speak',
+                    `Player speak partial ~${partialTokens} tokens (stream error)`, bodyGameId);
+                } catch (e) {
+                  console.error('[player-speak-stream] failed to bill partial output:', e);
+                }
+              }
+            }
             const errMsg = err instanceof Error ? err.message : 'Stream interrupted';
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: errMsg })}\n\n`));
             controller.close();
@@ -305,6 +328,10 @@ export async function POST(request: NextRequest) {
           { role: 'user', content: userContent },
         ],
         max_completion_tokens: maxTokens,
+        temperature: 0.95,
+        top_p: 0.95,
+        presence_penalty: 0.3,
+        frequency_penalty: 0.3,
       }, { signal: ac.signal });
     } finally {
       clearTimeout(timer);

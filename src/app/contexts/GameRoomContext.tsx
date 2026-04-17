@@ -465,6 +465,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     timerEndsAt,
     gameEnded,
     gameResult,
+    mood,
+    gameOverSummary,
   ]);
 
   // Save game room state: fixed dependency array to satisfy React strict rules

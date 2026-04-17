@@ -7,7 +7,6 @@ import { useGameRoomContext } from "@/app/contexts/GameRoomContext";
 import { toast } from "sonner";
 import { fetchAvatarsForRoom, type RoomPlayerInfo } from "@/lib/avatar";
 import { avatarCacheKey } from "@/app/components/generated-avatar";
-import { assignVoicesForRoom, pickVoiceForSpeaker, INWORLD_VOICE_META } from "@/lib/inworld-voices";
 import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { trackEvent } from "@/lib/analytics";
@@ -138,7 +137,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         background: isRpg ? "The eternal chronicler of realms and adventures" : "Invisible storyteller and director",
         personality: isRpg ? "Wise, dramatic, and fair — a seasoned Game Master" : undefined,
         gender: "other" as const,
-        voiceId: undefined as string | undefined,
       },
       hostName,
       hostColor,
@@ -164,8 +162,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
         { personality: configPlayer.personality, background: configPlayer.background },
       ),
       status: "online" as const,
-      voiceId: (configPlayer.voice_id as string | undefined) ?? undefined,
-      voiceSampleUrl: (configPlayer.voice_sample_url as string | undefined) ?? undefined,
       ...(configPlayer.rpg ? { rpg: configPlayer.rpg } : {}),
       ...(configPlayer.goal ? { goal: configPlayer.goal } : {}),
       ...(configPlayer.fear ? { fear: configPlayer.fear } : {}),
@@ -204,23 +200,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
       status: "online" as const,
       ...(humanRpg ? { rpg: humanRpg } : {}),
     };
-
-    const speakersNeedingVoice = [
-      !gameMaster.voiceId ? { name: gameMaster.name, gender: gameMaster.gender, personality: gameMaster.personality, background: gameMaster.background } : null,
-      ...aiPlayers
-        .filter((p: { voiceId?: string }) => !p.voiceId)
-        .map((p: { name: string; gender?: string; personality?: string; background?: string }) => ({
-          name: p.name, gender: p.gender, personality: p.personality, background: p.background,
-        })),
-    ].filter(Boolean) as { name: string; gender?: string; personality?: string; background?: string }[];
-
-    if (speakersNeedingVoice.length > 0) {
-      const voiceMap = assignVoicesForRoom(speakersNeedingVoice);
-      if (!gameMaster.voiceId) gameMaster.voiceId = voiceMap[gameMaster.name];
-      for (const p of aiPlayers) {
-        if (!p.voiceId) p.voiceId = voiceMap[p.name];
-      }
-    }
 
     setPlayers([gameMaster, ...aiPlayers, userPlayer]);
 
@@ -491,6 +470,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
             gameTemplate: config.template,
             role: cp?.role,
             word: cp?.word,
+            contentLanguage,
           });
           if (note) briefingByPlayerId[p.id] = note;
         }
@@ -506,6 +486,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
           gameTemplate: config.template,
           role: p.role,
           word: typeof p.stats?.Word === "string" ? p.stats.Word : undefined,
+          contentLanguage,
         });
       }
 
@@ -558,19 +539,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     } else if (!isInitialized && players.length === 0 && hasSavedState) {
       setIsInitialized(true);
     } else if (!isInitialized && players.length > 0) {
-      const needsVoiceFix = players.some((p) => {
-        if (!p.isAI || !p.voiceId || !p.gender) return false;
-        const g = p.gender.toLowerCase();
-        if (g !== 'male' && g !== 'female') return false;
-        const meta = INWORLD_VOICE_META.find(v => v.voiceId === p.voiceId);
-        return meta ? meta.gender !== g : false;
-      });
-      if (needsVoiceFix) {
-        const voiceMap = assignVoicesForRoom(players.filter(p => p.isAI).map(p => ({
-          name: p.name, gender: p.gender, personality: p.personality, background: p.background,
-        })));
-        setPlayers(prev => prev.map(p => p.isAI && voiceMap[p.name] ? { ...p, voiceId: voiceMap[p.name] } : p));
-      }
       setIsInitialized(true);
     }
   }, [currentGame, isInitialized, players.length, gameId, isRoomLoading]); // eslint-disable-line react-hooks/exhaustive-deps

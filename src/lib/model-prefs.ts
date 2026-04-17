@@ -16,6 +16,38 @@ export const SUMMARY_AI_MODEL = 'gpt-5.4-mini';
 /** Scene narrator: flagship GPT for strong instruction-following and creative writing. */
 export const SCENE_NARRATOR_MODEL = 'gpt-5.4';
 
+/**
+ * RPG Game Master (Host) model — needs strong instruction-following + format
+ * compliance + creative writing. We pin to the flagship regardless of the
+ * user's preferred model so directives don't degrade when they pick mini/nano
+ * to save credits on AI player chatter.
+ */
+export const HOST_MODEL = 'gpt-5.4';
+
+/**
+ * Default model for AI Players (NPCs / companions).
+ * They produce short in-character dialogue, so a small/cheap model is plenty
+ * and saves a lot of tokens in multi-AI rooms.
+ */
+export const PLAYER_MODEL = 'gpt-5.4-mini';
+
+/**
+ * Resolve the model used for a Host/GM call.
+ * Honors the env override if set, otherwise pins to HOST_MODEL.
+ */
+export function getHostModel(): string {
+  return process.env.OPENAI_CHAT_MODEL || HOST_MODEL;
+}
+
+/**
+ * Resolve the model used for an AI Player call.
+ * Stays cheap by default. Users can still escalate via OPENAI_CHAT_MODEL if
+ * they want everyone on the flagship.
+ */
+export function getPlayerModel(): string {
+  return process.env.OPENAI_PLAYER_MODEL || PLAYER_MODEL;
+}
+
 
 export const ALLOWED_MODELS = [
   'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano',

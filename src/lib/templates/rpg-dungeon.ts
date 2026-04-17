@@ -27,7 +27,7 @@ CLASSES:
 
 COMBAT:
 - Turn-based. Each player picks an action per turn (Attack, Defend, Cast Spell, etc.).
-- The Host controls enemies and resolves damage using simple d20-style rolls.
+- Resolution: virtual d20 + relevant stat (ATK / INT / DEX). 11+ on the modified roll = hit. Higher rolls land cleaner narration. DEF reduces incoming damage.
 - Defend halves incoming damage for one round.
 - Knocked out at 0 HP. Healer can revive with 30 HP.
 
@@ -59,11 +59,12 @@ ROUND STRUCTURE:
 - Use PHASE: to set the current phase. During combat use "Combat — [enemy name]". Between rooms use "Exploration — Room N" or "Rest — Camp".
 - After each room, briefly describe what the party finds and transition.
 
-COMBAT RULES:
+COMBAT RULES (must match the global d20+stat model — do NOT invent ATK-vs-DEF math):
 - When combat begins, describe the enemies and their threat level.
 - Each player picks an action. After all actions are in, resolve the round:
-  - Roll virtual d20 for attacks. 11+ hits. Describe results narratively.
-  - Enemies attack back. Distribute damage among players (vary targets).
+  - For each attacking player, roll a virtual d20 + relevant stat modifier (ATK for melee, INT for magic, DEX for ranged/sneak). 11+ on the modified roll = hit. Crit on natural 20.
+  - Higher rolls = stronger narration. DEF reduces incoming damage taken.
+  - Enemies attack back the same way. Distribute damage among players (vary targets).
   - Update HP on player boards after each round using [BOARD:PlayerName].
 - When a player reaches 0 HP, use ELIMINATE: to knock them out. Narrate dramatically.
 - Healer can spend a turn to revive a knocked-out player at 30 HP.

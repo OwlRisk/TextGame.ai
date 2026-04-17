@@ -2,7 +2,7 @@ import type { Player } from "@/types/player";
 import type { SpeakerQueueItem } from "@/lib/host-output-parser";
 import type { ConversationMode, StreamMsgMeta } from "@/lib/game-pace";
 import { parseHostActions } from "@/lib/host-actions";
-import { getPreferredModel } from "@/lib/model-prefs";
+import { getPlayerModel, SUMMARY_AI_MODEL } from "@/lib/model-prefs";
 import { isPlayerEliminated } from "@/lib/player-badges";
 import {
   thinkingDelay,
@@ -59,6 +59,12 @@ export interface SpeakerQueueContext {
   channelGoal?: string | null;
   /** RPG world ID — triggers RPG-specific player speak prompts */
   rpgWorldId?: string;
+  /**
+   * Optional ref the queue checks between speakers; when truthy the queue exits
+   * gracefully instead of starting a new player turn. Wired to the round-level
+   * `interruptRef` so a fresh user message can short-circuit the in-flight loop.
+   */
+  interruptRef?: { current: boolean };
 }
 
 export function isNightPhase(phaseLabel: string | undefined): boolean {
@@ -135,7 +141,7 @@ function buildPlayerSpeakBody(
     ...(ctx.playerNotes[speaker.id] ? { playerNotes: ctx.playerNotes[speaker.id] } : {}),
     recentMessages: recent,
     playerRoster,
-    preferredModel: getPreferredModel(),
+    preferredModel: getPlayerModel(),
     ...(channelGoal ? { channelGoal } : {}),
     ...(ctx.humanName ? { humanName: ctx.humanName } : {}),
     ...(ctx.sceneId ? { sceneId: ctx.sceneId } : {}),
@@ -434,6 +440,12 @@ const ENGAGEMENT_RATIO: Record<number, { chanceMultiplier: number; maxRatio: num
 
 const MAX_REACTIONS_PER_MESSAGE = 3;
 const recentReactorsByGame = new Map<string, Set<string>>();
+/**
+ * Pending reaction setTimeouts per game — tracked so `clearReactionState` (and
+ * therefore `endGame`) can cancel them, preventing emoji from popping into a
+ * room after the user navigated away or restarted the session.
+ */
+const pendingReactionTimers = new Map<string, Set<ReturnType<typeof setTimeout>>>();
 
 export function triggerPassiveReactions(
   ctx: SpeakerQueueContext,
@@ -476,18 +488,27 @@ export function triggerPassiveReactions(
     const emoji = pickEmojiForPlayer(mood, bias);
     const delay = 800 + Math.random() * 2500;
 
-    setTimeout(() => {
+    if (!pendingReactionTimers.has(gameKey)) pendingReactionTimers.set(gameKey, new Set());
+    const timers = pendingReactionTimers.get(gameKey)!;
+    const timer = setTimeout(() => {
+      timers.delete(timer);
       addReaction(messageId, emoji, player.name);
     }, delay);
+    timers.add(timer);
   }
 
   recentReactors.clear();
   for (const id of thisRoundReactors) recentReactors.add(id);
 }
 
-/** Clean up per-game reaction state when a game ends */
+/** Clean up per-game reaction state when a game ends. Also cancels any pending reaction emojis. */
 export function clearReactionState(gameId: string): void {
   recentReactorsByGame.delete(gameId);
+  const timers = pendingReactionTimers.get(gameId);
+  if (timers) {
+    for (const t of timers) clearTimeout(t);
+    pendingReactionTimers.delete(gameId);
+  }
 }
 
 export async function speakAndReveal(
@@ -546,6 +567,11 @@ export async function runSpeakerQueue(
   const night = isNightPhase(ctx.phaseLabel);
 
   for (let qi = 0; qi < queue.length; qi++) {
+    if (ctx.interruptRef?.current) {
+      ctx.setCurrentSpeakerId(null);
+      ctx.setTypingUsers([]);
+      return false;
+    }
     const item = queue[qi];
     if (item.type === "human") {
       ctx.setCurrentSpeakerId(ctx.userId);
@@ -653,7 +679,7 @@ export async function runPrivateChannelConversation(
                 content: `${goalLine}Channel: ${channelName}\n\n${transcript}\n\nHas the group reached a decision?`,
               },
             ],
-            preferredModel: getPreferredModel(),
+            preferredModel: SUMMARY_AI_MODEL,
           }),
         });
       } finally {
@@ -675,8 +701,10 @@ export async function runPrivateChannelConversation(
   const toTyp = (p: Player) => ({ name: p.name, avatar: p.avatar ?? "#8b5cf6" });
 
   for (let round = 0; round < maxRounds && !earlyDecisionSummary; round++) {
+    if (ctx.interruptRef?.current) break;
     for (let pi = 0; pi < channelAiPlayers.length; pi++) {
       if (earlyDecisionSummary) break;
+      if (ctx.interruptRef?.current) break;
       const player = channelAiPlayers[pi];
       const freshPlayer = ctx.playersRef.current.find((p) => p.id === player.id) ?? player;
       if (isPlayerEliminated(freshPlayer)) continue;
@@ -725,7 +753,7 @@ export async function runPrivateChannelConversation(
                   { role: "system", content: "Summarise the group's decision in exactly one concise sentence. Include specific names and choices. No preamble." },
                   { role: "user", content: `Channel: ${channelName}${goalLine}\n\n${transcript}\n\nSummarise:` },
                 ],
-                preferredModel: getPreferredModel(),
+                preferredModel: SUMMARY_AI_MODEL,
               }),
             });
           } finally {

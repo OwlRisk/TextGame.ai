@@ -1,5 +1,6 @@
 import { PoolClient } from 'pg';
 import { pool } from '@/lib/pg-pool';
+import { invalidateBalanceCache } from '@/lib/balance-cache';
 
 // PostgreSQL SET LOCAL does not support prepared parameter $1; only literal values allowed. UUID format enforced to prevent injection.
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -132,30 +133,6 @@ export function estimatedTokensToCoins(totalTokens: number, model?: string): num
 }
 
 /**
- * Inworld TTS pricing: price per 1M characters (USD).
- * As of 2026-03: https://platform.openai.com/docs/pricing (Inworld via OpenAI)
- */
-export const INWORLD_TTS_PRICE_PER_1M_CHARS: Record<string, number> = {
-  'inworld-tts-1.5-max':  10.00,
-  'inworld-tts-1-max':    10.00,
-  'inworld-tts-1.5-mini': 5.00,
-  'inworld-tts-1':        5.00,
-};
-
-/**
- * Calculate coins to deduct based on TTS character count and model (including PLATFORM_MARKUP).
- * Formula: usdToCoins((chars / 1_000_000) × pricePerMillion), minimum 1 coin.
- */
-export function ttsCostToCoins(chars: number, model: string): number {
-  if (chars <= 0) return 0;
-  const pricePerMillion =
-    INWORLD_TTS_PRICE_PER_1M_CHARS[model] ??
-    INWORLD_TTS_PRICE_PER_1M_CHARS['inworld-tts-1.5-max'];
-  const usd = (chars / 1_000_000) * pricePerMillion;
-  return usdToCoins(usd);
-}
-
-/**
  * Image generation model pricing (per image, USD).
  * As of 2026-03: https://platform.openai.com/docs/pricing
  */
@@ -205,9 +182,6 @@ export function estimateChatTokens(
 
 export interface UserBalance {
   tokens: number;
-  isPro: boolean;
-  subscriptionStatus: string;
-  subscriptionEndDate?: Date;
 }
 
 export interface TokenTransaction {
@@ -221,15 +195,13 @@ export interface TokenTransaction {
 }
 
 /**
- * Get user's current token balance and subscription status.
+ * Get user's current token balance.
  * Uses app.user_id for RLS so server-side API can read user_profiles.
  */
 export async function getUserBalance(userId: string): Promise<UserBalance> {
   return withUserContext(userId, async (client) => {
     const result = await client.query(
-      `SELECT tokens, subscription_status, subscription_current_period_end 
-       FROM user_profiles 
-       WHERE user_id = $1`,
+      `SELECT tokens FROM user_profiles WHERE user_id = $1`,
       [userId]
     );
     if (result.rows.length === 0) {
@@ -237,28 +209,14 @@ export async function getUserBalance(userId: string): Promise<UserBalance> {
         'INSERT INTO user_profiles (user_id, tokens) VALUES ($1, 100) ON CONFLICT (user_id) DO NOTHING',
         [userId]
       );
-      return {
-        tokens: 100,
-        isPro: false,
-        subscriptionStatus: 'free',
-      };
+      return { tokens: 100 };
     }
-
-    const row = result.rows[0];
-    const status = row.subscription_status || 'free';
-    const isPaidTier = status === 'pro' || status === 'plus' || status === 'ultra';
-    const subscriptionStatus = status === 'cancelled' ? 'free' : (isPaidTier ? status : 'free');
-    return {
-      tokens: row.tokens || 0,
-      isPro: isPaidTier,
-      subscriptionStatus,
-      subscriptionEndDate: row.subscription_current_period_end,
-    };
+    return { tokens: result.rows[0].tokens || 0 };
   });
 }
 
 /**
- * Check if user has sufficient tokens (subscription users get monthly allowance, same check)
+ * Check if user has sufficient tokens.
  */
 export async function hasTokens(userId: string, amount: number): Promise<boolean> {
   const balance = await getUserBalance(userId);
@@ -280,7 +238,7 @@ export async function deductTokens(
     await client.query('BEGIN');
     try {
       const balanceResult = await client.query(
-        'SELECT tokens, subscription_status FROM user_profiles WHERE user_id = $1 FOR UPDATE',
+        'SELECT tokens FROM user_profiles WHERE user_id = $1 FOR UPDATE',
         [userId]
       );
       if (balanceResult.rows.length === 0) {
@@ -303,6 +261,7 @@ export async function deductTokens(
         [userId, -amount, transactionType, description, gameSessionId]
       );
       await client.query('COMMIT');
+      invalidateBalanceCache(userId);
       return true;
     } catch (error) {
       await client.query('ROLLBACK');
@@ -361,6 +320,7 @@ export async function addTokens(
         [userId, amount, transactionType, description, paymentIntentId]
       );
       await client.query('COMMIT');
+      invalidateBalanceCache(userId);
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('[tokens] addTokens error:', error);
@@ -449,42 +409,6 @@ export async function getTokenPackages() {
     console.warn('[tokens] getTokenPackages DB error, using defaults:', (e as Error)?.message);
   }
   return [...DEFAULT_COIN_PACKAGES];
-}
-
-/** Subscription status (DB may still contain legacy plus/ultra values; new writes are free | pro | cancelled only) */
-export type SubscriptionStatus = 'free' | 'pro' | 'plus' | 'ultra' | 'cancelled';
-
-/**
- * Update user's subscription status (Pro only; writes free | pro | cancelled)
- */
-export async function updateSubscriptionStatus(
-  userId: string,
-  status: SubscriptionStatus,
-  subscriptionId?: string,
-  periodEnd?: Date
-): Promise<void> {
-  await withUserContext(userId, async (client) => {
-    await client.query(
-      `INSERT INTO user_profiles (user_id, subscription_status, subscription_id, subscription_current_period_end)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id)
-       DO UPDATE SET 
-         subscription_status = $2,
-         subscription_id = COALESCE($3, user_profiles.subscription_id),
-         subscription_current_period_end = $4`,
-      [userId, status, subscriptionId, periodEnd]
-    );
-  });
-}
-
-/**
- * Grant monthly usage allowance for subscription (call on subscribe + renewal)
- */
-export async function grantMonthlyAllowance(userId: string, tier: 'pro' | 'plus' | 'ultra'): Promise<void> {
-  const { getMonthlyUsageAllowance } = await import('@/lib/subscription');
-  const amount = getMonthlyUsageAllowance(tier);
-  if (amount <= 0) return;
-  await addTokens(userId, amount, 'subscription_grant', `Monthly allowance: ${tier}`);
 }
 
 /**

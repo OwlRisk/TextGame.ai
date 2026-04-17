@@ -134,6 +134,10 @@ export async function POST(request: NextRequest) {
         messages: formattedMessages,
         max_completion_tokens: maxTokens,
         stream: true,
+        // Host/GM stream: lower temperature to keep directive format compliance.
+        // Slight warmth so narration doesn't sound robotic.
+        temperature: 0.7,
+        top_p: 0.9,
       };
       if (!isGemini) {
         params.stream_options = { include_usage: true };
@@ -192,12 +196,15 @@ export async function POST(request: NextRequest) {
             ? gptUsageToCoins(actualModelUsed, promptTokens, completionTokens)
             : estimatedTokensToCoins(systemTokens + messagesTokens + Math.ceil(fullContent.length / 3), actualModelUsed);
           try {
-            await deductTokens(userId, Math.max(1, actualCoins), 'ai_chat',
+            const deductOk = await deductTokens(userId, Math.max(1, actualCoins), 'ai_chat',
               (promptTokens + completionTokens) > 0
                 ? `Chat ${promptTokens}+${completionTokens} tokens (${actualModelUsed})`
                 : `Chat ~${systemTokens + messagesTokens + Math.ceil(fullContent.length / 3)} tokens (estimate)`,
               bodyGameId
             );
+            if (!deductOk) {
+              console.error('[stream] CRITICAL deduct returned false — user received content but balance was insufficient at commit time:', { userId, coins: actualCoins, gameId: bodyGameId });
+            }
           } catch (deductErr) {
             console.error('[stream] CRITICAL deduct error — user received content without paying:', deductErr, { userId, coins: actualCoins });
           }

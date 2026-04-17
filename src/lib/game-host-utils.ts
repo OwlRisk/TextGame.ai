@@ -27,11 +27,34 @@ export function resolveChannelByName(
 }
 
 /**
+ * All host directive prefixes used by the system.
+ * Includes core game directives + RPG/dungeon-specific ones (ROOM_UPDATE, COMBAT_*, PLAYER_UPDATE, QUICK_ACTIONS, etc.)
+ * so they don't leak into streaming UI as raw JSON before "---" arrives.
+ */
+const DIR_PREFIXES_STR = [
+  "NEXT_SPEAKER", "ASSIGN_ROLE", "AUTO_CHANNEL", "CHANNEL_GOAL", "IMAGE_PROMPT",
+  "MY_NOTES", "GAME_PHASE", "SECTION", "START_VOTE", "END_VOTE", "ELIMINATE",
+  "REVEAL_ROLE", "GAME_OVER", "RECORD_EVENT", "ANNOUNCE", "MOOD", "REACT",
+  "TIMER", "PHASE", "GM_STATE", "CHARACTER_DIRECTION", "ENGAGEMENT", "BEGIN_GAME",
+  "ROOM_UPDATE", "PLAYER_UPDATE", "COMBAT_START", "COMBAT_END", "QUICK_ACTIONS",
+  "BOSS_PHASE", "MAP_UPDATE", "INVENTORY_UPDATE", "QUEST_UPDATE", "DICE_ROLL",
+  "SKILL_CHECK", "LOOT", "XP_GAIN", "LEVEL_UP", "STAT_CHANGE",
+].join("|");
+
+/**
+ * Match a single directive line (line-based). Used as a safety net during
+ * rendering to drop directive lines that may have leaked into the message body.
+ */
+const DIRECTIVE_PREFIXES_RE = new RegExp(`^(${DIR_PREFIXES_STR})(:.*)?$`, "gm");
+
+/**
  * Extract the public message portion from the accumulated stream.
  * With the --- separator format: everything before --- is the public message.
  * Handles both mid-text separators (\n---) and start-of-string separators
  * (silent turns where the GM outputs only directives).
- * Fallback (no --- yet): strip any partial/complete [BOARD:...] blocks.
+ * Fallback (no --- yet): strip any partial/complete [BOARD:...] blocks and
+ * known directive prefixes (so RPG ROOM_UPDATE JSON etc. doesn't flash before
+ * the separator arrives).
  */
 export function getStreamingDisplay(raw: string): string {
   // Match --- at start of string (optional leading whitespace/newline) or after a newline
@@ -42,10 +65,8 @@ export function getStreamingDisplay(raw: string): string {
   let cleaned = raw.replace(/\[(BOARD|SECTION|ACCESS):[^\]]*\][\s\S]*?\[\/\1\]/gi, "");
   cleaned = cleaned.replace(/\[GAME_OVER\][\s\S]*?\[\/GAME_OVER\]/gi, "");
   cleaned = cleaned.replace(/\[(BOARD|SECTION|ACCESS):[^\]]*\][\s\S]*$/gi, "");
-  // Strip directive lines that may leak when --- hasn't arrived yet.
-  // Also strip lines that are just a directive prefix without ':' (token still streaming).
-  const DIR_PREFIXES = "NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_GOAL|IMAGE_PROMPT|MY_NOTES|GAME_PHASE|SECTION|START_VOTE|END_VOTE|ELIMINATE|REVEAL_ROLE|GAME_OVER|RECORD_EVENT|ANNOUNCE|MOOD|REACT|TIMER|PHASE|GM_STATE|CHARACTER_DIRECTION|ENGAGEMENT|BEGIN_GAME";
-  cleaned = cleaned.replace(new RegExp(`^(${DIR_PREFIXES})(:.*)?$`, "gm"), "");
+  cleaned = cleaned.replace(new RegExp(`^(${DIR_PREFIXES_STR})(:.*)?$`, "gm"), "");
+  cleaned = cleaned.replace(new RegExp(`^(${DIR_PREFIXES_STR}):[\\s\\S]*$`, "i"), "");
   return cleaned.replace(/\n{2,}/g, "\n\n").trim();
 }
 
@@ -65,9 +86,6 @@ export function splitHostOutput(raw: string): { message: string; directives: str
   }
   return { message: "", directives: raw };
 }
-
-/** Known host directive prefixes — used to strip leaked directives from display. */
-const DIRECTIVE_PREFIXES_RE = /^(NEXT_SPEAKER|ASSIGN_ROLE|AUTO_CHANNEL|CHANNEL_GOAL|IMAGE_PROMPT|MY_NOTES|GAME_PHASE|SECTION|START_VOTE|END_VOTE|ELIMINATE|REVEAL_ROLE|GAME_OVER|RECORD_EVENT|ANNOUNCE|MOOD|REACT|TIMER|PHASE|GM_STATE|CHARACTER_DIRECTION|ENGAGEMENT|BEGIN_GAME)(:.*)?$/gm;
 
 /**
  * Strip any host directive lines from content. Safe to call on already-clean

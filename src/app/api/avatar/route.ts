@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import OpenAI from 'openai';
-import Replicate from 'replicate';
 import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
-import { deductTokens, imageGenCostToCoins } from '@/lib/tokens';
+import { deductTokens, hasTokens, imageGenCostToCoins } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
 import { logger } from '@/lib/logger';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
@@ -18,25 +17,18 @@ export const maxDuration = 60;
 /** GET /api/avatar - quick config health-check (no auth required) */
 export async function GET() {
   const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
-  const hasReplicate = Boolean(process.env.REPLICATE_API_TOKEN);
   const hasSupabaseUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
   const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
-  const model = (process.env.AVATAR_GENERATION_MODEL?.toLowerCase() === 'flux' ||
-    process.env.AVATAR_GENERATION_MODEL?.toLowerCase() === 'stable-diffusion')
-    ? process.env.AVATAR_GENERATION_MODEL
-    : 'dalle-3';
 
-  const ok = model === 'dalle-3' ? hasOpenAI : hasReplicate;
   return NextResponse.json({
-    ok,
-    model,
+    ok: hasOpenAI,
+    model: 'dalle-3',
     OPENAI_API_KEY: hasOpenAI ? 'set' : 'MISSING ❌',
-    REPLICATE_API_TOKEN: hasReplicate ? 'set' : 'not set',
     NEXT_PUBLIC_SUPABASE_URL: hasSupabaseUrl ? 'set' : 'MISSING ❌',
     SUPABASE_SERVICE_ROLE_KEY: hasServiceRole ? 'set' : 'MISSING ❌',
     DATABASE_URL: hasDatabaseUrl ? 'set' : 'not set',
-  }, { status: ok ? 200 : 503 });
+  }, { status: hasOpenAI ? 200 : 503 });
 }
 
 const AVATAR_BUCKET = 'avatars';
@@ -100,42 +92,39 @@ async function resizeForPool(dataUrl: string): Promise<Buffer> {
     .toBuffer();
 }
 
-/** Get next available pool index for a gender, then upload the avatar there. */
+/**
+ * Upload a generated avatar to the pool with a UUID filename to avoid concurrent
+ * upload races (previous version used `list().length + 1` + upsert:true, which
+ * could collide and overwrite under concurrency).
+ *
+ * Files live under `pool/{gender}/gen/{uuid}.png` so they don't conflict with
+ * the deterministic numbered seed pool (`pool/{gender}/001.png` … `030.png`).
+ */
 async function uploadToPool(buffer: Buffer, gender: 'male' | 'female'): Promise<string | null> {
   if (!supabaseAdmin) return null;
-  // Count existing pool files to find the next index
-  const { data } = await supabaseAdmin.storage.from(AVATAR_BUCKET).list(`pool/${gender}`, { limit: 1000 });
-  const currentSize = Math.max(data?.filter(f => f.name.endsWith('.png')).length ?? MIN_POOL_SIZE, MIN_POOL_SIZE);
-  const newIndex = currentSize + 1;
-  const padded = String(newIndex).padStart(3, '0');
-  const storagePath = `pool/${gender}/${padded}.png`;
+  const id = crypto.randomUUID();
+  const storagePath = `pool/${gender}/gen/${id}.png`;
 
   const { error } = await supabaseAdmin.storage
     .from(AVATAR_BUCKET)
-    .upload(storagePath, buffer, { contentType: 'image/png', upsert: true });
+    .upload(storagePath, buffer, { contentType: 'image/png', upsert: false });
   if (error) {
     logger.warn('[Avatar] Pool upload failed:', error.message);
     return null;
   }
 
   const { data: urlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(storagePath);
-  logger.log(`[Avatar] New avatar added to pool: ${storagePath} (pool size now ~${newIndex})`);
+  logger.log(`[Avatar] New avatar added to pool: ${storagePath}`);
   return urlData.publicUrl;
 }
 
 /** Save a generated character to the ai_characters table for future community use. */
 async function saveCharacterToDb(opts: {
   name: string; gender?: string; personality?: string; background?: string;
-  avatarUrl?: string; gameId?: string; voiceId?: string;
+  avatarUrl?: string; gameId?: string;
 }): Promise<void> {
   if (!supabaseAdmin) return;
   try {
-    // Compute a voice if not provided
-    let voiceId = opts.voiceId;
-    if (!voiceId) {
-      const { pickVoiceForSpeaker } = await import('@/lib/inworld-voices');
-      voiceId = pickVoiceForSpeaker(opts.gender, opts.personality);
-    }
     const { error } = await supabaseAdmin.from('ai_characters').insert({
       user_id: 'system',
       name: opts.name,
@@ -143,7 +132,6 @@ async function saveCharacterToDb(opts: {
       personality: opts.personality || null,
       background: opts.background || null,
       avatar_url: opts.avatarUrl || null,
-      voice_id: voiceId || null,
       is_system: true,
       source_game_id: opts.gameId || null,
     });
@@ -158,12 +146,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const replicate = process.env.REPLICATE_API_TOKEN
-  ? new Replicate({ auth: process.env.REPLICATE_API_TOKEN })
-  : null;
-
 type AvatarType = 'host' | 'player';
-type AvatarModel = 'dalle-3' | 'flux' | 'stable-diffusion';
+type AvatarModel = 'dalle-3';
 
 /** Same identity key as client (name|type) for cache lookup */
 function avatarCacheKey(name: string, type: AvatarType): string {
@@ -180,12 +164,8 @@ function avatarStoragePath(name: string, type: AvatarType): string {
   return `${type}/${AVATAR_STORAGE_VERSION}/${hash}.png`;
 }
 
-/** Get the model to use from env, default to dalle-3 */
+/** Avatar model is fixed to dalle-3 (Replicate removed). */
 function getModel(): AvatarModel {
-  const envModel = process.env.AVATAR_GENERATION_MODEL?.toLowerCase();
-  if (envModel === 'flux' || envModel === 'stable-diffusion') {
-    return envModel;
-  }
   return 'dalle-3';
 }
 
@@ -371,65 +351,10 @@ async function generateWithDalle3(prompt: string, retried = false): Promise<stri
   }
 }
 
-async function generateWithReplicate(
-  prompt: string,
-  model: 'flux' | 'stable-diffusion'
-): Promise<string> {
-  if (!replicate) {
-    throw new Error('Replicate API token not configured');
-  }
-
-  let modelId: `${string}/${string}` | `${string}/${string}:${string}`;
-  let input: Record<string, any>;
-
-  // Negative prompt: no text + no multiple people / dual faces
-  const negativePrompt =
-    'text, letters, words, characters, writing, symbols, labels, name tags, captions, subtitles, speech bubbles, signs, banners, written content, ' +
-    'two people, two faces, multiple people, multiple faces, group photo, crowd, duo, pair of people, second face, another person, reflection with face, mirror with face, double face, ' +
-    'photorealistic, realistic, photograph, real person, hyperrealistic, photo, cinematic';
-  
-  if (model === 'flux') {
-    // FLUX.1 [dev] - high quality, realistic
-    modelId = 'black-forest-labs/flux-dev' as const;
-    input = {
-      prompt: prompt + ' No text, no letters, no words.',
-      negative_prompt: negativePrompt,
-      aspect_ratio: '1:1',
-      output_format: 'png',
-      output_quality: 90,
-    };
-  } else {
-    // Stable Diffusion XL - good for portraits
-    modelId = 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b' as const;
-    input = {
-      prompt: prompt + ' No text, no letters, no words.',
-      negative_prompt: negativePrompt,
-      width: 1024,
-      height: 1024,
-      num_outputs: 1,
-      output_format: 'png',
-    };
-  }
-
-  const output = (await replicate.run(modelId, { input })) as string | string[];
-  const imageUrl = Array.isArray(output) ? output[0] : output;
-
-  if (!imageUrl) {
-    throw new Error('No image URL returned from Replicate');
-  }
-
-  // Fetch the image and convert to base64
-  const imageResponse = await fetch(imageUrl);
-  const imageBuffer = await imageResponse.arrayBuffer();
-  const base64 = Buffer.from(imageBuffer).toString('base64');
-  return `data:image/png;base64,${base64}`;
-}
-
 export async function POST(request: NextRequest) {
   const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
-  const hasReplicate = Boolean(process.env.REPLICATE_API_TOKEN);
   const model = getModel();
-  logger.log('[Avatar API] POST received. OPENAI_API_KEY:', hasOpenAI ? 'set' : 'MISSING', '| REPLICATE_API_TOKEN:', hasReplicate ? 'set' : 'missing', '| model:', model);
+  logger.log('[Avatar API] POST received. OPENAI_API_KEY:', hasOpenAI ? 'set' : 'MISSING', '| model:', model);
 
   try {
     // Authenticate user
@@ -516,26 +441,29 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Pre-check balance (fail fast before burning a generation), but actual
+      // deduction happens AFTER the image is successfully produced — so failures
+      // never charge the user.
+      const cost = imageGenCostToCoins('dall-e-3');
       if (isDatabaseConfigured()) {
         try {
-          const hasBalance = await deductTokens(
-            user.id,
-            imageGenCostToCoins('dall-e-3'),
-            'image_generation',
-            `Custom avatar for ${name} (${avatarType}) [dall-e-3]`
-          );
-          if (!hasBalance) {
+          const hasEnough = await hasTokens(user.id, cost);
+          if (!hasEnough) {
             return NextResponse.json(
               {
                 error: 'Insufficient tokens',
-                message: 'You need more tokens to generate custom avatars. Please purchase tokens or upgrade to Pro.',
+                message: 'You need more tokens to generate custom avatars. Please purchase more credits.',
                 code: 'INSUFFICIENT_TOKENS',
               },
               { status: 402 }
             );
           }
         } catch (tokenErr) {
-          logger.warn('[Avatar API] Token deduction failed, generating anyway:', tokenErr);
+          logger.error('[Avatar API] Balance check failed:', tokenErr);
+          return NextResponse.json(
+            { error: 'Service temporarily unavailable, please try again' },
+            { status: 503 }
+          );
         }
       }
 
@@ -551,6 +479,34 @@ export async function POST(request: NextRequest) {
 
       const imageDataUrl = await generateWithDalle3(prompt);
       const image64 = await resizeAvatarTo64(imageDataUrl);
+
+      // Charge only after the model returned a usable image.
+      if (isDatabaseConfigured()) {
+        try {
+          const ok = await deductTokens(
+            user.id,
+            cost,
+            'image_generation',
+            `Custom avatar for ${name} (${avatarType}) [dall-e-3]`
+          );
+          if (!ok) {
+            return NextResponse.json(
+              {
+                error: 'Insufficient tokens',
+                message: 'Balance changed during generation. Please try again.',
+                code: 'INSUFFICIENT_TOKENS',
+              },
+              { status: 402 }
+            );
+          }
+        } catch (tokenErr) {
+          logger.error('[Avatar API] Post-generation token deduction failed:', tokenErr);
+          return NextResponse.json(
+            { error: 'Billing temporarily unavailable, please try again' },
+            { status: 503 }
+          );
+        }
+      }
 
       if (supabaseAdmin) {
         try {
@@ -580,26 +536,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const cost = imageGenCostToCoins('dall-e-3');
       if (isDatabaseConfigured()) {
         try {
-          const hasBalance = await deductTokens(
-            user.id,
-            imageGenCostToCoins('dall-e-3'),
-            'image_generation',
-            `Pool avatar for ${name} (${avatarType}) [dall-e-3]`
-          );
-          if (!hasBalance) {
+          const hasEnough = await hasTokens(user.id, cost);
+          if (!hasEnough) {
             return NextResponse.json(
               {
                 error: 'Insufficient tokens',
-                message: 'You need more tokens to generate avatars. Please purchase tokens or upgrade to Pro.',
+                message: 'You need more tokens to generate avatars. Please purchase more credits.',
                 code: 'INSUFFICIENT_TOKENS',
               },
               { status: 402 }
             );
           }
         } catch (tokenErr) {
-          logger.warn('[Avatar API] Token deduction failed, generating anyway:', tokenErr);
+          logger.error('[Avatar API] Balance check failed:', tokenErr);
+          return NextResponse.json(
+            { error: 'Service temporarily unavailable, please try again' },
+            { status: 503 }
+          );
         }
       }
 
@@ -614,6 +570,34 @@ export async function POST(request: NextRequest) {
       logger.log(`[Avatar] generateAndPool for: ${name}, style: ${resolvedStyle}, gender: ${genderResolved}, prompt length: ${prompt.length}`);
 
       const imageDataUrl = await generateWithDalle3(prompt);
+
+      if (isDatabaseConfigured()) {
+        try {
+          const ok = await deductTokens(
+            user.id,
+            cost,
+            'image_generation',
+            `Pool avatar for ${name} (${avatarType}) [dall-e-3]`
+          );
+          if (!ok) {
+            return NextResponse.json(
+              {
+                error: 'Insufficient tokens',
+                message: 'Balance changed during generation. Please try again.',
+                code: 'INSUFFICIENT_TOKENS',
+              },
+              { status: 402 }
+            );
+          }
+        } catch (tokenErr) {
+          logger.error('[Avatar API] Post-generation token deduction failed:', tokenErr);
+          return NextResponse.json(
+            { error: 'Billing temporarily unavailable, please try again' },
+            { status: 503 }
+          );
+        }
+      }
+
       const g = poolGenderBinary(genderResolved, name);
 
       const poolBuffer = await resizeForPool(imageDataUrl);
@@ -746,23 +730,10 @@ export async function POST(request: NextRequest) {
 
     let imageDataUrl: string;
     try {
-      if (model === 'flux' || model === 'stable-diffusion') {
-        imageDataUrl = await generateWithReplicate(fallbackPrompt, model);
-      } else {
-        imageDataUrl = await generateWithDalle3(fallbackPrompt);
-      }
+      imageDataUrl = await generateWithDalle3(fallbackPrompt);
     } catch (error: unknown) {
       logger.error(`Error generating with ${model}:`, error);
-      if (model !== 'dalle-3') {
-        try {
-          imageDataUrl = await generateWithDalle3(fallbackPrompt);
-        } catch (fallbackError: unknown) {
-          const msg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-          throw new Error(`Primary model (${model}) and fallback (dalle-3) both failed: ${msg}`);
-        }
-      } else {
-        throw error;
-      }
+      throw error;
     }
 
     const image64 = await resizeAvatarTo64(imageDataUrl);
