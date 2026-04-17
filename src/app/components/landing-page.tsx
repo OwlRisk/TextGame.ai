@@ -101,7 +101,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
   const localFeatures = useMemo(() => localizeFeatures(FEATURES, lang), [lang]);
 
   const [selectedGame, setSelectedGame] = useState<keyof typeof GAME_SCENARIOS>(Object.keys(GAME_SCENARIOS)[0]);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAutoPlaying] = useState(true);
   const [visibleCount, setVisibleCount] = useState(1);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
       setSelectedGame(games[currentIndex]);
     }, 20000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, selectedGame]);
+  }, [isAutoPlaying, selectedGame, localScenarios]);
 
   // Reset visible count when switching games
   useEffect(() => {
@@ -133,7 +133,7 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
       const img = new Image();
       img.src = url;
     });
-  }, []);
+  }, [localScenarios]);
 
   const currentScenario = localScenarios[selectedGame] ?? Object.values(localScenarios)[0];
 

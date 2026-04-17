@@ -167,11 +167,6 @@ describe('avatarImageUrls map lifecycle', () => {
   });
 
   it('clearing the map (style change) removes all URLs', () => {
-    const urls: Record<string, string> = {
-      'Silas Grey|player': 'https://sr/silas.jpg',
-      'Silas Grey|player|semi-realistic': 'https://sr/silas.jpg',
-      'Echo|host': 'https://sr/echo.jpg',
-    };
     // Simulate: setAvatarImageUrls({})
     const cleared: Record<string, string> = {};
     expect(Object.keys(cleared)).toHaveLength(0);

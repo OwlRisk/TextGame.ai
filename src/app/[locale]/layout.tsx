@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { SITE_DOMAIN, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
+import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
 import { isValidSEOLocale, LOCALE_HTML_LANG, HOME_META, type SEOLocale } from "@/lib/seo-locales";
 
 interface Props {

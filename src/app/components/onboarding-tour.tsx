@@ -57,6 +57,8 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
     return () => {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onResize, true);
+      // Read latest raf id at cleanup time to cancel any in-flight frame.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       cancelAnimationFrame(rafRef.current);
     };
   }, [visible, step, measureTarget]);

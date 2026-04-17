@@ -5,10 +5,9 @@ import { flushSync } from "react-dom";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
-import { Sparkles, Send, X, Check, MessageSquarePlus, Trash2, Play, Plus, PanelLeft, FileText, LayoutGrid } from "lucide-react";
+import { Sparkles, Send, X, Check, MessageSquarePlus, Play, Plus, PanelLeft, FileText, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { GameConfig } from "@/app/components/game-setup-dialog";
-import type { DiscoverPreset } from "@/data/discover-templates";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
@@ -23,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { HOST_PERSONALITIES, getDefaultHost, getLastSelectedHostId, saveLastSelectedHostId, getHostById } from "@/app/config/host-config";
+import { getDefaultHost, getLastSelectedHostId } from "@/app/config/host-config";
 
 import { OutOfCreditsModal } from "@/app/components/out-of-credits-modal";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
@@ -51,7 +50,7 @@ import { GameTemplate, getAvatarStyleForTemplate } from "@/lib/game-templates";
 
 export type { ChatMessage, GameSession, ConversationState, GameMasterChatProps, ChannelRoomType };
 
-export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
+export function GameMasterChat({ onBack: _onBack, onCreateGame, initialPreset, onPresetApplied }: GameMasterChatProps) {
   const { session, user } = useAuth();
   const authToken = session?.access_token;
   const userAvatarUrl = getUserAvatarUrl(user);
@@ -106,9 +105,8 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
-  const [gameStory, setGameStory] = useState<string>("");
-  const [rpgWorldId, setRpgWorldId] = useState<string | null>(null);
-  const [rpgAdventureNotes, setRpgAdventureNotes] = useState<string>("");
+  const [rpgWorldId, _setRpgWorldId] = useState<string | null>(null);
+  const [rpgAdventureNotes, _setRpgAdventureNotes] = useState<string>("");
   const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
     name: string;
     gender?: string;
@@ -152,7 +150,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     sessions, setSessions, currentSessionId,
     deleteDialogOpen, setDeleteDialogOpen,
     sessionToDelete, setSessionToDelete,
-    saveCurrentSession, createNewSession, createSessionFromPreset,
+    saveCurrentSession: _saveCurrentSession, createNewSession, createSessionFromPreset: _createSessionFromPreset,
     loadSession, deleteSession,
   } = useGameMasterSessions({
     userId: user?.id,
@@ -167,17 +165,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     selectedHostId, setSelectedHostId,
     setIsGMTyping,
   });
-
-  const getCombinedRules = useCallback((rulesOverride?: string): string => {
-    const baseRules = (rulesOverride ?? customRules) || selectedTemplate?.defaultRules || "";
-    const story = gameStory.trim();
-    if (!story) return baseRules;
-    if (!baseRules) return `STORY:\n${story}`;
-    const strippedRules = baseRules.replace(/^(STORY|BACKGROUND|WORLD|SETTING)[\s\S]*?\n\n/i, "");
-    return `STORY:\n${story}\n\n${strippedRules}`;
-  }, [customRules, selectedTemplate, gameStory]);
-
-  const gameDocValue = useMemo(() => getCombinedRules(), [getCombinedRules]);
 
   // When template changes, clear GM-decided channels so we use template default until GM outputs CONFIG_CHANNELS again
   useEffect(() => {
@@ -252,7 +239,7 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
   }, [suggestionChips]);
 
   // Only render client-only UI after mount to avoid hydration mismatch.
-  const [mounted, setMounted] = useState(false);
+  const [_mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -445,7 +432,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
     
     setIsGMTyping(true);
     setIsStreaming(true);
-    const lowerInput = userInput.toLowerCase();
 
     // Create a temporary message for streaming
     const tempMessageId = `msg-temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
@@ -502,8 +488,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
 
       // Stream AI response
       let fullResponse = "";
-      let tempMessageAdded = false;
-      let lastProcessedLength = 0; // Track what we've already processed
       const processedEditTags = new Set<string>(); // Track which edit tags we've already processed to avoid duplicates
       let lastRulesPanelUpdate = 0; // Throttle rules panel updates (ms)
       const RULES_UPDATE_THROTTLE_MS = 80; // Min interval between incremental rules updates
@@ -521,9 +505,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
           // Real-time rule editing - process incrementally as chunks arrive
           // This makes it feel like a code editor agent writing code in real-time
           try {
-            const newContent = fullResponse.slice(lastProcessedLength);
-            lastProcessedLength = fullResponse.length;
-            
             // Real-time rule editing - like a code agent writing code
             let hasEditActivity = false;
             
@@ -661,7 +642,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
             let updated;
             // Only show message if there's content after removing editing tags
             if (!hasTempMessage && displayContent.trim()) {
-              tempMessageAdded = true;
               updated = [...prev, { ...tempMessage, content: displayContent }];
             } else if (hasTempMessage) {
               // Update with cleaned content
@@ -1074,15 +1054,6 @@ export function GameMasterChat({ onBack, onCreateGame, initialPreset, onPresetAp
       await getGMResponse(message);
     }
   };
-
-  const handleQuickReply = async (reply: string) => {
-    if (!isGMTyping && !isStreaming) {
-      addUserMessage(reply);
-      await getGMResponse(reply);
-    }
-  };
-
-  const host = getHostById(selectedHostId);
 
   return (
     <div className="flex-1 flex bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-hidden relative min-h-0 min-w-0">

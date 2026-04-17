@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { SCENES, getScene, getRandomScene, isSceneMode } from "../index";
-import type { Scene } from "../types";
 
 describe("SCENES data integrity", () => {
   it("should have at least 1 scene", () => {

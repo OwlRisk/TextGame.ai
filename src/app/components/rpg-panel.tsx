@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useCallback, memo, useMemo } from "react";
-import { Heart, Zap, Sword, Shield, Wind, Clover, ChevronDown, ChevronUp, Swords, BookOpen, Package, Star, User } from "lucide-react";
+import { useState, memo, useMemo } from "react";
+import { Heart, Zap, Sword, Shield, Wind, Clover, ChevronDown, ChevronUp, Swords, Star } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
 import type { Player } from "@/types/player";
-import type { RpgCharacter, RpgSkill, RpgItem, StatusEffect } from "@/types/rpg";
+import type { RpgCharacter, RpgSkill, RpgItem } from "@/types/rpg";
 import type { MudRoom } from "@/lib/gm-state";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { getAvatarPropsForPlayer } from "@/lib/avatar-utils";
@@ -302,7 +302,7 @@ function RoomCard({ room, onNavigate }: { room: MudRoom; onNavigate?: (direction
   );
 }
 
-function StatBar({ label, current, max, color, bgColor, icon, tiny }: {
+function StatBar({ label: _label, current, max, color, bgColor, icon, tiny }: {
   label: string; current: number; max: number; color: string; bgColor: string; icon: React.ReactNode; tiny?: boolean;
 }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;

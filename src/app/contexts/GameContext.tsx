@@ -101,6 +101,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setIsHydrated(true);
     }
     return () => { isCancelled = true; };
+    // Depend on user.id only: avoids re-fetching when AuthContext re-creates
+    // the user object reference but the underlying identity is the same.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   // Save to localStorage when not logged in

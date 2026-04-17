@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Check, ArrowRight, Sparkles, Shield, Infinity, MessageSquare } from 'lucide-react';
+import { Check, ArrowRight, Shield, Infinity, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { setAuthCookie } from '@/lib/auth-cookie';
 import { supabase } from '@/lib/supabase';

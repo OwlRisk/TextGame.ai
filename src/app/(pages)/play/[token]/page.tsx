@@ -1,5 +1,9 @@
 "use client";
 
+// Game icons can be data: URLs or arbitrary remote URLs of unknown dimensions;
+// next/image would require explicit width/height or remotePatterns config.
+/* eslint-disable @next/next/no-img-element */
+
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

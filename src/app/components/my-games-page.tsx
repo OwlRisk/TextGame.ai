@@ -1,5 +1,8 @@
 "use client";
 
+// Game icons are dynamic (data:/remote/static) inside container-sized cells.
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";

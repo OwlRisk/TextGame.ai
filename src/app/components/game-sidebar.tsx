@@ -1,5 +1,8 @@
 "use client";
 
+// Sidebar game icons are dynamic (data:/remote/static) inside small fixed cells.
+/* eslint-disable @next/next/no-img-element */
+
 import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins, Users } from "lucide-react";
 import { t, getBrowserLanguage } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
@@ -30,7 +33,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { useAuth, getUserAvatarUrl } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
@@ -81,7 +83,7 @@ interface GameSidebarProps {
   onNavigate?: () => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile, onDeleteGame, onNavigate }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile: _onOpenProfile, onDeleteGame, onNavigate }: GameSidebarProps) {
   const router = useRouter();
   const { user, session, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);

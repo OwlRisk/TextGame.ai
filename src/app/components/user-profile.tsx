@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, History, Camera, X, LogOut, Loader2, Gamepad2, ExternalLink, Globe } from "lucide-react";
+import { User, History, X, LogOut, Loader2, Gamepad2, ExternalLink, Globe } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -85,20 +85,6 @@ export function UserProfile({ onClose }: UserProfileProps) {
       toast.error(t("sidebar.failed_sign_out"));
       setIsSigningOut(false);
     }
-  };
-
-  // Mock data
-  const gameHistory = [
-    { id: 1, name: "Werewolf Night", date: "2024-01-20", result: "Won", players: 7 },
-    { id: 2, name: "Undercover Mystery", date: "2024-01-19", result: "Lost", players: 6 },
-    { id: 3, name: "Mafia Showdown", date: "2024-01-18", result: "Won", players: 8 },
-    { id: 4, name: "Detective Game", date: "2024-01-17", result: "Won", players: 5 },
-  ];
-
-  const stats = {
-    totalGames: 24,
-    totalPlaytime: "18h 32m",
-    favoriteGame: "Werewolf",
   };
 
   return (

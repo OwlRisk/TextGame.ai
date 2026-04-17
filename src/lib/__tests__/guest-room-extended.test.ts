@@ -20,7 +20,6 @@ import { describe, it, expect } from 'vitest';
 // selectedChannelId (which may point to a private channel they can't access).
 
 function stripGuestOnlyFields(raw: Record<string, unknown>): Record<string, unknown> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { humanGameIdentity: _id, selectedChannelId: _ch, ...rest } = raw;
   return rest;
 }

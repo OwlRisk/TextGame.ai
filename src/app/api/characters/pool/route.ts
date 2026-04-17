@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-import { VALID_STYLES, isValidStyle, DEFAULT_STYLE, type AvatarStyle } from "@/lib/avatar-style-constants";
+import { isValidStyle, DEFAULT_STYLE, type AvatarStyle } from "@/lib/avatar-style-constants";
 
 /**
  * GET /api/characters/pool?count=5&exclude=Name1,Name2&style=semi-realistic

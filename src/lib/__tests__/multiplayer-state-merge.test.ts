@@ -133,10 +133,8 @@ describe('mergeMessages – size cap', () => {
   });
 
   it('keeps the most recent 100 messages when over the cap', () => {
-    const msgs = Array.from({ length: 105 }, (_, i) => makeMsg(`m${i}`, i * 10));
-    const result = mergeMessages(msgs, []);
-    // Empty remote → no merge happens, returns original reference
-    // So let's test the cap via a real merge
+    // Empty remote → no merge happens, returns original reference,
+    // so we test the cap via a real merge below.
     const local = Array.from({ length: 95 }, (_, i) => makeMsg(`l${i}`, i * 10));
     const extra = Array.from({ length: 10 }, (_, i) => makeMsg(`e${i}`, 1000 + i));
     const capped = mergeMessages(local, extra);

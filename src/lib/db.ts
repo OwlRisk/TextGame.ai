@@ -15,11 +15,9 @@ function logDbError(context: string, err: unknown) {
   }
 }
 
-type GameSession = Database['public']['Tables']['game_sessions']['Row'];
 type GameSessionInsert = Database['public']['Tables']['game_sessions']['Insert'];
 type GameSessionUpdate = Database['public']['Tables']['game_sessions']['Update'];
 
-type Game = Database['public']['Tables']['games']['Row'];
 type GameInsert = Database['public']['Tables']['games']['Insert'];
 type GameUpdate = Database['public']['Tables']['games']['Update'];
 

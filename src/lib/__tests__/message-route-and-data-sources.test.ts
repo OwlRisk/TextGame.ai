@@ -434,8 +434,6 @@ describe('D – two data sources diverge during guest transitions', () => {
       { id: 'm1', nickname: 'Alice', is_owner: false, player_id: null, guest_id: 'g-alice' },
       // No Bob row in DB
     ];
-    const players: Array<{ id: string; name: string; isAI: boolean }> = [];
-
     const enriched = presences.map((g) => {
       const member = roomMembers.find((m) => m.guest_id === g.id && !m.is_owner);
       return {

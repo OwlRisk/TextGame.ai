@@ -311,7 +311,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         applyMessages(parsed, false);
         applyNonMessageState(parsed);
       }
-    } catch (_) {}
+    } catch { /* noop */ }
 
     getGameRoomState(gameId)
       .then(({ data, error }) => {
@@ -577,7 +577,7 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
             }
             keysToRemove.forEach((k) => localStorage.removeItem(k));
             localStorage.setItem(key, payload);
-          } catch (e2) {
+          } catch {
             // Still over quota — retry without avatar URLs (large payload)
             const stateSlim = { ...state, avatarImageUrls: undefined };
             try {
@@ -593,7 +593,11 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     } catch (e) {
       console.error("Error saving game room state:", e);
     }
-    // Fixed length: gameId, userId, isHydrated, saveTrigger only
+    // Fixed length: gameId, userId, isHydrated, saveTrigger only.
+    // saveTrigger is bumped externally whenever a snapshot of the (large) state
+    // should be persisted; depending on every individual piece of state would
+    // cause a save on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, userId, isHydrated, saveTrigger]);
 
   // ─── Realtime subscription ────────────────────────────────────────────────

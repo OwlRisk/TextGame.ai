@@ -205,7 +205,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange, gameId, avatar
 
 // ─── Shared sub-components ────────────────────────────────────────────
 
-function StatBar({ label, current, max, color, bgColor, icon, tiny }: {
+function StatBar({ label: _label, current, max, color, bgColor, icon, tiny }: {
   label: string; current: number; max: number; color: string; bgColor: string; icon: React.ReactNode; tiny?: boolean;
 }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;

@@ -17,8 +17,8 @@ interface UseGameRoomLifecycleParams {
 }
 
 export function useGameRoomLifecycle({
-  gamePhase,
-  gameId,
+  gamePhase: _gamePhase,
+  gameId: _gameId,
   timerEndsAt,
   addMessage,
   setTimerEndsAt,

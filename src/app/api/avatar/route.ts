@@ -376,7 +376,7 @@ export async function POST(request: NextRequest) {
       name,
       type = 'player',
       gameId,
-      role,
+      role: _role,
       background,
       personality,
       gender,

@@ -1,4 +1,4 @@
-import { Hash, Users, Lock, Trash2, BookOpen, FileText, Package } from "lucide-react";
+import { Users, Lock, Trash2, BookOpen, FileText, Package } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";

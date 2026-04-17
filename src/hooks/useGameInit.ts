@@ -10,12 +10,12 @@ import { avatarCacheKey } from "@/app/components/generated-avatar";
 import { buildAiPlayerBriefing } from "@/lib/ai-player-briefing";
 import { seedInitialPlayerReplies } from "@/lib/seed-initial-replies";
 import { trackEvent } from "@/lib/analytics";
-import { getGameTemplate, getTemplateHexColor, getAvatarStyleForTemplate, type GameTemplate } from "@/lib/game-templates";
+import { getGameTemplate, getAvatarStyleForTemplate, type GameTemplate } from "@/lib/game-templates";
 import { getScene, isSceneMode } from "@/lib/scenes";
 import { extractPreferredName, detectBrowserLanguage } from "@/lib/content-language";
 import { t, setAppLanguage, getAppLanguage } from "@/lib/i18n";
 import { resolvePlayerGender } from "@/lib/player-gender";
-import { getWorldById, type WorldSetting } from "@/lib/rpg/worlds";
+import { getWorldById } from "@/lib/rpg/worlds";
 import { createCharacterFromClass } from "@/lib/rpg/classes";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string, lang?: string): string {
@@ -76,7 +76,7 @@ export interface UseGameInitReturn {
 
 export function useGameInit(gameId: string): UseGameInitReturn {
   const { session } = useAuth();
-  const { games, updateGame } = useGameContext();
+  const { games } = useGameContext();
   const {
     players,
     setPlayers,
@@ -88,7 +88,6 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     userId,
     humanGameIdentity,
     setHumanGameIdentity,
-    avatarImageUrls,
     onAvatarUrlLoaded,
     isRoomLoading,
     addMessage,
@@ -143,7 +142,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     };
   }, []);
 
-  const buildAiPlayers = useCallback((configuredPlayers: any[], _template?: string) => {
+  const buildAiPlayers = useCallback((configuredPlayers: any[]) => {
     return (configuredPlayers || []).map((configPlayer: any, i: number) => ({
       id: `ai-${i + 1}`,
       name: configPlayer.name,
@@ -173,8 +172,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     if (!currentGame || !currentGame.config) return;
     const config = currentGame.config;
 
-    const { player: gameMaster, hostName, hostColor } = buildHostPlayer(config);
-    const aiPlayers = buildAiPlayers(config.configuredPlayers || [], config.template);
+    const { player: gameMaster } = buildHostPlayer(config);
+    const aiPlayers = buildAiPlayers(config.configuredPlayers || []);
 
     const userName = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split("@")[0])?.trim() || "You";
     const userProfileAvatar = getUserAvatarUrl(session?.user) ?? "#6366f1";
@@ -507,7 +506,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     } finally {
       gameStartingRef.current = false;
     }
-  }, [currentGame, gamePhase, buildHostPlayer, setPlayers, setPlayerNotes, setGamePhase, gameId, humanGameIdentity?.name, launchOpeningRound, setCurrentSpeakerId, userId, addMessage, setMyBoardContent, contentLanguage]);
+  }, [currentGame, gamePhase, buildHostPlayer, setPlayers, setPlayerNotes, humanGameIdentity?.name, launchOpeningRound, userId, setMyBoardContent, contentLanguage]);
 
   // Initialize game room: wait for room state to load, then set up lobby if fresh
   const humanIdentityFetchedRef = useRef<string | null>(null);

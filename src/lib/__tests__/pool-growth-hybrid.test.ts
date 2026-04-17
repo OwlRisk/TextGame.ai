@@ -5,7 +5,7 @@
  * - fetchAvatarsForRoom batch function
  * - Character persistence to ai_characters table
  */
-import { describe, it, expect, vi, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import crypto from "crypto";
 
 beforeAll(() => {

@@ -19,12 +19,6 @@ function renderToText(nodes: React.ReactNode[]): string {
     .join("");
 }
 
-function getElementTypes(nodes: React.ReactNode[]): string[] {
-  return nodes
-    .filter(React.isValidElement)
-    .map((n) => (n as React.ReactElement).type as string);
-}
-
 // ─── [ACTION] tag parsing ─────────────────────────────────────────────────
 
 describe("[ACTION] tag parsing", () => {

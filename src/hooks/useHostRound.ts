@@ -13,7 +13,7 @@ import {
   sectionId as sectionIdUtil,
 } from "@/lib/game-host-utils";
 import { getHostModel, SCENE_NARRATOR_MODEL } from "@/lib/model-prefs";
-import { getTemplateHexColor, getGameTemplate } from "@/lib/game-templates";
+import { getGameTemplate } from "@/lib/game-templates";
 import {
   MAX_AUTO_ADVANCES,
   HOST_CONTEXT_WINDOW,
@@ -43,7 +43,6 @@ import {
 } from "@/lib/speaker-queue";
 import { trackEvent } from "@/lib/analytics";
 import { AFTERLIFE_CHANNEL_ID } from "@/lib/templates/types";
-import type { Player } from "@/types/player";
 import { applyRpgUpdate } from "@/types/rpg";
 import type { PlayerUpdateEntry } from "@/lib/host-output-parser";
 
@@ -115,7 +114,6 @@ export function useHostRound({
     setMyBoardContent,
     playerNotes,
     setPlayerNotes,
-    sections,
     setSections,
     gameEvents,
     setGameEvents,
@@ -269,38 +267,6 @@ export function useHostRound({
 
       const humanPlayer = freshPlayers.find((p) => p.id === userId);
       const humanName = humanGameIdentity?.name || humanPlayer?.name || "You";
-      const nonHostPlayers = freshPlayers.filter((p) => !p.isGameMaster);
-      const playerRoster = nonHostPlayers.map((p) => {
-        const isHuman = p.id === userId;
-        const name = isHuman ? humanName : p.name;
-        const role = p.role ? `Role: ${p.role}` : "Role: not assigned";
-        const status = (p.stats?.Status as string | undefined) ?? "alive";
-        const statusStr = `Status: ${status}`;
-        if (isHuman) {
-          return `  • ${name} [YOU/HUMAN] | ${role} | ${statusStr}`;
-        }
-        const personality = p.personality ? `Personality: ${p.personality}` : "";
-        const background = p.background ? `Background: ${p.background}` : "";
-        const extras = [personality, background].filter(Boolean).join(" | ");
-        return `  • ${name} [AI] | ${role} | ${statusStr}${extras ? ` | ${extras}` : ""}`;
-      }).join("\n");
-
-      const boardEntries = Object.entries(myBoardContent)
-        .map(([playerId, boardContent]) => {
-          if (!boardContent?.trim()) return null;
-          if (playerId === "_host_") return `  [_Host_ (your private notes)]\n${boardContent.trim()}`;
-          const p = players.find((pl) => pl.id === playerId);
-          const name = p ? (p.id === userId ? humanName : p.name) : playerId;
-          return `  [${name}]\n${boardContent.trim()}`;
-        })
-        .filter(Boolean);
-      const boardSummary = boardEntries.length > 0
-        ? boardEntries.join("\n\n")
-        : "(No private board content yet)";
-
-      const eventLogSummary = gameEvents.length > 0
-        ? gameEvents.map((e, i) => `  ${i + 1}. ${e}`).join("\n")
-        : "(No events recorded yet)";
 
       const rulesText = currentGame?.config?.rules ?? "";
       const tmplId = currentGame?.config?.template ?? "";

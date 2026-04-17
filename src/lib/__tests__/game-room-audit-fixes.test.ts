@@ -636,7 +636,7 @@ describe("withCursor helper", () => {
 
   beforeEach(async () => {
     React = await import("react");
-    const mod = await import("@/app/components/chat-message");
+    await import("@/app/components/chat-message");
     // withCursor is not exported, so we test its behavior through formatMessage + cursor
     // Instead, test the logic pattern directly
     withCursor = (content, cursor) => {

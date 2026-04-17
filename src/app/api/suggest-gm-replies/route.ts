@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getAuthUserFromRequest } from "@/lib/auth-server";
-import { sanitizeModel, CHEAP_AI_MODEL } from "@/lib/model-prefs";
+import { CHEAP_AI_MODEL } from "@/lib/model-prefs";
 import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins } from "@/lib/tokens";
 import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { messages = [], preferredModel, language, gameName, rulesSnippet, playerCount } = body as {
+    const { messages = [], language, gameName, rulesSnippet, playerCount } = body as {
       messages?: { role: string; content: string }[];
       preferredModel?: string;
       language?: string;

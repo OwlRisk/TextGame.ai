@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { Crown, Volume2, VolumeX, User, Package } from "lucide-react";
+import { Crown, Volume2, VolumeX } from "lucide-react";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { PlayerBoardData } from "@/app/components/player-board";
 import { Badge } from "@/app/components/ui/badge";
 import { GeneratedAvatar, avatarCacheKey } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -127,7 +125,7 @@ function PlayerCard({
   isUserGameMaster,
   gameId,
   onToggleMute,
-  onSelectSpeaker,
+  onSelectSpeaker: _onSelectSpeaker,
   humanGameIdentity,
   onOpenProfile,
   avatarImageUrls = {},

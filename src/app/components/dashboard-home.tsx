@@ -1,10 +1,13 @@
 "use client";
 
+// Game icons can be data:/blob:/remote URLs of unknown dimensions; the
+// container-sized <img> stays as-is to avoid fill/unoptimized plumbing.
+/* eslint-disable @next/next/no-img-element */
+
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Users, Clock, Sparkles, Play, ChevronRight, Compass, TrendingUp, Shuffle, History } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
 import { t, getAppLanguage } from "@/lib/i18n";
 import { type GameTemplate, ALL_PRESETS } from "@/data/discover-templates";

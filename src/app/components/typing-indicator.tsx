@@ -25,7 +25,7 @@ interface TypingIndicatorProps {
 }
 
 export function TypingIndicator({
-  typingUsers, streamingNames, players, gameId, userId,
+  typingUsers, streamingNames, players, gameId, userId: _userId,
   humanPlayer, useGeneratedAvatarForUser, userAvatarName,
   avatarImageUrls = {}, onAvatarUrlLoaded,
 }: TypingIndicatorProps) {

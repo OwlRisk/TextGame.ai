@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { sanitizeModel, ALLOWED_MODELS, DEFAULT_AI_MODEL } from "../model-prefs";
 
 describe("ALLOWED_MODELS", () => {

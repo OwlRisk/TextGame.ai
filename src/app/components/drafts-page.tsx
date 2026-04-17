@@ -1,5 +1,8 @@
 "use client";
 
+// Game template icons are tiny inline badges; not worth next/image migration.
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
@@ -18,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { getDrafts, createDraft, deleteDraft } from "@/lib/db";
+import { getDrafts, deleteDraft } from "@/lib/db";
 
 export interface GameDraft {
   id: string;
@@ -111,7 +114,7 @@ export function DraftsPage({ onEditDraft, onCreateFromDraft }: DraftsPageProps) 
         const updated = parsed.filter((d: GameDraft) => d.id !== id);
         localStorage.setItem("gameDrafts", JSON.stringify(updated));
       }
-    } catch (_) {}
+    } catch { /* noop */ }
   };
 
   const formatDate = (date: Date) => {

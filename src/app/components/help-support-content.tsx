@@ -1,5 +1,9 @@
 'use client';
 
+// Image previews come from createObjectURL (blob:); next/image cannot optimize
+// these without `unoptimized`, so the plain <img> is intentional.
+/* eslint-disable @next/next/no-img-element */
+
 import { ArrowLeft, Send, Mail, CheckCircle2, ChevronDown, Zap, CreditCard, Bug, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';

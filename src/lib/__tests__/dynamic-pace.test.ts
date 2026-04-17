@@ -95,9 +95,8 @@ describe("dynamicPace", () => {
   });
 
   it("scene mode resolves faster than host mode", async () => {
-    let hostResolved = false;
     let sceneResolved = false;
-    dynamicPace(100, undefined, "structured", false).then(() => { hostResolved = true; });
+    dynamicPace(100, undefined, "structured", false);
     dynamicPace(100, undefined, "structured", true).then(() => { sceneResolved = true; });
 
     await vi.advanceTimersByTimeAsync(SCENE_PACE_MAX_MS + 100);

@@ -1,5 +1,5 @@
 import React from "react";
-import { X, User, Heart, Zap, Shield, Sword, Package, Sparkles, Plus, Minus } from "lucide-react";
+import { X, User, Heart, Zap, Shield, Sword, Package, Sparkles } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
@@ -75,7 +75,7 @@ const attributeIcons: Record<string, React.JSX.Element> = {
   attack: <Sword className="h-4 w-4" />,
 };
 
-export function PlayerBoard({ data, onClose, isEditable = false, gameId }: PlayerBoardProps) {
+export function PlayerBoard({ data, onClose, isEditable: _isEditable = false, gameId }: PlayerBoardProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-zinc-900 rounded-lg border border-zinc-700 w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">

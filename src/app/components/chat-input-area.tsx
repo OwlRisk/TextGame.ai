@@ -68,12 +68,12 @@ function parseTaskHintChoices(hint: string): { description: string; choices: str
 }
 
 export const ChatInputArea = React.memo(function ChatInputArea({
-  channelName,
+  channelName: _channelName,
   onSendMessage,
   players,
   userId,
   isGameActive,
-  currentSpeakerId,
+  currentSpeakerId: _currentSpeakerId,
   isEliminated,
   isInAfterlife = false,
   isRoundInProgress,
@@ -89,7 +89,7 @@ export const ChatInputArea = React.memo(function ChatInputArea({
   alivePlayers,
   gameActions = [],
   dialogueChips = [],
-  gameTemplate,
+  gameTemplate: _gameTemplate,
   channelTaskHint,
   messages = [],
 }: ChatInputAreaProps) {

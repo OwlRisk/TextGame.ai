@@ -9,7 +9,7 @@
  * All functions are pure helpers / models mirroring production logic.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   VALID_STYLES,
   DEFAULT_STYLE,
@@ -132,11 +132,6 @@ describe('avatarImageUrls map growth', () => {
   });
 
   it('clearing the map resets to empty', () => {
-    const map: AvatarMap = {
-      'Alice|player': 'https://sr/alice.jpg',
-      'Alice|player|toon3d': 'https://toon3d/alice.jpg',
-      'Echo|host': 'https://sr/echo.jpg',
-    };
     const cleared: AvatarMap = {};
     expect(Object.keys(cleared)).toHaveLength(0);
   });

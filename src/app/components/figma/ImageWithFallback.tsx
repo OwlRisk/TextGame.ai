@@ -1,3 +1,7 @@
+// Generic fallback wrapper for arbitrary remote/data-URL images. Intentionally
+// uses a plain <img> element so callers can spread any <img> attribute and so
+// data-URL fallbacks work without next/image domain configuration.
+/* eslint-disable @next/next/no-img-element */
 import React, { useState } from 'react'
 
 const ERROR_IMG_SRC =

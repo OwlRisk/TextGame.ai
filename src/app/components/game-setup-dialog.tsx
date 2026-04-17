@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, CheckCircle2 } from "lucide-react";
-import { HOST_PERSONALITIES, HostPersonality, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId } from "@/app/config/host-config";
+import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId } from "@/app/config/host-config";
 import { HostSelector } from "@/app/components/host-selector";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
@@ -139,7 +139,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
   
   useEffect(() => {
     if (open && messages.length === 0) {
-      // Initial greeting from Game Master
+      // Initial greeting from Game Master, fired once when dialog opens.
       setTimeout(() => {
         addGMMessage(
           "Greetings! I'm the Game Master, and I'll help you create an amazing game experience. " +
@@ -153,6 +153,7 @@ export function GameSetupDialog({ open, onClose, onCreateGame }: GameSetupDialog
         );
       }, 500);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SITE_DOMAIN, SITE_NAME } from "@/lib/site";
+import { SITE_DOMAIN } from "@/lib/site";
 import { FAQ_ITEMS } from "@/data/landing-content";
 import { buildHreflangAlternates } from "@/lib/seo-locales";
 import HomeClient from "./home-client";

@@ -1,11 +1,14 @@
 "use client";
 
+// Template icons render inside container-sized layouts; keeping <img> avoids
+// having to wire fill mode into every grid cell.
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Sparkles, ArrowLeft, ArrowRight, CheckCircle2, MessageSquare, Swords, Brain, MessageCircle, Trophy, User, Clock, Smile, Frown, Zap } from "lucide-react";
+import { Sparkles, ArrowLeft, ArrowRight, CheckCircle2, MessageSquare, Brain, User, Clock, Smile, Frown, Zap } from "lucide-react";
 import { GameConfig } from "@/app/components/game-setup-dialog";
-import { Badge } from "@/app/components/ui/badge";
 import { Textarea } from "@/app/components/ui/textarea";
 import { HostSelector } from "@/app/components/host-selector";
 import { HOST_PERSONALITIES, getDefaultHost, getDefaultHostForTemplate, getLastSelectedHostId, saveLastSelectedHostId } from "@/app/config/host-config";

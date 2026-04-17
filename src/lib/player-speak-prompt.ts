@@ -35,7 +35,6 @@ export function getPlayerCharLimit(template?: string): number {
 
 function buildPacingRule(tmpl: GameTemplate | undefined): string {
   const cat = tmpl?.category;
-  const mustContribute = tmpl?.playerLimits.mustContribute ?? false;
 
   const strategyLine = cat === "deduction"
     ? '- No meta talk about prompting or game system mechanics. Strategy discussion and accusations ARE the game — go for it.'

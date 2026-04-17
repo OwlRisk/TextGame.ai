@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Users, Clock, Play, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { t, tStyle, tCategory } from "@/lib/i18n";
-import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
   type DiscoverPreset,
@@ -186,7 +185,7 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           {/* Tabs */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            {CATEGORIES.map(({ id, label, icon: Icon }) => (
+            {CATEGORIES.map(({ id, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => handleCategoryChange(id)}

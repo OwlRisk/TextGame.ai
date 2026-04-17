@@ -47,7 +47,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   const router = useRouter();
   const { gameId } = use(params);
   const { session } = useAuth();
-  const { games, selectedGameId, selectGame, updateGame, touchGame, addGame, gamesLoading } = useGameContext();
+  const { games, selectedGameId, selectGame, updateGame, addGame, gamesLoading } = useGameContext();
   const {
     messages,
     setMessages,
@@ -60,14 +60,12 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     setSelectedChannelId,
     userId,
     currentSpeakerId,
-    setCurrentSpeakerId,
     typingUsers,
     humanGameIdentity,
     avatarImageUrls,
     onAvatarUrlLoaded,
     isRoomLoading,
     myBoardContent,
-    setMyBoardContent,
     sections,
     gameEvents,
     phaseLabel,
@@ -79,7 +77,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     gameOverSummary,
     setGameOverSummary,
     aiSuggestedPrompts,
-    addReaction,
     setGameEvents,
     gmState,
   } = useGameRoomContext();
@@ -180,7 +177,6 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
     startGame,
     launchOpeningRound,
     readyKickoffRef,
-    seedCancelledRef,
     afterSeedSendRef,
     isInitialized,
     contentLanguage,
@@ -220,10 +216,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
 
   // ─── Auto-start: always skip the lobby — start immediately once players exist ─
   const autoStartFiredRef = useRef(false);
-  const [autoStarting, setAutoStarting] = useState(false);
+  const [, setAutoStarting] = useState(false);
   const startGameRef = useRef(startGame);
   useEffect(() => { startGameRef.current = startGame; });
-  const isSceneGame = isSceneMode(currentGame?.config?.template);
   useEffect(() => {
     if (autoStartFiredRef.current) return;
     if (!isInitialized || gamePhase !== "lobby") return;
@@ -343,6 +338,8 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           template: currentGame?.config?.template || "unknown",
           phase,
           duration_seconds: Math.round((Date.now() - gameEnteredAtRef.current) / 1000),
+          // Refs intentionally read at cleanup time to capture the latest count.
+          // eslint-disable-next-line react-hooks/exhaustive-deps
           messages_sent: msgCountRef.current,
         });
       }
@@ -387,6 +384,9 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
   // Track first message sent (state-driven so the hint disappears reactively)
   const [hasUserSentFirstMsg, setHasUserSentFirstMsg] = useState(false);
   const prevMsgCountRef = useRef(0);
+  // Intentionally runs every render: detects when msgCountRef.current bumps.
+  // The setState is guarded by !hasUserSentFirstMsg, so it can't loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentCount = msgCountRef.current;
     if (!hasUserSentFirstMsg && currentCount > prevMsgCountRef.current) {

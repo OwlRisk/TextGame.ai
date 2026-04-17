@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { setAuthCookie } from '@/lib/auth-cookie';
-import { useRouter } from 'next/navigation';
 
 /** Auth state never expires; kept alive by Supabase refresh tokens */
 
@@ -67,29 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
   // When true, onAuthStateChange must NOT update React state because we are
   // about to do a full page reload. Updating state triggers re-renders with
   // user=null which crashes downstream components before the reload fires.
   const signingOutRef = React.useRef(false);
-
-  const doSignOut = useCallback(async () => {
-    signingOutRef.current = true;
-    setAuthCookie(null);
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // Best-effort
-    }
-    // Manually nuke Supabase localStorage keys so getLocalCachedSession()
-    // never resurrects a stale session on the next page load.
-    try {
-      Object.keys(localStorage)
-        .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
-        .forEach((k) => localStorage.removeItem(k));
-    } catch { /* storage access may fail */ }
-    window.location.href = '/';
-  }, []);
 
   const isInvalidRefreshToken = useCallback((err: unknown) => {
     if (!err || typeof err !== 'object') return false;

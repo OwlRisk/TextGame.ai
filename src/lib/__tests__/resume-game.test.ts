@@ -8,7 +8,7 @@
  *  4. Edge cases (double resume, resume after different end reasons)
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 // ─── 1. GameOverBanner button visibility logic ──────────────────────────────
 

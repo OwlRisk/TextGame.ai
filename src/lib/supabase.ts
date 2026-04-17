@@ -205,7 +205,7 @@ export interface Database {
           reactions?: any;
           created_at?: string;
         };
-        Update: {};
+        Update: Record<string, never>;
       };
     };
   };

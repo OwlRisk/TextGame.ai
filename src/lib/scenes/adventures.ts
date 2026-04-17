@@ -1,4 +1,4 @@
-import type { Scene, SceneOpeningMessage } from "./types";
+import type { Scene } from "./types";
 import type { GmState } from "@/lib/gm-state";
 
 export const theLighthouse: Scene = {

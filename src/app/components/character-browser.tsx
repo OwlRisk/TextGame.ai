@@ -1,5 +1,9 @@
 "use client";
 
+// Avatar URLs are dynamic remote/data URLs sized by their parent container;
+// migrating to next/image here would force adding fill + ratio plumbing.
+/* eslint-disable @next/next/no-img-element */
+
 import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
@@ -62,7 +66,7 @@ export function CharacterBrowser({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [styleProp]);
 
   useEffect(() => {
     if (open) {
