@@ -53,6 +53,21 @@ const nextConfig = {
     ];
   },
   async headers() {
+    // Vercel Live Feedback toolbar is auto-injected on preview/dev deploys.
+    // It pulls scripts from vercel.live and opens a websocket to Pusher.
+    // Allow only when not on production so the prod CSP stays tight.
+    const isPreview =
+      process.env.VERCEL_ENV === 'preview' ||
+      process.env.VERCEL_ENV === 'development' ||
+      process.env.NODE_ENV !== 'production';
+    const vercelLiveScript = isPreview ? ' https://vercel.live' : '';
+    const vercelLiveStyle = isPreview ? ' https://vercel.live' : '';
+    const vercelLiveImg = isPreview ? ' https://vercel.live https://vercel.com' : '';
+    const vercelLiveConnect = isPreview
+      ? ' https://vercel.live wss://ws-us3.pusher.com https://sockjs-us3.pusher.com'
+      : '';
+    const vercelLiveFrame = isPreview ? ' https://vercel.live' : '';
+
     const securityHeaders = [
       { key: 'X-Frame-Options', value: 'DENY' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -61,12 +76,13 @@ const nextConfig = {
         key: 'Content-Security-Policy',
         value: [
           "default-src 'self'",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com",
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: https://*.openai.com https://*.oaiusercontent.com https://*.supabase.co https://*.googleusercontent.com https://www.google-analytics.com",
+          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com${vercelLiveScript}`,
+          `style-src 'self' 'unsafe-inline'${vercelLiveStyle}`,
+          `img-src 'self' data: blob: https://*.openai.com https://*.oaiusercontent.com https://*.supabase.co https://*.googleusercontent.com https://www.google-analytics.com${vercelLiveImg}`,
           "font-src 'self' data:",
           "media-src 'self' blob: https://*.supabase.co",
-          "connect-src 'self' https://*.openai.com https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.sentry.io https://*.ingest.sentry.io",
+          `connect-src 'self' https://*.openai.com https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.sentry.io https://*.ingest.sentry.io${vercelLiveConnect}`,
+          `frame-src 'self'${vercelLiveFrame}`,
           "frame-ancestors 'none'",
           "object-src 'none'",
           "base-uri 'self'",
