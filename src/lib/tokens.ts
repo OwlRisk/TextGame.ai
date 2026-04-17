@@ -97,9 +97,6 @@ const OPENAI_PRICE_PER_1M: Record<string, { input: number; output: number }> = {
   'gpt-4o':               { input: 2.50, output: 10.00 },
   'gpt-4o-2024-11-20':    { input: 2.50, output: 10.00 },
   'gpt-4o-mini':          { input: 0.15, output: 0.60 },
-  // Google Gemini (via OpenAI-compat endpoint)
-  'gemini-2.5-pro':       { input: 1.25, output: 10.00 },
-  'gemini-2.5-flash':     { input: 0.15, output: 0.60 },
 };
 
 function getModelPrice(model: string): { input: number; output: number } {

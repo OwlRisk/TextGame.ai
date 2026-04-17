@@ -184,7 +184,6 @@ Output ONLY valid JSON:
     const { getGameTemplate } = await import('@/lib/game-templates');
     const tmpl = gameTemplate ? getGameTemplate(gameTemplate) : undefined;
     const needsRoles = tmpl?.hasHiddenRoles ?? false;
-    const needsWords = gameTemplate === 'undercover';
 
     let decideCompletion: OpenAI.Chat.Completions.ChatCompletion | null = null;
     if (playerCount === 0) {
@@ -225,10 +224,6 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
       outputFormat += `,
     "role": "Role from rules"`;
     }
-    if (needsWords) {
-      outputFormat += `,
-    "word": "civilian" or "undercover"`;
-    }
     outputFormat += `
   }
 ]`;
@@ -237,16 +232,6 @@ Consider: game balance, role distribution, pacing. Output ONLY a single number b
     if (needsRoles) {
       roleInstructions = `
 6. ROLE ASSIGNMENT (required): There will be ${playerCount} AI players plus 1 human player (${playerCount + 1} total). Based on the game rules above, distribute roles among ALL ${playerCount + 1} players fairly: most should be Villagers/Town, a few special roles as defined in rules, and Werewolves/Mafia as appropriate. Assign ${playerCount} roles to the AI players in the JSON array, and output the remaining 1 role for the human player as a top-level "humanRole" field. The human can be ANY role (including Werewolf/Mafia) — make it random and balanced.`;
-    }
-
-    let wordInstructions = '';
-    let wordPairFormat = '';
-    if (needsWords) {
-      wordInstructions = `
-6. WORD PAIR: Generate ONE civilian word and ONE undercover word (similar but different, e.g. "Coffee"/"Tea"). These words are NOT in the player objects - output them separately at the top level: "civilianWord" and "undercoverWord".
-7. WORD ASSIGNMENT: Assign "word": "civilian" to most players (all but one), and "word": "undercover" to exactly one random player.`;
-      wordPairFormat = `
-Also include at top level: "civilianWord": "your civilian word", "undercoverWord": "your undercover word"`;
     }
 
     const prompt = `Generate ${playerCount} unique AI players for this game. (Seed: ${randomSeed})
@@ -270,13 +255,11 @@ Requirements:
 3. Each personality MUST include specific behavioral details — how they react under pressure, what triggers them, how they argue. Generic traits like "friendly and helpful" are BANNED. Be specific: "Agrees enthusiastically then quietly undermines the plan. Gets defensive when called out — deflects by complimenting the accuser."
 4. Backgrounds should create NATURAL CONFLICT between characters — one is a control freak while another hates being told what to do. One trusts too easily, another sees conspiracies everywhere. These dynamics make the game dramatic without the GM forcing it.
 5. CRITICAL — speechStyle and quirk: Every player MUST sound completely different when they talk. One speaks in terse fragments, another is verbose and dramatic, another peppers in slang, another is painfully polite. Quirks should be things OTHER players would notice and react to.
-6. Give each character a RELATIONSHIP SEED — a detail that naturally creates interaction with other players (e.g. "Immediately trusts whoever speaks first" or "Always challenges the loudest person in the room")${roleInstructions}${wordInstructions}
+6. Give each character a RELATIONSHIP SEED — a detail that naturally creates interaction with other players (e.g. "Immediately trusts whoever speaks first" or "Always challenges the loudest person in the room")${roleInstructions}
 
-Output ONLY valid JSON:${outputFormat}${wordPairFormat ? `
+Output ONLY valid JSON:${outputFormat}
 
-Top-level structure: { "players": [ ... ], "civilianWord": "...", "undercoverWord": "..." }` : `
-
-Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleName"' : ''} }`}`;
+Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleName"' : ''} }`;
 
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest',
@@ -322,21 +305,12 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
         throw new Error('No valid players generated');
       }
 
-      const result: { players: any[]; count: number; civilianWord?: string; undercoverWord?: string; humanRole?: string } = {
+      const result: { players: any[]; count: number; humanRole?: string } = {
         players: validPlayers,
         count: validPlayers.length
       };
       if (needsRoles && parsed.humanRole) {
         result.humanRole = parsed.humanRole;
-      }
-      if (needsWords && parsed.civilianWord && parsed.undercoverWord) {
-        result.civilianWord = parsed.civilianWord;
-        result.undercoverWord = parsed.undercoverWord;
-        validPlayers.forEach((p: any) => {
-          const isUndercover = p.word === 'undercover';
-          p.role = isUndercover ? 'Undercover' : 'Civilian';
-          p.word = isUndercover ? parsed.undercoverWord : parsed.civilianWord;
-        });
       }
 
       const dp = decideCompletion?.usage?.prompt_tokens ?? 0;

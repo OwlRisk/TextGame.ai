@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { Users, Clock, Play, Search } from "lucide-react";
+import Link from "next/link";
+import { Users, Clock, Play, Search, Globe, TrendingUp } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { t, tStyle, tCategory } from "@/lib/i18n";
 import { Badge } from "@/app/components/ui/badge";
@@ -19,6 +20,19 @@ import {
 
 export type { DiscoverPreset };
 
+interface CommunityGame {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  shareToken: string;
+  playCount: number;
+  publishedAt: string;
+  rulesTeaser: string;
+  template: string;
+  rpgWorldId: string | null;
+}
+
 interface DiscoverPageProps {
   onCreateGame: (preset: DiscoverPreset) => void;
   onJoinGame?: (gameId: string) => void;
@@ -28,6 +42,28 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Community-published games (server-side query, public read).
+  const [communityGames, setCommunityGames] = useState<CommunityGame[]>([]);
+  const [communityLoading, setCommunityLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/community/games?sort=trending&limit=12")
+      .then((r) => (r.ok ? r.json() : { games: [] }))
+      .then((data) => {
+        if (cancelled) return;
+        setCommunityGames(Array.isArray(data?.games) ? data.games : []);
+      })
+      .catch(() => {
+        if (!cancelled) setCommunityGames([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCommunityLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleCategoryChange = useCallback((id: string) => {
     setActiveCategory(id);
@@ -178,6 +214,62 @@ export function DiscoverPage({ onCreateGame }: DiscoverPageProps) {
                 <Play className="h-8 w-8" />
               </div>
             </button>
+          </div>
+        )}
+
+        {/* Community-published games */}
+        {!communityLoading && communityGames.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center gap-2 mb-3">
+              <Globe className="h-4 w-4 text-emerald-400" />
+              <h2 className="text-sm font-bold text-emerald-300 uppercase tracking-wider">
+                {t("community.section_title")}
+              </h2>
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-500/70 ml-1" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {communityGames.map((cg) => (
+                <Link
+                  key={cg.id}
+                  href={`/play/${cg.shareToken}`}
+                  onClick={() =>
+                    trackEvent("community_game_open", { id: cg.id, source: "discover" })
+                  }
+                  className="group relative bg-gradient-to-br from-emerald-900/15 to-zinc-900/40 border border-emerald-700/30 hover:border-emerald-400/60 rounded-xl overflow-hidden transition-all hover:-translate-y-0.5"
+                >
+                  <div
+                    className="h-20 flex items-center justify-center text-3xl overflow-hidden"
+                    style={{ background: cg.color || "#1f2937" }}
+                  >
+                    {cg.icon?.startsWith("http") || cg.icon?.startsWith("/") ? (
+                      <Image
+                        src={cg.icon}
+                        alt={cg.name}
+                        width={64}
+                        height={64}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <span>{cg.icon || "🎲"}</span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h3 className="text-sm font-bold text-white mb-1 truncate group-hover:text-emerald-200">
+                      {cg.name}
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 line-clamp-2 mb-2 leading-snug min-h-[2.4em]">
+                      {cg.rulesTeaser || "—"}
+                    </p>
+                    <div className="flex items-center gap-1 text-[10px] text-emerald-400/80">
+                      <Play className="h-3 w-3" />
+                      <span>{cg.playCount.toLocaleString()}</span>
+                      <span className="text-zinc-600">·</span>
+                      <span className="lowercase">{t("community.plays")}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 

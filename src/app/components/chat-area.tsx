@@ -330,7 +330,11 @@ export function ChatArea({
         setIsAtBottom(visible);
         if (visible) setUnreadCount(0);
       },
-      { root: scrollViewport, rootMargin: "0px 0px 200px 0px", threshold: 0.1 }
+      // Tighter rootMargin so "at bottom" actually means within ~one message
+      // height of the latest message — 200px previously claimed the user was
+      // at the bottom while a screenful of new messages was still off-screen,
+      // suppressing the unread badge incorrectly.
+      { root: scrollViewport, rootMargin: "0px 0px 80px 0px", threshold: 0.1 }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();

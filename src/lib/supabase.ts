@@ -103,6 +103,8 @@ export interface Database {
           created_at: string;
           updated_at: string;
           share_token: string | null;
+          published_at: string | null;
+          play_count: number;
         };
         Insert: {
           id?: string;
@@ -115,6 +117,8 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           share_token?: string | null;
+          published_at?: string | null;
+          play_count?: number;
         };
         Update: {
           id?: string;
@@ -127,6 +131,8 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           share_token?: string | null;
+          published_at?: string | null;
+          play_count?: number;
         };
       };
       game_drafts: {

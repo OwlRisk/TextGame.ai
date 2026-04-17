@@ -10,7 +10,7 @@ import {
   estimateChatTokens,
 } from '@/lib/tokens';
 import { isDatabaseConfigured, isDatabaseError } from '@/lib/db-ready';
-import { sanitizeModel, isGeminiModel, DEFAULT_AI_MODEL } from '@/lib/model-prefs';
+import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
 import { buildGMSystemPrompt } from '@/lib/gm-system-prompt';
 
@@ -22,17 +22,6 @@ function getOpenAI() {
     throw new Error('OPENAI_API_KEY environment variable is not set. Please configure it in your .env file.');
   }
   return new OpenAI({ apiKey });
-}
-
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY environment variable is not set. Please configure it in your .env file.');
-  }
-  return new OpenAI({
-    apiKey,
-    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -93,8 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const chatModel = sanitizeModel(preferredModel);
-    const useGemini = isGeminiModel(chatModel);
-    const aiClient = useGemini ? getGeminiClient() : getOpenAI();
+    const aiClient = getOpenAI();
     const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext, customSystemPrompt, contentLanguage });
 
     const maxTokens = typeof maxCompletionTokens === 'number' && maxCompletionTokens > 0
@@ -126,7 +114,7 @@ export async function POST(request: NextRequest) {
       }))
     ];
 
-    async function createStream(client: OpenAI, model: string, isGemini: boolean) {
+    async function createStream(client: OpenAI, model: string) {
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), 120_000);
       const params: Record<string, unknown> = {
@@ -138,10 +126,8 @@ export async function POST(request: NextRequest) {
         // Slight warmth so narration doesn't sound robotic.
         temperature: 0.7,
         top_p: 0.9,
+        stream_options: { include_usage: true },
       };
-      if (!isGemini) {
-        params.stream_options = { include_usage: true };
-      }
       const s = await client.chat.completions.create(
         params as unknown as Parameters<typeof client.chat.completions.create>[0],
         { signal: ac.signal },
@@ -149,22 +135,8 @@ export async function POST(request: NextRequest) {
       return { stream: s, timer, model };
     }
 
-    let activeStream: Awaited<ReturnType<typeof createStream>>;
-    let actualModelUsed = chatModel;
-    try {
-      activeStream = await createStream(aiClient, chatModel, useGemini);
-      actualModelUsed = chatModel;
-    } catch (geminiErr) {
-      if (useGemini) {
-        console.warn('[stream] Gemini failed, falling back to OpenAI:', (geminiErr as Error)?.message);
-        const fallbackModel = DEFAULT_AI_MODEL;
-        activeStream = await createStream(getOpenAI(), fallbackModel, false);
-        actualModelUsed = fallbackModel;
-      } else {
-        throw geminiErr;
-      }
-    }
-
+    const activeStream = await createStream(aiClient, chatModel);
+    const actualModelUsed = chatModel;
     const { stream, timer } = activeStream;
     const userId = user.id;
     const encoder = new TextEncoder();

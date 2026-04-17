@@ -12,6 +12,7 @@ interface Game {
   icon: string;
   color: string;
   config?: { rules?: string; template?: string };
+  publishedAt?: string | null;
 }
 
 interface AppLayoutWithSidebarProps {
@@ -23,7 +24,7 @@ interface AppLayoutWithSidebarProps {
   selectedGameId: string | null;
   onSelectGame: (gameId: string) => void;
   onOpenProfile?: () => void;
-  onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
+  onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color" | "publishedAt">>) => void;
   children: React.ReactNode;
 }
 

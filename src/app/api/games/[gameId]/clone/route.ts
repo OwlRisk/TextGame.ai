@@ -23,7 +23,7 @@ export async function POST(
 
   const { data: source, error: fetchErr } = await supabaseAdmin
     .from("games")
-    .select("id, name, icon, color, config, share_token")
+    .select("id, user_id, name, icon, color, config, share_token, play_count")
     .eq("id", gameId)
     .not("share_token", "is", null)
     .single();
@@ -49,6 +49,16 @@ export async function POST(
 
   if (insertErr) {
     return NextResponse.json({ error: "Failed to clone game" }, { status: 500 });
+  }
+
+  // Bump the play counter on the source game so the community Discover feed
+  // can sort by popularity. Failure is non-critical — the clone already
+  // succeeded; we just lose one increment.
+  if (source.user_id !== user.id) {
+    await supabaseAdmin
+      .from("games")
+      .update({ play_count: (source.play_count ?? 0) + 1 })
+      .eq("id", gameId);
   }
 
   return NextResponse.json({ id: newId });

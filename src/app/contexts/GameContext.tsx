@@ -15,6 +15,9 @@ export interface Game {
   isActive: boolean;
   /** ISO date string; used for sorting the list by last update */
   updatedAt: string;
+  /** ISO date string when the owner published this game to the community
+   *  Discover feed; null/undefined when not published. */
+  publishedAt?: string | null;
 }
 
 interface GameContextType {
@@ -31,7 +34,7 @@ interface GameContextType {
   gamesLoading: boolean;
 }
 
-function rowToGame(row: { id: string; name: string; icon: string; color: string; config: unknown; is_active: boolean; updated_at?: string }): Game {
+function rowToGame(row: { id: string; name: string; icon: string; color: string; config: unknown; is_active: boolean; updated_at?: string; published_at?: string | null }): Game {
   return {
     id: row.id,
     name: row.name,
@@ -40,6 +43,7 @@ function rowToGame(row: { id: string; name: string; icon: string; color: string;
     config: (row.config ?? {}) as GameConfig,
     isActive: row.is_active,
     updatedAt: row.updated_at ?? new Date().toISOString(),
+    publishedAt: row.published_at ?? null,
   };
 }
 

@@ -1,4 +1,4 @@
-import { withDefaults, AFTERLIFE_CHANNEL_ID } from "./types";
+import { withDefaults } from "./types";
 
 export const rpgDungeon = withDefaults({
   id: "rpg-dungeon",
@@ -8,7 +8,11 @@ export const rpgDungeon = withDefaults({
   maxPlayers: 6,
   recommendedAICount: 3,
   hasHiddenRoles: false,
-  hasElimination: true,
+  // Co-op RPG: knockouts are soft (revivable via Healer / Rest) and tracked
+  // through the per-player board HP, not the global elimination directive
+  // that would permanently remove the player and lock them into a spectator
+  // channel. Keeping this `false` stops the GM from emitting ELIMINATE:.
+  hasElimination: false,
   category: "cooperative",
   icon: "⚔️",
   color: "from-amber-600 to-red-600",
@@ -29,7 +33,7 @@ COMBAT:
 - Turn-based. Each player picks an action per turn (Attack, Defend, Cast Spell, etc.).
 - Resolution: virtual d20 + relevant stat (ATK / INT / DEX). 11+ on the modified roll = hit. Higher rolls land cleaner narration. DEF reduces incoming damage.
 - Defend halves incoming damage for one round.
-- Knocked out at 0 HP. Healer can revive with 30 HP.
+- Knocked out at 0 HP — the player can still spectate and call out advice while down. Healer can revive with 30 HP. The party only loses if EVERYONE is at 0 HP at once.
 
 EXPLORATION:
 - Party moves room to room. Players can Search, Open doors/chests, or Disarm Traps.
@@ -66,8 +70,9 @@ COMBAT RULES (must match the global d20+stat model — do NOT invent ATK-vs-DEF 
   - Higher rolls = stronger narration. DEF reduces incoming damage taken.
   - Enemies attack back the same way. Distribute damage among players (vary targets).
   - Update HP on player boards after each round using [BOARD:PlayerName].
-- When a player reaches 0 HP, use ELIMINATE: to knock them out. Narrate dramatically.
-- Healer can spend a turn to revive a knocked-out player at 30 HP.
+- When a player reaches 0 HP, narrate them being knocked out and set their board HP to 0/MAX with a "**Status:** Knocked out" line. DO NOT use the ELIMINATE: directive — this is co-op and the player is meant to be revivable.
+- Healer can spend a turn to revive a knocked-out party member to 30 HP. Update the board to clear "Knocked out" once revived.
+- Only narrate a true defeat (and emit GAME_OVER) when EVERY party member is at 0 HP simultaneously.
 
 HP & BOARD TRACKING:
 - At game start, assign each player a class and initial HP on their board:
@@ -159,6 +164,5 @@ TONE: Epic, atmospheric, with moments of humor. Build tension before boss fights
 
   channels: [
     { id: "general", name: "Dungeon", roomType: "public" as const },
-    { id: AFTERLIFE_CHANNEL_ID, name: "Fallen Heroes", roomType: "private_ai" as const },
   ],
 });

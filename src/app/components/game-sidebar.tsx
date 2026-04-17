@@ -3,7 +3,7 @@
 // Sidebar game icons are dynamic (data:/remote/static) inside small fixed cells.
 /* eslint-disable @next/next/no-img-element */
 
-import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins, Share2 } from "lucide-react";
+import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins, Share2, Globe, EyeOff } from "lucide-react";
 import { t, getBrowserLanguage } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -43,6 +43,7 @@ interface Game {
   icon: string;
   color: string;
   config?: { rules?: string; template?: string };
+  publishedAt?: string | null;
 }
 
 import { getGameTemplate } from "@/lib/game-templates";
@@ -79,11 +80,11 @@ interface GameSidebarProps {
   onSelectGame: (gameId: string) => void;
   onOpenProfile?: () => void;
   onDeleteGame?: (gameId: string) => void;
-  onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color">>) => void;
+  onUpdateGame?: (gameId: string, updates: Partial<Pick<Game, "icon" | "color" | "publishedAt">>) => void;
   onNavigate?: () => void;
 }
 
-export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile: _onOpenProfile, onDeleteGame, onNavigate }: GameSidebarProps) {
+export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile: _onOpenProfile, onDeleteGame, onUpdateGame, onNavigate }: GameSidebarProps) {
   const router = useRouter();
   const { user, session, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -311,6 +312,58 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                       <Share2 className="mr-2 h-4 w-4" />
                       {t("share.copy_link")}
                     </ContextMenuItem>
+                    {game.publishedAt ? (
+                      <ContextMenuItem
+                        className="cursor-pointer"
+                        onClick={async () => {
+                          if (!session?.access_token) {
+                            toast.error(t("share.sign_in_required"));
+                            return;
+                          }
+                          try {
+                            const res = await fetch(`/api/games/${game.id}/publish`, {
+                              method: "DELETE",
+                              headers: { Authorization: `Bearer ${session.access_token}` },
+                            });
+                            if (!res.ok) throw new Error(await res.text());
+                            onUpdateGame?.(game.id, { publishedAt: null });
+                            toast.success(t("community.unpublished"));
+                            trackEvent("game_unpublished", { source: "sidebar" });
+                          } catch {
+                            toast.error(t("community.unpublish_failed"));
+                          }
+                        }}
+                      >
+                        <EyeOff className="mr-2 h-4 w-4" />
+                        {t("community.unpublish")}
+                      </ContextMenuItem>
+                    ) : (
+                      <ContextMenuItem
+                        className="cursor-pointer"
+                        onClick={async () => {
+                          if (!session?.access_token) {
+                            toast.error(t("share.sign_in_required"));
+                            return;
+                          }
+                          try {
+                            const res = await fetch(`/api/games/${game.id}/publish`, {
+                              method: "POST",
+                              headers: { Authorization: `Bearer ${session.access_token}` },
+                            });
+                            if (!res.ok) throw new Error(await res.text());
+                            const { publishedAt } = await res.json();
+                            onUpdateGame?.(game.id, { publishedAt });
+                            toast.success(t("community.published"));
+                            trackEvent("game_published", { source: "sidebar" });
+                          } catch {
+                            toast.error(t("community.publish_failed"));
+                          }
+                        }}
+                      >
+                        <Globe className="mr-2 h-4 w-4" />
+                        {t("community.publish")}
+                      </ContextMenuItem>
+                    )}
                     <ContextMenuItem
                       className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                       onClick={() => {
