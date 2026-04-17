@@ -1,5 +1,5 @@
 import type { GameTemplate } from "@/lib/game-templates";
-import type { GameConfig } from "@/app/components/game-setup-dialog";
+import type { GameConfig } from "@/types/game-config";
 import type { DiscoverPreset } from "@/data/discover-templates";
 
 export interface ChatMessage {

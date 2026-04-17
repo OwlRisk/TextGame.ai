@@ -8,7 +8,9 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
-import { Gamepad2, ArrowRight, Home } from "lucide-react";
+import { Gamepad2, ArrowRight, Home, Loader2 } from "lucide-react";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { toast } from "sonner";
 
 type GamePreview = {
   id: string;
@@ -21,9 +23,11 @@ type GamePreview = {
 export default function PlayTokenPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const router = useRouter();
+  const { session, loading: authLoading } = useAuth();
   const [game, setGame] = useState<GamePreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cloning, setCloning] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -130,11 +134,51 @@ export default function PlayTokenPage({ params }: { params: Promise<{ token: str
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                onClick={() => router.push(`/game/${game.id}`)}
+                disabled={cloning || authLoading}
+                onClick={async () => {
+                  if (!session) {
+                    // Bring the recipient back to this page after sign-in so we
+                    // can finish the clone instead of dropping them on the home
+                    // screen with no breadcrumb.
+                    const returnTo = encodeURIComponent(`/play/${token}`);
+                    router.push(`/?signin=1&returnTo=${returnTo}`);
+                    return;
+                  }
+                  setCloning(true);
+                  try {
+                    const res = await fetch(`/api/games/${game.id}/clone`, {
+                      method: "POST",
+                      headers: { Authorization: `Bearer ${session.access_token}` },
+                    });
+                    if (!res.ok) {
+                      const body = await res.json().catch(() => ({}));
+                      throw new Error(body?.error || "Failed to open game");
+                    }
+                    const { id: newId } = await res.json();
+                    router.push(`/game/${newId}`);
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Failed to open game");
+                    setCloning(false);
+                  }
+                }}
                 className="flex-1 bg-violet-600 hover:bg-violet-500 text-white h-11"
               >
-                Open in TextGame.ai
-                <ArrowRight className="h-4 w-4 ml-2" />
+                {cloning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Opening…
+                  </>
+                ) : session ? (
+                  <>
+                    Play this RPG
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                ) : (
+                  <>
+                    Sign in to play
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
               </Button>
               <Link href="/" className="flex-1 sm:flex-none">
                 <Button variant="outline" className="w-full h-11 border-zinc-600 text-zinc-300 hover:bg-zinc-800">
@@ -146,7 +190,7 @@ export default function PlayTokenPage({ params }: { params: Promise<{ token: str
         </div>
 
         <p className="text-center text-zinc-500 text-xs mt-6">
-          You’ll need to sign in or create an account to play.
+          A copy of this RPG will be added to your library so your progress stays separate from the original.
         </p>
       </div>
     </div>

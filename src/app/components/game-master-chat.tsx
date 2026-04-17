@@ -7,7 +7,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Sparkles, Send, X, Check, MessageSquarePlus, Play, Plus, PanelLeft, FileText, LayoutGrid } from "lucide-react";
 import Link from "next/link";
-import { GameConfig } from "@/app/components/game-setup-dialog";
+import { GameConfig } from "@/types/game-config";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
@@ -105,8 +105,8 @@ export function GameMasterChat({ onBack: _onBack, onCreateGame, initialPreset, o
   const [playerCount, setPlayerCount] = useState<number>(0);
   const [customRules, setCustomRules] = useState<string>("");
   const [gameName, setGameName] = useState<string>("");
-  const [rpgWorldId, _setRpgWorldId] = useState<string | null>(null);
-  const [rpgAdventureNotes, _setRpgAdventureNotes] = useState<string>("");
+  const [rpgWorldId, setRpgWorldId] = useState<string | null>(null);
+  const [rpgAdventureNotes, setRpgAdventureNotes] = useState<string>("");
   const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
     name: string;
     gender?: string;
@@ -164,6 +164,8 @@ export function GameMasterChat({ onBack: _onBack, onCreateGame, initialPreset, o
     gameName, setGameName,
     selectedHostId, setSelectedHostId,
     setIsGMTyping,
+    setRpgWorldId,
+    setRpgAdventureNotes,
   });
 
   // When template changes, clear GM-decided channels so we use template default until GM outputs CONFIG_CHANNELS again

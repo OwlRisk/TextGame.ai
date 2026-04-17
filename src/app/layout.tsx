@@ -170,18 +170,18 @@ export default async function RootLayout({
         {/* Static crawlable content for search engines (hidden from sighted users) */}
         <noscript>
           <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
-            <h1>{SITE_NAME} — Community AI RPG Platform</h1>
+            <h1>{SITE_NAME} — AI RPG Platform</h1>
             <p>{SITE_DESCRIPTION}</p>
             <h2>Create &amp; Play AI Text RPGs</h2>
             <p>
-              Build your own AI-powered text RPG in minutes, share it with the community, and play
-              adventures created by other players. The AI Game Master narrates every scene, runs every
-              encounter, and brings your characters to life.
+              Build your own AI-powered text RPG in minutes, then share a link so friends can play it
+              with you. The AI Game Master narrates every scene, runs every encounter, and brings your
+              characters to life.
             </p>
             {/* Plain <a> is intentional inside <noscript> — Next.js <Link> requires JS for SPA nav */}
             <nav>
               {/* eslint-disable @next/next/no-html-link-for-pages */}
-              <a href="/discover">Discover Community RPGs</a>
+              <a href="/discover">Discover RPG Adventures</a>
               <a href="/create">Create Your Own RPG</a>
               <a href="/recharge">Buy Credits</a>
               <a href="/signin">Sign In</a>

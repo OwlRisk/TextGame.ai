@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { GameConfig } from "@/app/components/game-setup-dialog";
+import { GameConfig } from "@/types/game-config";
 import { getGames, createGame, updateGame as updateGameDb, touchGame as touchGameDb, deleteGame } from "@/lib/db";
 import { toast } from "sonner";
 

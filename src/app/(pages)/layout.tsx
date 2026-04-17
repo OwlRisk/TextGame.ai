@@ -19,8 +19,7 @@ const PATHNAME_TO_TITLE: Record<string, string> = {
 
 function getMobileTitle(pathname: string): string {
   if (pathname.startsWith("/game/")) return "Game";
-  if (pathname.startsWith("/games/")) return "Game Info";
-  if (pathname === "/games") return "All Games";
+  if (pathname.startsWith("/play/")) return "Shared Game";
   return PATHNAME_TO_TITLE[pathname] ?? "Menu";
 }
 

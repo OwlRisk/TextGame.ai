@@ -8,8 +8,11 @@ import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Badge } from "@/app/components/ui/badge";
 import { Sparkles, Play, Clock, Users, Trash2, Archive, Copy, Star, Search, X, RotateCcw, Coins, MapPin } from "lucide-react";
-import { GameConfig } from "@/app/components/game-setup-dialog";
+import { GameConfig } from "@/types/game-config";
 import { toast } from "sonner";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { useGameContext } from "@/app/contexts/GameContext";
+import { useRouter } from "next/navigation";
 
 interface Game {
   id: string;
@@ -224,6 +227,10 @@ function GameCard({
 
 export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGame, onDeleteGame, gameSpending = {} }: MyGamesPageProps) {
   const [search, setSearch] = useState("");
+  const [playingAgainId, setPlayingAgainId] = useState<string | null>(null);
+  const { session } = useAuth();
+  const { addGame } = useGameContext();
+  const router = useRouter();
 
   const filteredGames = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -234,9 +241,44 @@ export function MyGamesPage({ games, isLoading = false, onSelectGame, onCreateGa
   const activeGames = filteredGames.filter((g) => g.isActive);
   const completedGames = filteredGames.filter((g) => !g.isActive);
 
+  /** Real "Play Again" — clones the original config (rules, RPG world,
+   *  configured players, host, etc.) into a brand-new game so the previous
+   *  story stays intact. Only applied locally; the new game is then persisted
+   *  by `addGame` exactly the same way as a fresh creation. */
   const handlePlayAgain = (game: Game) => {
-    toast.success(`Creating new game based on "${game.name}"…`);
-    setTimeout(() => onCreateGame(), 400);
+    if (playingAgainId) return;
+    if (!session?.user?.id) {
+      // Guest "Play Again" still works — just clone into local context.
+      const newId = `game-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      const cloned = {
+        id: newId,
+        name: game.name,
+        icon: game.icon,
+        color: game.color,
+        config: game.config,
+        isActive: true,
+        updatedAt: new Date().toISOString(),
+      };
+      addGame(cloned);
+      router.push(`/game/${newId}`);
+      return;
+    }
+    setPlayingAgainId(game.id);
+    const newId = (typeof crypto !== "undefined" && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `game-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    const cloned = {
+      id: newId,
+      name: game.name,
+      icon: game.icon,
+      color: game.color,
+      config: game.config,
+      isActive: true,
+      updatedAt: new Date().toISOString(),
+    };
+    addGame(cloned);
+    toast.success(`Started a fresh run of "${game.name}"`);
+    router.push(`/game/${newId}`);
   };
 
   return (

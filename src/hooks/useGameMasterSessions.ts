@@ -16,9 +16,9 @@ import {
 import { toast } from "sonner";
 
 const STATIC_WELCOME_CONTENT =
-  "Hey, I'm your **Game Master**. Describe any game idea and I'll design the rules, roles, and setup for you.\n\n" +
-  "Or pick a **ready-made template** — hit the Templates button to browse 10+ games.\n\n" +
-  "You can always **edit the Game Rules** directly, or just **tell me** what to change. When you're happy, hit **Create Room**!";
+  "Hey, I'm your **Game Master**. Describe an RPG you want to play and I'll design the world, classes, and opening hook for you.\n\n" +
+  "Or pick a **ready-made adventure** — hit the Templates button to browse curated worlds.\n\n" +
+  "You can **edit the Game Rules** directly, or just **tell me** what to change. When you're happy, hit **Create Room**!";
 
 export interface UseGameMasterSessionsParams {
   userId?: string;
@@ -39,6 +39,9 @@ export interface UseGameMasterSessionsParams {
   selectedHostId: string;
   setSelectedHostId: React.Dispatch<React.SetStateAction<string>>;
   setIsGMTyping: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Optional setters for RPG-specific config that comes from a Discover preset. */
+  setRpgWorldId?: React.Dispatch<React.SetStateAction<string | null>>;
+  setRpgAdventureNotes?: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export interface UseGameMasterSessionsReturn {
@@ -75,6 +78,8 @@ export function useGameMasterSessions({
   selectedHostId,
   setSelectedHostId,
   setIsGMTyping,
+  setRpgWorldId,
+  setRpgAdventureNotes,
 }: UseGameMasterSessionsParams): UseGameMasterSessionsReturn {
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
@@ -378,6 +383,11 @@ export function useGameMasterSessions({
       setCustomRules(nextRules);
       setGameName(nextGameName);
       setSelectedHostId(recommendedHost.id);
+      // Carry the preset's RPG world / adventure brief into the GM chat so a
+      // user clicking "Create Room" without further edits still gets the RPG
+      // experience the preset advertised.
+      setRpgWorldId?.(preset.rpgWorldId ?? null);
+      setRpgAdventureNotes?.(preset.rpgAdventureNotes ?? "");
 
       if (userId) {
         const messagesForDb = [presetWelcomeMessage].map((m) => ({
@@ -421,6 +431,8 @@ export function useGameMasterSessions({
       setCustomRules,
       setGameName,
       setSelectedHostId,
+      setRpgWorldId,
+      setRpgAdventureNotes,
     ],
   );
 

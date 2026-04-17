@@ -55,7 +55,7 @@ const PACKAGES: CreditPackage[] = [
 ];
 
 const FEATURES = [
-  { icon: MessageSquare, text: 'Every AI message, voice, and image' },
+  { icon: MessageSquare, text: 'Every AI message and generated image' },
   { icon: Infinity, text: 'Credits never expire' },
   { icon: Shield, text: 'No subscription, no recurring charges' },
 ] as const;

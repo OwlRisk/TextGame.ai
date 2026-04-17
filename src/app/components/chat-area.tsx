@@ -336,11 +336,18 @@ export function ChatArea({
     return () => observer.disconnect();
   }, []);
 
+  // Track only NEW messages while the user is scrolled up — increment by the
+  // delta, not by 1 per render. Comparing to the previous length stops the
+  // badge from inflating when messages are paginated/prepended in bulk.
+  const prevMsgLenRef = useRef(messages.length);
   useEffect(() => {
-    if (!isAtBottom && messages.length > 0) {
-      setUnreadCount((c) => c + 1);
+    const prev = prevMsgLenRef.current;
+    const curr = messages.length;
+    if (curr > prev && !isAtBottom) {
+      setUnreadCount((c) => c + (curr - prev));
     }
-  }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    prevMsgLenRef.current = curr;
+  }, [messages.length, isAtBottom]);
 
   const scrollToBottom = useCallback(() => {
     bottomSentinelRef.current?.scrollIntoView({ behavior: "smooth" });

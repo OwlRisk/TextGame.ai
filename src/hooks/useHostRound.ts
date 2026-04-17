@@ -494,13 +494,19 @@ export function useHostRound({
               }
               return [...prev, { id, name: a.title, content: a.content }];
             });
-          } else if (a.type === "game_over" && !isRpgMode) {
+          } else if (a.type === "game_over") {
+            // For RPG worlds, GAME_OVER means "this adventure has reached a
+            // narrative conclusion" — we still want the room to render the
+            // game-over banner and stop accepting new turns. The original
+            // gating skipped this branch for RPG, leaving the room alive while
+            // the GM had already announced the end of the story.
             updateGame(gameId, { isActive: false });
-            setGameOverSummary(a.summary || "Game over!");
+            setGameOverSummary(a.summary || (isRpgMode ? "Adventure complete." : "Game over!"));
             setGamePhase("ended");
             try { localStorage.setItem("tg_game_completed", "1"); } catch {}
             trackEvent("game_completed", {
               template: currentGame?.config?.template || "custom",
+              is_rpg: isRpgMode,
               messages_sent: msgCountRef.current,
             });
           } else if (a.type === "phase") {

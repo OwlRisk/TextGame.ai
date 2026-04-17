@@ -3137,6 +3137,21 @@ const T: Record<string, Record<string, string>> = {
     tr: "Oyunu Sil", hi: "गेम हटाएँ", id: "Hapus Game", vi: "Xóa trò chơi",
     th: "ลบเกม", pl: "Usuń grę", nl: "Spel verwijderen", uk: "Видалити гру",
   },
+  "share.copy_link": {
+    en: "Share — copy link", zh: "\u5206\u4eab\u2014\u590d\u5236\u94fe\u63a5",
+  },
+  "share.link_copied": {
+    en: "Share link copied to clipboard", zh: "\u5206\u4eab\u94fe\u63a5\u5df2\u590d\u5236",
+  },
+  "share.link_ready": {
+    en: "Share link ready", zh: "\u5206\u4eab\u94fe\u63a5\u5df2\u751f\u6210",
+  },
+  "share.failed": {
+    en: "Failed to create share link", zh: "\u751f\u6210\u5206\u4eab\u94fe\u63a5\u5931\u8d25",
+  },
+  "share.sign_in_required": {
+    en: "Please sign in to share", zh: "\u8bf7\u5148\u767b\u5f55\u518d\u5206\u4eab",
+  },
   "sidebar.settings": {
     en: "Settings", zh: "设置", ja: "設定", ko: "설정",
     de: "Einstellungen", fr: "Paramètres", es: "Configuración",

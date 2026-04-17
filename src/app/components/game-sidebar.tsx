@@ -3,7 +3,7 @@
 // Sidebar game icons are dynamic (data:/remote/static) inside small fixed cells.
 /* eslint-disable @next/next/no-img-element */
 
-import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins } from "lucide-react";
+import { Plus, Home, Compass, LogOut, HelpCircle, UserCircle, Gamepad2, Trash2, Loader2, LogIn, CreditCard, Coins, Share2 } from "lucide-react";
 import { t, getBrowserLanguage } from "@/lib/i18n";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -282,6 +282,35 @@ export function GameSidebar({ games, selectedGameId, onSelectGame, onOpenProfile
                     </Tooltip>
                   </ContextMenuTrigger>
                   <ContextMenuContent className="bg-zinc-900 border-zinc-700 text-white">
+                    <ContextMenuItem
+                      className="cursor-pointer"
+                      onClick={async () => {
+                        if (!session?.access_token) {
+                          toast.error(t("share.sign_in_required"));
+                          return;
+                        }
+                        try {
+                          const res = await fetch(`/api/games/${game.id}/share`, {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${session.access_token}` },
+                          });
+                          if (!res.ok) throw new Error(await res.text());
+                          const { shareUrl } = await res.json();
+                          if (shareUrl && navigator.clipboard) {
+                            await navigator.clipboard.writeText(shareUrl);
+                            toast.success(t("share.link_copied"));
+                          } else {
+                            toast.success(shareUrl ?? t("share.link_ready"));
+                          }
+                          trackEvent("game_share_created", { source: "sidebar" });
+                        } catch {
+                          toast.error(t("share.failed"));
+                        }
+                      }}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      {t("share.copy_link")}
+                    </ContextMenuItem>
                     <ContextMenuItem
                       className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                       onClick={() => {

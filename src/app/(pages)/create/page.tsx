@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import { GameConfig } from "@/app/components/game-setup-dialog";
+import { GameConfig } from "@/types/game-config";
 import { trackEvent } from "@/lib/analytics";
 
 const GameMasterChat = dynamic(
