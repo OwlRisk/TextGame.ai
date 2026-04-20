@@ -3,16 +3,16 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit && npx eslint src/",
+    "lint": "tsc --noEmit && eslint src/",
     "test": "vitest run",
     "test:watch": "vitest",
     "analyze": "ANALYZE=true next build",
     "test:e2e": "playwright test",
-    "db:setup": "NODE_TLS_REJECT_UNAUTHORIZED=0 node scripts/execute-schema.js",
-    "db:migrate": "NODE_TLS_REJECT_UNAUTHORIZED=0 node scripts/run-migration.js"
+    "db:setup": "node scripts/execute-schema.js",
+    "db:migrate": "node scripts/run-migration.js"
   },
   "dependencies": {
     "@next/third-parties": "^16.1.6",
