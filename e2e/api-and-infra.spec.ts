@@ -17,10 +17,11 @@ test.describe("API – public endpoints", () => {
 });
 
 test.describe("API – auth-required endpoints return 401 without token", () => {
+  // /api/stripe/create-portal-session was removed with subscriptions in the
+  // RPG-only refactor — only one-time credit checkouts remain.
   const authEndpoints = [
     { method: "POST" as const, path: "/api/chat/stream" },
     { method: "POST" as const, path: "/api/stripe/create-checkout" },
-    { method: "POST" as const, path: "/api/stripe/create-portal-session" },
   ];
 
   for (const { method, path } of authEndpoints) {
@@ -41,16 +42,15 @@ test.describe("API – malformed requests", () => {
     expect(res.status()).toBeGreaterThanOrEqual(400);
     expect(res.status()).toBeLessThan(500);
   });
-
-  test("POST /api/transcribe without file returns error", async ({ request }) => {
-    const res = await request.post("/api/transcribe");
-    expect(res.status()).toBeGreaterThanOrEqual(400);
-  });
+  // /api/transcribe was removed with the voice feature in the RPG-only refactor.
 });
 
 // ─── Sitemap & Robots ────────────────────────────────────────────────────────
 
 test.describe("Sitemap", () => {
+  // The blog section was removed in the RPG-only refactor; sitemap should no
+  // longer carry `/blog` URLs. We still assert the key surviving routes
+  // (homepage + /discover) are present.
   test("sitemap.xml is accessible and contains URLs", async ({ request }) => {
     const res = await request.get("/sitemap.xml");
     expect(res.status()).toBe(200);
@@ -61,16 +61,8 @@ test.describe("Sitemap", () => {
     const body = await res.text();
     expect(body).toContain("<urlset");
     expect(body).toContain("<loc>");
-    // Should include key pages
     expect(body).toContain("/discover");
-    expect(body).toContain("/blog");
-  });
-
-  test("sitemap includes blog post URLs", async ({ request }) => {
-    const res = await request.get("/sitemap.xml");
-    const body = await res.text();
-    expect(body).toContain("/blog/jackbox-alternatives");
-    expect(body).toContain("/blog/play-werewolf-online");
+    expect(body).not.toContain("/blog");
   });
 });
 
@@ -96,7 +88,6 @@ test.describe("Performance – page load times", () => {
   const performancePages = [
     { name: "Homepage", url: "/" },
     { name: "Discover", url: "/discover" },
-    { name: "Blog index", url: "/blog" },
   ];
 
   for (const { name, url } of performancePages) {

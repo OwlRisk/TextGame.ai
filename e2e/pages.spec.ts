@@ -3,66 +3,12 @@ import { test, expect } from "@playwright/test";
 // ---------------------------------------------------------------------------
 // Page rendering tests
 // Covers pages NOT already tested in smoke.spec.ts / core-flows.spec.ts:
-//   Blog index & posts, Subscription, Help, Recharge, My Games,
-//   and auth-protected route redirect behaviour.
+//   Recharge (credit packs), Help, My Games, and auth-protected route
+//   redirect behaviour. The Blog and Subscription describe-blocks were
+//   removed when those features were retired in the RPG-only refactor.
 // ---------------------------------------------------------------------------
 
-// ─── Blog ────────────────────────────────────────────────────────────────────
-
-test.describe("Blog", () => {
-  test("blog index loads and lists posts", async ({ page }) => {
-    await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
-    await expect(page).toHaveTitle(/Blog|TextGame/i);
-    await page.waitForTimeout(3000);
-
-    const count = await page.locator("a[href*='/blog/']").count();
-    if (count > 0) {
-      expect(count).toBeGreaterThan(0);
-    }
-  });
-
-  test("blog index has proper SEO metadata", async ({ page }) => {
-    await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
-    const ogTitle = await page.locator('meta[property="og:title"]').getAttribute("content");
-    expect(ogTitle).toBeTruthy();
-    const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
-    expect(canonical).toContain("/blog");
-  });
-
-  const samplePosts = [
-    "/blog/jackbox-alternatives",
-    "/blog/play-werewolf-online",
-    "/blog/ai-dungeon-alternatives",
-    "/blog/character-ai-alternatives",
-    "/blog/play-mafia-online",
-  ];
-
-  for (const slug of samplePosts) {
-    test(`blog post ${slug} renders with heading and content`, async ({ page }) => {
-      await page.goto(slug, { waitUntil: "domcontentloaded", timeout: 60000 });
-
-      const heading = page.locator("h1").first();
-      await expect(heading).toBeVisible({ timeout: 10000 });
-      const text = await heading.textContent();
-      expect(text!.length).toBeGreaterThan(10);
-
-      // Post should have some body content (threshold lowered for CI with placeholder backend)
-      const bodyText = await page.locator("article, main, [role='main']").first().textContent();
-      expect(bodyText!.length).toBeGreaterThan(50);
-    });
-  }
-
-  test("blog post has back-to-blog navigation", async ({ page }) => {
-    await page.goto("/blog/jackbox-alternatives", { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    const backLink = page.locator("a[href='/blog'], a[href*='/blog']:has-text('Blog'), a:has-text('Back')").first();
-    const visible = await backLink.isVisible({ timeout: 5000 }).catch(() => false);
-    // At minimum the page should not be a dead end
-    expect(visible || (await page.locator("nav").count()) > 0).toBe(true);
-  });
-});
-
-// ─── Subscription ────────────────────────────────────────────────────────────
+// ─── Recharge (one-time credit packages) ────────────────────────────────────
 
 test.describe("Recharge page (credit packages)", () => {
   test("loads and shows credit packages for unauthenticated users", async ({ page }) => {

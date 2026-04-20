@@ -195,25 +195,8 @@ test.describe("Responsive – Mobile Viewports", () => {
     expect(noHorizontalOverflow).toBe(true);
   });
 
-  test("blog page renders on mobile without horizontal overflow", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    await page.waitForTimeout(2000);
-    const noHorizontalOverflow = await page.evaluate(() => {
-      return document.documentElement.scrollWidth <= window.innerWidth + 5;
-    });
-    expect(noHorizontalOverflow).toBe(true);
-  });
-
-  test("subscription page renders on mobile", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/subscription", { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    await page.waitForTimeout(2000);
-    const body = page.locator("body");
-    await expect(body).toBeVisible();
-  });
+  // (removed: blog/subscription mobile tests — both surfaces were retired in
+  // the RPG-only refactor.)
 });
 
 // ─── Responsive – Tablet Views ───────────────────────────────────────────────
@@ -227,13 +210,6 @@ test.describe("Responsive – Tablet Viewports", () => {
     await expect(body).toBeVisible();
   });
 
-  test("blog post renders on iPad", async ({ page }) => {
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto("/blog/jackbox-alternatives", { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    const heading = page.locator("h1").first();
-    await expect(heading).toBeVisible({ timeout: 10000 });
-  });
 });
 
 // ─── Accessibility ───────────────────────────────────────────────────────────
@@ -276,37 +252,11 @@ test.describe("Accessibility – ARIA & Semantics", () => {
     expect(focusableElements).toBeGreaterThan(0);
   });
 
-  test("blog page headings have correct hierarchy", async ({ page }) => {
-    await page.goto("/blog/jackbox-alternatives", { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    const h1Count = await page.locator("h1").count();
-    expect(h1Count).toBe(1);
-  });
-
-  test("subscription page pricing cards have accessible text", async ({ page }) => {
-    await page.goto("/subscription", { waitUntil: "domcontentloaded", timeout: 60000 });
-    await page.waitForTimeout(3000);
-
-    if (page.url().includes("/signin") || page.url().includes("/recharge")) return;
-    const priceText = await page.locator("text=/\\$\\d+/").count();
-    if (priceText === 0) return;
-    expect(priceText).toBeGreaterThan(0);
-  });
 });
 
 // ─── SEO – Extended ──────────────────────────────────────────────────────────
 
 test.describe("SEO – Extended Meta Tags", () => {
-  test("blog post has structured article metadata", async ({ page }) => {
-    await page.goto("/blog/jackbox-alternatives");
-    await page.waitForLoadState("domcontentloaded");
-
-    const ogType = await page.locator('meta[property="og:type"]').getAttribute("content");
-    if (ogType) {
-      expect(ogType).toBe("article");
-    }
-  });
-
   test("homepage has og:image", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
@@ -321,12 +271,6 @@ test.describe("SEO – Extended Meta Tags", () => {
     const discoverTitle = await page.title();
 
     expect(discoverTitle).not.toBe(homeTitle);
-  });
-
-  test("blog index has unique title", async ({ page }) => {
-    await page.goto("/blog");
-    const blogTitle = await page.title();
-    expect(blogTitle).toMatch(/blog/i);
   });
 
   test("help page has unique title", async ({ page }) => {
@@ -349,36 +293,6 @@ test.describe("SEO – Extended Meta Tags", () => {
 // ─── Navigation Flows ────────────────────────────────────────────────────────
 
 test.describe("Navigation – Cross-page Flows", () => {
-  test("can navigate from blog index to a blog post and back", async ({ page }) => {
-    await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    const firstLink = page.locator("a[href*='/blog/']").first();
-    const linkVisible = await firstLink.isVisible({ timeout: 10000 }).catch(() => false);
-    if (!linkVisible) return;
-
-    const href = await firstLink.getAttribute("href").catch(() => null);
-    if (!href) return;
-
-    await page.goto(href, { waitUntil: "domcontentloaded", timeout: 60000 });
-    expect(page.url()).toMatch(/\/blog\/.+/);
-
-    const backLink = page.locator("a[href='/blog'], a:has-text('Blog'), a:has-text('Back')").first();
-    if (await backLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
-    }
-  });
-
-  test("can navigate from discover to subscription", async ({ page }) => {
-    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    const subLink = page.locator('a[href*="/subscription"]').first();
-    if (await subLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await subLink.click();
-      await page.waitForLoadState("domcontentloaded");
-      expect(page.url()).toContain("/subscription");
-    }
-  });
-
   test("back button works after navigation", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -460,14 +374,14 @@ test.describe("Performance – Extended", () => {
     expect(errors.length).toBe(0);
   });
 
-  test("blog page does not leak console errors", async ({ page }) => {
+  test("discover page does not leak console errors", async ({ page }) => {
     const errors: string[] = [];
     const ignoredPatterns = /fetch|ENOTFOUND|supabase|network|ERR_NAME|auth|cookie|session|hydrat|chunk|timeout|abort|JSON|storage|TypeError|Cannot read|is not a function|is not defined|ResizeObserver|Loading CSS/i;
     page.on("pageerror", (err) => {
       if (!ignoredPatterns.test(err.message)) errors.push(err.message);
     });
 
-    await page.goto("/blog", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForTimeout(3000);
 
     expect(errors.length).toBe(0);
