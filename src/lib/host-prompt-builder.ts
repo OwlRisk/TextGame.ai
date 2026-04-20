@@ -499,28 +499,17 @@ export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
     ? `\n${validatorAlerts.join("\n")}\n`
     : "";
 
-  // World-flavoured example NPCs / locations. Without this every world (Wuxia
-  // included) gets primed with English fantasy names like "Gruff" and
-  // "The Rusty Flagon", which then leak into Wuxia narration as Anglicised
-  // characters. Keep the examples short — they're only there to anchor the
-  // ROOM_UPDATE / QUICK_ACTIONS shape, not to inspire content.
-  const flavour = world?.id === "wuxia"
-    ? {
-        roomId: "drunken-crane-inn", roomName: "醉鹤客栈", roomDesc: "灯火昏黄的客栈，茶香与酒气交织。",
-        npcId: "li-zhang", npcName: "李掌柜", npcDesc: "鬓角斑白的掌柜，手不离茶。",
-        nextRoomId: "market-street", nextRoomLabel: "前门通向市集",
-        quickAction1: "上前与李掌柜交谈", quickAction2: "查看告示墙", quickAction3: "向北 → 市集",
-        channelGoal: "你身处醉鹤客栈，可与人攀谈、查看消息或离开。",
-        enemyName: "山贼斥候", enemyDesc: "瘦小的山贼，握着粗糙的刀。",
-      }
-    : {
-        roomId: "rusty-flagon", roomName: "The Rusty Flagon", roomDesc: "Dimly lit tavern.",
-        npcId: "gruff", npcName: "Gruff", npcDesc: "Grizzled bartender.",
-        nextRoomId: "market-square", nextRoomLabel: "the front door",
-        quickAction1: "Talk to Gruff", quickAction2: "Read notice board", quickAction3: "Go north → Market Square",
-        channelGoal: "You're in The Rusty Flagon. Look around, talk to NPCs, or head out.",
-        enemyName: "Goblin Scout", enemyDesc: "A small wiry goblin.",
-      };
+  // Western-fantasy example NPCs / locations to anchor the ROOM_UPDATE /
+  // QUICK_ACTIONS shape (not to inspire content). Kept here as a constant
+  // because the runtime no longer ships any non-Western worlds.
+  const flavour = {
+    roomId: "rusty-flagon", roomName: "The Rusty Flagon", roomDesc: "Dimly lit tavern.",
+    npcId: "gruff", npcName: "Gruff", npcDesc: "Grizzled bartender.",
+    nextRoomId: "market-square", nextRoomLabel: "the front door",
+    quickAction1: "Talk to Gruff", quickAction2: "Read notice board", quickAction3: "Go north → Market Square",
+    channelGoal: "You're in The Rusty Flagon. Look around, talk to NPCs, or head out.",
+    enemyName: "Goblin Scout", enemyDesc: "A small wiry goblin.",
+  };
 
   return `${buildLanguageInstruction(contentLanguage).trim()}
 ${alertsBlock}

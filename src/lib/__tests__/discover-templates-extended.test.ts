@@ -57,11 +57,10 @@ describe("Discover templates — CATEGORIES", () => {
     }
   });
 
-  it("has exactly 3 categories (all, wuxia, fantasy)", () => {
-    expect(CATEGORIES.length).toBe(3);
+  it("has exactly 2 categories (all, fantasy)", () => {
+    expect(CATEGORIES.length).toBe(2);
     const ids = CATEGORIES.map((c) => c.id);
     expect(ids).toContain("all");
-    expect(ids).toContain("wuxia");
     expect(ids).toContain("fantasy");
   });
 });

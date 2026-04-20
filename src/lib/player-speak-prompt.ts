@@ -236,10 +236,11 @@ export interface RpgCharacterPromptOpts {
   goal?: string;
   fear?: string;
   attitudeToPlayer?: string;
-  /** World terminology — when set, the AI player refers to MP as "Qi"/"内力"
-   *  in Wuxia, "Mana" in Western, etc. Without this every world's companions
-   *  speak as if "spell / MP" were universal terms, which breaks immersion
-   *  immediately in non-Western settings. */
+  /** World terminology — when set, the AI player refers to MP / skills /
+   *  factions / currency by the world's chosen vocabulary. Without this,
+   *  companions default to the generic "spell / MP / guild / gold" terms
+   *  defined below. Future non-Western worlds can plug in here without
+   *  touching the prompt. */
   terminology?: {
     mp: string;
     skill: string;
@@ -296,8 +297,8 @@ export function buildRpgCharacterPrompt(
   const f = o.fear || "Failing the party when they need me most.";
   const att = o.attitudeToPlayer || `A loyal companion to ${o.humanName}.`;
 
-  // Aliases. Defaults match Western Fantasy; Wuxia (and any other world)
-  // override these so the companion uses the world's vocabulary.
+  // Aliases. Defaults match Western Fantasy; any future world can override
+  // these via opts.terminology so the companion uses world-native vocabulary.
   const mpWord = o.terminology?.mp ?? "MP";
   const skillWord = o.terminology?.skill ?? "Skill";
   const terminologyHint = o.terminology

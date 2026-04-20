@@ -147,9 +147,9 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
-    // World terminology (e.g. "Qi" for MP in Wuxia) is plumbed into the
-    // companion prompt so the AI players use world-native vocabulary
-    // instead of generic D&D-isms in non-Western settings.
+    // World terminology is plumbed into the companion prompt so that any
+    // future non-Western world can override the default Western vocabulary
+    // (MP / spell / guild / gold) without touching the prompt code.
     const rpgWorld = rpgWorldId ? getWorldById(rpgWorldId) : undefined;
     const system = rpgWorldId && player.rpgClass
       ? buildRpgCharacterPrompt({

@@ -37,10 +37,9 @@ function pick(map: L, lang: string): string | undefined {
 type ScenarioOverlay = { title: string; messages: string[] };
 
 // Scenario IDs match GAME_SCENARIOS in landing-content.ts. When the source
-// scenarios get renamed/replaced (e.g. the RPG-only refactor that swapped
-// werewolf/mafia/spy/mystery → dungeon/wuxia/exploration/boss), this file
-// MUST be updated in lockstep — otherwise localizeScenarios() falls
-// through to English, leaving non-English homepages silently un-localized.
+// scenarios get renamed/replaced, this file MUST be updated in lockstep —
+// otherwise localizeScenarios() falls through to English, leaving
+// non-English homepages silently un-localized.
 // Order of `messages` matches landing-content.ts message order exactly.
 const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
   zh: {
@@ -49,12 +48,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "总算来活了——我都快无聊死了。退到我身后，前排我来扛。",
       "等等——阴影里还藏着第四个，我看见了。让我先把那个偷袭的解决掉。",
       "去吧。前面三个我顶住。别失手。",
-    ]},
-    wuxia: { title: "武侠冒险", messages: [
-      "翠峰比武场旌旗招展，各派门旗在山风中猎猎作响。一声铜锣响，第一轮比试开始。",
-      "师父说这场比武会试炼我的心志……可真站到台上，才发现自己竟然这么紧张。",
-      "紧张？哈！看看咱们第一个对手，他抖得比你还厉害——这局快得很。",
-      "别小瞧任何人。去年的冠军凭空消失了——这场比武，事情不简单。",
     ]},
     exploration: { title: "开放世界", messages: [
       "锈剑客栈一早冷冷清清，门口的告示板贴满任务榜。掌柜一边擦着酒杯，一边斜眼打量你们。",
@@ -76,12 +69,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "待って——影に四体目が隠れてる。見えた。あれは私が片付ける。",
       "ならいけ。前の三体は俺が引き受ける。外すなよ。",
     ]},
-    wuxia: { title: "武侠アドベンチャー", messages: [
-      "翡翠峰の比武場は色とりどりに賑わい、各門派の旗が山風にはためく。銅鑼の音が響き——第一試合の始まりだ。",
-      "師父はこの比武で私の覚悟が試されると言っていた。でも、いざ立ってみるとこんなに緊張するなんて。",
-      "緊張？はっ！見てみろ、最初の相手——あいつ、お前以上に震えてるぞ。すぐ終わる。",
-      "誰のことも侮らないで。去年の優勝者は跡形もなく消えた——この比武、何かおかしい。",
-    ]},
     exploration: { title: "オープンワールド", messages: [
       "錆びた剣亭は朝から静まり返り、入口の掲示板には依頼書がびっしり貼られている。店主はジョッキを磨きながら、片目でこちらを見ている。",
       "掲示板を見てみよう——割のいい仕事があるかも。店主にも噂を聞いてみる。",
@@ -101,12 +88,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "드디어. 지루해 죽을 뻔했어. 뒤로 빠져 — 전열은 내가 막는다.",
       "잠깐 — 그림자에 넷째가 숨어 있어. 보여. 저 암살자는 내가 처리할게.",
       "그럼 가. 앞의 셋은 내가 막을 테니까. 빗나가지 마.",
-    ]},
-    wuxia: { title: "무협 모험", messages: [
-      "비취봉 비무대가 알록달록 활기차다. 문파의 깃발이 산바람에 펄럭이고 — 징소리가 울려퍼지며 첫 시합이 시작된다.",
-      "스승님은 이 비무가 내 의지를 시험할 거라 하셨는데… 막상 단상에 서니 이렇게 긴장될 줄이야.",
-      "긴장? 하! 우리 첫 상대를 봐 — 너보다 더 떨고 있어. 금방 끝난다.",
-      "누구도 얕보지 마. 작년 우승자가 흔적도 없이 사라졌어 — 이 비무, 뭔가 잘못됐어.",
     ]},
     exploration: { title: "오픈 월드", messages: [
       "녹슨 검 여관은 아침부터 한산하다. 문 옆 게시판에 의뢰서가 빼곡히 붙어 있고, 주인은 술잔을 닦으며 한쪽 눈으로 너희를 살핀다.",
@@ -128,12 +109,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "Moment — im Schatten versteckt sich ein vierter. Ich sehe ihn. Den Schleicher übernehme ich.",
       "Dann los. Die drei vorne halte ich. Nur nicht daneben treffen.",
     ]},
-    wuxia: { title: "Wuxia-Abenteuer", messages: [
-      "Das Turnierfeld des Jadegipfels ist voller Farbe. Sektenbanner knattern im Bergwind. Ein Gong erklingt — die erste Runde beginnt.",
-      "Mein Meister sagte, dieses Turnier würde meine Entschlossenheit prüfen. So nervös zu sein, hätte ich nicht erwartet.",
-      "Nervös? Ha! Schau dir unseren ersten Gegner an — er zittert mehr als du. Das wird schnell vorbei sein.",
-      "Unterschätze hier niemanden. Der Champion vom letzten Jahr ist spurlos verschwunden — bei diesem Turnier stimmt etwas nicht.",
-    ]},
     exploration: { title: "Offene Welt", messages: [
       "Das Wirtshaus „Zum Rostigen Krug\u201C ist heute Morgen still. Eine Anschlagtafel an der Tür ist mit Auftragsanzeigen übersät. Der Wirt poliert einen Krug und beobachtet euch mit einem Auge.",
       "Schaut auf das Brett — vielleicht ist was Lohnendes dabei. Ich frage den Wirt nach Gerüchten.",
@@ -153,12 +128,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "Enfin. Je commençais à m'ennuyer. Restez derrière moi — je tiens la première ligne.",
       "Attendez — il y en a un quatrième caché dans les ombres. Je le vois. Laissez-moi gérer le furtif.",
       "Alors vas-y. Je m'occupe des trois devant. Ne le rate surtout pas.",
-    ]},
-    wuxia: { title: "Aventure Wuxia", messages: [
-      "Le terrain du tournoi de la Cime de Jade est plein de couleurs. Les bannières des sectes claquent dans le vent de la montagne. Un gong résonne — le premier tour commence.",
-      "Mon maître disait que ce tournoi mettrait ma résolution à l'épreuve. Je ne m'attendais pas à être aussi nerveuse une fois sur place.",
-      "Nerveuse ? Ha ! Regarde notre premier adversaire — il tremble plus que toi. Ce sera vite réglé.",
-      "Ne sous-estime personne ici. Le champion de l'année dernière a disparu sans laisser de trace — quelque chose cloche dans ce tournoi.",
     ]},
     exploration: { title: "Monde ouvert", messages: [
       "La taverne du Fer Rouillé est calme ce matin. Un tableau d'affichage près de la porte est couvert d'avis de quêtes. L'aubergiste astique une chope en vous observant d'un œil.",
@@ -180,12 +149,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "Espera — hay un cuarto escondido en las sombras. Lo veo. Yo me ocupo del sigiloso.",
       "Entonces ve. Yo aguanto a los tres del frente. Solo no falles.",
     ]},
-    wuxia: { title: "Aventura Wuxia", messages: [
-      "El campo de torneo de la Cima de Jade rebosa de color. Los estandartes de las sectas crujen en el viento de la montaña. Suena un gong — comienza la primera ronda.",
-      "Mi maestro dijo que este torneo pondría a prueba mi determinación. No esperaba sentir tantos nervios al estar de pie aquí.",
-      "¿Nerviosa? ¡Ja! Mira a nuestro primer rival — está temblando más que tú. Esto será rápido.",
-      "No subestimes a nadie aquí. El campeón del año pasado desapareció sin rastro — algo anda mal en este torneo.",
-    ]},
     exploration: { title: "Mundo abierto", messages: [
       "La taberna del Espadín Oxidado está tranquila esta mañana. Un tablón junto a la puerta está cubierto de carteles de misiones. El tabernero pule una jarra mientras os observa con un ojo.",
       "Mira el tablón — puede que haya algo que valga la pena. Yo le preguntaré al tabernero si ha oído rumores.",
@@ -205,12 +168,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "Finalmente. Estava ficando entediado. Fique atrás de mim — eu seguro a frente.",
       "Espera — tem um quarto escondido nas sombras. Eu o vejo. Deixa o furtivo comigo.",
       "Então vai. Eu seguro os três da frente. Só não erre.",
-    ]},
-    wuxia: { title: "Aventura Wuxia", messages: [
-      "O campo de torneio do Cume de Jade está cheio de cor. Os estandartes das seitas estalam no vento da montanha. Um gongo soa — começa a primeira rodada.",
-      "Meu mestre disse que este torneio testaria minha determinação. Não esperava sentir tanta tensão ao subir ao palco.",
-      "Tensa? Ha! Olha nosso primeiro oponente — está tremendo mais que você. Vai ser rápido.",
-      "Não subestime ninguém aqui. O campeão do ano passado desapareceu sem deixar rastros — algo está errado neste torneio.",
     ]},
     exploration: { title: "Mundo aberto", messages: [
       "A taverna do Florete Enferrujado está calma esta manhã. Um quadro de avisos junto à porta está coberto de cartazes de missão. O taverneiro polia uma caneca, observando-os com um olho.",
@@ -232,12 +189,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "Стой — в тенях прячется четвёртый. Я его вижу. Этого скрытного беру на себя.",
       "Тогда давай. Троих спереди я держу. Только не промахнись.",
     ]},
-    wuxia: { title: "Уся-приключение", messages: [
-      "Турнирная площадка Нефритовой Вершины пестрит цветами. Знамёна сект хлопают на горном ветру. Гонг звенит — начинается первый круг.",
-      "Учитель говорил, что этот турнир испытает мою решимость. Не думала, что буду так нервничать, стоя здесь.",
-      "Нервничаешь? Ха! Глянь на нашего первого соперника — он трясётся сильнее тебя. Это будет быстро.",
-      "Не недооценивай никого здесь. Прошлогодний чемпион бесследно исчез — с этим турниром что-то не так.",
-    ]},
     exploration: { title: "Открытый мир", messages: [
       "Таверна «Ржавый клинок» тиха этим утром. У двери — доска объявлений, увешанная заказами. Трактирщик протирает кружку, поглядывая на вас одним глазом.",
       "Посмотрим на доску — может, найдём стоящее дело. Я расспрошу трактирщика про слухи.",
@@ -258,12 +209,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "Aspetta — c'è un quarto nascosto nelle ombre. Lo vedo. Al furtivo penso io.",
       "Allora vai. I tre davanti li tengo io. Solo non fallire.",
     ]},
-    wuxia: { title: "Avventura Wuxia", messages: [
-      "Il campo del torneo della Vetta di Giada è pieno di colori. Gli stendardi delle sette sbattono nel vento di montagna. Risuona un gong — inizia il primo round.",
-      "Il mio maestro disse che questo torneo avrebbe messo alla prova la mia determinazione. Non mi aspettavo di sentirmi così nervosa qui sopra.",
-      "Nervosa? Ha! Guarda il nostro primo avversario — trema più di te. Sarà veloce.",
-      "Non sottovalutare nessuno qui. Il campione dell'anno scorso è sparito senza traccia — qualcosa non quadra in questo torneo.",
-    ]},
     exploration: { title: "Mondo aperto", messages: [
       "La taverna del Fioretto Arrugginito è tranquilla stamattina. Una bacheca accanto alla porta è coperta di annunci di missioni. L'oste lucida un boccale, guardandovi con un occhio.",
       "Guarda la bacheca — potrebbe esserci qualcosa che vale la pena. Io chiedo all'oste se ha sentito qualche voce.",
@@ -283,12 +228,6 @@ const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
       "أخيراً. كنت أشعر بالملل. ابقَ خلفي — أنا أتولى الجبهة الأمامية.",
       "انتظروا — ثمة رابع مختبئ في الظلال. أراه. اتركوا المتسلل لي.",
       "اذهبي إذاً. الثلاثة الأماميون عليّ. فقط لا تخطئي.",
-    ]},
-    wuxia: { title: "مغامرة ووشيا", messages: [
-      "ساحة بطولة قمة اليشم تعجّ بالألوان. أعلام الفصائل تخفق في رياح الجبل. يرنّ الجرس — تبدأ الجولة الأولى.",
-      "قال معلمي إن هذه البطولة ستختبر عزيمتي. لم أتوقع أن أشعر بهذا التوتر وأنا أقف هنا.",
-      "متوترة؟ هه! انظري إلى خصمنا الأول — إنه يرتجف أكثر منك. سينتهي الأمر سريعاً.",
-      "لا تستهيني بأحد هنا. بطل العام الماضي اختفى دون أثر — شيء ما ليس على ما يرام في هذه البطولة.",
     ]},
     exploration: { title: "عالم مفتوح", messages: [
       "حانة السيف الصدئ هادئة هذا الصباح. لوحة إعلانات بجانب الباب مغطاة بإعلانات المهام. صاحب الحانة يلمّع كأساً، يراقبكم بعين واحدة.",
@@ -477,91 +416,91 @@ export function localizeFeatures(features: Feature[], lang: string): Feature[] {
 //   6. How much does it cost?
 const FAQ_I18N: Record<string, FAQItem[]> = {
   zh: [
-    { question: "如何开始冒险？", answer: "用 Google 登录，进入「探索」页面浏览 RPG 冒险——选一个预设比如「翠峰武林大会」或「星陨地下城」。点一下，几秒钟就进入游戏。AI 队友会自动生成。你也可以从头设计自己的世界。" },
+    { question: "如何开始冒险？", answer: "用 Google 登录，进入「探索」页面浏览 RPG 冒险——选一个预设比如「星陨地下城」或「乞丐的铜钱」。点一下，几秒钟就进入游戏。AI 队友会自动生成。你也可以从头设计自己的世界。" },
     { question: "什么是 AI 游戏主持？", answer: "AI 游戏主持（Chronicle）负责讲述你的冒险、操控世界与 NPC、运行战斗，并根据你的选择调整剧情。你的 AI 队友个性鲜明——会争吵、开玩笑、害怕、并肩作战，就像真人玩家一样。" },
     { question: "可以保存进度，下次继续吗？", answer: "可以！冒险会自动保存。你随时可以关掉浏览器再回来——队伍、装备、任务进度和整个世界状态都会保留。故事从你离开的地方继续。" },
-    { question: "有哪些 RPG 世界可玩？", answer: "目前提供西方奇幻和武侠两个世界，每个都有现成冒险。你也可以通过和 AI 主持的对话，自定义你的世界——设定背景、传说、魔法体系和冒险线索。" },
+    { question: "有哪些 RPG 世界可玩？", answer: "目前提供西方奇幻世界，配套地下城探险、城市悬疑等现成冒险。你也可以通过和 AI 主持的对话，自定义你的世界——设定背景、传说、魔法体系和冒险线索。" },
     { question: "需要登录吗？免费吗？", answer: "用 Google 登录就可以创建冒险——只要几秒钟。新账号自带免费起始额度，可以立刻体验整个平台。" },
     { question: "可以设计自己的 RPG 世界吗？", answer: "当然可以！进入「创建」页，和 AI 游戏主持一起共建你的世界。描述世界设定、基调、势力、故事线索——主持会帮你搭建规则和传说。你的世界会被保存，随时可以再玩。" },
     { question: "费用是多少？", answer: "新账号自带免费额度。之后按需购买额外额度——定价透明，按实际 AI 使用量计费。没有订阅，没有隐藏费用。" },
   ],
   ja: [
-    { question: "冒険を始めるには？", answer: "Googleでログインし、「ディスカバー」でRPGアドベンチャーを閲覧——「翠峰の武術大会」や「星落のダンジョン」などのプリセットを選びます。クリックすれば数秒でゲームに入れます。AIの仲間は自動生成。ゼロから自分だけの世界を設計することもできます。" },
+    { question: "冒険を始めるには？", answer: "Googleでログインし、「ディスカバー」でRPGアドベンチャーを閲覧——「星落のダンジョン」や「乞食の銅貨」などのプリセットを選びます。クリックすれば数秒でゲームに入れます。AIの仲間は自動生成。ゼロから自分だけの世界を設計することもできます。" },
     { question: "AIゲームマスターって何？", answer: "AIゲームマスター（Chronicle）が冒険を語り、世界とNPCを操り、戦闘を進行し、あなたの選択に合わせて物語を紡ぎます。AIの仲間たちは本物の個性を持ち——議論し、冗談を言い、怖がり、本物のプレイヤーのように共に戦います。" },
     { question: "進行を保存して再開できますか？", answer: "はい！冒険は自動で保存されます。ブラウザを閉じてもいつでも戻ってこられます——パーティー、インベントリ、クエスト進行、世界全体の状態すべてが残ります。物語は中断したところから再開します。" },
-    { question: "どのRPG世界がありますか？", answer: "現在、西洋ファンタジーと武侠（ウーシャ）の2つの世界を提供——どちらにも事前に組まれた冒険があります。AIゲームマスターとの会話で、自分専用の世界をデザインすることもできます——設定、伝承、魔法体系、ストーリーフックを定義しましょう。" },
+    { question: "どのRPG世界がありますか？", answer: "現在、西洋ファンタジー世界を提供——ダンジョン探索や都市ミステリーなど事前に組まれた冒険があります。AIゲームマスターとの会話で、自分専用の世界をデザインすることもできます——設定、伝承、魔法体系、ストーリーフックを定義しましょう。" },
     { question: "サインインは必要？無料？", answer: "冒険を作るにはGoogleでログイン——数秒で完了。新規アカウントには無料のスタートクレジットが付与され、すぐにプラットフォームを試せます。" },
     { question: "自分のRPG世界を設計できますか？", answer: "もちろん！「作成」ページでAIゲームマスターと共にあなたの世界を共創します。設定、トーン、派閥、ストーリーフックを説明すれば——GMがルールと伝承の構築を助けます。あなたのカスタム世界は保存され、いつでも遊べます。" },
     { question: "料金はいくら？", answer: "新規アカウントは無料クレジット付きでスタート。その後、必要に応じて追加クレジットを購入——料金は透明で、実際のAI使用量に基づきます。サブスクリプションも隠れた費用もありません。" },
   ],
   ko: [
-    { question: "모험은 어떻게 시작하나요?", answer: "Google로 로그인 후 「탐색」에서 RPG 모험을 둘러보세요 — '비취봉 무술대회', '별이 떨어진 던전' 같은 프리셋을 고르면 클릭 몇 초 만에 게임에 입장합니다. AI 동료는 자동으로 생성됩니다. 처음부터 나만의 세계를 설계할 수도 있습니다." },
+    { question: "모험은 어떻게 시작하나요?", answer: "Google로 로그인 후 「탐색」에서 RPG 모험을 둘러보세요 — '별이 떨어진 던전', '거지의 동전' 같은 프리셋을 고르면 클릭 몇 초 만에 게임에 입장합니다. AI 동료는 자동으로 생성됩니다. 처음부터 나만의 세계를 설계할 수도 있습니다." },
     { question: "AI 게임 마스터란?", answer: "AI 게임 마스터(Chronicle)가 모험을 서술하고, 세계와 NPC를 조종하며, 전투를 진행하고, 당신의 선택에 따라 이야기를 적응시킵니다. AI 동료들은 진짜 성격을 가지고 있습니다 — 논쟁하고, 농담하고, 두려워하고, 진짜 플레이어처럼 함께 싸웁니다." },
     { question: "진행을 저장하고 나중에 돌아올 수 있나요?", answer: "네! 모험은 자동으로 저장됩니다. 브라우저를 닫고 언제든 돌아올 수 있습니다 — 파티, 인벤토리, 퀘스트 진행, 전체 세계 상태가 모두 유지됩니다. 이야기는 떠난 곳에서 그대로 이어집니다." },
-    { question: "어떤 RPG 세계가 있나요?", answer: "현재 서양 판타지와 무협 두 세계를 제공하며, 각각 사전 구성된 모험이 있습니다. AI 게임 마스터와의 대화를 통해 자신만의 세계도 디자인할 수 있습니다 — 배경, 전설, 마법 체계, 모험 단서를 정의하세요." },
+    { question: "어떤 RPG 세계가 있나요?", answer: "현재 서양 판타지 세계를 제공하며, 던전 탐험과 도시 미스터리 등 사전 구성된 모험이 있습니다. AI 게임 마스터와의 대화를 통해 자신만의 세계도 디자인할 수 있습니다 — 배경, 전설, 마법 체계, 모험 단서를 정의하세요." },
     { question: "로그인이 필요한가요? 무료인가요?", answer: "모험을 만들려면 Google 로그인 — 몇 초면 됩니다. 신규 계정은 무료 시작 크레딧을 받아 즉시 플랫폼을 체험할 수 있습니다." },
     { question: "나만의 RPG 세계를 설계할 수 있나요?", answer: "물론이죠! 「만들기」 페이지에서 AI 게임 마스터와 함께 세계를 공동 창작하세요. 배경, 분위기, 세력, 이야기 단서를 설명하면 — GM이 규칙과 전설 구축을 도와줍니다. 당신의 커스텀 세계는 저장되어 언제든 플레이 가능합니다." },
     { question: "비용은 얼마인가요?", answer: "신규 계정은 무료 크레딧으로 시작합니다. 이후 필요에 따라 추가 크레딧을 구매할 수 있습니다 — 가격은 투명하며 실제 AI 사용량에 기반합니다. 구독이나 숨겨진 비용은 없습니다." },
   ],
   de: [
-    { question: "Wie starte ich ein Abenteuer?", answer: "Melde dich mit Google an und durchstöbere unter „Entdecken\u201C die RPG-Abenteuer — wähle eine Vorlage wie „Das Turnier der Jadespitze\u201C oder „Der Sternfall-Dungeon\u201C. Ein Klick und du bist in Sekunden im Spiel. KI-Gefährten werden automatisch erzeugt. Du kannst auch von Grund auf deine eigene Welt entwerfen." },
+    { question: "Wie starte ich ein Abenteuer?", answer: "Melde dich mit Google an und durchstöbere unter „Entdecken\u201C die RPG-Abenteuer — wähle eine Vorlage wie „Der Sternfall-Dungeon\u201C oder „Die Münze des Bettlers\u201C. Ein Klick und du bist in Sekunden im Spiel. KI-Gefährten werden automatisch erzeugt. Du kannst auch von Grund auf deine eigene Welt entwerfen." },
     { question: "Was ist der KI-Spielleiter?", answer: "Der KI-Spielleiter (Chronicle) erzählt dein Abenteuer, kontrolliert Welt und NPCs, leitet Kämpfe und passt die Geschichte an deine Entscheidungen an. Deine KI-Gefährten haben echte Persönlichkeiten — sie streiten, scherzen, fürchten sich und kämpfen wie echte Spieler an deiner Seite." },
     { question: "Kann ich meinen Fortschritt speichern und später weitermachen?", answer: "Ja! Dein Abenteuer wird automatisch gespeichert. Du kannst den Browser schließen und jederzeit zurückkehren — Gruppe, Inventar, Quest-Fortschritt und der gesamte Weltzustand bleiben erhalten. Die Geschichte geht genau dort weiter, wo du aufgehört hast." },
-    { question: "Welche RPG-Welten gibt es?", answer: "Wir bieten westliche Fantasy- und Wuxia-Welten (Kampfkunst) mit vorgefertigten Abenteuern. Du kannst auch deine eigene Welt entwerfen — definiere Setting, Lore, Magiesystem und Storyhaken im Gespräch mit dem KI-Spielleiter." },
+    { question: "Welche RPG-Welten gibt es?", answer: "Wir bieten westliche Fantasy-Welten mit vorgefertigten Abenteuern — Dungeon-Crawls, urbane Mysterien und mehr. Du kannst auch deine eigene Welt entwerfen — definiere Setting, Lore, Magiesystem und Storyhaken im Gespräch mit dem KI-Spielleiter." },
     { question: "Muss ich mich anmelden? Ist es kostenlos?", answer: "Melde dich mit Google an, um Abenteuer zu erstellen — das dauert nur Sekunden. Neue Konten erhalten kostenlose Startguthaben, um die Plattform sofort zu testen." },
     { question: "Kann ich meine eigene RPG-Welt entwerfen?", answer: "Absolut! Nutze die Seite „Erstellen\u201C, um deine Welt mit dem KI-Spielleiter zu co-designen. Beschreibe Setting, Ton, Fraktionen und Storyhaken — der GM hilft beim Aufbau von Regeln und Lore. Deine eigene Welt wird gespeichert und kann jederzeit bespielt werden." },
     { question: "Was kostet es?", answer: "Neue Konten starten mit kostenlosen Guthaben. Danach kannst du bei Bedarf zusätzliche Guthaben kaufen — die Preise sind transparent und basieren auf der tatsächlichen KI-Nutzung. Keine Abonnements, keine versteckten Gebühren." },
   ],
   fr: [
-    { question: "Comment commencer une aventure ?", answer: "Connectez-vous avec Google, puis parcourez les aventures RPG dans Découvrir — choisissez un préréglage comme « Le Tournoi du Pic de Jade » ou « Le Donjon de l'Étoile Tombée ». Un clic et vous êtes dans le jeu en quelques secondes. Les compagnons IA sont générés automatiquement. Vous pouvez aussi concevoir votre propre monde de zéro." },
+    { question: "Comment commencer une aventure ?", answer: "Connectez-vous avec Google, puis parcourez les aventures RPG dans Découvrir — choisissez un préréglage comme « Le Donjon de l'Étoile Tombée » ou « La Pièce du Mendiant ». Un clic et vous êtes dans le jeu en quelques secondes. Les compagnons IA sont générés automatiquement. Vous pouvez aussi concevoir votre propre monde de zéro." },
     { question: "Qu'est-ce que le Maître du Jeu IA ?", answer: "Le Maître du Jeu IA (Chronicle) narre votre aventure, contrôle le monde et les PNJ, gère les combats et adapte l'histoire à vos choix. Vos compagnons IA ont de vraies personnalités — ils argumentent, plaisantent, ont peur et combattent à vos côtés comme de vrais joueurs." },
     { question: "Puis-je sauvegarder ma progression et revenir plus tard ?", answer: "Oui ! Votre aventure est sauvegardée automatiquement. Vous pouvez fermer le navigateur et revenir à tout moment — groupe, inventaire, progression des quêtes et état du monde restent intacts. L'histoire reprend exactement là où vous l'avez laissée." },
-    { question: "Quels mondes RPG sont disponibles ?", answer: "Nous proposons des mondes de Fantasy occidentale et de Wuxia (arts martiaux) avec des aventures prêtes à l'emploi. Vous pouvez aussi concevoir votre propre monde personnalisé — définissez le décor, le folklore, le système magique et les accroches d'histoire en conversant avec le Maître du Jeu IA." },
+    { question: "Quels mondes RPG sont disponibles ?", answer: "Nous proposons des mondes de Fantasy occidentale avec des aventures prêtes à l'emploi — donjons, mystères urbains et plus. Vous pouvez aussi concevoir votre propre monde personnalisé — définissez le décor, le folklore, le système magique et les accroches d'histoire en conversant avec le Maître du Jeu IA." },
     { question: "Dois-je me connecter ? Est-ce gratuit ?", answer: "Connectez-vous avec Google pour créer des aventures — ça ne prend que quelques secondes. Les nouveaux comptes reçoivent des crédits gratuits pour essayer la plateforme tout de suite." },
     { question: "Puis-je concevoir mon propre monde RPG ?", answer: "Absolument ! Utilisez la page « Créer » pour co-concevoir votre monde avec le Maître du Jeu IA. Décrivez le décor, le ton, les factions et les accroches narratives — le GM aide à construire les règles et le folklore. Votre monde personnalisé est sauvegardé et jouable à tout moment." },
     { question: "Combien ça coûte ?", answer: "Les nouveaux comptes démarrent avec des crédits gratuits. Ensuite, vous pouvez acheter des crédits supplémentaires selon vos besoins — les tarifs sont transparents et basés sur l'utilisation réelle de l'IA. Pas d'abonnement, pas de frais cachés." },
   ],
   es: [
-    { question: "¿Cómo empiezo una aventura?", answer: "Inicia sesión con Google, luego explora las aventuras RPG en Descubrir — elige un preset como 'El Torneo del Pico de Jade' o 'La Mazmorra de la Caída Estelar'. Un clic y estás en el juego en segundos. Los compañeros IA se generan automáticamente. También puedes diseñar tu propio mundo desde cero." },
+    { question: "¿Cómo empiezo una aventura?", answer: "Inicia sesión con Google, luego explora las aventuras RPG en Descubrir — elige un preset como 'La Mazmorra de la Caída Estelar' o 'La Moneda del Mendigo'. Un clic y estás en el juego en segundos. Los compañeros IA se generan automáticamente. También puedes diseñar tu propio mundo desde cero." },
     { question: "¿Qué es el Game Master IA?", answer: "El Game Master IA (Chronicle) narra tu aventura, controla el mundo y los NPCs, gestiona combates y adapta la historia a tus decisiones. Tus compañeros IA tienen personalidades reales — discuten, bromean, se asustan y luchan contigo como jugadores reales." },
     { question: "¿Puedo guardar mi progreso y volver?", answer: "¡Sí! Tu aventura se guarda automáticamente. Puedes cerrar el navegador y volver cuando quieras — el grupo, el inventario, el progreso de las misiones y el estado del mundo persisten. La historia continúa exactamente donde la dejaste." },
-    { question: "¿Qué mundos RPG están disponibles?", answer: "Ofrecemos mundos de Fantasía Occidental y Wuxia (artes marciales) con aventuras preconstruidas. También puedes diseñar tu propio mundo personalizado — define el escenario, el lore, el sistema mágico y los ganchos narrativos conversando con el Game Master IA." },
+    { question: "¿Qué mundos RPG están disponibles?", answer: "Ofrecemos mundos de Fantasía Occidental con aventuras preconstruidas — mazmorras, misterios urbanos y más. También puedes diseñar tu propio mundo personalizado — define el escenario, el lore, el sistema mágico y los ganchos narrativos conversando con el Game Master IA." },
     { question: "¿Necesito iniciar sesión? ¿Es gratis?", answer: "Inicia sesión con Google para crear aventuras — solo toma unos segundos. Las cuentas nuevas reciben créditos gratuitos para probar la plataforma de inmediato." },
     { question: "¿Puedo diseñar mi propio mundo RPG?", answer: "¡Absolutamente! Usa la página Crear para co-diseñar tu mundo con el Game Master IA. Describe el escenario, el tono, las facciones y los ganchos narrativos — el GM ayuda a construir las reglas y el lore. Tu mundo personalizado se guarda y se puede jugar cuando quieras." },
     { question: "¿Cuánto cuesta?", answer: "Las cuentas nuevas empiezan con créditos gratuitos. Después, puedes comprar créditos adicionales según necesites — los precios son transparentes y basados en el uso real de la IA. Sin suscripciones ni cobros ocultos." },
   ],
   pt: [
-    { question: "Como começo uma aventura?", answer: "Faça login com Google, depois navegue pelas aventuras RPG em Descobrir — escolha um preset como 'O Torneio do Pico de Jade' ou 'A Masmorra da Queda Estelar'. Clique e você está no jogo em segundos. Companheiros IA são gerados automaticamente. Você também pode projetar seu próprio mundo do zero." },
+    { question: "Como começo uma aventura?", answer: "Faça login com Google, depois navegue pelas aventuras RPG em Descobrir — escolha um preset como 'A Masmorra da Queda Estelar' ou 'A Moeda do Mendigo'. Clique e você está no jogo em segundos. Companheiros IA são gerados automaticamente. Você também pode projetar seu próprio mundo do zero." },
     { question: "O que é o Mestre de Jogo IA?", answer: "O Mestre de Jogo IA (Chronicle) narra sua aventura, controla o mundo e os NPCs, gerencia combates e adapta a história às suas escolhas. Seus companheiros IA têm personalidades reais — discutem, brincam, têm medo e lutam ao seu lado como jogadores reais." },
     { question: "Posso salvar meu progresso e voltar?", answer: "Sim! Sua aventura é salva automaticamente. Você pode fechar o navegador e voltar a qualquer momento — o grupo, o inventário, o progresso das missões e o estado do mundo persistem. A história continua exatamente de onde você parou." },
-    { question: "Quais mundos RPG estão disponíveis?", answer: "Oferecemos mundos de Fantasia Ocidental e Wuxia (artes marciais) com aventuras pré-construídas. Você também pode projetar seu próprio mundo personalizado — defina o cenário, o folclore, o sistema mágico e os ganchos narrativos conversando com o Mestre de Jogo IA." },
+    { question: "Quais mundos RPG estão disponíveis?", answer: "Oferecemos mundos de Fantasia Ocidental com aventuras pré-construídas — masmorras, mistérios urbanos e mais. Você também pode projetar seu próprio mundo personalizado — defina o cenário, o folclore, o sistema mágico e os ganchos narrativos conversando com o Mestre de Jogo IA." },
     { question: "Preciso fazer login? É gratuito?", answer: "Faça login com Google para criar aventuras — leva apenas segundos. Novas contas recebem créditos gratuitos para experimentar a plataforma imediatamente." },
     { question: "Posso projetar meu próprio mundo RPG?", answer: "Com certeza! Use a página Criar para co-projetar seu mundo com o Mestre de Jogo IA. Descreva o cenário, o tom, as facções e os ganchos narrativos — o GM ajuda a construir as regras e o folclore. Seu mundo personalizado é salvo e jogável a qualquer momento." },
     { question: "Quanto custa?", answer: "Novas contas começam com créditos gratuitos. Depois, você pode comprar créditos adicionais conforme necessário — os preços são transparentes e baseados no uso real da IA. Sem assinaturas, sem taxas ocultas." },
   ],
   ru: [
-    { question: "Как начать приключение?", answer: "Войдите через Google, затем просмотрите RPG-приключения в разделе «Обзор» — выберите пресет вроде «Турнир Нефритовой Вершины» или «Подземелье Звездопада». Клик — и через секунды вы в игре. ИИ-спутники создаются автоматически. Можно также спроектировать свой мир с нуля." },
+    { question: "Как начать приключение?", answer: "Войдите через Google, затем просмотрите RPG-приключения в разделе «Обзор» — выберите пресет вроде «Подземелье Звездопада» или «Монета Нищего». Клик — и через секунды вы в игре. ИИ-спутники создаются автоматически. Можно также спроектировать свой мир с нуля." },
     { question: "Что такое ИИ-мастер игры?", answer: "ИИ-мастер игры (Chronicle) ведёт ваше приключение, управляет миром и NPC, проводит сражения и адаптирует историю под ваши решения. У ваших ИИ-спутников настоящие личности — они спорят, шутят, боятся и сражаются плечом к плечу, как настоящие игроки." },
     { question: "Можно ли сохранить прогресс и вернуться позже?", answer: "Да! Ваше приключение сохраняется автоматически. Можно закрыть браузер и вернуться когда угодно — отряд, инвентарь, прогресс квестов и весь мир сохраняются. История продолжается ровно с того места, где вы остановились." },
-    { question: "Какие RPG-миры доступны?", answer: "Предлагаем миры Западной Фэнтези и Уся (боевые искусства) с готовыми приключениями. Можно также спроектировать свой собственный мир — определите сеттинг, лор, систему магии и сюжетные крючки в диалоге с ИИ-мастером игры." },
+    { question: "Какие RPG-миры доступны?", answer: "Предлагаем миры Западной Фэнтези с готовыми приключениями — подземелья, городские детективы и многое другое. Можно также спроектировать свой собственный мир — определите сеттинг, лор, систему магии и сюжетные крючки в диалоге с ИИ-мастером игры." },
     { question: "Нужно ли входить? Это бесплатно?", answer: "Войдите через Google, чтобы создавать приключения — это занимает секунды. Новые аккаунты получают бесплатные стартовые кредиты, чтобы сразу попробовать платформу." },
     { question: "Можно ли спроектировать свой RPG-мир?", answer: "Конечно! Используйте страницу «Создать», чтобы спроектировать мир вместе с ИИ-мастером игры. Опишите сеттинг, тон, фракции и сюжетные крючки — ГМ поможет построить правила и лор. Ваш мир сохраняется и доступен в любое время." },
     { question: "Сколько это стоит?", answer: "Новые аккаунты начинают с бесплатных кредитов. Затем можно покупать дополнительные кредиты по мере необходимости — цены прозрачные, основаны на реальном использовании ИИ. Никаких подписок, никаких скрытых сборов." },
   ],
   it: [
-    { question: "Come inizio un'avventura?", answer: "Accedi con Google, poi sfoglia le avventure RPG su Scopri — scegli un preset come 'Il Torneo del Picco di Giada' o 'Il Dungeon della Caduta Stellare'. Un clic e sei nel gioco in pochi secondi. I compagni IA sono generati automaticamente. Puoi anche progettare il tuo mondo da zero." },
+    { question: "Come inizio un'avventura?", answer: "Accedi con Google, poi sfoglia le avventure RPG su Scopri — scegli un preset come 'Il Dungeon della Caduta Stellare' o 'La Moneta del Mendicante'. Un clic e sei nel gioco in pochi secondi. I compagni IA sono generati automaticamente. Puoi anche progettare il tuo mondo da zero." },
     { question: "Cos'è il Game Master IA?", answer: "Il Game Master IA (Chronicle) narra la tua avventura, controlla il mondo e i PNG, gestisce i combattimenti e adatta la storia alle tue scelte. I tuoi compagni IA hanno personalità vere — discutono, scherzano, si spaventano e combattono al tuo fianco come giocatori veri." },
     { question: "Posso salvare i miei progressi e tornare?", answer: "Sì! La tua avventura viene salvata automaticamente. Puoi chiudere il browser e tornare quando vuoi — gruppo, inventario, progresso delle missioni e stato del mondo persistono. La storia riprende esattamente da dove l'avevi lasciata." },
-    { question: "Quali mondi RPG sono disponibili?", answer: "Offriamo mondi di Fantasy Occidentale e Wuxia (arti marziali) con avventure preconfezionate. Puoi anche progettare il tuo mondo personalizzato — definisci ambientazione, folklore, sistema magico e ganci narrativi conversando con il Game Master IA." },
+    { question: "Quali mondi RPG sono disponibili?", answer: "Offriamo mondi di Fantasy Occidentale con avventure preconfezionate — dungeon, misteri urbani e altro. Puoi anche progettare il tuo mondo personalizzato — definisci ambientazione, folklore, sistema magico e ganci narrativi conversando con il Game Master IA." },
     { question: "Devo accedere? È gratuito?", answer: "Accedi con Google per creare avventure — ci vogliono solo pochi secondi. I nuovi account ricevono crediti gratuiti per provare subito la piattaforma." },
     { question: "Posso progettare il mio mondo RPG?", answer: "Assolutamente! Usa la pagina Crea per co-progettare il tuo mondo con il Game Master IA. Descrivi ambientazione, tono, fazioni e ganci narrativi — il GM aiuta a costruire regole e folklore. Il tuo mondo personalizzato viene salvato e giocabile in qualsiasi momento." },
     { question: "Quanto costa?", answer: "I nuovi account iniziano con crediti gratuiti. Poi puoi acquistare crediti aggiuntivi secondo necessità — i prezzi sono trasparenti e basati sull'uso effettivo dell'IA. Nessun abbonamento, nessun costo nascosto." },
   ],
   ar: [
-    { question: "كيف أبدأ مغامرة؟", answer: "سجّل الدخول بحساب Google، ثم تصفّح مغامرات RPG في «الاستكشاف» — اختر إعداداً مسبقاً مثل «بطولة قمة اليشم» أو «دنجن السقوط النجمي». انقر وستكون داخل اللعبة خلال ثوانٍ. يُنشأ الرفاق بالذكاء الاصطناعي تلقائياً. يمكنك أيضاً تصميم عالمك الخاص من الصفر." },
+    { question: "كيف أبدأ مغامرة؟", answer: "سجّل الدخول بحساب Google، ثم تصفّح مغامرات RPG في «الاستكشاف» — اختر إعداداً مسبقاً مثل «دنجن السقوط النجمي» أو «عملة المتسوّل». انقر وستكون داخل اللعبة خلال ثوانٍ. يُنشأ الرفاق بالذكاء الاصطناعي تلقائياً. يمكنك أيضاً تصميم عالمك الخاص من الصفر." },
     { question: "ما هو سيد اللعبة بالذكاء الاصطناعي؟", answer: "سيد اللعبة بالذكاء الاصطناعي (Chronicle) يروي مغامرتك، ويتحكم في العالم والشخصيات غير اللاعبة، ويدير القتال، ويكيّف القصة وفق اختياراتك. رفاقك بالذكاء الاصطناعي لديهم شخصيات حقيقية — يجادلون، يمزحون، يخافون، ويقاتلون إلى جانبك كلاعبين حقيقيين." },
     { question: "هل يمكنني حفظ تقدمي والعودة لاحقاً؟", answer: "نعم! تُحفظ مغامرتك تلقائياً. يمكنك إغلاق المتصفح والعودة في أي وقت — الفريق، المخزون، تقدم المهام، وحالة العالم بأكملها تُحفظ. تستأنف القصة من حيث توقفت بالضبط." },
-    { question: "ما عوالم RPG المتاحة؟", answer: "نوفر عوالم الفانتازيا الغربية والووشيا (الفنون القتالية) مع مغامرات جاهزة. يمكنك أيضاً تصميم عالمك المخصص — حدّد الإعداد، الأساطير، نظام السحر، وخيوط القصة عبر محادثة مع سيد اللعبة." },
+    { question: "ما عوالم RPG المتاحة؟", answer: "نوفر عوالم الفانتازيا الغربية مع مغامرات جاهزة — استكشاف الزنازين وألغاز المدن وأكثر. يمكنك أيضاً تصميم عالمك المخصص — حدّد الإعداد، الأساطير، نظام السحر، وخيوط القصة عبر محادثة مع سيد اللعبة." },
     { question: "هل يجب تسجيل الدخول؟ هل هو مجاني؟", answer: "سجّل الدخول بحساب Google لإنشاء المغامرات — لا يستغرق سوى ثوانٍ. تحصل الحسابات الجديدة على رصيد مجاني للبدء فوراً." },
     { question: "هل يمكنني تصميم عالم RPG خاص بي؟", answer: "بالتأكيد! استخدم صفحة «إنشاء» لتصميم عالمك مع سيد اللعبة. صِف الإعداد، النغمة، الفصائل، وخيوط القصة — وسيد اللعبة سيساعدك في بناء القواعد والأساطير. عالمك المخصص يُحفظ ويمكن لعبه في أي وقت." },
     { question: "كم تكلفتها؟", answer: "تبدأ الحسابات الجديدة برصيد مجاني. بعد ذلك، يمكنك شراء رصيد إضافي حسب الحاجة — التسعير شفاف ويعتمد على الاستخدام الفعلي للذكاء الاصطناعي. لا اشتراكات، لا رسوم خفية." },

@@ -3,15 +3,14 @@ import { buildHreflangAlternates } from "@/lib/seo-locales";
 import DiscoverView from "./discover-view";
 
 export const metadata: Metadata = {
-  title: "Discover RPG Adventures — Fantasy, Wuxia & Custom Worlds",
+  title: "Discover RPG Adventures — Fantasy & Custom Worlds",
   description:
-    "Browse RPG adventures powered by AI. Explore fantasy dungeons, wuxia tournaments, and open-world quests — or design your own custom world with the AI Game Master.",
+    "Browse RPG adventures powered by AI. Explore fantasy dungeons, urban mysteries, and open-world quests — or design your own custom world with the AI Game Master.",
   keywords: [
     "ai rpg",
     "text rpg online",
     "ai dungeon master",
     "fantasy rpg",
-    "wuxia rpg",
     "ai adventure game",
     "text adventure",
     "rpg with ai companions",
@@ -25,14 +24,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Discover RPG Adventures · TextGame.ai",
     description:
-      "RPG adventures with an AI Game Master. Fantasy, Wuxia, open-world — or design your own.",
+      "RPG adventures with an AI Game Master. Fantasy dungeons, urban mysteries, open-world — or design your own.",
     type: "website",
     images: [{ url: "/hero.webp", width: 1200, height: 630, alt: "Discover RPG Adventures · TextGame.ai" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Discover RPG Adventures · TextGame.ai",
-    description: "RPG adventures with an AI Game Master. Fantasy, Wuxia, open-world — or design your own.",
+    description: "RPG adventures with an AI Game Master. Fantasy dungeons, urban mysteries, open-world — or design your own.",
     images: ["/hero.webp"],
   },
 };

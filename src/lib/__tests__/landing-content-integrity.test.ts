@@ -87,8 +87,8 @@ describe("Landing content — FEATURES", () => {
 });
 
 describe("Landing content — FEATURED_GAMES", () => {
-  it("has at least 3 featured games", () => {
-    expect(FEATURED_GAMES.length).toBeGreaterThanOrEqual(3);
+  it("has at least 2 featured games", () => {
+    expect(FEATURED_GAMES.length).toBeGreaterThanOrEqual(2);
   });
 
   it("each featured game has title, emoji, players", () => {

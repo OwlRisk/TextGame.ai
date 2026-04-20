@@ -13,8 +13,8 @@ describe("ALL_PRESETS integrity", () => {
   // Tracks the structured-adventure registry. Bump when adding a new
   // adventure to `lib/rpg/adventures.ts` and registering UI metadata in
   // `data/discover-templates.ts`.
-  it("has at least 3 RPG adventure presets", () => {
-    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(3);
+  it("has at least 2 RPG adventure presets", () => {
+    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(2);
   });
 
   it("every preset has required fields", () => {
@@ -91,7 +91,7 @@ describe("getPresetById", () => {
 describe("CATEGORY_MAP", () => {
   it("has expected RPG categories", () => {
     expect(Object.keys(CATEGORY_MAP)).toEqual(
-      expect.arrayContaining(["wuxia", "fantasy"]),
+      expect.arrayContaining(["fantasy"]),
     );
   });
 

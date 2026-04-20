@@ -11,7 +11,7 @@ describe("Discover page data integrity", () => {
   it("ALL_PRESETS contains all the structured RPG adventures", () => {
     // Counts the structured adventure registry. Bump (or reach for a
     // looser check) when adding a new adventure.
-    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(3);
+    expect(ALL_PRESETS.length).toBeGreaterThanOrEqual(2);
   });
 
   it("every template has a unique id", () => {
@@ -68,7 +68,7 @@ describe("Discover page data integrity", () => {
   // ── CATEGORY_MAP ─────────────────────────────────────────────────────────────
 
   it("CATEGORY_MAP has entries for RPG categories", () => {
-    const expected = ["wuxia", "fantasy"];
+    const expected = ["fantasy"];
     for (const cat of expected) {
       expect(CATEGORY_MAP[cat], `missing category: ${cat}`).toBeDefined();
       expect(CATEGORY_MAP[cat].length, `empty category: ${cat}`).toBeGreaterThan(0);

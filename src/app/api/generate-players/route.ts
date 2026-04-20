@@ -85,7 +85,7 @@ ${classDescriptions}
 
 Available factions: ${factionNames}
 
-For ${world.id === 'wuxia' ? 'Wuxia: use Romanized Chinese names in pinyin (e.g. Lin Jianxin, Fang Wukong, Shen Duanqiu). Do NOT use Chinese characters — use English/pinyin only. Backgrounds should reference sects, martial arts, jianghu lore.' : 'Western Fantasy: use fantasy names (e.g. Aldric Stone, Lyra Frost). Backgrounds should reference guilds, quests, magical lore.'}
+For Western Fantasy: use fantasy names (e.g. Aldric Stone, Lyra Frost). Backgrounds should reference guilds, quests, magical lore.
 
 Requirements:
 1. Each name must be SHORT (1-3 words, max 20 characters). No titles or class in the name.

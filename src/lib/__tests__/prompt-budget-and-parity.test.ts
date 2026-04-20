@@ -230,8 +230,6 @@ const NON_DIRECTIVE_LABELS = new Set<string>([
   "EXIT", "EXITS", "NPCS", "ITEMS",
   // Misc
   "LANGUAGE", "PHASE_LABEL", "MOD", "NEW_PLAYER_JOINED",
-  // Wuxia faction names that happen to be uppercase
-  "WUDANG", "SHAOLIN", "EMEI", "TANG",
 ]);
 
 /** Smoke test the registry itself — every entry must round-trip via at least

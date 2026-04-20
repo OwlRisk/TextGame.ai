@@ -123,62 +123,6 @@ export const WESTERN_REGIONS: RegionDefinition[] = [
   },
 ];
 
-// --- Wuxia Regions ---
-
-export const WUXIA_REGIONS: RegionDefinition[] = [
-  {
-    id: 'bamboo-grove',
-    name: 'Bamboo Grove',
-    nameZh: '竹林幽径',
-    description: 'A serene bamboo forest where hermit masters train in secret, and bandits lurk on the trails.',
-    descriptionZh: '宁静的竹林，隐士高手在此秘密修炼，山贼潜伏于小道之上。',
-    difficulty: 'easy',
-    recommendedLevel: 1,
-    tags: ['bamboo', 'peaceful', 'hermit', 'bandit'],
-    possibleEvents: ['hermit-training', 'bandit-toll', 'lost-scroll', 'tea-ceremony'],
-    questIds: ['bamboo-sect-trial', 'bandit-camp'],
-  },
-  {
-    id: 'misty-lake',
-    name: 'Misty Lake',
-    nameZh: '迷雾湖',
-    description: 'A fog-shrouded lake with floating pavilions, hiding a sect of water martial artists.',
-    descriptionZh: '雾气笼罩的湖泊，浮动亭阁中隐藏着水系武学门派。',
-    difficulty: 'normal',
-    recommendedLevel: 3,
-    tags: ['lake', 'mist', 'water-sect', 'mystery'],
-    possibleEvents: ['fog-maze', 'lotus-gathering', 'water-duel', 'fisherman-tale'],
-    questIds: ['sect-alliance', 'sunken-treasure'],
-    bossId: 'water-sage',
-  },
-  {
-    id: 'iron-fortress',
-    name: 'Iron Fortress',
-    nameZh: '铁壁山庄',
-    description: 'A fortified mountain stronghold ruled by a tyrannical martial lord.',
-    descriptionZh: '由暴虐武林霸主统治的山间要塞。',
-    difficulty: 'hard',
-    recommendedLevel: 5,
-    tags: ['fortress', 'martial', 'tyrant', 'siege'],
-    possibleEvents: ['guard-patrol', 'underground-passage', 'prisoner-rescue', 'arena-challenge'],
-    questIds: ['overthrow-tyrant', 'secret-technique'],
-    bossId: 'iron-lord',
-  },
-  {
-    id: 'celestial-peak',
-    name: 'Celestial Peak',
-    nameZh: '天枢峰',
-    description: 'The highest peak in the realm, where ancient martial arts secrets and immortal cultivators await.',
-    descriptionZh: '天下第一高峰，古老武学秘密与仙人修士在此等候。',
-    difficulty: 'deadly',
-    recommendedLevel: 8,
-    tags: ['peak', 'celestial', 'immortal', 'legendary'],
-    possibleEvents: ['lightning-trial', 'immortal-encounter', 'heaven-gate', 'martial-tournament'],
-    questIds: ['martial-supreme', 'celestial-scripture'],
-    bossId: 'fallen-immortal',
-  },
-];
-
 // --- Sample Random Events ---
 
 export const RANDOM_EVENTS: RandomEvent[] = [
@@ -193,11 +137,6 @@ export const RANDOM_EVENTS: RandomEvent[] = [
   { id: 'undead-horde', name: 'Undead Horde', nameZh: '亡灵大军', description: 'A horde of undead rises from the ground!', descriptionZh: '亡灵大军从地下涌出！', type: 'combat', weight: 12 },
   { id: 'cursed-altar', name: 'Cursed Altar', nameZh: '诅咒祭坛', description: 'A dark altar radiates malevolent energy.', descriptionZh: '黑暗祭坛散发着邪恶能量。', type: 'mystery', weight: 8 },
   { id: 'ghost-memory', name: 'Ghost Memory', nameZh: '幽灵记忆', description: 'A spectral figure shows you visions of the past.', descriptionZh: '幽灵向你展示过去的幻象。', type: 'npc_encounter', weight: 10 },
-  // Wuxia events
-  { id: 'hermit-training', name: 'Hermit Training', nameZh: '隐士指点', description: 'A hidden master offers to train you briefly.', descriptionZh: '隐世高手愿意短暂指点你。', type: 'npc_encounter', weight: 10 },
-  { id: 'bandit-toll', name: 'Bandit Toll', nameZh: '山贼关卡', description: 'Bandits demand a toll to pass.', descriptionZh: '山贼要求交过路费。', type: 'combat', weight: 15 },
-  { id: 'lost-scroll', name: 'Lost Scroll', nameZh: '遗失秘籍', description: 'You find a partially damaged martial arts scroll.', descriptionZh: '你发现了一卷残破的武功秘籍。', type: 'treasure', weight: 8 },
-  { id: 'tea-ceremony', name: 'Tea Ceremony', nameZh: '品茶论道', description: 'A scholar invites you for tea and philosophical discussion.', descriptionZh: '文人雅士邀你品茶论道。', type: 'npc_encounter', weight: 12 },
 ];
 
 // --- Recruitable NPCs ---
@@ -206,15 +145,11 @@ export const RECRUITABLE_NPCS: RecruitableNpc[] = [
   { id: 'elena-healer', name: 'Elena', nameZh: '艾莲娜', class: 'cleric', personality: 'Gentle and devoted, speaks softly but with conviction.', recruitCondition: 'Complete the "gather-herbs" quest', regionId: 'verdant-woods', specialAbility: 'Group Heal' },
   { id: 'gruk-warrior', name: 'Gruk', nameZh: '格鲁克', class: 'warrior', personality: 'Gruff former gladiator seeking redemption.', recruitCondition: 'Free him from the goblin prison', regionId: 'shadow-caves', specialAbility: 'Taunt' },
   { id: 'sera-mage', name: 'Sera', nameZh: '瑟拉', class: 'mage', personality: 'Curious researcher obsessed with ancient magic.', recruitCondition: 'Help her decode the ancient library', regionId: 'cursed-ruins', specialAbility: 'Arcane Shield' },
-  // Wuxia
-  { id: 'xiaoyue', name: 'Xiao Yue', nameZh: '小月', class: 'assassin', personality: 'Quick-witted thief with a heart of gold.', recruitCondition: 'Spare her during the bandit camp quest', regionId: 'bamboo-grove', specialAbility: 'Shadow Step' },
-  { id: 'master-liu', name: 'Master Liu', nameZh: '柳师父', class: 'monk', personality: 'Serene monk who speaks in riddles and proverbs.', recruitCondition: 'Defeat him in a friendly duel at the tea ceremony', regionId: 'misty-lake', specialAbility: 'Iron Body' },
-  { id: 'zhang-wei', name: 'Zhang Wei', nameZh: '张威', class: 'swordsman', personality: 'Disgraced former guard seeking to restore his honor.', recruitCondition: 'Help him clear his name during the tyrant overthrow', regionId: 'iron-fortress', specialAbility: 'Counter Strike' },
 ];
 
 // --- Helpers ---
 
-export const ALL_REGIONS = [...WESTERN_REGIONS, ...WUXIA_REGIONS];
+export const ALL_REGIONS = [...WESTERN_REGIONS];
 
 export function getRegionById(id: string): RegionDefinition | undefined {
   return ALL_REGIONS.find(r => r.id === id);
@@ -222,7 +157,6 @@ export function getRegionById(id: string): RegionDefinition | undefined {
 
 export function getRegionsForWorld(worldId: string): RegionDefinition[] {
   if (worldId === 'western-fantasy') return WESTERN_REGIONS;
-  if (worldId === 'wuxia') return WUXIA_REGIONS;
   return [];
 }
 

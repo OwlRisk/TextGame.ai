@@ -92,8 +92,6 @@ export const LANDING_AVATAR_MAP: Record<string, string> = {
   Sera:             anime("Serena"),     // Cleric (female)
   Mira:             anime("Miranda"),    // Ranger (female)
   Kael:             anime("Levi"),       // Rogue (male)
-  "林剑心":          anime("Asuka"),      // Wuxia swordmaster (female)
-  "方悟空":          anime("Satoshi"),    // Wuxia monk (male)
   // Marquee characters (AI Players section)
   "Isabelle Frost":    anime("Miranda"),
   "Jasper Kane":       anime("Sebastian"),
@@ -188,15 +186,6 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
       { name: "Aldric", time: "Room 3", text: "Then go. I'll hold the front three. Just don't miss.", role: "Knight", personality: "Brave and protective", gender: "male" },
     ],
   },
-  wuxia: {
-    title: "Wuxia Adventure",
-    messages: [
-      { isHost: true, name: "Chronicle", time: "Act 1", text: "The tournament grounds of Jade Peak are alive with color. Sect banners snap in the mountain wind. A gong sounds — the first round begins." },
-      { name: "林剑心", time: "Act 1", text: "My master said this tournament would test my resolve. I didn't expect to feel this nervous standing here.", role: "Swordmaster", personality: "Disciplined but self-doubting", gender: "female" },
-      { name: "方悟空", time: "Act 1", text: "Nervous? Ha! Look at our first opponent — he's shaking more than you are. This will be quick.", role: "Monk", personality: "Confident and teasing", gender: "male" },
-      { name: "林剑心", time: "Act 1", text: "Don't underestimate anyone here. Last year's champion vanished — something is wrong at this tournament.", role: "Swordmaster", personality: "Disciplined but self-doubting", gender: "female" },
-    ],
-  },
   exploration: {
     title: "Open World",
     messages: [
@@ -254,21 +243,10 @@ export const FEATURES: Feature[] = [
 
 export const FEATURED_GAMES: FeaturedGame[] = [
   {
-    emoji: "⚔️",
-    title: "The Tournament of Jade Peak",
-    players: "Solo + 3 AI",
-    tags: ["Wuxia", "Combat", "New"],
-    description: "A martial arts tournament hides a deadly conspiracy. Fight, investigate, and decide the fate of the martial world.",
-    cover: "/games/game-cover-rpg-jade-peak.webp",
-    accent: "from-red-500/20 to-amber-500/10",
-    border: "hover:border-red-500/50",
-    presetId: "rpg-jade-peak",
-  },
-  {
     emoji: "🏰",
     title: "The Starfall Dungeon",
     players: "Solo + 3 AI",
-    tags: ["Fantasy", "Dungeon Crawl"],
+    tags: ["Fantasy", "Dungeon Crawl", "New"],
     description: "A meteorite opened a rift beneath the old castle. Explore the depths, fight monsters, and claim legendary loot.",
     cover: "/games/game-cover-rpg-starfall-dungeon.webp",
     accent: "from-violet-500/20 to-purple-500/10",
@@ -276,22 +254,22 @@ export const FEATURED_GAMES: FeaturedGame[] = [
     presetId: "rpg-starfall-dungeon",
   },
   {
-    emoji: "🗺️",
-    title: "The Cursed Crossroads",
+    emoji: "🪙",
+    title: "The Beggar's Coin",
     players: "Solo + 3 AI",
-    tags: ["Fantasy", "Open World"],
-    description: "An ancient curse is spreading across the land. Explore, recruit allies, and uncover the source before it's too late.",
-    cover: "/games/game-cover-rpg-cursed-crossroads.webp",
-    accent: "from-emerald-500/20 to-teal-500/10",
-    border: "hover:border-emerald-500/50",
-    presetId: "rpg-cursed-crossroads",
+    tags: ["Fantasy", "Urban Mystery", "Short Session"],
+    description: "A pickpocket lifted the prince's signet ring. One copper coin is your only lead. Recover it before dawn court convenes.",
+    cover: "/games/game-cover-rpg-starfall-dungeon.webp",
+    accent: "from-amber-500/20 to-stone-500/10",
+    border: "hover:border-amber-500/50",
+    presetId: "rpg-beggars-coin",
   },
 ];
 
 export const FAQ_ITEMS: FAQItem[] = [
   {
     question: "How do I start an adventure?",
-    answer: "Sign in with Google, then browse RPG adventures on Discover — pick a preset like 'The Tournament of Jade Peak' or 'The Starfall Dungeon'. Click and you're in the game within seconds. AI party members are generated automatically. You can also design your own world from scratch.",
+    answer: "Sign in with Google, then browse RPG adventures on Discover — pick a preset like 'The Starfall Dungeon' or 'The Beggar's Coin'. Click and you're in the game within seconds. AI party members are generated automatically. You can also design your own world from scratch.",
   },
   {
     question: "What is the AI Game Master?",
@@ -303,7 +281,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What RPG worlds are available?",
-    answer: "We offer Western Fantasy and Wuxia (martial arts) worlds with pre-built adventures. You can also design your own custom world — define the setting, lore, magic system, and adventure hooks through conversation with the AI Game Master.",
+    answer: "We offer Western Fantasy with pre-built adventures — dungeon crawls, urban mysteries, and more. You can also design your own custom world — define the setting, lore, magic system, and adventure hooks through conversation with the AI Game Master.",
   },
   {
     question: "Do I need to sign in? Is it free?",

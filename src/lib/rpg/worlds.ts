@@ -1,5 +1,5 @@
 import type { ClassDefinition } from "./classes";
-import { WESTERN_CLASSES, WUXIA_CLASSES } from "./classes";
+import { WESTERN_CLASSES } from "./classes";
 
 export interface WorldSetting {
   id: string;
@@ -55,31 +55,7 @@ export const WESTERN_FANTASY: WorldSetting = {
   },
 };
 
-export const WUXIA: WorldSetting = {
-  id: "wuxia",
-  name: "Wuxia",
-  nameZh: "武侠",
-  description: "The martial world of ancient China. Master secret techniques, join legendary sects, and forge your own path in the jianghu.",
-  descriptionZh: "刀光剑影的江湖世界。习得绝世武功、加入传奇门派、在武林中闯出自己的天地。",
-  icon: "⚔️",
-  color: "from-red-600 to-amber-900",
-  classes: WUXIA_CLASSES,
-  factions: [
-    { id: "wudang", name: "Wudang Sect", nameZh: "武当派", description: "Taoist swordsmen known for their internal energy cultivation and elegant sword techniques." },
-    { id: "shaolin", name: "Shaolin Temple", nameZh: "少林寺", description: "Buddhist warrior monks with unmatched physical conditioning and iron-body techniques." },
-    { id: "emei", name: "Emei Sect", nameZh: "峨眉派", description: "A sect known for combining martial arts with healing and protective techniques." },
-    { id: "beggar-clan", name: "Beggar Clan", nameZh: "丐帮", description: "The largest martial arts organization, with an intelligence network spanning the empire." },
-    { id: "tang-clan", name: "Tang Clan", nameZh: "唐门", description: "Secretive clan specializing in hidden weapons, poisons, and mechanical traps." },
-  ],
-  terminology: {
-    mp: "Qi", mpZh: "内力",
-    skill: "Technique", skillZh: "武功",
-    faction: "Sect", factionZh: "门派",
-    currency: "Silver Taels", currencyZh: "银两",
-  },
-};
-
-export const ALL_WORLDS: WorldSetting[] = [WESTERN_FANTASY, WUXIA];
+export const ALL_WORLDS: WorldSetting[] = [WESTERN_FANTASY];
 
 export function getWorldById(id: string): WorldSetting | undefined {
   return ALL_WORLDS.find((w) => w.id === id);

@@ -18,7 +18,6 @@ export const metadata: Metadata = {
     "persistent RPG",
     "open world text game",
     "AI DnD",
-    "wuxia RPG",
     "fantasy RPG online",
   ],
   alternates: {

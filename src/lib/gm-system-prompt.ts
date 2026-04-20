@@ -141,7 +141,7 @@ GAME NAME: <SET_GAME_NAME>name</SET_GAME_NAME> — set the adventure's display n
 PLAYER COUNT: <SET_PLAYER_COUNT>N</SET_PLAYER_COUNT> where N = party members (AI companions). Default 3.
 
 WORLD DESIGN FLOW:
-1. Ask what kind of world they want (fantasy, wuxia, sci-fi, post-apocalyptic, etc.)
+1. Ask what kind of world they want (fantasy, sci-fi, post-apocalyptic, horror, etc.)
 2. Help define the tone (dark & gritty, lighthearted, epic, horror)
 3. Suggest a starting scenario and adventure hooks
 4. Build the world rules: magic system, combat style, key factions, notable locations

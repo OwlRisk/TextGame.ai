@@ -1,8 +1,8 @@
-export { ALL_CLASSES, WESTERN_CLASSES, WUXIA_CLASSES, getClassById, createCharacterFromClass } from "./classes";
+export { ALL_CLASSES, WESTERN_CLASSES, getClassById, createCharacterFromClass } from "./classes";
 export type { ClassDefinition } from "./classes";
-export { ALL_WORLDS, WESTERN_FANTASY, WUXIA, getWorldById } from "./worlds";
+export { ALL_WORLDS, WESTERN_FANTASY, getWorldById } from "./worlds";
 export type { WorldSetting, WorldFaction, WorldTerminology } from "./worlds";
-export { ALL_REGIONS, WESTERN_REGIONS, WUXIA_REGIONS, RANDOM_EVENTS, RECRUITABLE_NPCS, getRegionById, getRegionsForWorld, getRandomEvent, getRecruitableNpcsForRegion } from "./regions";
+export { ALL_REGIONS, WESTERN_REGIONS, RANDOM_EVENTS, RECRUITABLE_NPCS, getRegionById, getRegionsForWorld, getRandomEvent, getRecruitableNpcsForRegion } from "./regions";
 export type { RegionDefinition, QuestDefinition, QuestObjective, QuestReward, RandomEvent, RecruitableNpc } from "./regions";
 export { RPG_RESOLUTION_RULES, RPG_RESOLUTION_RULES_PLAYER_FACING } from "./resolution";
 export { ALL_RPG_ADVENTURES, getRpgAdventureById, buildAdventureNotes } from "./adventures";

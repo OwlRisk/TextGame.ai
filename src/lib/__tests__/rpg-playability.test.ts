@@ -22,8 +22,8 @@ import { ALL_WORLDS } from "../rpg/worlds";
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("RPG adventures — structured definitions", () => {
-  it("ships at least 3 adventures", () => {
-    expect(ALL_RPG_ADVENTURES.length).toBeGreaterThanOrEqual(3);
+  it("ships at least 2 adventures", () => {
+    expect(ALL_RPG_ADVENTURES.length).toBeGreaterThanOrEqual(2);
   });
 
   it("every adventure has a unique id", () => {
@@ -96,8 +96,8 @@ describe("RPG adventures — structured definitions", () => {
 
 describe("getRpgAdventureById", () => {
   it("returns the adventure for a known id", () => {
-    const a = getRpgAdventureById("rpg-jade-peak");
-    expect(a?.id).toBe("rpg-jade-peak");
+    const a = getRpgAdventureById("rpg-starfall-dungeon");
+    expect(a?.id).toBe("rpg-starfall-dungeon");
   });
 
   it("returns undefined for unknown / null / empty", () => {
