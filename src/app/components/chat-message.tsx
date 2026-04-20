@@ -458,7 +458,7 @@ function MessageAvatar({
     );
   }
   const avatarColor = messagePlayer?.avatar || message.senderAvatar;
-  const avatarProps = getAvatarPropsForPlayer(messagePlayer, avatarStyle as any);
+  const avatarProps = getAvatarPropsForPlayer(messagePlayer, avatarStyle as Parameters<typeof getAvatarPropsForPlayer>[1]);
   return (
     <GeneratedAvatar
       {...avatarProps}

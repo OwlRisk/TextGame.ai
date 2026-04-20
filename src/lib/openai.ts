@@ -53,7 +53,7 @@ export async function getAIChatResponse(
   request: ChatRequest,
   retries = 3
 ): Promise<ChatResponse> {
-  let lastError: any;
+  let lastError: unknown;
   
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -86,12 +86,13 @@ export async function getAIChatResponse(
 
       const data = await response.json();
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
       console.error(`Error calling OpenAI API (attempt ${attempt + 1}/${retries}):`, error);
-      
+
+      const msg = error instanceof Error ? error.message : String(error);
       // Don't retry on certain errors
-      if (error.message?.includes('API key') || error.message?.includes('authentication')) {
+      if (msg.includes('API key') || msg.includes('authentication')) {
         throw error;
       }
       
@@ -116,8 +117,8 @@ export async function streamAIChatResponse(
   onError?: (error: Error) => void,
   retries = 2
 ): Promise<void> {
-  let lastError: any;
-  
+  let lastError: unknown;
+
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const hostPersonality = request.hostPersonality ?? (request.hostId ? (() => {
@@ -211,28 +212,32 @@ export async function streamAIChatResponse(
 
       onComplete?.();
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
       console.error(`Error streaming AI response (attempt ${attempt + 1}/${retries}):`, error);
-      
-      const noRetry = error.message?.includes('API key')
-        || error.message?.includes('authentication')
-        || error.message === 'INSUFFICIENT_TOKENS'
-        || error.code === 'INSUFFICIENT_TOKENS';
+
+      const msg = error instanceof Error ? error.message : String(error);
+      const code = error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined;
+      const noRetry = msg.includes('API key')
+        || msg.includes('authentication')
+        || msg === 'INSUFFICIENT_TOKENS'
+        || code === 'INSUFFICIENT_TOKENS';
       if (noRetry) {
-        if (onError) { onError(error); } else { throw error; }
+        const err = error instanceof Error ? error : new Error(msg);
+        if (onError) { onError(err); } else { throw err; }
         return;
       }
-      
+
       if (attempt < retries - 1) {
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
       }
     }
   }
-  
+
+  const finalErr = lastError instanceof Error ? lastError : new Error(String(lastError));
   if (onError) {
-    onError(lastError);
+    onError(finalErr);
   } else {
-    throw lastError;
+    throw finalErr;
   }
 }

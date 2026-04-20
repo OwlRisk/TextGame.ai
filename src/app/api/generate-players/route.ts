@@ -127,7 +127,13 @@ Output ONLY valid JSON:
       const parsed = JSON.parse(stripped);
       const rawPlayers = (Array.isArray(parsed) ? parsed : (parsed.players || [])).slice(0, count);
 
-      const rpgPlayers = rawPlayers.map((p: any, i: number) => {
+      type GeneratedRpgPlayer = {
+        name?: string; gender?: string; personality?: string; background?: string;
+        speechStyle?: string; quirk?: string; goal?: string; fear?: string;
+        attitudeToPlayer?: string; faction?: string;
+      };
+      const rpgPlayers = rawPlayers.map((raw: unknown, i: number) => {
+        const p = (raw ?? {}) as GeneratedRpgPlayer;
         const cls = selectedClasses[i] || selectedClasses[0];
         const faction = p.faction || world.factions[0]?.name;
         const rpgChar = createCharacterFromClass(cls, faction);
@@ -289,7 +295,13 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
         throw new Error('Response is not an array');
       }
 
-      const enrichedPlayers = players.map((p: Record<string, unknown>) => ({
+      type EnrichedPlayer = Record<string, unknown> & {
+        name?: string;
+        personality?: string;
+        background?: string;
+        gender?: string;
+      };
+      const enrichedPlayers: EnrichedPlayer[] = players.map((p: Record<string, unknown>) => ({
         ...p,
         gender: resolvePlayerGender(String(p.name || "Player"), p.gender as string | undefined, {
           personality: typeof p.personality === "string" ? p.personality : undefined,
@@ -297,7 +309,7 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
         }),
       }));
 
-      const validPlayers = enrichedPlayers.filter((p: any) =>
+      const validPlayers = enrichedPlayers.filter((p) =>
         p.name && p.personality && p.background
       );
 
@@ -305,7 +317,7 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
         throw new Error('No valid players generated');
       }
 
-      const result: { players: any[]; count: number; humanRole?: string } = {
+      const result: { players: EnrichedPlayer[]; count: number; humanRole?: string } = {
         players: validPlayers,
         count: validPlayers.length
       };
@@ -333,17 +345,18 @@ Top-level structure: { "players": [ ... ]${needsRoles ? ', "humanRole": "RoleNam
       );
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generating players:', error);
-    
-    if (error.status === 401) {
+
+    const status = (error as { status?: number } | null)?.status;
+    if (status === 401) {
       return NextResponse.json(
         { error: 'Invalid API key' },
         { status: 401 }
       );
     }
-    
-    if (error.status === 429) {
+
+    if (status === 429) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
         { status: 429 }

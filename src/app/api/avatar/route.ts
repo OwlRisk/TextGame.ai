@@ -336,16 +336,17 @@ async function generateWithDalle3(prompt: string, retried = false): Promise<stri
     }
 
     return `data:image/png;base64,${b64}`;
-  } catch (error: any) {
-    const status = error?.status ?? error?.code;
+  } catch (error: unknown) {
+    const e = error as { status?: number; code?: number; message?: string } | null;
+    const status = e?.status ?? e?.code;
     const is5xx = typeof status === 'number' && status >= 500 && status < 600;
     if (is5xx && !retried) {
-      logger.warn('[DALL-E 3] Server error (5xx), retrying once after 2s...', status, error?.message);
+      logger.warn('[DALL-E 3] Server error (5xx), retrying once after 2s...', status, e?.message);
       await new Promise((r) => setTimeout(r, 2000));
       return generateWithDalle3(prompt, true);
     }
-    logger.error('[DALL-E 3] API Error:', error?.message || error);
-    const err = new Error(error?.message ? `DALL-E 3 API error: ${error.message}` : 'DALL-E 3 API error') as Error & { status?: number };
+    logger.error('[DALL-E 3] API Error:', e?.message || error);
+    const err = new Error(e?.message ? `DALL-E 3 API error: ${e.message}` : 'DALL-E 3 API error') as Error & { status?: number };
     err.status = 503;
     throw err;
   }

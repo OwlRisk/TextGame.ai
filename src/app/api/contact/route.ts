@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     try {
       await sendFeedbackEmail(message, email, attachmentUrls, emailAttachments);
       emailStatus = 'sent';
-    } catch (emailErr: any) {
+    } catch (emailErr: unknown) {
       console.error('[contact] Email send error:', emailErr);
       emailStatus = 'failed';
     }

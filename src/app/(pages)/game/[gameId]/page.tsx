@@ -113,9 +113,16 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
       if (!data.messages?.length) { setHasMoreDbMessages(false); return; }
       setHasMoreDbMessages(data.hasMore);
       const existingIds = new Set(messages.map((m: { id: string }) => m.id));
+      type DbMessage = {
+        id: string; senderId: string; senderName: string; senderAvatar: string;
+        content: string; timestamp: string | number | Date; channelId?: string;
+        isAI?: boolean; isSystemMessage?: boolean; isPrivate?: boolean;
+        isAnnouncement?: boolean; imageUrl?: string;
+        reactions?: Array<{ emoji: string; from: string }>;
+      };
       const newMsgs = data.messages
         .filter((m: { id: string }) => !existingIds.has(m.id))
-        .map((m: any) => ({
+        .map((m: DbMessage) => ({
           id: m.id,
           senderId: m.senderId,
           senderName: m.senderName,
@@ -132,7 +139,7 @@ export default function GameRoomPage({ params }: { params: Promise<{ gameId: str
           isStreaming: false,
         }));
       if (newMsgs.length > 0) {
-        setMessages((prev: any[]) => [...newMsgs, ...prev]);
+        setMessages((prev) => [...newMsgs, ...prev]);
       }
     } catch (e) {
       console.error("Failed to load older messages:", e);

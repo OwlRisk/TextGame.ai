@@ -17,6 +17,7 @@ import { t, setAppLanguage, getAppLanguage } from "@/lib/i18n";
 import { resolvePlayerGender } from "@/lib/player-gender";
 import { getWorldById } from "@/lib/rpg/worlds";
 import { createCharacterFromClass } from "@/lib/rpg/classes";
+import type { GameConfig, ConfiguredPlayer } from "@/types/game-config";
 
 function buildRoleBoardContent(tmpl: GameTemplate | undefined, role: string, lang?: string): string {
   const label = t("board.your_role", lang, { role });
@@ -121,7 +122,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     };
   }, [gameId]);
 
-  const buildHostPlayer = useCallback((config: any) => {
+  const buildHostPlayer = useCallback((config: GameConfig) => {
     const isRpg = !!config.rpgWorldId;
     const hostColor = isRpg ? "#7c3aed" : "#52525b";
     const hostName = isRpg ? "Chronicle" : "Narrator";
@@ -142,8 +143,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     };
   }, []);
 
-  const buildAiPlayers = useCallback((configuredPlayers: any[]) => {
-    return (configuredPlayers || []).map((configPlayer: any, i: number) => ({
+  const buildAiPlayers = useCallback((configuredPlayers: ConfiguredPlayer[]) => {
+    return (configuredPlayers || []).map((configPlayer, i: number) => ({
       id: `ai-${i + 1}`,
       name: configPlayer.name,
       avatar: (configPlayer.avatar_url as string | undefined) ?? AI_COLOR_PALETTE[i % AI_COLOR_PALETTE.length],
@@ -181,7 +182,7 @@ export function useGameInit(gameId: string): UseGameInitReturn {
     const rpgWorld = rpgWorldId ? getWorldById(rpgWorldId) : undefined;
     const humanRpg = (() => {
       if (!rpgWorld) return undefined;
-      const aiClasses = new Set(aiPlayers.map((p: any) => p.rpg?.class).filter(Boolean));
+      const aiClasses = new Set(aiPlayers.map((p) => p.rpg?.class).filter(Boolean));
       const available = rpgWorld.classes.filter((c) => !aiClasses.has(c.id));
       const cls = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : rpgWorld.classes[0];
       const faction = rpgWorld.factions[Math.floor(Math.random() * rpgWorld.factions.length)]?.name;
@@ -447,8 +448,8 @@ export function useGameInit(gameId: string): UseGameInitReturn {
             if (role && tmpl?.hasElimination) {
               stats.Status = "Alive";
             }
-            if ((cp as any).word && tmpl?.hasSecretWord) {
-              stats.Word = (cp as any).word;
+            if (cp.word && tmpl?.hasSecretWord) {
+              stats.Word = cp.word;
             }
             return { ...p, role, stats };
           })

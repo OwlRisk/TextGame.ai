@@ -108,9 +108,9 @@ export async function POST(request: NextRequest) {
 
     const formattedMessages = [
       { role: 'system' as const, content: systemMessage },
-      ...messages.map((msg: any) => ({
+      ...messages.map((msg: { role?: string; content?: string }) => ({
         role: msg.role === 'gm' ? 'assistant' as const : 'user' as const,
-        content: msg.content
+        content: msg.content ?? ''
       }))
     ];
 
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('OpenAI streaming error:', error);
     if (isDatabaseError(error)) {
       return new Response(
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
         { status: 503, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    let message = error.message || 'Failed to stream AI response';
+    let message = (error instanceof Error ? error.message : String(error)) || 'Failed to stream AI response';
     if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
       message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY.';
     }

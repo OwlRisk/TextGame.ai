@@ -17,6 +17,19 @@ export interface ConfiguredPlayer {
   /** Word-pair for the dropped Undercover template. Kept optional for
    *  backward compatibility with old saved games; new flows do not set it. */
   word?: string;
+  /** Speech mannerisms baked into AI player prompts. */
+  speechStyle?: string;
+  speech_style?: string;
+  /** Distinctive habit or tic. */
+  quirk?: string;
+  /** Generated avatar URL (Supabase Storage path). */
+  avatar_url?: string;
+  /** RPG character sheet — class, level, HP/MP, stats, skills. */
+  rpg?: import("./rpg").RpgCharacter;
+  /** Scene-mode character motivations — drive CHARACTER_DIRECTION targeting. */
+  goal?: string;
+  fear?: string;
+  attitudeToPlayer?: string;
 }
 
 export interface GameConfig {

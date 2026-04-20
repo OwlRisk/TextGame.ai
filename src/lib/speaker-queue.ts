@@ -194,8 +194,8 @@ export async function streamPlayerSpeak(
 
   if (!res.ok) {
     if (res.status === 402) {
-      const err = new Error("CREDITS_EXHAUSTED");
-      (err as any).status = 402;
+      const err = new Error("CREDITS_EXHAUSTED") as Error & { status: number };
+      err.status = 402;
       throw err;
     }
     console.warn(`[player-speak-stream] ${speaker.name}: HTTP ${res.status}`);
@@ -328,8 +328,8 @@ export async function runPlayerSpeak(
 
   if (!res.ok) {
     if (res.status === 402) {
-      const err = new Error("CREDITS_EXHAUSTED");
-      (err as any).status = 402;
+      const err = new Error("CREDITS_EXHAUSTED") as Error & { status: number };
+      err.status = 402;
       throw err;
     }
     console.warn(`[player-speak] ${speaker.name}: HTTP ${res.status}`);

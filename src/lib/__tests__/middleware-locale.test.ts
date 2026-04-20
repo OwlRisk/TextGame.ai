@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SEO_LOCALES, isValidSEOLocale } from "../seo-locales";
+import { SEO_LOCALES, isValidSEOLocale, type SEOLocale } from "../seo-locales";
 
 /**
  * Tests for locale URL routing logic.
@@ -15,14 +15,14 @@ import { SEO_LOCALES, isValidSEOLocale } from "../seo-locales";
 const SEO_LOCALE_SET = new Set(SEO_LOCALES);
 
 function resolveContentLanguage(locale: string): string | null {
-  if (!SEO_LOCALE_SET.has(locale as any)) return null;
+  if (!SEO_LOCALE_SET.has(locale as SEOLocale)) return null;
   return locale === "zh" ? "zh-CN" : locale;
 }
 
 function extractLocaleFromPath(pathname: string): string | null {
   const segments = pathname.split("/").filter(Boolean);
   const first = segments[0];
-  if (first && SEO_LOCALE_SET.has(first as any)) return first;
+  if (first && SEO_LOCALE_SET.has(first as SEOLocale)) return first;
   return null;
 }
 
@@ -121,7 +121,7 @@ describe("isValidSEOLocale alignment", () => {
   it("both reject non-locale strings", () => {
     for (const invalid of ["en", "games", "api", "blog", "", "ZH", "zh-CN"]) {
       expect(isValidSEOLocale(invalid)).toBe(false);
-      expect(SEO_LOCALE_SET.has(invalid as any)).toBe(false);
+      expect(SEO_LOCALE_SET.has(invalid as SEOLocale)).toBe(false);
     }
   });
 });

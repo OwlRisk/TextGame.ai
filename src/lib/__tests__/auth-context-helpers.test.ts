@@ -15,7 +15,7 @@ const localStorageShim = {
   key: (i: number) => Object.keys(store)[i] ?? null,
   get length() { return Object.keys(store).length; },
 };
-(globalThis as any).localStorage = localStorageShim;
+(globalThis as unknown as { localStorage: Storage }).localStorage = localStorageShim as unknown as Storage;
 
 // ─── Re-implement the pure helpers exactly as in AuthContext.tsx ─────────────
 

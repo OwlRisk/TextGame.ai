@@ -78,7 +78,7 @@ Randomness seed: ${seed}`;
       }));
 
     return NextResponse.json({ characters: valid });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[characters/generate] error:", err);
     return NextResponse.json({ error: "Character generation failed" }, { status: 500 });
   }

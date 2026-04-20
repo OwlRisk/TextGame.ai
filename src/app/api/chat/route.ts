@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';
     const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext });
 
-    const estTokens = estimateTokensFromText(systemMessage) + messages.reduce((s: number, m: any) => s + estimateTokensFromText(m.content || ''), 0) + maxTokens;
+    const estTokens = estimateTokensFromText(systemMessage) + messages.reduce((s: number, m: { content?: string }) => s + estimateTokensFromText(m.content || ''), 0) + maxTokens;
     const estCoins = estimatedTokensToCoins(estTokens, chatModel);
     if (!(await hasTokens(user.id, estCoins))) {
       return NextResponse.json({ error: 'Insufficient tokens', code: 'INSUFFICIENT_TOKENS' }, { status: 402 });
@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
 
     const formattedMessages = [
       { role: 'system' as const, content: systemMessage },
-      ...messages.map((msg: any) => ({
+      ...messages.map((msg: { role?: string; content?: string }) => ({
         role: msg.role === 'gm' ? 'assistant' as const : 'user' as const,
-        content: msg.content
+        content: msg.content ?? ''
       }))
     ];
 
@@ -125,25 +125,26 @@ export async function POST(request: NextRequest) {
       usage: completion.usage,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('OpenAI API error:', error);
-    
+
+    const status = (error as { status?: number } | null)?.status;
     // Handle specific OpenAI errors
-    if (error.status === 401) {
+    if (status === 401) {
       return NextResponse.json(
         { error: 'Invalid API key. Please check your OpenAI API key configuration.' },
         { status: 401 }
       );
     }
-    
-    if (error.status === 429) {
+
+    if (status === 429) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Please try again later.' },
         { status: 429 }
       );
     }
 
-    let message = error.message || 'Failed to get AI response';
+    let message = (error instanceof Error ? error.message : String(error)) || 'Failed to get AI response';
     if (/connection error|connection refused|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(message)) {
       message = 'Unable to connect to OpenAI. Check your network and OPENAI_API_KEY. You can set OPENAI_CHAT_MODEL=gpt-5.3-chat-latest in .env if the default model fails.';
     }

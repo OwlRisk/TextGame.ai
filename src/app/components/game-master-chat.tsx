@@ -7,7 +7,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Sheet, SheetContent } from "@/app/components/ui/sheet";
 import { Sparkles, Send, X, Check, MessageSquarePlus, Play, Plus, PanelLeft, FileText, LayoutGrid } from "lucide-react";
 import Link from "next/link";
-import { GameConfig } from "@/types/game-config";
+import { GameConfig, ConfiguredPlayer } from "@/types/game-config";
 import { GeneratedAvatar } from "@/app/components/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { toast } from "sonner";
@@ -107,13 +107,7 @@ export function GameMasterChat({ onBack: _onBack, onCreateGame, initialPreset, o
   const [gameName, setGameName] = useState<string>("");
   const [rpgWorldId, setRpgWorldId] = useState<string | null>(null);
   const [rpgAdventureNotes, setRpgAdventureNotes] = useState<string>("");
-  const [configuredPlayers, setConfiguredPlayers] = useState<Array<{
-    name: string;
-    gender?: string;
-    personality?: string;
-    background?: string;
-    avatar_url?: string;
-  }>>([]);
+  const [configuredPlayers, setConfiguredPlayers] = useState<ConfiguredPlayer[]>([]);
   /** Channels (game rooms) decided by the GM via <CONFIG_CHANNELS>. null = use template default. */
   const [gmChannels, setGmChannels] = useState<{ id: string; name: string; roomType?: ChannelRoomType }[] | null>(null);
   /** Action buttons decided by the GM via <CONFIG_ACTIONS>. null = use template default. */
@@ -740,7 +734,7 @@ export function GameMasterChat({ onBack: _onBack, onCreateGame, initialPreset, o
 
           const isInsufficientTokens =
             error.message === 'INSUFFICIENT_TOKENS' ||
-            (error as any).code === 'INSUFFICIENT_TOKENS';
+            (error as Error & { code?: string }).code === 'INSUFFICIENT_TOKENS';
           const isConfigError = error.message?.includes('OPENAI_API_KEY') || error.message?.includes('API key');
 
           if (isInsufficientTokens) {
@@ -773,22 +767,24 @@ export function GameMasterChat({ onBack: _onBack, onCreateGame, initialPreset, o
           pendingSnapshotRef.current = null;
         }
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting AI response:', error);
       setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
       setIsGMTyping(false);
       setIsStreaming(false);
       pendingSnapshotRef.current = null;
 
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const errCode = (error as { code?: string } | null)?.code;
       const isInsufficientTokens =
-        error.message === 'INSUFFICIENT_TOKENS' || error.code === 'INSUFFICIENT_TOKENS';
+        errMsg === 'INSUFFICIENT_TOKENS' || errCode === 'INSUFFICIENT_TOKENS';
 
       if (isInsufficientTokens) {
         setShowOutOfCredits(true);
         trackEvent("token_insufficient", { context: "non_stream" });
       } else if (!isStreaming) {
-        toast.error(error.message || 'Failed to get AI response. Please try again.');
-        trackEvent("error_shown", { type: "ai_response", message: String(error.message || "unknown").slice(0, 100) });
+        toast.error(errMsg || 'Failed to get AI response. Please try again.');
+        trackEvent("error_shown", { type: "ai_response", message: errMsg.slice(0, 100) });
         addGMMessage(
           "I apologize, but I'm having trouble processing that right now. Could you try rephrasing your message?"
         );
@@ -921,7 +917,7 @@ export function GameMasterChat({ onBack: _onBack, onCreateGame, initialPreset, o
                   if (roleData.players) {
                     finalConfiguredPlayers = finalConfiguredPlayers.map((cp, i) => ({
                       ...cp,
-                      role: roleData.players[i]?.role ?? (cp as any).role,
+                      role: roleData.players[i]?.role ?? cp.role,
                     }));
                   }
                 }

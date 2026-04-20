@@ -43,6 +43,14 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceKey
     })
   : null;
 
+// Generic JSON value — Postgres JSONB columns hold arbitrary structured data.
+// Concrete shapes (GameConfig, ChatMessage[], GmState, …) are validated/cast
+// at the call site rather than baked into the schema type. We use `unknown`
+// here (instead of a strict recursive Json union) so that domain types with
+// methods or branded fields can flow into Insert/Update without a forced cast,
+// while still being safer than `any` (the value can't be used until narrowed).
+export type Json = unknown;
+
 // Database types
 export interface Database {
   public: {
@@ -58,7 +66,7 @@ export interface Database {
           player_count: number;
           custom_rules: string | null;
           conversation_state: string;
-          messages: any; // JSON
+          messages: Json; // JSON
           created_at: string;
           updated_at: string;
         };
@@ -72,7 +80,7 @@ export interface Database {
           player_count: number;
           custom_rules?: string | null;
           conversation_state: string;
-          messages?: any;
+          messages?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -86,7 +94,7 @@ export interface Database {
           player_count?: number;
           custom_rules?: string | null;
           conversation_state?: string;
-          messages?: any;
+          messages?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -98,7 +106,7 @@ export interface Database {
           name: string;
           icon: string;
           color: string;
-          config: any; // JSON
+          config: Json; // JSON
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -112,7 +120,7 @@ export interface Database {
           name: string;
           icon: string;
           color: string;
-          config: any;
+          config: Json;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -126,7 +134,7 @@ export interface Database {
           name?: string;
           icon?: string;
           color?: string;
-          config?: any;
+          config?: Json;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -139,21 +147,21 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          config: any; // JSON GameConfig
+          config: Json; // JSON GameConfig
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
-          config?: any;
+          config?: Json;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
-          config?: any;
+          config?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -162,19 +170,19 @@ export interface Database {
         Row: {
           game_id: string;
           user_id: string;
-          state: any; // JSON: messages, players, gamePhase, etc.
+          state: Json; // JSON: messages, players, gamePhase, etc.
           updated_at: string;
         };
         Insert: {
           game_id: string;
           user_id: string;
-          state?: any;
+          state?: Json;
           updated_at?: string;
         };
         Update: {
           game_id?: string;
           user_id?: string;
-          state?: any;
+          state?: Json;
           updated_at?: string;
         };
       };
@@ -192,7 +200,7 @@ export interface Database {
           is_private: boolean;
           is_announcement: boolean;
           image_url: string | null;
-          reactions: any;
+          reactions: Json;
           created_at: string;
         };
         Insert: {
@@ -208,7 +216,7 @@ export interface Database {
           is_private?: boolean;
           is_announcement?: boolean;
           image_url?: string | null;
-          reactions?: any;
+          reactions?: Json;
           created_at?: string;
         };
         Update: Record<string, never>;

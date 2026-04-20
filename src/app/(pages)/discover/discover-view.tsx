@@ -119,7 +119,7 @@ function DiscoverViewInner() {
             channels: tmpl.channels.map(c => ({ id: c.id, name: c.name, roomType: c.roomType })),
           }),
           ...(rpgWorldId && { rpgWorldId }),
-          ...((preset as any).rpgAdventureNotes && { rpgAdventureNotes: (preset as any).rpgAdventureNotes }),
+          ...((preset as { rpgAdventureNotes?: string }).rpgAdventureNotes && { rpgAdventureNotes: (preset as { rpgAdventureNotes?: string }).rpgAdventureNotes }),
           generatedHost,
         },
         isActive: true,

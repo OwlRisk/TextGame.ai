@@ -78,7 +78,7 @@ export async function POST(
 
   const { gameId } = await params;
   const body = await request.json();
-  const messages: any[] = body.messages;
+  const messages: Array<Record<string, unknown>> = body.messages;
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "No messages" }, { status: 400 });

@@ -236,19 +236,19 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
   useEffect(() => {
     function applyMessages(state: Record<string, unknown>, merge: boolean) {
       if (!state.messages || !Array.isArray(state.messages)) return;
-      const incoming = (state.messages as any[]).map((m: any) => ({
+      const incoming = (state.messages as Array<Message & { timestamp: string | Date }>).map((m) => ({
         ...m,
         timestamp: new Date(m.timestamp),
         isStreaming: false,
-      }));
+      })) as Message[];
       if (merge) {
         setMessages((prev) => {
           if (prev.length === 0) return incoming;
           const localIds = new Set(prev.map((m) => m.id));
-          const fresh = incoming.filter((m: any) => !localIds.has(m.id));
+          const fresh = incoming.filter((m) => !localIds.has(m.id));
           if (fresh.length === 0) return prev;
           const merged = [...prev, ...fresh];
-          merged.sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
+          merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
           return merged.length > 60 ? merged.slice(-60) : merged;
         });
       } else {
@@ -280,8 +280,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
         }
         setPrivateMessages(pm);
       }
-      if (state.humanGameIdentity && typeof (state.humanGameIdentity as any).name === "string") {
-        setHumanGameIdentity({ name: (state.humanGameIdentity as any).name });
+      if (state.humanGameIdentity && typeof (state.humanGameIdentity as { name?: unknown }).name === "string") {
+        setHumanGameIdentity({ name: (state.humanGameIdentity as { name: string }).name });
       }
       if (typeof state.phaseLabel === "string") setPhaseLabel(state.phaseLabel);
       if (state.mood === "dark" || state.mood === "light" || state.mood === "neutral") setMood(state.mood);
@@ -649,8 +649,8 @@ export function GameRoomProvider({ children, gameId }: GameRoomProviderProps) {
     if (remoteState.sections && Array.isArray(remoteState.sections)) {
       setSections(remoteState.sections as Array<{ id: string; name: string; content: string }>);
     }
-    if (remoteState.humanGameIdentity && typeof (remoteState.humanGameIdentity as any).name === "string") {
-      setHumanGameIdentity({ name: (remoteState.humanGameIdentity as any).name });
+    if (remoteState.humanGameIdentity && typeof (remoteState.humanGameIdentity as { name?: unknown }).name === "string") {
+      setHumanGameIdentity({ name: (remoteState.humanGameIdentity as { name: string }).name });
     }
     if (typeof remoteState.currentSpeakerId === "string") setCurrentSpeakerId(remoteState.currentSpeakerId);
     if (remoteState.activeVote && typeof remoteState.activeVote === "object") setActiveVote(remoteState.activeVote as ActiveVote);

@@ -42,7 +42,7 @@ Say a single short greeting (1 sentence, under 15 words) introducing yourself in
     }
 
     return NextResponse.json({ greeting });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[characters/greet]", err);
     return NextResponse.json({ error: "Character generation failed" }, { status: 500 });
   }
