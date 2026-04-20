@@ -30,7 +30,7 @@ import { buildHostSystemPrompt, buildSceneDirectorPrompt, buildRpgDirectorPrompt
 import { getWorldById } from "@/lib/rpg/worlds";
 import { getRpgAdventureById } from "@/lib/rpg/adventures";
 import { isSceneMode, getScene } from "@/lib/scenes";
-import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, parseEncountersFired, stripGmDirectives, buildStorySummary, reconcileIngredients, reconcileEncounters, reconcileBossPhase, reconcileNpcIntroductions, getOverdueNpcs, detectMissingRoomUpdate, EMPTY_GM_STATE } from "@/lib/gm-state";
+import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, parseEncountersFired, stripGmDirectives, buildStorySummary, reconcileIngredients, reconcileEncounters, reconcileBossPhase, reconcileNpcIntroductions, getOverdueNpcs, reconcileQuests, detectMissingRoomUpdate, EMPTY_GM_STATE } from "@/lib/gm-state";
 import {
   type SpeakerQueueItem,
   parseRoleAssignments,
@@ -47,6 +47,54 @@ import { AFTERLIFE_CHANNEL_ID } from "@/lib/templates/types";
 import { applyRpgUpdate } from "@/types/rpg";
 import type { PlayerUpdateEntry } from "@/lib/host-output-parser";
 import type { OpeningKickoffState } from "@/hooks/useGameInit";
+import type { RpgQuest } from "@/lib/rpg/adventures";
+
+/**
+ * Build the markdown shown in the "Quests" sidebar section.
+ *
+ * Visibility rules:
+ *   - Main + side quests are always visible.
+ *   - Hidden quests are HIDDEN until they auto-complete, at which point
+ *     they pop into view as a discovery — that "✨ Hidden quest" reveal
+ *     is one of the more satisfying moments in classic RPGs.
+ *   - Returns null when there's nothing to show (no visible quests in
+ *     either bucket), so the caller can leave the sidebar untouched.
+ */
+function renderQuestsSidebar(quests: ReadonlyArray<RpgQuest>, completedIds: ReadonlyArray<string>): string | null {
+  const completedSet = new Set(completedIds);
+  const visible = quests.filter((q) => q.type !== "hidden" || completedSet.has(q.id));
+  if (visible.length === 0) return null;
+
+  const formatReward = (r: RpgQuest["reward"]): string => {
+    if (!r) return "";
+    const parts: string[] = [];
+    if (r.exp) parts.push(`+${r.exp} EXP`);
+    if (r.currency) parts.push(`+${r.currency} 💰`);
+    if (r.item) parts.push(`📦 ${r.item}`);
+    if (r.notes) parts.push(r.notes);
+    return parts.length ? ` _(${parts.join(", ")})_` : "";
+  };
+
+  const active = visible.filter((q) => !completedSet.has(q.id));
+  const completed = visible.filter((q) => completedSet.has(q.id));
+
+  const sections: string[] = [];
+  if (active.length > 0) {
+    sections.push("**Active**");
+    for (const q of active) {
+      const tag = q.type === "side" ? " _(side)_" : "";
+      sections.push(`- ${q.name}${tag}\n  ${q.objective}`);
+    }
+  }
+  if (completed.length > 0) {
+    sections.push("\n**Completed**");
+    for (const q of completed) {
+      const tag = q.type === "hidden" ? " ✨ _(hidden)_" : q.type === "side" ? " _(side)_" : "";
+      sections.push(`- ✓ ~~${q.name}~~${tag}${formatReward(q.reward)}`);
+    }
+  }
+  return sections.join("\n");
+}
 
 export interface SendMessageOptions {
   skipAddMessage?: boolean;
@@ -175,6 +223,10 @@ export function useHostRound({
    *  "should have appeared by now" so the GM stops forgetting plotted
    *  characters that are gating story progress. */
   const overdueNpcsRef = useRef<Array<{ id: string; name: string }>>([]);
+  /** Quests that became complete THIS turn — held for the NEXT prompt as
+   *  a "🎯 QUEST COMPLETE — narrate resolution + grant reward" reminder
+   *  so the GM actually awards what the adventure promised. */
+  const newlyCompletedQuestsRef = useRef<Array<{ id: string; name: string; reward?: unknown }>>([]);
   const roundAbortRef = useRef<AbortController | null>(null);
   const roundWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -324,6 +376,16 @@ export function useHostRound({
         const adventure = getRpgAdventureById(rpgAdventureId);
         if (adventure?.initialGmState) {
           gmStateRef.current = { ...adventure.initialGmState };
+          // Seed the Quests sidebar so the player sees objectives from
+          // turn 1, not only after the first quest completes.
+          const initialQuestContent = renderQuestsSidebar(adventure.quests, []);
+          if (initialQuestContent !== null) {
+            const initialQuestSectionId = sectionIdUtil("Quests");
+            setSections((prev) => {
+              if (prev.some((s) => s.id === initialQuestSectionId)) return prev;
+              return [...prev, { id: initialQuestSectionId, name: "Quests", content: initialQuestContent }];
+            });
+          }
         }
       }
 
@@ -380,6 +442,10 @@ export function useHostRound({
             pendingBossPhaseTransition: pendingBossPhaseRef.current,
             roomUpdateMissingLastTurn: missingRoomUpdateRef.current,
             overdueNpcs: overdueNpcsRef.current,
+            newlyCompletedQuests: newlyCompletedQuestsRef.current as Array<{
+              id: string; name: string;
+              reward?: { exp?: number; currency?: number; item?: string; notes?: string };
+            }>,
           });
         }
 
@@ -776,7 +842,7 @@ export function useHostRound({
             // appeared by now but haven't.
             const rpgAdventureIdForNpc = currentGame?.config?.rpgAdventureId;
             const adventureForNpc = rpgAdventureIdForNpc ? getRpgAdventureById(rpgAdventureIdForNpc) : undefined;
-            let finalState: GmState = bossReconciled;
+            let stateAfterNpc: GmState = bossReconciled;
             if (adventureForNpc) {
               const { state: npcReconciled, newlyIntroduced } = reconcileNpcIntroductions({
                 narration: rawSplitMessage,
@@ -791,9 +857,47 @@ export function useHostRound({
                 npcRoster: adventureForNpc.keyNpcs,
                 npcsIntroduced: npcReconciled.npcsIntroduced ?? [],
               });
-              finalState = npcReconciled;
+              stateAfterNpc = npcReconciled;
             } else {
               overdueNpcsRef.current = [];
+            }
+
+            // Quest auto-completion — runs after encounter + ingredient
+            // reconciliation since quests trigger off those ledgers. The GM
+            // never has to mark a quest complete; it falls out of the
+            // existing structured state.
+            let finalState: GmState = stateAfterNpc;
+            if (adventureForNpc) {
+              const { state: questReconciled, newlyCompleted } = reconcileQuests({
+                quests: adventureForNpc.quests,
+                parsedState: stateAfterNpc,
+              });
+              if (newlyCompleted.length > 0) {
+                console.debug(`[gm-state] quests completed: ${newlyCompleted.map((q) => q.id).join(", ")}`);
+              }
+              newlyCompletedQuestsRef.current = newlyCompleted as Array<{ id: string; name: string; reward?: unknown }>;
+              finalState = questReconciled;
+
+              // Render the quest sidebar from the reconciled state so the
+              // player sees progress without the GM having to emit a
+              // SECTION block. Hidden quests stay hidden until completed,
+              // then they pop in as a discovery.
+              const questsSectionContent = renderQuestsSidebar(adventureForNpc.quests, finalState.questsCompleted ?? []);
+              if (questsSectionContent !== null) {
+                const questSectionId = sectionIdUtil("Quests");
+                setSections((prev) => {
+                  const idx = prev.findIndex((s) => s.id === questSectionId);
+                  if (idx >= 0) {
+                    if (prev[idx].content === questsSectionContent) return prev;
+                    const next = [...prev];
+                    next[idx] = { ...next[idx], content: questsSectionContent };
+                    return next;
+                  }
+                  return [...prev, { id: questSectionId, name: "Quests", content: questsSectionContent }];
+                });
+              }
+            } else {
+              newlyCompletedQuestsRef.current = [];
             }
 
             gmStateRef.current = finalState;

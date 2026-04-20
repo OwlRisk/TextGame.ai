@@ -431,10 +431,23 @@ export interface RpgDirectorOpts {
    *  hasn't introduced into the story yet. Surfaced as a "should have
    *  appeared by now" reminder so plotted characters stop getting lost. */
   overdueNpcs?: ReadonlyArray<{ id: string; name: string }>;
+  /** Quests that became complete LAST turn but the GM hasn't yet narrated
+   *  the resolution / granted the reward. Surfaced as a 🎯 alert so the
+   *  GM actually awards what the adventure promised. */
+  newlyCompletedQuests?: ReadonlyArray<{
+    id: string;
+    name: string;
+    reward?: {
+      exp?: number;
+      currency?: number;
+      item?: string;
+      notes?: string;
+    };
+  }>;
 }
 
 export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
-  const { worldName, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, contentLanguage, previousGmState, adventureNotes, world, storySummary, recentlyRepeatedIngredients, recentlyRepeatedEncounters, pendingBossPhaseTransition, roomUpdateMissingLastTurn, overdueNpcs } = opts;
+  const { worldName, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, contentLanguage, previousGmState, adventureNotes, world, storySummary, recentlyRepeatedIngredients, recentlyRepeatedEncounters, pendingBossPhaseTransition, roomUpdateMissingLastTurn, overdueNpcs, newlyCompletedQuests } = opts;
   const playerNamesList = nonHostPlayerNames.join(", ");
   const terms = world?.terminology;
 
@@ -455,6 +468,22 @@ export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
   }
   if (overdueNpcs && overdueNpcs.length > 0) {
     validatorAlerts.push(`!! OVERDUE NPCs — these adventure characters should already be on stage but you haven't introduced them: ${overdueNpcs.map((n) => n.name).join("; ")}. Bring at least one of them in this turn (or shortly).`);
+  }
+  if (newlyCompletedQuests && newlyCompletedQuests.length > 0) {
+    const formatReward = (q: NonNullable<typeof newlyCompletedQuests>[number]): string => {
+      const r = q.reward;
+      if (!r) return " (no reward defined; narrate fanfare anyway)";
+      const parts: string[] = [];
+      if (r.exp) parts.push(`+${r.exp} EXP to each party member`);
+      if (r.currency) parts.push(`+${r.currency} currency to each member`);
+      if (r.item) parts.push(`grant item: ${r.item} to each member`);
+      if (r.notes) parts.push(r.notes);
+      return parts.length ? ` — grant: ${parts.join("; ")}` : "";
+    };
+    const lines = newlyCompletedQuests
+      .map((q) => `   • "${q.name}"${formatReward(q)}`)
+      .join("\n");
+    validatorAlerts.push(`🎯 QUEST COMPLETE — these quests just resolved last turn. THIS TURN must narrate the resolution AND emit PLAYER_UPDATE directives for the rewards:\n${lines}`);
   }
 
   // Stable reminder of who's already in the scene — keeps NPC behaviour

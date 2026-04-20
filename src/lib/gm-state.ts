@@ -99,6 +99,11 @@ export interface GmState {
    *  Detected from narration (NPC display name appearing in the text)
    *  so the GM doesn't have to manually mark introductions. */
   npcsIntroduced?: string[];
+  /** Adventure quest ids that have been auto-marked complete (their
+   *  `completedWhen` trigger fired in encountersFired or ingredientsUsed).
+   *  Used by the runtime to surface "QUEST COMPLETE" reminders to the GM
+   *  and to render the quest sidebar to the player. */
+  questsCompleted?: string[];
 
   // ── MUD room graph ──
   /** Persistent world room data */
@@ -192,6 +197,7 @@ export function parseGmState(directives: string): GmState | null {
     if (Array.isArray(raw.enemies)) state.enemies = raw.enemies;
     if (Array.isArray(raw.encountersFired)) state.encountersFired = raw.encountersFired.filter((x: unknown): x is string => typeof x === "string");
     if (Array.isArray(raw.npcsIntroduced)) state.npcsIntroduced = raw.npcsIntroduced.filter((x: unknown): x is string => typeof x === "string");
+    if (Array.isArray(raw.questsCompleted)) state.questsCompleted = raw.questsCompleted.filter((x: unknown): x is string => typeof x === "string");
     if (raw.activeBoss && typeof raw.activeBoss === "object") {
       const ab = raw.activeBoss as Record<string, unknown>;
       if (typeof ab.name === "string" && typeof ab.currentHp === "number" && typeof ab.maxHp === "number") {
@@ -485,6 +491,62 @@ export function reconcileEncounters(opts: {
     state: { ...parsedState, encountersFired: [...ledger] },
     newlyFired,
     repeatedEncounters,
+  };
+}
+
+// ─── Quest completion tracking (RPG mode) ──────────────────────────────────
+
+export interface QuestReconciliation {
+  /** Possibly-revised state with newly-completed quest ids appended. */
+  state: GmState;
+  /** Quests that became complete THIS turn (not yet in the ledger). */
+  newlyCompleted: ReadonlyArray<{ id: string; name: string; reward?: unknown }>;
+}
+
+/**
+ * Auto-detect quest completions by checking each quest's `completedWhen`
+ * trigger id against the persistent ledgers built by the other reconcilers
+ * (`encountersFired` and `ingredientsUsed`). The GM doesn't have to mark
+ * quests complete — completion is a deterministic consequence of the
+ * encounter / ingredient ledgers we already maintain.
+ *
+ * Only main + side quests count for the player-visible "X of N" badge;
+ * hidden quests stay invisible until they complete (then they pop into
+ * view as a discovery).
+ *
+ * Pure function. The runtime turns `newlyCompleted` into a one-time GM
+ * prompt nudge (`🎯 QUEST COMPLETE — narrate resolution + grant reward`).
+ */
+export function reconcileQuests(opts: {
+  quests: ReadonlyArray<{ id: string; name: string; completedWhen: string; reward?: unknown }>;
+  parsedState: GmState;
+}): QuestReconciliation {
+  const { quests, parsedState } = opts;
+  if (quests.length === 0) {
+    return { state: parsedState, newlyCompleted: [] };
+  }
+
+  const fired = new Set<string>([
+    ...(parsedState.encountersFired ?? []),
+    ...parsedState.ingredientsUsed,
+  ]);
+  const alreadyCompleted = new Set(parsedState.questsCompleted ?? []);
+  const newlyCompleted: Array<{ id: string; name: string; reward?: unknown }> = [];
+
+  for (const q of quests) {
+    if (alreadyCompleted.has(q.id)) continue;
+    if (fired.has(q.completedWhen)) {
+      alreadyCompleted.add(q.id);
+      newlyCompleted.push({ id: q.id, name: q.name, reward: q.reward });
+    }
+  }
+
+  if (newlyCompleted.length === 0) {
+    return { state: parsedState, newlyCompleted: [] };
+  }
+  return {
+    state: { ...parsedState, questsCompleted: [...alreadyCompleted] },
+    newlyCompleted,
   };
 }
 

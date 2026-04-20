@@ -10,6 +10,7 @@ import {
   reconcileBossPhase,
   reconcileNpcIntroductions,
   getOverdueNpcs,
+  reconcileQuests,
   detectMissingRoomUpdate,
   type GmState,
   type ActiveBossState,
@@ -385,6 +386,95 @@ describe("getOverdueNpcs", () => {
       npcsIntroduced: SAMPLE_ROSTER.map((n) => n.id),
     });
     expect(overdue).toEqual([]);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Phase 7 — Quest completion
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SAMPLE_QUESTS = [
+  { id: "main_a", name: "Defeat the boss", completedWhen: "boss_fight", reward: { exp: 100 } },
+  { id: "main_b", name: "Find the truth", completedWhen: "library_evidence_found", reward: { exp: 60 } },
+  { id: "hidden_x", name: "Secret reveal", completedWhen: "secret_clue", reward: { exp: 50 } },
+];
+
+describe("reconcileQuests", () => {
+  it("returns empty when no quests", () => {
+    const s = makeRpgState();
+    const r = reconcileQuests({ quests: [], parsedState: s });
+    expect(r.state).toBe(s);
+    expect(r.newlyCompleted).toEqual([]);
+  });
+
+  it("auto-completes a quest when its trigger is in encountersFired", () => {
+    const s = makeRpgState({ encountersFired: ["boss_fight"] });
+    const r = reconcileQuests({ quests: SAMPLE_QUESTS, parsedState: s });
+    expect(r.newlyCompleted.map((q) => q.id)).toEqual(["main_a"]);
+    expect(r.state.questsCompleted).toEqual(["main_a"]);
+  });
+
+  it("auto-completes a quest when its trigger is in ingredientsUsed", () => {
+    const s = makeRpgState({ ingredientsUsed: ["library_evidence_found"] });
+    const r = reconcileQuests({ quests: SAMPLE_QUESTS, parsedState: s });
+    expect(r.newlyCompleted.map((q) => q.id)).toEqual(["main_b"]);
+  });
+
+  it("can complete multiple quests in one turn", () => {
+    const s = makeRpgState({
+      encountersFired: ["boss_fight"],
+      ingredientsUsed: ["library_evidence_found", "secret_clue"],
+    });
+    const r = reconcileQuests({ quests: SAMPLE_QUESTS, parsedState: s });
+    expect(r.newlyCompleted.map((q) => q.id).sort()).toEqual(["hidden_x", "main_a", "main_b"]);
+    expect(r.state.questsCompleted?.sort()).toEqual(["hidden_x", "main_a", "main_b"]);
+  });
+
+  it("does not re-complete an already-completed quest", () => {
+    const s = makeRpgState({
+      encountersFired: ["boss_fight"],
+      questsCompleted: ["main_a"],
+    });
+    const r = reconcileQuests({ quests: SAMPLE_QUESTS, parsedState: s });
+    expect(r.newlyCompleted).toEqual([]);
+    expect(r.state).toBe(s);
+  });
+
+  it("includes the reward in newlyCompleted so the runtime can prompt the GM to grant it", () => {
+    const s = makeRpgState({ encountersFired: ["boss_fight"] });
+    const r = reconcileQuests({ quests: SAMPLE_QUESTS, parsedState: s });
+    expect(r.newlyCompleted[0].reward).toEqual({ exp: 100 });
+  });
+});
+
+describe("RPG adventures — quest definitions", () => {
+  it("every adventure declares at least one main quest", () => {
+    for (const a of ALL_RPG_ADVENTURES) {
+      const mains = a.quests.filter((q) => q.type === "main");
+      expect(mains.length, `${a.id}: no main quests`).toBeGreaterThan(0);
+    }
+  });
+
+  it("every quest's completedWhen exists in encounters or initial ingredients", () => {
+    for (const a of ALL_RPG_ADVENTURES) {
+      const validTriggers = new Set<string>([
+        ...a.encounters.map((e) => e.id),
+        ...a.initialGmState.ingredientsAvailable,
+      ]);
+      for (const q of a.quests) {
+        expect(
+          validTriggers.has(q.completedWhen),
+          `${a.id} / ${q.id}: completedWhen "${q.completedWhen}" matches no encounter id or initial ingredient`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("quest ids are unique within each adventure", () => {
+    for (const a of ALL_RPG_ADVENTURES) {
+      const ids = a.quests.map((q) => q.id);
+      expect(new Set(ids).size, `${a.id}: duplicate quest id`).toBe(ids.length);
+    }
   });
 });
 

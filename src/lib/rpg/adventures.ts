@@ -70,6 +70,39 @@ export interface RpgActArc {
   triggers: string[];
 }
 
+export interface RpgQuestReward {
+  /** Bonus EXP awarded on completion (each party member). */
+  exp?: number;
+  /** Item granted to each party member on completion (free-form name —
+   *  the GM narrates it as the appropriate world-flavour item). */
+  item?: string;
+  /** Currency reward (gold / silver taels — world's currency term). */
+  currency?: number;
+  /** Free-form reward description for narrative-only rewards
+   *  ("Master Yun teaches you the Jade Tempest form"). */
+  notes?: string;
+}
+
+export interface RpgQuest {
+  /** Stable id used by `completedWhen` look-ups and the QuestsCompleted ledger. */
+  id: string;
+  /** Player-facing name. */
+  name: string;
+  /** main = drives the story; side = optional but rewarding;
+   *  hidden = NOT shown to the player until completed. */
+  type: "main" | "side" | "hidden";
+  /** Player-facing one-line objective. */
+  objective: string;
+  /** Auto-completion trigger: when this id appears in either
+   *  `gmState.encountersFired` OR `gmState.ingredientsUsed` the quest is
+   *  marked complete and the GM is told to grant rewards. Use either an
+   *  encounter id (preferred, deterministic) or an ingredient id (for
+   *  story-beat completions like "the truth was revealed"). */
+  completedWhen: string;
+  /** What the party gets on completion. */
+  reward?: RpgQuestReward;
+}
+
 export interface RpgAdventure {
   id: string;
   worldId: "western-fantasy" | "wuxia";
@@ -89,6 +122,10 @@ export interface RpgAdventure {
   encounters: RpgEncounterSpec[];
   /** Act structure with transition triggers. */
   acts: RpgActArc[];
+  /** Structured quest list — auto-completion driven by encounter / ingredient
+   *  ids in `completedWhen`. Hidden quests are kept secret until completed
+   *  (then surface to the sidebar). */
+  quests: RpgQuest[];
   /** Initial GM state — ingredients, secrets, threats. The runtime seeds
    *  gmStateRef from this on the first turn (parallel to scene mode). */
   initialGmState: GmState;
@@ -177,6 +214,48 @@ TONE: Honourable martial pageantry → quiet conspiracy → desperate confrontat
     { act: 1, label: "Arrival — Tournament Begins", triggers: ["party registers", "first round fought", "first poisoning clue noticed"] },
     { act: 2, label: "Conspiracy Surfaces", triggers: ["second poisoning", "library lead pursued", "Mei Ling makes contact"] },
     { act: 3, label: "Confrontation", triggers: ["traitor identified", "Wu Sheng cornered or revealed publicly"] },
+  ],
+  quests: [
+    {
+      id: "win_first_round",
+      name: "Win your first tournament match",
+      type: "main",
+      objective: "Defeat your assigned opponent in Round 1.",
+      completedWhen: "tournament_round_1",
+      reward: { exp: 40, currency: 50 },
+    },
+    {
+      id: "win_team_round",
+      name: "Survive the team round",
+      type: "main",
+      objective: "Win the 3v3 team match in Round 2.",
+      completedWhen: "tournament_round_2_team",
+      reward: { exp: 80, currency: 100 },
+    },
+    {
+      id: "investigate_poisonings",
+      name: "Investigate the disrupted-qi poisonings",
+      type: "main",
+      objective: "Find the source of the forbidden technique paralysing contestants.",
+      completedWhen: "library_evidence_found",
+      reward: { exp: 60, notes: "Mei Ling shares Tang Clan intel — opens future favours." },
+    },
+    {
+      id: "stop_the_traitor",
+      name: "Stop Elder Wu Sheng",
+      type: "main",
+      objective: "Confront and defeat the rogue elder behind the conspiracy.",
+      completedWhen: "boss_wu_sheng",
+      reward: { exp: 200, item: "Jade Peak Sword Manual", currency: 300 },
+    },
+    {
+      id: "expose_mei_ling",
+      name: "Mei Ling's true allegiance",
+      type: "hidden",
+      objective: "Discover that Mei Ling is a Tang Clan scout.",
+      completedWhen: "mei_ling_makes_contact",
+      reward: { exp: 30, notes: "Tang Clan owes you a favour — recoverable in future Wuxia adventures." },
+    },
   ],
   initialGmState: {
     act: 1,
@@ -313,6 +392,32 @@ TONE: Adventurous descent → unease → desperate boss fight.`,
     { act: 2, label: "Crystal Caverns", triggers: ["Crystal Golems fought", "Skeleton Warriors revealed as ex-adventurers", "rest spring discovered"] },
     { act: 3, label: "Dragon's Lair", triggers: ["party reaches crystal pedestal", "Ignathir awakens"] },
   ],
+  quests: [
+    {
+      id: "clear_dungeon",
+      name: "Clear the Starfall Dungeon",
+      type: "main",
+      objective: "Reach and defeat whatever guards the Starfall Crystal — Ashwick's bounty depends on it.",
+      completedWhen: "boss_ignathir",
+      reward: { exp: 300, currency: 500, item: "Ashwick Bounty Purse" },
+    },
+    {
+      id: "uncover_seal_truth",
+      name: "Uncover the dungeon's true purpose",
+      type: "side",
+      objective: "Find out what the ancient mages were really hiding here.",
+      completedWhen: "skeletons_were_adventurers_clue",
+      reward: { exp: 60, notes: "The grim truth — these tombs are former adventurers." },
+    },
+    {
+      id: "claim_starfall_crystal",
+      name: "Claim the Starfall Crystal",
+      type: "hidden",
+      objective: "Recover the legendary gem from the dragon's hoard.",
+      completedWhen: "boss_ignathir",
+      reward: { exp: 100, item: "Starfall Crystal" },
+    },
+  ],
   initialGmState: {
     act: 1,
     tension: 1,
@@ -420,6 +525,32 @@ TONE: Ghost-village dread → discovery → desperate rescue.`,
     { act: 1, label: "Empty Village — Bell Falls Silent", triggers: ["party arrives", "first scorch sign found", "Old Hua spoken to"] },
     { act: 2, label: "Investigation — Hut and Cave", triggers: ["seal fragments retrieved (any number)", "Liang found alive in cave"] },
     { act: 3, label: "Bell Tower — The Serpent Wakes", triggers: ["party climbs the bell tower", "boss revealed"] },
+  ],
+  quests: [
+    {
+      id: "find_villagers",
+      name: "Find the missing villagers of Heishan",
+      type: "main",
+      objective: "Locate the cave shelter where the villagers are hiding.",
+      completedWhen: "cave_shelter_rescue",
+      reward: { exp: 80, currency: 30, notes: "The villagers' gratitude — Heishan owes you a debt." },
+    },
+    {
+      id: "stop_serpent",
+      name: "Stop the released spirit",
+      type: "main",
+      objective: "Defeat whatever the iron bell was holding back.",
+      completedWhen: "boss_huoshe_serpent",
+      reward: { exp: 220, item: "Bell Charm of Heishan" },
+    },
+    {
+      id: "channel_baisseal",
+      name: "Channel Master Bai's seal",
+      type: "hidden",
+      objective: "Bring all three seal-talisman fragments to the bell tower and offer one party member as the channel.",
+      completedWhen: "spirit_of_bai_appears",
+      reward: { exp: 100, item: "Master Bai's Charm", notes: "A trace of Bai's qi remains; once per future Wuxia adventure, one party member may seal an enemy spirit at full HP cost." },
+    },
   ],
   initialGmState: {
     act: 1,
@@ -545,6 +676,64 @@ TONE: Disorientation → investigation → moral weight.`,
     { act: 2, label: "Investigation — Three Fragments", triggers: ["Blackwood reveals the truth", "at least 2 fragments retrieved"] },
     { act: 3, label: "Final Choice", triggers: ["all three fragments brought to the tree", "MERGE or SEPARATE chosen"] },
   ],
+  quests: [
+    {
+      id: "escape_yunjin",
+      name: "Find a way out of Yunjin",
+      type: "main",
+      objective: "Investigate the barrier and find what's keeping it active.",
+      completedWhen: "blackwood_reveals_truth",
+      reward: { exp: 60, notes: "Blackwood's confession — the catalyst plan revealed." },
+    },
+    {
+      id: "fragment_dojo",
+      name: "Recover the dojo fragment",
+      type: "main",
+      objective: "Retrieve the catalyst fragment from the collapsed Eastern dojo.",
+      completedWhen: "fragment_1_qi_wraith",
+      reward: { exp: 50, currency: 40 },
+    },
+    {
+      id: "fragment_tower",
+      name: "Recover the tower fragment",
+      type: "main",
+      objective: "Solve the rune puzzle in Helena's wizard tower vault.",
+      completedWhen: "fragment_2_rune_puzzle",
+      reward: { exp: 40, item: "Mana-Woven Robe" },
+    },
+    {
+      id: "fragment_warehouse",
+      name: "Earn Kai's fragment",
+      type: "main",
+      objective: "Clear the Chaos Beasts from Kai's warehouse so he hands over the third fragment.",
+      completedWhen: "fragment_3_smuggler_bargain",
+      reward: { exp: 60, currency: 80 },
+    },
+    {
+      id: "break_curse_merge",
+      name: "Break the curse — Merge",
+      type: "main",
+      objective: "Bring all three fragments to the tree and properly merge the energies.",
+      completedWhen: "boss_rift_guardian_merge",
+      reward: { exp: 250, item: "The Catalyst Shard", notes: "Master Xu pulled free of the rift; both factions reconciled." },
+    },
+    {
+      id: "break_curse_separate",
+      name: "Break the curse — Separate",
+      type: "main",
+      objective: "Forcefully separate the energies — town survives but is damaged.",
+      completedWhen: "boss_split_guardians_separate",
+      reward: { exp: 180, item: "Chaos Shield", notes: "The barrier falls; reconstruction will take years." },
+    },
+    {
+      id: "save_master_xu",
+      name: "Free Master Xu from the rift",
+      type: "hidden",
+      objective: "Choose the MERGE path so Master Xu can be pulled free.",
+      completedWhen: "boss_rift_guardian_merge",
+      reward: { exp: 120, notes: "Master Xu becomes a long-term mentor figure." },
+    },
+  ],
   initialGmState: {
     act: 1,
     tension: 1,
@@ -616,6 +805,22 @@ export function buildAdventureNotes(adventure: RpgAdventure): string {
     .map((a) => `  - Act ${a.act} — ${a.label}\n      Triggers: ${a.triggers.join("; ")}`)
     .join("\n");
 
+  const formatQuestReward = (r: RpgQuest["reward"]): string => {
+    if (!r) return "";
+    const parts: string[] = [];
+    if (r.exp) parts.push(`+${r.exp} EXP`);
+    if (r.currency) parts.push(`+${r.currency} currency`);
+    if (r.item) parts.push(`item: ${r.item}`);
+    if (r.notes) parts.push(r.notes);
+    return parts.length ? ` → ${parts.join(", ")}` : "";
+  };
+  const questLines = adventure.quests
+    .map((q) => {
+      const tag = q.type === "hidden" ? " [HIDDEN — only visible after completion]" : q.type === "side" ? " [side]" : "";
+      return `  - [${q.id}]${tag} ${q.name}\n      Objective: ${q.objective}\n      Auto-completes when [${q.completedWhen}] fires${formatQuestReward(q.reward)}`;
+    })
+    .join("\n");
+
   return `${adventure.directorBrief}
 
 ## KEY NPCs (keep CONSISTENT across turns)
@@ -623,6 +828,9 @@ ${npcLines}
 
 ## ENCOUNTER TABLE (each fires AT MOST ONCE — emit ENCOUNTER_FIRED: <id>)
 ${encounterLines}
+
+## QUESTS (the runtime auto-completes these — you only narrate them and grant rewards)
+${questLines}
 
 ## ACT STRUCTURE
 ${actLines}`;
