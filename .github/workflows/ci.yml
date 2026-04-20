@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feat/instant-scene-v1]
+    branches: [main, refactor/rpg-only-community]
   pull_request:
     branches: [main]
 
@@ -57,15 +57,6 @@ jobs:
           OPENAI_API_KEY: sk-placeholder
           STRIPE_SECRET_KEY: sk_test_placeholder
           STRIPE_WEBHOOK_SECRET: whsec_placeholder
-          STRIPE_PRO_PRICE_ID: price_placeholder
-          STRIPE_PLUS_PRICE_ID: price_placeholder
-          STRIPE_ULTRA_PRICE_ID: price_placeholder
-          INWORLD_BASIC_BASE64: placeholder
-          INWORLD_JWT_KEY: placeholder
-          INWORLD_JWT_SECRET: placeholder
-          CARTESIA_API_KEY: placeholder
-          REPLICATE_API_TOKEN: placeholder
-          AVATAR_GENERATION_MODEL: dalle-3
 
   e2e:
     name: E2E Tests
@@ -91,15 +82,6 @@ jobs:
           OPENAI_API_KEY: sk-placeholder
           STRIPE_SECRET_KEY: sk_test_placeholder
           STRIPE_WEBHOOK_SECRET: whsec_placeholder
-          STRIPE_PRO_PRICE_ID: price_placeholder
-          STRIPE_PLUS_PRICE_ID: price_placeholder
-          STRIPE_ULTRA_PRICE_ID: price_placeholder
-          INWORLD_BASIC_BASE64: placeholder
-          INWORLD_JWT_KEY: placeholder
-          INWORLD_JWT_SECRET: placeholder
-          CARTESIA_API_KEY: placeholder
-          REPLICATE_API_TOKEN: placeholder
-          AVATAR_GENERATION_MODEL: dalle-3
       - uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:

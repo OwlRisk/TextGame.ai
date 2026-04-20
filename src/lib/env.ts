@@ -32,25 +32,14 @@ export const env = {
   get STRIPE_WEBHOOK_SECRET(): string | undefined {
     return process.env.STRIPE_WEBHOOK_SECRET;
   },
-  get CARTESIA_API_KEY(): string | undefined {
-    return process.env.CARTESIA_API_KEY;
-  },
-  /** Inworld.ai: Base64 for "Authorization: Basic <value>" (server-side only) */
-  get INWORLD_BASIC_BASE64(): string | undefined {
-    return process.env.INWORLD_BASIC_BASE64;
-  },
-  /** Inworld.ai: JWT Key (for signing tokens with INWORLD_JWT_SECRET) */
-  get INWORLD_JWT_KEY(): string | undefined {
-    return process.env.INWORLD_JWT_KEY;
-  },
-  /** Inworld.ai: JWT Secret (keep secret, server-side only) */
-  get INWORLD_JWT_SECRET(): string | undefined {
-    return process.env.INWORLD_JWT_SECRET;
-  },
-  get REPLICATE_API_TOKEN(): string | undefined {
-    return process.env.REPLICATE_API_TOKEN;
-  },
   get NODE_ENV(): string {
     return process.env.NODE_ENV || 'development';
   },
 } as const;
+
+// Note: CARTESIA_API_KEY / INWORLD_* / REPLICATE_API_TOKEN getters were
+// removed in the RPG-only refactor — those services were retired with the
+// voice and SD-image generation features. The names are no longer
+// referenced by any production code. Keep this comment as a checkpoint:
+// if any of those services come back, re-add the getter explicitly so
+// `env.X` reads stay typed.

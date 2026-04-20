@@ -46,14 +46,8 @@ describe("env", () => {
   it("returns undefined for missing optional keys", () => {
     delete process.env.STRIPE_SECRET_KEY;
     delete process.env.STRIPE_WEBHOOK_SECRET;
-    delete process.env.CARTESIA_API_KEY;
-    delete process.env.INWORLD_BASIC_BASE64;
-    delete process.env.REPLICATE_API_TOKEN;
     expect(env.STRIPE_SECRET_KEY).toBeUndefined();
     expect(env.STRIPE_WEBHOOK_SECRET).toBeUndefined();
-    expect(env.CARTESIA_API_KEY).toBeUndefined();
-    expect(env.INWORLD_BASIC_BASE64).toBeUndefined();
-    expect(env.REPLICATE_API_TOKEN).toBeUndefined();
   });
 
   it("returns DATABASE_URL when set", () => {
@@ -64,13 +58,6 @@ describe("env", () => {
   it("returns DATABASE_SSL_REJECT_UNAUTHORIZED when set", () => {
     process.env.DATABASE_SSL_REJECT_UNAUTHORIZED = "0";
     expect(env.DATABASE_SSL_REJECT_UNAUTHORIZED).toBe("0");
-  });
-
-  it("returns Inworld keys when set", () => {
-    process.env.INWORLD_JWT_KEY = "jwt-key";
-    process.env.INWORLD_JWT_SECRET = "jwt-secret";
-    expect(env.INWORLD_JWT_KEY).toBe("jwt-key");
-    expect(env.INWORLD_JWT_SECRET).toBe("jwt-secret");
   });
 
   it("all env getters are reactive (change when process.env changes)", () => {
