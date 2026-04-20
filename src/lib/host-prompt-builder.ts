@@ -472,18 +472,21 @@ export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
   if (newlyCompletedQuests && newlyCompletedQuests.length > 0) {
     const formatReward = (q: NonNullable<typeof newlyCompletedQuests>[number]): string => {
       const r = q.reward;
-      if (!r) return " (no reward defined; narrate fanfare anyway)";
+      if (!r) return " (no mechanical reward — narrate fanfare anyway)";
       const parts: string[] = [];
-      if (r.exp) parts.push(`+${r.exp} EXP to each party member`);
-      if (r.currency) parts.push(`+${r.currency} currency to each member`);
-      if (r.item) parts.push(`grant item: ${r.item} to each member`);
+      if (r.exp) parts.push(`+${r.exp} EXP`);
+      if (r.currency) parts.push(`+${r.currency} currency (you narrate this)`);
+      if (r.item) parts.push(`item: ${r.item}`);
       if (r.notes) parts.push(r.notes);
-      return parts.length ? ` — grant: ${parts.join("; ")}` : "";
+      return parts.length ? ` — already granted: ${parts.join("; ")}` : "";
     };
     const lines = newlyCompletedQuests
       .map((q) => `   • "${q.name}"${formatReward(q)}`)
       .join("\n");
-    validatorAlerts.push(`🎯 QUEST COMPLETE — these quests just resolved last turn. THIS TURN must narrate the resolution AND emit PLAYER_UPDATE directives for the rewards:\n${lines}`);
+    // Runtime auto-grants exp + items via the quest-reward path in
+    // useHostRound. Telling the GM they're "already granted" prevents the
+    // most common failure: GM emits PLAYER_UPDATE on top, double-applying.
+    validatorAlerts.push(`🎯 QUEST COMPLETE — these quests resolved last turn. The runtime has ALREADY granted exp/items + posted a chat banner. THIS TURN: narrate the resolution moment in-character. Do NOT emit PLAYER_UPDATE for these rewards (the runtime already did). Currency / story-notes rewards still need narrative weaving.\n${lines}`);
   }
 
   // Stable reminder of who's already in the scene — keeps NPC behaviour

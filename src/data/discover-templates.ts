@@ -135,6 +135,20 @@ const RPG_ADVENTURE_UI: Record<string, RpgAdventureUiMeta> = {
     features: ["~25 min session", "One pivotal boss with a unique mechanic", "Spirit-mentor optional ally", "Investigation-heavy"],
     rules: "Wuxia short-form — empty village rescue. Investigate, find survivors, defeat the released spirit.",
   },
+  "rpg-beggars-coin": {
+    description: "The pickpocket who stole the prince's signet ring left only one clue — a copper coin marked with a beggar's sigil. Find the ring before dawn court convenes.",
+    longDescription: "The capital city is in quiet chaos. Last night a pickpocket lifted the prince's signet ring at the harvest festival, and the throne wants it back by dawn. Three threads to pull: the coin (Underworld), the festival (witnesses), the palace (motive). Investigation-heavy Western Fantasy short-form — combat is optional, the moral choice at the rooftop chase finale is the real climax.",
+    icon: "🪙",
+    // Reuses the Starfall Dungeon cover for now — both are Western Fantasy.
+    // Replace with /games/game-cover-rpg-beggars-coin.webp when commissioned.
+    cover: "/games/game-cover-rpg-starfall-dungeon.webp",
+    tags: ["Western Fantasy", "Urban Mystery", "Short Session", "Intrigue"],
+    style: "Strategic",
+    color: "from-amber-800 to-stone-900",
+    badge: "NEW",
+    features: ["~25 min session", "Three independent investigation threads", "Optional non-lethal boss resolution", "Faction-favour rewards"],
+    rules: "Western Fantasy short-form — urban mystery. Recover the stolen signet ring before dawn.",
+  },
 };
 
 function decorateRpgAdventures(adventures: RpgAdventure[]): GameTemplate[] {

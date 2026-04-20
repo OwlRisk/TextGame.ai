@@ -38,13 +38,39 @@ Three play modes are currently shipped:
 ## Features
 
 ### AI Game Master
-- **Autonomous director** — Parses structured directives (`NEXT_SPEAKER`, `ROOM_UPDATE`, `COMBAT_START/END`, `PLAYER_UPDATE`, `CHANNEL_GOAL`, `QUICK_ACTIONS`, `GAME_OVER`, …) to drive the entire game state without human moderation.
-- **Persistent GM state** — A typed `GmState` object (act, tension, ingredients used/available, what the player knows vs doesn't, active threats, mood, world rooms, combat) carries across turns so the GM has memory.
+- **Autonomous director** — Parses structured directives (`NEXT_SPEAKER`, `ROOM_UPDATE`, `COMBAT_START/END`, `PLAYER_UPDATE`, `ENCOUNTER_FIRED`, `CHANNEL_GOAL`, `QUICK_ACTIONS`, `GAME_OVER`, …) to drive the entire game state without human moderation.
+- **Persistent GM state** — A typed `GmState` object carries across turns (act, tension, ingredients used/available, what the player knows vs doesn't, active threats, mood, world rooms, combat, encounters fired, active boss with phase tracking, NPCs introduced, quests completed) so the GM has memory.
 - **Character whispering** — `CHARACTER_DIRECTION: <name> | <instruction>` lets the GM secretly steer individual party members for drama, conflict, and reveals.
+
+### Authored RPG Adventures (5 shipped)
+Adventures are typed data — not prose blobs — so the runtime can validate them. Each declares NPCs, encounters with stable ids, boss phase HP thresholds, ingredients, secrets, threats, and quests with auto-completion triggers + rewards.
+
+| Adventure | World | Length |
+|---|---|---|
+| The Tournament of Jade Peak | Wuxia | 30–60 min |
+| The Iron Bell of Heishan | Wuxia | 20–30 min |
+| The Dungeon of Starfall | Western Fantasy | 30–60 min |
+| The Beggar's Coin | Western Fantasy | 20–30 min |
+| The Cursed Crossroads | Mixed | 30–60 min |
+
+### Six-Layer Validator Pipeline
+On every GM turn the runtime cross-checks the GM's output against the structured adventure to prevent the failure modes that plague prose-only LLM RPGs. Each layer is a pure function (`reconcile*` in `lib/gm-state.ts`) covered by unit tests:
+
+| Layer | What it catches | Player-visible? |
+|---|---|---|
+| **Ingredient ledger** | Re-introducing an already-used plot beat | No (internal correction) |
+| **Encounter ledger** | Firing the same authored encounter twice | No |
+| **Boss phase tracker** | Forgetting to enter Phase 2 when boss HP crosses the threshold | No |
+| **NPC continuity** | NPCs who should have appeared by Act N still missing; consistency reminder for already-on-stage NPCs | No |
+| **ROOM_UPDATE missing** | Narration says "you enter the chapel" but no room update was emitted | Yes — keeps room panel in sync |
+| **Quest completion** | Auto-detects when a quest's `completedWhen` ID enters the encounter or ingredient ledger; auto-grants exp/items; shows quest progress in a sidebar; prompts the GM to narrate resolution without double-granting | Yes — sidebar + chat banner |
+
+Each layer surfaces validator alerts at the top of the *next* GM prompt so the GM corrects course on the next turn rather than compounding errors.
 
 ### AI Players
 - **Distinct personalities** — Each AI companion has personality, background, goal, fear, speech style, quirk, and an attitude toward the human player.
 - **Class & skills (RPG)** — Warrior / Mage / Rogue / Healer (dungeon) plus world-specific classes (Western Fantasy, Wuxia) with skills, MP costs, and level-up progression.
+- **World-aware vocabulary** — Wuxia companions say "运起内力" / "招式" instead of "spell / mana / MP"; the player-speak prompt is parameterised by the world's terminology block.
 
 ### Multiplayer
 - **Real-time rooms** — Multiple humans can join a single game via shareable links; mix with AI companions to fill the party.

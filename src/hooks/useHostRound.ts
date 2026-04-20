@@ -878,6 +878,54 @@ export function useHostRound({
               newlyCompletedQuestsRef.current = newlyCompleted as Array<{ id: string; name: string; reward?: unknown }>;
               finalState = questReconciled;
 
+              // AUTO-GRANT quest rewards. This is the one validator layer
+              // where we don't trust the GM to act on the alert — the
+              // adventure declared the reward, the runtime applies it,
+              // the GM only has to narrate. Avoids the "GM forgets to
+              // emit PLAYER_UPDATE" failure mode and prevents double-grants
+              // (the prompt explicitly tells the GM rewards are already
+              // applied; do NOT emit PLAYER_UPDATE).
+              if (newlyCompleted.length > 0) {
+                const partyNames = playersRef.current
+                  .filter((p) => !p.isGameMaster)
+                  .map((p) => (p.id === userId ? humanName : p.name));
+                const rewardEntries: PlayerUpdateEntry[] = [];
+                for (const q of newlyCompleted) {
+                  const r = (q.reward ?? null) as { exp?: number; item?: string } | null;
+                  if (!r) continue;
+                  const update: { exp?: number; addItem?: string } = {};
+                  if (r.exp) update.exp = r.exp;
+                  if (r.item) update.addItem = r.item;
+                  if (Object.keys(update).length === 0) continue;
+                  for (const name of partyNames) {
+                    rewardEntries.push({ playerName: name, update });
+                  }
+                }
+                if (rewardEntries.length > 0) {
+                  applyPlayerUpdates(rewardEntries);
+                }
+                // Player-visible chat banner — separate from the GM's
+                // narrated resolution so the player sees the mechanical
+                // reward immediately even before the next GM turn.
+                for (const q of newlyCompleted) {
+                  const r = (q.reward ?? null) as { exp?: number; currency?: number; item?: string; notes?: string } | null;
+                  const parts: string[] = [];
+                  if (r?.exp) parts.push(`+${r.exp} EXP`);
+                  if (r?.currency) parts.push(`+${r.currency} 💰`);
+                  if (r?.item) parts.push(`📦 ${r.item}`);
+                  if (r?.notes) parts.push(r.notes);
+                  const tail = parts.length ? ` — ${parts.join(", ")}` : "";
+                  addMessage({
+                    senderId: "system",
+                    senderName: "Quest Complete",
+                    senderAvatar: "#10b981",
+                    content: `🎯 ${q.name}${tail}`,
+                    isAI: false,
+                    isAnnouncement: true,
+                  });
+                }
+              }
+
               // Render the quest sidebar from the reconciled state so the
               // player sees progress without the GM having to emit a
               // SECTION block. Hidden quests stay hidden until completed,

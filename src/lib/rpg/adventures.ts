@@ -447,6 +447,144 @@ TONE: Adventurous descent → unease → desperate boss fight.`,
   },
 };
 
+// ─── Adventure 5: The Beggar's Coin (Western Fantasy, short-form) ─────────
+//
+// Western Fantasy parity for Heishan Bell — a ~25 minute investigation
+// adventure to balance Starfall Dungeon's longer dungeon-crawl arc.
+// Validates the structure under a NON-dungeon Western Fantasy
+// archetype (urban mystery / faction politics).
+
+const BEGGARS_COIN: RpgAdventure = {
+  id: "rpg-beggars-coin",
+  worldId: "western-fantasy",
+  title: "The Beggar's Coin",
+  hook: "The pickpocket who stole the prince's signet ring left only one clue: a copper coin marked with a beggar's sigil. The throne wants the ring back by dawn.",
+  partySize: 3,
+  estimatedDuration: "20-30 min",
+  directorBrief: `The capital city of Westmarch is in quiet chaos. Last night a pickpocket lifted the prince's signet ring from his belt at the harvest festival. Crown guards have torn through the lower wards finding nothing. The only lead is a copper coin the thief dropped — stamped with the sigil of the Beggar King, the apocryphal head of the city's underworld guild. The throne hires the party to recover the ring before dawn, when court convenes.
+
+THE TRUTH (only the GM knows): The "thief" was actually Lady Ymara, the prince's own younger sister, who took the ring to discredit him before the succession vote. She paid the Beggar King 50 gold to provide the coin as misdirection. The Beggar King knows but won't betray a paying client unless leveraged. The ring is in Ymara's chambers in the palace itself.
+
+PRINCIPLES:
+- Investigation, not dungeon crawl. Combat is one optional set-piece (sewer ambush) and one rooftop chase finale.
+- Three threads to pull: the coin (leads to Beggar King), the festival (witnesses), the palace (Ymara's motive). Any path can crack the case.
+- Lady Ymara is sympathetic — she's not evil, she's desperate. Players choose whether to expose her or cover for her.
+- The dawn deadline is a real ticking clock — narrate the sky lightening.
+
+TONE: Urban noir → faction intrigue → moral ambiguity.`,
+  keyNpcs: [
+    { id: "captain_orin", name: "Captain Orin of the Crown Guard", role: "Hired the party; gruff, by-the-book, increasingly worried about dawn", introducedAtStart: true },
+    { id: "beggar_king", name: "The Beggar King", role: "Underworld figurehead; trades information for coin or favours; appears in Act 1-2", appearsInAct: 1 },
+    { id: "lady_ymara", name: "Lady Ymara", role: "TRUE CULPRIT — appears as helpful royal cousin in Act 1, revealed as thief in Act 3", introducedAtStart: true },
+    { id: "festival_witness", name: "Pip the lamplighter", role: "Saw the theft from a rooftop but no one took him seriously; appears in Act 2 if the festival is investigated", appearsInAct: 2 },
+  ],
+  encounters: [
+    {
+      id: "sewer_ambush",
+      label: "Sewer ambush — the Beggar King's bouncers",
+      act: 1, type: "combat",
+      enemies: [
+        { name: "Underwarren Brawler", hp: 55, atk: 14 },
+        { name: "Underwarren Brawler", hp: 55, atk: 14 },
+        { name: "Underwarren Brawler", hp: 55, atk: 14 },
+      ],
+      expReward: 70,
+      notes: "Triggers if the party enters the sewers loudly. The Beggar King watches and decides whether to talk based on how the fight ends — efficient OR merciful both impress him.",
+    },
+    {
+      id: "festival_witness_breakthrough",
+      label: "Festival recreation — find Pip",
+      act: 2, type: "discovery",
+      expReward: 50,
+      notes: "Investigation set-piece, no combat. Visit the festival square at the same hour as the theft. If the party climbed to a rooftop, asked vendors about the prince's path, OR bribed children — Pip surfaces and identifies a 'pretty woman in green' near the prince.",
+    },
+    {
+      id: "library_succession_records",
+      label: "Royal library — succession records",
+      act: 2, type: "puzzle",
+      expReward: 40,
+      notes: "If the party investigates Lady Ymara's motive: the library contains the succession bylaws. Mage / scholar character pieces together that Ymara is third in line; the prince's signet missing from court would force a delay vote.",
+    },
+    {
+      id: "rooftop_chase_finale",
+      label: "Rooftop chase — Ymara flees",
+      act: 3, type: "combat",
+      enemies: [
+        { name: "Lady Ymara (chase)", hp: 80, atk: 18, def: 8, isBoss: true, phaseThresholds: [0.5] },
+        { name: "Hired Bodyguard", hp: 60, atk: 16 },
+      ],
+      expReward: 180,
+      notes: "Once cornered, Ymara flees across the palace rooftops. Phase 1: she fights via the bodyguard while she runs. Phase 2 (HP<50%): bodyguard down, Ymara turns and pleads — combat can end here if the party offers a non-lethal bargain (she returns the ring, party covers for her). Mechanically: if any party member uses a 'social' or 'support' action this round, treat the boss as defeated; otherwise narrate the killing blow as a tragedy.",
+    },
+  ],
+  acts: [
+    { act: 1, label: "Hired by the Crown — The Coin", triggers: ["meet Captain Orin", "first lead pursued (sewers OR festival OR palace)"] },
+    { act: 2, label: "Three Threads", triggers: ["Beggar King spoken to OR Pip's testimony OR succession motive uncovered"] },
+    { act: 3, label: "Dawn Approaches — Ymara Revealed", triggers: ["culprit identified", "rooftop chase begun"] },
+  ],
+  quests: [
+    {
+      id: "recover_ring",
+      name: "Recover the prince's signet ring",
+      type: "main",
+      objective: "Find the ring before dawn court convenes.",
+      completedWhen: "rooftop_chase_finale",
+      reward: { exp: 200, currency: 200, item: "Crown's Favor Token" },
+    },
+    {
+      id: "lean_on_beggar_king",
+      name: "Question the Beggar King",
+      type: "side",
+      objective: "Find the Underwarren court and pressure the Beggar King for information.",
+      completedWhen: "sewer_ambush",
+      reward: { exp: 70, notes: "The Beggar King owes you a favour — recoverable in future Western Fantasy adventures." },
+    },
+    {
+      id: "find_witness",
+      name: "Find a witness from the festival",
+      type: "side",
+      objective: "Recreate the moment of the theft and find anyone who saw it clearly.",
+      completedWhen: "festival_witness_breakthrough",
+      reward: { exp: 50, item: "Pip's Lantern Charm" },
+    },
+    {
+      id: "uncover_ymara_motive",
+      name: "Uncover the succession motive",
+      type: "hidden",
+      objective: "Discover that Lady Ymara has political reasons to take the ring.",
+      completedWhen: "library_succession_records",
+      reward: { exp: 60, notes: "Ymara's secret — leverage that may be spent or kept." },
+    },
+  ],
+  initialGmState: {
+    act: 1,
+    tension: 2,
+    ingredientsUsed: [],
+    ingredientsAvailable: [
+      "captain_orin_briefing",
+      "copper_coin_with_beggar_sigil",
+      "sewer_ambush",
+      "beggar_king_audience",
+      "festival_witness_breakthrough",
+      "library_succession_records",
+      "ymara_caught_in_lie",
+      "rooftop_chase_finale",
+      "dawn_approaching",
+    ],
+    playerKnows: ["the prince's signet ring was stolen", "the only clue is a copper coin with the Beggar King's sigil"],
+    playerDoesntKnow: [
+      "the thief is Lady Ymara, the prince's sister",
+      "the Beggar King was paid 50 gold to provide the coin as misdirection",
+      "Ymara's motive is the upcoming succession vote",
+      "the ring is in Ymara's own chambers",
+    ],
+    activeThreats: ["dawn_court_convenes", "kingdom_political_instability"],
+    mood: "urgent",
+    partyLevel: 2,
+    questLog: ["Recover the prince's signet ring before dawn"],
+  },
+};
+
 // ─── Adventure 4: The Iron Bell of Heishan (Wuxia, short-form) ─────────────
 //
 // Shorter (~20-30 min) Wuxia adventure to balance Jade Peak's longer arc.
@@ -774,6 +912,7 @@ export const ALL_RPG_ADVENTURES: RpgAdventure[] = [
   STARFALL_DUNGEON,
   CURSED_CROSSROADS,
   HEISHAN_BELL,
+  BEGGARS_COIN,
 ];
 
 export function getRpgAdventureById(id: string | null | undefined): RpgAdventure | undefined {

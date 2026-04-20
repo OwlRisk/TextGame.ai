@@ -104,6 +104,39 @@ describe("prompt size budget", () => {
     expect(out.length, `rpg prompt is ${out.length} chars`).toBeLessThan(RPG_BUDGET_CHARS);
   });
 
+  // The "loaded" budget is what you'll see on a real mid-game turn: full
+  // structured adventure brief, populated GM state, all five validator
+  // alerts firing simultaneously. This is the actual cost ceiling — the
+  // empty-state test only catches refactor regressions, not real-world
+  // bloat from the per-adventure data we ship in `lib/rpg/adventures.ts`.
+  const RPG_LOADED_BUDGET_CHARS = 28_000; // ≈ 7k tokens
+  it(`buildRpgDirectorPrompt stays under ${RPG_LOADED_BUDGET_CHARS} chars (worst-case loaded turn)`, async () => {
+    const { ALL_RPG_ADVENTURES, buildAdventureNotes } = await import("../rpg/adventures");
+    const adventure = ALL_RPG_ADVENTURES.reduce((biggest, cur) =>
+      buildAdventureNotes(cur).length > buildAdventureNotes(biggest).length ? cur : biggest,
+    );
+    const out = buildRpgDirectorPrompt(rpgOpts({
+      adventureNotes: buildAdventureNotes(adventure),
+      previousGmState: {
+        ...adventure.initialGmState,
+        encountersFired: adventure.encounters.slice(0, 2).map((e) => e.id),
+        npcsIntroduced: adventure.keyNpcs.slice(0, 2).map((n) => n.id),
+        questsCompleted: adventure.quests.slice(0, 1).map((q) => q.id),
+      },
+      recentlyRepeatedIngredients: ["foo_bar"],
+      recentlyRepeatedEncounters: ["enc_dup"],
+      pendingBossPhaseTransition: 2,
+      roomUpdateMissingLastTurn: true,
+      overdueNpcs: [{ id: "x", name: "Plotted Sage" }],
+      newlyCompletedQuests: [{
+        id: "q1", name: "Defeat the boss",
+        reward: { exp: 200, currency: 100, item: "Hero's Blade", notes: "fame across the realm" },
+      }],
+    }));
+    expect(out.length, `loaded rpg prompt is ${out.length} chars (largest adventure: ${adventure.id})`)
+      .toBeLessThan(RPG_LOADED_BUDGET_CHARS);
+  });
+
   it("GM_STATE is serialised compactly (no pretty-printing)", () => {
     const out = buildSceneDirectorPrompt(sceneOpts({
       previousGmState: {
