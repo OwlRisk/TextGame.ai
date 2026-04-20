@@ -5,15 +5,15 @@
 <h1 align="center">TextGame.ai</h1>
 
 <p align="center">
-  <strong>AI-powered multiplayer text game platform</strong><br>
-  An AI Game Master hosts social deduction, RPG, and party games — so everyone can play, no human moderator needed.
+  <strong>AI-driven text RPG platform</strong><br>
+  An AI Game Master runs cooperative dungeon crawls and open-world adventures with a party of AI companions — anyone can sit down and play.
 </p>
 
 <p align="center">
-  <a href="https://textgame.ai">Live Site</a> · 
-  <a href="#features">Features</a> · 
-  <a href="#tech-stack">Tech Stack</a> · 
-  <a href="#architecture">Architecture</a> · 
+  <a href="https://textgame.ai">Live Site</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#tech-stack">Tech Stack</a> ·
+  <a href="#architecture">Architecture</a> ·
   <a href="#getting-started">Getting Started</a>
 </p>
 
@@ -21,9 +21,15 @@
 
 ## Overview
 
-**TextGame.ai** is a full-stack AI game platform where an intelligent Game Master runs entire game sessions autonomously — assigning roles, managing phases, narrating the story, and driving AI characters that think and strategize alongside human players.
+**TextGame.ai** is an AI-hosted text RPG platform. An autonomous Game Master narrates the world, runs combat, controls a party of AI companions with their own personalities, and adapts the story to what the human player does.
 
-Players can jump into 10+ built-in game templates (Werewolf, Mafia, Undercover, 20 Questions, Escape Room, Debate, and more), create custom games with their own rules, or play solo with a full table of AI opponents.
+Three play modes are currently shipped:
+
+| Mode | What it is | Driver |
+|---|---|---|
+| **RPG Dungeon Crawl** | A cooperative party of 3–6 fights through 4–5 themed dungeon rooms to a final boss. d20 + stat resolution, class skills, knockouts and revives. | `templates/rpg-dungeon` |
+| **Open-World RPG** | Pick a world (Western Fantasy or Wuxia), build a party, and explore a MUD-style room graph. The GM generates rooms, NPCs, quests, and loot on the fly. | `worlds/*` + `buildRpgDirectorPrompt` |
+| **Scene Adventure** | Authored short-form interactive stories (lighthouse mystery, supernatural town, museum heist, ghost train) with hand-tuned characters and a "GM brain" that releases plot ingredients at the right moment. | `scenes/*` + `buildSceneDirectorPrompt` |
 
 **Live at [textgame.ai](https://textgame.ai)**
 
@@ -31,26 +37,23 @@ Players can jump into 10+ built-in game templates (Werewolf, Mafia, Undercover, 
 
 ## Features
 
-### AI Game Engine
-- **Autonomous Game Master** — Parses structured directives (`ASSIGN_ROLE`, `NEXT_SPEAKER`, `ELIMINATE`, `GAME_OVER`, etc.) to drive game state without manual intervention.
-- **AI Player Characters** — Each AI player has a unique personality, strategy style, and optional voice. They deliberate, bluff, vote, and react in real time.
-- **10+ Game Templates** — Werewolf, Mafia, Undercover, Spyfall, Codenames, 20 Questions, Escape Room, Debate, Improv Comedy, and more.
-- **Custom Game Creation** — Define your own rules, roles, phases, and win conditions.
+### AI Game Master
+- **Autonomous director** — Parses structured directives (`NEXT_SPEAKER`, `ROOM_UPDATE`, `COMBAT_START/END`, `PLAYER_UPDATE`, `CHANNEL_GOAL`, `QUICK_ACTIONS`, `GAME_OVER`, …) to drive the entire game state without human moderation.
+- **Persistent GM state** — A typed `GmState` object (act, tension, ingredients used/available, what the player knows vs doesn't, active threats, mood, world rooms, combat) carries across turns so the GM has memory.
+- **Character whispering** — `CHARACTER_DIRECTION: <name> | <instruction>` lets the GM secretly steer individual party members for drama, conflict, and reveals.
 
-### Multiplayer & Social
-- **Real-time Multiplayer** — Invite friends via shareable links; mix human and AI players.
-- **Private Boards** — Per-player secret information (roles, notes) managed by the host.
-- **Channel System** — Separate rooms for game chat, rules, private boards, and custom sections.
-- **Guest Join** — No account required for invited players.
+### AI Players
+- **Distinct personalities** — Each AI companion has personality, background, goal, fear, speech style, quirk, and an attitude toward the human player.
+- **Class & skills (RPG)** — Warrior / Mage / Rogue / Healer (dungeon) plus world-specific classes (Western Fantasy, Wuxia) with skills, MP costs, and level-up progression.
 
-### Voice & Media
-- **Speech-to-Text** — Voice input via OpenAI Whisper.
-- **Text-to-Speech** — AI characters speak with unique voices (Cartesia, Inworld.ai).
-- **AI Avatar Generation** — Character portraits via DALL-E or Replicate (Flux / Stable Diffusion).
+### Multiplayer
+- **Real-time rooms** — Multiple humans can join a single game via shareable links; mix with AI companions to fill the party.
+- **Guest join** — No account required for invitees.
+- **Per-player private boards** — HP, inventory, role, hidden notes managed by the host.
 
 ### Monetization
-- **Token System** — Pay-as-you-go credits with model-aware cost estimation.
-- **Subscription Plans** — Stripe-powered Pro/Plus/Ultra tiers.
+- **Token system** — Pay-as-you-go credits with model-aware cost estimation.
+- **Stripe** — One-time credit pack purchases (no subscriptions).
 
 ---
 
@@ -58,14 +61,14 @@ Players can jump into 10+ built-in game templates (Werewolf, Mafia, Undercover, 
 
 | Layer | Technologies |
 |---|---|
-| **Framework** | Next.js 16 (App Router), React 19, TypeScript |
+| **Framework** | Next.js 16 (App Router, Turbopack), React 19, TypeScript |
 | **UI** | shadcn/ui, Radix UI, Tailwind CSS, Motion (Framer), Tiptap |
-| **Backend** | Next.js API Routes (serverless), OpenAI API (GPT-4o / GPT-5.3, Whisper, DALL-E) |
+| **Backend** | Next.js API Routes (serverless), OpenAI API, optional Gemini fallback |
 | **Database** | PostgreSQL via Supabase (Auth, RLS, Realtime, Storage) |
-| **Payments** | Stripe (subscriptions + one-time purchases) |
-| **Voice** | Cartesia TTS, Inworld.ai TTS |
+| **Payments** | Stripe (one-time credit purchases) |
+| **Email** | Nodemailer (contact / feedback form) |
 | **Monitoring** | Sentry, Vercel Analytics |
-| **Testing** | Vitest, Playwright, Storybook |
+| **Testing** | Vitest (unit), Playwright (E2E) |
 
 ---
 
@@ -75,30 +78,40 @@ Players can jump into 10+ built-in game templates (Werewolf, Mafia, Undercover, 
 src/
 ├── app/
 │   ├── (pages)/                  # Route groups
-│   │   ├── game/[gameId]/        # Game room — real-time play
-│   │   ├── discover/             # Browse & search templates
-│   │   ├── my-games/             # User's game library
-│   │   ├── profile/              # User profile & settings
-│   │   ├── subscription/         # Stripe subscription management
-│   │   └── recharge/             # Token purchase
+│   │   ├── game/[gameId]/        #   Game room — real-time play
+│   │   ├── discover/             #   Browse RPG worlds & scenes
+│   │   ├── my-games/             #   User's game library
+│   │   ├── profile/              #   User profile & settings
+│   │   ├── recharge/             #   Token purchase
+│   │   ├── create/               #   New-game wizard
+│   │   └── play/[token]/         #   Guest invite landing
+│   ├── [locale]/                 # Locale-aware SEO routes (zh/ja/ko/...)
 │   ├── api/                      # Serverless API routes
-│   │   ├── chat/                 #   Streaming AI chat & player-speak
-│   │   ├── characters/           #   Character CRUD & generation
+│   │   ├── chat/                 #   GM streaming + player-speak
+│   │   ├── characters/           #   AI character generation
 │   │   ├── games/[gameId]/       #   Multiplayer room management
-│   │   ├── stripe/               #   Payment webhooks & checkout
-│   │   └── voice/                #   Transcribe & TTS
+│   │   ├── community/            #   Published-game feed
+│   │   ├── stripe/               #   Checkout + webhook
+│   │   └── share/                #   Invite-token resolution
 │   ├── components/               # React components (shadcn/ui based)
-│   └── config/                   # Host personalities, game phases, branding
-├── hooks/                        # Custom hooks (useHostRound, useGameInit, useChatTTS)
-├── lib/                          # Core logic
-│   ├── gm-system-prompt.ts       #   Game Master system prompt builder
-│   ├── host-prompt-builder.ts    #   Per-template prompt adaptation
-│   ├── game-templates.ts         #   10+ template definitions
-│   ├── game-template-driver.ts   #   Template-specific game mechanics
-│   └── __tests__/                #   Comprehensive unit tests
+│   └── config/                   # Host personalities, branding
+├── hooks/                        # useHostRound, useGameInit, useChatTTS, …
+├── lib/
+│   ├── gm-system-prompt.ts       #   Setup-phase GM prompt
+│   ├── host-prompt-builder.ts    #   Three runtime GM prompts: dungeon, scene, RPG
+│   ├── player-speak-prompt.ts    #   AI-player character prompts
+│   ├── ai-player-briefing.ts     #   Per-turn role briefings (i18n)
+│   ├── gm-state.ts               #   Typed GM brain + ROOM_UPDATE/CHARACTER_DIRECTION parser
+│   ├── host-output-parser.ts     #   Parses NEXT_SPEAKER, COMBAT_*, PLAYER_UPDATE, QUICK_ACTIONS, …
+│   ├── host-actions.ts           #   Parses [BOARD], [SECTION], [GAME_OVER], MOOD, REACT, …
+│   ├── templates/                #   Game templates (rpg-dungeon, custom)
+│   ├── scenes/                   #   Authored scene adventures
+│   ├── rpg/                      #   Worlds, classes, archetypes, regions
+│   └── __tests__/                #   Vitest unit tests (~2700 cases)
 ├── contexts/                     # React contexts (Auth, Game, GameRoom)
 ├── types/                        # TypeScript type definitions
-└── data/                         # Discovery templates, presets, SEO data
+├── data/                         # Discovery templates, presets, SEO data
+└── proxy.ts                      # Next 16 proxy (formerly middleware.ts)
 ```
 
 ### Core Game Loop
@@ -108,22 +121,23 @@ Lobby → Host Intro → [Turn Cycle] → Game Over
                          │
               ┌──────────┼──────────┐
               ▼          ▼          ▼
-          Host Turn  AI Turn   Human Turn
-         (stream)   (player-   (user input)
-                     speak)
+          GM Turn    AI Turn    Human Turn
+         (stream)  (player-     (user input)
+                    speak)
               │          │          │
               └──────────┼──────────┘
                          ▼
-              Parse Host Directives
-         (ASSIGN_ROLE, NEXT_SPEAKER,
-          ELIMINATE, GAME_OVER, ...)
+              Parse Directives
+   (NEXT_SPEAKER, ROOM_UPDATE, COMBAT_*,
+    PLAYER_UPDATE, CHARACTER_DIRECTION,
+    GM_STATE, QUICK_ACTIONS, GAME_OVER, ...)
                          │
                          ▼
               Update Game State
-         (roles, boards, phase, votes)
+   (rooms, HP, inventory, party, phase, gmState)
 ```
 
-The AI Game Master's output is parsed for structured directives that drive the entire game state machine — role assignments, speaker ordering, eliminations, private board updates, and game conclusion — all without manual intervention.
+The GM's output is split by `---` into a **NARRATION** half (visible to players) and a **DIRECTIVES** half (machine-parsed and stripped before display). The directives are what drive the room graph, combat, party stats, character whispers, and the persistent `GmState`.
 
 ---
 
@@ -134,7 +148,7 @@ The AI Game Master's output is parsed for structured directives that drive the e
 - Node.js 18+
 - OpenAI API key
 - Supabase project (auth + database)
-- Stripe account (optional, for payments)
+- Stripe account (optional, for credit purchases)
 
 ### Installation
 
@@ -153,6 +167,7 @@ Copy `.env.example` and fill in:
 OPENAI_API_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
 # Database
 DATABASE_URL=
@@ -160,19 +175,24 @@ DIRECT_URL=
 
 # Optional
 STRIPE_SECRET_KEY=
-REPLICATE_API_TOKEN=
-INWORLD_BASIC_BASE64=
+STRIPE_WEBHOOK_SECRET=
+GEMINI_API_KEY=             # cheaper fallback chat model
+EMAIL_HOST= EMAIL_USER= ... # contact form
 ```
 
 ### Run
 
 ```bash
-npm run dev          # Development server at localhost:3000
+npm run dev          # Development server at http://localhost:3000
 npm run build        # Production build
-npm run test         # Run unit tests (Vitest)
-npm run test:e2e     # Run E2E tests (Playwright)
-npm run storybook    # Component playground
+npm run lint         # tsc --noEmit + eslint src/
+npm run test         # Vitest unit tests
+npm run test:e2e     # Playwright E2E
+npm run db:setup     # Apply schema.sql + run all database/migrations/*.sql
+npm run db:migrate   # Run all (or one) migration only
 ```
+
+> **TLS note:** if your local Supabase pooler complains with `SELF_SIGNED_CERT_IN_CHAIN`, set `DATABASE_SSL_REJECT_UNAUTHORIZED=0` in `.env` (only the PG client reads it). Avoid setting `NODE_TLS_REJECT_UNAUTHORIZED=0` globally — that disables TLS for every outbound HTTPS call (OpenAI, Stripe, Sentry…).
 
 ---
 
