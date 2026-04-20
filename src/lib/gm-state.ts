@@ -87,9 +87,34 @@ export interface GmState {
   /** Active enemies in combat (includes optional boss fields) */
   enemies?: RpgEnemy[];
 
+  /** Encounter ids the GM has already fired (via `ENCOUNTER_FIRED:` or
+   *  reconciler detection). The runtime uses this to flag re-firing of
+   *  authored encounters. */
+  encountersFired?: string[];
+  /** Currently-engaged boss (if any) — tracks HP threshold transitions
+   *  so the runtime can prompt the GM to advance phases at the right
+   *  moment instead of relying on the GM remembering. */
+  activeBoss?: ActiveBossState;
+
   // ── MUD room graph ──
   /** Persistent world room data */
   worldRooms?: WorldRooms;
+}
+
+export interface ActiveBossState {
+  /** Display name. */
+  name: string;
+  /** Current HP (mirrors enemy entry — kept here so phase logic stays
+   *  available even if the GM rewrites the enemies array). */
+  currentHp: number;
+  /** Max HP for percentage calculations. */
+  maxHp: number;
+  /** 1-indexed current phase. */
+  currentPhase: number;
+  /** HP-percent thresholds for each phase transition (e.g. [0.5, 0.25] for
+   *  three phases). When currentHp / maxHp drops past the next threshold,
+   *  the runtime emits a phase-transition reminder in the next prompt. */
+  phaseThresholds: number[];
 }
 
 export interface CharacterDirection {
@@ -161,6 +186,19 @@ export function parseGmState(directives: string): GmState | null {
     if (Array.isArray(raw.loot)) state.loot = raw.loot;
     if (typeof raw.combatActive === "boolean") state.combatActive = raw.combatActive;
     if (Array.isArray(raw.enemies)) state.enemies = raw.enemies;
+    if (Array.isArray(raw.encountersFired)) state.encountersFired = raw.encountersFired.filter((x: unknown): x is string => typeof x === "string");
+    if (raw.activeBoss && typeof raw.activeBoss === "object") {
+      const ab = raw.activeBoss as Record<string, unknown>;
+      if (typeof ab.name === "string" && typeof ab.currentHp === "number" && typeof ab.maxHp === "number") {
+        state.activeBoss = {
+          name: ab.name,
+          currentHp: ab.currentHp,
+          maxHp: ab.maxHp,
+          currentPhase: typeof ab.currentPhase === "number" ? ab.currentPhase : 1,
+          phaseThresholds: Array.isArray(ab.phaseThresholds) ? ab.phaseThresholds.filter((n: unknown): n is number => typeof n === "number") : [],
+        };
+      }
+    }
     if (raw.worldRooms && typeof raw.worldRooms === "object") state.worldRooms = raw.worldRooms as WorldRooms;
     return state;
   } catch {
@@ -215,6 +253,22 @@ export function parseRoomUpdate(directives: string): MudRoom | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Parse ENCOUNTER_FIRED: <id> lines from directives. Returns the de-duped
+ * set of encounter ids fired this turn so the runtime can extend the
+ * persistent `encountersFired` ledger.
+ */
+export function parseEncountersFired(directives: string): string[] {
+  const found = new Set<string>();
+  const re = /^\s*ENCOUNTER_FIRED:\s*(.+?)\s*$/gim;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(directives)) !== null) {
+    const id = m[1].trim();
+    if (id) found.add(id);
+  }
+  return [...found];
 }
 
 /**
@@ -350,6 +404,142 @@ export function reconcileIngredients(opts: {
   };
 }
 
+// ─── Movement / ROOM_UPDATE missing detection (RPG mode) ──────────────────
+
+/**
+ * Detect whether the GM's narration implies the party moved to a new room
+ * but the GM forgot to emit a `ROOM_UPDATE`. Without this, the room panel
+ * goes stale and exits in QUICK_ACTIONS reference rooms that don't exist
+ * in the persistent graph.
+ *
+ * Heuristic: scan narration for movement verbs ("you enter", "you go",
+ * "step into", "the door opens to", etc.) followed by a noun phrase that
+ * suggests a new location. Only fires when ROOM_UPDATE is absent from the
+ * directives — never when the GM did emit one.
+ *
+ * Conservative on purpose: false positives are annoying (extra warning
+ * the GM has to ignore), but false negatives are cheap (the next time the
+ * party clearly moves, the heuristic will catch it).
+ */
+const MOVEMENT_PATTERNS: RegExp[] = [
+  /\byou (?:enter|step into|walk into|pass through|emerge into|arrive at|reach|come upon|find yourself in)\b/i,
+  /\bthe (?:door|gate|passage|stairway|tunnel|archway) (?:opens|leads|reveals)\b/i,
+  /\b(?:climbing|descending|crossing) (?:up|down|across|through|into) (?:the|a|an)\b/i,
+  /\bthe (?:party|group) (?:enters|moves into|crosses into|descends into|climbs to)\b/i,
+];
+
+export function detectMissingRoomUpdate(opts: {
+  narration: string;
+  directivesContainRoomUpdate: boolean;
+}): boolean {
+  if (opts.directivesContainRoomUpdate) return false;
+  if (!opts.narration.trim()) return false;
+  return MOVEMENT_PATTERNS.some((re) => re.test(opts.narration));
+}
+
+// ─── Encounter ledger reconciliation (RPG mode) ─────────────────────────────
+
+export interface EncounterReconciliation {
+  /** Possibly-revised state with newly-fired encounters merged into the
+   *  persistent `encountersFired` ledger. */
+  state: GmState;
+  /** Encounter ids fired for the first time this turn. */
+  newlyFired: string[];
+  /** Encounter ids the GM tried to re-fire (already in the ledger). The
+   *  caller surfaces these in the next prompt as a "do not re-fire" warning. */
+  repeatedEncounters: string[];
+}
+
+/**
+ * Reconcile ENCOUNTER_FIRED directives against the persistent ledger.
+ * Same shape as `reconcileIngredients` — pure function, no I/O.
+ */
+export function reconcileEncounters(opts: {
+  firedThisTurn: string[];
+  parsedState: GmState;
+}): EncounterReconciliation {
+  const { firedThisTurn, parsedState } = opts;
+  const ledger = new Set(parsedState.encountersFired ?? []);
+  const newlyFired: string[] = [];
+  const repeatedEncounters: string[] = [];
+
+  for (const id of firedThisTurn) {
+    if (ledger.has(id)) {
+      repeatedEncounters.push(id);
+    } else {
+      ledger.add(id);
+      newlyFired.push(id);
+    }
+  }
+
+  if (newlyFired.length === 0 && repeatedEncounters.length === 0) {
+    return { state: parsedState, newlyFired, repeatedEncounters };
+  }
+
+  return {
+    state: { ...parsedState, encountersFired: [...ledger] },
+    newlyFired,
+    repeatedEncounters,
+  };
+}
+
+// ─── Boss phase tracking (RPG mode) ─────────────────────────────────────────
+
+export interface BossPhaseTransition {
+  /** Possibly-revised state with `activeBoss.currentPhase` advanced. */
+  state: GmState;
+  /** When non-null, the boss just crossed an HP threshold and the next
+   *  prompt should warn the GM to narrate a phase change. */
+  transitionedTo: number | null;
+}
+
+/**
+ * Watch the active boss's HP and auto-advance `currentPhase` when it
+ * crosses the next configured threshold. The GM previously declared phase
+ * mechanics in the adventure brief but never reliably narrated transitions
+ * because nothing tracked HP outside the model's head.
+ *
+ * `bossEnemy` should be the freshest enemy snapshot (post-PLAYER_UPDATE
+ * resolution); the runtime feeds this from `gmState.enemies` looking up
+ * the boss by name.
+ */
+export function reconcileBossPhase(opts: {
+  parsedState: GmState;
+  bossEnemy?: { name: string; hp: number; maxHp: number } | null;
+}): BossPhaseTransition {
+  const { parsedState, bossEnemy } = opts;
+  const boss = parsedState.activeBoss;
+  if (!boss || !bossEnemy || bossEnemy.maxHp <= 0) {
+    return { state: parsedState, transitionedTo: null };
+  }
+  // Sync HP from the enemies array so the GM can't accidentally desync
+  // by editing one but not the other.
+  const synced: ActiveBossState = {
+    ...boss,
+    currentHp: bossEnemy.hp,
+    maxHp: bossEnemy.maxHp,
+  };
+  const hpRatio = synced.currentHp / synced.maxHp;
+  // phaseThresholds is descending fractions (e.g. [0.5, 0.25]). Phase 1
+  // before any threshold crossed; Phase 2 after first; Phase 3 after second.
+  const expectedPhase = synced.phaseThresholds.reduce(
+    (acc, threshold) => (hpRatio < threshold ? acc + 1 : acc),
+    1,
+  );
+  if (expectedPhase > synced.currentPhase) {
+    synced.currentPhase = expectedPhase;
+    return {
+      state: { ...parsedState, activeBoss: synced },
+      transitionedTo: expectedPhase,
+    };
+  }
+  // No transition, but still write back the synced HP.
+  return {
+    state: { ...parsedState, activeBoss: synced },
+    transitionedTo: null,
+  };
+}
+
 /**
  * Strip GM_STATE and CHARACTER_DIRECTION lines from directives
  * so they don't leak into visible content or event log.
@@ -421,5 +611,6 @@ export function stripGmDirectives(directives: string): string {
     }
   }
   result = result.replace(/CHARACTER_DIRECTION:\s*[^\n]+\n?/g, "");
+  result = result.replace(/^\s*ENCOUNTER_FIRED:\s*[^\n]+\n?/gim, "");
   return result.trim();
 }

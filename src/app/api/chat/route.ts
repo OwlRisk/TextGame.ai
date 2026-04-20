@@ -70,7 +70,16 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI();
     const chatModel = preferredModel || process.env.OPENAI_CHAT_MODEL || 'gpt-5.3-chat-latest';
-    const systemMessage = buildGMSystemPrompt({ hostPersonality, gameContext });
+
+    // Build the GM setup prompt only when the caller is the SETUP chat (i.e.
+    // it supplied either a host personality or a gameContext). Internal
+    // utility calls — most importantly the auto-channel consensus check in
+    // `speaker-queue.ts` — pass their own system prompt as part of `messages`
+    // and don't want the multi-thousand-character GM setup wrapper appended
+    // on top, which both wastes tokens and confuses the model with
+    // unrelated instructions about EDIT_RULES / SET_PLAYER_COUNT.
+    const wantsGmWrapper = !!hostPersonality || !!gameContext;
+    const systemMessage = wantsGmWrapper ? buildGMSystemPrompt({ hostPersonality, gameContext }) : '';
 
     const estTokens = estimateTokensFromText(systemMessage) + messages.reduce((s: number, m: { content?: string }) => s + estimateTokensFromText(m.content || ''), 0) + maxTokens;
     const estCoins = estimatedTokensToCoins(estTokens, chatModel);
@@ -81,7 +90,7 @@ export async function POST(request: NextRequest) {
     await deductTokens(user.id, estCoins, 'ai_chat', `Chat pre-deduct ~${estTokens} tokens (${chatModel})`);
 
     const formattedMessages = [
-      { role: 'system' as const, content: systemMessage },
+      ...(systemMessage ? [{ role: 'system' as const, content: systemMessage }] : []),
       ...messages.map((msg: { role?: string; content?: string }) => ({
         role: msg.role === 'gm' ? 'assistant' as const : 'user' as const,
         content: msg.content ?? ''

@@ -28,8 +28,9 @@ import {
 } from "@/lib/game-pace";
 import { buildHostSystemPrompt, buildSceneDirectorPrompt, buildRpgDirectorPrompt } from "@/lib/host-prompt-builder";
 import { getWorldById } from "@/lib/rpg/worlds";
+import { getRpgAdventureById } from "@/lib/rpg/adventures";
 import { isSceneMode, getScene } from "@/lib/scenes";
-import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, stripGmDirectives, buildStorySummary, reconcileIngredients, EMPTY_GM_STATE } from "@/lib/gm-state";
+import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, parseEncountersFired, stripGmDirectives, buildStorySummary, reconcileIngredients, reconcileEncounters, reconcileBossPhase, detectMissingRoomUpdate, EMPTY_GM_STATE } from "@/lib/gm-state";
 import {
   type SpeakerQueueItem,
   parseRoleAssignments,
@@ -157,6 +158,18 @@ export function useHostRound({
    *  `ingredientsUsed`. Surfaced into the NEXT prompt as a "Already used"
    *  warning so the GM stops re-using consumed plot elements. */
   const repeatedIngredientsRef = useRef<string[]>([]);
+  /** Encounter ids the GM tried to re-fire despite already being in the
+   *  ledger. Surfaced into the next prompt as a "DO NOT re-fire" warning. */
+  const repeatedEncountersRef = useRef<string[]>([]);
+  /** When the boss just crossed an HP threshold, the next prompt gets a
+   *  "BOSS PHASE TRANSITION: enter Phase N" reminder so the GM actually
+   *  narrates the transition the adventure brief promised. */
+  const pendingBossPhaseRef = useRef<number | null>(null);
+  /** When the GM's last narration described a movement (entering a new
+   *  room) without emitting ROOM_UPDATE, the next prompt reminds them.
+   *  Without this the room panel goes stale and QUICK_ACTIONS reference
+   *  exits to rooms that don't exist. */
+  const missingRoomUpdateRef = useRef<boolean>(false);
   const roundAbortRef = useRef<AbortController | null>(null);
   const roundWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -288,11 +301,24 @@ export function useHostRound({
 
       const sceneId = (currentGame?.config as unknown as Record<string, unknown> | undefined)?.sceneId as string | undefined;
 
-      // Initialize GM state from scene data on first round
+      // Initialize GM state from scene data on first round.
       if (isSceneMode(tmplId) && sceneId && !gmStateRef.current) {
         const sceneData = getScene(sceneId);
         if (sceneData?.initialGmState) {
           gmStateRef.current = { ...sceneData.initialGmState };
+        }
+      }
+
+      // Initialize GM state from RPG adventure on first round. Mirrors the
+      // scene-mode init above. Without this, RPG mode starts with no
+      // ingredients / encounters tracked, and `reconcileIngredients` (the
+      // GM auto-validator) has nothing to validate against — the GM ends up
+      // re-introducing key plot beats and re-firing the same encounters.
+      const rpgAdventureId = currentGame?.config?.rpgAdventureId;
+      if (rpgAdventureId && !gmStateRef.current) {
+        const adventure = getRpgAdventureById(rpgAdventureId);
+        if (adventure?.initialGmState) {
+          gmStateRef.current = { ...adventure.initialGmState };
         }
       }
 
@@ -344,6 +370,10 @@ export function useHostRound({
             adventureNotes: currentGame?.config?.rpgAdventureNotes,
             world,
             storySummary: resumeSummary || undefined,
+            recentlyRepeatedIngredients: repeatedIngredientsRef.current,
+            recentlyRepeatedEncounters: repeatedEncountersRef.current,
+            pendingBossPhaseTransition: pendingBossPhaseRef.current,
+            roomUpdateMissingLastTurn: missingRoomUpdateRef.current,
           });
         }
 
@@ -677,14 +707,17 @@ export function useHostRound({
           const newGmState = parseGmState(directives);
           if (newGmState) {
             // Reconcile against the narration the GM actually produced. This
-            // catches two common GM mistakes that would otherwise corrupt the
-            // ingredient ledger:
-            //   - The GM introduced an ingredient in narration but forgot to
-            //     move it from `ingredientsAvailable` → `ingredientsUsed`.
-            //   - The GM re-introduced something already in `ingredientsUsed`
-            //     (we capture this as `repeatedIngredientsRef` so the next
-            //     prompt can warn the GM not to reuse it).
-            const { state: reconciled, autoMarked, repeatedIngredients } = reconcileIngredients({
+            // catches three common GM mistakes that would otherwise corrupt
+            // the ledgers / boss phase tracking:
+            //   1. Introduced an ingredient in narration but forgot to move
+            //      it from `ingredientsAvailable` → `ingredientsUsed`.
+            //   2. Re-introduced something already in `ingredientsUsed` →
+            //      captured into `repeatedIngredientsRef`.
+            //   3. Re-fired an authored encounter (ENCOUNTER_FIRED) →
+            //      captured into `repeatedEncountersRef`.
+            //   4. Boss crossed an HP threshold → pendingBossPhaseRef so the
+            //      next prompt nudges the GM to narrate the transition.
+            const { state: ingredientReconciled, autoMarked, repeatedIngredients } = reconcileIngredients({
               narration: rawSplitMessage,
               previousState: gmStateRef.current,
               parsedState: newGmState,
@@ -696,8 +729,41 @@ export function useHostRound({
               console.debug(`[gm-state] GM re-introduced already-used ingredients: ${repeatedIngredients.join(", ")}`);
             }
             repeatedIngredientsRef.current = repeatedIngredients;
-            gmStateRef.current = reconciled;
-            setGmState(reconciled);
+
+            const firedThisTurn = parseEncountersFired(directives);
+            const { state: encounterReconciled, newlyFired, repeatedEncounters } = reconcileEncounters({
+              firedThisTurn,
+              parsedState: ingredientReconciled,
+            });
+            if (newlyFired.length > 0) {
+              console.debug(`[gm-state] encounters fired: ${newlyFired.join(", ")}`);
+            }
+            if (repeatedEncounters.length > 0) {
+              console.debug(`[gm-state] GM tried to re-fire encounters: ${repeatedEncounters.join(", ")}`);
+            }
+            repeatedEncountersRef.current = repeatedEncounters;
+
+            // Boss phase tracking — sync HP from the enemies array (which
+            // gets updated by COMBAT_START / PLAYER_UPDATE), then advance
+            // currentPhase if HP crossed the next threshold.
+            const boss = encounterReconciled.activeBoss;
+            const enemies = encounterReconciled.enemies ?? [];
+            const bossEnemy = boss
+              ? enemies.find((e) => e.name === boss.name)
+              : undefined;
+            const { state: bossReconciled, transitionedTo } = reconcileBossPhase({
+              parsedState: encounterReconciled,
+              bossEnemy: bossEnemy
+                ? { name: bossEnemy.name, hp: bossEnemy.hp, maxHp: bossEnemy.maxHp }
+                : null,
+            });
+            if (transitionedTo !== null) {
+              console.debug(`[gm-state] boss phase transition → Phase ${transitionedTo}`);
+            }
+            pendingBossPhaseRef.current = transitionedTo;
+
+            gmStateRef.current = bossReconciled;
+            setGmState(bossReconciled);
           }
 
           const roomUpdate = parseRoomUpdate(directives);
@@ -709,6 +775,19 @@ export function useHostRound({
             const updated = { ...current, worldRooms, location: roomUpdate.name };
             gmStateRef.current = updated;
             setGmState(updated);
+          }
+          // RPG mode: warn the GM next turn if narration described a movement
+          // but no ROOM_UPDATE was emitted. Only meaningful when we're in a
+          // worldRooms-aware game.
+          if (currentGame?.config?.rpgWorldId) {
+            const narrationImpliesMove = detectMissingRoomUpdate({
+              narration: rawSplitMessage,
+              directivesContainRoomUpdate: !!roomUpdate,
+            });
+            missingRoomUpdateRef.current = narrationImpliesMove;
+            if (narrationImpliesMove) {
+              console.debug("[gm-state] narration implies room change but no ROOM_UPDATE emitted");
+            }
           }
 
           characterDirectionsRef.current = parseCharacterDirections(directives);

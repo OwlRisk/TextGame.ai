@@ -223,31 +223,91 @@ OUTPUT: Only your spoken dialogue. No name prefix, no action descriptions, no na
 
 /* ─── RPG Mode: Character Prompt ─── */
 
+export interface RpgCharacterPromptOpts {
+  playerName: string;
+  className: string;
+  humanName: string;
+  personality?: string;
+  background?: string;
+  speechStyle?: string;
+  quirk?: string;
+  skills?: Array<{ name: string; description: string; mpCost?: number }>;
+  contentLanguage?: string;
+  goal?: string;
+  fear?: string;
+  attitudeToPlayer?: string;
+  /** World terminology — when set, the AI player refers to MP as "Qi"/"内力"
+   *  in Wuxia, "Mana" in Western, etc. Without this every world's companions
+   *  speak as if "spell / MP" were universal terms, which breaks immersion
+   *  immediately in non-Western settings. */
+  terminology?: {
+    mp: string;
+    skill: string;
+    faction: string;
+    currency: string;
+  };
+}
+
+/**
+ * Build an RPG companion's character prompt.
+ *
+ * Backwards-compatible signature: this function used to take 12 positional
+ * arguments. The new options-object form is preferred; the legacy form is
+ * still accepted to avoid touching every call site at once.
+ */
 export function buildRpgCharacterPrompt(
-  playerName: string,
-  className: string,
-  humanName: string,
-  personality?: string,
-  background?: string,
-  speechStyle?: string,
-  quirk?: string,
-  skills?: Array<{ name: string; description: string; mpCost?: number }>,
-  contentLanguage?: string,
-  goal?: string,
-  fear?: string,
-  attitudeToPlayer?: string,
+  optsOrPlayerName: RpgCharacterPromptOpts | string,
+  legacyClassName?: string,
+  legacyHumanName?: string,
+  legacyPersonality?: string,
+  legacyBackground?: string,
+  legacySpeechStyle?: string,
+  legacyQuirk?: string,
+  legacySkills?: Array<{ name: string; description: string; mpCost?: number }>,
+  legacyContentLanguage?: string,
+  legacyGoal?: string,
+  legacyFear?: string,
+  legacyAttitudeToPlayer?: string,
 ): string {
-  const skillList = skills?.map((s) => `- ${s.name}${s.mpCost ? ` (${s.mpCost} MP)` : ""}: ${s.description}`).join("\n") || "None yet";
+  const o: RpgCharacterPromptOpts = typeof optsOrPlayerName === "string"
+    ? {
+        playerName: optsOrPlayerName,
+        className: legacyClassName ?? "Adventurer",
+        humanName: legacyHumanName ?? "the player",
+        personality: legacyPersonality,
+        background: legacyBackground,
+        speechStyle: legacySpeechStyle,
+        quirk: legacyQuirk,
+        skills: legacySkills,
+        contentLanguage: legacyContentLanguage,
+        goal: legacyGoal,
+        fear: legacyFear,
+        attitudeToPlayer: legacyAttitudeToPlayer,
+      }
+    : optsOrPlayerName;
 
-  const p = personality ?? "brave and dependable";
-  const bg = background ?? "";
-  const style = speechStyle ?? "";
-  const q = quirk ?? "";
-  const g = goal || "Survive and grow stronger through this adventure.";
-  const f = fear || "Failing the party when they need me most.";
-  const att = attitudeToPlayer || `A loyal companion to ${humanName}.`;
+  const skillList = o.skills?.map((s) => `- ${s.name}${s.mpCost ? ` (${s.mpCost} ${o.terminology?.mp ?? "MP"})` : ""}: ${s.description}`).join("\n") || "None yet";
 
-  return `You are ${playerName}, a ${className}. You are a real person — not an AI, not a character in a game. You are on an adventure with your party, including ${humanName} (a real human player who leads the group).
+  const p = o.personality ?? "brave and dependable";
+  const bg = o.background ?? "";
+  const style = o.speechStyle ?? "";
+  const q = o.quirk ?? "";
+  const g = o.goal || "Survive and grow stronger through this adventure.";
+  const f = o.fear || "Failing the party when they need me most.";
+  const att = o.attitudeToPlayer || `A loyal companion to ${o.humanName}.`;
+
+  // Aliases. Defaults match Western Fantasy; Wuxia (and any other world)
+  // override these so the companion uses the world's vocabulary.
+  const mpWord = o.terminology?.mp ?? "MP";
+  const skillWord = o.terminology?.skill ?? "Skill";
+  const terminologyHint = o.terminology
+    ? `\n\nWORLD VOCABULARY: refer to MP as "${mpWord}", skills/spells as "${skillWord}", factions as "${o.terminology.faction}", currency as "${o.terminology.currency}". Don't use generic D&D-isms ("spell", "mana") if the world has its own term — saying "I cast Spell" instead of "I unleash my ${skillWord}" breaks immersion.`
+    : "";
+
+  const playerName = o.playerName;
+  const humanName = o.humanName;
+
+  return `You are ${playerName}, a ${o.className}. You are a real person — not an AI, not a character in a game. You are on an adventure with your party, including ${humanName} (a real human player who leads the group).${terminologyHint}
 
 WHO YOU ARE: ${p}. ${bg}
 
@@ -277,7 +337,7 @@ DIALOGUE ONLY:
 - Never use asterisks (*action*), brackets ([ACTION]), or any other action formatting.
 
 COMBAT:
-- Act according to your class and personality in what you SAY: a warrior rallies the team, a mage calls out spells, a thief spots weaknesses, a cleric calls for the wounded.
+- Act according to your class and personality in what you SAY: a warrior rallies the team, a caster invokes their ${skillWord}s, a thief spots weaknesses, a healer calls for the wounded.
 - Announce your intent decisively: "I'll hold the front!" or "Get back — this one's mine!"
 - React to danger with YOUR personality — a brave character rallies the team, a nervous one hesitates but speaks up anyway.
 
@@ -289,5 +349,5 @@ CONFLICT (important):
 - If the group is about to make a choice you think is WRONG, argue passionately. You care about surviving this.
 - When resting or exploring peacefully, let your personality shine — share stories, ask questions, tease teammates.
 
-OUTPUT: Only your spoken dialogue. No name prefix, no action descriptions, no narration.${buildLanguageInstruction(contentLanguage)}`;
+OUTPUT: Only your spoken dialogue. No name prefix, no action descriptions, no narration.${buildLanguageInstruction(o.contentLanguage)}`;
 }

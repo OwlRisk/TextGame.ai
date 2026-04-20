@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuthUserFromRequest } from '@/lib/auth-server';
 import { buildSystemPrompt, buildSceneCharacterPrompt, buildRpgCharacterPrompt, getPlayerTokenLimit } from '@/lib/player-speak-prompt';
+import { getWorldById } from '@/lib/rpg/worlds';
 import { deductTokens, hasTokens, gptUsageToCoins, estimatedTokensToCoins, estimateTokensFromText } from '@/lib/tokens';
 import { sanitizeModel } from '@/lib/model-prefs';
 import { createRateLimiter, rateLimitResponse } from '@/lib/rate-limit';
@@ -146,8 +147,26 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.senderName}: ${m.content}`)
       .join('\n');
 
+    // World terminology (e.g. "Qi" for MP in Wuxia) is plumbed into the
+    // companion prompt so the AI players use world-native vocabulary
+    // instead of generic D&D-isms in non-Western settings.
+    const rpgWorld = rpgWorldId ? getWorldById(rpgWorldId) : undefined;
     const system = rpgWorldId && player.rpgClass
-      ? buildRpgCharacterPrompt(player.name, player.rpgClass, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, player.rpgSkills, contentLanguage, player.goal, player.fear, player.attitudeToPlayer)
+      ? buildRpgCharacterPrompt({
+          playerName: player.name,
+          className: player.rpgClass,
+          humanName: humanName || 'the player',
+          personality: player.personality,
+          background: player.background,
+          speechStyle: player.speechStyle,
+          quirk: player.quirk,
+          skills: player.rpgSkills,
+          contentLanguage,
+          goal: player.goal,
+          fear: player.fear,
+          attitudeToPlayer: player.attitudeToPlayer,
+          terminology: rpgWorld?.terminology,
+        })
       : (gameTemplate === 'scene' && sceneId)
       ? buildSceneCharacterPrompt(player.name, sceneId, humanName || 'the player', player.personality, player.background, player.speechStyle, player.quirk, contentLanguage)
       : buildSystemPrompt(player.name, gameTemplate, gameName || 'the game', player.personality, player.background, player.role, player.speechStyle, player.quirk, contentLanguage);

@@ -91,6 +91,14 @@ export interface GameConfig {
   /** RPG world identifier — when set, enables RPG mode with class-based
    *  characters (see `lib/rpg-worlds`). */
   rpgWorldId?: string;
-  /** Optional GM notes for the RPG adventure (long-form story brief). */
+  /** Structured adventure id from `lib/rpg/adventures` — when set, the
+   *  runtime seeds gmState (ingredients, secrets, threats, encounters)
+   *  from the matching `RpgAdventure` on the first turn so the ingredient
+   *  / encounter ledger validators have something to validate against. */
+  rpgAdventureId?: string;
+  /** Pre-rendered prose adventure brief injected into the GM prompt's
+   *  `## ADVENTURE` section. When `rpgAdventureId` is set this is derived
+   *  from the structured adventure; for custom user games it can be
+   *  free-form prose. */
   rpgAdventureNotes?: string;
 }

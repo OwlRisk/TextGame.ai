@@ -71,12 +71,15 @@ export function buildGMSystemPrompt(opts: {
 
   s += `\n\nBe concise. Users are human—short replies (a few sentences). Talk naturally.`;
 
-  const setupStates = ['greeting', 'game-type', 'player-count', 'rules-discussion', 'confirmation', 'completed'];
-  const isSetup = gameContext?.conversationState && setupStates.includes(gameContext.conversationState);
-
-  if (!isSetup) {
-    s += GAMEPLAY_PROMPT;
-  } else if (isRpg) {
+  // This prompt is for the SETUP / world-design chat (`game-master-chat.tsx`).
+  // Actual gameplay runs through `useHostRound` + `buildHostSystemPrompt` /
+  // `buildSceneDirectorPrompt` / `buildRpgDirectorPrompt`. We always emit
+  // setup guidance here — both branches assume the GM is helping the user
+  // configure a new game, not running one. (The legacy "GAMEPLAY_PROMPT"
+  // branch was unreachable in production: every caller either supplies a
+  // setup-flavoured `conversationState` or skips the system prompt entirely
+  // — see /api/chat/route.ts for the no-gameContext shortcut.)
+  if (isRpg) {
     s += `\n\nThis chat is for RPG world design. The adventure runs on a separate screen after "Create Room".`;
     if (gameContext?.conversationState === "confirmation") {
       s += ` World design complete—help the user click "Create Room" to start the adventure.`;
@@ -96,14 +99,6 @@ export function buildGMSystemPrompt(opts: {
 
   return s;
 }
-
-const GAMEPLAY_PROMPT = `
-
-RULES ARE LOCKED. Do NOT output editing tags. Only narrate and run the game.
-
-GAME OVER: When the game concludes, deliver a final announcement with all reveals, then append:
-[GAME_OVER]One sentence outcome.[/GAME_OVER]
-Output this tag once, only when definitively over.`;
 
 const SETUP_PROMPT = `
 

@@ -413,12 +413,45 @@ export interface RpgDirectorOpts {
   world?: WorldSetting;
   /** Story recap from a previous session — inject when the player resumes a saved game. */
   storySummary?: string;
+  /** Ingredient ids the GM tried to re-introduce in the LAST narration even
+   *  though they were already consumed. Surfaced as an explicit "do not
+   *  reuse" warning for THIS turn (parallel to scene mode). */
+  recentlyRepeatedIngredients?: string[];
+  /** Encounter ids the GM tried to re-fire in the LAST turn (already in
+   *  the encounter ledger). The next turn must NOT mark them again. */
+  recentlyRepeatedEncounters?: string[];
+  /** When non-null, the boss just crossed an HP threshold last turn and
+   *  this turn must narrate a phase change to Phase N. */
+  pendingBossPhaseTransition?: number | null;
+  /** Last turn's narration implied the party moved to a new room but the
+   *  GM forgot to emit ROOM_UPDATE. This turn MUST emit a fresh
+   *  ROOM_UPDATE so the room panel and exits stay in sync. */
+  roomUpdateMissingLastTurn?: boolean;
 }
 
 export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
-  const { worldName, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, contentLanguage, previousGmState, adventureNotes, world, storySummary } = opts;
+  const { worldName, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, contentLanguage, previousGmState, adventureNotes, world, storySummary, recentlyRepeatedIngredients, recentlyRepeatedEncounters, pendingBossPhaseTransition, roomUpdateMissingLastTurn } = opts;
   const playerNamesList = nonHostPlayerNames.join(", ");
   const terms = world?.terminology;
+
+  // External-validator feedback for the LAST turn — surfaces in this turn's
+  // prompt so the GM corrects course instead of compounding the same mistake.
+  const validatorAlerts: string[] = [];
+  if (recentlyRepeatedIngredients && recentlyRepeatedIngredients.length > 0) {
+    validatorAlerts.push(`!! REUSE ALERT — last turn re-introduced consumed plot ingredients: ${recentlyRepeatedIngredients.join(", ")}. Pick a DIFFERENT ingredient this turn.`);
+  }
+  if (recentlyRepeatedEncounters && recentlyRepeatedEncounters.length > 0) {
+    validatorAlerts.push(`!! ENCOUNTER ALREADY FIRED — these authored encounters are already done: ${recentlyRepeatedEncounters.join(", ")}. Use a different encounter id, or improvise an organic encounter (and DO NOT emit ENCOUNTER_FIRED for it).`);
+  }
+  if (pendingBossPhaseTransition && pendingBossPhaseTransition > 1) {
+    validatorAlerts.push(`!! BOSS PHASE TRANSITION — the active boss just crossed an HP threshold. THIS TURN must narrate the boss entering Phase ${pendingBossPhaseTransition} (new abilities, environmental shift, dramatic beat).`);
+  }
+  if (roomUpdateMissingLastTurn) {
+    validatorAlerts.push(`!! ROOM_UPDATE MISSING — last turn's narration described the party moving to a new place but no ROOM_UPDATE was emitted. The room panel is stale. THIS TURN must emit a fresh ROOM_UPDATE for the new location with correct exits.`);
+  }
+  const alertsBlock = validatorAlerts.length > 0
+    ? `\n${validatorAlerts.join("\n")}\n`
+    : "";
 
   // World-flavoured example NPCs / locations. Without this every world (Wuxia
   // included) gets primed with English fantasy names like "Gruff" and
@@ -444,7 +477,7 @@ export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
       };
 
   return `${buildLanguageInstruction(contentLanguage).trim()}
-
+${alertsBlock}
 You are the Game Master of a MUD-style RPG set in a ${worldName} world. The party (${playerNamesList} and ${humanName}) explores room by room. Never speak for party members — describe what the world does, then let them react via NEXT_SPEAKER.
 
 ## ROOM SYSTEM
@@ -501,13 +534,14 @@ ${CHARACTER_DIRECTION_FRAGMENT}
 ## DIRECTIVES (after "---")
 ROOM_UPDATE: <JSON> — **required every turn**.
 NEXT_SPEAKER: <name>[, ...] — required every turn.
-GM_STATE: <JSON> — required every turn. Include partyLevel, location (= current room name), questLog, combatActive, enemies.
+GM_STATE: <JSON> — required every turn. Include partyLevel, location (= current room name), questLog, combatActive, enemies, encountersFired, activeBoss.
 CHARACTER_DIRECTION: <Name> | <instruction> — 0–2 per turn.
 PLAYER_UPDATE: <Name> | <JSON> — stat changes:
   PLAYER_UPDATE: ${humanName} | {"hp":-15,"exp":50}
   PLAYER_UPDATE: ${nonHostPlayerNames[0] || "Companion"} | {"mp":-20,"addItem":"Health Potion"}
   PLAYER_UPDATE: ${nonHostPlayerNames[1] || "Ally"} | {"addSkill":"Flame Strike","exp":30}
 COMBAT_START: <JSON array of enemies>   COMBAT_END: <result text>
+ENCOUNTER_FIRED: <encounter_id> — emit when starting a pre-authored encounter so it's not fired again.
 QUICK_ACTIONS: <a1> | <a2> | ... — 3-5 context-appropriate options every turn. Include exits as navigation when not in combat (e.g. "Go north → Market Square").
 CHANNEL_GOAL: <text>   RECORD_EVENT: <summary>   PHASE: <label>
 
@@ -516,6 +550,16 @@ Individual HP=0 is unconsciousness — revivable by healing or items. Total part
 
 ## GM_STATE
 ${previousGmState ? `Last turn: ${serializeGmStateForPrompt(previousGmState)}\nUpdate every turn. Keep location = current room name.` : "First turn — initialize: partyLevel, location (= starting room name), questLog, combatActive (false)."}
+
+## ADVENTURE INGREDIENTS (use the ledger — don't repeat yourself)
+The adventure seeded \`ingredientsAvailable\` (key plot beats / NPC reveals / set-piece encounters) and \`playerDoesntKnow\` (secrets) into your GM_STATE. Use them like a scene director uses a plot board:
+- Pick ONE ingredient when the moment calls for it. Move it from \`ingredientsAvailable\` → \`ingredientsUsed\` in your output.
+- NEVER reintroduce something already in \`ingredientsUsed\` — the runtime auto-detects and will warn you next turn.
+- A turn that resolves a \`playerDoesntKnow\` entry should also move the resolved fact into \`playerKnows\`.
+- \`activeThreats\` are your background ticking-clock items — mention them in narration so urgency stays felt.
+
+## ENCOUNTER LEDGER (combat fires AT MOST ONCE per encounter id)
+The adventure pre-defines a set of encounters with stable ids. When you start a fight, emit \`ENCOUNTER_FIRED: <encounter_id>\` in your directives so the runtime can deduplicate. Re-firing an already-used encounter id will be flagged in the next prompt — pick a new id, or improvise an organic encounter (don't mark those with ENCOUNTER_FIRED).
 
 ${buildKnownRoomsBlock(previousGmState) || `## WORLD BUILDING
 Create the starting room now. Memorable name, 2-3 exits leading to interesting places. Build organically — when the party goes north, create what's there. Aim for logical layout (towns: market/tavern/gates; dungeons: corridors/chambers/traps).`}

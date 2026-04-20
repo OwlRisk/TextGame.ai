@@ -5,3 +5,5 @@ export type { WorldSetting, WorldFaction, WorldTerminology } from "./worlds";
 export { ALL_REGIONS, WESTERN_REGIONS, WUXIA_REGIONS, RANDOM_EVENTS, RECRUITABLE_NPCS, getRegionById, getRegionsForWorld, getRandomEvent, getRecruitableNpcsForRegion } from "./regions";
 export type { RegionDefinition, QuestDefinition, QuestObjective, QuestReward, RandomEvent, RecruitableNpc } from "./regions";
 export { RPG_RESOLUTION_RULES, RPG_RESOLUTION_RULES_PLAYER_FACING } from "./resolution";
+export { ALL_RPG_ADVENTURES, getRpgAdventureById, buildAdventureNotes } from "./adventures";
+export type { RpgAdventure, RpgKeyNpc, RpgEncounterSpec, RpgActArc } from "./adventures";

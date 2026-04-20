@@ -161,6 +161,7 @@ const PARSED_DIRECTIVES = new Set<string>([
   "GM_STATE",
   "ROOM_UPDATE",
   "CHARACTER_DIRECTION",
+  "ENCOUNTER_FIRED",
 ]);
 
 const BRACKET_BLOCKS = new Set<string>([
