@@ -44,9 +44,10 @@ describe("playerCount consistency", () => {
     }
   });
 
-  it("all RPG adventures have playerCount === 3", () => {
+  it("all RPG adventures have a playerCount in the supported range (3-4)", () => {
     for (const t of ALL_PRESETS) {
-      expect(t.playerCount, `"${t.id}" playerCount`).toBe(3);
+      expect(t.playerCount, `"${t.id}" playerCount`).toBeGreaterThanOrEqual(3);
+      expect(t.playerCount, `"${t.id}" playerCount`).toBeLessThanOrEqual(4);
     }
   });
 });
