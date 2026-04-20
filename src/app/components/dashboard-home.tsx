@@ -1,9 +1,5 @@
 "use client";
 
-// Game icons can be data:/blob:/remote URLs of unknown dimensions; the
-// container-sized <img> stays as-is to avoid fill/unoptimized plumbing.
-/* eslint-disable @next/next/no-img-element */
-
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -131,8 +127,14 @@ export function DashboardHome({ userName, games = [], onCreateGame, onNavigateTo
                   className="group relative bg-zinc-800/60 border border-zinc-700 hover:border-amber-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 cursor-pointer text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                 >
                   <div className={`relative h-20 overflow-hidden bg-gradient-to-br ${game.color} flex items-center justify-center`}>
-                    {game.icon && (game.icon.startsWith("/") || game.icon.startsWith("http")) ? (
-                      <img src={game.icon} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    {game.icon && typeof game.icon === "string" && (game.icon.startsWith("/") || game.icon.startsWith("http")) ? (
+                      <Image
+                        src={game.icon}
+                        alt={game.name}
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover"
+                      />
                     ) : (
                       <span className="text-4xl">{game.icon}</span>
                     )}
