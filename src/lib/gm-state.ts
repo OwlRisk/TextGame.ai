@@ -186,7 +186,7 @@ export function parseRoomUpdate(directives: string): MudRoom | null {
       name: String(raw.name || raw.id),
       description: String(raw.description || ""),
       exits: Array.isArray(raw.exits)
-        ? raw.exits.map((e: any) => ({
+        ? (raw.exits as Array<Record<string, unknown>>).map((e) => ({
             direction: String(e.direction || ""),
             roomId: String(e.roomId || e.room_id || ""),
             label: e.label ? String(e.label) : undefined,
@@ -195,15 +195,15 @@ export function parseRoomUpdate(directives: string): MudRoom | null {
           }))
         : [],
       npcs: Array.isArray(raw.npcs)
-        ? raw.npcs.map((n: any) => ({
+        ? (raw.npcs as Array<Record<string, unknown>>).map((n) => ({
             id: String(n.id || n.name || ""),
             name: String(n.name || ""),
             description: String(n.description || ""),
-            attitude: ["hostile", "neutral", "friendly"].includes(n.attitude) ? n.attitude : "neutral",
+            attitude: (typeof n.attitude === "string" && ["hostile", "neutral", "friendly"].includes(n.attitude) ? n.attitude : "neutral") as "hostile" | "neutral" | "friendly",
           }))
         : [],
       items: Array.isArray(raw.items)
-        ? raw.items.map((i: any) => ({
+        ? (raw.items as Array<Record<string, unknown>>).map((i) => ({
             id: String(i.id || i.name || ""),
             name: String(i.name || ""),
             description: i.description ? String(i.description) : undefined,
@@ -229,6 +229,125 @@ export function parseCharacterDirections(directives: string): CharacterDirection
     results.push({ name: m[1].trim(), direction: m[2].trim() });
   }
   return results;
+}
+
+// ─── Ingredient reconciliation (Scene mode) ─────────────────────────────────
+
+/**
+ * Tokenise an ingredient ID for lexical matching against narration.
+ * `coffee_mug` → ["coffee", "mug"]; `Max_claustrophobia` → ["max", "claustrophobia"].
+ * Single-letter tokens and articles are dropped to avoid false positives on
+ * common words like "the" / "of".
+ */
+function ingredientTokens(id: string): string[] {
+  return id
+    .split(/[_\s-]+/)
+    .map((t) => t.toLowerCase())
+    .filter((t) => t.length >= 3 && t !== "the" && t !== "and" && t !== "for");
+}
+
+/**
+ * Detect whether an ingredient is referenced in a narration block.
+ *
+ * Heuristic: treat the ingredient ID as a tag (e.g. `coffee_mug`,
+ * `Rena_camera`) and require enough of its constituent tokens to appear in
+ * the narration as whole words.
+ *
+ * - 1-token ID: the single token must appear.
+ * - 2-token ID: BOTH tokens must appear (within the same narration).
+ * - 3+ token ID: at least 2/3 of the tokens must appear.
+ *
+ * Conservative on purpose — we'd rather miss an introduction than
+ * incorrectly mark an unused ingredient as used.
+ */
+function narrationMentionsIngredient(narration: string, ingredientId: string): boolean {
+  const lower = narration.toLowerCase();
+  const tokens = ingredientTokens(ingredientId);
+  if (tokens.length === 0) return false;
+
+  let hits = 0;
+  for (const tok of tokens) {
+    const re = new RegExp(`\\b${tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+    if (re.test(lower)) hits++;
+  }
+
+  if (tokens.length === 1) return hits >= 1;
+  if (tokens.length === 2) return hits >= 2;
+  return hits / tokens.length >= 2 / 3;
+}
+
+export interface IngredientReconciliation {
+  /** A possibly-revised GmState whose `ingredientsUsed` reflects the
+   *  narration. Returned identical to input when nothing changed. */
+  state: GmState;
+  /** Ingredient IDs auto-moved from available → used because they
+   *  appeared in the narration but the GM forgot to update GM_STATE. */
+  autoMarked: string[];
+  /** Ingredient IDs the GM tried to introduce again even though they
+   *  were already in `ingredientsUsed`. The caller can surface these in
+   *  the next prompt as "Already used (DO NOT reuse): …". */
+  repeatedIngredients: string[];
+}
+
+/**
+ * Reconcile the GM's freshly-emitted state against the narration it
+ * actually produced. Two corrections happen here:
+ *
+ *   1. AUTO-MIGRATE: ingredients mentioned in narration but still listed in
+ *      `ingredientsAvailable` get moved to `ingredientsUsed`. Without this,
+ *      the GM frequently forgets to update its own state and ends up
+ *      re-using the same plot element.
+ *
+ *   2. DETECT REPEAT: ingredients that appear in narration AND were already
+ *      in `ingredientsUsed` (i.e. previously consumed) before this turn are
+ *      reported back so the next prompt can warn the GM not to reuse them.
+ *
+ * `previousState` is the GM's state from BEFORE this turn (used to detect
+ * repeats); `parsedState` is what the GM emitted THIS turn.
+ */
+export function reconcileIngredients(opts: {
+  narration: string;
+  previousState: GmState | null | undefined;
+  parsedState: GmState;
+}): IngredientReconciliation {
+  const { narration, previousState, parsedState } = opts;
+  if (!narration.trim()) {
+    return { state: parsedState, autoMarked: [], repeatedIngredients: [] };
+  }
+
+  const previouslyUsed = new Set(previousState?.ingredientsUsed ?? []);
+  const stillAvailable = new Set(parsedState.ingredientsAvailable);
+  const alreadyUsed = new Set(parsedState.ingredientsUsed);
+
+  const autoMarked: string[] = [];
+  for (const ingredient of [...stillAvailable]) {
+    if (narrationMentionsIngredient(narration, ingredient)) {
+      stillAvailable.delete(ingredient);
+      alreadyUsed.add(ingredient);
+      autoMarked.push(ingredient);
+    }
+  }
+
+  const repeatedIngredients: string[] = [];
+  for (const ingredient of previouslyUsed) {
+    if (narrationMentionsIngredient(narration, ingredient)) {
+      repeatedIngredients.push(ingredient);
+    }
+  }
+
+  if (autoMarked.length === 0) {
+    return { state: parsedState, autoMarked: [], repeatedIngredients };
+  }
+
+  return {
+    state: {
+      ...parsedState,
+      ingredientsAvailable: [...stillAvailable],
+      ingredientsUsed: [...alreadyUsed],
+    },
+    autoMarked,
+    repeatedIngredients,
+  };
 }
 
 /**

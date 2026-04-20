@@ -29,7 +29,7 @@ import {
 import { buildHostSystemPrompt, buildSceneDirectorPrompt, buildRpgDirectorPrompt } from "@/lib/host-prompt-builder";
 import { getWorldById } from "@/lib/rpg/worlds";
 import { isSceneMode, getScene } from "@/lib/scenes";
-import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, stripGmDirectives, buildStorySummary, EMPTY_GM_STATE } from "@/lib/gm-state";
+import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, stripGmDirectives, buildStorySummary, reconcileIngredients, EMPTY_GM_STATE } from "@/lib/gm-state";
 import {
   type SpeakerQueueItem,
   parseRoleAssignments,
@@ -45,6 +45,7 @@ import { trackEvent } from "@/lib/analytics";
 import { AFTERLIFE_CHANNEL_ID } from "@/lib/templates/types";
 import { applyRpgUpdate } from "@/types/rpg";
 import type { PlayerUpdateEntry } from "@/lib/host-output-parser";
+import type { OpeningKickoffState } from "@/hooks/useGameInit";
 
 export interface SendMessageOptions {
   skipAddMessage?: boolean;
@@ -59,8 +60,8 @@ interface UseHostRoundParams {
   setChannelPermissions: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
   gameRoomEntries: Array<{ id: string; name: string; roomType?: string }>;
   defaultGameChannelId: string;
-  readyKickoffRef: React.MutableRefObject<{ channelId: string } | null>;
-  launchOpeningRound: (kickoff: any) => Promise<void>;
+  readyKickoffRef: React.MutableRefObject<OpeningKickoffState | null>;
+  launchOpeningRound: (kickoff: OpeningKickoffState) => Promise<void>;
   contentLanguage?: string;
 }
 
@@ -152,6 +153,10 @@ export function useHostRound({
     if (persistedGmState && !gmStateRef.current) gmStateRef.current = persistedGmState;
   }, [persistedGmState]);
   const characterDirectionsRef = useRef<CharacterDirection[]>([]);
+  /** Ingredients the GM tried to re-introduce despite already being in
+   *  `ingredientsUsed`. Surfaced into the NEXT prompt as a "Already used"
+   *  warning so the GM stops re-using consumed plot elements. */
+  const repeatedIngredientsRef = useRef<string[]>([]);
   const roundAbortRef = useRef<AbortController | null>(null);
   const roundWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -336,7 +341,7 @@ export function useHostRound({
             eventLogSummary: freshEvents,
             contentLanguage,
             previousGmState: gmStateRef.current,
-            adventureNotes: (currentGame?.config as any)?.rpgAdventureNotes,
+            adventureNotes: currentGame?.config?.rpgAdventureNotes,
             world,
             storySummary: resumeSummary || undefined,
           });
@@ -352,6 +357,7 @@ export function useHostRound({
             recentNonHostTurns,
             contentLanguage,
             previousGmState: gmStateRef.current,
+            recentlyRepeatedIngredients: repeatedIngredientsRef.current,
           });
         }
 
@@ -669,7 +675,30 @@ export function useHostRound({
           const { message: rawSplitMessage, directives } = splitHostOutput(acc);
 
           const newGmState = parseGmState(directives);
-          if (newGmState) { gmStateRef.current = newGmState; setGmState(newGmState); }
+          if (newGmState) {
+            // Reconcile against the narration the GM actually produced. This
+            // catches two common GM mistakes that would otherwise corrupt the
+            // ingredient ledger:
+            //   - The GM introduced an ingredient in narration but forgot to
+            //     move it from `ingredientsAvailable` → `ingredientsUsed`.
+            //   - The GM re-introduced something already in `ingredientsUsed`
+            //     (we capture this as `repeatedIngredientsRef` so the next
+            //     prompt can warn the GM not to reuse it).
+            const { state: reconciled, autoMarked, repeatedIngredients } = reconcileIngredients({
+              narration: rawSplitMessage,
+              previousState: gmStateRef.current,
+              parsedState: newGmState,
+            });
+            if (autoMarked.length > 0) {
+              console.debug(`[gm-state] auto-migrated ingredients to used: ${autoMarked.join(", ")}`);
+            }
+            if (repeatedIngredients.length > 0) {
+              console.debug(`[gm-state] GM re-introduced already-used ingredients: ${repeatedIngredients.join(", ")}`);
+            }
+            repeatedIngredientsRef.current = repeatedIngredients;
+            gmStateRef.current = reconciled;
+            setGmState(reconciled);
+          }
 
           const roomUpdate = parseRoomUpdate(directives);
           if (roomUpdate) {
@@ -1015,7 +1044,7 @@ export function useHostRound({
       setTypingUsers([]);
       setCurrentSpeakerId(null);
       const isAbort = error instanceof DOMException && error.name === "AbortError";
-      const is402 = error instanceof Error && (error.message === "CREDITS_EXHAUSTED" || (error as any).status === 402);
+      const is402 = error instanceof Error && (error.message === "CREDITS_EXHAUSTED" || (error as Error & { status?: number }).status === 402);
       if (is402) {
         console.warn("Credits exhausted during AI player speak");
         setCreditsExhausted(true);

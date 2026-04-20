@@ -1,4 +1,5 @@
 import { withDefaults } from "./types";
+import { RPG_RESOLUTION_RULES, RPG_RESOLUTION_RULES_PLAYER_FACING } from "@/lib/rpg/resolution";
 
 export const rpgDungeon = withDefaults({
   id: "rpg-dungeon",
@@ -30,10 +31,9 @@ CLASSES:
 - Healer: Medium HP (85). Restores HP to allies. Can revive knocked-out players.
 
 COMBAT:
-- Turn-based. Each player picks an action per turn (Attack, Defend, Cast Spell, etc.).
-- Resolution: virtual d20 + relevant stat (ATK / INT / DEX). 11+ on the modified roll = hit. Higher rolls land cleaner narration. DEF reduces incoming damage.
+${RPG_RESOLUTION_RULES_PLAYER_FACING}
 - Defend halves incoming damage for one round.
-- Knocked out at 0 HP — the player can still spectate and call out advice while down. Healer can revive with 30 HP. The party only loses if EVERYONE is at 0 HP at once.
+- Healer can revive a knocked-out party member with 30 HP.
 
 EXPLORATION:
 - Party moves room to room. Players can Search, Open doors/chests, or Disarm Traps.
@@ -63,16 +63,11 @@ ROUND STRUCTURE:
 - Use PHASE: to set the current phase. During combat use "Combat — [enemy name]". Between rooms use "Exploration — Room N" or "Rest — Camp".
 - After each room, briefly describe what the party finds and transition.
 
-COMBAT RULES (must match the global d20+stat model — do NOT invent ATK-vs-DEF math):
-- When combat begins, describe the enemies and their threat level.
-- Each player picks an action. After all actions are in, resolve the round:
-  - For each attacking player, roll a virtual d20 + relevant stat modifier (ATK for melee, INT for magic, DEX for ranged/sneak). 11+ on the modified roll = hit. Crit on natural 20.
-  - Higher rolls = stronger narration. DEF reduces incoming damage taken.
-  - Enemies attack back the same way. Distribute damage among players (vary targets).
-  - Update HP on player boards after each round using [BOARD:PlayerName].
-- When a player reaches 0 HP, narrate them being knocked out and set their board HP to 0/MAX with a "**Status:** Knocked out" line. DO NOT use the ELIMINATE: directive — this is co-op and the player is meant to be revivable.
-- Healer can spend a turn to revive a knocked-out party member to 30 HP. Update the board to clear "Knocked out" once revived.
-- Only narrate a true defeat (and emit GAME_OVER) when EVERY party member is at 0 HP simultaneously.
+${RPG_RESOLUTION_RULES}
+- Update HP on each player's board with [BOARD:PlayerName] after every round.
+- Knockouts: narrate the fall, set board HP to 0/MAX with "**Status:** Knocked out". DO NOT use ELIMINATE: — this is co-op and players are revivable.
+- Healer revival: one full action restores a downed ally to 30 HP; clear the "Knocked out" status.
+- Only emit GAME_OVER when EVERY party member is at 0 HP simultaneously, OR when the dungeon boss is defeated.
 
 HP & BOARD TRACKING:
 - At game start, assign each player a class and initial HP on their board:
@@ -127,33 +122,16 @@ TONE: Epic, atmospheric, with moments of humor. Build tension before boss fights
     },
   },
 
+  // Universal fallback actions only. The GM emits class/phase-specific buttons
+  // dynamically via the `QUICK_ACTIONS:` directive (e.g. "Shield Bash | Disarm
+  // Trap | Search the chest | Go north → Cellar"), so the static set here is
+  // intentionally small — players don't get a fixed menu that ignores the
+  // current room state.
   quickActions: [
-    // Combat actions — available to all
     { label: "Attack", template: "I attack the enemy with my weapon!", icon: "⚔️", phase: "combat", actionType: "attack" },
     { label: "Defend", template: "I raise my guard and defend this round.", icon: "🛡️", phase: "combat", actionType: "defend" },
-    { label: "Use Item", template: "I use a potion from my inventory.", icon: "🧪", phase: "combat", actionType: "use" },
-
-    // Combat — class-specific
-    { label: "Shield Bash", template: "I shield bash the enemy to stun them!", icon: "💥", phase: "combat", role: "warrior", actionType: "attack" },
-    { label: "Cast Spell", template: "I cast a spell at the enemy!", icon: "🔮", phase: "combat", role: "mage", actionType: "attack" },
-    { label: "Backstab", template: "I sneak behind the enemy and backstab!", icon: "🗡️", phase: "combat", role: "rogue", actionType: "attack" },
-    { label: "Heal Ally", template: "I cast a healing spell on {player}!", needsTarget: true, icon: "💚", phase: "combat", role: "healer", actionType: "support" },
-    { label: "Revive", template: "I revive {player} from unconsciousness!", needsTarget: true, icon: "✨", phase: "combat", role: "healer", actionType: "support" },
-
-    // Exploration actions
+    { label: "Use Item", template: "I use an item from my inventory.", icon: "🧪", actionType: "use" },
     { label: "Search", template: "I search the area for anything useful.", icon: "🔍", phase: "exploration", actionType: "investigate" },
-    { label: "Open Door", template: "I carefully open the door ahead.", icon: "🚪", phase: "exploration", actionType: "move" },
-    { label: "Disarm Trap", template: "I check for traps and try to disarm them.", icon: "⚙️", phase: "exploration", role: "rogue", actionType: "use" },
-    { label: "Detect Magic", template: "I cast Detect Magic to sense hidden enchantments.", icon: "👁️", phase: "exploration", role: "mage", actionType: "investigate" },
-    { label: "Scout Ahead", template: "I sneak ahead to scout the next room.", icon: "🦊", phase: "exploration", role: "rogue", actionType: "investigate" },
-
-    // Rest actions
-    { label: "Rest & Heal", template: "I rest and tend to my wounds.", icon: "🏕️", phase: "rest", actionType: "meta" },
-    { label: "Check Inventory", template: "I check my inventory and equipment.", icon: "🎒", phase: "rest", actionType: "meta" },
-    { label: "Trade", template: "I want to trade items with {player}.", needsTarget: true, icon: "🤝", phase: "rest", actionType: "support" },
-    { label: "Heal party", template: "I spend time healing {player}'s wounds.", needsTarget: true, icon: "💚", phase: "rest", role: "healer", actionType: "support" },
-
-    // Always available
     { label: "Inspect", template: "I look around and inspect my surroundings.", icon: "👀", actionType: "investigate" },
   ],
 

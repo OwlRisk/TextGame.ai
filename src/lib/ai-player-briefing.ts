@@ -67,12 +67,56 @@ const BRIEFING_I18N: Record<string, Record<BriefingKey, string>> = {
     openIntent: "- 保持角色感，用一个明确的意图推进剧情。",
     yourRole: "- 你这局的角色：",
   },
+  ja: {
+    header: "GM ブリーフィング:",
+    speakLikePlayer: "- 卓上のプレイヤーらしく話す。ナレーター調は禁止。",
+    concreteContribution: "- 毎ターン、具体的な進行（読み・追求・質問・反応）を1つ。",
+    hiddenSide: "- 君は隠匿陣営: 紛れ込み、誘導しすぎず、絶対に正体を明かさない。",
+    hiddenSideReason: "- 後で破綻しない、もっともらしい理由を選ぶ。",
+    townSide: "- 君は市民側に近い: 曖昧な発言者には具体的な観察で詰める。",
+    townSideReason: "- 投票理由は明快かつ簡潔に。漠然とした疑念だけで濁さない。",
+    undercover: "- 君は潜伏側: ヒントは広めに、皆の言い回しに寄せ、過度に具体化しない。",
+    civilian: "- 君は市民側: 露骨でない有用なヒントを出し、口調が浮いた者を指摘する。",
+    secretWord: "- 今回の合言葉:",
+    quizTempo: "- クイズのテンポ重視: 短い回答+簡潔な理由+一言の反応。",
+    quizYesNo: "- Yes/No 質問を1つだけ、または確信があれば最終回答を出す。",
+    quizBuildOnClues: "- 確定済みヒントだけを足場に。既出質問は繰り返さない。",
+    cooperative: "- 共通目標に向けて協力。毎ターン行動か観察を1つ提案。",
+    buildOnFindings: "- 仲間の発見の上に積む。判明済みのヒントは繰り返さない。",
+    partyEnergy: "- 高めのテンションで遊び心を維持。他の発言にしっかり反応する。",
+    partySpontaneous: "- 即興で。意外性は反復に勝る。",
+    openIntent: "- 役柄を保ち、明確な意図でシーンを前に進める。",
+    yourRole: "- 今回の君の役:",
+  },
+  ko: {
+    header: "GM 브리핑:",
+    speakLikePlayer: "- 식탁의 플레이어처럼 말하라. 나레이터 톤 금지.",
+    concreteContribution: "- 매 턴 구체적인 진행(읽기·추궁·질문·반응) 한 가지를 더하라.",
+    hiddenSide: "- 너는 은닉 진영: 묻혀가고, 과하게 이끌지 말고, 절대 정체를 밝히지 마라.",
+    hiddenSideReason: "- 나중에 무너지지 않을, 그럴듯한 이유를 들어라.",
+    townSide: "- 너는 시민 쪽일 가능성이 크다: 모호한 발언자에게 구체적 관찰로 압박하라.",
+    townSideReason: "- 투표 논리는 명확하고 간결하게. 막연한 의심으로 메우지 마라.",
+    undercover: "- 너는 잠입자: 단서는 넓게, 다수의 표현을 따라가고, 너무 구체적으로 말하지 마라.",
+    civilian: "- 너는 시민 쪽: 노골적이지 않은 유용한 단서를 주고, 톤이 어긋난 자를 지적하라.",
+    secretWord: "- 이번 라운드의 비밀어:",
+    quizTempo: "- 퀴즈 템포 유지: 짧은 답 + 간결한 이유 + 짧은 반응.",
+    quizYesNo: "- Yes/No 질문 한 개만 하거나, 확신이 있으면 최종 답을 내라.",
+    quizBuildOnClues: "- 확정된 단서로만 진전하고, 이미 나온 질문은 절대 반복하지 마라.",
+    cooperative: "- 공동 목표를 향해 협력. 매 턴 행동 또는 관찰 하나를 제안.",
+    buildOnFindings: "- 동료가 찾은 것 위에 쌓아 올려라. 이미 알려진 단서는 반복하지 마라.",
+    partyEnergy: "- 텐션을 높게 유지. 상대 발언에 또렷이 반응하라.",
+    partySpontaneous: "- 즉흥적으로. 의외성이 반복을 이긴다.",
+    openIntent: "- 캐릭터를 유지하고 분명한 의도 하나로 장면을 진전시켜라.",
+    yourRole: "- 이번 라운드의 네 역할:",
+  },
 };
 
 function pickLocale(code?: string): keyof typeof BRIEFING_I18N {
   if (!code) return "en";
   const lc = code.toLowerCase();
   if (lc.startsWith("zh")) return "zh";
+  if (lc.startsWith("ja")) return "ja";
+  if (lc.startsWith("ko")) return "ko";
   return "en";
 }
 

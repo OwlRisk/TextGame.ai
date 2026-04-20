@@ -201,7 +201,10 @@ describe("GM prompt: mid-game new player handling", () => {
 
   it("host prompt tells GM to narrate new player arrival in-character", () => {
     const output = buildHostSystemPrompt(defaultOpts());
-    expect(output).toContain("Narrate their arrival naturally in-character");
+    // Wording was tightened in the shared-prompt refactor; the behavioural
+    // assertion is that the GM is instructed to narrate the arrival in-character
+    // when a NEW_PLAYER_JOINED event appears.
+    expect(output).toMatch(/narrate.*arrival.*in-character/i);
   });
 });
 

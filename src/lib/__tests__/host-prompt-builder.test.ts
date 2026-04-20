@@ -117,7 +117,10 @@ describe("buildHostSystemPrompt", () => {
       const opts = defaultOpts({ hasVotingPhase: true });
       const output = buildHostSystemPrompt(opts);
       expect(output).toContain("VOTING:");
-      expect(output).toContain("List ALL eligible AI players");
+      // Wording note: VOTING block tells the GM to list every eligible AI player
+      // plus the human in one NEXT_SPEAKER. Phrasing was tightened in the
+      // shared-prompt refactor; we still assert on the imperative.
+      expect(output).toMatch(/list ALL eligible AI/i);
     });
 
     it("when hasVotingPhase is false: does NOT include VOTING section", () => {
@@ -231,10 +234,14 @@ describe("buildHostSystemPrompt", () => {
       expect(output).toContain("---");
     });
 
-    it("contains ACTIVE NARRATION section", () => {
+    it("contains a NARRATIVE VOICE / drama section", () => {
       const opts = defaultOpts();
       const output = buildHostSystemPrompt(opts);
-      expect(output).toContain("**ACTIVE NARRATION");
+      // After the shared-prompt refactor, the explicit "**ACTIVE NARRATION**"
+      // header is replaced by buildVoiceBlock() which always emits the
+      // "## NARRATIVE VOICE" heading and a DRAMA: <level> line.
+      expect(output).toContain("## NARRATIVE VOICE");
+      expect(output).toMatch(/DRAMA: (HIGH|MEDIUM|LOW)/);
     });
 
     it("contains DIRECTIVES section heading", () => {

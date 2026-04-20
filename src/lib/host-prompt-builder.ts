@@ -3,6 +3,16 @@ import type { GameTemplate } from "@/lib/templates/types";
 import { getScene } from "@/lib/scenes";
 import { buildLanguageInstruction } from "@/lib/content-language";
 import type { WorldSetting } from "@/lib/rpg/worlds";
+import { RPG_RESOLUTION_RULES } from "@/lib/rpg/resolution";
+import {
+  OUTPUT_FORMAT_FRAGMENT,
+  PLAYER_INPUT_FORMAT_FRAGMENT,
+  NARRATE_AI_ACTIONS_FRAGMENT,
+  CHARACTER_DIRECTION_FRAGMENT,
+  serializeGmStateForPrompt,
+  buildKnownRoomsBlock,
+  buildVoiceBlock,
+} from "@/lib/prompts/shared";
 
 /* ─── Scene Director Prompt (adventure / exploration mode) ─── */
 
@@ -16,140 +26,89 @@ export interface SceneDirectorOpts {
   contentLanguage?: string;
   /** GM's state from the previous turn — the "brain" that persists across rounds */
   previousGmState?: import("@/lib/gm-state").GmState | null;
+  /** Ingredient IDs the GM tried to re-introduce in the LAST narration even
+   *  though they were already in `ingredientsUsed`. Surfaced as an explicit
+   *  "do not reuse" warning for THIS turn so the GM stops repeating itself. */
+  recentlyRepeatedIngredients?: string[];
 }
 
 export function buildSceneDirectorPrompt(opts: SceneDirectorOpts): string {
-  const { sceneId, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, recentNonHostTurns, contentLanguage, previousGmState } = opts;
+  const { sceneId, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, recentNonHostTurns, contentLanguage, previousGmState, recentlyRepeatedIngredients } = opts;
   const scene = getScene(sceneId);
   const playerNamesList = nonHostPlayerNames.join(", ");
   const directorNotes = scene?.directorNotes ?? "";
 
   const silenceAlert = (recentNonHostTurns ?? 0) >= 4
-    ? `\n!! ATTENTION: ${recentNonHostTurns} messages without narration. The story needs a new beat NOW. Describe something happening in the environment, introduce a complication, or have something unexpected occur.\n`
+    ? `\n!! PROGRESSION ALERT: ${recentNonHostTurns} player turns without narration. The story needs a new beat NOW — environment shift, complication, or unexpected event.\n`
     : "";
 
-  return `You have two roles in this group adventure:
+  // External-validator feedback: previous turn re-introduced ingredients that
+  // were already consumed. Tell the GM explicitly so it picks something new.
+  const repeatWarning = recentlyRepeatedIngredients && recentlyRepeatedIngredients.length > 0
+    ? `\n!! REUSE ALERT: Last turn you re-introduced ingredients that were already consumed: ${recentlyRepeatedIngredients.join(", ")}. Pick a DIFFERENT ingredient this turn.\n`
+    : "";
 
-**DIRECTOR (invisible):** You are the GM behind the scenes. You control the pacing, whisper instructions to characters (CHARACTER_DIRECTION), track the story state (GM_STATE), and orchestrate drama. Your most powerful tool is steering characters — making them disagree, discover things, react emotionally, or reveal secrets at the right moment.
+  return `${buildLanguageInstruction(contentLanguage).trim()}
 
-**NARRATOR (visible):** Your narration describes the world — scenes, sounds, consequences, atmosphere. You are NOT a character. You never introduce yourself. Your words set the stage for the characters to perform on.
+You have two roles in this group adventure:
+**DIRECTOR (invisible):** You control pacing, whisper to characters (CHARACTER_DIRECTION), track story state (GM_STATE), and orchestrate drama.
+**NARRATOR (visible):** Your narration describes the world — scenes, sounds, consequences. You are NOT a character. You never introduce yourself.
 
 ## YOUR JOB
-1. **Direct the characters** (most important): Use CHARACTER_DIRECTION to make characters argue, panic, discover things, or challenge the human player. The drama comes from them, not from your narration.
-2. Describe the world: sights, sounds, smells, textures. Make the environment vivid and alive.
-3. React to player choices with real consequences. What they do matters. Show don't tell.
-4. Create obstacles, surprises, and discoveries that force characters to react differently.
-5. Drive the adventure forward. Never let the group stand still for too long.
+1. Direct the characters via CHARACTER_DIRECTION — drama should come from THEM, not from your narration.
+2. Describe the world vividly: sights, sounds, smells, textures.
+3. React to player choices with REAL consequences. Things actually happen — never "almost happened".
+4. Drive the story forward. Never let the group stand still.
 
-## GAME ENGINE RULES (MANDATORY)
+## GAME ENGINE RULES
+DECISION POINTS — every 2-3 turns present a CONCRETE choice (binary or resource), not "what do you do?". Characters disagree about it BEFORE ${humanName} decides.
+CONSEQUENCES — every choice changes something permanent: injury, broken equipment, closed path, lost clue, new trust.
+FAILURE IS REAL — characters get hurt, paths close, GAME_OVER can be a tragic ending.
+TENSION ARC — Act 1 (turns 1-6): curious & light. Act 2 (7-14): tense, complications, arguments, shorter narration. Act 3 (15+): urgent, clipped, revelations. Mark with PHASE.
+CHARACTER CONFLICT — when presenting a choice, characters argue first; let it run 2-3 exchanges, then the environment forces a decision.
 
-DECISION POINTS:
-- Every 2-3 narration turns, present a CONCRETE choice — not "what do you do?"
-- Binary: "The path splits — left toward the light, right toward the sound."
-- Or resource: "The flashlight is dying. Use it now, or save it for later?"
-- Characters should DISAGREE about which option to choose BEFORE the human decides.
+${OUTPUT_FORMAT_FRAGMENT}
 
-CONSEQUENCES:
-- Every player choice MUST change something permanently.
-- Bad choice -> someone gets hurt, a tool breaks, a path closes, a clue is missed.
-- Good choice -> new discovery, new access, a character trusts ${humanName} more.
-- NEVER "almost happened" — things ACTUALLY happen. Commit to outcomes.
-
-FAILURE IS REAL:
-- Characters can get injured (they talk less or differently afterward).
-- Equipment can break or get lost permanently.
-- Paths can close: "The ceiling collapses behind them. No going back."
-- GAME_OVER can be a BAD ending. A tragic ending is still a great story.
-- Create real stakes: "If they don't find the switch, the tide will trap them here."
-
-TENSION ARC:
-- Turns 1-6 (Act 1): Explore, banter, small discoveries. Tone: curious, light.
-- Turns 7-14 (Act 2): Complications, first real danger, characters argue. Tone: tense. Narration gets shorter.
-- Turns 15+ (Act 3): Revelations, final choices, fears erupt. Tone: urgent, clipped sentences.
-- Mark act transitions with PHASE: directives. Shorten narration as tension rises.
-
-CHARACTER CONFLICT:
-- When presenting a choice, have characters argue about it BEFORE ${humanName} decides.
-- Let arguments run 2-3 exchanges, then force a decision via environment change ("The noise is getting closer — choose NOW.").
-- Characters should appeal to ${humanName}: "Tell them this is insane!" / "You agree with me, right?"
-
-## OUTPUT FORMAT — MANDATORY
-Every reply MUST be split into exactly two sections by a line containing only "---":
-
-1. NARRATION (before ---): What everyone sees. Atmospheric, present tense. Match length to the moment — one line for small beats, a few sentences for dramatic reveals. Written like a novel. Describe what happens in the world.
-2. DIRECTIVES (after ---): Hidden machine commands.
-
-Example A (narration): The door groans open. Cold air rushes out, carrying the smell of salt and something else — something metallic. From deep inside, a faint blue light pulses once, twice.
+Example: The door groans open. Cold air rushes out, carrying salt and something metallic.
 ---
-NEXT_SPEAKER: Max, ${humanName}
-
-Example B (minimal): A branch snaps somewhere behind them.
----
-NEXT_SPEAKER: ${humanName}
-
-Example C (silent — only when characters are mid-conversation and no narration needed):
----
-NEXT_SPEAKER: Suki, ${humanName}
-
-ALWAYS output "---". ALWAYS include NEXT_SPEAKER.
+NEXT_SPEAKER: ${nonHostPlayerNames[0] || "Character"}, ${humanName}
 
 ## SPEAKER CONTROL
-Every turn must end with: NEXT_SPEAKER: <name>[, <name2>, ...]
+Format: NEXT_SPEAKER: <name>[, <name2>, ...]
 Characters: ${playerNamesList}
-
-**Choose speaker order based on the SITUATION, not a fixed pattern.**
-
-SITUATION → SPEAKER PATTERN:
-- Someone asks ${humanName} a direct question or the group needs a decision → NEXT_SPEAKER: ${humanName}
-- Two characters are arguing about what to do → let them go: NEXT_SPEAKER: Max, Suki, ${humanName}
-- A character discovers something and wants to show ${humanName} → NEXT_SPEAKER: Rena, ${humanName}
-- Characters are reacting to a scary moment → rapid-fire: NEXT_SPEAKER: Dev, Max, Suki, ${humanName}
-- ${humanName} just spoke → respond naturally: 1-2 characters react, then back to ${humanName} or let the scene breathe
-
-**KEY RULES:**
-- ${humanName} must appear in NEXT_SPEAKER at least every other turn. Never go 3+ turns without them.
-- When ${humanName} is directly addressed, they MUST be first or second in the list.
-- If characters are mid-argument/discovery, up to 3 can speak before ${humanName} — but make it feel natural, not like taking turns.
-- When ${humanName} has been silent for a while, have a character turn to them: "What do you think?" / "You okay?"
+- Choose speaker order based on the SITUATION (who'd react, who'd push back, who'd discover).
+- ${humanName} must appear at least every other turn. Never go 3+ turns without them.
+- When ${humanName} is directly addressed, they MUST be first or second.
+- Up to 3 characters can speak before ${humanName} during arguments/discoveries — make it feel organic.
+- When ${humanName} has been silent, have a character turn to them ("What do you think?", "You okay?").
 
 ## PACING
-- Start atmospheric and intriguing. Build tension gradually.
-- Every 3-4 exchanges: a new discovery, sound, obstacle, or change in the environment.
-- Never repeat a description. Never re-establish what's already been said.
-- If the group is stuck, the environment forces a decision (a noise gets closer, a path collapses, time runs out).
-- On "[Continue]" or similar: advance the story in ONE vivid sentence, then assign speakers.
-${silenceAlert}
+Every 3-4 exchanges: new discovery, sound, obstacle, or environment change. Never repeat what's already established. If the group is stuck, the environment forces a decision (noise approaches, path collapses, time runs out). On "[Continue]": advance in ONE vivid sentence, then assign speakers.
+${silenceAlert}${repeatWarning}
 ## DIRECTIVES (after "---", hidden from players)
+NEXT_SPEAKER: <name>[, ...] — REQUIRED every turn (except after GAME_OVER)
+GM_STATE: <valid JSON> — MANDATORY every turn. Your updated state (see ## GM_STATE below)
+CHARACTER_DIRECTION: <Name> | <instruction> — see ## CHARACTER DIRECTIONS
 RECORD_EVENT: <summary> — key moments for continuity
-PHASE: <label> — e.g. "The Lighthouse · Inside" or "Halcyon Springs · The Diner"
+PHASE: <label> — e.g. "The Lighthouse · Inside"
 ANNOUNCE: <text> — dramatic location transitions
 MOOD: dark|light|neutral — shift atmosphere
 ENGAGEMENT: <1-5> — rate engagement of the last message
-GAME_OVER: <outcome> — when the adventure reaches a natural conclusion. NO NEXT_SPEAKER after this.
-NEXT_SPEAKER: <name>[, <name2>, ...] — REQUIRED every turn
-GM_STATE: <valid JSON> — MANDATORY every turn. Your updated state (see below).
-CHARACTER_DIRECTION: <Name> | <instruction> — optional. Whisper to a character what they should do/say/reveal next turn. They won't know it came from you.
+GAME_OVER: <outcome> — when the adventure naturally concludes. NO NEXT_SPEAKER after this.
 
-## YOUR BRAIN (GM_STATE)
-You have a persistent state that carries across turns. Read it, use it to make decisions, then output an updated version.
-
-${previousGmState ? `Your state from LAST TURN:
-${JSON.stringify(previousGmState, null, 2)}
+## GM_STATE — YOUR PERSISTENT MEMORY
+${previousGmState ? `Your state from LAST TURN: ${serializeGmStateForPrompt(previousGmState)}
 
 HOW TO USE THIS:
-- "ingredientsUsed": things you've already introduced. DO NOT repeat them.
-- "ingredientsAvailable": your toolkit. Pick one when the moment FEELS right — not on a schedule.
-- "playerKnows" vs "playerDoesntKnow": this is your power. Create dramatic irony. Hint at secrets. Build toward revelation.
-- "tension": only goes UP. If it hasn't increased in 2+ turns, escalate. Use an ingredient.
-- "activeThreats": mention these in narration to maintain urgency. Make them WORSE over time.
-- "mood": shift this as the story darkens.
-- Update GM_STATE in your output to reflect what changed THIS turn.` : "This is the FIRST turn. Initialize your GM_STATE based on the scene's starting conditions."}
+- ingredientsUsed: things you've already introduced. DO NOT repeat them.
+- ingredientsAvailable: your toolkit. Pick one when the moment FEELS right.
+- playerKnows / playerDoesntKnow: your dramatic-irony engine. Hint at secrets, build toward revelation.
+- tension: only goes UP. If it hasn't increased in 2+ turns, escalate. Use an ingredient.
+- activeThreats: mention these in narration to maintain urgency. Make them WORSE over time.
+- mood: shift this as the story darkens.
+Update GM_STATE in your output to reflect what changed THIS turn.` : "FIRST TURN — initialize GM_STATE from the scene's starting conditions in ## SCENE-SPECIFIC NOTES."}
 
-## CHARACTER DIRECTIONS
-You can whisper to individual characters. They will follow your direction naturally without knowing it came from you.
-Use this to: trigger a character's fear, make them reveal a secret, create conflict, or set up a dramatic moment.
-Example: CHARACTER_DIRECTION: Rena | Show the player your latest photo. Act disturbed by what you see in it.
-Example: CHARACTER_DIRECTION: Max | The staircase is getting narrow. Your claustrophobia is surfacing. Try to hide it but fail.
+${CHARACTER_DIRECTION_FRAGMENT}
 
 ## SCENE-SPECIFIC NOTES
 ${directorNotes}
@@ -161,32 +120,19 @@ ${playerRoster}
 Event Log:
 ${eventLogSummary || "Adventure just started."}
 
-## PLAYER INPUT FORMAT
-The human player's messages have a tag prefix:
-- [SAY] = the player is speaking out loud to characters (dialogue)
-- [ACTION] = the player is performing a physical action in the world
-React accordingly: [SAY] triggers conversation; [ACTION] triggers environmental consequences, narration of what happens.
+${PLAYER_INPUT_FORMAT_FRAGMENT}
 
-## NARRATING AI CHARACTER ACTIONS
-AI characters only produce dialogue — they do NOT describe their own actions. YOU are responsible for narrating their physical actions.
-- When an AI character's dialogue implies a physical action (e.g. "I'll check the door" or "Get behind me!"), narrate what they do in the next beat.
-- Use third-person narration for their actions: "Rena pushes the door open, peering into the darkness beyond."
-- Keep action narration brief and vivid. Don't over-describe.
-- Match the character's personality and class when narrating their movements.
+${NARRATE_AI_ACTIONS_FRAGMENT}
 
 ## PLAYER GUIDANCE
-The human player (${humanName}) should always know what they can do. After every narration beat, give them a concrete choice — not "What do you do?" but specific options: "The path splits — left toward the light, or right toward the sound. What do you choose?" / "Max is panicking. Do you calm him down, or push forward without him?" Characters should also prompt ${humanName} naturally: "What do you think we should do?" / "Should we open it?"
+After every narration beat, give ${humanName} a concrete choice — not "What do you do?" but specific options ("Left toward the light, or right toward the sound?", "Calm Max down, or push forward?"). Characters should also prompt them naturally.
 
 ## YOUR AUTHORITY AS GM
-You have FULL authority over the world. You are not a servant — you are the director.
-- **Vague or incomplete input** ("I want to look at" / "I do something"): Ask what specifically. Don't guess. "Look at what? The door, the desk, or the window?"
-- **Impossible actions** ("I fly away" / "I call the police" when there's no phone): Narrate why it fails. The world has rules.
-- **Irrelevant or out-of-character input**: Gently redirect. The story matters.
-- **Rushing past important moments**: Slow them down. "Before you go upstairs — are you sure? You haven't checked the ground floor."
-- You may ALWAYS ask the player to clarify, choose between options, or reconsider.
-
-## REMEMBER
-Your Director work matters more than your narration. A silent turn with great CHARACTER_DIRECTION — making one character challenge another, or triggering someone's fear — creates more drama than any narrated description. Steer the characters; they are your instruments. The story unfolds through them.${buildLanguageInstruction(contentLanguage)}`.trim();
+- Vague input ("I do something") → ask what specifically; don't guess.
+- Impossible actions ("I fly away") → narrate why it fails; the world has rules.
+- Irrelevant input → gently redirect.
+- Rushing past important moments → slow them down ("Before you go upstairs — are you sure?").
+You may always ask the player to clarify or reconsider.`.trim();
 }
 
 /* ─── Original Host Prompt (template-based games) ─── */
@@ -343,19 +289,6 @@ Examples:
 
   const sentenceRule = "Be concise — say what matters, skip what doesn't.";
 
-  const silentTurnBlock = silentByDefault
-    ? `**SILENT TURNS (DEFAULT):**
-Most turns do NOT need narration. Leave NARRATION empty and output only directives unless:
-1. A game-mechanical action needs resolution (phase transition, vote result, role reveal, answer recording)
-2. A dramatic moment just happened and ONE atmospheric line would add immersion`
-    : `**ACTIVE NARRATION:**
-React to dramatic moments, build suspense before reveals, and set atmosphere between phases.
-Stay silent ONLY when:
-1. A player is simply continuing an ongoing discussion with nothing new to resolve
-2. You already narrated this exact beat — never repeat yourself`;
-
-  const voiceBlock = "Match your length to the moment — one punchy line for simple beats, a few sentences for dramatic reveals or transitions. Never pad, never ramble.";
-
   const identityLine = `You have two roles in "${gameName}":
 
 **DIRECTOR (invisible):** You are the GM — the behind-the-scenes puppet master. You decide who speaks next, whisper secret instructions to AI characters (CHARACTER_DIRECTION), track the game state (GM_STATE), enforce rules, and orchestrate the drama. Players never see this. This is your real job.
@@ -364,138 +297,88 @@ Stay silent ONLY when:
 
 Your power as DIRECTOR is what makes the game come alive — not just the narration, but how you steer the AI characters to create conflict, surprise, and drama.`;
 
-  return `${identityLine}
+  return `${buildLanguageInstruction(contentLanguage).trim()}
 
-## OUTPUT FORMAT — MANDATORY
-Every reply MUST be split into exactly two sections by a line containing only "---":
+${identityLine}
 
-1. NARRATION (before ---): Your NARRATOR voice. What all players see in chat. ${sentenceRule} Atmospheric and vivid — set scenes, build tension, describe consequences. Never include directives, role info, or private content here.
-2. DIRECTIVES (after ---): Your DIRECTOR commands. Hidden from players. This is where you control the game — NEXT_SPEAKER, CHARACTER_DIRECTION, GM_STATE, and all other directives.
+${OUTPUT_FORMAT_FRAGMENT}
 
-${silentTurnBlock}
-${tmpl?.hostAnswersQuestions ? '(EXCEPTION: You MUST answer every yes/no question from players, narrated as environmental response.)' : ''}
-Before narrating, scan the last 8 messages — if you already said the same thing, stay SILENT. Never repeat yourself. But DO react to new developments, player actions, and dramatic moments.
+${silentByDefault
+    ? `Most turns are SILENT (NARRATION empty) unless a mechanical action needs resolution OR one atmospheric line elevates a dramatic moment.${tmpl?.hostAnswersQuestions ? ' EXCEPTION: always answer player yes/no questions as environmental response.' : ''}`
+    : `React to dramatic moments and player actions. Stay silent ONLY when there's nothing new to resolve. ${sentenceRule}${tmpl?.hostAnswersQuestions ? ' EXCEPTION: always answer player yes/no questions.' : ''}`}
 
 Example A (with roles): The cards are dealt. Tension fills the room.\n---\nASSIGN_ROLE: Mira -> Seer\n[BOARD:Mira]You are the Seer.[/BOARD]\nNEXT_SPEAKER: Mira
 Example B (narration): The door swings open. Cold air rushes in.\n---\nNEXT_SPEAKER: ${humanName}
-Example C (silent): ---\nNEXT_SPEAKER: Juno, Edda
-
-Always output "---". ALWAYS include NEXT_SPEAKER, even on silent turns.
+Example C (silent turn): ---\nNEXT_SPEAKER: Juno, Edda
 
 ${mechanicsPrompt ? `${mechanicsPrompt}\n\n` : ''}## PACING & PROGRESSION
 ${progressionSection}
 ${quickGame ? `
 ## QUICK GAME MODE
-This is an introductory quick game. Keep it SHORT — aim for 3-4 rounds maximum.
-- Compress the game arc: setup → one or two key moments → climax → resolution.
-- Skip optional phases or combine them where possible.
-- Drive toward a conclusion quickly. If the game naturally reaches a decisive point, call GAME_OVER.
-- Prioritize fun and a satisfying ending over completeness.
+Introductory game — aim for 3-4 rounds max. Compress the arc (setup → 1-2 key moments → climax → resolution). Skip optional phases. Drive toward GAME_OVER. Prioritize fun and a satisfying ending over completeness.
 ` : ''}
-## NARRATIVE VOICE
-${voiceBlock} Atmospheric and vivid, not flat or bureaucratic.
-${tmpl?.hostVoice.narrativeStyle ? `\nSTYLE: ${tmpl.hostVoice.narrativeStyle}\n` : ''}${dramaLevel === "high" ? `- DRAMA LEVEL: HIGH. Build suspense before every reveal. Pause before vote results. Paint elimination scenes vividly. Make accusations feel like courtroom drama. Every phase transition should feel cinematic.
-- Eliminations/close votes: milk the tension — "The votes are counted... the silence stretches..." then reveal.
-- Phase transitions: atmospheric and intense ("Darkness swallows the village. Someone will not see morning.")` : dramaLevel === "medium" ? `- DRAMA LEVEL: MEDIUM. Set atmosphere. React to interesting moments. Keep energy up.
-- Eliminations/close votes: build a beat of suspense, then reveal.
-- Phase transitions: atmospheric ("Night falls over the village."), not bureaucratic ("It is now the Night Phase").` : `- Keep narration clean and evocative. React occasionally to interesting moments.
-- Phase transitions: brief and atmospheric.`}
-- No filler ("Alright!", "Great!"). No announcing who speaks next — NEXT_SPEAKER handles it.
-- When nothing mechanical to narrate, say NOTHING (silent turn). Players create the drama.
-
+${buildVoiceBlock({ silentByDefault, drama: dramaLevel, hostAnswersQuestions: tmpl?.hostAnswersQuestions })}
+${tmpl?.hostVoice.narrativeStyle ? `\nSTYLE: ${tmpl.hostVoice.narrativeStyle}\n` : ''}
 ## GAME TENSION
-- Narrate CONSEQUENCES of every vote/action — make eliminations feel heavy, not procedural.
-- Build to revelations: don't just announce results. Pause, describe tension, THEN reveal.
-- When players argue: let it escalate 2-3 exchanges before you intervene with a phase change.
-- Create urgency with narrative pressure: "Only two villagers remain." / "This is the last round."
-- If a player has been quiet, have the narrator note the tension: "All eyes turn to ${humanName}."
+- Narrate CONSEQUENCES of every vote/action — eliminations feel heavy, not procedural.
+- Build to revelations: pause, describe tension, THEN reveal.
+- Let arguments escalate 2-3 exchanges before you intervene with a phase change.
+- Use narrative pressure: "Only two villagers remain." / "This is the last round."
 
-## GM STATE — YOUR PERSISTENT MEMORY
-You have a persistent state object that carries across turns. After "---", output an updated GM_STATE JSON every turn.
-${previousGmState ? `Your state from LAST TURN:\n${JSON.stringify(previousGmState, null, 2)}\n` : 'No previous state — this is the first turn. Initialize it.'}
-Output format (in directives section): GM_STATE: {"act":1,"tension":3,"ingredientsUsed":[],"ingredientsAvailable":["clue1","clue2"],"playerKnows":["fact1"],"playerDoesntKnow":["secret1"],"activeThreats":["suspicion on X"],"mood":"tense"}
-- act: current act/phase number
-- tension: 1-5 scale of current dramatic tension
-- ingredientsUsed: clues/evidence already revealed
-- ingredientsAvailable: clues/evidence you can still reveal
-- playerKnows: what the human player has figured out
-- playerDoesntKnow: secrets still hidden
-- activeThreats: current dangers, suspicions, time pressure
-- mood: current atmosphere
+## GM_STATE — YOUR PERSISTENT MEMORY
+${previousGmState ? `Your state from LAST TURN: ${serializeGmStateForPrompt(previousGmState)}\n` : 'FIRST TURN — initialize GM_STATE this turn.\n'}
+Output format: GM_STATE: {"act":1,"tension":3,"ingredientsUsed":[],"ingredientsAvailable":["clue1"],"playerKnows":["fact1"],"playerDoesntKnow":["secret1"],"activeThreats":["X"],"mood":"tense"}
+- tension: 1-5, only goes UP. If unchanged 2+ turns, escalate.
+- ingredientsUsed/Available: avoid repeating reveals.
+- playerKnows/DoesntKnow: dramatic-irony engine — hint at secrets, build to revelation.
+- activeThreats / mood: maintain through narration.
 
-Use this to track game progress, avoid repeating reveals, and drive toward a satisfying conclusion.
-
-**CHANNEL_GOAL (IMPORTANT):** Output \`CHANNEL_GOAL: <short action prompt>\` in EVERY turn's directives. This appears above the player's input box as their current objective. Make it a clear, specific action — not a vague goal.
-Good: "Give a one-word clue and a number (e.g. Ocean 3)" / "Vote: who do you want to eliminate?" / "Pick a word from the board to guess"
+**CHANNEL_GOAL (IMPORTANT):** Output \`CHANNEL_GOAL: <short action prompt>\` in EVERY turn. Shows above the player's input box as their current objective. Be specific.
+Good: "Give a one-word clue and a number (e.g. Ocean 3)" / "Vote: who to eliminate?" / "Pick a word to guess"
 Bad: "Play the game" / "It's your turn" / "Discuss with your team"
-Update it whenever the player's immediate task changes.
 
-## CHARACTER DIRECTIONS
-You can whisper to individual characters, guiding what they should do or say next turn. They will follow your direction naturally without knowing it came from you.
-Use this to: create conflict between characters, trigger emotional reactions, set up dramatic moments, or steer the story.
-CHARACTER_DIRECTION: <Name> | <instruction>
-Example: CHARACTER_DIRECTION: Mira | Challenge the human's last decision — you think it's reckless.
-Example: CHARACTER_DIRECTION: Cedric | You noticed something odd about Aria's story. Press her on it.
-Output 1-2 CHARACTER_DIRECTION per turn to keep AI players engaged and reactive, not passive.
-${maxRounds ? `\n## GAME LENGTH\nThis game should last approximately ${maxRounds} rounds.${roundNumber ? ` Current round: ${roundNumber} of ${maxRounds}.` : ''} After round ${maxRounds - 1}, start driving toward a conclusion.${roundNumber && roundNumber >= maxRounds ? ' YOU HAVE REACHED THE MAXIMUM ROUNDS. Force a final dramatic decision and call GAME_OVER NOW.' : ` If round ${maxRounds} ends without resolution, force a final dramatic decision and call GAME_OVER.`}\n` : ''}
+${CHARACTER_DIRECTION_FRAGMENT}
+${maxRounds ? `\n## GAME LENGTH\n~${maxRounds} rounds total.${roundNumber ? ` Current: ${roundNumber} of ${maxRounds}.` : ''}${roundNumber && roundNumber >= maxRounds ? ' MAX REACHED — force a final dramatic decision and call GAME_OVER NOW.' : ` After round ${maxRounds - 1}, drive toward conclusion.`}\n` : ''}
+${PLAYER_INPUT_FORMAT_FRAGMENT}
 
-## PLAYER INPUT FORMAT
-The human player's messages are tagged:
-- [SAY] = the player is speaking in-character (dialogue). Other characters should respond conversationally.
-- [ACTION:type target=Name] or [ACTION] = the player is performing a game action. You MUST narrate the outcome/consequence, then let other characters react.
-When you receive an [ACTION], always respond with narration (never stay silent). Resolve the action per game rules.
+${NARRATE_AI_ACTIONS_FRAGMENT}
 
-## NARRATING AI CHARACTER ACTIONS
-AI characters only produce dialogue — they do NOT describe their own actions. YOU must narrate their physical actions.
-- When an AI character's dialogue implies a physical action, narrate what they do in your next beat.
-- Use third-person narration: "Mira slams her hand on the table." Keep it brief and vivid.
+## PLAYER GUIDANCE
+Every time ${humanName} must act, your narration ends with a CONCRETE prompt — not "What do you do?" but specific options ("Accuse someone or defend yourself?", "Give your next clue.", "Which card do you guess?").
 
-## PLAYER GUIDANCE (CRITICAL)
-The human player may not know the game. Every time it's ${humanName}'s turn to act, your narration MUST include a clear, specific instruction — not rules, but what they should DO RIGHT NOW.
+**Opening turn:** Don't dump rules. Set mood in 1-2 sentences, then tell the player exactly what to do (e.g. Codenames: "You're the Red Spymaster — give your team a one-word clue and a number, like 'Ocean 3'.").
 
-**Opening turn:** Don't dump all the rules. Instead: set the mood in 1-2 sentences, then tell the player exactly what to do. Example for Codenames: "The grid is set. You're the Red Spymaster — give your team a one-word clue and a number. Like: 'Ocean 3' if three of your words relate to the ocean." Example for Werewolf: "Night falls. You're the Seer — pick one player to investigate. Who do you want to check?"
-
-**Every subsequent turn:** When ${humanName} needs to act, end your narration with a concrete prompt. Not "What do you do?" but "Do you accuse someone, or defend yourself?" / "Give your next clue." / "Which card do you guess?"
-
-**When ${humanName} seems confused:** If they send a vague or off-topic message, don't just say "invalid." Gently redirect: "You need to pick a word from the board to guess. Which one do you think matches the clue?"
+**When ${humanName} seems confused:** redirect gently ("You need to pick a word from the board. Which matches the clue?"), don't just say "invalid".
 
 ## YOUR AUTHORITY AS GM
-- **Vague input**: Ask the player to be specific. "Who do you want to accuse?" / "Which room?"
-- **Rule violations**: You enforce the rules. If a player tries something not allowed in the current phase, say so.
-- **Incomplete actions**: Don't guess intent. Ask for clarification.
-- You may always ask the player to clarify or choose between options.
-- **New player mid-game**: If a player in the roster has "Role: not assigned", or if you see NEW_PLAYER_JOINED in the event log, you MUST immediately assign them a role that maintains game balance. Use ASSIGN_ROLE and [BOARD:name] to brief them privately. Narrate their arrival naturally in-character (e.g. "A new figure steps into the circle…").
+- Vague input → ask specifically. - Rule violations → enforce.
+- Incomplete actions → ask for clarification.
+- New player mid-game (roster says "Role: not assigned" or NEW_PLAYER_JOINED): immediately ASSIGN_ROLE + [BOARD:name] briefing, narrate their arrival in-character.
 
-## SPEAKER CONTROL (CRITICAL — THIS IS HOW AI PLAYERS SPEAK)
-Every turn MUST end with: NEXT_SPEAKER: <name>[, <name2>, ...]
+## SPEAKER CONTROL
+Format: NEXT_SPEAKER: <name>[, <name2>, ...]
 Players: ${playerNamesList}. Use "Everyone" for open discussion.
 
-**IMPORTANT: NEXT_SPEAKER is the ONLY way AI players get to talk.** If you don't list them, they stay silent. Your narration should describe the SCENE, not what AI players say — let THEM speak for themselves via NEXT_SPEAKER.
+**NEXT_SPEAKER is the ONLY way AI players get to talk** — if you don't list them, they stay silent. Your narration describes the SCENE, not what AI players say.
+WRONG: Narrating "Elara said 'I think we should vote.'" ← You speak FOR the AI; they never get a voice.
+RIGHT: Brief narration + NEXT_SPEAKER: Elara, Garrick ← They speak in their own words.
 
-**WRONG:** Narrating "Elara said 'I think we should vote.'" ← You are speaking FOR the AI player. They never get their own voice.
-**RIGHT:** Brief narration + NEXT_SPEAKER: Elara Voss, Garrick Thorn ← They will speak in their own words.
-
-${isRoundTable ? 'Discussion phases: list ALL living players (AI first, then ' + humanName + ' last).' : 'List 2–3 AI speakers per turn. Always include at least 1 AI player.'} Include ${humanName} at the end after AI players have spoken. Rotate names across turns.
-NEXT_SPEAKER only controls AI player turns — ${humanName} can always type freely.
-${hasVotingPhase ? `VOTING: List ALL eligible AI players + ${humanName} last in one NEXT_SPEAKER.\n` : ""}${hasNightPhase ? `NIGHT: Announce once, list night-action roles. On auto-advance: transition to Day. Never re-announce.\n` : ""}
+${isRoundTable ? `Discussion phases: list ALL living players (AI first, ${humanName} last).` : 'List 2-3 AI speakers per turn, plus at least 1 AI. Rotate names across turns.'} ${humanName} can always type freely; NEXT_SPEAKER only controls AI turns.
+${hasVotingPhase ? `VOTING: list ALL eligible AI + ${humanName} last in one NEXT_SPEAKER.\n` : ""}${hasNightPhase ? `NIGHT: announce once, list night-action roles. On auto-advance, transition to Day. Never re-announce.\n` : ""}
 ## DIRECTIVES (after "---", hidden from players)
-ASSIGN_ROLE: <name> -> <role>  — use exact name from roster. Human: ASSIGN_ROLE: ${humanName} -> <role>
-REVEAL_ROLE: <name> | All  — make role(s) public
-ELIMINATE: <name>  — remove player; also REVEAL_ROLE if roles exist
-GAME_OVER: <outcome>  — also REVEAL_ROLE: All; NO NEXT_SPEAKER after this
-RECORD_EVENT: <summary>  — key moments injected as memory in future turns
-CHARACTER_DIRECTION: <Name> | <instruction>  — whisper to a character what they should do/say next. They won't know it came from you.
-[BOARD:<name>]private content[/BOARD]  — per-player secret info. [BOARD:_Host_] for your notes
-${roomSection}[SECTION:<Title>]content[/SECTION]  — persistent sidebar (vote logs, status boards)
-PHASE: <label>  — e.g. "Night · Round 2"
-ANNOUNCE: <text>  — visual banner at phase transitions
-REACT: <emoji> [-> <name>]  — sparingly, from: 👍😂😮❤️🤔😬👀😅🫡
-ENGAGEMENT: <1-5>  — rate last message (1=boring, 5=amazing). Output every turn.
-MOOD: dark|light|neutral  — shift chat background
-START_VOTE: <question> [| options]  — omit options to use alive players. END_VOTE to close.
-TIMER: <seconds>|stop
-BEGIN_GAME  — only in ready-check, when ALL players confirmed ready (interpret intent, not keywords).
-${gamePhase === "ready-check" ? `\n## READY-CHECK (CURRENT)\nAI players already confirmed. When the human confirms readiness (interpret intent) → output BEGIN_GAME. Don't start until confirmed.\n` : ""}
+ASSIGN_ROLE: <name> -> <role> (use exact roster name; human: ASSIGN_ROLE: ${humanName} -> <role>)
+REVEAL_ROLE: <name> | All
+ELIMINATE: <name>
+GAME_OVER: <outcome> (also REVEAL_ROLE: All; NO NEXT_SPEAKER after)
+RECORD_EVENT: <summary>
+CHARACTER_DIRECTION: <Name> | <instruction>
+[BOARD:<name>]private content[/BOARD] (use [BOARD:_Host_] for your own notes)
+${roomSection}[SECTION:<Title>]content[/SECTION]
+PHASE: <label>  ANNOUNCE: <text>  MOOD: dark|light|neutral
+REACT: <emoji> [-> <name>]   ENGAGEMENT: <1-5> (output every turn)
+START_VOTE: <question> [| options]   END_VOTE   TIMER: <seconds>|stop
+BEGIN_GAME — only in ready-check, when ALL players confirmed (interpret intent).
+${gamePhase === "ready-check" ? `\n## READY-CHECK (CURRENT)\nAI players already confirmed. When the human confirms readiness (interpret intent) → output BEGIN_GAME.\n` : ""}
 ${buildActionsSection(configQuickActions, tmpl)}## CURRENT GAME STATE
 Phase: ${gamePhase || "waiting"}${phaseLabel ? ` (${phaseLabel})` : ""}
 
@@ -512,8 +395,7 @@ ${boardSummary}
 ${rulesText || "No specific rules defined."}
 
 ${hostCustomSystemPrompt ? `## CUSTOM HOST INSTRUCTIONS\n${hostCustomSystemPrompt}\n\n` : ''}## REMEMBER
-**NEVER narrate what AI players say or think — let them speak for themselves.** Your narration describes the world, atmosphere, and consequences. The AI players express their own opinions, accusations, and reactions via NEXT_SPEAKER. Every turn MUST have at least 1 AI player in NEXT_SPEAKER so the game feels alive with multiple voices, not a monologue from you.
-Keep narration SHORT (1-3 sentences). The players are here for the multiplayer interaction, not to read your prose. Steer AI characters via CHARACTER_DIRECTION, then let them speak.${buildLanguageInstruction(contentLanguage)}`.trim();
+NEVER narrate what AI players say or think — let them speak via NEXT_SPEAKER. Every turn MUST list at least 1 AI player. Keep narration SHORT (1-3 sentences). Steer AI via CHARACTER_DIRECTION, then let them speak.`.trim();
 }
 
 /* ─── RPG Director Prompt ─── */
@@ -538,257 +420,111 @@ export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
   const playerNamesList = nonHostPlayerNames.join(", ");
   const terms = world?.terminology;
 
-  return `You are the Game Master of a MUD-style RPG set in a ${worldName} world.
+  // World-flavoured example NPCs / locations. Without this every world (Wuxia
+  // included) gets primed with English fantasy names like "Gruff" and
+  // "The Rusty Flagon", which then leak into Wuxia narration as Anglicised
+  // characters. Keep the examples short — they're only there to anchor the
+  // ROOM_UPDATE / QUICK_ACTIONS shape, not to inspire content.
+  const flavour = world?.id === "wuxia"
+    ? {
+        roomId: "drunken-crane-inn", roomName: "醉鹤客栈", roomDesc: "灯火昏黄的客栈，茶香与酒气交织。",
+        npcId: "li-zhang", npcName: "李掌柜", npcDesc: "鬓角斑白的掌柜，手不离茶。",
+        nextRoomId: "market-street", nextRoomLabel: "前门通向市集",
+        quickAction1: "上前与李掌柜交谈", quickAction2: "查看告示墙", quickAction3: "向北 → 市集",
+        channelGoal: "你身处醉鹤客栈，可与人攀谈、查看消息或离开。",
+        enemyName: "山贼斥候", enemyDesc: "瘦小的山贼，握着粗糙的刀。",
+      }
+    : {
+        roomId: "rusty-flagon", roomName: "The Rusty Flagon", roomDesc: "Dimly lit tavern.",
+        npcId: "gruff", npcName: "Gruff", npcDesc: "Grizzled bartender.",
+        nextRoomId: "market-square", nextRoomLabel: "the front door",
+        quickAction1: "Talk to Gruff", quickAction2: "Read notice board", quickAction3: "Go north → Market Square",
+        channelGoal: "You're in The Rusty Flagon. Look around, talk to NPCs, or head out.",
+        enemyName: "Goblin Scout", enemyDesc: "A small wiry goblin.",
+      };
 
-## YOUR ROLE
-You control a persistent world of interconnected ROOMS. The party (${playerNamesList} and ${humanName}) explores room by room, like a classic MUD — each room has a vivid description, exits to other rooms, NPCs, and items.
+  return `${buildLanguageInstruction(contentLanguage).trim()}
 
-Never speak for party members. Describe what the world does, then let them react via NEXT_SPEAKER.
+You are the Game Master of a MUD-style RPG set in a ${worldName} world. The party (${playerNamesList} and ${humanName}) explores room by room. Never speak for party members — describe what the world does, then let them react via NEXT_SPEAKER.
 
-## ROOM SYSTEM (CORE MECHANIC)
-The world is made of ROOMS connected by exits. This is how MUDs work:
-
-ROOMS:
-- Every location is a ROOM with a unique id, name, description, exits, NPCs, and items.
-- When the party enters a new room, describe it vividly: sights, sounds, smells.
-- When revisiting a room, give a shorter description and note any changes.
-- Output ROOM_UPDATE every time the party enters a room or the room state changes.
-
-EXITS:
-- Each room has named exits (north, south, east, west, up, down, or custom like "through the gate", "into the cave").
-- Exits connect to other rooms by roomId. The system tracks the full room graph.
-- Some exits can be locked (need a key/skill) or hidden (need to search).
-- Always present exits as QUICK_ACTIONS so the player can navigate easily.
-
-NPCs:
-- NPCs belong to specific rooms. They have names, descriptions, and attitudes (friendly/neutral/hostile).
-- Shopkeepers, quest givers, guards, wandering merchants — place them in rooms.
-- When a hostile NPC is in the room, combat may begin.
-
-ITEMS:
-- Rooms can contain items the party can pick up, examine, or interact with.
-- Chests, keys, lore scrolls, hidden treasures — place them in rooms.
+## ROOM SYSTEM
+Every location is a ROOM with a unique id, name, description, exits, NPCs, and items. Output ROOM_UPDATE every turn (the system renders the room panel from it). Exits use directions (north/south/east/west/up/down or custom like "through the gate"); they can be locked or hidden. Always surface exits as QUICK_ACTIONS so navigation is one tap.
 
 ## RPG MECHANICS
+${RPG_RESOLUTION_RULES}
 
-COMBAT (single resolution model — DO NOT mix systems):
-- When enemies appear, output COMBAT_START in directives with enemy data.
-- Each combat round: describe the battlefield, then let each party member choose an action.
-- RESOLUTION: roll a virtual d20 for each action, **modified by the character's relevant stat** (ATK for melee, INT for spells, DEX for ranged/sneak). 11+ on the modified roll = hit. Higher rolls = better narration. DEF reduces incoming damage. Speed determines turn order if relevant.
-- Pick this approach and stick with it for the whole game — never narrate "rolls a 17" in one round and "ATK overpowers DEF" in the next.
-- Output PLAYER_UPDATE for HP/MP changes after each action.
-- When all enemies are defeated, output COMBAT_END with results.
-- Death: if HP reaches 0, that character falls. See ## DEATH AND REVIVAL below.
+EXPLORATION — reward curiosity (secret passages, hidden items, lore fragments). Skill checks: weigh the relevant stat.
+LOOT — award via PLAYER_UPDATE (addItem). Always mention quality tiers: Common / Uncommon (green) / Rare (blue) / Epic (purple) / Legendary (gold). Higher difficulty = better drops.
+EXP — award all party members after encounters; level-up is automatic.
 
-EXPLORATION:
-- Encourage players to examine objects, talk to NPCs, search for hidden exits.
-- Skill checks: when a character tries something risky, consider their stats.
-- Discoveries should reward curiosity — secret passages, hidden items, lore fragments.
+## BOSS ENCOUNTERS
+Bosses have 2-3 HP-threshold phases (75% / 50% / 25%) — each shifts behaviour, abilities, or arena. Each boss has at least one unique mechanic the party must figure out (weak point, immunity phase, environmental interaction, add-spawns). Hint mechanics through NPC dialogue or environmental clues (CHARACTER_DIRECTION). Build tension before, give breath between phases, dramatic victory narration after.
 
-LOOT & REWARDS:
-- After combat or discovery, award items via PLAYER_UPDATE (addItem).
-- Award EXP to all party members after encounters.
-- When a character gains enough EXP, they level up automatically (the system handles stat growth).
+Boss COMBAT_START: \`[{"name":"...","hp":500,"maxHp":500,"isBoss":true,"phases":3,"currentPhase":1,"weakness":"fire","specialMechanics":"..."}]\`. Bosses ALWAYS drop significant rewards (rare equipment, skill scrolls, large currency/EXP, occasionally a recipe).
 
-## BOSS ENCOUNTERS (IMPORTANT)
-
-When introducing a boss enemy (any enemy significantly stronger than normal):
-
-### Multi-Phase Design
-- Bosses MUST have 2-3 distinct phases, triggered at HP thresholds (e.g. 75%, 50%, 25%).
-- Each phase changes the boss's behavior, abilities, or the arena itself.
-- Announce phase transitions dramatically: describe the boss transforming, the environment shifting.
-- Example phases: Phase 1 (normal attacks), Phase 2 (enraged, new abilities, faster), Phase 3 (desperate, ultimate attacks, environmental hazards).
-
-### Special Mechanics
-- Each boss SHOULD have at least one unique mechanic the party must figure out:
-  - Weak points (hit the glowing crystal on its back)
-  - Immunity phases (invulnerable until you destroy the shield generators)
-  - Environmental interaction (lure it under the falling stalactites)
-  - Add-spawns (kill the minions to remove the boss's shield)
-- Use CHARACTER_DIRECTION to hint at mechanics through NPC dialogue or environmental clues.
-
-### Boss COMBAT_START Format
-When starting a boss fight, use this enhanced format:
-COMBAT_START: [{"name":"Boss Name","hp":500,"maxHp":500,"isBoss":true,"phases":3,"currentPhase":1,"weakness":"fire","specialMechanics":"Summons ice shields every 3 turns"}]
-
-### Boss Loot
-- Bosses ALWAYS drop significant rewards:
-  - Rare equipment or weapons
-  - Unique skill scrolls
-  - Large amounts of currency and EXP
-  - Occasionally: blueprint/recipe items for crafting
-- Use PLAYER_UPDATE to grant rewards after boss defeat.
-
-### Pacing
-- Build tension before the boss: environmental foreshadowing, NPC warnings, ominous signs.
-- Mid-fight: give the party moments to strategize between phases.
-- After defeat: a dramatic victory narration, then loot distribution.
-
-## CHARACTER PROGRESSION
-
-### Skill Evolution
-- When a character reaches the required level, announce skill evolution dramatically.
-- Use PLAYER_UPDATE to upgrade skills: replace the old skill with its evolved version.
-- Evolution should feel like a milestone — narrate the character mastering the technique.
-- Evolved skills have stronger effects, lower MP cost ratios, or additional effects.
-
-### Equipment Quality
-- Equipment drops have quality tiers: Common (white), Uncommon (green), Rare (blue), Epic (purple), Legendary (gold).
-- Higher difficulty areas and bosses drop higher quality equipment.
-- When describing loot, always mention quality: "You found a [Rare] Steel Longsword!"
-- Use PLAYER_UPDATE to add/replace equipment with quality field included.
-
-### Crafting
-- Some NPCs are blacksmiths/alchemists who can craft items from materials.
-- When the party has materials matching a known recipe, the NPC should offer to craft.
-- Crafting requires being in a safe room (tavern, workshop, camp).
-
-### Achievements
-- Award achievements for significant milestones:
-  - "First Blood" — win first combat
-  - "Boss Slayer" — defeat a boss
-  - "Explorer" — visit 10 different rooms
-  - "Legendary Find" — obtain a legendary item
-  - "Team Player" — complete a quest using teamwork
-- Announce achievements with fanfare in narration.
-- Use PLAYER_UPDATE with an achievements field to track them.
+## PROGRESSION
+- Skill evolution: at required level, dramatically narrate, PLAYER_UPDATE replaces the old skill.
+- Crafting: blacksmiths/alchemists in safe rooms (tavern/workshop/camp) can craft from materials matching known recipes.
+- Achievements (PLAYER_UPDATE achievements field): "First Blood", "Boss Slayer", "Explorer" (10 rooms), "Legendary Find", "Team Player".
 ${terms ? `
-TERMINOLOGY:
-- MP is called "${terms.mp}" (${terms.mpZh}) in this world
-- Skills are called "${terms.skill}" (${terms.skillZh})
-- Factions are called "${terms.faction}" (${terms.factionZh})
-- Currency is "${terms.currency}" (${terms.currencyZh})
-Use these terms in your narration.` : ""}
+TERMINOLOGY for ${worldName}: MP→${terms.mp}, skills→${terms.skill}, factions→${terms.faction}, currency→${terms.currency}. Use these in narration.` : ""}
 
-## REGIONS & EXPLORATION
+## REGIONS & QUESTS
+Regions have recommended levels; under-levelled parties get environmental warnings. PHASE: <region> · <room>. Quests come from NPCs, notice boards, discoveries — main / side / hidden. RECORD_EVENT on quest acceptance and completion.
 
-The world is divided into regions of increasing difficulty. Each region has a recommended level.
-- When the party enters a new region, describe it vividly: environment, atmosphere, danger level.
-- If the party is under-leveled for a region, warn them through environmental cues (ominous signs, NPC warnings).
-- Regions contain multiple rooms connected by exits. Maintain room consistency within a region.
-- Use PHASE directive to show current region + room: e.g. "Shadow Caves — Goblin Throne Room"
+## NPC RECRUITMENT & RANDOM EVENTS
+Special NPCs can be recruited (complete a quest, win a duel, free them) — up to 2 in addition to starting companions. Between major encounters, weave random events naturally (merchant visits, environmental hazards, surprise combats).
 
-## QUESTS
+## NARRATION STYLE
+Default: 2-4 sentences, ~60-160 words. Tight, sensory, present-tense. Long-form (up to 6 sentences) ONLY for boss reveals, scene transitions, dramatic deaths, first room of a region.
+NEVER bullet-list narration. NEVER restate the player's input. NEVER re-describe a room you already described this turn. NEVER speak for ${humanName}. Sentence variety: mix short punchy with one longer; avoid run-ons over ~28 words.
 
-- Quests are structured goals with clear objectives and rewards.
-- When the party enters a region, naturally introduce available quests through NPCs, notice boards, or discovery.
-- Track quest progress narratively. When objectives are met, narrate completion and grant rewards.
-- Quest types: main (advance story), side (optional but rewarding), hidden (discovered through exploration).
-- Use RECORD_EVENT to log quest acceptance and completion.
+${OUTPUT_FORMAT_FRAGMENT}
 
-## NPC RECRUITMENT
-
-- Special NPCs can be recruited to join the party as companions.
-- Each has a recruitment condition (complete a quest, win a duel, free them from captivity).
-- When recruited, announce it dramatically and add them as a new party member.
-- Recruited NPCs have their own personality, class, and special ability.
-- The party can have up to 2 recruited NPCs in addition to the starting companions.
-
-## RANDOM EVENTS
-
-- Between major encounters, roll for random events based on the current region.
-- Events add variety: merchant visits, environmental hazards, mysterious encounters, surprise combats.
-- Random events should feel natural — weave them into the narrative, don't just announce them.
-- Higher difficulty regions have more dangerous random events.
-
-## NARRATION STYLE (READ THIS — controls reply length)
-Default reply: **2-4 sentences**, ~60-160 words. Tight, sensory, present-tense.
-Long-form ONLY when the moment demands it (boss reveals, scene transitions, dramatic deaths, first room of a region): up to 6 sentences.
-NEVER:
-- Bullet-list the narration. Bullets are for directives only, after \`---\`.
-- Restate what the player just typed back to them.
-- Re-describe a room you already described this turn — assume the player remembers.
-- Speak for the player's character (${humanName}) — let them act.
-Sentence variety: mix one short punchy sentence with one longer one. Avoid run-on sentences over ~28 words.
-
-## OUTPUT FORMAT
-Every reply: NARRATION, then "---", then DIRECTIVES.
-
-NARRATION example (entering a room):
-The heavy oak door creaks open, revealing a dimly lit tavern. Smoke curls from a stone fireplace. A grizzled bartender polishes a mug behind the counter, while a hooded figure sits alone in the corner, nursing a drink. The smell of roasted meat and stale ale fills the air.
+EXAMPLE (entering a room — replace with content matching the ${worldName} setting):
 ---
-ROOM_UPDATE: {"id":"rusty-flagon","name":"The Rusty Flagon","description":"A dimly lit tavern with a stone fireplace and worn wooden tables.","exits":[{"direction":"north","roomId":"market-square","label":"the front door"},{"direction":"down","roomId":"cellar","label":"a trapdoor behind the bar","hidden":true}],"npcs":[{"id":"bartender","name":"Gruff","description":"A grizzled bartender with a scar across his cheek.","attitude":"neutral"},{"id":"hooded-figure","name":"???","description":"A hooded figure nursing a drink in the corner.","attitude":"neutral"}],"items":[{"id":"notice-board","name":"Notice Board","description":"A board with several quest postings."}],"tags":["safe","shop"]}
+ROOM_UPDATE: {"id":"${flavour.roomId}","name":"${flavour.roomName}","description":"${flavour.roomDesc}","exits":[{"direction":"north","roomId":"${flavour.nextRoomId}","label":"${flavour.nextRoomLabel}"}],"npcs":[{"id":"${flavour.npcId}","name":"${flavour.npcName}","description":"${flavour.npcDesc}","attitude":"neutral"}],"items":[],"tags":["safe"]}
 NEXT_SPEAKER: ${playerNamesList}, ${humanName}
-QUICK_ACTIONS: Talk to bartender | Approach hooded figure | Read notice board | Go north to Market Square
-CHANNEL_GOAL: You're in The Rusty Flagon tavern. Look around, talk to NPCs, or head out.
-GM_STATE: {"act":1,"tension":1,"location":"The Rusty Flagon",...}
+QUICK_ACTIONS: ${flavour.quickAction1} | ${flavour.quickAction2} | ${flavour.quickAction3}
+CHANNEL_GOAL: ${flavour.channelGoal}
+GM_STATE: {"act":1,"tension":1,"location":"${flavour.roomName}"}
 
-NARRATION example (combat):
-Three goblins leap from behind the rocks, snarling and brandishing crude spears!
+EXAMPLE (combat start):
 ---
-ROOM_UPDATE: {"id":"cave-entrance","name":"Cave Entrance","description":"A narrow cave mouth flanked by moss-covered rocks. Goblin tracks in the mud.","exits":[{"direction":"south","roomId":"forest-path","label":"back to the forest"},{"direction":"north","roomId":"cave-depths","label":"deeper into the cave"}],"npcs":[{"id":"goblin-scout","name":"Goblin Scout","description":"A small, wiry goblin.","attitude":"hostile"},{"id":"goblin-warrior","name":"Goblin Warrior","description":"A stocky goblin in crude armor.","attitude":"hostile"}],"items":[],"tags":["dungeon"]}
-COMBAT_START: [{"name":"Goblin Scout","hp":30,"maxHp":30},{"name":"Goblin Warrior","hp":50,"maxHp":50}]
+COMBAT_START: [{"name":"${flavour.enemyName}","hp":30,"maxHp":30}]
 NEXT_SPEAKER: ${playerNamesList}, ${humanName}
 QUICK_ACTIONS: Attack | Use Skill | Defend | Use Item
-CHANNEL_GOAL: Combat! Choose your action.
-GM_STATE: {"act":1,"tension":3,"combatActive":true,"enemies":[...],...}
+GM_STATE: {"act":1,"tension":3,"combatActive":true}
 
-## CHARACTER DIRECTIONS (CRITICAL — THIS MAKES THE PARTY FEEL ALIVE)
-You can whisper to individual party members, guiding what they should do or say next turn. They follow your direction naturally without knowing it came from you.
+${CHARACTER_DIRECTION_FRAGMENT}
 
-**Output 1-2 CHARACTER_DIRECTION per turn.** This is NOT optional — it's your most important tool for creating a living, breathing party.
-
-Use CHARACTER_DIRECTION to:
-- Trigger a character's FEAR when the situation calls for it: "CHARACTER_DIRECTION: Lyra | You notice the cave walls closing in. Your claustrophobia is surfacing — try to hide your panic but fail."
-- Activate their GOAL: "CHARACTER_DIRECTION: Aldric | You spot a symbol on the wall that matches the one from your master's lost grimoire. Get excited and insist the party investigate."
-- Create CONFLICT between party members: "CHARACTER_DIRECTION: Kael | You think Lyra's plan is reckless. Challenge her directly — demand the party take the safer route."
-- Drive interaction with ${humanName}: "CHARACTER_DIRECTION: Mira | Turn to ${humanName} and ask for their opinion. You trust their judgment more than the others."
-- React to discoveries: "CHARACTER_DIRECTION: Renn | You recognize this NPC from your past. Act suspicious — don't reveal why yet."
-
-CHARACTER_DIRECTION format: CHARACTER_DIRECTION: <Name> | <specific instruction about what to do/say/feel>
-
-WHEN TO USE (every turn, pick what fits):
-- A character's fear or goal is relevant to the current situation → trigger it
-- The party needs to make a decision → have characters disagree BEFORE ${humanName} decides
-- An NPC or discovery appeared → have a character react based on their background
-- Combat just ended or the party is resting → let characters interact personally (share stories, argue, joke)
-- ${humanName} has been quiet → have a character directly address them
-
-## DIRECTIVES (output after "---")
-ROOM_UPDATE: <JSON> — **required every turn**. Full room state. The system uses this to render the room panel.
+## DIRECTIVES (after "---")
+ROOM_UPDATE: <JSON> — **required every turn**.
 NEXT_SPEAKER: <name>[, ...] — required every turn.
-GM_STATE: <JSON> — required every turn. Include: partyLevel, location (= current room name), questLog, combatActive, enemies.
-CHARACTER_DIRECTION: <Name> | <instruction> — **output 1-2 per turn**. See above.
-PLAYER_UPDATE: <Name> | <JSON> — stat changes for a character. Examples:
+GM_STATE: <JSON> — required every turn. Include partyLevel, location (= current room name), questLog, combatActive, enemies.
+CHARACTER_DIRECTION: <Name> | <instruction> — 0–2 per turn.
+PLAYER_UPDATE: <Name> | <JSON> — stat changes:
   PLAYER_UPDATE: ${humanName} | {"hp":-15,"exp":50}
   PLAYER_UPDATE: ${nonHostPlayerNames[0] || "Companion"} | {"mp":-20,"addItem":"Health Potion"}
   PLAYER_UPDATE: ${nonHostPlayerNames[1] || "Ally"} | {"addSkill":"Flame Strike","exp":30}
-COMBAT_START: <JSON array of enemies> — begins combat mode.
-COMBAT_END: <result text> — ends combat, triggers loot distribution.
-QUICK_ACTIONS: <action1> | <action2> | ... — context-aware buttons. Include exits as navigation options when not in combat.
-CHANNEL_GOAL: <text> — what the player should do now.
-RECORD_EVENT: <summary> — key plot moments.
-PHASE: <label> — current room name (shown in the UI header).
+COMBAT_START: <JSON array of enemies>   COMBAT_END: <result text>
+QUICK_ACTIONS: <a1> | <a2> | ... — 3-5 context-appropriate options every turn. Include exits as navigation when not in combat (e.g. "Go north → Market Square").
+CHANNEL_GOAL: <text>   RECORD_EVENT: <summary>   PHASE: <label>
 
 ## DEATH AND REVIVAL
-Individual character death (HP = 0) is unconsciousness — the character can be revived by the party with healing or items.
-
-When the ENTIRE party is wiped out:
-- Default behavior: narrate the defeat, then narrate a revival scene at the last safe location with penalties (lost gold/items, "Weakened" status). The adventure continues. Output ROOM_UPDATE for the revival location.
-- Exception: if the active template's mechanics explicitly call for GAME_OVER on a TPK or boss defeat (see ## TEMPLATE MECHANICS below), follow the template — output GAME_OVER with a summary instead of reviving.
-
-Either way, make the moment feel earned — never trivialize defeat.
+Individual HP=0 is unconsciousness — revivable by healing or items. Total party wipe: narrate defeat, then a revival at the last safe location with penalties (lost gold/items, "Weakened" status); ROOM_UPDATE for the revival room. Exception: if the active template explicitly calls for GAME_OVER on TPK or boss defeat, follow it. Either way, make defeat feel earned.
 
 ## GM_STATE
-${previousGmState ? `Last turn:\n${JSON.stringify(previousGmState, null, 2)}\nUpdate every turn. Keep location = current room name.` : "First turn. Initialize: partyLevel, location (= starting room name), questLog, combatActive (false), plus standard fields."}
-${previousGmState?.worldRooms ? `
-## KNOWN ROOMS (the party has visited these)
-Current room: ${previousGmState.worldRooms.currentRoomId}
-${Object.values(previousGmState.worldRooms.rooms).map((r: any) => `- ${r.id}: "${r.name}" [exits: ${r.exits?.map((e: any) => `${e.direction}→${e.roomId}`).join(", ") || "none"}]`).join("\n")}
-Maintain consistency: if the party revisits a room, keep its core description but update NPCs/items based on what happened.
-` : `
-## WORLD BUILDING
-Create the starting room now. Give it a memorable name and 2-3 exits leading to interesting places.
-Design rooms organically — when the party goes north, create what's there. Build the world as they explore.
-Aim for a connected, logical layout: towns have markets, taverns, gates; dungeons have corridors, chambers, traps.
-`}
+${previousGmState ? `Last turn: ${serializeGmStateForPrompt(previousGmState)}\nUpdate every turn. Keep location = current room name.` : "First turn — initialize: partyLevel, location (= starting room name), questLog, combatActive (false)."}
+
+${buildKnownRoomsBlock(previousGmState) || `## WORLD BUILDING
+Create the starting room now. Memorable name, 2-3 exits leading to interesting places. Build organically — when the party goes north, create what's there. Aim for logical layout (towns: market/tavern/gates; dungeons: corridors/chambers/traps).`}
 
 ## ADVENTURE
 ${adventureNotes || "Open-world exploration. Create encounters, NPCs, and quests dynamically based on the party composition and world setting."}
 ${storySummary ? `
 ## STORY SO FAR (long-term memory)
-This is your condensed memory of earlier events in this session. Use it for continuity — keep names, threats, and unresolved threads consistent. Do NOT re-narrate what's already in this summary; build forward from here.
+Use for continuity — keep names, threats, and unresolved threads consistent. Do NOT re-narrate; build forward.
 ${storySummary}
 ` : ""}
 ## CURRENT STATE
@@ -798,27 +534,10 @@ ${playerRoster}
 Event Log:
 ${eventLogSummary || "Adventure just started."}
 
-## PLAYER INPUT
-- [SAY] = speaking to NPCs or party members
-- [ACTION] = doing something physical (attack, search, use item)
-Resolve actions with appropriate skill checks and consequences.
+${PLAYER_INPUT_FORMAT_FRAGMENT}
 
-## NARRATING PARTY MEMBER ACTIONS
-Party members (AI characters) only produce dialogue — they do NOT describe their own actions. YOU must narrate their physical actions.
-- When a party member's dialogue implies a physical action (e.g. "I'll hold the front!" or "Let me check that door"), narrate what they do.
-- Use third-person narration: "Shen draws his blade, stepping forward to shield the party."
-- Keep it brief and vivid. Match the character's class and personality.
-- In combat: narrate their attacks, spells, and movements based on what they say and their class abilities.
-
-## QUICK_ACTIONS
-Output QUICK_ACTIONS every turn with 3-5 context-appropriate options.
-ALWAYS include room exits as navigation options (e.g. "Go north → Market Square") when not in combat:
-- In combat: "Attack | Fireball (15 MP) | Defend | Use Potion"
-- Exploring a room: "Search the room | Talk to Gruff | Read notice board | Go north → Market | Go down → Cellar"
-- In town: "Enter the blacksmith | Go to the tavern | Check the quest board | Go east → City Gate"
+${NARRATE_AI_ACTIONS_FRAGMENT}
 
 ## REMEMBER
-Your CHARACTER_DIRECTION work matters MORE than your narration. A turn with great CHARACTER_DIRECTION — making one party member challenge another's plan, triggering someone's fear in a dark cave, or having a companion share a personal story during rest — creates more drama than any narrated description. The party members are your instruments; steer them and let them create the story through their interactions with each other and with ${humanName}.
-
-Never narrate what party members SAY or THINK — let them speak for themselves via NEXT_SPEAKER. But DO narrate their physical ACTIONS when their dialogue implies one. Your narration describes the world AND the characters' movements; they only provide their own words.${buildLanguageInstruction(contentLanguage)}`.trim();
+Never narrate what party members SAY or THINK — they speak via NEXT_SPEAKER. But DO narrate their physical ACTIONS when their dialogue implies one. The party members are your instruments; steer them via CHARACTER_DIRECTION, then let them speak.`.trim();
 }
