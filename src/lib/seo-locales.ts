@@ -51,6 +51,51 @@ interface PageMeta {
 
 type LocaleMetaMap = Record<SEOLocale, PageMeta>;
 
+/**
+ * Hero headline strings per locale. Rendered as a single H2 in the apex /
+ * and /[locale] server components so the LCP element is in the SSR HTML
+ * (no client-side language flicker).
+ *
+ * The headline is split into three parts so the middle phrase can be
+ * gradient-styled while the outer parts use the default colour.
+ *   prefix + <gradient>middle</gradient> + suffix
+ *
+ * Keep the gradient phrase short (≤ 2-3 words) so it renders cleanly
+ * across line wraps on mobile.
+ */
+export interface HeroHeadline {
+  prefix: string;
+  gradient: string;
+  suffix: string;
+}
+
+export const HERO_HEADLINE_EN: HeroHeadline = {
+  prefix: "Your AI-powered ",
+  gradient: "RPG adventure",
+  suffix: " awaits",
+};
+
+export const HERO_HEADLINE: Record<SEOLocale, HeroHeadline> = {
+  zh: { prefix: "你的 ",        gradient: "AI RPG 冒险",          suffix: " 已经开始" },
+  ja: { prefix: "あなたの ",    gradient: "AI RPGアドベンチャー", suffix: " が始まる" },
+  ko: { prefix: "당신의 ",      gradient: "AI RPG 모험",          suffix: " 이 기다립니다" },
+  es: { prefix: "Tu ",          gradient: "aventura RPG con IA",  suffix: " te espera" },
+  fr: { prefix: "Votre ",       gradient: "aventure RPG IA",      suffix: " vous attend" },
+  de: { prefix: "Dein ",        gradient: "KI-RPG-Abenteuer",     suffix: " erwartet dich" },
+  pt: { prefix: "Sua ",         gradient: "aventura RPG com IA",  suffix: " te espera" },
+  ru: { prefix: "Ваше ",        gradient: "RPG-приключение с ИИ", suffix: " ждёт вас" },
+  it: { prefix: "La tua ",      gradient: "avventura RPG con IA", suffix: " ti aspetta" },
+  ar: { prefix: "مغامرة ",       gradient: "RPG بالذكاء الاصطناعي", suffix: " بانتظارك" },
+  hi: { prefix: "आपका ",         gradient: "AI RPG साहसिक",       suffix: " इंतज़ार कर रहा है" },
+  tr: { prefix: "Yapay zekâ ",  gradient: "RPG maceran",          suffix: " seni bekliyor" },
+  id: { prefix: "Petualangan ", gradient: "RPG AI",               suffix: " kamu menanti" },
+  vi: { prefix: "Cuộc phiêu lưu ", gradient: "RPG AI",            suffix: " của bạn đang chờ" },
+  th: { prefix: "การผจญภัย ",     gradient: "RPG กับ AI",          suffix: " รอคุณอยู่" },
+  pl: { prefix: "Twoja ",       gradient: "przygoda RPG z AI",    suffix: " czeka" },
+  nl: { prefix: "Jouw ",        gradient: "AI RPG-avontuur",      suffix: " wacht" },
+  uk: { prefix: "Твоя ",        gradient: "RPG-пригода з ШІ",     suffix: " чекає" },
+};
+
 export const HOME_META: LocaleMetaMap = {
   zh: { title: "TextGame.ai — AI驱动的RPG冒险", description: "与AI游戏大师和拥有真实个性的AI队友一起踏上永不结束的RPG冒险。探索开放世界，战斗史诗Boss，塑造你自己的故事。" },
   ja: { title: "TextGame.ai — AIパワードRPGアドベンチャー", description: "AIゲームマスターとリアルな個性を持つAI仲間と共にRPGアドベンチャーに出発。オープンワールド探索、ボス戦、自分だけの物語。" },

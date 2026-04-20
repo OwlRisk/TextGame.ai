@@ -12,7 +12,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { trackEvent } from "@/lib/analytics";
 import { getPresetById } from "@/data/discover-templates";
 import { GAME_TEMPLATES } from "@/lib/game-templates";
-import { getAppLanguage, t } from "@/lib/i18n";
+import { getAppLanguage, setAppLanguage, t } from "@/lib/i18n";
 
 const TAILWIND_TO_HEX: Record<string, string> = {
   purple: "#9333ea", indigo: "#4f46e5", red: "#dc2626", pink: "#ec4899",
@@ -28,7 +28,7 @@ function templateToHex(templateId: string | undefined): string {
   return (match && TAILWIND_TO_HEX[match[1]]) || "#8b5cf6";
 }
 
-export default function HomeClient({ heroHeadline }: { heroHeadline?: React.ReactNode }) {
+export default function HomeClient({ heroHeadline, urlLocale }: { heroHeadline?: React.ReactNode; urlLocale?: string }) {
   const router = useRouter();
   const { selectGame, games, updateGame, addGame } = useGameContext();
   const { user, loading, signInWithGoogle, signInWithFacebook } = useAuth();
@@ -37,6 +37,15 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
   useEffect(() => {
     selectGame("home");
   }, [selectGame]);
+
+  // When the page renders for a specific locale URL ("/zh", "/ja"…), pin
+  // that locale into the i18n store so the rest of the UI matches the URL
+  // instead of falling back to navigator.language. Without this, a user
+  // who arrived at /zh from the proxy auto-redirect could still see English
+  // chrome (sidebar, modal labels) because navigator.language is "en-US".
+  useEffect(() => {
+    if (urlLocale) setAppLanguage(urlLocale);
+  }, [urlLocale]);
 
   const createGameFromPreset = async (presetId: string) => {
     const preset = getPresetById(presetId);
@@ -184,6 +193,7 @@ export default function HomeClient({ heroHeadline }: { heroHeadline?: React.Reac
           onCreateGame={handleCreateGame}
           onExploreGames={handleExploreGames}
           heroHeadline={heroHeadline}
+          urlLocale={urlLocale}
         />
       )}
 

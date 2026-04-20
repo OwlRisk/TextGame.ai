@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SITE_DOMAIN } from "@/lib/site";
 import { FAQ_ITEMS } from "@/data/landing-content";
-import { buildHreflangAlternates } from "@/lib/seo-locales";
+import { buildHreflangAlternates, HERO_HEADLINE_EN } from "@/lib/seo-locales";
 import HomeClient from "./home-client";
 
 export const metadata: Metadata = {
@@ -67,13 +67,14 @@ export default function HomePage() {
           receive it as a pre-rendered React node and render it in-place,
           so hydration matches and no duplicate element appears. */}
       <HomeClient
+        urlLocale="en"
         heroHeadline={
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
-            Your AI-powered{" "}
+            {HERO_HEADLINE_EN.prefix}
             <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-              RPG adventure
-            </span>{" "}
-            awaits
+              {HERO_HEADLINE_EN.gradient}
+            </span>
+            {HERO_HEADLINE_EN.suffix}
           </h2>
         }
       />

@@ -34,6 +34,12 @@ interface LandingPageProps {
   onCreateGame?: (presetId?: string) => void;
   onExploreGames?: () => void;
   heroHeadline?: React.ReactNode;
+  /** URL-derived locale (e.g. "zh" for /zh, "en" for /). When present, used
+   *  as the source of truth for the page language so SSR + first-paint
+   *  matches the URL instead of falling back to navigator/localStorage —
+   *  prevents a flash of English chrome on /zh for English-OS users who
+   *  navigated explicitly. */
+  urlLocale?: string;
 }
 
 type PreviewMessage = {
@@ -94,8 +100,10 @@ function localizeTag(tag: string, lang: string): string {
   return TAG_I18N[tag]?.[key] ?? tag;
 }
 
-export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExploreGames, heroHeadline }: LandingPageProps) {
-  const lang = getAppLanguage();
+export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExploreGames, heroHeadline, urlLocale }: LandingPageProps) {
+  // Prefer the URL-derived locale (deterministic at SSR + client hydrate)
+  // over the localStorage / navigator detection used elsewhere in the app.
+  const lang = urlLocale || getAppLanguage();
   const localScenarios = useMemo(() => localizeScenarios(GAME_SCENARIOS, lang), [lang]);
   const localCharacters = useMemo(() => localizeMarqueeCharacters(MARQUEE_CHARACTERS, lang), [lang]);
   const localFeatures = useMemo(() => localizeFeatures(FEATURES, lang), [lang]);
