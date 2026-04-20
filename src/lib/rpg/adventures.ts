@@ -342,6 +342,115 @@ TONE: Adventurous descent → unease → desperate boss fight.`,
   },
 };
 
+// ─── Adventure 4: The Iron Bell of Heishan (Wuxia, short-form) ─────────────
+//
+// Shorter (~20-30 min) Wuxia adventure to balance Jade Peak's longer arc.
+// Validates that the structured form scales down — not every adventure
+// needs three full acts and a multi-phase boss; this one has one
+// pivot moment and a single-phase boss with a unique mechanic.
+
+const HEISHAN_BELL: RpgAdventure = {
+  id: "rpg-heishan-bell",
+  worldId: "wuxia",
+  title: "The Iron Bell of Heishan",
+  hook: "The black mountain village of Heishan (黑山) hasn't rung its iron warning-bell in forty years. Tonight at dusk it tolled three times. The villagers are gone.",
+  partySize: 3,
+  estimatedDuration: "20-30 min",
+  directorBrief: `Heishan is a remote mountain village whose iron warning-bell has stood silent for forty years. Tonight, at dusk, it rang three times — the old signal for "the mountain wakes". Every villager has vanished from their homes. Half-eaten meals, lit lanterns, a dropped infant blanket in the muddy main street.
+
+THE TRUTH (only the GM knows): Forty years ago Master Bai (白师傅) sealed a fire serpent (火蛇 / huǒshé) into the bell using a forbidden technique that cost him his life. The seal weakened over decades; tonight it broke. The villagers ran for the cave shelters when the bell rang — they're alive but trapped. The serpent now hunts them. The seal-talisman fragments are still in Bai's old hut.
+
+PRINCIPLES:
+- Short-form pacing — one pivot beat per act, not a full three-arc tournament. Don't pad.
+- The villagers are alive; the stakes are rescue, not vengeance. Reward investigation that finds them.
+- The fire serpent is the ONLY combat encounter that matters — everything else builds tension toward it.
+- Old Hua (花婆婆), the herbalist, is the only NPC visible at first; she stayed behind because she's too old to run. She knows the legend.
+
+TONE: Ghost-village dread → discovery → desperate rescue.`,
+  keyNpcs: [
+    { id: "old_hua", name: "Old Hua (花婆婆)", role: "Village herbalist; stayed behind out of pride; knows the legend of the bell", introducedAtStart: true },
+    { id: "village_headman_son", name: "Liang (梁少年)", role: "Headman's teenage son, hiding wounded in the cave shelter; can lead the party there once found", appearsInAct: 2 },
+    { id: "spirit_of_master_bai", name: "Spirit of Master Bai (白师傅之魂)", role: "Appears to the party at the boss confrontation if his hut was investigated; bestows the seal technique", appearsInAct: 3 },
+  ],
+  encounters: [
+    {
+      id: "village_search_serpent_signs",
+      label: "Act 1 — Search the empty village",
+      act: 1, type: "discovery",
+      expReward: 30,
+      notes: "Investigation, not combat. Scattered scorch marks, rope burns on door frames, a child's wooden charm dropped near the well. Reward thoroughness — finding 3+ signs unlocks an early conversation with Old Hua about the legend.",
+    },
+    {
+      id: "talk_to_old_hua",
+      label: "Act 1 — Old Hua's tea house",
+      act: 1, type: "social",
+      expReward: 20,
+      notes: "Old Hua is hostile at first (she thinks the party are looters), then warms up if the party shows respect. She tells the legend of Master Bai and the bell. Hands the party an old map marking Bai's hut and the cave shelters.",
+    },
+    {
+      id: "bai_hut_seal_fragments",
+      label: "Act 2 — Master Bai's abandoned hut",
+      act: 2, type: "puzzle",
+      expReward: 50,
+      notes: "Three seal-talisman fragments hidden in the rafters, behind a loose floor stone, and inside an old qin (古琴). Mage's Detect Magic finds them all instantly; without a mage, party rolls per fragment. Failed roll = a fragment is brittle, must be repaired with herbs from Old Hua.",
+    },
+    {
+      id: "cave_shelter_rescue",
+      label: "Act 2 — Cave shelter ambush",
+      act: 2, type: "combat",
+      enemies: [
+        { name: "Burning Acolyte", hp: 50, atk: 16, def: 4 },
+        { name: "Burning Acolyte", hp: 50, atk: 16, def: 4 },
+      ],
+      expReward: 80,
+      notes: "Fire-cult acolytes drawn by the bell now guard the cave entrance. Light combat. After they fall, Liang (the headman's son) emerges and leads the party to where the villagers hide.",
+    },
+    {
+      id: "boss_huoshe_serpent",
+      label: "Act 3 — The Fire Serpent at the bell tower",
+      act: 3, type: "combat",
+      enemies: [
+        { name: "Huoshe, the Fire Serpent", hp: 220, atk: 28, def: 12, isBoss: true, phaseThresholds: [0.5] },
+      ],
+      expReward: 220,
+      notes: "Single-phase-transition boss. Phase 1: standard fire breath + lash attacks (AoE 18). Phase 2 (HP<50%): coils around the bell tower itself — physical attacks only damage when the party climbs the bell rope to strike the head. Mage spells hit at any range. If the party brought all three seal fragments, the spirit of Master Bai appears mid-fight (CHARACTER_DIRECTION) and offers to channel the seal through one party member, dealing 80 damage instantly but knocking that character out for the rest of the fight.",
+    },
+  ],
+  acts: [
+    { act: 1, label: "Empty Village — Bell Falls Silent", triggers: ["party arrives", "first scorch sign found", "Old Hua spoken to"] },
+    { act: 2, label: "Investigation — Hut and Cave", triggers: ["seal fragments retrieved (any number)", "Liang found alive in cave"] },
+    { act: 3, label: "Bell Tower — The Serpent Wakes", triggers: ["party climbs the bell tower", "boss revealed"] },
+  ],
+  initialGmState: {
+    act: 1,
+    tension: 2,
+    ingredientsUsed: [],
+    ingredientsAvailable: [
+      "first_scorch_sign_found",
+      "wooden_charm_at_well",
+      "old_hua_meeting",
+      "old_hua_tells_legend",
+      "village_search_serpent_signs",
+      "bai_hut_seal_fragments",
+      "cave_shelter_rescue",
+      "liang_revealed_alive",
+      "bell_tower_climb",
+      "spirit_of_bai_appears",
+      "boss_huoshe_revealed",
+    ],
+    playerKnows: ["the village is empty", "the iron bell rang at dusk after 40 years of silence"],
+    playerDoesntKnow: [
+      "Master Bai sealed a fire serpent in the bell 40 years ago and died doing it",
+      "the seal weakened and broke tonight",
+      "the villagers escaped to cave shelters and are alive",
+      "the seal can be re-channelled through any party member at the cost of being knocked out",
+    ],
+    activeThreats: ["serpent_loose_in_mountain", "more_villagers_lost_each_hour"],
+    mood: "uneasy dread",
+    questLog: ["Find the missing villagers of Heishan"],
+  },
+};
+
 // ─── Adventure 3: The Cursed Crossroads (Mixed) ────────────────────────────
 
 const CURSED_CROSSROADS: RpgAdventure = {
@@ -475,6 +584,7 @@ export const ALL_RPG_ADVENTURES: RpgAdventure[] = [
   JADE_PEAK,
   STARFALL_DUNGEON,
   CURSED_CROSSROADS,
+  HEISHAN_BELL,
 ];
 
 export function getRpgAdventureById(id: string | null | undefined): RpgAdventure | undefined {

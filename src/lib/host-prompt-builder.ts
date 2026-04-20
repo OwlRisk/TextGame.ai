@@ -427,10 +427,14 @@ export interface RpgDirectorOpts {
    *  GM forgot to emit ROOM_UPDATE. This turn MUST emit a fresh
    *  ROOM_UPDATE so the room panel and exits stay in sync. */
   roomUpdateMissingLastTurn?: boolean;
+  /** Adventure NPCs whose `appearsInAct` has been reached but who the GM
+   *  hasn't introduced into the story yet. Surfaced as a "should have
+   *  appeared by now" reminder so plotted characters stop getting lost. */
+  overdueNpcs?: ReadonlyArray<{ id: string; name: string }>;
 }
 
 export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
-  const { worldName, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, contentLanguage, previousGmState, adventureNotes, world, storySummary, recentlyRepeatedIngredients, recentlyRepeatedEncounters, pendingBossPhaseTransition, roomUpdateMissingLastTurn } = opts;
+  const { worldName, humanName, nonHostPlayerNames, playerRoster, eventLogSummary, contentLanguage, previousGmState, adventureNotes, world, storySummary, recentlyRepeatedIngredients, recentlyRepeatedEncounters, pendingBossPhaseTransition, roomUpdateMissingLastTurn, overdueNpcs } = opts;
   const playerNamesList = nonHostPlayerNames.join(", ");
   const terms = world?.terminology;
 
@@ -449,6 +453,16 @@ export function buildRpgDirectorPrompt(opts: RpgDirectorOpts): string {
   if (roomUpdateMissingLastTurn) {
     validatorAlerts.push(`!! ROOM_UPDATE MISSING — last turn's narration described the party moving to a new place but no ROOM_UPDATE was emitted. The room panel is stale. THIS TURN must emit a fresh ROOM_UPDATE for the new location with correct exits.`);
   }
+  if (overdueNpcs && overdueNpcs.length > 0) {
+    validatorAlerts.push(`!! OVERDUE NPCs — these adventure characters should already be on stage but you haven't introduced them: ${overdueNpcs.map((n) => n.name).join("; ")}. Bring at least one of them in this turn (or shortly).`);
+  }
+
+  // Stable reminder of who's already in the scene — keeps NPC behaviour
+  // consistent across turns instead of "Master Yun is kindly" turn 5,
+  // "Master Yun is scheming" turn 12.
+  const introducedNpcsBlock = previousGmState?.npcsIntroduced && previousGmState.npcsIntroduced.length > 0
+    ? `\n## NPCs ALREADY ON STAGE (keep behaviour consistent with how you introduced them)\n${previousGmState.npcsIntroduced.map((id) => `  - ${id}`).join("\n")}\n`
+    : "";
   const alertsBlock = validatorAlerts.length > 0
     ? `\n${validatorAlerts.join("\n")}\n`
     : "";
@@ -566,6 +580,7 @@ Create the starting room now. Memorable name, 2-3 exits leading to interesting p
 
 ## ADVENTURE
 ${adventureNotes || "Open-world exploration. Create encounters, NPCs, and quests dynamically based on the party composition and world setting."}
+${introducedNpcsBlock}
 ${storySummary ? `
 ## STORY SO FAR (long-term memory)
 Use for continuity — keep names, threats, and unresolved threads consistent. Do NOT re-narrate; build forward.

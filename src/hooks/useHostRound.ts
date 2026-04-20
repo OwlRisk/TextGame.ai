@@ -30,7 +30,7 @@ import { buildHostSystemPrompt, buildSceneDirectorPrompt, buildRpgDirectorPrompt
 import { getWorldById } from "@/lib/rpg/worlds";
 import { getRpgAdventureById } from "@/lib/rpg/adventures";
 import { isSceneMode, getScene } from "@/lib/scenes";
-import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, parseEncountersFired, stripGmDirectives, buildStorySummary, reconcileIngredients, reconcileEncounters, reconcileBossPhase, detectMissingRoomUpdate, EMPTY_GM_STATE } from "@/lib/gm-state";
+import { type GmState, type CharacterDirection, type WorldRooms, parseGmState, parseCharacterDirections, parseRoomUpdate, parseEncountersFired, stripGmDirectives, buildStorySummary, reconcileIngredients, reconcileEncounters, reconcileBossPhase, reconcileNpcIntroductions, getOverdueNpcs, detectMissingRoomUpdate, EMPTY_GM_STATE } from "@/lib/gm-state";
 import {
   type SpeakerQueueItem,
   parseRoleAssignments,
@@ -170,6 +170,11 @@ export function useHostRound({
    *  Without this the room panel goes stale and QUICK_ACTIONS reference
    *  exits to rooms that don't exist. */
   const missingRoomUpdateRef = useRef<boolean>(false);
+  /** Adventure NPCs whose `appearsInAct` has been reached but who haven't
+   *  been introduced in narration yet. Surfaced into the next prompt as
+   *  "should have appeared by now" so the GM stops forgetting plotted
+   *  characters that are gating story progress. */
+  const overdueNpcsRef = useRef<Array<{ id: string; name: string }>>([]);
   const roundAbortRef = useRef<AbortController | null>(null);
   const roundWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -374,6 +379,7 @@ export function useHostRound({
             recentlyRepeatedEncounters: repeatedEncountersRef.current,
             pendingBossPhaseTransition: pendingBossPhaseRef.current,
             roomUpdateMissingLastTurn: missingRoomUpdateRef.current,
+            overdueNpcs: overdueNpcsRef.current,
           });
         }
 
@@ -762,8 +768,36 @@ export function useHostRound({
             }
             pendingBossPhaseRef.current = transitionedTo;
 
-            gmStateRef.current = bossReconciled;
-            setGmState(bossReconciled);
+            // RPG-mode NPC introduction tracker — when the adventure has a
+            // structured roster, mark any NPCs whose names showed up in the
+            // narration this turn as introduced. Used by the next prompt to
+            // (a) tell the GM which NPCs are already on-stage so they stay
+            // consistent, and (b) flag NPCs the adventure said should have
+            // appeared by now but haven't.
+            const rpgAdventureIdForNpc = currentGame?.config?.rpgAdventureId;
+            const adventureForNpc = rpgAdventureIdForNpc ? getRpgAdventureById(rpgAdventureIdForNpc) : undefined;
+            let finalState: GmState = bossReconciled;
+            if (adventureForNpc) {
+              const { state: npcReconciled, newlyIntroduced } = reconcileNpcIntroductions({
+                narration: rawSplitMessage,
+                npcRoster: adventureForNpc.keyNpcs,
+                parsedState: bossReconciled,
+              });
+              if (newlyIntroduced.length > 0) {
+                console.debug(`[gm-state] NPCs introduced: ${newlyIntroduced.join(", ")}`);
+              }
+              overdueNpcsRef.current = getOverdueNpcs({
+                currentAct: npcReconciled.act,
+                npcRoster: adventureForNpc.keyNpcs,
+                npcsIntroduced: npcReconciled.npcsIntroduced ?? [],
+              });
+              finalState = npcReconciled;
+            } else {
+              overdueNpcsRef.current = [];
+            }
+
+            gmStateRef.current = finalState;
+            setGmState(finalState);
           }
 
           const roomUpdate = parseRoomUpdate(directives);

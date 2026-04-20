@@ -119,6 +119,22 @@ const RPG_ADVENTURE_UI: Record<string, RpgAdventureUiMeta> = {
     features: ["Mixed Wuxia + Fantasy world", "Mystery & combat blend", "Faction diplomacy", "Dual magic systems"],
     rules: "Fantasy RPG — mixed world where Eastern martial arts and Western magic coexist. Players explore, investigate, and fight.",
   },
+  "rpg-heishan-bell": {
+    description: "The iron bell of a remote mountain village rings for the first time in forty years. The villagers are gone.",
+    longDescription: "Heishan (黑山), a remote mountain village, hasn't rung its iron warning-bell in forty years. Tonight at dusk it tolled three times — and every villager vanished from their homes. Half-eaten meals, dropped lanterns, scorch marks on the door frames. A short, focused Wuxia rescue: investigate the empty village, find the surviving villagers in the cave shelters, and stop whatever the bell was holding back.",
+    icon: "🔔",
+    // Reuses the Jade Peak cover for now — both are Wuxia, and shipping a new
+    // adventure shouldn't be blocked on commissioning a new cover asset.
+    // Replace with a dedicated /games/game-cover-rpg-heishan-bell.webp once
+    // the asset is ready.
+    cover: "/games/game-cover-rpg-jade-peak.webp",
+    tags: ["Wuxia", "Mystery", "Short Session", "Rescue"],
+    style: "Strategic",
+    color: "from-zinc-700 to-red-900",
+    badge: "NEW",
+    features: ["~25 min session", "One pivotal boss with a unique mechanic", "Spirit-mentor optional ally", "Investigation-heavy"],
+    rules: "Wuxia short-form — empty village rescue. Investigate, find survivors, defeat the released spirit.",
+  },
 };
 
 function decorateRpgAdventures(adventures: RpgAdventure[]): GameTemplate[] {

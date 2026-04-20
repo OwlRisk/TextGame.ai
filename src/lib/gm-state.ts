@@ -95,6 +95,10 @@ export interface GmState {
    *  so the runtime can prompt the GM to advance phases at the right
    *  moment instead of relying on the GM remembering. */
   activeBoss?: ActiveBossState;
+  /** Adventure NPC ids the GM has already introduced into the story.
+   *  Detected from narration (NPC display name appearing in the text)
+   *  so the GM doesn't have to manually mark introductions. */
+  npcsIntroduced?: string[];
 
   // ── MUD room graph ──
   /** Persistent world room data */
@@ -187,6 +191,7 @@ export function parseGmState(directives: string): GmState | null {
     if (typeof raw.combatActive === "boolean") state.combatActive = raw.combatActive;
     if (Array.isArray(raw.enemies)) state.enemies = raw.enemies;
     if (Array.isArray(raw.encountersFired)) state.encountersFired = raw.encountersFired.filter((x: unknown): x is string => typeof x === "string");
+    if (Array.isArray(raw.npcsIntroduced)) state.npcsIntroduced = raw.npcsIntroduced.filter((x: unknown): x is string => typeof x === "string");
     if (raw.activeBoss && typeof raw.activeBoss === "object") {
       const ab = raw.activeBoss as Record<string, unknown>;
       if (typeof ab.name === "string" && typeof ab.currentHp === "number" && typeof ab.maxHp === "number") {
@@ -481,6 +486,125 @@ export function reconcileEncounters(opts: {
     newlyFired,
     repeatedEncounters,
   };
+}
+
+// ─── NPC introduction tracking (RPG mode) ──────────────────────────────────
+
+export interface NpcIntroductionReconciliation {
+  /** Possibly-revised state with newly-introduced NPC ids appended. */
+  state: GmState;
+  /** NPC ids detected in narration this turn that weren't already
+   *  in the ledger. */
+  newlyIntroduced: string[];
+}
+
+/**
+ * Detect adventure NPCs introduced in this turn's narration.
+ *
+ * Heuristic: for each NPC in the adventure roster, check whether their
+ * display name (or a reasonable short form derived from it) appears as a
+ * whole word in the narration. The display name "Master Yun (云大师)"
+ * matches if either "Master Yun" OR "云大师" appears.
+ *
+ * Match is case-sensitive for English (so common words like "kai" don't
+ * spuriously trip on dialogue), but case-insensitive for the first
+ * letter only — so "Mei Ling" matches "mei ling" but a word "the" inside
+ * a name is not matched in isolation.
+ *
+ * Conservative on purpose: only flips a single bit (introduced=true);
+ * the reconciler will never flag a *contradiction* about an NPC's
+ * personality — that's an LLM-evals problem we don't try to solve here.
+ */
+export function reconcileNpcIntroductions(opts: {
+  narration: string;
+  npcRoster: ReadonlyArray<{ id: string; name: string }>;
+  parsedState: GmState;
+}): NpcIntroductionReconciliation {
+  const { narration, npcRoster, parsedState } = opts;
+  if (!narration.trim() || npcRoster.length === 0) {
+    return { state: parsedState, newlyIntroduced: [] };
+  }
+
+  const already = new Set(parsedState.npcsIntroduced ?? []);
+  const newlyIntroduced: string[] = [];
+
+  for (const npc of npcRoster) {
+    if (already.has(npc.id)) continue;
+    if (npcNameMentioned(narration, npc.name)) {
+      already.add(npc.id);
+      newlyIntroduced.push(npc.id);
+    }
+  }
+
+  if (newlyIntroduced.length === 0) {
+    return { state: parsedState, newlyIntroduced: [] };
+  }
+  return {
+    state: { ...parsedState, npcsIntroduced: [...already] },
+    newlyIntroduced,
+  };
+}
+
+/**
+ * Pull the most "name-like" tokens out of a display name and check
+ * whether any one of them appears as a whole word in the narration.
+ *
+ * Display name forms we want to match:
+ *   - "Master Yun (云大师)"  → match either "Master Yun" or "云大师"
+ *   - "Iron Fist Chen (铁拳陈)" → match either "Iron Fist Chen" or "铁拳陈"
+ *   - "Kai the Smuggler" → match "Kai the Smuggler" (the full phrase)
+ *
+ * We deliberately require the FULL phrase before parens (or the parens
+ * content alone) — single-word matches like "Kai" are too prone to
+ * collisions with common dialogue.
+ */
+function npcNameMentioned(narration: string, displayName: string): boolean {
+  const cleaned = displayName.trim();
+  if (!cleaned) return false;
+  // Split into "before parens" + "in parens" forms, both candidates.
+  const parenMatch = cleaned.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+  const candidates: string[] = parenMatch
+    ? [parenMatch[1].trim(), parenMatch[2].trim()]
+    : [cleaned];
+
+  for (const cand of candidates) {
+    if (!cand) continue;
+    if (containsAsPhrase(narration, cand)) return true;
+  }
+  return false;
+}
+
+function containsAsPhrase(haystack: string, phrase: string): boolean {
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // ASCII names: enforce word boundaries. CJK names have no whitespace
+  // word boundaries so we fall back to substring containment.
+  const isAscii = /^[\x00-\x7F]+$/.test(phrase);
+  const re = isAscii
+    ? new RegExp(`\\b${escaped}\\b`, "i")
+    : new RegExp(escaped);
+  return re.test(haystack);
+}
+
+/**
+ * NPCs the adventure says should have appeared by the current act but
+ * haven't (based on `npcsIntroduced` ledger). The runtime surfaces these
+ * to the GM as a "should have introduced X by now" reminder.
+ */
+export function getOverdueNpcs(opts: {
+  currentAct: number;
+  npcRoster: ReadonlyArray<{ id: string; name: string; introducedAtStart?: boolean; appearsInAct?: number }>;
+  npcsIntroduced: ReadonlyArray<string>;
+}): Array<{ id: string; name: string }> {
+  const { currentAct, npcRoster, npcsIntroduced } = opts;
+  const introduced = new Set(npcsIntroduced);
+  return npcRoster
+    .filter((n) => !introduced.has(n.id))
+    .filter((n) => {
+      if (n.introducedAtStart) return true;        // should be on stage from turn 1
+      const targetAct = n.appearsInAct ?? Infinity;
+      return currentAct >= targetAct;
+    })
+    .map((n) => ({ id: n.id, name: n.name }));
 }
 
 // ─── Boss phase tracking (RPG mode) ─────────────────────────────────────────
