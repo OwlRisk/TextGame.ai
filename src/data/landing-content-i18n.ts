@@ -36,265 +36,271 @@ function pick(map: L, lang: string): string | undefined {
 
 type ScenarioOverlay = { title: string; messages: string[] };
 
+// Scenario IDs match GAME_SCENARIOS in landing-content.ts. When the source
+// scenarios get renamed/replaced (e.g. the RPG-only refactor that swapped
+// werewolf/mafia/spy/mystery → dungeon/wuxia/exploration/boss), this file
+// MUST be updated in lockstep — otherwise localizeScenarios() falls
+// through to English, leaving non-English homepages silently un-localized.
+// Order of `messages` matches landing-content.ts message order exactly.
 const SCENARIO_TEXT: Record<string, Record<string, ScenarioOverlay>> = {
   zh: {
-    werewolf: { title: "狼人杀", messages: [
-      "村庄入睡。狼人——选择你们的猎物。",
-      "Blake！一！整！晚！没！说！话！你们不觉得有问题吗？？",
-      "淡定——我昨晚守了Blake，他没事，相信我。",
-      "等等——你刚承认自己是医生？？这不就是狼人骗信任的套路吗！",
+    dungeon: { title: "地下城探险", messages: [
+      "厚重的石门轰然推开，火把光照亮一间圆形石室——三个哥布林斥候从一只被偷的补给箱旁抬起头，狞笑着。",
+      "总算来活了——我都快无聊死了。退到我身后，前排我来扛。",
+      "等等——阴影里还藏着第四个，我看见了。让我先把那个偷袭的解决掉。",
+      "去吧。前面三个我顶住。别失手。",
     ]},
-    mafia: { title: "黑手党", messages: [
-      "城市入睡。黑手党——选人。",
-      "我亲眼看到Marco半夜在外面。别想抵赖。",
-      "我去买面包！！给家里人买面包！！这也有罪？？",
-      "行行行，买面包。投他出去——我看够了。",
+    wuxia: { title: "武侠冒险", messages: [
+      "翠峰比武场旌旗招展，各派门旗在山风中猎猎作响。一声铜锣响，第一轮比试开始。",
+      "师父说这场比武会试炼我的心志……可真站到台上，才发现自己竟然这么紧张。",
+      "紧张？哈！看看咱们第一个对手，他抖得比你还厉害——这局快得很。",
+      "别小瞧任何人。去年的冠军凭空消失了——这场比武，事情不简单。",
     ]},
-    spy: { title: "谁是卧底", messages: [
-      "暗号已发。有一个人拿到了不同的词。描述但别说穿。",
-      "嗯……我的是那种冷天早上会想来一杯的东西，暖暖的。",
-      "哇这也说得太模糊了吧，你是不是卧底啊Jordan？",
-      "好笑，第一个跳出来指人的往往最有鬼。说的就是你Riley 😏",
+    exploration: { title: "开放世界", messages: [
+      "锈剑客栈一早冷冷清清，门口的告示板贴满任务榜。掌柜一边擦着酒杯，一边斜眼打量你们。",
+      "看看告示板——说不定有合适的活。我去问问掌柜最近有什么传闻。",
+      "这条不错——『商队失踪，最后出现在北方』，赏金挺厚。我们正缺银子。",
+      "北边是黑林。先备好补给。最好再找个帮手。",
     ]},
-    mystery: { title: "谋杀之谜", messages: [
-      "钻石不见了。保险库是锁着的。你们中有人干的。",
-      "那个……我9点左右看到有人在展柜那边。当时没多想。",
-      "博物馆8点就关门了啊Morgan，你那时候在里面干嘛？🤔",
-      "我有钥匙！我在盘点库存——真不是我干的！",
+    boss: { title: "Boss 战", messages: [
+      "巨龙咆哮，洞顶碎石簌簌而落。它的鳞片烧得通红——它进入狂暴阶段了。地面震得发颤。",
+      "Aldric，你血量到极限了！立刻退到掩体后——快！我可以治你，但你得先撑过这两秒。",
+      "再一击我就能把它打趴！再撑我十秒就行！",
+      "十秒？！行啊——你要是死了，我可不会把你那身铠甲扛回城。",
     ]},
   },
   ja: {
-    werewolf: { title: "人狼", messages: [
-      "村に夜が訪れた。狼たちが動き出す……人狼よ、目を開けてターゲットを選べ。",
-      "Blakeは一晩中ほとんど何も言わなかった。あの沈黙は怪しい——指摘させてもらう。",
-      "Blakeのはずがない。昨夜私が守った——もし狼だったら、もう分かっているはず。",
-      "待てよ……Caseyが今、能力を暴露した。医者がわざわざ正体を明かすのは、何かをごまかしている時だけだ。",
+    dungeon: { title: "ダンジョン探索", messages: [
+      "重い石の扉が音を立てて開く。たいまつの光が円形の広間を照らし出す——三体のゴブリン斥候が、奪った補給箱から顔を上げ、唸り声を上げる。",
+      "ようやくか。退屈してたところだ。下がってろ——前線は俺が抑える。",
+      "待って——影に四体目が隠れてる。見えた。あれは私が片付ける。",
+      "ならいけ。前の三体は俺が引き受ける。外すなよ。",
     ]},
-    mafia: { title: "マフィア", messages: [
-      "街が静まり返る。マフィアよ——目を開け。夜明け前にターゲットを選べ。",
-      "Marcoは真夜中にパン屋の外にいた。偶然じゃない——記録を確認した。",
-      "誓って言うけど、家族のためにパンを買いに行っただけだ！！こんなことで嘘をつく理由がない！",
-      "それこそマフィアが言いそうなことだからよ。出来すぎた話ね、Marco。",
+    wuxia: { title: "武侠アドベンチャー", messages: [
+      "翡翠峰の比武場は色とりどりに賑わい、各門派の旗が山風にはためく。銅鑼の音が響き——第一試合の始まりだ。",
+      "師父はこの比武で私の覚悟が試されると言っていた。でも、いざ立ってみるとこんなに緊張するなんて。",
+      "緊張？はっ！見てみろ、最初の相手——あいつ、お前以上に震えてるぞ。すぐ終わる。",
+      "誰のことも侮らないで。去年の優勝者は跡形もなく消えた——この比武、何かおかしい。",
     ]},
-    spy: { title: "スパイは誰だ", messages: [
-      "秘密の言葉が送られた。一人を除いて全員が同じ言葉を持っている。ばれないように自分の言葉を描写せよ。",
-      "僕のはね、ゆっくりした朝に手が伸びる温かいもの……とても心地いい。",
-      "曖昧すぎるよ、Jordan。スパイか、スパイっぽく振る舞ってるかのどっちかだ。",
-      "ただ答えを明白にしたくないだけかもよ？話をそらしてるのは君の方だよ、Riley。",
+    exploration: { title: "オープンワールド", messages: [
+      "錆びた剣亭は朝から静まり返り、入口の掲示板には依頼書がびっしり貼られている。店主はジョッキを磨きながら、片目でこちらを見ている。",
+      "掲示板を見てみよう——割のいい仕事があるかも。店主にも噂を聞いてみる。",
+      "これいいぞ——『商隊が失踪、最後に目撃されたのは北方』。賞金もまとも。路銀の足しになる。",
+      "北はダークウッドね。先に物資を整えて。応援も呼んだ方がいいかも。",
     ]},
-    mystery: { title: "殺人ミステリー", messages: [
-      "施錠された美術館の金庫から、高価なダイヤモンドが消えた。この部屋にいる全員が容疑者だ。",
-      "私は……午後9時頃に展示ケースの近くで誰かを見ました。その時はあまり気にしませんでした。",
-      "それはありえない——美術館は8時に閉まる。閉館後に誰が入れたんだ、Morgan？",
-      "鍵を持っていたんです。私じゃないです、約束します……在庫確認をしていただけです。",
+    boss: { title: "ボス戦", messages: [
+      "竜が咆哮し、洞窟の天井から小石が落ちる。鱗が真っ赤に焼けあがり——奴は狂乱モードに入った。地面が震える。",
+      "Aldric、HPが危ない！すぐに遮蔽物の後ろへ——今だ！治癒はする、でもあと二秒だけ生き延びて。",
+      "もう一発で奴をよろめかせられる！あと十秒だけ俺を生かしてくれ！",
+      "十秒！？分かった——でも死んだらその鎧、町まで運んであげないからね。",
     ]},
   },
   ko: {
-    werewolf: { title: "늑대인간", messages: [
-      "마을에 밤이 찾아왔습니다. 늑대들이 움직이기 시작합니다... 늑대인간들이여, 눈을 뜨고 목표를 선택하세요.",
-      "Blake는 밤새 거의 말을 하지 않았어요. 그 침묵이 수상합니다 — 지적하겠습니다.",
-      "Blake일 리가 없어요. 어젯밤에 제가 보호했으니까 — 만약 늑대였다면, 이미 알았을 거예요.",
-      "잠깐... Casey가 방금 자신의 능력을 드러냈어요. 의사가 왜 자신을 노출하겠어요, 주의를 돌리려는 게 아니라면?",
+    dungeon: { title: "던전 탐험", messages: [
+      "육중한 돌문이 신음을 내며 열린다. 횃불 빛이 원형 방을 비추자 — 약탈한 보급 상자 옆에 있던 고블린 정찰병 셋이 으르렁거리며 고개를 든다.",
+      "드디어. 지루해 죽을 뻔했어. 뒤로 빠져 — 전열은 내가 막는다.",
+      "잠깐 — 그림자에 넷째가 숨어 있어. 보여. 저 암살자는 내가 처리할게.",
+      "그럼 가. 앞의 셋은 내가 막을 테니까. 빗나가지 마.",
     ]},
-    mafia: { title: "마피아", messages: [
-      "도시가 고요해집니다. 마피아 — 눈을 뜨세요. 새벽 전에 목표를 선택하세요.",
-      "Marco가 자정에 빵집 밖에 있었어요. 우연이 아닙니다 — 기록을 확인했어요.",
-      "맹세하건대 가족을 위해 빵을 사러 간 것뿐이에요!! 이런 일에 대해 왜 거짓말을 하겠어요?",
-      "마피아 조직원이 딱 할 법한 말이니까요. 너무 편리하네요, Marco.",
+    wuxia: { title: "무협 모험", messages: [
+      "비취봉 비무대가 알록달록 활기차다. 문파의 깃발이 산바람에 펄럭이고 — 징소리가 울려퍼지며 첫 시합이 시작된다.",
+      "스승님은 이 비무가 내 의지를 시험할 거라 하셨는데… 막상 단상에 서니 이렇게 긴장될 줄이야.",
+      "긴장? 하! 우리 첫 상대를 봐 — 너보다 더 떨고 있어. 금방 끝난다.",
+      "누구도 얕보지 마. 작년 우승자가 흔적도 없이 사라졌어 — 이 비무, 뭔가 잘못됐어.",
     ]},
-    spy: { title: "스파이는 누구", messages: [
-      "비밀 단어가 전송되었습니다. 한 명을 제외하고 모두 같은 단어를 가지고 있습니다. 들키지 않게 설명하세요.",
-      "제 것은 느긋한 아침에 사람들이 찾는 따뜻한 무언가예요... 매우 편안해요.",
-      "너무 모호하네요, Jordan. 스파이거나, 스파이처럼 보이려는 거거나 둘 중 하나예요.",
-      "아니면 너무 뻔하게 말하고 싶지 않았을 뿐인 걸요? 여기서 주의를 돌리는 건 Riley, 당신이에요.",
+    exploration: { title: "오픈 월드", messages: [
+      "녹슨 검 여관은 아침부터 한산하다. 문 옆 게시판에 의뢰서가 빼곡히 붙어 있고, 주인은 술잔을 닦으며 한쪽 눈으로 너희를 살핀다.",
+      "게시판을 보자 — 쓸만한 일이 있을지도. 나는 주인한테 소문을 물어볼게.",
+      "이거 괜찮은데 — '상단 실종, 마지막 목격은 북쪽.' 현상금이 두둑해. 돈이 필요하잖아.",
+      "북쪽은 다크우드야. 먼저 보급부터 챙겨. 지원도 부르는 게 나아.",
     ]},
-    mystery: { title: "살인 미스터리", messages: [
-      "잠긴 박물관 금고에서 값을 매길 수 없는 다이아몬드가 사라졌습니다. 이 방에 있는 모든 사람이 용의자입니다.",
-      "저는... 밤 9시쯤 진열장 근처에서 누군가를 봤어요. 당시에는 대수롭지 않게 생각했어요.",
-      "그건 불가능해요 — 박물관은 8시에 닫습니다. 폐관 후에 누가 당신을 들여보냈나요, Morgan?",
-      "저한테 열쇠가 있었어요. 제가 한 게 아니에요, 약속해요... 재고 조사를 하고 있었을 뿐이에요.",
+    boss: { title: "보스 전투", messages: [
+      "용이 포효하자 동굴 천장에서 돌조각이 우수수 떨어진다. 비늘이 시뻘겋게 달아오른다 — 광폭화 단계에 들어섰다. 땅이 흔들린다.",
+      "Aldric, HP 위험해! 당장 엄폐물 뒤로 — 지금! 치유는 해줄 수 있어, 단 2초만 버텨.",
+      "한 방만 더 치면 비틀거리게 만들 수 있어! 딱 10초만 더 살려줘!",
+      "10초?! 좋아 — 근데 죽으면 그 갑옷, 나 마을까지 안 들고 간다.",
     ]},
   },
   de: {
-    werewolf: { title: "Werwolf", messages: [
-      "Die Nacht bricht über das Dorf herein. Die Wölfe erwachen… Werwölfe, öffnet eure Augen und wählt euer Ziel.",
-      "Blake hat die ganze Nacht kaum ein Wort gesagt. Dieses Schweigen ist verdächtig — das muss ich ansprechen.",
-      "Unmöglich, dass es Blake ist. Ich habe ihn letzte Nacht beschützt — wäre er ein Wolf, wüssten wir es bereits.",
-      "Moment… Casey hat gerade seine Fähigkeit enthüllt. Warum sollte der Arzt sich offenbaren, wenn er nicht ablenken will?",
+    dungeon: { title: "Dungeon-Erkundung", messages: [
+      "Die schwere Steintür ächzt auf. Fackellicht enthüllt eine runde Kammer — drei Goblin-Späher schauen knurrend von einer geraubten Vorratskiste hoch.",
+      "Endlich. Mir wurde langsam langweilig. Bleib hinter mir — die Front halte ich.",
+      "Moment — im Schatten versteckt sich ein vierter. Ich sehe ihn. Den Schleicher übernehme ich.",
+      "Dann los. Die drei vorne halte ich. Nur nicht daneben treffen.",
     ]},
-    mafia: { title: "Mafia", messages: [
-      "Die Stadt verstummt. Mafia — öffnet die Augen. Wählt euer Ziel vor Tagesanbruch.",
-      "Marco war um Mitternacht vor der Bäckerei. Das ist kein Zufall — ich habe die Aufzeichnungen überprüft.",
-      "Ich schwöre, ich wollte nur Brot für meine Familie holen!! Warum sollte ich bei so etwas lügen?",
-      "Weil genau das ein Mafia-Mitglied sagen würde. Zu bequem, Marco.",
+    wuxia: { title: "Wuxia-Abenteuer", messages: [
+      "Das Turnierfeld des Jadegipfels ist voller Farbe. Sektenbanner knattern im Bergwind. Ein Gong erklingt — die erste Runde beginnt.",
+      "Mein Meister sagte, dieses Turnier würde meine Entschlossenheit prüfen. So nervös zu sein, hätte ich nicht erwartet.",
+      "Nervös? Ha! Schau dir unseren ersten Gegner an — er zittert mehr als du. Das wird schnell vorbei sein.",
+      "Unterschätze hier niemanden. Der Champion vom letzten Jahr ist spurlos verschwunden — bei diesem Turnier stimmt etwas nicht.",
     ]},
-    spy: { title: "Wer ist der Spion", messages: [
-      "Geheimwörter gesendet. Alle haben dasselbe Wort — außer ein Spieler. Beschreibt eures, ohne es zu verraten.",
-      "Meins ist etwas Warmes, nach dem man an einem gemütlichen Morgen greift… sehr wohltuend.",
-      "Das ist extrem vage, Jordan. Du bist entweder der Spion oder versuchst so zu klingen.",
-      "Oder vielleicht will ich es einfach nicht zu offensichtlich machen? Du bist hier derjenige, der ablenkt, Riley.",
+    exploration: { title: "Offene Welt", messages: [
+      "Das Wirtshaus „Zum Rostigen Krug\u201C ist heute Morgen still. Eine Anschlagtafel an der Tür ist mit Auftragsanzeigen übersät. Der Wirt poliert einen Krug und beobachtet euch mit einem Auge.",
+      "Schaut auf das Brett — vielleicht ist was Lohnendes dabei. Ich frage den Wirt nach Gerüchten.",
+      "Hier — ‚Vermisste Händlerkarawane, zuletzt gen Norden gesehen.' Das Kopfgeld ist solide. Wir können das Gold gebrauchen.",
+      "Der Norden ist der Dunkelwald. Erst Proviant. Und besser noch Verstärkung.",
     ]},
-    mystery: { title: "Mordmysterium", messages: [
-      "Ein unbezahlbarer Diamant ist aus dem verschlossenen Museumstresor verschwunden. Jede Person in diesem Raum ist verdächtig.",
-      "Ich… habe gegen 21 Uhr jemanden in der Nähe der Vitrine gesehen. Ich habe mir dabei nichts gedacht.",
-      "Das ist unmöglich — das Museum schließt um 8. Wer hat dich nach Feierabend reingelassen, Morgan?",
-      "Ich hatte einen Schlüssel. Ich war es nicht, versprochen… Ich habe nur Inventur gemacht.",
+    boss: { title: "Boss-Kampf", messages: [
+      "Der Drache brüllt, lose Steine prasseln von der Höhlendecke. Seine Schuppen glühen geschmolzen rot — er tritt in seine Wutphase. Der Boden bebt.",
+      "Aldric, deine HP sind kritisch! Sofort hinter Deckung — JETZT! Ich kann dich heilen, aber du musst die nächsten zwei Sekunden überleben.",
+      "Noch ein Treffer und ich bringe ihn aus dem Tritt. Halt mich nur noch zehn Sekunden am Leben!",
+      "Zehn Sekunden?! Na schön — aber wenn du stirbst, trage ich deine Rüstung NICHT in die Stadt zurück.",
     ]},
   },
   fr: {
-    werewolf: { title: "Loup-garou", messages: [
-      "La nuit tombe sur le village. Les loups s'agitent… Loups-garous, ouvrez les yeux et choisissez votre cible.",
-      "Blake n'a presque rien dit de toute la nuit. Ce silence est suspect — je le signale.",
-      "Impossible que ce soit Blake. Je l'ai protégé cette nuit — s'il était un loup, on le saurait déjà.",
-      "Attendez… Casey vient de révéler son pouvoir. Pourquoi le Médecin se dévoilerait-il, à moins de chercher à détourner l'attention ?",
+    dungeon: { title: "Exploration de donjon", messages: [
+      "La lourde porte de pierre s'ouvre en grinçant. La lumière des torches révèle une salle circulaire — trois éclaireurs gobelins lèvent les yeux d'une caisse de ravitaillement volée, grognant.",
+      "Enfin. Je commençais à m'ennuyer. Restez derrière moi — je tiens la première ligne.",
+      "Attendez — il y en a un quatrième caché dans les ombres. Je le vois. Laissez-moi gérer le furtif.",
+      "Alors vas-y. Je m'occupe des trois devant. Ne le rate surtout pas.",
     ]},
-    mafia: { title: "Mafia", messages: [
-      "La ville se tait. Mafia — ouvrez les yeux. Choisissez votre cible avant l'aube.",
-      "Marco était devant la boulangerie à minuit. Ce n'est pas une coïncidence — j'ai vérifié les registres.",
-      "Je jure que j'allais juste chercher du pain pour ma famille !! Pourquoi mentirais-je sur un truc pareil ?",
-      "Parce que c'est exactement ce qu'un membre de la Mafia dirait. Trop pratique, Marco.",
+    wuxia: { title: "Aventure Wuxia", messages: [
+      "Le terrain du tournoi de la Cime de Jade est plein de couleurs. Les bannières des sectes claquent dans le vent de la montagne. Un gong résonne — le premier tour commence.",
+      "Mon maître disait que ce tournoi mettrait ma résolution à l'épreuve. Je ne m'attendais pas à être aussi nerveuse une fois sur place.",
+      "Nerveuse ? Ha ! Regarde notre premier adversaire — il tremble plus que toi. Ce sera vite réglé.",
+      "Ne sous-estime personne ici. Le champion de l'année dernière a disparu sans laisser de trace — quelque chose cloche dans ce tournoi.",
     ]},
-    spy: { title: "Qui est l'espion", messages: [
-      "Mots secrets envoyés. Tout le monde a le même mot — sauf un joueur. Décrivez le vôtre sans le révéler.",
-      "Le mien est quelque chose de chaud qu'on cherche lors d'une matinée tranquille… très réconfortant.",
-      "C'est extrêmement vague, Jordan. Tu es soit l'espion, soit tu essaies d'y ressembler.",
-      "Ou peut-être que je ne veux pas rendre la chose trop évidente ? C'est toi qui détournes l'attention, Riley.",
+    exploration: { title: "Monde ouvert", messages: [
+      "La taverne du Fer Rouillé est calme ce matin. Un tableau d'affichage près de la porte est couvert d'avis de quêtes. L'aubergiste astique une chope en vous observant d'un œil.",
+      "Regardez le tableau — il y a peut-être quelque chose qui en vaut la peine. Je vais demander à l'aubergiste s'il a entendu des rumeurs.",
+      "En voilà une — « Caravane marchande disparue, vue pour la dernière fois en route vers le nord. » La prime est correcte. On a besoin de l'or.",
+      "Le nord, c'est le Bois Sombre. Il nous faut des provisions d'abord. Et probablement du renfort.",
     ]},
-    mystery: { title: "Mystère du meurtre", messages: [
-      "Un diamant inestimable a disparu du coffre-fort verrouillé du musée. Chaque personne ici est suspecte.",
-      "J'ai… vu quelqu'un près de la vitrine vers 21 heures. Je n'y ai pas prêté attention sur le moment.",
-      "C'est impossible — le musée ferme à 20 heures. Qui t'a laissé entrer après la fermeture, Morgan ?",
-      "J'avais une clé. Ce n'est pas moi, je vous le promets… Je faisais juste l'inventaire.",
+    boss: { title: "Combat de boss", messages: [
+      "Le dragon rugit, faisant pleuvoir des pierres du plafond de la caverne. Ses écailles rougeoient comme de la lave — il entre dans sa phase de fureur. Le sol tremble.",
+      "Aldric, tes PV sont critiques ! À l'abri — TOUT DE SUITE ! Je peux te soigner, mais tu dois survivre aux deux prochaines secondes.",
+      "Encore un coup et je le déstabilise. Garde-moi en vie dix secondes de plus !",
+      "Dix secondes ?! Bon — mais si tu meurs, je ne ramène PAS ton armure en ville.",
     ]},
   },
   es: {
-    werewolf: { title: "Hombre Lobo", messages: [
-      "La noche cae sobre el pueblo. Los lobos se agitan… Hombres lobo, abran los ojos y elijan su objetivo.",
-      "Blake apenas dijo una palabra en toda la noche. Ese silencio es sospechoso — lo voy a señalar.",
-      "No puede ser Blake. Lo protegí anoche — si fuera un lobo, ya lo sabríamos.",
-      "Espera… Casey acaba de revelar su habilidad. ¿Por qué el Doctor se expondría a menos que esté desviando la atención?",
+    dungeon: { title: "Exploración de mazmorra", messages: [
+      "La pesada puerta de piedra se abre con un gemido. La luz de la antorcha revela una cámara circular — tres exploradores goblins levantan la vista de una caja de suministros robada, gruñendo.",
+      "Por fin. Me estaba aburriendo. Quédate detrás de mí — yo aguanto la línea.",
+      "Espera — hay un cuarto escondido en las sombras. Lo veo. Yo me ocupo del sigiloso.",
+      "Entonces ve. Yo aguanto a los tres del frente. Solo no falles.",
     ]},
-    mafia: { title: "Mafia", messages: [
-      "La ciudad se sume en el silencio. Mafia — abran los ojos. Elijan su objetivo antes del amanecer.",
-      "Marco estaba fuera de la panadería a medianoche. No es coincidencia — revisé los registros.",
-      "¡¡Les juro que solo fui a comprar pan para mi familia!! ¿Por qué mentiría sobre algo así?",
-      "Porque eso es exactamente lo que diría un miembro de la Mafia. Demasiado conveniente, Marco.",
+    wuxia: { title: "Aventura Wuxia", messages: [
+      "El campo de torneo de la Cima de Jade rebosa de color. Los estandartes de las sectas crujen en el viento de la montaña. Suena un gong — comienza la primera ronda.",
+      "Mi maestro dijo que este torneo pondría a prueba mi determinación. No esperaba sentir tantos nervios al estar de pie aquí.",
+      "¿Nerviosa? ¡Ja! Mira a nuestro primer rival — está temblando más que tú. Esto será rápido.",
+      "No subestimes a nadie aquí. El campeón del año pasado desapareció sin rastro — algo anda mal en este torneo.",
     ]},
-    spy: { title: "¿Quién es el espía?", messages: [
-      "Palabras secretas enviadas. Todos tienen la misma palabra — excepto un jugador. Describe la tuya sin revelarla.",
-      "Lo mío es algo cálido que la gente busca en una mañana tranquila… muy reconfortante.",
-      "Eso es extremadamente vago, Jordan. O eres el espía o intentas parecer uno.",
-      "O quizás no quiero hacerlo demasiado obvio. Tú eres quien desvía la atención aquí, Riley.",
+    exploration: { title: "Mundo abierto", messages: [
+      "La taberna del Espadín Oxidado está tranquila esta mañana. Un tablón junto a la puerta está cubierto de carteles de misiones. El tabernero pule una jarra mientras os observa con un ojo.",
+      "Mira el tablón — puede que haya algo que valga la pena. Yo le preguntaré al tabernero si ha oído rumores.",
+      "Aquí hay uno — 'Caravana mercante desaparecida, vista por última vez rumbo al norte.' La recompensa está bien. Nos viene bien el oro.",
+      "El norte es el Bosque Oscuro. Necesitaremos suministros primero. Y probablemente refuerzos.",
     ]},
-    mystery: { title: "Misterio de asesinato", messages: [
-      "Un diamante invaluable ha desaparecido de la bóveda cerrada del museo. Cada persona en esta sala es sospechosa.",
-      "Yo… vi a alguien cerca de la vitrina alrededor de las 9 PM. No le di mucha importancia en ese momento.",
-      "Eso es imposible — el museo cierra a las 8. ¿Quién te dejó entrar fuera de horario, Morgan?",
-      "Tenía una llave. No fui yo, lo prometo… Solo estaba haciendo inventario.",
+    boss: { title: "Pelea de jefe", messages: [
+      "El dragón ruge, sacudiendo piedras sueltas del techo de la caverna. Sus escamas brillan al rojo vivo — está entrando en su fase de furia. El suelo tiembla.",
+      "¡Aldric, tu HP está crítico! ¡A cubierto — AHORA! Puedo curarte, pero tienes que sobrevivir los próximos dos segundos.",
+      "¡Un golpe más y lo tambaleo. Mantenme vivo diez segundos más!",
+      "¿¡Diez segundos!? Vale — pero si mueres, NO te llevo la armadura de vuelta al pueblo.",
     ]},
   },
   pt: {
-    werewolf: { title: "Lobisomem", messages: [
-      "A noite cai sobre a aldeia. Os lobos se agitam… Lobisomens, abram os olhos e escolham seu alvo.",
-      "Blake mal disse uma palavra a noite toda. Esse silêncio é suspeito — preciso apontar isso.",
-      "Impossível ser o Blake. Eu o protegi na noite passada — se fosse um lobo, já saberíamos.",
-      "Espera… Casey acabou de revelar sua habilidade. Por que o Médico se exporia, a menos que esteja desviando a atenção?",
+    dungeon: { title: "Exploração de masmorra", messages: [
+      "A pesada porta de pedra range ao abrir. A luz da tocha revela uma câmara circular — três batedores goblins erguem o olhar de uma caixa de suprimentos roubada, rosnando.",
+      "Finalmente. Estava ficando entediado. Fique atrás de mim — eu seguro a frente.",
+      "Espera — tem um quarto escondido nas sombras. Eu o vejo. Deixa o furtivo comigo.",
+      "Então vai. Eu seguro os três da frente. Só não erre.",
     ]},
-    mafia: { title: "Máfia", messages: [
-      "A cidade cai em silêncio. Máfia — abram os olhos. Escolham seu alvo antes do amanhecer.",
-      "Marco estava fora da padaria à meia-noite. Isso não é coincidência — eu verifiquei os registros.",
-      "Eu juro que só fui buscar pão para minha família!! Por que eu mentiria sobre algo assim?",
-      "Porque é exatamente o que um membro da Máfia diria. Conveniente demais, Marco.",
+    wuxia: { title: "Aventura Wuxia", messages: [
+      "O campo de torneio do Cume de Jade está cheio de cor. Os estandartes das seitas estalam no vento da montanha. Um gongo soa — começa a primeira rodada.",
+      "Meu mestre disse que este torneio testaria minha determinação. Não esperava sentir tanta tensão ao subir ao palco.",
+      "Tensa? Ha! Olha nosso primeiro oponente — está tremendo mais que você. Vai ser rápido.",
+      "Não subestime ninguém aqui. O campeão do ano passado desapareceu sem deixar rastros — algo está errado neste torneio.",
     ]},
-    spy: { title: "Quem é o espião", messages: [
-      "Palavras secretas enviadas. Todos têm a mesma palavra — exceto um jogador. Descreva a sua sem revelá-la.",
-      "O meu é algo quente que as pessoas buscam numa manhã tranquila… muito reconfortante.",
-      "Isso é extremamente vago, Jordan. Ou você é o espião ou está tentando parecer um.",
-      "Ou talvez eu só não queira tornar óbvio demais? Quem está desviando a atenção aqui é você, Riley.",
+    exploration: { title: "Mundo aberto", messages: [
+      "A taverna do Florete Enferrujado está calma esta manhã. Um quadro de avisos junto à porta está coberto de cartazes de missão. O taverneiro polia uma caneca, observando-os com um olho.",
+      "Veja o quadro — pode ter algo que valha a pena. Eu pergunto ao taverneiro se ouviu boatos.",
+      "Aqui — 'Caravana mercante desaparecida, vista pela última vez indo para o norte.' A recompensa é boa. Estamos precisando de ouro.",
+      "O norte é a Floresta Sombria. Precisamos de suprimentos primeiro. E provavelmente reforços.",
     ]},
-    mystery: { title: "Mistério de assassinato", messages: [
-      "Um diamante inestimável desapareceu do cofre trancado do museu. Cada pessoa nesta sala é suspeita.",
-      "Eu… vi alguém perto da vitrine por volta das 21h. Na hora não pensei muito sobre isso.",
-      "Isso é impossível — o museu fecha às 8. Quem te deixou entrar fora do horário, Morgan?",
-      "Eu tinha uma chave. Não fui eu, prometo… Estava apenas fazendo inventário.",
+    boss: { title: "Luta de chefe", messages: [
+      "O dragão ruge, fazendo cair pedras soltas do teto da caverna. Suas escamas brilham em vermelho fundido — está entrando na fase de fúria. O chão treme.",
+      "Aldric, seu HP está crítico! Para trás da cobertura — AGORA! Posso te curar, mas precisa sobreviver os próximos dois segundos.",
+      "Mais um golpe e eu o desequilibro. Só me mantenha vivo por mais dez segundos!",
+      "Dez segundos?! Tá bem — mas se você morrer, eu NÃO carrego sua armadura de volta para a cidade.",
     ]},
   },
   ru: {
-    werewolf: { title: "Оборотень", messages: [
-      "На деревню опускается ночь. Волки пробуждаются… Оборотни, откройте глаза и выберите цель.",
-      "Блейк за всю ночь едва слово сказал. Это молчание подозрительно — я должен это отметить.",
-      "Не может быть Блейк. Я защитил его прошлой ночью — будь он волком, мы бы уже знали.",
-      "Подождите… Кейси только что раскрыл свою способность. Зачем Доктору раскрываться, если не для того, чтобы отвести подозрения?",
+    dungeon: { title: "Исследование подземелья", messages: [
+      "Тяжёлая каменная дверь со скрипом открывается. Свет факела освещает круглый зал — три гоблина-разведчика поднимают взгляд от украденного ящика с припасами, скалясь.",
+      "Наконец-то. Я уже скучать начал. Держись позади — фронт я возьму на себя.",
+      "Стой — в тенях прячется четвёртый. Я его вижу. Этого скрытного беру на себя.",
+      "Тогда давай. Троих спереди я держу. Только не промахнись.",
     ]},
-    mafia: { title: "Мафия", messages: [
-      "Город погружается в тишину. Мафия — откройте глаза. Выберите цель до рассвета.",
-      "Марко был у пекарни в полночь. Это не совпадение — я проверила записи.",
-      "Клянусь, я просто ходил за хлебом для семьи!! Зачем мне врать о таком?",
-      "Потому что именно это сказал бы член Мафии. Слишком удобно, Марко.",
+    wuxia: { title: "Уся-приключение", messages: [
+      "Турнирная площадка Нефритовой Вершины пестрит цветами. Знамёна сект хлопают на горном ветру. Гонг звенит — начинается первый круг.",
+      "Учитель говорил, что этот турнир испытает мою решимость. Не думала, что буду так нервничать, стоя здесь.",
+      "Нервничаешь? Ха! Глянь на нашего первого соперника — он трясётся сильнее тебя. Это будет быстро.",
+      "Не недооценивай никого здесь. Прошлогодний чемпион бесследно исчез — с этим турниром что-то не так.",
     ]},
-    spy: { title: "Кто шпион", messages: [
-      "Секретные слова отправлены. У всех одно слово — кроме одного игрока. Опишите своё, не выдавая его.",
-      "Моё — это что-то тёплое, к чему тянешься неспешным утром… Очень уютное.",
-      "Это слишком размыто, Джордан. Ты либо шпион, либо просто пытаешься им казаться.",
-      "А может, я просто не хочу делать это слишком очевидным? Это ты здесь уводишь разговор, Райли.",
+    exploration: { title: "Открытый мир", messages: [
+      "Таверна «Ржавый клинок» тиха этим утром. У двери — доска объявлений, увешанная заказами. Трактирщик протирает кружку, поглядывая на вас одним глазом.",
+      "Посмотрим на доску — может, найдём стоящее дело. Я расспрошу трактирщика про слухи.",
+      "Вот это — «Пропавший торговый караван, последний раз видели на севере». Награда приличная. Деньги нам пригодятся.",
+      "На севере — Тёмный Лес. Сначала припасы. И, скорее всего, подкрепление.",
     ]},
-    mystery: { title: "Тайна убийства", messages: [
-      "Бесценный бриллиант исчез из запертого музейного хранилища. Каждый в этой комнате — подозреваемый.",
-      "Я… видел кого-то у витрины около 9 вечера. Тогда не придал этому значения.",
-      "Это невозможно — музей закрывается в 8. Кто впустил тебя после закрытия, Морган?",
-      "У меня был ключ. Это не я, обещаю… Я просто проводил инвентаризацию.",
+    boss: { title: "Битва с боссом", messages: [
+      "Дракон ревёт, и с потолка пещеры сыплются камни. Его чешуя пылает раскалённым красным — он входит в фазу ярости. Земля дрожит.",
+      "Aldric, у тебя критический HP! За укрытие — НЕМЕДЛЕННО! Я могу тебя вылечить, но ты должен пережить следующие две секунды.",
+      "Ещё один удар — и я его пошатну. Просто держи меня живым ещё десять секунд!",
+      "Десять секунд?! Ладно — но если ты умрёшь, я НЕ потащу твою броню обратно в город.",
     ]},
   },
   it: {
-    werewolf: { title: "Lupo Mannaro", messages: [
-      "La notte cala sul villaggio. I lupi si agitano… Lupi mannari, aprite gli occhi e scegliete il vostro bersaglio.",
-      "Blake non ha quasi detto una parola tutta la notte. Quel silenzio è sospetto — devo farlo notare.",
-      "Impossibile che sia Blake. L'ho protetto stanotte — se fosse un lupo, lo sapremmo già.",
-      "Aspettate… Casey ha appena rivelato la sua abilità. Perché il Dottore dovrebbe esporsi, se non per depistare?",
+    dungeon: { title: "Esplorazione del dungeon", messages: [
+      "La pesante porta di pietra geme aprendosi. La luce della torcia rivela una camera circolare — tre esploratori goblin alzano lo sguardo da una cassa di rifornimenti rubata, ringhiando.",
+      "Finalmente. Mi stavo annoiando. Stammi dietro — la prima linea la tengo io.",
+      "Aspetta — c'è un quarto nascosto nelle ombre. Lo vedo. Al furtivo penso io.",
+      "Allora vai. I tre davanti li tengo io. Solo non fallire.",
     ]},
-    mafia: { title: "Mafia", messages: [
-      "La città ammutolisce. Mafia — aprite gli occhi. Scegliete il vostro bersaglio prima dell'alba.",
-      "Marco era fuori dalla panetteria a mezzanotte. Non è una coincidenza — ho controllato i registri.",
-      "Vi giuro che stavo solo prendendo il pane per la mia famiglia!! Perché dovrei mentire su una cosa del genere?",
-      "Perché è esattamente quello che direbbe un membro della Mafia. Troppo comodo, Marco.",
+    wuxia: { title: "Avventura Wuxia", messages: [
+      "Il campo del torneo della Vetta di Giada è pieno di colori. Gli stendardi delle sette sbattono nel vento di montagna. Risuona un gong — inizia il primo round.",
+      "Il mio maestro disse che questo torneo avrebbe messo alla prova la mia determinazione. Non mi aspettavo di sentirmi così nervosa qui sopra.",
+      "Nervosa? Ha! Guarda il nostro primo avversario — trema più di te. Sarà veloce.",
+      "Non sottovalutare nessuno qui. Il campione dell'anno scorso è sparito senza traccia — qualcosa non quadra in questo torneo.",
     ]},
-    spy: { title: "Chi è la spia", messages: [
-      "Parole segrete inviate. Tutti hanno la stessa parola — tranne un giocatore. Descrivete la vostra senza rivelarla.",
-      "Il mio è qualcosa di caldo a cui ci si aggrappa in una mattina tranquilla… molto confortante.",
-      "È estremamente vago, Jordan. O sei la spia o stai cercando di sembrarlo.",
-      "O forse non voglio renderlo troppo ovvio? Sei tu che stai deviando, Riley.",
+    exploration: { title: "Mondo aperto", messages: [
+      "La taverna del Fioretto Arrugginito è tranquilla stamattina. Una bacheca accanto alla porta è coperta di annunci di missioni. L'oste lucida un boccale, guardandovi con un occhio.",
+      "Guarda la bacheca — potrebbe esserci qualcosa che vale la pena. Io chiedo all'oste se ha sentito qualche voce.",
+      "Eccone uno — 'Carovana mercantile scomparsa, vista l'ultima volta diretta a nord.' La taglia è buona. Ci serve l'oro.",
+      "Il nord è il Bosco Oscuro. Prima i rifornimenti. E probabilmente dei rinforzi.",
     ]},
-    mystery: { title: "Mistero dell'omicidio", messages: [
-      "Un diamante inestimabile è scomparso dalla cassaforte chiusa del museo. Ogni persona in questa stanza è sospettata.",
-      "Io… ho visto qualcuno vicino alla vetrina verso le 21. Al momento non ci ho fatto caso.",
-      "È impossibile — il museo chiude alle 8. Chi ti ha fatto entrare fuori orario, Morgan?",
-      "Avevo una chiave. Non sono stato io, lo giuro… Stavo solo facendo l'inventario.",
+    boss: { title: "Scontro con il boss", messages: [
+      "Il drago ruggisce, facendo cadere pietre dal soffitto della caverna. Le sue scaglie brillano di un rosso fuso — sta entrando in fase di furia. Il terreno trema.",
+      "Aldric, i tuoi PF sono critici! Al riparo — ORA! Posso curarti, ma devi sopravvivere ai prossimi due secondi.",
+      "Ancora un colpo e lo faccio barcollare. Tienimi in vita dieci secondi in più!",
+      "Dieci secondi?! Va bene — ma se muori, NON ti riporto l'armatura in città.",
     ]},
   },
   ar: {
-    werewolf: { title: "المستذئب", messages: [
-      "يحل الليل على القرية. الذئاب تتحرك… أيها المستذئبون، افتحوا أعينكم واختاروا هدفكم.",
-      "بالكاد نطق Blake بكلمة طوال الليل. هذا الصمت مثير للريبة — يجب أن أشير إلى ذلك.",
-      "مستحيل أن يكون Blake. لقد حميته الليلة الماضية — لو كان ذئباً، لكنا عرفنا بالفعل.",
-      "انتظروا… Casey كشف للتو عن قدرته. لماذا يكشف الطبيب عن نفسه إلا إذا كان يحاول تحويل الانتباه؟",
+    dungeon: { title: "استكشاف الدنجن", messages: [
+      "يُفتح الباب الحجري الثقيل بأنين. يكشف ضوء المشعل عن قاعة دائرية — ثلاثة كشّافة من الغوبلين يرفعون أعينهم من صندوق إمدادات مسروق، وهم يزمجرون.",
+      "أخيراً. كنت أشعر بالملل. ابقَ خلفي — أنا أتولى الجبهة الأمامية.",
+      "انتظروا — ثمة رابع مختبئ في الظلال. أراه. اتركوا المتسلل لي.",
+      "اذهبي إذاً. الثلاثة الأماميون عليّ. فقط لا تخطئي.",
     ]},
-    mafia: { title: "المافيا", messages: [
-      "يخيّم الصمت على المدينة. أيها المافيا — افتحوا أعينكم. اختاروا هدفكم قبل الفجر.",
-      "كان Marco خارج المخبز في منتصف الليل. هذه ليست مصادفة — لقد راجعت السجلات.",
-      "أقسم أنني كنت فقط أشتري خبزاً لعائلتي!! لماذا سأكذب بشأن شيء كهذا؟",
-      "لأن هذا بالضبط ما سيقوله عضو في المافيا. مريح جداً يا Marco.",
+    wuxia: { title: "مغامرة ووشيا", messages: [
+      "ساحة بطولة قمة اليشم تعجّ بالألوان. أعلام الفصائل تخفق في رياح الجبل. يرنّ الجرس — تبدأ الجولة الأولى.",
+      "قال معلمي إن هذه البطولة ستختبر عزيمتي. لم أتوقع أن أشعر بهذا التوتر وأنا أقف هنا.",
+      "متوترة؟ هه! انظري إلى خصمنا الأول — إنه يرتجف أكثر منك. سينتهي الأمر سريعاً.",
+      "لا تستهيني بأحد هنا. بطل العام الماضي اختفى دون أثر — شيء ما ليس على ما يرام في هذه البطولة.",
     ]},
-    spy: { title: "من هو الجاسوس", messages: [
-      "تم إرسال الكلمات السرية. الجميع لديهم نفس الكلمة — ما عدا لاعب واحد. صِفوا كلمتكم دون كشفها.",
-      "ما لديّ هو شيء دافئ يلجأ إليه الناس في صباح هادئ… مريح جداً.",
-      "هذا غامض للغاية يا Jordan. إما أنك الجاسوس أو تحاول أن تبدو كأنك واحد.",
-      "أو ربما لا أريد أن أجعل الأمر واضحاً جداً؟ أنتِ من تحاولين تحويل الانتباه هنا يا Riley.",
+    exploration: { title: "عالم مفتوح", messages: [
+      "حانة السيف الصدئ هادئة هذا الصباح. لوحة إعلانات بجانب الباب مغطاة بإعلانات المهام. صاحب الحانة يلمّع كأساً، يراقبكم بعين واحدة.",
+      "تفقدوا اللوحة — قد يكون هناك شيء يستحق وقتنا. سأسأل صاحب الحانة إن كان قد سمع شائعات.",
+      "هذه واحدة — «قافلة تجارية مفقودة، شوهدت آخر مرة متجهة شمالاً». المكافأة جيدة. نحتاج إلى الذهب.",
+      "الشمال هو الغابة المظلمة. سنحتاج إلى إمدادات أولاً. وربما دعم.",
     ]},
-    mystery: { title: "لغز الجريمة", messages: [
-      "اختفت ماسة لا تُقدّر بثمن من خزنة المتحف المقفلة. كل شخص في هذه الغرفة مشتبه به.",
-      "أنا… رأيت شخصاً بالقرب من واجهة العرض حوالي الساعة 9 مساءً. لم أعر الأمر اهتماماً حينها.",
-      "هذا مستحيل — المتحف يُغلق الساعة 8. من سمح لك بالدخول بعد ساعات العمل يا Morgan؟",
-      "كان معي مفتاح. لم أكن أنا، أعدكم… كنت أقوم بالجرد فقط.",
+    boss: { title: "معركة الزعيم", messages: [
+      "يزمجر التنين، فتتساقط حجارة من سقف الكهف. حراشفه تتوهج بحمرة منصهرة — إنه يدخل طور الغضب. تهتز الأرض.",
+      "Aldric، نقاط حياتك حرجة! إلى الغطاء — الآن! يمكنني شفاؤك، لكن عليك الصمود الثانيتين القادمتين.",
+      "ضربة أخرى وأُسقطه. فقط أبقني حياً عشر ثوانٍ أخرى!",
+      "عشر ثوانٍ؟! حسناً — لكن إن متّ، لن أحمل درعك إلى المدينة.",
     ]},
   },
 };

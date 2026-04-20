@@ -167,7 +167,7 @@ export const INSIDE_GAME_STEPS: InsideGameStep[] = [
     image: "/steps/step-ai-players.png",
     imageAlt: "AI party members with unique personalities arguing tactics in an RPG fight",
     messages: [
-      { name: "Aldric", badge: "AI", time: "4:20 PM", text: "[ACTION]draws sword[/ACTION] Finally. I was getting bored. Stay behind me!", role: "Knight", personality: "Brave and protective", gender: "male" },
+      { name: "Aldric", badge: "AI", time: "4:20 PM", text: "Finally. I was getting bored. Stay behind me — I'll hold the front.", role: "Knight", personality: "Brave and protective", gender: "male" },
       { name: "Lyra", badge: "AI", time: "4:20 PM", text: "I'll take the one in the rafters before they get a clean shot — give me a count of three.", role: "Rogue", personality: "Sharp-eyed and cunning", gender: "female" },
       { name: "Mira", badge: "AI", time: "4:21 PM", text: "I can blind the closest two with a flare cantrip. Aldric, charge them once they're stunned.", role: "Mage", personality: "Tactical, slightly bossy", gender: "female" },
     ],
@@ -196,7 +196,7 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
     title: "Dungeon Crawl",
     messages: [
       { isHost: true, name: "Chronicle", time: "Room 3", text: "The heavy stone door groans open. Torchlight reveals a circular chamber — three goblin scouts look up from a stolen supply crate, snarling." },
-      { name: "Aldric", time: "Room 3", text: "[ACTION]draws sword[/ACTION] Finally. I was getting bored. Stay behind me!", role: "Knight", personality: "Brave and protective", gender: "male" },
+      { name: "Aldric", time: "Room 3", text: "Finally. I was getting bored. Stay behind me — I'll hold the front.", role: "Knight", personality: "Brave and protective", gender: "male" },
       { name: "Lyra", time: "Room 3", text: "Wait — there's a fourth one hiding in the shadows. I can see it. Let me handle the sneak.", role: "Rogue", personality: "Sharp-eyed and cunning", gender: "female" },
       { name: "Aldric", time: "Room 3", text: "Then go. I'll hold the front three. Just don't miss.", role: "Knight", personality: "Brave and protective", gender: "male" },
     ],
@@ -205,7 +205,7 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
     title: "Wuxia Adventure",
     messages: [
       { isHost: true, name: "Chronicle", time: "Act 1", text: "The tournament grounds of Jade Peak are alive with color. Sect banners snap in the mountain wind. A gong sounds — the first round begins." },
-      { name: "林剑心", time: "Act 1", text: "[ACTION]unsheathes sword slowly[/ACTION] My master said this tournament would test my resolve. I didn't expect to feel this nervous.", role: "Swordmaster", personality: "Disciplined but self-doubting", gender: "female" },
+      { name: "林剑心", time: "Act 1", text: "My master said this tournament would test my resolve. I didn't expect to feel this nervous standing here.", role: "Swordmaster", personality: "Disciplined but self-doubting", gender: "female" },
       { name: "方悟空", time: "Act 1", text: "Nervous? Ha! Look at our first opponent — he's shaking more than you are. This will be quick.", role: "Monk", personality: "Confident and teasing", gender: "male" },
       { name: "林剑心", time: "Act 1", text: "Don't underestimate anyone here. Last year's champion vanished — something is wrong at this tournament.", role: "Swordmaster", personality: "Disciplined but self-doubting", gender: "female" },
     ],
@@ -215,7 +215,7 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
     messages: [
       { isHost: true, name: "Chronicle", time: "Dawn", text: "The Rusty Flagon tavern is quiet this morning. A notice board by the door is covered in quest postings. The bartender polishes a mug, watching you with one eye." },
       { name: "Mira", time: "Dawn", text: "Check the notice board — there might be something worth our time. I'll ask the bartender if he's heard any rumors.", role: "Ranger", personality: "Practical and resourceful", gender: "female" },
-      { name: "Kael", time: "Dawn", text: "[ACTION]reads the notice board[/ACTION] 'Missing merchant caravan — last seen heading north.' This one pays well.", role: "Rogue", personality: "Motivated by gold", gender: "male" },
+      { name: "Kael", time: "Dawn", text: "Here's one — 'Missing merchant caravan, last seen heading north.' Bounty's solid. We could use the coin.", role: "Rogue", personality: "Motivated by gold", gender: "male" },
       { name: "Mira", time: "Dawn", text: "North is the Darkwood. We'll need supplies first. And probably backup.", role: "Ranger", personality: "Practical and resourceful", gender: "female" },
     ],
   },
@@ -223,7 +223,7 @@ export const GAME_SCENARIOS: Record<string, GameScenario> = {
     title: "Boss Fight",
     messages: [
       { isHost: true, name: "Chronicle", time: "Phase 2", text: "The dragon roars, shaking loose stones from the cavern ceiling. Its scales glow molten red — it's entering its fury phase. The ground trembles." },
-      { name: "Sera", time: "Phase 2", text: "[ACTION]raises healing staff[/ACTION] Aldric, your HP is critical! Get behind cover — NOW!", role: "Cleric", personality: "Fierce protector", gender: "female" },
+      { name: "Sera", time: "Phase 2", text: "Aldric, your HP is critical! Get behind cover — NOW! I can heal you, but you need to live the next two seconds.", role: "Cleric", personality: "Fierce protector", gender: "female" },
       { name: "Aldric", time: "Phase 2", text: "One more hit and I'll stagger it. Just keep me alive for ten more seconds!", role: "Knight", personality: "Recklessly brave", gender: "male" },
       { name: "Sera", time: "Phase 2", text: "Ten seconds?! Fine — but if you die, I'm NOT carrying your armor back to town.", role: "Cleric", personality: "Fierce protector", gender: "female" },
     ],
