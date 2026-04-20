@@ -76,30 +76,17 @@ export interface MarqueeCharacter {
 const ANIME_POOL = "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime";
 const anime = (name: string) => `${ANIME_POOL}/${name}.jpg`;
 
-/** Static pre-generated avatar map for landing page characters */
+/** Static avatar map for landing page characters. All entries below MUST be
+ *  referenced from GAME_SCENARIOS, INSIDE_GAME_STEPS, BASE_MARQUEE_CHARACTERS,
+ *  or the hero typing-indicator in landing-page.tsx — anything else is dead
+ *  weight and should be pruned (along with its public/ asset). All landing
+ *  avatars use the anime pool so the hero/marquee aesthetic stays consistent
+ *  with the in-session character generator. */
 export const LANDING_AVATAR_MAP: Record<string, string> = {
-  // Players
-  Alex:            "/avatars/preview/landing-avatar-alex.webp",
-  Casey:           "/avatars/preview/landing-avatar-casey.webp",
-  Drew:            "/avatars/preview/landing-avatar-drew.webp",
-  Lucia:           "/avatars/preview/landing-avatar-lucia.webp",
-  Marco:           "/avatars/preview/landing-avatar-marco.webp",
-  Jordan:          "/avatars/preview/landing-avatar-jordan.webp",
-  Riley:           "/avatars/preview/landing-avatar-riley.webp",
-  Morgan:          "/avatars/preview/landing-avatar-morgan.webp",
-  Taylor:          "/avatars/preview/landing-avatar-taylor.webp",
-  // Inside a Game steps – AI players
-  "Dr. Chen":       "/avatars/preview/landing-avatar-dr-chen.webp",
-  "Captain Rex":    "/avatars/preview/landing-avatar-captain-rex.webp",
-  "Engineer Nova":  "/avatars/preview/landing-avatar-engineer-nova.webp",
-  Gideon:           "/avatars/preview/landing-avatar-gideon.webp",
-  // In-game hosts (each game has its own named host character)
-  "Warden Lunaris":  "/avatars/preview/landing-avatar-warden-lunaris.webp",
-  "Don Ferrante":    "/avatars/preview/landing-avatar-don-ferrante.webp",
-  "Detective Kate":  "/avatars/preview/landing-avatar-detective-kate.webp",
-  // Hero chat preview — characters cycled through GAME_SCENARIOS. Mapped to
-  // anime-pool avatars so the cards match the marquee aesthetic instead of
-  // falling through to the letter-initial placeholder.
+  // Hero chat preview GM (separate from the in-session GM avatar so the
+  // landing page reads "anime" while in-game Chronicle keeps the hooded sage).
+  Chronicle:        anime("Arjun"),
+  // Hero chat preview — RPG party members cycled through GAME_SCENARIOS
   Aldric:           anime("Sebastian"),  // Knight (male)
   Lyra:             anime("Julia"),      // Rogue (female)
   Sera:             anime("Serena"),     // Cleric (female)

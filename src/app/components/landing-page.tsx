@@ -279,25 +279,34 @@ export function LandingPage({ onSignIn, onSignInFacebook, onCreateGame, onExplor
                   visibleCount={visibleCount}
                   onMessageComplete={() => setVisibleCount(v => Math.min(v + 1, currentScenario.messages.length))}
                 />
-                {/* Simple typing indicator */}
-                <div className="flex gap-3 mt-2">
-                  <PreviewAvatar
-                    name="Drew"
-                    role="Villager"
-                    personality="Quiet observer"
-                    gender="other"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-semibold text-white text-sm">Drew</span>
+                {/* Typing indicator — picks the first non-host party member
+                    from the current scenario so the avatar/name match the
+                    on-screen RPG world (no hardcoded Drew/Villager from the
+                    pre-RPG era). */}
+                {(() => {
+                  const next = currentScenario.messages.find((m) => !m.isHost);
+                  if (!next) return null;
+                  return (
+                    <div className="flex gap-3 mt-2">
+                      <PreviewAvatar
+                        name={next.name}
+                        role={next.role}
+                        personality={next.personality}
+                        gender={next.gender}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 mb-1">
+                          <span className="font-semibold text-white text-sm">{next.name}</span>
+                        </div>
+                        <div className="flex gap-1 items-center" aria-hidden="true">
+                          <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse" />
+                          <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse [animation-delay:75ms]" />
+                          <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse [animation-delay:150ms]" />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-1 items-center" aria-hidden="true">
-                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse" />
-                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse [animation-delay:75ms]" />
-                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse [animation-delay:150ms]" />
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
               {/* Mock input */}
               <div className="bg-zinc-800/70 px-4 py-3 border-t border-zinc-700/80">
