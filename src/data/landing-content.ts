@@ -70,6 +70,12 @@ export interface MarqueeCharacter {
 
 // ─── Static data ─────────────────────────────────────────────────────────────
 
+/** Pre-generated anime avatars in Supabase storage. Same pool as the in-game
+ *  character generator so the landing page matches what players actually see
+ *  during a session. */
+const ANIME_POOL = "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime";
+const anime = (name: string) => `${ANIME_POOL}/${name}.jpg`;
+
 /** Static pre-generated avatar map for landing page characters */
 export const LANDING_AVATAR_MAP: Record<string, string> = {
   // Players
@@ -91,16 +97,26 @@ export const LANDING_AVATAR_MAP: Record<string, string> = {
   "Warden Lunaris":  "/avatars/preview/landing-avatar-warden-lunaris.webp",
   "Don Ferrante":    "/avatars/preview/landing-avatar-don-ferrante.webp",
   "Detective Kate":  "/avatars/preview/landing-avatar-detective-kate.webp",
-  // Marquee characters (AI Players section) — anime-style from character pool
-  "Isabelle Frost":    "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Miranda.jpg",
-  "Jasper Kane":       "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Sebastian.jpg",
-  "Serena Lovelace":   "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Serena.jpg",
-  "Arjun Nair":        "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Arjun.jpg",
-  "Zhao Mei":          "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Xiaoyin.jpg",
-  "Silas Grey":        "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Levi.jpg",
-  "Lila Archer":       "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Julia.jpg",
-  "Kenji Yamamoto":    "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Satoshi.jpg",
-  "Haruka Tanaka":     "https://hazjbhhreltgjexxaazn.supabase.co/storage/v1/object/public/avatars/pool/anime/Asuka.jpg",
+  // Hero chat preview — characters cycled through GAME_SCENARIOS. Mapped to
+  // anime-pool avatars so the cards match the marquee aesthetic instead of
+  // falling through to the letter-initial placeholder.
+  Aldric:           anime("Sebastian"),  // Knight (male)
+  Lyra:             anime("Julia"),      // Rogue (female)
+  Sera:             anime("Serena"),     // Cleric (female)
+  Mira:             anime("Miranda"),    // Ranger (female)
+  Kael:             anime("Levi"),       // Rogue (male)
+  "林剑心":          anime("Asuka"),      // Wuxia swordmaster (female)
+  "方悟空":          anime("Satoshi"),    // Wuxia monk (male)
+  // Marquee characters (AI Players section)
+  "Isabelle Frost":    anime("Miranda"),
+  "Jasper Kane":       anime("Sebastian"),
+  "Serena Lovelace":   anime("Serena"),
+  "Arjun Nair":        anime("Arjun"),
+  "Zhao Mei":          anime("Xiaoyin"),
+  "Silas Grey":        anime("Levi"),
+  "Lila Archer":       anime("Julia"),
+  "Kenji Yamamoto":    anime("Satoshi"),
+  "Haruka Tanaka":     anime("Asuka"),
 };
 
 export const INSIDE_GAME_STEPS: InsideGameStep[] = [
