@@ -374,18 +374,9 @@ test.describe("Performance – Extended", () => {
     expect(errors.length).toBe(0);
   });
 
-  test("discover page does not leak console errors", async ({ page }) => {
-    const errors: string[] = [];
-    const ignoredPatterns = /fetch|ENOTFOUND|supabase|network|ERR_NAME|auth|cookie|session|hydrat|chunk|timeout|abort|JSON|storage|TypeError|Cannot read|is not a function|is not defined|ResizeObserver|Loading CSS/i;
-    page.on("pageerror", (err) => {
-      if (!ignoredPatterns.test(err.message)) errors.push(err.message);
-    });
-
-    await page.goto("/discover", { waitUntil: "domcontentloaded", timeout: 60000 });
-    await page.waitForTimeout(3000);
-
-    expect(errors.length).toBe(0);
-  });
+  // (The retired blog console-error scan was repointed to /discover, but
+  // /discover already has its own console-error scan above — so we just
+  // drop the duplicate rather than introducing a second identical test.)
 });
 
 // ─── Cookie & Privacy ────────────────────────────────────────────────────────
